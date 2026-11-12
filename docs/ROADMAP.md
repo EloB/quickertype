@@ -36,32 +36,44 @@ parallel; phases are ordered by dependency.
 - [x] Corpus self-check: 10,132/10,132 pass against the TypeScript CLI
 - [ ] Research notes per area (`docs/research/`)
 
-## Phase 1 — Leaf modules and data model (parallel)
+## Phase 1 — Leaf modules, data model, CLI (parallel) — in progress
 
 | WP | Branch | Scope |
 |---|---|---|
-| 1 | `feat/core-support` | `support/*`, a `js_compat` module (JS number formatting, UTF-16 string ops, JS sort, `JSON.stringify` escaping), pluralize port, Markov chain, `Messages`. Differential unit tests against Node. |
-| 2 | `feat/core-type-graph` | `Type/*`, `attributes/*`, `TypeBuilder`, `TypeGraph`, `GraphRewriting`, `UnionBuilder`, `UnifyClasses`: the arena-based type graph. |
-| 3 | `feat/cli-options` | CLI option model, two-pass parsing, exact `--help`/`--version`/error output, all languages' renderer option declarations. Adds CLI-behavior golden cases (stdout/stderr/exit code). |
+| A | `feat/js-compat` | New `quicktype-js-compat` crate: JS number formatting, UTF-16 strings, V8 TimSort, `JSON.stringify`, `unicode-properties` table, `pluralize`, `wordwrap`. In core: `support/strings`, `acronyms`, `markov_chain`, `integer_range`. Differential test vectors generated from Node. |
+| B | `feat/core-type-graph` | `ty/*`, `attributes/*`, `graph`, `graph_rewriting`, `union_builder`, `unify_classes`, `messages` (error type), `support/{support,chance}`, collection-utils hashing (`EqualityMap`). Graph printer identical to `--debug print-graph` for stage-by-stage diffing. |
+| C | `feat/cli` | CLI-behavior golden cases (help, version, stdout, stdin, directories, errors, a full renderer-option sweep per language); language registry + renderer option declarations; CLI parsing and exact `--help`/error output. |
 
-## Phase 2 — Engine (parallel, after WP2)
+## Phase 2 — Engine (parallel, after Phase 1)
 
 | WP | Branch | Scope |
 |---|---|---|
-| 4 | `feat/core-json-input` | `CompressedJSON`, JSON inference, `Inputs`/`InputData`, string-type detection |
-| 5 | `feat/core-pipeline` | `rewrites/*`, `MakeTransformations`, `Transformers`, `CycleBreaker`, `DeclarationIR`, `Run` |
-| 6 | `feat/core-rendering` | `Source`, `Renderer`, `ConvenienceRenderer`, `Naming`, `GatherNames`, `TargetLanguage` |
-| 7 | `feat/core-json-schema-input` | `JSONSchemaInput`, schema stores, `$ref`/URI resolution, YAML |
+| D | `feat/core-json-input` | Two JSON readers (stream-json semantics for the CLI, `JSON.parse` semantics for the API), `CompressedJSON`, JSON inference, `Inputs`/`InputData`, string-type detection, inference-affecting language metadata |
+| E | `feat/core-pipeline` | `rewrites/*`, `MakeTransformations`, `Transformers`, `CycleBreaker`, `DeclarationIR`, `Run` |
+| F | `feat/core-rendering` | `Source`, `Renderer`, `ConvenienceRenderer`, `Naming`, `GatherNames`, renderer trait for all languages, `Comments`, `Converters` |
+| G | `feat/core-json-schema-input` | `JSONSchemaInput`, schema stores, `urijs` port, YAML |
 
-## Phase 3 — First end-to-end language
+## Phase 3 — First end-to-end language: Rust
 
-One simple, well-covered language wired through the CLI, proving the whole
-pipeline. First non-zero parity baseline.
+Rust (852 TS lines, 321 golden cases, no transformers or multi-file output)
+wired through the CLI, proving the whole pipeline; then Go as the second
+pilot (aligned tables, `DependencyName`, GraphQL).
 
 ## Phase 4 — Language fan-out (parallel)
 
-The remaining languages are split into roughly 8 packages along their base-class
-families, so no two packages edit the same files.
+Eight packages along base-class families (research 04), so no two edit the
+same files:
+
+| Package | Languages | TS lines / golden cases |
+|---|---|---|
+| L1 | C (cJSON) | 6.7k / 314 |
+| L2 | Crystal, C++ | 4.9k / 631 |
+| L3 | Pike, C# | 4.3k / 1,317 |
+| L4 | Java, Kotlin | 4.4k / 1,659 |
+| L5 | JavaScript, TypeScript, Flow, Zod, Effect Schema, PropTypes, Elm | 4.5k / 2,273 |
+| L6 | Ruby, Elixir, Python | 5.3k / 955 |
+| L7 | Swift, Objective-C, Dart | 5.0k / 1,025 |
+| L8 | Haskell, Scala 3, Smithy4s, PHP | 4.9k / 1,235 |
 
 ## Phase 5 — Remaining inputs
 
