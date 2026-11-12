@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "kind": {
+                    "$ref": "#/definitions/Kind"
+                },
+                "ratio": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "amount",
+                "enabled",
+                "kind",
+                "ratio",
+                "version"
+            ],
+            "title": "TopLevel"
+        },
+        "Kind": {
+            "type": "string",
+            "enum": [
+                "widget"
+            ],
+            "title": "Kind"
+        }
+    }
+}

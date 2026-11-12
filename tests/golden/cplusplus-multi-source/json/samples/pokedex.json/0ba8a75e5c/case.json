@@ -1,0 +1,38 @@
+{
+  "fixture": "cplusplus-multi-source",
+  "input": "json/samples/pokedex.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/json/samples/pokedex.json",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--source-style",
+        "multi-source",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "Egg.hpp",
+        "Evolution.hpp",
+        "Generators.hpp",
+        "Pokemon.hpp",
+        "TopLevel.hpp",
+        "Type.hpp",
+        "helper.hpp",
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

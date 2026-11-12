@@ -1,0 +1,153 @@
+import datetime
+import re
+from enum import Enum
+from dataclasses import dataclass
+from typing import Any, TypeVar, Callable, Type, cast
+import dateutil.parser
+
+
+T = TypeVar("T")
+EnumT = TypeVar("EnumT", bound=Enum)
+
+
+def from_list(f: Callable[[Any], T], x: Any) -> list[T]:
+    assert isinstance(x, list)
+    return [f(y) for y in x]
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
+
+
+def from_datetime(x: Any) -> datetime.datetime:
+    return dateutil.parser.parse(x)
+
+
+def from_union(fs, x):
+    for f in fs:
+        try:
+            return f(x)
+        except:
+            pass
+    assert False
+
+
+def from_date(x: Any) -> datetime.date:
+    assert isinstance(x, str) and re.match(r"^\d{4}-\d{2}-\d{2}$", x)
+    return dateutil.parser.parse(x).date()
+
+
+def from_time(x: Any) -> datetime.time:
+    assert isinstance(x, str) and re.match(r"^\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$", x)
+    return dateutil.parser.parse(x).timetz()
+
+
+def from_none(x: Any) -> Any:
+    assert x is None
+    return x
+
+
+def to_enum(c: Type[EnumT], x: Any) -> EnumT:
+    assert isinstance(x, c)
+    return x.value
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+class ComplexUnionArrayEnum(Enum):
+    FOO = "foo"
+    BAR = "bar"
+
+
+@dataclass
+class LocalDate:
+    pass
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'LocalDate':
+        assert isinstance(obj, dict)
+        return LocalDate()
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        return result
+
+
+@dataclass
+class OffsetDateTime:
+    pass
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'OffsetDateTime':
+        assert isinstance(obj, dict)
+        return OffsetDateTime()
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        return result
+
+
+@dataclass
+class OffsetTime:
+    pass
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'OffsetTime':
+        assert isinstance(obj, dict)
+        return OffsetTime()
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        return result
+
+
+@dataclass
+class TopLevel:
+    complex_union_array: list[int | ComplexUnionArrayEnum | datetime.datetime]
+    date: datetime.date
+    date_time: datetime.datetime
+    time: datetime.time
+    union_array: list[datetime.date | datetime.time | datetime.datetime]
+    local_date_class: LocalDate | None = None
+    offset_date_time_class: OffsetDateTime | None = None
+    offset_time_class: OffsetTime | None = None
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'TopLevel':
+        assert isinstance(obj, dict)
+        complex_union_array = from_list(lambda x: from_union([from_int, ComplexUnionArrayEnum, from_datetime], x), obj["complex-union-array"])
+        date = from_date(obj["date"])
+        date_time = from_datetime(obj["date-time"])
+        time = from_time(obj["time"])
+        union_array = from_list(lambda x: from_union([from_date, from_time, from_datetime], x), obj["union-array"])
+        local_date_class = from_union([LocalDate.from_dict, from_none], obj.get("local-date-class"))
+        offset_date_time_class = from_union([OffsetDateTime.from_dict, from_none], obj.get("offset-date-time-class"))
+        offset_time_class = from_union([OffsetTime.from_dict, from_none], obj.get("offset-time-class"))
+        return TopLevel(complex_union_array, date, date_time, time, union_array, local_date_class, offset_date_time_class, offset_time_class)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["complex-union-array"] = from_list(lambda x: from_union([from_int, lambda x: to_enum(ComplexUnionArrayEnum, x), lambda x: x.isoformat()], x), self.complex_union_array)
+        result["date"] = self.date.isoformat()
+        result["date-time"] = self.date_time.isoformat()
+        result["time"] = self.time.isoformat()
+        result["union-array"] = from_list(lambda x: from_union([lambda x: x.isoformat(), lambda x: x.isoformat(), lambda x: x.isoformat()], x), self.union_array)
+        if self.local_date_class is not None:
+            result["local-date-class"] = from_union([lambda x: to_class(LocalDate, x), from_none], self.local_date_class)
+        if self.offset_date_time_class is not None:
+            result["offset-date-time-class"] = from_union([lambda x: to_class(OffsetDateTime, x), from_none], self.offset_date_time_class)
+        if self.offset_time_class is not None:
+            result["offset-time-class"] = from_union([lambda x: to_class(OffsetTime, x), from_none], self.offset_time_class)
+        return result
+
+
+def top_level_from_dict(s: Any) -> TopLevel:
+    return TopLevel.from_dict(s)
+
+
+def top_level_to_dict(x: TopLevel) -> Any:
+    return to_class(TopLevel, x)

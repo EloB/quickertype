@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-kotlinx",
+  "input": "schema/comment-injection-nested-comment.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/schema/comment-injection-nested-comment.schema",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--framework",
+        "kotlinx",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

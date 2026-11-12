@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-cplusplus",
+  "input": "schema/accessors.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/schema/accessors.schema",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

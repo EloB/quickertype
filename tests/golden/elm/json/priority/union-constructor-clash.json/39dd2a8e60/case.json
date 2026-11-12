@@ -1,0 +1,29 @@
+{
+  "fixture": "elm",
+  "input": "json/priority/union-constructor-clash.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "elm",
+        "--src",
+        "{INPUTS}/json/priority/union-constructor-clash.json",
+        "--out",
+        "QuickType.elm",
+        "--top-level",
+        "QuickType",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.elm"
+      ]
+    }
+  ]
+}

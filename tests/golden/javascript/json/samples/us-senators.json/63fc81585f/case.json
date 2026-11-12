@@ -1,0 +1,29 @@
+{
+  "fixture": "javascript",
+  "input": "json/samples/us-senators.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "javascript",
+        "--src",
+        "{INPUTS}/json/samples/us-senators.json",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

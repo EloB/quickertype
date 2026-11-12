@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-dart",
+  "input": "graphql/github3.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/graphql/github3.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

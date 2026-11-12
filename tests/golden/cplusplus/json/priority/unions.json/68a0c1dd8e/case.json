@@ -1,0 +1,30 @@
+{
+  "fixture": "cplusplus",
+  "input": "json/priority/unions.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/json/priority/unions.json",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--boost",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "fixture": "flow",
+  "input": "json/priority/php-mixed-union.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "flow",
+        "--src",
+        "{INPUTS}/json/priority/php-mixed-union.json",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

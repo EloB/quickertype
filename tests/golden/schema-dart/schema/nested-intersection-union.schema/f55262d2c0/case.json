@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-dart",
+  "input": "schema/nested-intersection-union.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/schema/nested-intersection-union.schema",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

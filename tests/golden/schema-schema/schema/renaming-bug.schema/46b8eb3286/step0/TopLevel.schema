@@ -1,0 +1,262 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "pattern": "^\\d{1,5}.{1}\\d{1,5}.{1}\\d{1,5}$"
+                },
+                "fruits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Fruit"
+                    }
+                },
+                "vehicles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Vehicle"
+                    }
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Fruit": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "apple": {
+                    "type": "boolean"
+                },
+                "berries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Berry"
+                    }
+                },
+                "orange": {
+                    "type": "boolean"
+                }
+            },
+            "required": [],
+            "title": "Fruit"
+        },
+        "Berry": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "color": {
+                    "$ref": "#/definitions/Color"
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "shapes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Shape"
+                    }
+                }
+            },
+            "required": [],
+            "title": "Berry"
+        },
+        "Color": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "rgb": {
+                    "type": "number"
+                }
+            },
+            "required": [],
+            "title": "Color"
+        },
+        "Shape": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "geometry": {
+                    "$ref": "#/definitions/Geometry"
+                },
+                "history": {
+                    "$ref": "#/definitions/History"
+                }
+            },
+            "required": [],
+            "title": "Shape"
+        },
+        "Geometry": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "rectShape": {
+                    "$ref": "#/definitions/RectShape"
+                },
+                "circularShape": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CircularShape"
+                    }
+                }
+            },
+            "required": [],
+            "title": "Geometry"
+        },
+        "CircularShape": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "shapeName": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "CircularShape"
+        },
+        "RectShape": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "parts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Part"
+                    }
+                }
+            },
+            "required": [],
+            "title": "RectShape"
+        },
+        "Part": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "depth": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Part"
+        },
+        "History": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "class": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "History"
+        },
+        "Vehicle": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "brand": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "speed": {
+                    "$ref": "#/definitions/Speed"
+                },
+                "subModule": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/VehicleType"
+                },
+                "year": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Vehicle"
+        },
+        "Speed": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "velocity": {
+                    "$ref": "#/definitions/Limit"
+                }
+            },
+            "required": [],
+            "title": "Speed"
+        },
+        "Limit": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "maximum": {
+                    "type": "number"
+                },
+                "minimum": {
+                    "type": "number"
+                }
+            },
+            "required": [],
+            "title": "Limit"
+        },
+        "VehicleType": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "name": {
+                    "$ref": "#/definitions/Name"
+                },
+                "width": {
+                    "$ref": "#/definitions/Axis"
+                },
+                "length": {
+                    "$ref": "#/definitions/Axis"
+                }
+            },
+            "required": [],
+            "title": "VehicleType"
+        },
+        "Axis": {
+            "type": "string",
+            "enum": [
+                "X",
+                "Y",
+                "Z",
+                "YZ",
+                "ZX",
+                "XY"
+            ],
+            "title": "Axis"
+        },
+        "Name": {
+            "type": "string",
+            "enum": [
+                "truck",
+                "bus",
+                "car",
+                "van",
+                "train",
+                "Bike",
+                "Aeroplane",
+                "Jeep",
+                "Trolley"
+            ],
+            "title": "Name"
+        }
+    }
+}

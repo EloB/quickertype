@@ -1,0 +1,29 @@
+{
+  "fixture": "golang",
+  "input": "json/priority/omit-empty.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/json/priority/omit-empty.json",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

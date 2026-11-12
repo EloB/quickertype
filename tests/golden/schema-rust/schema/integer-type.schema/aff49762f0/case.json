@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-rust",
+  "input": "schema/integer-type.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/schema/integer-type.schema",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--integer-type",
+        "force-i64",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

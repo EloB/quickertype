@@ -1,0 +1,49 @@
+{
+  "fixture": "java",
+  "input": "json/misc/dd1ce.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/dd1ce.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Booster.java",
+        "src/main/java/io/quicktype/Card.java",
+        "src/main/java/io/quicktype/Color.java",
+        "src/main/java/io/quicktype/ColorIdentity.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Format.java",
+        "src/main/java/io/quicktype/Layout.java",
+        "src/main/java/io/quicktype/LegalityElement.java",
+        "src/main/java/io/quicktype/LegalityEnum.java",
+        "src/main/java/io/quicktype/Rarity.java",
+        "src/main/java/io/quicktype/Ruling.java",
+        "src/main/java/io/quicktype/Supertype.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Type.java"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "weekdays": {
+                    "$ref": "#/definitions/Weekdays"
+                }
+            },
+            "required": [
+                "weekdays"
+            ],
+            "title": "TopLevel"
+        },
+        "Weekdays": {
+            "type": "string",
+            "enum": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday"
+            ],
+            "title": "Weekdays"
+        }
+    }
+}

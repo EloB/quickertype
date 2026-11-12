@@ -1,0 +1,29 @@
+{
+  "fixture": "crystal",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/json/samples/getting-started.json",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

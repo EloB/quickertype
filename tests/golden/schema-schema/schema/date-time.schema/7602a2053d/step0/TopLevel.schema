@@ -1,0 +1,108 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "complex-union-array": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ComplexUnionArrayElement"
+                    }
+                },
+                "date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "date-time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "local-date-class": {
+                    "$ref": "#/definitions/LocalDate"
+                },
+                "offset-date-time-class": {
+                    "$ref": "#/definitions/OffsetDateTime"
+                },
+                "offset-time-class": {
+                    "$ref": "#/definitions/OffsetTime"
+                },
+                "time": {
+                    "type": "string",
+                    "format": "time"
+                },
+                "union-array": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UnionArray"
+                    }
+                }
+            },
+            "required": [
+                "complex-union-array",
+                "date",
+                "date-time",
+                "time",
+                "union-array"
+            ],
+            "title": "TopLevel"
+        },
+        "LocalDate": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "LocalDate"
+        },
+        "OffsetDateTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetDateTime"
+        },
+        "OffsetTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetTime"
+        },
+        "ComplexUnionArrayElement": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                {
+                    "$ref": "#/definitions/ComplexUnionArrayEnum"
+                },
+                {
+                    "type": "integer"
+                }
+            ],
+            "title": "ComplexUnionArrayElement"
+        },
+        "UnionArray": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "format": "date"
+                },
+                {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                {
+                    "type": "string",
+                    "format": "time"
+                }
+            ],
+            "title": "UnionArray"
+        },
+        "ComplexUnionArrayEnum": {
+            "type": "string",
+            "enum": [
+                "foo",
+                "bar"
+            ],
+            "title": "ComplexUnionArrayEnum"
+        }
+    }
+}

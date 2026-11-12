@@ -1,0 +1,54 @@
+package quicktype
+
+import io.circe.syntax._
+import io.circe._
+import cats.syntax.functor._
+
+// If a union has a null in, then we'll need this too... 
+type NullValue = None.type
+
+case class TopLevel (
+    val `complex-union-array` : Seq[ComplexUnionArrayElement],
+    val date : String,
+    val `date-time` : java.time.Instant,
+    val `local-date-class` : Option[LocalDate] = None,
+    val `offset-date-time-class` : Option[OffsetDateTime] = None,
+    val `offset-time-class` : Option[OffsetTime] = None,
+    val time : String,
+    val `union-array` : Seq[String]
+) derives Encoder.AsObject, Decoder
+
+type ComplexUnionArrayElement = java.time.Instant | ComplexUnionArrayEnum | Long
+given Decoder[ComplexUnionArrayElement] = {
+    List[Decoder[ComplexUnionArrayElement]](
+        Decoder[ComplexUnionArrayEnum].widen,
+        Decoder[Long].widen,
+        Decoder[java.time.Instant].widen,
+    ).reduceLeft(_ or _)
+}
+
+given Encoder[ComplexUnionArrayElement] = Encoder.instance {
+    case enc0 : ComplexUnionArrayEnum => summon[Encoder[ComplexUnionArrayEnum]].apply(enc0)
+    case enc1 : Long => Encoder.encodeLong(enc1)
+    case enc2 : java.time.Instant => summon[Encoder[java.time.Instant]].apply(enc2)
+}
+
+enum ComplexUnionArrayEnum : 
+    case Foo
+    case Bar
+
+given Decoder[ComplexUnionArrayEnum] = Decoder.decodeString.emap {
+    case "foo" => scala.Right(ComplexUnionArrayEnum.Foo)
+    case "bar" => scala.Right(ComplexUnionArrayEnum.Bar)
+    case other => scala.Left("invalid ComplexUnionArrayEnum: " + other)
+}
+given Encoder[ComplexUnionArrayEnum] = Encoder.encodeString.contramap {
+    case ComplexUnionArrayEnum.Foo => "foo"
+    case ComplexUnionArrayEnum.Bar => "bar"
+}
+
+case class LocalDate()  derives Encoder.AsObject, Decoder
+
+case class OffsetDateTime()  derives Encoder.AsObject, Decoder
+
+case class OffsetTime()  derives Encoder.AsObject, Decoder

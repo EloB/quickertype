@@ -1,0 +1,30 @@
+{
+  "fixture": "swift",
+  "input": "json/misc/cfbce.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/json/misc/cfbce.json",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

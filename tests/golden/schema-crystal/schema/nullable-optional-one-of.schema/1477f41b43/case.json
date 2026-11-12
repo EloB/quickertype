@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-crystal",
+  "input": "schema/nullable-optional-one-of.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/schema/nullable-optional-one-of.schema",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

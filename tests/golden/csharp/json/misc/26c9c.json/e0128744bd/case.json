@@ -1,0 +1,32 @@
+{
+  "fixture": "csharp",
+  "input": "json/misc/26c9c.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/json/misc/26c9c.json",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-ruby",
+  "input": "schema/non-standard-ref.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "ruby",
+        "--src",
+        "{INPUTS}/schema/non-standard-ref.schema",
+        "--out",
+        "TopLevel.rb",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.rb"
+      ]
+    }
+  ]
+}

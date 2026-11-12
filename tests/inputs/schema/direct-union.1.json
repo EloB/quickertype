@@ -1,0 +1,29 @@
+{
+    "arrayNode": {},
+    "booleanNode": {},
+    "doubleNode": {},
+    "intNode": {},
+    "longNode": {},
+    "nullNode": {},
+    "objectNode": {},
+    "textNode": {},
+    "stuff": {
+        "one": {
+            "required": null
+        },
+        "two": {
+            "required": "abc",
+            "optional": null
+        },
+        "three": {
+            "required": {
+                "foo": 123
+            },
+            "optional": [
+                1,
+                2,
+                3
+            ]
+        }
+    }
+}

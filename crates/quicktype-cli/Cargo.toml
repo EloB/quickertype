@@ -1,0 +1,20 @@
+[package]
+name = "quicktype-cli"
+description = "The quicktype command-line tool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "quicktype"
+path = "src/main.rs"
+
+[dependencies]
+quicktype-core.workspace = true
+quicktype-graphql-input.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,31 @@
+{
+  "fixture": "kotlinx",
+  "input": "json/misc/a71df.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/json/misc/a71df.json",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "kotlinx",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

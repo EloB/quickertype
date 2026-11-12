@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-swift",
+  "input": "schema/integer-before-number.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/schema/integer-before-number.schema",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

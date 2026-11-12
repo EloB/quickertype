@@ -1,0 +1,31 @@
+{
+  "fixture": "javascript",
+  "input": "json/priority/nested-objects.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "javascript",
+        "--src",
+        "{INPUTS}/json/priority/nested-objects.json",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--converters",
+        "all-objects",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

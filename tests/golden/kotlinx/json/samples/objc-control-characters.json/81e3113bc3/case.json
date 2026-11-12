@@ -1,0 +1,31 @@
+{
+  "fixture": "kotlinx",
+  "input": "json/samples/objc-control-characters.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/json/samples/objc-control-characters.json",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "kotlinx",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

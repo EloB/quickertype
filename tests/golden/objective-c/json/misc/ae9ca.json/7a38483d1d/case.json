@@ -1,0 +1,31 @@
+{
+  "fixture": "objective-c",
+  "input": "json/misc/ae9ca.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "objective-c",
+        "--src",
+        "{INPUTS}/json/misc/ae9ca.json",
+        "--out",
+        "QTTopLevel.m",
+        "--top-level",
+        "QTTopLevel",
+        "--alphabetize-properties",
+        "--functions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QTTopLevel.h",
+        "QTTopLevel.m"
+      ]
+    }
+  ]
+}

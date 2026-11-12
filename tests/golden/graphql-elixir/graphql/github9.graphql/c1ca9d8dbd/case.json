@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-elixir",
+  "input": "graphql/github9.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "elixir",
+        "--src",
+        "{INPUTS}/graphql/github9.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "QuickType.ex",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "QuickType.ex"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "free": {
+                    "type": "integer"
+                },
+                "intersection": {
+                    "type": "integer",
+                    "minimum": 4,
+                    "maximum": 5
+                },
+                "max": {
+                    "type": "integer",
+                    "maximum": 5
+                },
+                "min": {
+                    "type": "integer",
+                    "minimum": 3
+                },
+                "minmax": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 5
+                },
+                "minMaxIntersection": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 5
+                },
+                "minMaxUnion": {
+                    "type": "integer"
+                },
+                "union": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 6
+                }
+            },
+            "required": [
+                "free",
+                "intersection",
+                "max",
+                "min",
+                "minMaxIntersection",
+                "minMaxUnion",
+                "minmax",
+                "union"
+            ],
+            "title": "TopLevel"
+        }
+    }
+}

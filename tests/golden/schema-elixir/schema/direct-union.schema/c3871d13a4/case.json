@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-elixir",
+  "input": "schema/direct-union.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "elixir",
+        "--src",
+        "{INPUTS}/schema/direct-union.schema",
+        "--out",
+        "QuickType.ex",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.ex"
+      ]
+    }
+  ]
+}

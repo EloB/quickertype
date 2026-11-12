@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "arrNullable": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "arrOne": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "boolean"
+                    }
+                },
+                "nullable": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "format": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "one": {
+                    "type": "string",
+                    "format": "boolean"
+                },
+                "optional": {
+                    "type": "string",
+                    "format": "boolean"
+                },
+                "unionWithBool": {
+                    "$ref": "#/definitions/UnionWithBool"
+                },
+                "unionWithBoolAndEnum": {
+                    "$ref": "#/definitions/UnionWithBoolAndEnumUnion"
+                }
+            },
+            "required": [
+                "nullable",
+                "one",
+                "unionWithBool",
+                "unionWithBoolAndEnum"
+            ],
+            "title": "TopLevel"
+        },
+        "UnionWithBool": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "string",
+                    "format": "boolean"
+                }
+            ],
+            "title": "UnionWithBool"
+        },
+        "UnionWithBoolAndEnumUnion": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "string",
+                    "format": "boolean"
+                },
+                {
+                    "$ref": "#/definitions/UnionWithBoolAndEnumEnum"
+                }
+            ],
+            "title": "UnionWithBoolAndEnumUnion"
+        },
+        "UnionWithBoolAndEnumEnum": {
+            "type": "string",
+            "enum": [
+                "foo"
+            ],
+            "title": "UnionWithBoolAndEnumEnum"
+        }
+    }
+}

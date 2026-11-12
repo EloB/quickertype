@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "input": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Item"
+                    }
+                }
+            },
+            "required": [
+                "input"
+            ],
+            "title": "TopLevel"
+        },
+        "Item": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Item"
+        }
+    }
+}

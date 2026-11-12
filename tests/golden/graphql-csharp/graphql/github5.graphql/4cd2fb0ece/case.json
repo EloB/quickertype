@@ -1,0 +1,31 @@
+{
+  "fixture": "graphql-csharp",
+  "input": "graphql/github5.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/graphql/github5.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

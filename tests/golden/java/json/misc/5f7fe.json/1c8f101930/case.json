@@ -1,0 +1,62 @@
+{
+  "fixture": "java",
+  "input": "json/misc/5f7fe.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/5f7fe.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/AdditionalResources.java",
+        "src/main/java/io/quicktype/Attachment.java",
+        "src/main/java/io/quicktype/CachedContents.java",
+        "src/main/java/io/quicktype/Column.java",
+        "src/main/java/io/quicktype/CommonCore.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/CustomFields.java",
+        "src/main/java/io/quicktype/DatasetInformation.java",
+        "src/main/java/io/quicktype/DatasetSummary.java",
+        "src/main/java/io/quicktype/Datum.java",
+        "src/main/java/io/quicktype/Expression.java",
+        "src/main/java/io/quicktype/Format.java",
+        "src/main/java/io/quicktype/Grant.java",
+        "src/main/java/io/quicktype/JSONQuery.java",
+        "src/main/java/io/quicktype/Meta.java",
+        "src/main/java/io/quicktype/Metadata.java",
+        "src/main/java/io/quicktype/Notes.java",
+        "src/main/java/io/quicktype/Order.java",
+        "src/main/java/io/quicktype/OrderBy.java",
+        "src/main/java/io/quicktype/Owner.java",
+        "src/main/java/io/quicktype/Query.java",
+        "src/main/java/io/quicktype/RenderTypeConfig.java",
+        "src/main/java/io/quicktype/Top.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/TypeName.java",
+        "src/main/java/io/quicktype/View.java",
+        "src/main/java/io/quicktype/Visible.java"
+      ]
+    }
+  ]
+}

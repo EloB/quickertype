@@ -1,0 +1,29 @@
+{
+  "fixture": "elm",
+  "input": "json/misc/cb81e.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "elm",
+        "--src",
+        "{INPUTS}/json/misc/cb81e.json",
+        "--out",
+        "QuickType.elm",
+        "--top-level",
+        "QuickType",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.elm"
+      ]
+    }
+  ]
+}

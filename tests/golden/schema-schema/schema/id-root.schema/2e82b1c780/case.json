@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-schema",
+  "input": "schema/id-root.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "schema",
+        "--src",
+        "{INPUTS}/schema/id-root.schema",
+        "--out",
+        "TopLevel.schema",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.schema"
+      ]
+    }
+  ]
+}

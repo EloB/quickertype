@@ -1,0 +1,29 @@
+{
+  "fixture": "graphql-typescript",
+  "input": "graphql/github2.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/graphql/github2.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

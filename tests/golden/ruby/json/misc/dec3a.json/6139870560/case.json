@@ -1,0 +1,29 @@
+{
+  "fixture": "ruby",
+  "input": "json/misc/dec3a.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "ruby",
+        "--src",
+        "{INPUTS}/json/misc/dec3a.json",
+        "--out",
+        "TopLevel.rb",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.rb"
+      ]
+    }
+  ]
+}

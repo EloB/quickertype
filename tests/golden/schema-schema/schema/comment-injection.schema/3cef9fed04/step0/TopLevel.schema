@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "trailingBackslash": {
+                    "type": "string",
+                    "description": "Ends with a backslash \\"
+                },
+                "trailingQuote": {
+                    "type": "string",
+                    "description": "Ends with a quote \""
+                },
+                "trailingTripleQuote": {
+                    "type": "string",
+                    "description": "Ends with a triple quote \"\"\""
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Property delimiters:\n*/\n/*\n{-\n-}\n\"\"\"\n</summary> & <br>\n}\n}\n}\n}\n}"
+                }
+            },
+            "required": [
+                "value"
+            ],
+            "title": "TopLevel",
+            "description": "Comment delimiters:\n*/\n/*\n{-\n-}\n\"\"\"\n</summary> & <br>\n}\r}} } }"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-zod",
+  "input": "schema/minmax.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/schema/minmax.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

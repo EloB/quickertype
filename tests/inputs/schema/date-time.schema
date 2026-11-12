@@ -1,0 +1,76 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "date": {
+            "type": "string",
+            "format": "date"
+        },
+        "time": {
+            "type": "string",
+            "format": "time"
+        },
+        "date-time": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "local-date-class": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "LocalDate"
+        },
+        "offset-date-time-class": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetDateTime"
+        },
+        "offset-time-class": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetTime"
+        },
+        "union-array": {
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    {
+                        "type": "string",
+                        "format": "time"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                ]
+            }
+        },
+        "complex-union-array": {
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "enum": ["foo", "bar"]
+                    }
+                ]
+            }
+        }
+    },
+    "required": [
+        "date",
+        "date-time",
+        "time",
+        "union-array",
+        "complex-union-array"
+    ]
+}

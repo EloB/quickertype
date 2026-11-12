@@ -1,0 +1,483 @@
+#import "QTTopLevel.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface QTTopLevel (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTData (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTUser (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTRepository (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTPullRequestConnection (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTPullRequest (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTError (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@implementation QTPullRequestState
++ (NSDictionary<NSString *, QTPullRequestState *> *)values
+{
+    static NSDictionary<NSString *, QTPullRequestState *> *values;
+    return values = values ? values : @{
+        @"OPEN": [[QTPullRequestState alloc] initWithValue:@"OPEN"],
+        @"CLOSED": [[QTPullRequestState alloc] initWithValue:@"CLOSED"],
+        @"MERGED": [[QTPullRequestState alloc] initWithValue:@"MERGED"],
+    };
+}
+
++ (QTPullRequestState *)open { return QTPullRequestState.values[@"OPEN"]; }
++ (QTPullRequestState *)closed { return QTPullRequestState.values[@"CLOSED"]; }
++ (QTPullRequestState *)merged { return QTPullRequestState.values[@"MERGED"]; }
+
++ (instancetype _Nullable)withValue:(NSString *)value
+{
+    return QTPullRequestState.values[value];
+}
+
+- (instancetype)initWithValue:(NSString *)value
+{
+    if (self = [super init]) _value = value;
+    return self;
+}
+
+- (NSUInteger)hash { return _value.hash; }
+@end
+
+static id map(id collection, id (^f)(id value)) {
+    id result = nil;
+    if ([collection isKindOfClass:NSArray.class]) {
+            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];
+            for (id x in collection) [result addObject:NSNullify(f(x))];
+    } else if ([collection isKindOfClass:NSDictionary.class]) {
+            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];
+            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];
+    }
+    return result;
+}
+
+#pragma mark - JSON serialization
+
+QTTopLevel *_Nullable QTTopLevelFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        return *error ? nil : [QTTopLevel fromJSONDictionary:json];
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+QTTopLevel *_Nullable QTTopLevelFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return QTTopLevelFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable QTTopLevelToData(QTTopLevel *topLevel, NSError **error)
+{
+    @try {
+        id json = [topLevel JSONDictionary];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable QTTopLevelToJSON(QTTopLevel *topLevel, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = QTTopLevelToData(topLevel, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+@implementation QTTopLevel
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"data": @"data",
+        @"errors": @"errors",
+    };
+}
+
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error
+{
+    return QTTopLevelFromData(data, error);
+}
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTTopLevelFromJSON(json, encoding, error);
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTTopLevel alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (!dict[@"data"]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _data = [QTData fromJSONDictionary:(id)_data];
+        if (!_data && dict[@"data"] && ![dict[@"data"] isKindOfClass:NSNull.class]) return nil;
+        _errors = map(_errors, λ(id x, [QTError fromJSONDictionary:x]));
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTTopLevel.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTTopLevel.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTTopLevel.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"data": NSNullify([_data isKindOfClass:NSNull.class] ? nil : [_data JSONDictionary]),
+        @"errors": NSNullify(map(_errors, λ(id x, [x JSONDictionary]))),
+    }];
+
+    return dict;
+}
+
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error
+{
+    return QTTopLevelToData(self, error);
+}
+
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTTopLevelToJSON(self, encoding, error);
+}
+@end
+
+@implementation QTData
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"viewer": @"viewer",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTData alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"viewer"] isKindOfClass:NSDictionary.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _viewer = [QTUser fromJSONDictionary:(id)_viewer];
+        if (!_viewer && dict[@"viewer"] && ![dict[@"viewer"] isKindOfClass:NSNull.class]) return nil;
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTData.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTData.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTData.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"viewer": [_viewer JSONDictionary],
+    }];
+
+    return dict;
+}
+@end
+
+@implementation QTUser
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"login": @"login",
+        @"name": @"name",
+        @"repository": @"repository",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTUser alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"login"] isKindOfClass:NSString.class]) return nil;
+        if (!dict[@"name"]) return nil;
+        if (!dict[@"repository"]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _repository = [QTRepository fromJSONDictionary:(id)_repository];
+        if (!_repository && dict[@"repository"] && ![dict[@"repository"] isKindOfClass:NSNull.class]) return nil;
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTUser.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTUser.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTUser.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"repository": NSNullify([_repository isKindOfClass:NSNull.class] ? nil : [_repository JSONDictionary]),
+    }];
+
+    return dict;
+}
+@end
+
+@implementation QTRepository
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"pullRequests": @"pullRequests",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTRepository alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"pullRequests"] isKindOfClass:NSDictionary.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _pullRequests = [QTPullRequestConnection fromJSONDictionary:(id)_pullRequests];
+        if (!_pullRequests && dict[@"pullRequests"] && ![dict[@"pullRequests"] isKindOfClass:NSNull.class]) return nil;
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTRepository.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTRepository.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTRepository.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"pullRequests": [_pullRequests JSONDictionary],
+    }];
+
+    return dict;
+}
+@end
+
+@implementation QTPullRequestConnection
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"nodes": @"nodes",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTPullRequestConnection alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (!dict[@"nodes"]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _nodes = map(_nodes, λ(id x, [QTPullRequest fromJSONDictionary:x]));
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTPullRequestConnection.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTPullRequestConnection.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTPullRequestConnection.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"nodes": NSNullify(map(_nodes, λ(id x, NSNullify([x isKindOfClass:NSNull.class] ? nil : [x JSONDictionary])))),
+    }];
+
+    return dict;
+}
+@end
+
+@implementation QTPullRequest
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"state": @"state",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTPullRequest alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"state"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _state = [QTPullRequestState withValue:(id)_state];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTPullRequest.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTPullRequest.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTPullRequest.properties.allValues] mutableCopy];
+
+    [dict addEntriesFromDictionary:@{
+        @"state": [_state value],
+    }];
+
+    return dict;
+}
+@end
+
+@implementation QTError
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"message": @"message",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTError alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"message"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTError.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTError.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTError.properties.allValues];
+}
+@end
+
+NS_ASSUME_NONNULL_END

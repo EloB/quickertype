@@ -1,0 +1,29 @@
+{
+  "fixture": "ruby",
+  "input": "json/misc/7df41.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "ruby",
+        "--src",
+        "{INPUTS}/json/misc/7df41.json",
+        "--out",
+        "TopLevel.rb",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.rb"
+      ]
+    }
+  ]
+}

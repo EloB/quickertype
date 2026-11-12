@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-cjson",
+  "input": "schema/prefix-items.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/schema/prefix-items.schema",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}

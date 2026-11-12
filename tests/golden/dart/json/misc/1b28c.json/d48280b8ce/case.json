@@ -1,0 +1,29 @@
+{
+  "fixture": "dart",
+  "input": "json/misc/1b28c.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/json/misc/1b28c.json",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "fixture": "swift",
+  "input": "json/samples/copy-with-property.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/json/samples/copy-with-property.json",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

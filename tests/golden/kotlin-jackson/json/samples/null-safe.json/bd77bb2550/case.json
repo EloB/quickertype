@@ -1,0 +1,31 @@
+{
+  "fixture": "kotlin-jackson",
+  "input": "json/samples/null-safe.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/json/samples/null-safe.json",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "jackson",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

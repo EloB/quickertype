@@ -1,0 +1,41 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/9eed5.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/9eed5.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Identifier.java",
+        "src/main/java/io/quicktype/Keyword.java",
+        "src/main/java/io/quicktype/Link.java",
+        "src/main/java/io/quicktype/Text.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

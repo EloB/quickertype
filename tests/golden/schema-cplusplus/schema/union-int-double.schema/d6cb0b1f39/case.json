@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-cplusplus",
+  "input": "schema/union-int-double.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/schema/union-int-double.schema",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

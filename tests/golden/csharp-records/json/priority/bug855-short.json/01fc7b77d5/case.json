@@ -1,0 +1,33 @@
+{
+  "fixture": "csharp-records",
+  "input": "json/priority/bug855-short.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/json/priority/bug855-short.json",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--use-records",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

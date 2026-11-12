@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "Bar": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "foo": {
+                    "$ref": "#/definitions/Foo"
+                }
+            },
+            "required": [
+                "foo"
+            ],
+            "title": "Bar"
+        },
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "bar": {
+                    "$ref": "#/definitions/Bar"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Foo": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TopLevel"
+                    }
+                },
+                {
+                    "$ref": "#/definitions/TopLevel"
+                }
+            ],
+            "title": "Foo"
+        }
+    }
+}

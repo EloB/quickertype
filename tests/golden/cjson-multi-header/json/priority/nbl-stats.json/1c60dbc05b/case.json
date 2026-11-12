@@ -1,0 +1,52 @@
+{
+  "fixture": "cjson-multi-header",
+  "input": "json/priority/nbl-stats.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/json/priority/nbl-stats.json",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--source-style",
+        "multi-source",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "ActionType.h",
+        "Comp.h",
+        "FamilyNameInitial.h",
+        "FirstNameInitial.h",
+        "Lds.h",
+        "LeaddatumElement.h",
+        "LeaddatumEnum.h",
+        "Othermatch.h",
+        "Pbp.h",
+        "PerType.h",
+        "Pl.h",
+        "SBlocks.h",
+        "SMinutes.h",
+        "ScoreboardName.h",
+        "Scorer.h",
+        "Shot.h",
+        "SubType.h",
+        "Team.h",
+        "Time.h",
+        "Tm.h",
+        "TopLevel.h",
+        "Totallds.h"
+      ]
+    }
+  ]
+}

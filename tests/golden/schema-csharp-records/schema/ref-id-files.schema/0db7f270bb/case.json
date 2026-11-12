@@ -1,0 +1,32 @@
+{
+  "fixture": "schema-csharp-records",
+  "input": "schema/ref-id-files.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/schema/ref-id-files.schema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--use-records",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

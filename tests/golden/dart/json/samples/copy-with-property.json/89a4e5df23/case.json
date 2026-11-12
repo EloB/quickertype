@@ -1,0 +1,30 @@
+{
+  "fixture": "dart",
+  "input": "json/samples/copy-with-property.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/json/samples/copy-with-property.json",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--copy-with",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

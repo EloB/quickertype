@@ -1,0 +1,31 @@
+{
+  "fixture": "schema-csharp",
+  "input": "schema/enum-with-values.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/schema/enum-with-values.schema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

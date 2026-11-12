@@ -1,0 +1,31 @@
+{
+  "fixture": "rust",
+  "input": "json/priority/combinations1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/json/priority/combinations1.json",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--visibility",
+        "crate",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

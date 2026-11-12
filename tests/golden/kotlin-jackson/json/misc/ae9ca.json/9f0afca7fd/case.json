@@ -1,0 +1,31 @@
+{
+  "fixture": "kotlin-jackson",
+  "input": "json/misc/ae9ca.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/json/misc/ae9ca.json",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "jackson",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

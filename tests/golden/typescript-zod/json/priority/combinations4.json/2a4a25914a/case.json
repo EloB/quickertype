@@ -1,0 +1,30 @@
+{
+  "fixture": "typescript-zod",
+  "input": "json/priority/combinations4.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/json/priority/combinations4.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--just-schema",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

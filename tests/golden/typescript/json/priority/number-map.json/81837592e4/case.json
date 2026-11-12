@@ -1,0 +1,31 @@
+{
+  "fixture": "typescript",
+  "input": "json/priority/number-map.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/json/priority/number-map.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--explicit-unions",
+        "--readonly",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

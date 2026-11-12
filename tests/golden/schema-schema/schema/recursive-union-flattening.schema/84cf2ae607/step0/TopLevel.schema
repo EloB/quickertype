@@ -1,0 +1,133 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevelObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "x": {
+                    "$ref": "#/definitions/X"
+                }
+            },
+            "required": [],
+            "title": "TopLevelObject"
+        },
+        "XObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "x": {
+                    "$ref": "#/definitions/X"
+                }
+            },
+            "required": [],
+            "title": "XObject"
+        },
+        "TopLevel": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TopLevelElement"
+                    }
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "TopLevel"
+        },
+        "TopLevelElement": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {}
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/TopLevelObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "TopLevelElement"
+        },
+        "XElement": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {}
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/XObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "XElement"
+        },
+        "X": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/XElement"
+                    }
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "X"
+        }
+    }
+}

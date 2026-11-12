@@ -1,0 +1,31 @@
+{
+  "fixture": "cjson",
+  "input": "json/misc/b6f2c.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/json/misc/b6f2c.json",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}

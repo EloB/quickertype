@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "bar": {
+                    "type": "string"
+                },
+                "enum": {
+                    "$ref": "#/definitions/Enum"
+                },
+                "foo": {
+                    "type": "string"
+                },
+                "union": {
+                    "$ref": "#/definitions/Union"
+                }
+            },
+            "required": [
+                "bar",
+                "enum",
+                "foo",
+                "union"
+            ],
+            "title": "TopLevel"
+        },
+        "Union": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "Union"
+        },
+        "Enum": {
+            "type": "string",
+            "enum": [
+                "red",
+                "green",
+                "blue"
+            ],
+            "title": "Enum"
+        }
+    }
+}

@@ -1,0 +1,52 @@
+{
+  "fixture": "java",
+  "input": "json/misc/af2d1.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/af2d1.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/AddImprov.java",
+        "src/main/java/io/quicktype/CRS.java",
+        "src/main/java/io/quicktype/CRSProperties.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Feature.java",
+        "src/main/java/io/quicktype/FeatureProperties.java",
+        "src/main/java/io/quicktype/FeatureType.java",
+        "src/main/java/io/quicktype/FundingBa.java",
+        "src/main/java/io/quicktype/Geometry.java",
+        "src/main/java/io/quicktype/GeometryName.java",
+        "src/main/java/io/quicktype/GeometryType.java",
+        "src/main/java/io/quicktype/LevelAccu.java",
+        "src/main/java/io/quicktype/Material.java",
+        "src/main/java/io/quicktype/MiSymbolo.java",
+        "src/main/java/io/quicktype/PropertiesType.java",
+        "src/main/java/io/quicktype/Status.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

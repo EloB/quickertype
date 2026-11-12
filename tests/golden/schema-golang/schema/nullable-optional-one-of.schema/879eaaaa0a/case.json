@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-golang",
+  "input": "schema/nullable-optional-one-of.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/schema/nullable-optional-one-of.schema",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--omit-empty",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

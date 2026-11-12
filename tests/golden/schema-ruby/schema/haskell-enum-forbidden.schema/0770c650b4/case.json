@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-ruby",
+  "input": "schema/haskell-enum-forbidden.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "ruby",
+        "--src",
+        "{INPUTS}/schema/haskell-enum-forbidden.schema",
+        "--out",
+        "TopLevel.rb",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.rb"
+      ]
+    }
+  ]
+}

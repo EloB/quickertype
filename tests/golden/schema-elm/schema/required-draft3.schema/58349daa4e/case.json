@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-elm",
+  "input": "schema/required-draft3.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "elm",
+        "--src",
+        "{INPUTS}/schema/required-draft3.schema",
+        "--out",
+        "QuickType.elm",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.elm"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "kind": {
+                    "$ref": "#/definitions/Kind",
+                    "description": "Comment delimiters:\n*/\n{-\n-}\n\"\"\"\n}\n}"
+                }
+            },
+            "required": [
+                "kind"
+            ],
+            "title": "TopLevel"
+        },
+        "Kind": {
+            "type": "string",
+            "enum": [
+                "ok"
+            ],
+            "title": "Kind",
+            "description": "Comment delimiters:\n*/\n{-\n-}\n\"\"\"\n}\r}"
+        }
+    }
+}

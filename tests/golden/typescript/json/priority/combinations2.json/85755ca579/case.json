@@ -1,0 +1,32 @@
+{
+  "fixture": "typescript",
+  "input": "json/priority/combinations2.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/json/priority/combinations2.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--converters",
+        "all-objects",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,343 @@
+// To parse the JSON, install Klaxon and do:
+//
+//   val topLevel = TopLevel.fromJson(jsonString)
+
+package quicktype
+
+import com.beust.klaxon.*
+
+private fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =
+    this.converter(object: Converter {
+        @Suppress("UNCHECKED_CAST")
+        override fun toJson(value: Any)        = toJson(value as T)
+        override fun fromJson(jv: JsonValue)   = fromJson(jv) as Any
+        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)
+    })
+
+private val klaxon = Klaxon()
+    .convert(JsonObject::class,            { it.obj!! },                                     { it.toJsonString() })
+    .convert(Domain::class,                { Domain.fromValue(it.string!!) },                { Klaxon().toJsonString(it.value) })
+    .convert(PostHint::class,              { PostHint.fromValue(it.string!!) },              { Klaxon().toJsonString(it.value) })
+    .convert(Subreddit::class,             { Subreddit.fromValue(it.string!!) },             { Klaxon().toJsonString(it.value) })
+    .convert(SubredditID::class,           { SubredditID.fromValue(it.string!!) },           { Klaxon().toJsonString(it.value) })
+    .convert(SubredditNamePrefixed::class, { SubredditNamePrefixed.fromValue(it.string!!) }, { Klaxon().toJsonString(it.value) })
+    .convert(SubredditType::class,         { SubredditType.fromValue(it.string!!) },         { Klaxon().toJsonString(it.value) })
+    .convert(Kind::class,                  { Kind.fromValue(it.string!!) },                  { Klaxon().toJsonString(it.value) })
+
+data class TopLevel (
+    val data: TopLevelData,
+    val kind: String
+) {
+    public fun toJson() = klaxon.toJsonString(this)
+
+    companion object {
+        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)
+    }
+}
+
+data class TopLevelData (
+    val after: String,
+    val before: Any? = null,
+    val children: List<Child>,
+    val modhash: String
+)
+
+data class Child (
+    val data: ChildData,
+    val kind: Kind
+)
+
+data class ChildData (
+    @Json(name = "approved_at_utc")
+    val approvedAtUTC: Any? = null,
+
+    @Json(name = "approved_by")
+    val approvedBy: Any? = null,
+
+    val archived: Boolean,
+    val author: String,
+
+    @Json(name = "author_flair_css_class")
+    val authorFlairCSSClass: String? = null,
+
+    @Json(name = "author_flair_text")
+    val authorFlairText: String? = null,
+
+    @Json(name = "banned_at_utc")
+    val bannedAtUTC: Any? = null,
+
+    @Json(name = "banned_by")
+    val bannedBy: Any? = null,
+
+    @Json(name = "brand_safe")
+    val brandSafe: Boolean,
+
+    @Json(name = "can_gild")
+    val canGild: Boolean,
+
+    @Json(name = "can_mod_post")
+    val canModPost: Boolean,
+
+    val clicked: Boolean,
+
+    @Json(name = "contest_mode")
+    val contestMode: Boolean,
+
+    val created: Double,
+
+    @Json(name = "created_utc")
+    val createdUTC: Double,
+
+    val distinguished: String? = null,
+    val domain: Domain,
+    val downs: Long,
+    val edited: Boolean,
+    val gilded: Long,
+    val hidden: Boolean,
+
+    @Json(name = "hide_score")
+    val hideScore: Boolean,
+
+    val id: String,
+
+    @Json(name = "is_self")
+    val isSelf: Boolean,
+
+    @Json(name = "is_video")
+    val isVideo: Boolean,
+
+    val likes: Any? = null,
+
+    @Json(name = "link_flair_css_class")
+    val linkFlairCSSClass: String? = null,
+
+    @Json(name = "link_flair_text")
+    val linkFlairText: String? = null,
+
+    val locked: Boolean,
+    val media: Media? = null,
+
+    @Json(name = "media_embed")
+    val mediaEmbed: MediaEmbed,
+
+    @Json(name = "mod_reports")
+    val modReports: List<Any?>,
+
+    val name: String,
+
+    @Json(name = "num_comments")
+    val numComments: Long,
+
+    @Json(name = "num_reports")
+    val numReports: Any? = null,
+
+    @Json(name = "over_18")
+    val over18: Boolean,
+
+    val permalink: String,
+
+    @Json(name = "post_hint")
+    val postHint: PostHint? = null,
+
+    val preview: Preview? = null,
+    val quarantine: Boolean,
+
+    @Json(name = "removal_reason")
+    val removalReason: Any? = null,
+
+    @Json(name = "report_reasons")
+    val reportReasons: Any? = null,
+
+    val saved: Boolean,
+    val score: Long,
+
+    @Json(name = "secure_media")
+    val secureMedia: Media? = null,
+
+    @Json(name = "secure_media_embed")
+    val secureMediaEmbed: MediaEmbed,
+
+    val selftext: String,
+
+    @Json(name = "selftext_html")
+    val selftextHTML: String? = null,
+
+    val spoiler: Boolean,
+    val stickied: Boolean,
+    val subreddit: Subreddit,
+
+    @Json(name = "subreddit_id")
+    val subredditID: SubredditID,
+
+    @Json(name = "subreddit_name_prefixed")
+    val subredditNamePrefixed: SubredditNamePrefixed,
+
+    @Json(name = "subreddit_type")
+    val subredditType: SubredditType,
+
+    @Json(name = "suggested_sort")
+    val suggestedSort: Any? = null,
+
+    val thumbnail: String,
+
+    @Json(name = "thumbnail_height")
+    val thumbnailHeight: Long? = null,
+
+    @Json(name = "thumbnail_width")
+    val thumbnailWidth: Long? = null,
+
+    val title: String,
+    val ups: Long,
+    val url: String,
+
+    @Json(name = "user_reports")
+    val userReports: List<Any?>,
+
+    @Json(name = "view_count")
+    val viewCount: Any? = null,
+
+    val visited: Boolean
+)
+
+enum class Domain(val value: String) {
+    SelfPics("self.pics"),
+    ImgurCOM("imgur.com"),
+    IImgurCOM("i.imgur.com"),
+    IReddIt("i.redd.it");
+
+    companion object {
+        public fun fromValue(value: String): Domain = when (value) {
+            "self.pics"   -> SelfPics
+            "imgur.com"   -> ImgurCOM
+            "i.imgur.com" -> IImgurCOM
+            "i.redd.it"   -> IReddIt
+            else          -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class Media (
+    val oembed: Oembed,
+    val type: Domain
+)
+
+data class Oembed (
+    val description: String,
+    val height: Long,
+    val html: String,
+
+    @Json(name = "provider_name")
+    val providerName: String,
+
+    @Json(name = "provider_url")
+    val providerURL: String,
+
+    @Json(name = "thumbnail_height")
+    val thumbnailHeight: Long,
+
+    @Json(name = "thumbnail_url")
+    val thumbnailURL: String,
+
+    @Json(name = "thumbnail_width")
+    val thumbnailWidth: Long,
+
+    val title: String,
+    val type: String,
+    val version: String,
+    val width: Long
+)
+
+data class MediaEmbed (
+    val content: String? = null,
+    val height: Long? = null,
+    val scrolling: Boolean? = null,
+    val width: Long? = null
+)
+
+enum class PostHint(val value: String) {
+    Link("link"),
+    Image("image");
+
+    companion object {
+        public fun fromValue(value: String): PostHint = when (value) {
+            "link"  -> Link
+            "image" -> Image
+            else    -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class Preview (
+    val enabled: Boolean,
+    val images: List<Image>
+)
+
+data class Image (
+    val id: String,
+    val resolutions: List<Source>,
+    val source: Source,
+    val variants: Variants
+)
+
+data class Source (
+    val height: Long,
+    val url: String,
+    val width: Long
+)
+
+typealias Variants = JsonObject
+
+enum class Subreddit(val value: String) {
+    Pics("pics");
+
+    companion object {
+        public fun fromValue(value: String): Subreddit = when (value) {
+            "pics" -> Pics
+            else   -> throw IllegalArgumentException()
+        }
+    }
+}
+
+enum class SubredditID(val value: String) {
+    T52Qh0U("t5_2qh0u");
+
+    companion object {
+        public fun fromValue(value: String): SubredditID = when (value) {
+            "t5_2qh0u" -> T52Qh0U
+            else       -> throw IllegalArgumentException()
+        }
+    }
+}
+
+enum class SubredditNamePrefixed(val value: String) {
+    RPics("r/pics");
+
+    companion object {
+        public fun fromValue(value: String): SubredditNamePrefixed = when (value) {
+            "r/pics" -> RPics
+            else     -> throw IllegalArgumentException()
+        }
+    }
+}
+
+enum class SubredditType(val value: String) {
+    Public("public");
+
+    companion object {
+        public fun fromValue(value: String): SubredditType = when (value) {
+            "public" -> Public
+            else     -> throw IllegalArgumentException()
+        }
+    }
+}
+
+enum class Kind(val value: String) {
+    T3("t3");
+
+    companion object {
+        public fun fromValue(value: String): Kind = when (value) {
+            "t3" -> T3
+            else -> throw IllegalArgumentException()
+        }
+    }
+}

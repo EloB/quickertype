@@ -1,0 +1,30 @@
+{
+  "fixture": "swift",
+  "input": "json/misc/ab0d1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/json/misc/ab0d1.json",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "tuple": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Tuple"
+                    }
+                }
+            },
+            "required": [
+                "tuple"
+            ],
+            "title": "TopLevel"
+        },
+        "Tuple": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "integer"
+                }
+            ],
+            "title": "Tuple"
+        }
+    }
+}

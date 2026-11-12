@@ -1,0 +1,31 @@
+{
+  "fixture": "schema-csharp",
+  "input": "schema/top-level-primitive-array.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/schema/top-level-primitive-array.schema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

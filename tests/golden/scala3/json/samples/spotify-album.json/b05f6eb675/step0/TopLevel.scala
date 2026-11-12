@@ -1,0 +1,82 @@
+package quicktype
+
+import io.circe.syntax._
+import io.circe._
+import cats.syntax.functor._
+
+// If a union has a null in, then we'll need this too... 
+type NullValue = None.type
+
+case class TopLevel (
+    val album_type : String,
+    val artists : Seq[Artist],
+    val available_markets : Seq[String],
+    val copyrights : Seq[Copyright],
+    val external_ids : ExternalIDS,
+    val external_urls : ExternalUrls,
+    val genres : Seq[Option[Json]],
+    val href : String,
+    val id : String,
+    val images : Seq[Image],
+    val name : String,
+    val popularity : Long,
+    val release_date : String,
+    val release_date_precision : String,
+    val `type` : String,
+    val tracks : Tracks,
+    val uri : String
+) derives Encoder.AsObject, Decoder
+
+case class Artist (
+    val `type` : String,
+    val external_urls : ExternalUrls,
+    val href : String,
+    val id : String,
+    val name : String,
+    val uri : String
+) derives Encoder.AsObject, Decoder
+
+case class ExternalUrls (
+    val spotify : String
+) derives Encoder.AsObject, Decoder
+
+case class Copyright (
+    val `type` : String,
+    val text : String
+) derives Encoder.AsObject, Decoder
+
+case class ExternalIDS (
+    val upc : String
+) derives Encoder.AsObject, Decoder
+
+case class Image (
+    val height : Long,
+    val url : String,
+    val width : Long
+) derives Encoder.AsObject, Decoder
+
+case class Tracks (
+    val href : String,
+    val items : Seq[Item],
+    val limit : Long,
+    val next : Option[Json] = None,
+    val offset : Long,
+    val previous : Option[Json] = None,
+    val total : Long
+) derives Encoder.AsObject, Decoder
+
+case class Item (
+    val artists : Seq[Artist],
+    val available_markets : Seq[String],
+    val disc_number : Long,
+    val duration_ms : Long,
+    val explicit : Boolean,
+    val external_urls : ExternalUrls,
+    val href : String,
+    val id : String,
+    val `type` : String,
+    val name : String,
+    val preview_url : String,
+    val track_number : Long,
+    val uri : String
+) derives Encoder.AsObject, Decoder

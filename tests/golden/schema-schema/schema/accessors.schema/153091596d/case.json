@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-schema",
+  "input": "schema/accessors.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "schema",
+        "--src",
+        "{INPUTS}/schema/accessors.schema",
+        "--out",
+        "TopLevel.schema",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.schema"
+      ]
+    }
+  ]
+}

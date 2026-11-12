@@ -1,0 +1,89 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/Config"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Config": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "closed": {
+                    "$ref": "#/definitions/Closed"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "settings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/Item"
+                        }
+                    }
+                }
+            },
+            "required": [],
+            "title": "Config"
+        },
+        "ClosedClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ClosedClass"
+        },
+        "Item": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "key",
+                "value"
+            ],
+            "title": "Item"
+        },
+        "Closed": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {}
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "$ref": "#/definitions/ClosedClass"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Closed"
+        }
+    }
+}

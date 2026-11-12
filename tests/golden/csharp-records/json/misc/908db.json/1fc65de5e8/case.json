@@ -1,0 +1,33 @@
+{
+  "fixture": "csharp-records",
+  "input": "json/misc/908db.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/json/misc/908db.json",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--use-records",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

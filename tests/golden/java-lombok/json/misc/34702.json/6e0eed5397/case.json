@@ -1,0 +1,48 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/34702.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/34702.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/CRS.java",
+        "src/main/java/io/quicktype/CRSProperties.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Feature.java",
+        "src/main/java/io/quicktype/FeatureProperties.java",
+        "src/main/java/io/quicktype/FeatureType.java",
+        "src/main/java/io/quicktype/FireBanR.java",
+        "src/main/java/io/quicktype/Geometry.java",
+        "src/main/java/io/quicktype/GeometryName.java",
+        "src/main/java/io/quicktype/GeometryType.java",
+        "src/main/java/io/quicktype/PropertiesType.java",
+        "src/main/java/io/quicktype/Region.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-haskell",
+  "input": "schema/required.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/schema/required.schema",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

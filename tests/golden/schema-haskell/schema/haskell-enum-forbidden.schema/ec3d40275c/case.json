@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-haskell",
+  "input": "schema/haskell-enum-forbidden.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/schema/haskell-enum-forbidden.schema",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

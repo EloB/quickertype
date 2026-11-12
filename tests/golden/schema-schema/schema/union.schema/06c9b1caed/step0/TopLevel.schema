@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "type": "array",
+    "items": {
+        "$ref": "#/definitions/TopLevelElement"
+    },
+    "definitions": {
+        "TopLevelElement": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "one": {
+                    "type": "integer"
+                },
+                "two": {
+                    "type": "boolean"
+                },
+                "three": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "two"
+            ],
+            "title": "TopLevelElement"
+        }
+    }
+}

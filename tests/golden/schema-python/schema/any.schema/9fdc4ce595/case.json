@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-python",
+  "input": "schema/any.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "python",
+        "--src",
+        "{INPUTS}/schema/any.schema",
+        "--out",
+        "quicktype.py",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.py"
+      ]
+    }
+  ]
+}

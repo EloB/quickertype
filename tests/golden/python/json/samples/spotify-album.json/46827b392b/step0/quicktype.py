@@ -1,0 +1,297 @@
+from dataclasses import dataclass
+from typing import Any, TypeVar, Type, cast, Callable
+
+
+T = TypeVar("T")
+
+
+def from_str(x: Any) -> str:
+    assert isinstance(x, str)
+    return x
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
+
+
+def from_list(f: Callable[[Any], T], x: Any) -> list[T]:
+    assert isinstance(x, list)
+    return [f(y) for y in x]
+
+
+def from_bool(x: Any) -> bool:
+    assert isinstance(x, bool)
+    return x
+
+
+def from_none(x: Any) -> Any:
+    assert x is None
+    return x
+
+
+@dataclass
+class ExternalUrls:
+    spotify: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'ExternalUrls':
+        assert isinstance(obj, dict)
+        spotify = from_str(obj["spotify"])
+        return ExternalUrls(spotify)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["spotify"] = from_str(self.spotify)
+        return result
+
+
+@dataclass
+class Artist:
+    external_urls: ExternalUrls
+    href: str
+    id: str
+    name: str
+    type: str
+    uri: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Artist':
+        assert isinstance(obj, dict)
+        external_urls = ExternalUrls.from_dict(obj["external_urls"])
+        href = from_str(obj["href"])
+        id = from_str(obj["id"])
+        name = from_str(obj["name"])
+        type = from_str(obj["type"])
+        uri = from_str(obj["uri"])
+        return Artist(external_urls, href, id, name, type, uri)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["external_urls"] = to_class(ExternalUrls, self.external_urls)
+        result["href"] = from_str(self.href)
+        result["id"] = from_str(self.id)
+        result["name"] = from_str(self.name)
+        result["type"] = from_str(self.type)
+        result["uri"] = from_str(self.uri)
+        return result
+
+
+@dataclass
+class Copyright:
+    text: str
+    type: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Copyright':
+        assert isinstance(obj, dict)
+        text = from_str(obj["text"])
+        type = from_str(obj["type"])
+        return Copyright(text, type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["text"] = from_str(self.text)
+        result["type"] = from_str(self.type)
+        return result
+
+
+@dataclass
+class ExternalIDS:
+    upc: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'ExternalIDS':
+        assert isinstance(obj, dict)
+        upc = from_str(obj["upc"])
+        return ExternalIDS(upc)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["upc"] = from_str(self.upc)
+        return result
+
+
+@dataclass
+class Image:
+    height: int
+    url: str
+    width: int
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Image':
+        assert isinstance(obj, dict)
+        height = from_int(obj["height"])
+        url = from_str(obj["url"])
+        width = from_int(obj["width"])
+        return Image(height, url, width)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["height"] = from_int(self.height)
+        result["url"] = from_str(self.url)
+        result["width"] = from_int(self.width)
+        return result
+
+
+@dataclass
+class Item:
+    artists: list[Artist]
+    available_markets: list[str]
+    disc_number: int
+    duration_ms: int
+    explicit: bool
+    external_urls: ExternalUrls
+    href: str
+    id: str
+    name: str
+    preview_url: str
+    track_number: int
+    type: str
+    uri: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Item':
+        assert isinstance(obj, dict)
+        artists = from_list(Artist.from_dict, obj["artists"])
+        available_markets = from_list(from_str, obj["available_markets"])
+        disc_number = from_int(obj["disc_number"])
+        duration_ms = from_int(obj["duration_ms"])
+        explicit = from_bool(obj["explicit"])
+        external_urls = ExternalUrls.from_dict(obj["external_urls"])
+        href = from_str(obj["href"])
+        id = from_str(obj["id"])
+        name = from_str(obj["name"])
+        preview_url = from_str(obj["preview_url"])
+        track_number = from_int(obj["track_number"])
+        type = from_str(obj["type"])
+        uri = from_str(obj["uri"])
+        return Item(artists, available_markets, disc_number, duration_ms, explicit, external_urls, href, id, name, preview_url, track_number, type, uri)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["artists"] = from_list(lambda x: to_class(Artist, x), self.artists)
+        result["available_markets"] = from_list(from_str, self.available_markets)
+        result["disc_number"] = from_int(self.disc_number)
+        result["duration_ms"] = from_int(self.duration_ms)
+        result["explicit"] = from_bool(self.explicit)
+        result["external_urls"] = to_class(ExternalUrls, self.external_urls)
+        result["href"] = from_str(self.href)
+        result["id"] = from_str(self.id)
+        result["name"] = from_str(self.name)
+        result["preview_url"] = from_str(self.preview_url)
+        result["track_number"] = from_int(self.track_number)
+        result["type"] = from_str(self.type)
+        result["uri"] = from_str(self.uri)
+        return result
+
+
+@dataclass
+class Tracks:
+    href: str
+    items: list[Item]
+    limit: int
+    offset: int
+    total: int
+    next: None
+    previous: None
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'Tracks':
+        assert isinstance(obj, dict)
+        href = from_str(obj["href"])
+        items = from_list(Item.from_dict, obj["items"])
+        limit = from_int(obj["limit"])
+        offset = from_int(obj["offset"])
+        total = from_int(obj["total"])
+        next = from_none(obj["next"])
+        previous = from_none(obj["previous"])
+        return Tracks(href, items, limit, offset, total, next, previous)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["href"] = from_str(self.href)
+        result["items"] = from_list(lambda x: to_class(Item, x), self.items)
+        result["limit"] = from_int(self.limit)
+        result["offset"] = from_int(self.offset)
+        result["total"] = from_int(self.total)
+        result["next"] = from_none(self.next)
+        result["previous"] = from_none(self.previous)
+        return result
+
+
+@dataclass
+class TopLevel:
+    album_type: str
+    artists: list[Artist]
+    available_markets: list[str]
+    copyrights: list[Copyright]
+    external_ids: ExternalIDS
+    external_urls: ExternalUrls
+    genres: list[Any]
+    href: str
+    id: str
+    images: list[Image]
+    name: str
+    popularity: int
+    release_date: int
+    release_date_precision: str
+    tracks: Tracks
+    type: str
+    uri: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'TopLevel':
+        assert isinstance(obj, dict)
+        album_type = from_str(obj["album_type"])
+        artists = from_list(Artist.from_dict, obj["artists"])
+        available_markets = from_list(from_str, obj["available_markets"])
+        copyrights = from_list(Copyright.from_dict, obj["copyrights"])
+        external_ids = ExternalIDS.from_dict(obj["external_ids"])
+        external_urls = ExternalUrls.from_dict(obj["external_urls"])
+        genres = from_list(lambda x: x, obj["genres"])
+        href = from_str(obj["href"])
+        id = from_str(obj["id"])
+        images = from_list(Image.from_dict, obj["images"])
+        name = from_str(obj["name"])
+        popularity = from_int(obj["popularity"])
+        release_date = int(from_str(obj["release_date"]))
+        release_date_precision = from_str(obj["release_date_precision"])
+        tracks = Tracks.from_dict(obj["tracks"])
+        type = from_str(obj["type"])
+        uri = from_str(obj["uri"])
+        return TopLevel(album_type, artists, available_markets, copyrights, external_ids, external_urls, genres, href, id, images, name, popularity, release_date, release_date_precision, tracks, type, uri)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["album_type"] = from_str(self.album_type)
+        result["artists"] = from_list(lambda x: to_class(Artist, x), self.artists)
+        result["available_markets"] = from_list(from_str, self.available_markets)
+        result["copyrights"] = from_list(lambda x: to_class(Copyright, x), self.copyrights)
+        result["external_ids"] = to_class(ExternalIDS, self.external_ids)
+        result["external_urls"] = to_class(ExternalUrls, self.external_urls)
+        result["genres"] = from_list(lambda x: x, self.genres)
+        result["href"] = from_str(self.href)
+        result["id"] = from_str(self.id)
+        result["images"] = from_list(lambda x: to_class(Image, x), self.images)
+        result["name"] = from_str(self.name)
+        result["popularity"] = from_int(self.popularity)
+        result["release_date"] = from_str(str(self.release_date))
+        result["release_date_precision"] = from_str(self.release_date_precision)
+        result["tracks"] = to_class(Tracks, self.tracks)
+        result["type"] = from_str(self.type)
+        result["uri"] = from_str(self.uri)
+        return result
+
+
+def top_level_from_dict(s: Any) -> TopLevel:
+    return TopLevel.from_dict(s)
+
+
+def top_level_to_dict(x: TopLevel) -> Any:
+    return to_class(TopLevel, x)

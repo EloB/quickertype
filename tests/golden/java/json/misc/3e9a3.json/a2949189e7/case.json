@@ -1,0 +1,41 @@
+{
+  "fixture": "java",
+  "input": "json/misc/3e9a3.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/3e9a3.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Datum.java",
+        "src/main/java/io/quicktype/Footnote.java",
+        "src/main/java/io/quicktype/Results.java",
+        "src/main/java/io/quicktype/Series.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+// To parse the JSON, install Klaxon and do:
+//
+//   val topLevel = TopLevel.fromJson(jsonString)
+
+package quicktype
+
+import com.beust.klaxon.*
+
+private val klaxon = Klaxon()
+
+data class TopLevel(val value: Double) {
+    public fun toJson() = klaxon.toJsonString(value)
+
+    companion object {
+        public fun fromJson(json: String) = TopLevel(json.toDouble())
+    }
+}

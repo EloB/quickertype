@@ -1,0 +1,31 @@
+{
+  "fixture": "schema-csharp-SystemTextJson",
+  "input": "schema/haskell-enum-forbidden.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/schema/haskell-enum-forbidden.schema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "SystemTextJson",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

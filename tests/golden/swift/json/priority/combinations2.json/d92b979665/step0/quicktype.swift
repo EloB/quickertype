@@ -1,0 +1,2880 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let topLevel = try TopLevel(json)
+
+import Foundation
+
+// MARK: - TopLevel
+public struct TopLevel: Codable {
+    public let abranchiata: [Abranchiata]
+    public let academe: [Academe]
+    public let acquirable: [Acquirable]
+    public let aerometry: [Aerometry]
+    public let alexin: [Alexin]
+    public let alleviate: [AlleviateElement]
+    public let amaas: [Amaa]
+    public let ambassage: [Ambassage]
+    public let amphithyron: [Amphithyron?]
+    public let andriana: [String?]
+    public let ankee: [AnkeeElement]
+    public let annihilator: [[String: Int?]?]
+    public let annulose: JSONNull?
+    public let ansarie: [AnsarieElement]
+    public let aphasia: [Aphasia]
+    public let asprawl: [Asprawl]
+    public let attractive: [Bool?]
+    public let barksome: [String: Int]
+    public let bedesman: [Bedesman]
+    public let belard: [Belard]
+    public let bocking: [Bocking]
+    public let brawlingly: [Brawlingly]
+    public let brookie: [Brookie]
+    public let bumboatman: [Bumboatman]
+    public let bystreet: [JSONNull?]
+    public let calaverite: [Calaverite]
+    public let catallactic: [Catallactic]
+    public let cemental: [Cemental]
+    public let chytridiaceae: [ChytridiaceaeElement]
+    public let discordia: [DiscordiaElement]
+    public let endomyces: [Endomyce]
+    public let epinephelidae: [Epinephelidae]
+    public let eupatorium: [Eupatorium]
+    public let gryphosaurus: [GryphosaurusElement]
+    public let koryak: [Koryak]
+    public let lavinia: [LaviniaElement]
+    public let oskar: [OskarElement]
+    public let rebecca: [RebeccaElement]
+    public let rhomboganoidei: [Rhomboganoidei]
+    public let rigsmal: Bool
+    public let ruellia: [Ruellia]
+    public let school: [School]
+    public let shakespearolater: [Shakespearolater]
+    public let svan: [Double]
+    public let wayao: [String: Double]
+
+    public enum CodingKeys: String, CodingKey {
+        case abranchiata = "Abranchiata"
+        case academe = "academe"
+        case acquirable = "acquirable"
+        case aerometry = "aerometry"
+        case alexin = "alexin"
+        case alleviate = "alleviate"
+        case amaas = "amaas"
+        case ambassage = "ambassage"
+        case amphithyron = "amphithyron"
+        case andriana = "Andriana"
+        case ankee = "ankee"
+        case annihilator = "annihilator"
+        case annulose = "annulose"
+        case ansarie = "Ansarie"
+        case aphasia = "aphasia"
+        case asprawl = "asprawl"
+        case attractive = "attractive"
+        case barksome = "barksome"
+        case bedesman = "bedesman"
+        case belard = "belard"
+        case bocking = "bocking"
+        case brawlingly = "brawlingly"
+        case brookie = "brookie"
+        case bumboatman = "bumboatman"
+        case bystreet = "bystreet"
+        case calaverite = "calaverite"
+        case catallactic = "catallactic"
+        case cemental = "cemental"
+        case chytridiaceae = "Chytridiaceae"
+        case discordia = "Discordia"
+        case endomyces = "Endomyces"
+        case epinephelidae = "Epinephelidae"
+        case eupatorium = "Eupatorium"
+        case gryphosaurus = "Gryphosaurus"
+        case koryak = "Koryak"
+        case lavinia = "Lavinia"
+        case oskar = "Oskar"
+        case rebecca = "Rebecca"
+        case rhomboganoidei = "Rhomboganoidei"
+        case rigsmal = "Rigsmal"
+        case ruellia = "Ruellia"
+        case school = "School"
+        case shakespearolater = "Shakespearolater"
+        case svan = "Svan"
+        case wayao = "Wayao"
+    }
+
+    public init(abranchiata: [Abranchiata], academe: [Academe], acquirable: [Acquirable], aerometry: [Aerometry], alexin: [Alexin], alleviate: [AlleviateElement], amaas: [Amaa], ambassage: [Ambassage], amphithyron: [Amphithyron?], andriana: [String?], ankee: [AnkeeElement], annihilator: [[String: Int?]?], annulose: JSONNull?, ansarie: [AnsarieElement], aphasia: [Aphasia], asprawl: [Asprawl], attractive: [Bool?], barksome: [String: Int], bedesman: [Bedesman], belard: [Belard], bocking: [Bocking], brawlingly: [Brawlingly], brookie: [Brookie], bumboatman: [Bumboatman], bystreet: [JSONNull?], calaverite: [Calaverite], catallactic: [Catallactic], cemental: [Cemental], chytridiaceae: [ChytridiaceaeElement], discordia: [DiscordiaElement], endomyces: [Endomyce], epinephelidae: [Epinephelidae], eupatorium: [Eupatorium], gryphosaurus: [GryphosaurusElement], koryak: [Koryak], lavinia: [LaviniaElement], oskar: [OskarElement], rebecca: [RebeccaElement], rhomboganoidei: [Rhomboganoidei], rigsmal: Bool, ruellia: [Ruellia], school: [School], shakespearolater: [Shakespearolater], svan: [Double], wayao: [String: Double]) {
+        self.abranchiata = abranchiata
+        self.academe = academe
+        self.acquirable = acquirable
+        self.aerometry = aerometry
+        self.alexin = alexin
+        self.alleviate = alleviate
+        self.amaas = amaas
+        self.ambassage = ambassage
+        self.amphithyron = amphithyron
+        self.andriana = andriana
+        self.ankee = ankee
+        self.annihilator = annihilator
+        self.annulose = annulose
+        self.ansarie = ansarie
+        self.aphasia = aphasia
+        self.asprawl = asprawl
+        self.attractive = attractive
+        self.barksome = barksome
+        self.bedesman = bedesman
+        self.belard = belard
+        self.bocking = bocking
+        self.brawlingly = brawlingly
+        self.brookie = brookie
+        self.bumboatman = bumboatman
+        self.bystreet = bystreet
+        self.calaverite = calaverite
+        self.catallactic = catallactic
+        self.cemental = cemental
+        self.chytridiaceae = chytridiaceae
+        self.discordia = discordia
+        self.endomyces = endomyces
+        self.epinephelidae = epinephelidae
+        self.eupatorium = eupatorium
+        self.gryphosaurus = gryphosaurus
+        self.koryak = koryak
+        self.lavinia = lavinia
+        self.oskar = oskar
+        self.rebecca = rebecca
+        self.rhomboganoidei = rhomboganoidei
+        self.rigsmal = rigsmal
+        self.ruellia = ruellia
+        self.school = school
+        self.shakespearolater = shakespearolater
+        self.svan = svan
+        self.wayao = wayao
+    }
+}
+
+// MARK: TopLevel convenience initializers and mutators
+
+public extension TopLevel {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(TopLevel.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        abranchiata: [Abranchiata]? = nil,
+        academe: [Academe]? = nil,
+        acquirable: [Acquirable]? = nil,
+        aerometry: [Aerometry]? = nil,
+        alexin: [Alexin]? = nil,
+        alleviate: [AlleviateElement]? = nil,
+        amaas: [Amaa]? = nil,
+        ambassage: [Ambassage]? = nil,
+        amphithyron: [Amphithyron?]? = nil,
+        andriana: [String?]? = nil,
+        ankee: [AnkeeElement]? = nil,
+        annihilator: [[String: Int?]?]? = nil,
+        annulose: JSONNull?? = nil,
+        ansarie: [AnsarieElement]? = nil,
+        aphasia: [Aphasia]? = nil,
+        asprawl: [Asprawl]? = nil,
+        attractive: [Bool?]? = nil,
+        barksome: [String: Int]? = nil,
+        bedesman: [Bedesman]? = nil,
+        belard: [Belard]? = nil,
+        bocking: [Bocking]? = nil,
+        brawlingly: [Brawlingly]? = nil,
+        brookie: [Brookie]? = nil,
+        bumboatman: [Bumboatman]? = nil,
+        bystreet: [JSONNull?]? = nil,
+        calaverite: [Calaverite]? = nil,
+        catallactic: [Catallactic]? = nil,
+        cemental: [Cemental]? = nil,
+        chytridiaceae: [ChytridiaceaeElement]? = nil,
+        discordia: [DiscordiaElement]? = nil,
+        endomyces: [Endomyce]? = nil,
+        epinephelidae: [Epinephelidae]? = nil,
+        eupatorium: [Eupatorium]? = nil,
+        gryphosaurus: [GryphosaurusElement]? = nil,
+        koryak: [Koryak]? = nil,
+        lavinia: [LaviniaElement]? = nil,
+        oskar: [OskarElement]? = nil,
+        rebecca: [RebeccaElement]? = nil,
+        rhomboganoidei: [Rhomboganoidei]? = nil,
+        rigsmal: Bool? = nil,
+        ruellia: [Ruellia]? = nil,
+        school: [School]? = nil,
+        shakespearolater: [Shakespearolater]? = nil,
+        svan: [Double]? = nil,
+        wayao: [String: Double]? = nil
+    ) -> TopLevel {
+        return TopLevel(
+            abranchiata: abranchiata ?? self.abranchiata,
+            academe: academe ?? self.academe,
+            acquirable: acquirable ?? self.acquirable,
+            aerometry: aerometry ?? self.aerometry,
+            alexin: alexin ?? self.alexin,
+            alleviate: alleviate ?? self.alleviate,
+            amaas: amaas ?? self.amaas,
+            ambassage: ambassage ?? self.ambassage,
+            amphithyron: amphithyron ?? self.amphithyron,
+            andriana: andriana ?? self.andriana,
+            ankee: ankee ?? self.ankee,
+            annihilator: annihilator ?? self.annihilator,
+            annulose: annulose ?? self.annulose,
+            ansarie: ansarie ?? self.ansarie,
+            aphasia: aphasia ?? self.aphasia,
+            asprawl: asprawl ?? self.asprawl,
+            attractive: attractive ?? self.attractive,
+            barksome: barksome ?? self.barksome,
+            bedesman: bedesman ?? self.bedesman,
+            belard: belard ?? self.belard,
+            bocking: bocking ?? self.bocking,
+            brawlingly: brawlingly ?? self.brawlingly,
+            brookie: brookie ?? self.brookie,
+            bumboatman: bumboatman ?? self.bumboatman,
+            bystreet: bystreet ?? self.bystreet,
+            calaverite: calaverite ?? self.calaverite,
+            catallactic: catallactic ?? self.catallactic,
+            cemental: cemental ?? self.cemental,
+            chytridiaceae: chytridiaceae ?? self.chytridiaceae,
+            discordia: discordia ?? self.discordia,
+            endomyces: endomyces ?? self.endomyces,
+            epinephelidae: epinephelidae ?? self.epinephelidae,
+            eupatorium: eupatorium ?? self.eupatorium,
+            gryphosaurus: gryphosaurus ?? self.gryphosaurus,
+            koryak: koryak ?? self.koryak,
+            lavinia: lavinia ?? self.lavinia,
+            oskar: oskar ?? self.oskar,
+            rebecca: rebecca ?? self.rebecca,
+            rhomboganoidei: rhomboganoidei ?? self.rhomboganoidei,
+            rigsmal: rigsmal ?? self.rigsmal,
+            ruellia: ruellia ?? self.ruellia,
+            school: school ?? self.school,
+            shakespearolater: shakespearolater ?? self.shakespearolater,
+            svan: svan ?? self.svan,
+            wayao: wayao ?? self.wayao
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Abranchiata: Codable {
+    case integer(Int)
+    case integerArray([Int])
+    case null
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        throw DecodingError.typeMismatch(Abranchiata.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Abranchiata"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+public enum Academe: Codable {
+    case integer(Int)
+    case integerArray([Int])
+    case integerMap([String: Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Academe.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Academe"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .integerMap(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Acquirable: Codable {
+    case integerMap([String: Int])
+    case unionArray([Int?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int?].self) {
+            self = .unionArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Acquirable.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Acquirable"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerMap(let x):
+            try container.encode(x)
+        case .unionArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Aerometry: Codable {
+    case bool(Bool)
+    case double(Double)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Aerometry.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Aerometry"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .double(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Alexin: Codable {
+    case bool(Bool)
+    case integerArray([Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Alexin.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Alexin"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum AlleviateElement: Codable {
+    case alleviateClass(AlleviateClass)
+    case unionArray([Int?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int?].self) {
+            self = .unionArray(x)
+            return
+        }
+        if let x = try? container.decode(AlleviateClass.self) {
+            self = .alleviateClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(AlleviateElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for AlleviateElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .alleviateClass(let x):
+            try container.encode(x)
+        case .unionArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - AlleviateClass
+public struct AlleviateClass: Codable {
+    public let apriori: JSONNull?
+    public let beggarer: JSONNull?
+    public let brokenheartedly: JSONNull?
+    public let debilitation: JSONNull?
+    public let frike: JSONNull?
+    public let gastrolith: JSONNull?
+    public let hulsean: JSONNull?
+    public let orthocentric: JSONNull?
+    public let petaly: JSONNull?
+    public let probudgeting: JSONNull?
+    public let reacquire: JSONNull?
+    public let scow: JSONNull?
+    public let shutoff: JSONNull?
+    public let subcontiguous: JSONNull?
+    public let suffumigate: JSONNull?
+    public let transformable: JSONNull?
+    public let uncoroneted: JSONNull?
+    public let unparking: JSONNull?
+    public let unvarnishedness: JSONNull?
+    public let wherewithal: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case apriori = "apriori"
+        case beggarer = "beggarer"
+        case brokenheartedly = "brokenheartedly"
+        case debilitation = "debilitation"
+        case frike = "frike"
+        case gastrolith = "gastrolith"
+        case hulsean = "Hulsean"
+        case orthocentric = "orthocentric"
+        case petaly = "petaly"
+        case probudgeting = "probudgeting"
+        case reacquire = "reacquire"
+        case scow = "scow"
+        case shutoff = "shutoff"
+        case subcontiguous = "subcontiguous"
+        case suffumigate = "suffumigate"
+        case transformable = "transformable"
+        case uncoroneted = "uncoroneted"
+        case unparking = "unparking"
+        case unvarnishedness = "unvarnishedness"
+        case wherewithal = "wherewithal"
+    }
+
+    public init(apriori: JSONNull?, beggarer: JSONNull?, brokenheartedly: JSONNull?, debilitation: JSONNull?, frike: JSONNull?, gastrolith: JSONNull?, hulsean: JSONNull?, orthocentric: JSONNull?, petaly: JSONNull?, probudgeting: JSONNull?, reacquire: JSONNull?, scow: JSONNull?, shutoff: JSONNull?, subcontiguous: JSONNull?, suffumigate: JSONNull?, transformable: JSONNull?, uncoroneted: JSONNull?, unparking: JSONNull?, unvarnishedness: JSONNull?, wherewithal: JSONNull?) {
+        self.apriori = apriori
+        self.beggarer = beggarer
+        self.brokenheartedly = brokenheartedly
+        self.debilitation = debilitation
+        self.frike = frike
+        self.gastrolith = gastrolith
+        self.hulsean = hulsean
+        self.orthocentric = orthocentric
+        self.petaly = petaly
+        self.probudgeting = probudgeting
+        self.reacquire = reacquire
+        self.scow = scow
+        self.shutoff = shutoff
+        self.subcontiguous = subcontiguous
+        self.suffumigate = suffumigate
+        self.transformable = transformable
+        self.uncoroneted = uncoroneted
+        self.unparking = unparking
+        self.unvarnishedness = unvarnishedness
+        self.wherewithal = wherewithal
+    }
+}
+
+// MARK: AlleviateClass convenience initializers and mutators
+
+public extension AlleviateClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AlleviateClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        apriori: JSONNull?? = nil,
+        beggarer: JSONNull?? = nil,
+        brokenheartedly: JSONNull?? = nil,
+        debilitation: JSONNull?? = nil,
+        frike: JSONNull?? = nil,
+        gastrolith: JSONNull?? = nil,
+        hulsean: JSONNull?? = nil,
+        orthocentric: JSONNull?? = nil,
+        petaly: JSONNull?? = nil,
+        probudgeting: JSONNull?? = nil,
+        reacquire: JSONNull?? = nil,
+        scow: JSONNull?? = nil,
+        shutoff: JSONNull?? = nil,
+        subcontiguous: JSONNull?? = nil,
+        suffumigate: JSONNull?? = nil,
+        transformable: JSONNull?? = nil,
+        uncoroneted: JSONNull?? = nil,
+        unparking: JSONNull?? = nil,
+        unvarnishedness: JSONNull?? = nil,
+        wherewithal: JSONNull?? = nil
+    ) -> AlleviateClass {
+        return AlleviateClass(
+            apriori: apriori ?? self.apriori,
+            beggarer: beggarer ?? self.beggarer,
+            brokenheartedly: brokenheartedly ?? self.brokenheartedly,
+            debilitation: debilitation ?? self.debilitation,
+            frike: frike ?? self.frike,
+            gastrolith: gastrolith ?? self.gastrolith,
+            hulsean: hulsean ?? self.hulsean,
+            orthocentric: orthocentric ?? self.orthocentric,
+            petaly: petaly ?? self.petaly,
+            probudgeting: probudgeting ?? self.probudgeting,
+            reacquire: reacquire ?? self.reacquire,
+            scow: scow ?? self.scow,
+            shutoff: shutoff ?? self.shutoff,
+            subcontiguous: subcontiguous ?? self.subcontiguous,
+            suffumigate: suffumigate ?? self.suffumigate,
+            transformable: transformable ?? self.transformable,
+            uncoroneted: uncoroneted ?? self.uncoroneted,
+            unparking: unparking ?? self.unparking,
+            unvarnishedness: unvarnishedness ?? self.unvarnishedness,
+            wherewithal: wherewithal ?? self.wherewithal
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Amaa: Codable {
+    case bool(Bool)
+    case integer(Int)
+    case rebecca(Rebecca)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Amaa.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Amaa"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - Rebecca
+public struct Rebecca: Codable {
+    public let catharticalness: Double
+    public let chirotherium: Int
+    public let disdiapason: String
+    public let homocerc: Bool
+    public let nonbookish: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case catharticalness = "catharticalness"
+        case chirotherium = "Chirotherium"
+        case disdiapason = "disdiapason"
+        case homocerc = "homocerc"
+        case nonbookish = "nonbookish"
+    }
+
+    public init(catharticalness: Double, chirotherium: Int, disdiapason: String, homocerc: Bool, nonbookish: JSONNull?) {
+        self.catharticalness = catharticalness
+        self.chirotherium = chirotherium
+        self.disdiapason = disdiapason
+        self.homocerc = homocerc
+        self.nonbookish = nonbookish
+    }
+}
+
+// MARK: Rebecca convenience initializers and mutators
+
+public extension Rebecca {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Rebecca.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        catharticalness: Double? = nil,
+        chirotherium: Int? = nil,
+        disdiapason: String? = nil,
+        homocerc: Bool? = nil,
+        nonbookish: JSONNull?? = nil
+    ) -> Rebecca {
+        return Rebecca(
+            catharticalness: catharticalness ?? self.catharticalness,
+            chirotherium: chirotherium ?? self.chirotherium,
+            disdiapason: disdiapason ?? self.disdiapason,
+            homocerc: homocerc ?? self.homocerc,
+            nonbookish: nonbookish ?? self.nonbookish
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Ambassage: Codable {
+    case nullArray([JSONNull?])
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([JSONNull?].self) {
+            self = .nullArray(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Ambassage.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Ambassage"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .nullArray(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - Amphithyron
+public struct Amphithyron: Codable {
+    public let akroasis: Int?
+    public let antiphonical: Int?
+    public let basebred: Int?
+    public let catharticalness: Double?
+    public let chirotherium: Int?
+    public let conductometric: Int?
+    public let disdiapason: String?
+    public let ensilation: Int?
+    public let eyebolt: Int?
+    public let fistulated: Int?
+    public let heteropod: Int?
+    public let homocerc: Bool?
+    public let juniperus: Int?
+    public let labyrinthically: Int?
+    public let martyrization: Int?
+    public let mispolicy: Int?
+    public let multipara: Int?
+    public let nazirite: Int?
+    public let nonbookish: JSONNull?
+    public let possessorial: Int?
+    public let shamed: Int?
+    public let shelfworn: Int?
+    public let stagnum: Int?
+    public let those: Int?
+    public let undecimal: Int?
+
+    public enum CodingKeys: String, CodingKey {
+        case akroasis = "akroasis"
+        case antiphonical = "antiphonical"
+        case basebred = "basebred"
+        case catharticalness = "catharticalness"
+        case chirotherium = "Chirotherium"
+        case conductometric = "conductometric"
+        case disdiapason = "disdiapason"
+        case ensilation = "ensilation"
+        case eyebolt = "eyebolt"
+        case fistulated = "fistulated"
+        case heteropod = "heteropod"
+        case homocerc = "homocerc"
+        case juniperus = "Juniperus"
+        case labyrinthically = "labyrinthically"
+        case martyrization = "martyrization"
+        case mispolicy = "mispolicy"
+        case multipara = "multipara"
+        case nazirite = "Nazirite"
+        case nonbookish = "nonbookish"
+        case possessorial = "possessorial"
+        case shamed = "shamed"
+        case shelfworn = "shelfworn"
+        case stagnum = "stagnum"
+        case those = "Those"
+        case undecimal = "undecimal"
+    }
+
+    public init(akroasis: Int?, antiphonical: Int?, basebred: Int?, catharticalness: Double?, chirotherium: Int?, conductometric: Int?, disdiapason: String?, ensilation: Int?, eyebolt: Int?, fistulated: Int?, heteropod: Int?, homocerc: Bool?, juniperus: Int?, labyrinthically: Int?, martyrization: Int?, mispolicy: Int?, multipara: Int?, nazirite: Int?, nonbookish: JSONNull?, possessorial: Int?, shamed: Int?, shelfworn: Int?, stagnum: Int?, those: Int?, undecimal: Int?) {
+        self.akroasis = akroasis
+        self.antiphonical = antiphonical
+        self.basebred = basebred
+        self.catharticalness = catharticalness
+        self.chirotherium = chirotherium
+        self.conductometric = conductometric
+        self.disdiapason = disdiapason
+        self.ensilation = ensilation
+        self.eyebolt = eyebolt
+        self.fistulated = fistulated
+        self.heteropod = heteropod
+        self.homocerc = homocerc
+        self.juniperus = juniperus
+        self.labyrinthically = labyrinthically
+        self.martyrization = martyrization
+        self.mispolicy = mispolicy
+        self.multipara = multipara
+        self.nazirite = nazirite
+        self.nonbookish = nonbookish
+        self.possessorial = possessorial
+        self.shamed = shamed
+        self.shelfworn = shelfworn
+        self.stagnum = stagnum
+        self.those = those
+        self.undecimal = undecimal
+    }
+}
+
+// MARK: Amphithyron convenience initializers and mutators
+
+public extension Amphithyron {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Amphithyron.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        akroasis: Int?? = nil,
+        antiphonical: Int?? = nil,
+        basebred: Int?? = nil,
+        catharticalness: Double?? = nil,
+        chirotherium: Int?? = nil,
+        conductometric: Int?? = nil,
+        disdiapason: String?? = nil,
+        ensilation: Int?? = nil,
+        eyebolt: Int?? = nil,
+        fistulated: Int?? = nil,
+        heteropod: Int?? = nil,
+        homocerc: Bool?? = nil,
+        juniperus: Int?? = nil,
+        labyrinthically: Int?? = nil,
+        martyrization: Int?? = nil,
+        mispolicy: Int?? = nil,
+        multipara: Int?? = nil,
+        nazirite: Int?? = nil,
+        nonbookish: JSONNull?? = nil,
+        possessorial: Int?? = nil,
+        shamed: Int?? = nil,
+        shelfworn: Int?? = nil,
+        stagnum: Int?? = nil,
+        those: Int?? = nil,
+        undecimal: Int?? = nil
+    ) -> Amphithyron {
+        return Amphithyron(
+            akroasis: akroasis ?? self.akroasis,
+            antiphonical: antiphonical ?? self.antiphonical,
+            basebred: basebred ?? self.basebred,
+            catharticalness: catharticalness ?? self.catharticalness,
+            chirotherium: chirotherium ?? self.chirotherium,
+            conductometric: conductometric ?? self.conductometric,
+            disdiapason: disdiapason ?? self.disdiapason,
+            ensilation: ensilation ?? self.ensilation,
+            eyebolt: eyebolt ?? self.eyebolt,
+            fistulated: fistulated ?? self.fistulated,
+            heteropod: heteropod ?? self.heteropod,
+            homocerc: homocerc ?? self.homocerc,
+            juniperus: juniperus ?? self.juniperus,
+            labyrinthically: labyrinthically ?? self.labyrinthically,
+            martyrization: martyrization ?? self.martyrization,
+            mispolicy: mispolicy ?? self.mispolicy,
+            multipara: multipara ?? self.multipara,
+            nazirite: nazirite ?? self.nazirite,
+            nonbookish: nonbookish ?? self.nonbookish,
+            possessorial: possessorial ?? self.possessorial,
+            shamed: shamed ?? self.shamed,
+            shelfworn: shelfworn ?? self.shelfworn,
+            stagnum: stagnum ?? self.stagnum,
+            those: those ?? self.those,
+            undecimal: undecimal ?? self.undecimal
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum AnkeeElement: Codable {
+    case ankeeClass(AnkeeClass)
+    case integer(Int)
+    case integerArray([Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(AnkeeClass.self) {
+            self = .ankeeClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(AnkeeElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for AnkeeElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .ankeeClass(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - AnkeeClass
+public struct AnkeeClass: Codable {
+    public let anomoean: JSONNull?
+    public let barleyhood: JSONNull?
+    public let befriender: JSONNull?
+    public let brutishness: JSONNull?
+    public let cephalalgy: JSONNull?
+    public let cirurgian: JSONNull?
+    public let conventionally: JSONNull?
+    public let jackshay: JSONNull?
+    public let milammeter: JSONNull?
+    public let naja: JSONNull?
+    public let ombrological: JSONNull?
+    public let phonasthenia: JSONNull?
+    public let retrievableness: JSONNull?
+    public let snakily: JSONNull?
+    public let swot: JSONNull?
+    public let tartlet: JSONNull?
+    public let thiofuran: JSONNull?
+    public let tracheophone: JSONNull?
+    public let tuglike: JSONNull?
+    public let unscratchingly: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case anomoean = "Anomoean"
+        case barleyhood = "barleyhood"
+        case befriender = "befriender"
+        case brutishness = "brutishness"
+        case cephalalgy = "cephalalgy"
+        case cirurgian = "cirurgian"
+        case conventionally = "conventionally"
+        case jackshay = "jackshay"
+        case milammeter = "milammeter"
+        case naja = "Naja"
+        case ombrological = "ombrological"
+        case phonasthenia = "phonasthenia"
+        case retrievableness = "retrievableness"
+        case snakily = "snakily"
+        case swot = "swot"
+        case tartlet = "tartlet"
+        case thiofuran = "thiofuran"
+        case tracheophone = "tracheophone"
+        case tuglike = "tuglike"
+        case unscratchingly = "unscratchingly"
+    }
+
+    public init(anomoean: JSONNull?, barleyhood: JSONNull?, befriender: JSONNull?, brutishness: JSONNull?, cephalalgy: JSONNull?, cirurgian: JSONNull?, conventionally: JSONNull?, jackshay: JSONNull?, milammeter: JSONNull?, naja: JSONNull?, ombrological: JSONNull?, phonasthenia: JSONNull?, retrievableness: JSONNull?, snakily: JSONNull?, swot: JSONNull?, tartlet: JSONNull?, thiofuran: JSONNull?, tracheophone: JSONNull?, tuglike: JSONNull?, unscratchingly: JSONNull?) {
+        self.anomoean = anomoean
+        self.barleyhood = barleyhood
+        self.befriender = befriender
+        self.brutishness = brutishness
+        self.cephalalgy = cephalalgy
+        self.cirurgian = cirurgian
+        self.conventionally = conventionally
+        self.jackshay = jackshay
+        self.milammeter = milammeter
+        self.naja = naja
+        self.ombrological = ombrological
+        self.phonasthenia = phonasthenia
+        self.retrievableness = retrievableness
+        self.snakily = snakily
+        self.swot = swot
+        self.tartlet = tartlet
+        self.thiofuran = thiofuran
+        self.tracheophone = tracheophone
+        self.tuglike = tuglike
+        self.unscratchingly = unscratchingly
+    }
+}
+
+// MARK: AnkeeClass convenience initializers and mutators
+
+public extension AnkeeClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AnkeeClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        anomoean: JSONNull?? = nil,
+        barleyhood: JSONNull?? = nil,
+        befriender: JSONNull?? = nil,
+        brutishness: JSONNull?? = nil,
+        cephalalgy: JSONNull?? = nil,
+        cirurgian: JSONNull?? = nil,
+        conventionally: JSONNull?? = nil,
+        jackshay: JSONNull?? = nil,
+        milammeter: JSONNull?? = nil,
+        naja: JSONNull?? = nil,
+        ombrological: JSONNull?? = nil,
+        phonasthenia: JSONNull?? = nil,
+        retrievableness: JSONNull?? = nil,
+        snakily: JSONNull?? = nil,
+        swot: JSONNull?? = nil,
+        tartlet: JSONNull?? = nil,
+        thiofuran: JSONNull?? = nil,
+        tracheophone: JSONNull?? = nil,
+        tuglike: JSONNull?? = nil,
+        unscratchingly: JSONNull?? = nil
+    ) -> AnkeeClass {
+        return AnkeeClass(
+            anomoean: anomoean ?? self.anomoean,
+            barleyhood: barleyhood ?? self.barleyhood,
+            befriender: befriender ?? self.befriender,
+            brutishness: brutishness ?? self.brutishness,
+            cephalalgy: cephalalgy ?? self.cephalalgy,
+            cirurgian: cirurgian ?? self.cirurgian,
+            conventionally: conventionally ?? self.conventionally,
+            jackshay: jackshay ?? self.jackshay,
+            milammeter: milammeter ?? self.milammeter,
+            naja: naja ?? self.naja,
+            ombrological: ombrological ?? self.ombrological,
+            phonasthenia: phonasthenia ?? self.phonasthenia,
+            retrievableness: retrievableness ?? self.retrievableness,
+            snakily: snakily ?? self.snakily,
+            swot: swot ?? self.swot,
+            tartlet: tartlet ?? self.tartlet,
+            thiofuran: thiofuran ?? self.thiofuran,
+            tracheophone: tracheophone ?? self.tracheophone,
+            tuglike: tuglike ?? self.tuglike,
+            unscratchingly: unscratchingly ?? self.unscratchingly
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum AnsarieElement: Codable {
+    case ansarieClass(AnsarieClass)
+    case integerArray([Int])
+    case null
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(AnsarieClass.self) {
+            self = .ansarieClass(x)
+            return
+        }
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        throw DecodingError.typeMismatch(AnsarieElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for AnsarieElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .ansarieClass(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+// MARK: - AnsarieClass
+public struct AnsarieClass: Codable {
+    public let accension: JSONNull?
+    public let alida: JSONNull?
+    public let asteria: JSONNull?
+    public let beriberic: JSONNull?
+    public let edgebone: JSONNull?
+    public let gastrodialysis: JSONNull?
+    public let geographic: JSONNull?
+    public let ictonyx: JSONNull?
+    public let metrocele: JSONNull?
+    public let misgraft: JSONNull?
+    public let monteith: JSONNull?
+    public let notcher: JSONNull?
+    public let prorestriction: JSONNull?
+    public let ramist: JSONNull?
+    public let throatlet: JSONNull?
+    public let unfair: JSONNull?
+    public let unsynonymous: JSONNull?
+    public let water: JSONNull?
+    public let zestfully: JSONNull?
+    public let zincic: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case accension = "accension"
+        case alida = "Alida"
+        case asteria = "asteria"
+        case beriberic = "beriberic"
+        case edgebone = "edgebone"
+        case gastrodialysis = "gastrodialysis"
+        case geographic = "geographic"
+        case ictonyx = "Ictonyx"
+        case metrocele = "metrocele"
+        case misgraft = "misgraft"
+        case monteith = "monteith"
+        case notcher = "notcher"
+        case prorestriction = "prorestriction"
+        case ramist = "Ramist"
+        case throatlet = "throatlet"
+        case unfair = "unfair"
+        case unsynonymous = "unsynonymous"
+        case water = "water"
+        case zestfully = "zestfully"
+        case zincic = "zincic"
+    }
+
+    public init(accension: JSONNull?, alida: JSONNull?, asteria: JSONNull?, beriberic: JSONNull?, edgebone: JSONNull?, gastrodialysis: JSONNull?, geographic: JSONNull?, ictonyx: JSONNull?, metrocele: JSONNull?, misgraft: JSONNull?, monteith: JSONNull?, notcher: JSONNull?, prorestriction: JSONNull?, ramist: JSONNull?, throatlet: JSONNull?, unfair: JSONNull?, unsynonymous: JSONNull?, water: JSONNull?, zestfully: JSONNull?, zincic: JSONNull?) {
+        self.accension = accension
+        self.alida = alida
+        self.asteria = asteria
+        self.beriberic = beriberic
+        self.edgebone = edgebone
+        self.gastrodialysis = gastrodialysis
+        self.geographic = geographic
+        self.ictonyx = ictonyx
+        self.metrocele = metrocele
+        self.misgraft = misgraft
+        self.monteith = monteith
+        self.notcher = notcher
+        self.prorestriction = prorestriction
+        self.ramist = ramist
+        self.throatlet = throatlet
+        self.unfair = unfair
+        self.unsynonymous = unsynonymous
+        self.water = water
+        self.zestfully = zestfully
+        self.zincic = zincic
+    }
+}
+
+// MARK: AnsarieClass convenience initializers and mutators
+
+public extension AnsarieClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(AnsarieClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        accension: JSONNull?? = nil,
+        alida: JSONNull?? = nil,
+        asteria: JSONNull?? = nil,
+        beriberic: JSONNull?? = nil,
+        edgebone: JSONNull?? = nil,
+        gastrodialysis: JSONNull?? = nil,
+        geographic: JSONNull?? = nil,
+        ictonyx: JSONNull?? = nil,
+        metrocele: JSONNull?? = nil,
+        misgraft: JSONNull?? = nil,
+        monteith: JSONNull?? = nil,
+        notcher: JSONNull?? = nil,
+        prorestriction: JSONNull?? = nil,
+        ramist: JSONNull?? = nil,
+        throatlet: JSONNull?? = nil,
+        unfair: JSONNull?? = nil,
+        unsynonymous: JSONNull?? = nil,
+        water: JSONNull?? = nil,
+        zestfully: JSONNull?? = nil,
+        zincic: JSONNull?? = nil
+    ) -> AnsarieClass {
+        return AnsarieClass(
+            accension: accension ?? self.accension,
+            alida: alida ?? self.alida,
+            asteria: asteria ?? self.asteria,
+            beriberic: beriberic ?? self.beriberic,
+            edgebone: edgebone ?? self.edgebone,
+            gastrodialysis: gastrodialysis ?? self.gastrodialysis,
+            geographic: geographic ?? self.geographic,
+            ictonyx: ictonyx ?? self.ictonyx,
+            metrocele: metrocele ?? self.metrocele,
+            misgraft: misgraft ?? self.misgraft,
+            monteith: monteith ?? self.monteith,
+            notcher: notcher ?? self.notcher,
+            prorestriction: prorestriction ?? self.prorestriction,
+            ramist: ramist ?? self.ramist,
+            throatlet: throatlet ?? self.throatlet,
+            unfair: unfair ?? self.unfair,
+            unsynonymous: unsynonymous ?? self.unsynonymous,
+            water: water ?? self.water,
+            zestfully: zestfully ?? self.zestfully,
+            zincic: zincic ?? self.zincic
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Aphasia: Codable {
+    case integer(Int)
+    case integerArray([Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Aphasia.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Aphasia"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Asprawl: Codable {
+    case double(Double)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Asprawl.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Asprawl"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .double(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Bedesman: Codable {
+    case bool(Bool)
+    case double(Double)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Bedesman.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Bedesman"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .double(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Belard: Codable {
+    case double(Double)
+    case integerArray([Int])
+    case rebecca(Rebecca)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Belard.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Belard"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .double(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Bocking: Codable {
+    case bool(Bool)
+    case integerArray([Int])
+    case integerMap([String: Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Bocking.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Bocking"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .integerMap(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Brawlingly: Codable {
+    case nullArray([JSONNull?])
+    case unionMap([String: Int?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([JSONNull?].self) {
+            self = .nullArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int?].self) {
+            self = .unionMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Brawlingly.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Brawlingly"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .nullArray(let x):
+            try container.encode(x)
+        case .unionMap(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Brookie: Codable {
+    case integerArray([Int])
+    case rebecca(Rebecca)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Brookie.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Brookie"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerArray(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Bumboatman: Codable {
+    case nullArray([JSONNull?])
+    case string(String)
+    case null
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([JSONNull?].self) {
+            self = .nullArray(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        throw DecodingError.typeMismatch(Bumboatman.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Bumboatman"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .nullArray(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+public enum Calaverite: Codable {
+    case integerArray([Int])
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Calaverite.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Calaverite"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerArray(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Catallactic: Codable {
+    case bool(Bool)
+    case integerMap([String: Int])
+    case nullArray([JSONNull?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode([JSONNull?].self) {
+            self = .nullArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Catallactic.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Catallactic"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .integerMap(let x):
+            try container.encode(x)
+        case .nullArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Cemental: Codable {
+    case double(Double)
+    case integerArray([Int])
+    case integerMap([String: Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Cemental.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Cemental"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .double(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .integerMap(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum ChytridiaceaeElement: Codable {
+    case bool(Bool)
+    case chytridiaceaeClass(ChytridiaceaeClass)
+    case null
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(ChytridiaceaeClass.self) {
+            self = .chytridiaceaeClass(x)
+            return
+        }
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        throw DecodingError.typeMismatch(ChytridiaceaeElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for ChytridiaceaeElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .chytridiaceaeClass(let x):
+            try container.encode(x)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+// MARK: - ChytridiaceaeClass
+public struct ChytridiaceaeClass: Codable {
+    public let batidaceae: JSONNull?
+    public let brechites: JSONNull?
+    public let codespairer: JSONNull?
+    public let emery: JSONNull?
+    public let enervative: JSONNull?
+    public let excriminate: JSONNull?
+    public let goshenite: JSONNull?
+    public let grime: JSONNull?
+    public let gritten: JSONNull?
+    public let hectorly: JSONNull?
+    public let intermediation: JSONNull?
+    public let meeterly: JSONNull?
+    public let narraganset: JSONNull?
+    public let onymatic: JSONNull?
+    public let paddlecock: JSONNull?
+    public let thana: JSONNull?
+    public let thornily: JSONNull?
+    public let uckia: JSONNull?
+    public let unmettle: JSONNull?
+    public let vorticellid: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case batidaceae = "Batidaceae"
+        case brechites = "Brechites"
+        case codespairer = "codespairer"
+        case emery = "Emery"
+        case enervative = "enervative"
+        case excriminate = "excriminate"
+        case goshenite = "goshenite"
+        case grime = "grime"
+        case gritten = "gritten"
+        case hectorly = "hectorly"
+        case intermediation = "intermediation"
+        case meeterly = "meeterly"
+        case narraganset = "Narraganset"
+        case onymatic = "onymatic"
+        case paddlecock = "paddlecock"
+        case thana = "thana"
+        case thornily = "thornily"
+        case uckia = "uckia"
+        case unmettle = "unmettle"
+        case vorticellid = "vorticellid"
+    }
+
+    public init(batidaceae: JSONNull?, brechites: JSONNull?, codespairer: JSONNull?, emery: JSONNull?, enervative: JSONNull?, excriminate: JSONNull?, goshenite: JSONNull?, grime: JSONNull?, gritten: JSONNull?, hectorly: JSONNull?, intermediation: JSONNull?, meeterly: JSONNull?, narraganset: JSONNull?, onymatic: JSONNull?, paddlecock: JSONNull?, thana: JSONNull?, thornily: JSONNull?, uckia: JSONNull?, unmettle: JSONNull?, vorticellid: JSONNull?) {
+        self.batidaceae = batidaceae
+        self.brechites = brechites
+        self.codespairer = codespairer
+        self.emery = emery
+        self.enervative = enervative
+        self.excriminate = excriminate
+        self.goshenite = goshenite
+        self.grime = grime
+        self.gritten = gritten
+        self.hectorly = hectorly
+        self.intermediation = intermediation
+        self.meeterly = meeterly
+        self.narraganset = narraganset
+        self.onymatic = onymatic
+        self.paddlecock = paddlecock
+        self.thana = thana
+        self.thornily = thornily
+        self.uckia = uckia
+        self.unmettle = unmettle
+        self.vorticellid = vorticellid
+    }
+}
+
+// MARK: ChytridiaceaeClass convenience initializers and mutators
+
+public extension ChytridiaceaeClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ChytridiaceaeClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        batidaceae: JSONNull?? = nil,
+        brechites: JSONNull?? = nil,
+        codespairer: JSONNull?? = nil,
+        emery: JSONNull?? = nil,
+        enervative: JSONNull?? = nil,
+        excriminate: JSONNull?? = nil,
+        goshenite: JSONNull?? = nil,
+        grime: JSONNull?? = nil,
+        gritten: JSONNull?? = nil,
+        hectorly: JSONNull?? = nil,
+        intermediation: JSONNull?? = nil,
+        meeterly: JSONNull?? = nil,
+        narraganset: JSONNull?? = nil,
+        onymatic: JSONNull?? = nil,
+        paddlecock: JSONNull?? = nil,
+        thana: JSONNull?? = nil,
+        thornily: JSONNull?? = nil,
+        uckia: JSONNull?? = nil,
+        unmettle: JSONNull?? = nil,
+        vorticellid: JSONNull?? = nil
+    ) -> ChytridiaceaeClass {
+        return ChytridiaceaeClass(
+            batidaceae: batidaceae ?? self.batidaceae,
+            brechites: brechites ?? self.brechites,
+            codespairer: codespairer ?? self.codespairer,
+            emery: emery ?? self.emery,
+            enervative: enervative ?? self.enervative,
+            excriminate: excriminate ?? self.excriminate,
+            goshenite: goshenite ?? self.goshenite,
+            grime: grime ?? self.grime,
+            gritten: gritten ?? self.gritten,
+            hectorly: hectorly ?? self.hectorly,
+            intermediation: intermediation ?? self.intermediation,
+            meeterly: meeterly ?? self.meeterly,
+            narraganset: narraganset ?? self.narraganset,
+            onymatic: onymatic ?? self.onymatic,
+            paddlecock: paddlecock ?? self.paddlecock,
+            thana: thana ?? self.thana,
+            thornily: thornily ?? self.thornily,
+            uckia: uckia ?? self.uckia,
+            unmettle: unmettle ?? self.unmettle,
+            vorticellid: vorticellid ?? self.vorticellid
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum DiscordiaElement: Codable {
+    case discordiaClass(DiscordiaClass)
+    case integerArray([Int])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(DiscordiaClass.self) {
+            self = .discordiaClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(DiscordiaElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for DiscordiaElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .discordiaClass(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - DiscordiaClass
+public struct DiscordiaClass: Codable {
+    public let altaic: Int?
+    public let amoristic: Int?
+    public let blennophthalmia: Int?
+    public let catharticalness: Double?
+    public let chirotherium: Int?
+    public let disciplinability: Int?
+    public let disdiapason: String?
+    public let goofer: Int?
+    public let homocerc: Bool?
+    public let laryngograph: Int?
+    public let leucitis: Int?
+    public let lymphocyst: Int?
+    public let microcosmology: Int?
+    public let nauseation: Int?
+    public let nonbookish: JSONNull?
+    public let patarin: Int?
+    public let preliberal: Int?
+    public let prettifier: Int?
+    public let rangework: Int?
+    public let redient: Int?
+    public let subfusiform: Int?
+    public let suicidical: Int?
+    public let swow: Int?
+    public let wastrel: Int?
+    public let wingle: Int?
+
+    public enum CodingKeys: String, CodingKey {
+        case altaic = "Altaic"
+        case amoristic = "amoristic"
+        case blennophthalmia = "blennophthalmia"
+        case catharticalness = "catharticalness"
+        case chirotherium = "Chirotherium"
+        case disciplinability = "disciplinability"
+        case disdiapason = "disdiapason"
+        case goofer = "goofer"
+        case homocerc = "homocerc"
+        case laryngograph = "laryngograph"
+        case leucitis = "leucitis"
+        case lymphocyst = "lymphocyst"
+        case microcosmology = "microcosmology"
+        case nauseation = "nauseation"
+        case nonbookish = "nonbookish"
+        case patarin = "Patarin"
+        case preliberal = "preliberal"
+        case prettifier = "prettifier"
+        case rangework = "rangework"
+        case redient = "redient"
+        case subfusiform = "subfusiform"
+        case suicidical = "suicidical"
+        case swow = "swow"
+        case wastrel = "wastrel"
+        case wingle = "wingle"
+    }
+
+    public init(altaic: Int?, amoristic: Int?, blennophthalmia: Int?, catharticalness: Double?, chirotherium: Int?, disciplinability: Int?, disdiapason: String?, goofer: Int?, homocerc: Bool?, laryngograph: Int?, leucitis: Int?, lymphocyst: Int?, microcosmology: Int?, nauseation: Int?, nonbookish: JSONNull?, patarin: Int?, preliberal: Int?, prettifier: Int?, rangework: Int?, redient: Int?, subfusiform: Int?, suicidical: Int?, swow: Int?, wastrel: Int?, wingle: Int?) {
+        self.altaic = altaic
+        self.amoristic = amoristic
+        self.blennophthalmia = blennophthalmia
+        self.catharticalness = catharticalness
+        self.chirotherium = chirotherium
+        self.disciplinability = disciplinability
+        self.disdiapason = disdiapason
+        self.goofer = goofer
+        self.homocerc = homocerc
+        self.laryngograph = laryngograph
+        self.leucitis = leucitis
+        self.lymphocyst = lymphocyst
+        self.microcosmology = microcosmology
+        self.nauseation = nauseation
+        self.nonbookish = nonbookish
+        self.patarin = patarin
+        self.preliberal = preliberal
+        self.prettifier = prettifier
+        self.rangework = rangework
+        self.redient = redient
+        self.subfusiform = subfusiform
+        self.suicidical = suicidical
+        self.swow = swow
+        self.wastrel = wastrel
+        self.wingle = wingle
+    }
+}
+
+// MARK: DiscordiaClass convenience initializers and mutators
+
+public extension DiscordiaClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(DiscordiaClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        altaic: Int?? = nil,
+        amoristic: Int?? = nil,
+        blennophthalmia: Int?? = nil,
+        catharticalness: Double?? = nil,
+        chirotherium: Int?? = nil,
+        disciplinability: Int?? = nil,
+        disdiapason: String?? = nil,
+        goofer: Int?? = nil,
+        homocerc: Bool?? = nil,
+        laryngograph: Int?? = nil,
+        leucitis: Int?? = nil,
+        lymphocyst: Int?? = nil,
+        microcosmology: Int?? = nil,
+        nauseation: Int?? = nil,
+        nonbookish: JSONNull?? = nil,
+        patarin: Int?? = nil,
+        preliberal: Int?? = nil,
+        prettifier: Int?? = nil,
+        rangework: Int?? = nil,
+        redient: Int?? = nil,
+        subfusiform: Int?? = nil,
+        suicidical: Int?? = nil,
+        swow: Int?? = nil,
+        wastrel: Int?? = nil,
+        wingle: Int?? = nil
+    ) -> DiscordiaClass {
+        return DiscordiaClass(
+            altaic: altaic ?? self.altaic,
+            amoristic: amoristic ?? self.amoristic,
+            blennophthalmia: blennophthalmia ?? self.blennophthalmia,
+            catharticalness: catharticalness ?? self.catharticalness,
+            chirotherium: chirotherium ?? self.chirotherium,
+            disciplinability: disciplinability ?? self.disciplinability,
+            disdiapason: disdiapason ?? self.disdiapason,
+            goofer: goofer ?? self.goofer,
+            homocerc: homocerc ?? self.homocerc,
+            laryngograph: laryngograph ?? self.laryngograph,
+            leucitis: leucitis ?? self.leucitis,
+            lymphocyst: lymphocyst ?? self.lymphocyst,
+            microcosmology: microcosmology ?? self.microcosmology,
+            nauseation: nauseation ?? self.nauseation,
+            nonbookish: nonbookish ?? self.nonbookish,
+            patarin: patarin ?? self.patarin,
+            preliberal: preliberal ?? self.preliberal,
+            prettifier: prettifier ?? self.prettifier,
+            rangework: rangework ?? self.rangework,
+            redient: redient ?? self.redient,
+            subfusiform: subfusiform ?? self.subfusiform,
+            suicidical: suicidical ?? self.suicidical,
+            swow: swow ?? self.swow,
+            wastrel: wastrel ?? self.wastrel,
+            wingle: wingle ?? self.wingle
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Endomyce: Codable {
+    case integer(Int)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Endomyce.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Endomyce"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Epinephelidae: Codable {
+    case bool(Bool)
+    case integer(Int)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Epinephelidae.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Epinephelidae"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Eupatorium: Codable {
+    case integerMap([String: Int])
+    case nullArray([JSONNull?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([JSONNull?].self) {
+            self = .nullArray(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Eupatorium.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Eupatorium"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerMap(let x):
+            try container.encode(x)
+        case .nullArray(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum GryphosaurusElement: Codable {
+    case gryphosaurusClass(GryphosaurusClass)
+    case integerArray([Int])
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(GryphosaurusClass.self) {
+            self = .gryphosaurusClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(GryphosaurusElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for GryphosaurusElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .gryphosaurusClass(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - GryphosaurusClass
+public struct GryphosaurusClass: Codable {
+    public let amissibility: JSONNull?
+    public let burushaski: JSONNull?
+    public let citronin: JSONNull?
+    public let coplaintiff: JSONNull?
+    public let disquisitionary: JSONNull?
+    public let enoplan: JSONNull?
+    public let faintness: JSONNull?
+    public let hebetomy: JSONNull?
+    public let islandry: JSONNull?
+    public let lameduck: JSONNull?
+    public let overbattle: JSONNull?
+    public let overinterested: JSONNull?
+    public let phrenologic: JSONNull?
+    public let rainband: JSONNull?
+    public let shiningly: JSONNull?
+    public let stamineous: JSONNull?
+    public let subscapularis: JSONNull?
+    public let tahami: JSONNull?
+    public let undaubed: JSONNull?
+    public let underntime: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case amissibility = "amissibility"
+        case burushaski = "Burushaski"
+        case citronin = "citronin"
+        case coplaintiff = "coplaintiff"
+        case disquisitionary = "disquisitionary"
+        case enoplan = "enoplan"
+        case faintness = "faintness"
+        case hebetomy = "hebetomy"
+        case islandry = "islandry"
+        case lameduck = "lameduck"
+        case overbattle = "overbattle"
+        case overinterested = "overinterested"
+        case phrenologic = "phrenologic"
+        case rainband = "rainband"
+        case shiningly = "shiningly"
+        case stamineous = "stamineous"
+        case subscapularis = "subscapularis"
+        case tahami = "Tahami"
+        case undaubed = "undaubed"
+        case underntime = "underntime"
+    }
+
+    public init(amissibility: JSONNull?, burushaski: JSONNull?, citronin: JSONNull?, coplaintiff: JSONNull?, disquisitionary: JSONNull?, enoplan: JSONNull?, faintness: JSONNull?, hebetomy: JSONNull?, islandry: JSONNull?, lameduck: JSONNull?, overbattle: JSONNull?, overinterested: JSONNull?, phrenologic: JSONNull?, rainband: JSONNull?, shiningly: JSONNull?, stamineous: JSONNull?, subscapularis: JSONNull?, tahami: JSONNull?, undaubed: JSONNull?, underntime: JSONNull?) {
+        self.amissibility = amissibility
+        self.burushaski = burushaski
+        self.citronin = citronin
+        self.coplaintiff = coplaintiff
+        self.disquisitionary = disquisitionary
+        self.enoplan = enoplan
+        self.faintness = faintness
+        self.hebetomy = hebetomy
+        self.islandry = islandry
+        self.lameduck = lameduck
+        self.overbattle = overbattle
+        self.overinterested = overinterested
+        self.phrenologic = phrenologic
+        self.rainband = rainband
+        self.shiningly = shiningly
+        self.stamineous = stamineous
+        self.subscapularis = subscapularis
+        self.tahami = tahami
+        self.undaubed = undaubed
+        self.underntime = underntime
+    }
+}
+
+// MARK: GryphosaurusClass convenience initializers and mutators
+
+public extension GryphosaurusClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(GryphosaurusClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        amissibility: JSONNull?? = nil,
+        burushaski: JSONNull?? = nil,
+        citronin: JSONNull?? = nil,
+        coplaintiff: JSONNull?? = nil,
+        disquisitionary: JSONNull?? = nil,
+        enoplan: JSONNull?? = nil,
+        faintness: JSONNull?? = nil,
+        hebetomy: JSONNull?? = nil,
+        islandry: JSONNull?? = nil,
+        lameduck: JSONNull?? = nil,
+        overbattle: JSONNull?? = nil,
+        overinterested: JSONNull?? = nil,
+        phrenologic: JSONNull?? = nil,
+        rainband: JSONNull?? = nil,
+        shiningly: JSONNull?? = nil,
+        stamineous: JSONNull?? = nil,
+        subscapularis: JSONNull?? = nil,
+        tahami: JSONNull?? = nil,
+        undaubed: JSONNull?? = nil,
+        underntime: JSONNull?? = nil
+    ) -> GryphosaurusClass {
+        return GryphosaurusClass(
+            amissibility: amissibility ?? self.amissibility,
+            burushaski: burushaski ?? self.burushaski,
+            citronin: citronin ?? self.citronin,
+            coplaintiff: coplaintiff ?? self.coplaintiff,
+            disquisitionary: disquisitionary ?? self.disquisitionary,
+            enoplan: enoplan ?? self.enoplan,
+            faintness: faintness ?? self.faintness,
+            hebetomy: hebetomy ?? self.hebetomy,
+            islandry: islandry ?? self.islandry,
+            lameduck: lameduck ?? self.lameduck,
+            overbattle: overbattle ?? self.overbattle,
+            overinterested: overinterested ?? self.overinterested,
+            phrenologic: phrenologic ?? self.phrenologic,
+            rainband: rainband ?? self.rainband,
+            shiningly: shiningly ?? self.shiningly,
+            stamineous: stamineous ?? self.stamineous,
+            subscapularis: subscapularis ?? self.subscapularis,
+            tahami: tahami ?? self.tahami,
+            undaubed: undaubed ?? self.undaubed,
+            underntime: underntime ?? self.underntime
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum Koryak: Codable {
+    case string(String)
+    case unionMap([String: Int?])
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([String: Int?].self) {
+            self = .unionMap(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Koryak.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Koryak"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let x):
+            try container.encode(x)
+        case .unionMap(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum LaviniaElement: Codable {
+    case laviniaClass(LaviniaClass)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(LaviniaClass.self) {
+            self = .laviniaClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(LaviniaElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for LaviniaElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .laviniaClass(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - LaviniaClass
+public struct LaviniaClass: Codable {
+    public let agitable: Int?
+    public let asininity: Int?
+    public let benefiter: Int?
+    public let bronzelike: Int?
+    public let catharticalness: Double?
+    public let chirotherium: Int?
+    public let cholesteatomatous: Int?
+    public let deprivement: Int?
+    public let disdiapason: String?
+    public let flippantness: Int?
+    public let fogproof: Int?
+    public let homocerc: Bool?
+    public let merrymeeting: Int?
+    public let nonbookish: JSONNull?
+    public let overcareful: Int?
+    public let panaris: Int?
+    public let preacceptance: Int?
+    public let quinoxaline: Int?
+    public let sig: Int?
+    public let superconfusion: Int?
+    public let tacana: Int?
+    public let tillotter: Int?
+    public let tranquillize: Int?
+    public let unquestionable: Int?
+    public let uproute: Int?
+
+    public enum CodingKeys: String, CodingKey {
+        case agitable = "agitable"
+        case asininity = "asininity"
+        case benefiter = "benefiter"
+        case bronzelike = "bronzelike"
+        case catharticalness = "catharticalness"
+        case chirotherium = "Chirotherium"
+        case cholesteatomatous = "cholesteatomatous"
+        case deprivement = "deprivement"
+        case disdiapason = "disdiapason"
+        case flippantness = "flippantness"
+        case fogproof = "fogproof"
+        case homocerc = "homocerc"
+        case merrymeeting = "merrymeeting"
+        case nonbookish = "nonbookish"
+        case overcareful = "overcareful"
+        case panaris = "panaris"
+        case preacceptance = "preacceptance"
+        case quinoxaline = "quinoxaline"
+        case sig = "sig"
+        case superconfusion = "superconfusion"
+        case tacana = "Tacana"
+        case tillotter = "tillotter"
+        case tranquillize = "tranquillize"
+        case unquestionable = "unquestionable"
+        case uproute = "uproute"
+    }
+
+    public init(agitable: Int?, asininity: Int?, benefiter: Int?, bronzelike: Int?, catharticalness: Double?, chirotherium: Int?, cholesteatomatous: Int?, deprivement: Int?, disdiapason: String?, flippantness: Int?, fogproof: Int?, homocerc: Bool?, merrymeeting: Int?, nonbookish: JSONNull?, overcareful: Int?, panaris: Int?, preacceptance: Int?, quinoxaline: Int?, sig: Int?, superconfusion: Int?, tacana: Int?, tillotter: Int?, tranquillize: Int?, unquestionable: Int?, uproute: Int?) {
+        self.agitable = agitable
+        self.asininity = asininity
+        self.benefiter = benefiter
+        self.bronzelike = bronzelike
+        self.catharticalness = catharticalness
+        self.chirotherium = chirotherium
+        self.cholesteatomatous = cholesteatomatous
+        self.deprivement = deprivement
+        self.disdiapason = disdiapason
+        self.flippantness = flippantness
+        self.fogproof = fogproof
+        self.homocerc = homocerc
+        self.merrymeeting = merrymeeting
+        self.nonbookish = nonbookish
+        self.overcareful = overcareful
+        self.panaris = panaris
+        self.preacceptance = preacceptance
+        self.quinoxaline = quinoxaline
+        self.sig = sig
+        self.superconfusion = superconfusion
+        self.tacana = tacana
+        self.tillotter = tillotter
+        self.tranquillize = tranquillize
+        self.unquestionable = unquestionable
+        self.uproute = uproute
+    }
+}
+
+// MARK: LaviniaClass convenience initializers and mutators
+
+public extension LaviniaClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(LaviniaClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        agitable: Int?? = nil,
+        asininity: Int?? = nil,
+        benefiter: Int?? = nil,
+        bronzelike: Int?? = nil,
+        catharticalness: Double?? = nil,
+        chirotherium: Int?? = nil,
+        cholesteatomatous: Int?? = nil,
+        deprivement: Int?? = nil,
+        disdiapason: String?? = nil,
+        flippantness: Int?? = nil,
+        fogproof: Int?? = nil,
+        homocerc: Bool?? = nil,
+        merrymeeting: Int?? = nil,
+        nonbookish: JSONNull?? = nil,
+        overcareful: Int?? = nil,
+        panaris: Int?? = nil,
+        preacceptance: Int?? = nil,
+        quinoxaline: Int?? = nil,
+        sig: Int?? = nil,
+        superconfusion: Int?? = nil,
+        tacana: Int?? = nil,
+        tillotter: Int?? = nil,
+        tranquillize: Int?? = nil,
+        unquestionable: Int?? = nil,
+        uproute: Int?? = nil
+    ) -> LaviniaClass {
+        return LaviniaClass(
+            agitable: agitable ?? self.agitable,
+            asininity: asininity ?? self.asininity,
+            benefiter: benefiter ?? self.benefiter,
+            bronzelike: bronzelike ?? self.bronzelike,
+            catharticalness: catharticalness ?? self.catharticalness,
+            chirotherium: chirotherium ?? self.chirotherium,
+            cholesteatomatous: cholesteatomatous ?? self.cholesteatomatous,
+            deprivement: deprivement ?? self.deprivement,
+            disdiapason: disdiapason ?? self.disdiapason,
+            flippantness: flippantness ?? self.flippantness,
+            fogproof: fogproof ?? self.fogproof,
+            homocerc: homocerc ?? self.homocerc,
+            merrymeeting: merrymeeting ?? self.merrymeeting,
+            nonbookish: nonbookish ?? self.nonbookish,
+            overcareful: overcareful ?? self.overcareful,
+            panaris: panaris ?? self.panaris,
+            preacceptance: preacceptance ?? self.preacceptance,
+            quinoxaline: quinoxaline ?? self.quinoxaline,
+            sig: sig ?? self.sig,
+            superconfusion: superconfusion ?? self.superconfusion,
+            tacana: tacana ?? self.tacana,
+            tillotter: tillotter ?? self.tillotter,
+            tranquillize: tranquillize ?? self.tranquillize,
+            unquestionable: unquestionable ?? self.unquestionable,
+            uproute: uproute ?? self.uproute
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum OskarElement: Codable {
+    case integerArray([Int])
+    case oskarClass(OskarClass)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(OskarClass.self) {
+            self = .oskarClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(OskarElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for OskarElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerArray(let x):
+            try container.encode(x)
+        case .oskarClass(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - OskarClass
+public struct OskarClass: Codable {
+    public let acrobates: JSONNull?
+    public let beanshooter: JSONNull?
+    public let bearhound: JSONNull?
+    public let cayuga: JSONNull?
+    public let guarneri: JSONNull?
+    public let hypochondriacism: JSONNull?
+    public let indication: JSONNull?
+    public let jaculative: JSONNull?
+    public let nagana: JSONNull?
+    public let netherlandish: JSONNull?
+    public let noctivagous: JSONNull?
+    public let nonphysiological: JSONNull?
+    public let praxis: JSONNull?
+    public let provision: JSONNull?
+    public let subterhuman: JSONNull?
+    public let sunlit: JSONNull?
+    public let syncraniate: JSONNull?
+    public let teachment: JSONNull?
+    public let unmutinous: JSONNull?
+    public let unstoppable: JSONNull?
+
+    public enum CodingKeys: String, CodingKey {
+        case acrobates = "Acrobates"
+        case beanshooter = "beanshooter"
+        case bearhound = "bearhound"
+        case cayuga = "Cayuga"
+        case guarneri = "guarneri"
+        case hypochondriacism = "hypochondriacism"
+        case indication = "indication"
+        case jaculative = "jaculative"
+        case nagana = "nagana"
+        case netherlandish = "Netherlandish"
+        case noctivagous = "noctivagous"
+        case nonphysiological = "nonphysiological"
+        case praxis = "praxis"
+        case provision = "provision"
+        case subterhuman = "subterhuman"
+        case sunlit = "sunlit"
+        case syncraniate = "syncraniate"
+        case teachment = "teachment"
+        case unmutinous = "unmutinous"
+        case unstoppable = "unstoppable"
+    }
+
+    public init(acrobates: JSONNull?, beanshooter: JSONNull?, bearhound: JSONNull?, cayuga: JSONNull?, guarneri: JSONNull?, hypochondriacism: JSONNull?, indication: JSONNull?, jaculative: JSONNull?, nagana: JSONNull?, netherlandish: JSONNull?, noctivagous: JSONNull?, nonphysiological: JSONNull?, praxis: JSONNull?, provision: JSONNull?, subterhuman: JSONNull?, sunlit: JSONNull?, syncraniate: JSONNull?, teachment: JSONNull?, unmutinous: JSONNull?, unstoppable: JSONNull?) {
+        self.acrobates = acrobates
+        self.beanshooter = beanshooter
+        self.bearhound = bearhound
+        self.cayuga = cayuga
+        self.guarneri = guarneri
+        self.hypochondriacism = hypochondriacism
+        self.indication = indication
+        self.jaculative = jaculative
+        self.nagana = nagana
+        self.netherlandish = netherlandish
+        self.noctivagous = noctivagous
+        self.nonphysiological = nonphysiological
+        self.praxis = praxis
+        self.provision = provision
+        self.subterhuman = subterhuman
+        self.sunlit = sunlit
+        self.syncraniate = syncraniate
+        self.teachment = teachment
+        self.unmutinous = unmutinous
+        self.unstoppable = unstoppable
+    }
+}
+
+// MARK: OskarClass convenience initializers and mutators
+
+public extension OskarClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(OskarClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        acrobates: JSONNull?? = nil,
+        beanshooter: JSONNull?? = nil,
+        bearhound: JSONNull?? = nil,
+        cayuga: JSONNull?? = nil,
+        guarneri: JSONNull?? = nil,
+        hypochondriacism: JSONNull?? = nil,
+        indication: JSONNull?? = nil,
+        jaculative: JSONNull?? = nil,
+        nagana: JSONNull?? = nil,
+        netherlandish: JSONNull?? = nil,
+        noctivagous: JSONNull?? = nil,
+        nonphysiological: JSONNull?? = nil,
+        praxis: JSONNull?? = nil,
+        provision: JSONNull?? = nil,
+        subterhuman: JSONNull?? = nil,
+        sunlit: JSONNull?? = nil,
+        syncraniate: JSONNull?? = nil,
+        teachment: JSONNull?? = nil,
+        unmutinous: JSONNull?? = nil,
+        unstoppable: JSONNull?? = nil
+    ) -> OskarClass {
+        return OskarClass(
+            acrobates: acrobates ?? self.acrobates,
+            beanshooter: beanshooter ?? self.beanshooter,
+            bearhound: bearhound ?? self.bearhound,
+            cayuga: cayuga ?? self.cayuga,
+            guarneri: guarneri ?? self.guarneri,
+            hypochondriacism: hypochondriacism ?? self.hypochondriacism,
+            indication: indication ?? self.indication,
+            jaculative: jaculative ?? self.jaculative,
+            nagana: nagana ?? self.nagana,
+            netherlandish: netherlandish ?? self.netherlandish,
+            noctivagous: noctivagous ?? self.noctivagous,
+            nonphysiological: nonphysiological ?? self.nonphysiological,
+            praxis: praxis ?? self.praxis,
+            provision: provision ?? self.provision,
+            subterhuman: subterhuman ?? self.subterhuman,
+            sunlit: sunlit ?? self.sunlit,
+            syncraniate: syncraniate ?? self.syncraniate,
+            teachment: teachment ?? self.teachment,
+            unmutinous: unmutinous ?? self.unmutinous,
+            unstoppable: unstoppable ?? self.unstoppable
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum RebeccaElement: Codable {
+    case integer(Int)
+    case rebecca(Rebecca)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(RebeccaElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for RebeccaElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Rhomboganoidei: Codable {
+    case integerArray([Int])
+    case rebecca(Rebecca)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Rhomboganoidei.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Rhomboganoidei"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integerArray(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum Ruellia: Codable {
+    case bool(Bool)
+    case rebecca(Rebecca)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) {
+            self = .bool(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(Rebecca.self) {
+            self = .rebecca(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Ruellia.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Ruellia"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .bool(let x):
+            try container.encode(x)
+        case .rebecca(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+public enum School: Codable {
+    case integer(Int)
+    case integerMap([String: Int])
+    case null
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode([String: Int].self) {
+            self = .integerMap(x)
+            return
+        }
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        throw DecodingError.typeMismatch(School.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for School"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .integerMap(let x):
+            try container.encode(x)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+}
+
+public enum Shakespearolater: Codable {
+    case double(Double)
+    case integerArray([Int])
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode([Int].self) {
+            self = .integerArray(x)
+            return
+        }
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Shakespearolater.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Shakespearolater"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .double(let x):
+            try container.encode(x)
+        case .integerArray(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - Helper functions for creating encoders and decoders
+
+func newJSONDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .custom({ (decoder) -> Date in
+        let container = try decoder.singleValueContainer()
+        let dateStr = try container.decode(String.self)
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+        if let date = formatter.date(from: dateStr) {
+            return date
+        }
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssXXXXX"
+        if let date = formatter.date(from: dateStr) {
+            return date
+        }
+        throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Could not decode date"))
+    })
+    return decoder
+}
+
+func newJSONEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .iso8601)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX"
+    encoder.dateEncodingStrategy = .formatted(formatter)
+    return encoder
+}
+
+// MARK: - Encode/decode helpers
+
+public class JSONNull: Codable, Hashable {
+
+    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(0)
+    }
+
+    public init() {}
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if !container.decodeNil() {
+            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
+    }
+}

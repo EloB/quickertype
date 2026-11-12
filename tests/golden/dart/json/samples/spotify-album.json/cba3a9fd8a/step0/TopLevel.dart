@@ -1,0 +1,305 @@
+// To parse this JSON data, do
+//
+//     final topLevel = topLevelFromJson(jsonString);
+
+import 'dart:convert';
+
+TopLevel topLevelFromJson(String str) => TopLevel.fromJson(json.decode(str));
+
+String topLevelToJson(TopLevel data) => json.encode(data.toJson());
+
+class TopLevel {
+    final String albumType;
+    final List<Artist> artists;
+    final List<String> availableMarkets;
+    final List<Copyright> copyrights;
+    final ExternalIds externalIds;
+    final ExternalUrls externalUrls;
+    final List<dynamic> genres;
+    final String href;
+    final String id;
+    final List<Image> images;
+    final String name;
+    final int popularity;
+    final String releaseDate;
+    final String releaseDatePrecision;
+    final Tracks tracks;
+    final String type;
+    final String uri;
+
+    TopLevel({
+        required this.albumType,
+        required this.artists,
+        required this.availableMarkets,
+        required this.copyrights,
+        required this.externalIds,
+        required this.externalUrls,
+        required this.genres,
+        required this.href,
+        required this.id,
+        required this.images,
+        required this.name,
+        required this.popularity,
+        required this.releaseDate,
+        required this.releaseDatePrecision,
+        required this.tracks,
+        required this.type,
+        required this.uri,
+    });
+
+    factory TopLevel.fromJson(Map<String, dynamic> json) => TopLevel(
+        albumType: json["album_type"],
+        artists: List<Artist>.from(json["artists"].map((x) => Artist.fromJson(x))),
+        availableMarkets: List<String>.from(json["available_markets"].map((x) => x)),
+        copyrights: List<Copyright>.from(json["copyrights"].map((x) => Copyright.fromJson(x))),
+        externalIds: ExternalIds.fromJson(json["external_ids"]),
+        externalUrls: ExternalUrls.fromJson(json["external_urls"]),
+        genres: List<dynamic>.from(json["genres"].map((x) => x)),
+        href: json["href"],
+        id: json["id"],
+        images: List<Image>.from(json["images"].map((x) => Image.fromJson(x))),
+        name: json["name"],
+        popularity: json["popularity"],
+        releaseDate: json["release_date"],
+        releaseDatePrecision: json["release_date_precision"],
+        tracks: Tracks.fromJson(json["tracks"]),
+        type: json["type"],
+        uri: json["uri"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "album_type": albumType,
+        "artists": List<dynamic>.from(artists.map((x) => x.toJson())),
+        "available_markets": List<dynamic>.from(availableMarkets.map((x) => x)),
+        "copyrights": List<dynamic>.from(copyrights.map((x) => x.toJson())),
+        "external_ids": externalIds.toJson(),
+        "external_urls": externalUrls.toJson(),
+        "genres": List<dynamic>.from(genres.map((x) => x)),
+        "href": href,
+        "id": id,
+        "images": List<dynamic>.from(images.map((x) => x.toJson())),
+        "name": name,
+        "popularity": popularity,
+        "release_date": releaseDate,
+        "release_date_precision": releaseDatePrecision,
+        "tracks": tracks.toJson(),
+        "type": type,
+        "uri": uri,
+    };
+}
+
+class Artist {
+    final ExternalUrls externalUrls;
+    final String href;
+    final String id;
+    final String name;
+    final String type;
+    final String uri;
+
+    Artist({
+        required this.externalUrls,
+        required this.href,
+        required this.id,
+        required this.name,
+        required this.type,
+        required this.uri,
+    });
+
+    factory Artist.fromJson(Map<String, dynamic> json) => Artist(
+        externalUrls: ExternalUrls.fromJson(json["external_urls"]),
+        href: json["href"],
+        id: json["id"],
+        name: json["name"],
+        type: json["type"],
+        uri: json["uri"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "external_urls": externalUrls.toJson(),
+        "href": href,
+        "id": id,
+        "name": name,
+        "type": type,
+        "uri": uri,
+    };
+}
+
+class ExternalUrls {
+    final String spotify;
+
+    ExternalUrls({
+        required this.spotify,
+    });
+
+    factory ExternalUrls.fromJson(Map<String, dynamic> json) => ExternalUrls(
+        spotify: json["spotify"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "spotify": spotify,
+    };
+}
+
+class Copyright {
+    final String text;
+    final String type;
+
+    Copyright({
+        required this.text,
+        required this.type,
+    });
+
+    factory Copyright.fromJson(Map<String, dynamic> json) => Copyright(
+        text: json["text"],
+        type: json["type"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "text": text,
+        "type": type,
+    };
+}
+
+class ExternalIds {
+    final String upc;
+
+    ExternalIds({
+        required this.upc,
+    });
+
+    factory ExternalIds.fromJson(Map<String, dynamic> json) => ExternalIds(
+        upc: json["upc"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "upc": upc,
+    };
+}
+
+class Image {
+    final int height;
+    final String url;
+    final int width;
+
+    Image({
+        required this.height,
+        required this.url,
+        required this.width,
+    });
+
+    factory Image.fromJson(Map<String, dynamic> json) => Image(
+        height: json["height"],
+        url: json["url"],
+        width: json["width"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "height": height,
+        "url": url,
+        "width": width,
+    };
+}
+
+class Tracks {
+    final String href;
+    final List<Item> items;
+    final int limit;
+    final dynamic next;
+    final int offset;
+    final dynamic previous;
+    final int total;
+
+    Tracks({
+        required this.href,
+        required this.items,
+        required this.limit,
+        required this.next,
+        required this.offset,
+        required this.previous,
+        required this.total,
+    });
+
+    factory Tracks.fromJson(Map<String, dynamic> json) => Tracks(
+        href: json["href"],
+        items: List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
+        limit: json["limit"],
+        next: (json.containsKey("next") ? json["next"] : throw FormatException('Missing required property')),
+        offset: json["offset"],
+        previous: (json.containsKey("previous") ? json["previous"] : throw FormatException('Missing required property')),
+        total: json["total"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "href": href,
+        "items": List<dynamic>.from(items.map((x) => x.toJson())),
+        "limit": limit,
+        "next": next,
+        "offset": offset,
+        "previous": previous,
+        "total": total,
+    };
+}
+
+class Item {
+    final List<Artist> artists;
+    final List<String> availableMarkets;
+    final int discNumber;
+    final int durationMs;
+    final bool explicit;
+    final ExternalUrls externalUrls;
+    final String href;
+    final String id;
+    final String name;
+    final String previewUrl;
+    final int trackNumber;
+    final String type;
+    final String uri;
+
+    Item({
+        required this.artists,
+        required this.availableMarkets,
+        required this.discNumber,
+        required this.durationMs,
+        required this.explicit,
+        required this.externalUrls,
+        required this.href,
+        required this.id,
+        required this.name,
+        required this.previewUrl,
+        required this.trackNumber,
+        required this.type,
+        required this.uri,
+    });
+
+    factory Item.fromJson(Map<String, dynamic> json) => Item(
+        artists: List<Artist>.from(json["artists"].map((x) => Artist.fromJson(x))),
+        availableMarkets: List<String>.from(json["available_markets"].map((x) => x)),
+        discNumber: json["disc_number"],
+        durationMs: json["duration_ms"],
+        explicit: json["explicit"],
+        externalUrls: ExternalUrls.fromJson(json["external_urls"]),
+        href: json["href"],
+        id: json["id"],
+        name: json["name"],
+        previewUrl: json["preview_url"],
+        trackNumber: json["track_number"],
+        type: json["type"],
+        uri: json["uri"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "artists": List<dynamic>.from(artists.map((x) => x.toJson())),
+        "available_markets": List<dynamic>.from(availableMarkets.map((x) => x)),
+        "disc_number": discNumber,
+        "duration_ms": durationMs,
+        "explicit": explicit,
+        "external_urls": externalUrls.toJson(),
+        "href": href,
+        "id": id,
+        "name": name,
+        "preview_url": previewUrl,
+        "track_number": trackNumber,
+        "type": type,
+        "uri": uri,
+    };
+}

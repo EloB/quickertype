@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-scala3-upickle",
+  "input": "schema/required-draft3.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "scala3",
+        "--src",
+        "{INPUTS}/schema/required-draft3.schema",
+        "--out",
+        "TopLevel.scala",
+        "--top-level",
+        "TopLevel",
+        "--framework",
+        "upickle",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.scala"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-dart",
+  "input": "schema/optional-any.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/schema/optional-any.schema",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

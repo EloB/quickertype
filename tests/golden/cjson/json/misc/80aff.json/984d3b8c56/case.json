@@ -1,0 +1,31 @@
+{
+  "fixture": "cjson",
+  "input": "json/misc/80aff.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/json/misc/80aff.json",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}

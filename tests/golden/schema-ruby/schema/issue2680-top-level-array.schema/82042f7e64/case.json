@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-ruby",
+  "input": "schema/issue2680-top-level-array.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "ruby",
+        "--src",
+        "{INPUTS}/schema/issue2680-top-level-array.schema",
+        "--out",
+        "TopLevel.rb",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.rb"
+      ]
+    }
+  ]
+}

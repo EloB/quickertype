@@ -1,0 +1,31 @@
+{
+  "fixture": "javascript-prop-types",
+  "input": "json/misc/cda6c.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "javascript-prop-types",
+        "--src",
+        "{INPUTS}/json/misc/cda6c.json",
+        "--out",
+        "toplevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--module-system",
+        "es6",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "toplevel.js"
+      ]
+    }
+  ]
+}

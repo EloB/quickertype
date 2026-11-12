@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-kotlin",
+  "input": "schema/optional-constraints.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/schema/optional-constraints.schema",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--framework",
+        "klaxon",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "fixture": "haskell",
+  "input": "json/misc/ab0d1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/json/misc/ab0d1.json",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

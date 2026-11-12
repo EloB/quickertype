@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "optional-date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "optional-date-time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "optional-time": {
+                    "type": "string",
+                    "format": "time"
+                },
+                "required-date": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "required-date-time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "required-time": {
+                    "type": "string",
+                    "format": "time"
+                }
+            },
+            "required": [
+                "required-date",
+                "required-date-time",
+                "required-time"
+            ],
+            "title": "TopLevel"
+        }
+    }
+}

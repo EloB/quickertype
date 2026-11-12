@@ -1,0 +1,30 @@
+{
+  "fixture": "flow",
+  "input": "json/priority/uuids.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "flow",
+        "--src",
+        "{INPUTS}/json/priority/uuids.json",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

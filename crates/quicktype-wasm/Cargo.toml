@@ -1,0 +1,19 @@
+[package]
+name = "quicktype-wasm"
+description = "WebAssembly bindings exposing the quicktype-core JavaScript API"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+quicktype-core.workspace = true
+
+[lints]
+workspace = true

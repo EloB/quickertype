@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-javascript-prop-types",
+  "input": "schema/fractional-bounds.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "javascript-prop-types",
+        "--src",
+        "{INPUTS}/schema/fractional-bounds.schema",
+        "--out",
+        "toplevel.js",
+        "--top-level",
+        "TopLevel",
+        "--module-system",
+        "es6",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "toplevel.js"
+      ]
+    }
+  ]
+}

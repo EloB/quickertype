@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-effect-schema",
+  "input": "schema/implicit-class-array-union.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-effect-schema",
+        "--src",
+        "{INPUTS}/schema/implicit-class-array-union.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

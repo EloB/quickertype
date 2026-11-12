@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "value": {
+                    "$ref": "#/definitions/Value"
+                }
+            },
+            "required": [
+                "value"
+            ],
+            "title": "TopLevel"
+        },
+        "Value": {
+            "anyOf": [
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Value"
+        }
+    }
+}

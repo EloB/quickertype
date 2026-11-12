@@ -1,0 +1,29 @@
+{
+  "fixture": "php",
+  "input": "json/priority/nested-objects.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "php",
+        "--src",
+        "{INPUTS}/json/priority/nested-objects.json",
+        "--out",
+        "TopLevel.php",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.php"
+      ]
+    }
+  ]
+}

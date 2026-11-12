@@ -1,0 +1,29 @@
+{
+  "fixture": "typescript-zod",
+  "input": "json/misc/f22f5.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/json/misc/f22f5.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-javascript",
+  "input": "graphql/github7.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "javascript",
+        "--src",
+        "{INPUTS}/graphql/github7.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

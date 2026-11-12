@@ -1,0 +1,49 @@
+{
+  "fixture": "java",
+  "input": "json/priority/nst-test-suite.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/priority/nst-test-suite.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/JSON.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/X.java",
+        "src/main/java/io/quicktype/YArrayHeterogeneousJSON.java",
+        "src/main/java/io/quicktype/YObjectBasicJSON.java",
+        "src/main/java/io/quicktype/YObjectEmptyKeyJSON.java",
+        "src/main/java/io/quicktype/YObjectEscapedNullInKeyJSON.java",
+        "src/main/java/io/quicktype/YObjectExtremeNumbersJSON.java",
+        "src/main/java/io/quicktype/YObjectJSON.java",
+        "src/main/java/io/quicktype/YObjectLongStringsJSON.java",
+        "src/main/java/io/quicktype/YObjectSimpleJSON.java",
+        "src/main/java/io/quicktype/YObjectStringUnicodeJSON.java",
+        "src/main/java/io/quicktype/YObjectWithNewlinesJSON.java"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-golang",
+  "input": "graphql/github3.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/graphql/github3.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

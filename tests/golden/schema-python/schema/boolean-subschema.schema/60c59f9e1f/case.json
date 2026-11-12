@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-python",
+  "input": "schema/boolean-subschema.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "python",
+        "--src",
+        "{INPUTS}/schema/boolean-subschema.schema",
+        "--out",
+        "quicktype.py",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.py"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-elm",
+  "input": "schema/date-time-or-string.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "elm",
+        "--src",
+        "{INPUTS}/schema/date-time-or-string.schema",
+        "--out",
+        "QuickType.elm",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.elm"
+      ]
+    }
+  ]
+}

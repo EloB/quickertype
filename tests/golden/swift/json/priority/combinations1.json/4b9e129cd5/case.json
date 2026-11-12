@@ -1,0 +1,30 @@
+{
+  "fixture": "swift",
+  "input": "json/priority/combinations1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/json/priority/combinations1.json",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--no-support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

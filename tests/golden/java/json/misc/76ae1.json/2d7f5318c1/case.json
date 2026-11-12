@@ -1,0 +1,64 @@
+{
+  "fixture": "java",
+  "input": "json/misc/76ae1.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/76ae1.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Article.java",
+        "src/main/java/io/quicktype/BusinessServiceProvidersSearchClass.java",
+        "src/main/java/io/quicktype/BusinessServiceProvidersSearchGet.java",
+        "src/main/java/io/quicktype/ConsolidatedScreeningListSearchClass.java",
+        "src/main/java/io/quicktype/ConsolidatedScreeningListSearchGet.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/DeMinimis.java",
+        "src/main/java/io/quicktype/DeMinimisProperties.java",
+        "src/main/java/io/quicktype/Definitions.java",
+        "src/main/java/io/quicktype/FAQ.java",
+        "src/main/java/io/quicktype/FAQProperties.java",
+        "src/main/java/io/quicktype/Fluffy200.java",
+        "src/main/java/io/quicktype/FluffyResponses.java",
+        "src/main/java/io/quicktype/FormatEnum.java",
+        "src/main/java/io/quicktype/In.java",
+        "src/main/java/io/quicktype/Info.java",
+        "src/main/java/io/quicktype/ItemsClass.java",
+        "src/main/java/io/quicktype/Parameter.java",
+        "src/main/java/io/quicktype/Paths.java",
+        "src/main/java/io/quicktype/Property.java",
+        "src/main/java/io/quicktype/Purple200.java",
+        "src/main/java/io/quicktype/PurpleResponses.java",
+        "src/main/java/io/quicktype/PurpleSchema.java",
+        "src/main/java/io/quicktype/Report.java",
+        "src/main/java/io/quicktype/ReportProperties.java",
+        "src/main/java/io/quicktype/SchemaType.java",
+        "src/main/java/io/quicktype/Taxonomy.java",
+        "src/main/java/io/quicktype/TaxonomyProperties.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+public class Description {
+    private String basePeriod;
+    private String missing;
+    private String title;
+    private String units;
+
+    @JsonProperty("base_period")
+    public String getBasePeriod() { return basePeriod; }
+    @JsonProperty("base_period")
+    public void setBasePeriod(String value) { this.basePeriod = value; }
+
+    @JsonProperty("missing")
+    public String getMissing() { return missing; }
+    @JsonProperty("missing")
+    public void setMissing(String value) { this.missing = value; }
+
+    @JsonProperty("title")
+    public String getTitle() { return title; }
+    @JsonProperty("title")
+    public void setTitle(String value) { this.title = value; }
+
+    @JsonProperty("units")
+    public String getUnits() { return units; }
+    @JsonProperty("units")
+    public void setUnits(String value) { this.units = value; }
+}

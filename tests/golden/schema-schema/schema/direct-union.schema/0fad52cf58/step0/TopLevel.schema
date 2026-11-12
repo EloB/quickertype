@@ -1,0 +1,130 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "arrayNode": {
+                    "$ref": "#/definitions/ArrayNode"
+                },
+                "booleanNode": {
+                    "$ref": "#/definitions/BooleanNode"
+                },
+                "doubleNode": {
+                    "$ref": "#/definitions/DoubleNode"
+                },
+                "intNode": {
+                    "$ref": "#/definitions/IntNode"
+                },
+                "longNode": {
+                    "$ref": "#/definitions/LongNode"
+                },
+                "nullNode": {
+                    "$ref": "#/definitions/NullNode"
+                },
+                "objectNode": {
+                    "$ref": "#/definitions/ObjectNode"
+                },
+                "stuff": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Thing"
+                    }
+                },
+                "textNode": {
+                    "$ref": "#/definitions/TextNode"
+                }
+            },
+            "required": [
+                "stuff"
+            ],
+            "title": "TopLevel"
+        },
+        "ArrayNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ArrayNode"
+        },
+        "BooleanNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "BooleanNode"
+        },
+        "DoubleNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DoubleNode"
+        },
+        "IntNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "IntNode"
+        },
+        "LongNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "LongNode"
+        },
+        "NullNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NullNode"
+        },
+        "ObjectNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ObjectNode"
+        },
+        "Thing": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "optional": {
+                    "$ref": "#/definitions/Anything"
+                },
+                "required": {
+                    "$ref": "#/definitions/Anything"
+                }
+            },
+            "required": [
+                "required"
+            ],
+            "title": "Thing"
+        },
+        "TextNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TextNode"
+        },
+        "Anything": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {}
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Anything"
+        }
+    }
+}

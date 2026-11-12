@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-dart",
+  "input": "schema/union-int-double.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/schema/union-int-double.schema",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

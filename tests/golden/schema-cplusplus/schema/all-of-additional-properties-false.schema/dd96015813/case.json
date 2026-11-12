@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-cplusplus",
+  "input": "schema/all-of-additional-properties-false.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/schema/all-of-additional-properties-false.schema",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

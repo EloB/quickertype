@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-zod",
+  "input": "schema/class-with-additional.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/schema/class-with-additional.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

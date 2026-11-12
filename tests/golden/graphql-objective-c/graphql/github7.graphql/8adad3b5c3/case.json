@@ -1,0 +1,30 @@
+{
+  "fixture": "graphql-objective-c",
+  "input": "graphql/github7.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "objective-c",
+        "--src",
+        "{INPUTS}/graphql/github7.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "QTTopLevel.m",
+        "--top-level",
+        "QTTopLevel",
+        "--functions",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "QTTopLevel.h",
+        "QTTopLevel.m"
+      ]
+    }
+  ]
+}

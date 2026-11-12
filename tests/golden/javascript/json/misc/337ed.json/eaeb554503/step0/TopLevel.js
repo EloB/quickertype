@@ -1,0 +1,268 @@
+// To parse this data:
+//
+//   const Convert = require("./TopLevel");
+//
+//   const topLevel = Convert.toTopLevel(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
+// Converts JSON strings to/from your types
+// and asserts the results of JSON.parse at runtime
+function toTopLevel(json) {
+    return cast(JSON.parse(json), r("TopLevel"));
+}
+
+function topLevelToJson(value) {
+    return JSON.stringify(uncast(value, r("TopLevel")), null, 2);
+}
+
+function invalidValue(typ, val, key, parent = '') {
+    const prettyTyp = prettyTypeName(typ);
+    const parentText = parent ? ` on ${parent}` : '';
+    const keyText = key ? ` for key "${key}"` : '';
+    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);
+}
+
+function prettyTypeName(typ) {
+    if (Array.isArray(typ)) {
+        if (typ.length === 2 && typ[0] === undefined) {
+            return `an optional ${prettyTypeName(typ[1])}`;
+        } else {
+            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(", ")}]`;
+        }
+    } else if (typeof typ === "object" && typ.literal !== undefined) {
+        return typ.literal;
+    } else {
+        return typeof typ;
+    }
+}
+
+function jsonToJSProps(typ) {
+    if (typ.jsonToJS === undefined) {
+        const map = {};
+        typ.props.forEach((p) => map[p.json] = { key: p.js, typ: p.typ });
+        typ.jsonToJS = map;
+    }
+    return typ.jsonToJS;
+}
+
+function jsToJSONProps(typ) {
+    if (typ.jsToJSON === undefined) {
+        const map = {};
+        typ.props.forEach((p) => map[p.js] = { key: p.json, typ: p.typ });
+        typ.jsToJSON = map;
+    }
+    return typ.jsToJSON;
+}
+
+function transform(val, typ, getProps, key = '', parent = '') {
+    function transformPrimitive(typ, val) {
+        if (typeof typ === typeof val) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+
+    function transformUnion(typs, val) {
+        // val must validate against one typ in typs
+        const l = typs.length;
+        for (let i = 0; i < l; i++) {
+            const typ = typs[i];
+            try {
+                return transform(val, typ, getProps);
+            } catch (_) {}
+        }
+        return invalidValue(typs, val, key, parent);
+    }
+
+    function transformEnum(cases, val) {
+        if (cases.indexOf(val) !== -1) return val;
+        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);
+    }
+
+    function transformArray(typ, val) {
+        // val must be an array with no invalid elements
+        if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
+
+        return val.map(el => transform(el, typ, getProps));
+    }
+
+    function transformDate(val) {
+        if (val === null) {
+            return null;
+        }
+        const d = new Date(val);
+        if (isNaN(d.valueOf())) {
+            return invalidValue(l("Date"), val, key, parent);
+        }
+        return d;
+    }
+
+    function transformObject(props, additional, val) {
+        if (val === null || typeof val !== "object" || Array.isArray(val)) {
+            return invalidValue(l(ref || "object"), val, key, parent);
+        }
+        const result = {};
+        Object.getOwnPropertyNames(props).forEach(key => {
+            const prop = props[key];
+            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
+            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+        });
+        Object.getOwnPropertyNames(val).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) {
+                result[key] = transform(val[key], additional, getProps, key, ref);
+            }
+        });
+        return result;
+    }
+
+    if (typ === "any") return val;
+    if (typ === null) {
+        if (val === null) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+    if (typ === false) return invalidValue(typ, val, key, parent);
+    let ref = undefined;
+    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }
+    if (Array.isArray(typ)) return transformEnum(typ, val);
+    if (typeof typ === "object") {
+        return typ.hasOwnProperty("pattern")      ? typeof val === "string" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("string")       ? typeof val === "string" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("number")       ? typeof val === "number" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("integer")      ? typeof val === "number" && val % 1 === 0 ? val : invalidValue(l("integer"), val, key, parent)
+            : typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
+            : invalidValue(typ, val, key, parent);
+    }
+    // Numbers can be parsed by Date but shouldn't be.
+    if (typ === Date && (typeof val === "string" || val instanceof Date)) return transformDate(val);
+    return transformPrimitive(typ, val);
+}
+
+function cast(val, typ) {
+    return transform(val, typ, jsonToJSProps);
+}
+
+function uncast(val, typ) {
+    return transform(val, typ, jsToJSONProps);
+}
+
+function l(typ) {
+    return { literal: typ };
+}
+
+function a(typ) {
+    return { arrayItems: typ };
+}
+
+function i(typ) {
+    return { integer: typ };
+}
+
+function p(pattern) {
+    return { pattern };
+}
+
+function s(typ, min, max) {
+    return { string: typ, min, max };
+}
+
+function n(typ, min, max) {
+    return { number: typ, min, max };
+}
+
+function u(...typs) {
+    return { unionMembers: typs };
+}
+
+function o(props, additional) {
+    return { props, additional };
+}
+
+function m(additional) {
+    const props = [];
+    return { props, additional };
+}
+
+function r(name) {
+    return { ref: name };
+}
+
+const typeMap = {
+    "TopLevel": o([
+        { json: "count", js: "count", typ: i(0) },
+        { json: "facets", js: "facets", typ: r("Facets") },
+        { json: "limit", js: "limit", typ: i(0) },
+        { json: "next", js: "next", typ: "" },
+        { json: "offset", js: "offset", typ: i(0) },
+        { json: "previous", js: "previous", typ: true },
+        { json: "results", js: "results", typ: a(r("Result")) },
+    ], false),
+    "Facets": o([
+    ], false),
+    "Result": o([
+        { json: "cost_absolute", js: "cost_absolute", typ: u(i(0), null) },
+        { json: "cost_max", js: "cost_max", typ: u(i(0), null) },
+        { json: "cost_min", js: "cost_min", typ: u(i(0), null) },
+        { json: "created_at", js: "created_at", typ: Date },
+        { json: "customIncomes", js: "customIncomes", typ: a(r("CustomIncome")) },
+        { json: "direct_rep_costs_max", js: "direct_rep_costs_max", typ: null },
+        { json: "direct_rep_costs_min", js: "direct_rep_costs_min", typ: null },
+        { json: "end_date", js: "end_date", typ: Date },
+        { json: "eur_sources_grants", js: "eur_sources_grants", typ: i(0) },
+        { json: "eur_sources_grants_src", js: "eur_sources_grants_src", typ: u(null, "") },
+        { json: "eur_sources_procurement", js: "eur_sources_procurement", typ: i(0) },
+        { json: "eur_sources_procurement_src", js: "eur_sources_procurement_src", typ: u(null, "") },
+        { json: "id", js: "id", typ: "" },
+        { json: "new_organisation", js: "new_organisation", typ: null },
+        { json: "no_clients", js: "no_clients", typ: u(null, "") },
+        { json: "other_financial_information", js: "other_financial_information", typ: u(null, "") },
+        { json: "other_sources_contributions", js: "other_sources_contributions", typ: u(i(0), null) },
+        { json: "other_sources_donation", js: "other_sources_donation", typ: u(i(0), null) },
+        { json: "other_sources_total", js: "other_sources_total", typ: u(i(0), null) },
+        { json: "public_financing_infranational", js: "public_financing_infranational", typ: u(i(0), null) },
+        { json: "public_financing_national", js: "public_financing_national", typ: u(i(0), null) },
+        { json: "public_financing_total", js: "public_financing_total", typ: u(i(0), null) },
+        { json: "representative", js: "representative", typ: "" },
+        { json: "start_date", js: "start_date", typ: Date },
+        { json: "status", js: "status", typ: r("Status") },
+        { json: "total_budget", js: "total_budget", typ: u(i(0), null) },
+        { json: "turnover_absolute", js: "turnover_absolute", typ: u(i(0), null) },
+        { json: "turnover_max", js: "turnover_max", typ: u(i(0), null) },
+        { json: "turnover_min", js: "turnover_min", typ: u(i(0), null) },
+        { json: "type", js: "type", typ: r("ResultType") },
+        { json: "updated_at", js: "updated_at", typ: Date },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "CustomIncome": o([
+        { json: "amount", js: "amount", typ: i(0) },
+        { json: "created_at", js: "created_at", typ: Date },
+        { json: "id", js: "id", typ: "" },
+        { json: "name", js: "name", typ: "" },
+        { json: "status", js: "status", typ: r("Status") },
+        { json: "type", js: "type", typ: r("CustomIncomeType") },
+        { json: "updated_at", js: "updated_at", typ: Date },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "Status": [
+        "active",
+        "inactive",
+    ],
+    "CustomIncomeType": [
+        "public",
+        "other",
+    ],
+    "ResultType": [
+        "FinancialDataNGO",
+        "FinancialDataLawyer",
+        "FinancialDataTradeAssociation",
+    ],
+};
+
+module.exports = {
+    "topLevelToJson": topLevelToJson,
+    "toTopLevel": toTopLevel,
+};

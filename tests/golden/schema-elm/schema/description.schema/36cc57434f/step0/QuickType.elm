@@ -1,0 +1,158 @@
+-- To decode the JSON data, add this file to your project, run
+--
+--     elm install NoRedInk/elm-json-decode-pipeline
+--
+-- add these imports
+--
+--     import Json.Decode exposing (decodeString)
+--     import QuickType exposing (quickType)
+--
+-- and you're off to the races with
+--
+--     decodeString quickType myJsonString
+
+module QuickType exposing
+    ( QuickType
+    , quickTypeToString
+    , quickType
+    , ObjectOrStringClass
+    , Enum(..)
+    , ObjectOrStringUnion(..)
+    , Union(..)
+    )
+
+import Json.Decode as Jdec
+import Json.Decode.Pipeline as Jpipe
+import Json.Encode as Jenc
+import Dict exposing (Dict)
+
+{-| The top-level class.
+Its description has two lines.
+
+bar:
+A pretty boolean
+
+enum:
+An enumeration
+
+union:
+Either a number or a string
+-}
+type alias QuickType =
+    { bar : Maybe Bool
+    , enum : Enum
+    , foo : Maybe Float
+    , objectOrString : ObjectOrStringUnion
+    , union : Union
+    }
+
+{-| An enumeration -}
+
+type Enum
+    = Foo
+    | Bar
+
+type ObjectOrStringUnion
+    = ObjectOrStringClassInObjectOrStringUnion ObjectOrStringClass
+    | StringInObjectOrStringUnion String
+
+{-| prop:
+This must not get lost
+-}
+type alias ObjectOrStringClass =
+    { prop : Float
+    }
+
+{-| Either a number or a string -}
+
+type Union
+    = DoubleInUnion Float
+    | StringInUnion String
+
+-- decoders and encoders
+optionalField key decoder fallback =
+    Jdec.dict Jdec.value
+        |> Jdec.andThen (\m ->
+            case Dict.get key m of
+                Nothing -> Jdec.succeed fallback
+                Just x -> Jdec.decodeValue decoder x |> Result.map Jdec.succeed |> Result.withDefault (Jdec.fail ("Invalid " ++ key)))
+
+quickTypeToString : QuickType -> String
+quickTypeToString r = Jenc.encode 0 (encodeQuickType r)
+
+quickType : Jdec.Decoder QuickType
+quickType =
+    Jdec.succeed QuickType
+        |> Jpipe.custom (optionalField "bar" (Jdec.map Just Jdec.bool) Nothing)
+        |> Jpipe.required "enum" enum
+        |> Jpipe.custom (optionalField "foo" (Jdec.map Just Jdec.float) Nothing)
+        |> Jpipe.required "object-or-string" objectOrStringUnion
+        |> Jpipe.required "union" union
+
+encodeQuickType : QuickType -> Jenc.Value
+encodeQuickType x =
+    Jenc.object
+        [ ("bar", makeNullableEncoder Jenc.bool x.bar)
+        , ("enum", encodeEnum x.enum)
+        , ("foo", makeNullableEncoder Jenc.float x.foo)
+        , ("object-or-string", encodeObjectOrStringUnion x.objectOrString)
+        , ("union", encodeUnion x.union)
+        ]
+
+enum : Jdec.Decoder Enum
+enum =
+    Jdec.string
+        |> Jdec.andThen (\str ->
+            case str of
+                "foo" -> Jdec.succeed Foo
+                "bar" -> Jdec.succeed Bar
+                somethingElse -> Jdec.fail <| "Invalid Enum: " ++ somethingElse
+        )
+
+encodeEnum : Enum -> Jenc.Value
+encodeEnum x = case x of
+    Foo -> Jenc.string "foo"
+    Bar -> Jenc.string "bar"
+
+objectOrStringUnion : Jdec.Decoder ObjectOrStringUnion
+objectOrStringUnion =
+    Jdec.oneOf
+        [ Jdec.map StringInObjectOrStringUnion Jdec.string
+        , Jdec.map ObjectOrStringClassInObjectOrStringUnion objectOrStringClass
+        ]
+
+encodeObjectOrStringUnion : ObjectOrStringUnion -> Jenc.Value
+encodeObjectOrStringUnion x = case x of
+    StringInObjectOrStringUnion y -> Jenc.string y
+    ObjectOrStringClassInObjectOrStringUnion y -> encodeObjectOrStringClass y
+
+objectOrStringClass : Jdec.Decoder ObjectOrStringClass
+objectOrStringClass =
+    Jdec.succeed ObjectOrStringClass
+        |> Jpipe.required "prop" Jdec.float
+
+encodeObjectOrStringClass : ObjectOrStringClass -> Jenc.Value
+encodeObjectOrStringClass x =
+    Jenc.object
+        [ ("prop", Jenc.float x.prop)
+        ]
+
+union : Jdec.Decoder Union
+union =
+    Jdec.oneOf
+        [ Jdec.map StringInUnion Jdec.string
+        , Jdec.map DoubleInUnion Jdec.float
+        ]
+
+encodeUnion : Union -> Jenc.Value
+encodeUnion x = case x of
+    StringInUnion y -> Jenc.string y
+    DoubleInUnion y -> Jenc.float y
+
+--- encoder helpers
+
+makeNullableEncoder : (a -> Jenc.Value) -> Maybe a -> Jenc.Value
+makeNullableEncoder f m =
+    case m of
+    Just x -> f x
+    Nothing -> Jenc.null

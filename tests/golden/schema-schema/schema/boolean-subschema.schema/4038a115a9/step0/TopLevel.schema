@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "disallowed": {},
+                "empty": {
+                    "type": "array",
+                    "items": {}
+                },
+                "foo": {
+                    "type": "string"
+                },
+                "impossible": {}
+            },
+            "required": [
+                "empty",
+                "foo"
+            ],
+            "title": "TopLevel"
+        }
+    }
+}

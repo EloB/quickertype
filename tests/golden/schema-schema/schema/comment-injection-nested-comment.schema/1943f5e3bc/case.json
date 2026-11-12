@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-schema",
+  "input": "schema/comment-injection-nested-comment.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "schema",
+        "--src",
+        "{INPUTS}/schema/comment-injection-nested-comment.schema",
+        "--out",
+        "TopLevel.schema",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.schema"
+      ]
+    }
+  ]
+}

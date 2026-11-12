@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-scala3",
+  "input": "schema/accessors.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "scala3",
+        "--src",
+        "{INPUTS}/schema/accessors.schema",
+        "--out",
+        "TopLevel.scala",
+        "--top-level",
+        "TopLevel",
+        "--framework",
+        "circe",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.scala"
+      ]
+    }
+  ]
+}

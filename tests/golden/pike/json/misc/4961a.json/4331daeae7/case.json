@@ -1,0 +1,29 @@
+{
+  "fixture": "pike",
+  "input": "json/misc/4961a.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "pike",
+        "--src",
+        "{INPUTS}/json/misc/4961a.json",
+        "--out",
+        "TopLevel.pmod",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.pmod"
+      ]
+    }
+  ]
+}

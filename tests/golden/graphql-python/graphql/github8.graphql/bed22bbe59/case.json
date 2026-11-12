@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-python",
+  "input": "graphql/github8.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "python",
+        "--src",
+        "{INPUTS}/graphql/github8.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "quicktype.py",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "quicktype.py"
+      ]
+    }
+  ]
+}

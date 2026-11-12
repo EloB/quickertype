@@ -1,0 +1,31 @@
+{
+  "fixture": "scala3",
+  "input": "json/misc/f3edf.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "scala3",
+        "--src",
+        "{INPUTS}/json/misc/f3edf.json",
+        "--out",
+        "TopLevel.scala",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "circe",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.scala"
+      ]
+    }
+  ]
+}

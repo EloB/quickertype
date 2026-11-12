@@ -1,0 +1,29 @@
+{
+  "fixture": "graphql-swift",
+  "input": "graphql/github7.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/graphql/github7.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

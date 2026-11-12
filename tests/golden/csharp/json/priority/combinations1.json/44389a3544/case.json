@@ -1,0 +1,34 @@
+{
+  "fixture": "csharp",
+  "input": "json/priority/combinations1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/json/priority/combinations1.json",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--check-required",
+        "--csharp-version",
+        "5",
+        "--framework",
+        "NewtonSoft",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

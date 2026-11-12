@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-golang",
+  "input": "schema/enum.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/schema/enum.schema",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--enum-type-name-suffix",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "fixture": "javascript",
+  "input": "json/priority/combinations1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "javascript",
+        "--src",
+        "{INPUTS}/json/priority/combinations1.json",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--converters",
+        "top-level",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

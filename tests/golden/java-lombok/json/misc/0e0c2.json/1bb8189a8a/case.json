@@ -1,0 +1,47 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/0e0c2.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/0e0c2.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Collection.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Detail.java",
+        "src/main/java/io/quicktype/DetailLanguage.java",
+        "src/main/java/io/quicktype/FavMovie.java",
+        "src/main/java/io/quicktype/Image.java",
+        "src/main/java/io/quicktype/Result.java",
+        "src/main/java/io/quicktype/ResultLanguage.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Type.java",
+        "src/main/java/io/quicktype/Video.java",
+        "src/main/java/io/quicktype/VoteScore.java"
+      ]
+    }
+  ]
+}

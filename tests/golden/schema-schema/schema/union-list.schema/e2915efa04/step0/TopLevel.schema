@@ -1,0 +1,43 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "list": {
+                    "$ref": "#/definitions/UnionList"
+                }
+            },
+            "required": [
+                "list"
+            ],
+            "title": "TopLevel"
+        },
+        "UnionListClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "next": {
+                    "$ref": "#/definitions/UnionList"
+                }
+            },
+            "required": [
+                "next"
+            ],
+            "title": "UnionListClass"
+        },
+        "UnionList": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UnionListClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionList"
+        }
+    }
+}

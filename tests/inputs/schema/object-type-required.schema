@@ -1,0 +1,41 @@
+{
+    "allOf": [
+        {
+            "type": "object",
+            "properties": {
+                "foo": {
+                    "type": "string"
+                },
+                "empty": {
+                    "type": "object",
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "foo",
+                "empty"
+            ]
+        },
+        {
+            "oneOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "bar": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "bar"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            ]
+        }
+    ]
+}

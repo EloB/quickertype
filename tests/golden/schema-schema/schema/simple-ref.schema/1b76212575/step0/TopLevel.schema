@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "next": {
+                    "$ref": "#/definitions/TopLevel"
+                }
+            },
+            "required": [],
+            "title": "TopLevel",
+            "description": "A recursive class type"
+        }
+    }
+}

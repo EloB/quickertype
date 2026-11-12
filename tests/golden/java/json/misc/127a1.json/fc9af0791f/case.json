@@ -1,0 +1,49 @@
+{
+  "fixture": "java",
+  "input": "json/misc/127a1.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/127a1.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Datum.java",
+        "src/main/java/io/quicktype/Downsized.java",
+        "src/main/java/io/quicktype/DownsizedSmall.java",
+        "src/main/java/io/quicktype/FixedHeight.java",
+        "src/main/java/io/quicktype/Images.java",
+        "src/main/java/io/quicktype/Looping.java",
+        "src/main/java/io/quicktype/Meta.java",
+        "src/main/java/io/quicktype/Pagination.java",
+        "src/main/java/io/quicktype/Rating.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Type.java",
+        "src/main/java/io/quicktype/User.java",
+        "src/main/java/io/quicktype/Username.java"
+      ]
+    }
+  ]
+}

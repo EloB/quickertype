@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-pike",
+  "input": "schema/implicit-all-of.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "pike",
+        "--src",
+        "{INPUTS}/schema/implicit-all-of.schema",
+        "--out",
+        "TopLevel.pmod",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.pmod"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-rust",
+  "input": "schema/recursive-union-flattening.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/schema/recursive-union-flattening.schema",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

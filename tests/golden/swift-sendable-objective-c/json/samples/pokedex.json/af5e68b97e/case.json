@@ -1,0 +1,34 @@
+{
+  "fixture": "swift-sendable-objective-c",
+  "input": "json/samples/pokedex.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "swift",
+        "--src",
+        "{INPUTS}/json/samples/pokedex.json",
+        "--out",
+        "quicktype.swift",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--objective-c-support",
+        "--sendable",
+        "--struct-or-class",
+        "class",
+        "--support-linux",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.swift"
+      ]
+    }
+  ]
+}

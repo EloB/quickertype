@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-crystal",
+  "input": "schema/required-non-properties.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/schema/required-non-properties.schema",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

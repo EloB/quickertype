@@ -1,0 +1,162 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let topLevel = try TopLevel(json)
+
+import Foundation
+
+// MARK: - TopLevel
+struct TopLevel: Codable {
+    let pairs: [String: Pair]
+    let serverTime: Int
+
+    enum CodingKeys: String, CodingKey {
+        case pairs = "pairs"
+        case serverTime = "server_time"
+    }
+}
+
+// MARK: TopLevel convenience initializers and mutators
+
+extension TopLevel {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(TopLevel.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        pairs: [String: Pair]? = nil,
+        serverTime: Int? = nil
+    ) -> TopLevel {
+        return TopLevel(
+            pairs: pairs ?? self.pairs,
+            serverTime: serverTime ?? self.serverTime
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - Pair
+struct Pair: Codable {
+    let decimalPlaces: Int
+    let fee: Double
+    let hidden: Int
+    let maxAmount: Int
+    let maxPrice: Int
+    let minAmount: Double
+    let minPrice: Double
+    let minTotal: Double
+
+    enum CodingKeys: String, CodingKey {
+        case decimalPlaces = "decimal_places"
+        case fee = "fee"
+        case hidden = "hidden"
+        case maxAmount = "max_amount"
+        case maxPrice = "max_price"
+        case minAmount = "min_amount"
+        case minPrice = "min_price"
+        case minTotal = "min_total"
+    }
+}
+
+// MARK: Pair convenience initializers and mutators
+
+extension Pair {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Pair.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        decimalPlaces: Int? = nil,
+        fee: Double? = nil,
+        hidden: Int? = nil,
+        maxAmount: Int? = nil,
+        maxPrice: Int? = nil,
+        minAmount: Double? = nil,
+        minPrice: Double? = nil,
+        minTotal: Double? = nil
+    ) -> Pair {
+        return Pair(
+            decimalPlaces: decimalPlaces ?? self.decimalPlaces,
+            fee: fee ?? self.fee,
+            hidden: hidden ?? self.hidden,
+            maxAmount: maxAmount ?? self.maxAmount,
+            maxPrice: maxPrice ?? self.maxPrice,
+            minAmount: minAmount ?? self.minAmount,
+            minPrice: minPrice ?? self.minPrice,
+            minTotal: minTotal ?? self.minTotal
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - Helper functions for creating encoders and decoders
+
+func newJSONDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .custom({ (decoder) -> Date in
+        let container = try decoder.singleValueContainer()
+        let dateStr = try container.decode(String.self)
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+        if let date = formatter.date(from: dateStr) {
+            return date
+        }
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssXXXXX"
+        if let date = formatter.date(from: dateStr) {
+            return date
+        }
+        throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Could not decode date"))
+    })
+    return decoder
+}
+
+func newJSONEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .iso8601)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX"
+    encoder.dateEncodingStrategy = .formatted(formatter)
+    return encoder
+}

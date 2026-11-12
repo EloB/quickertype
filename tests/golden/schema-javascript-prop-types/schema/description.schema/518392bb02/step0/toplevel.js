@@ -1,0 +1,29 @@
+// Example usage:
+//
+// import { MyShape } from ./myShape.js;
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+import PropTypes from "prop-types";
+
+let _TopLevel;
+let _ObjectOrStringClass;
+const _Enum = PropTypes.oneOf(['foo', 'bar']);
+_ObjectOrStringClass = PropTypes.shape({
+    "prop": PropTypes.oneOfType([PropTypes.number]).isRequired,
+});
+_TopLevel = PropTypes.shape({
+    "bar": PropTypes.oneOfType([PropTypes.bool, PropTypes.oneOf([null])]),
+    "enum": _Enum,
+    "foo": PropTypes.oneOfType([PropTypes.number, PropTypes.oneOf([null])]),
+    "object-or-string": PropTypes.oneOfType([PropTypes.oneOfType([_ObjectOrStringClass, PropTypes.string])]).isRequired,
+    "union": PropTypes.oneOfType([PropTypes.oneOfType([PropTypes.number, PropTypes.string])]).isRequired,
+});
+
+export const TopLevel = _TopLevel;

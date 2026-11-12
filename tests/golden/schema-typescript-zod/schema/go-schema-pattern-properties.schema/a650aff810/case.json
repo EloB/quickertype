@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-zod",
+  "input": "schema/go-schema-pattern-properties.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/schema/go-schema-pattern-properties.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

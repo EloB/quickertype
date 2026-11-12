@@ -1,0 +1,29 @@
+{
+  "fixture": "haskell",
+  "input": "json/priority/nbl-stats.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/json/priority/nbl-stats.json",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

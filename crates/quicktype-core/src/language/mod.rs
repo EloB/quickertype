@@ -1,0 +1,31 @@
+//! Port of `packages/quicktype-core/src/language/index.ts`.
+
+pub mod all;
+pub mod cjson;
+pub mod cplusplus;
+pub mod crystal;
+pub mod csharp;
+pub mod dart;
+pub mod elixir;
+pub mod elm;
+pub mod golang;
+pub mod haskell;
+pub mod java;
+pub mod javascript;
+pub mod javascript_prop_types;
+pub mod json_schema;
+pub mod kotlin;
+pub mod objective_c;
+pub mod options_types;
+pub mod php;
+pub mod pike;
+pub mod python;
+pub mod ruby;
+pub mod rust;
+pub mod scala3;
+pub mod smithy4s;
+pub mod swift;
+pub mod types;
+pub mod typescript_effect_schema;
+pub mod typescript_flow;
+pub mod typescript_zod;

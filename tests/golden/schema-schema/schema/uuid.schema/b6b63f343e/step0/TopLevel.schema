@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "arrNullable": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            }
+                        ]
+                    }
+                },
+                "arrOne": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "nullable": {
+                    "anyOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    ]
+                },
+                "one": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "optional": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "unionWithEnum": {
+                    "$ref": "#/definitions/UnionWithEnumUnion"
+                }
+            },
+            "required": [
+                "nullable",
+                "one",
+                "unionWithEnum"
+            ],
+            "title": "TopLevel"
+        },
+        "UnionWithEnumUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UnionWithEnumEnum"
+                },
+                {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            ],
+            "title": "UnionWithEnumUnion"
+        },
+        "UnionWithEnumEnum": {
+            "type": "string",
+            "enum": [
+                "foo"
+            ],
+            "title": "UnionWithEnumEnum"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-crystal",
+  "input": "schema/fractional-bounds.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/schema/fractional-bounds.schema",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

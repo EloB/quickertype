@@ -1,0 +1,43 @@
+{
+  "fixture": "schema-java-datetime-legacy",
+  "input": "schema/recursive-union-flattening.schema",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/schema/recursive-union-flattening.schema",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--datetime-provider",
+        "legacy",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/TopLevelClass.java",
+        "src/main/java/io/quicktype/TopLevelElement.java",
+        "src/main/java/io/quicktype/X.java",
+        "src/main/java/io/quicktype/XClass.java",
+        "src/main/java/io/quicktype/XElement.java"
+      ]
+    }
+  ]
+}

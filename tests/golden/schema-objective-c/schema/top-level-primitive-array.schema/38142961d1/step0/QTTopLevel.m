@@ -1,0 +1,61 @@
+#import "QTTopLevel.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+static id map(id collection, id (^f)(id value)) {
+    id result = nil;
+    if ([collection isKindOfClass:NSArray.class]) {
+            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];
+            for (id x in collection) [result addObject:NSNullify(f(x))];
+    } else if ([collection isKindOfClass:NSDictionary.class]) {
+            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];
+            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];
+    }
+    return result;
+}
+
+#pragma mark - JSON serialization
+
+QTTopLevel *_Nullable QTTopLevelFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        if (![json isKindOfClass:NSArray.class]) [NSException raise:@"Invalid JSON" format:@"Expected NSArray."];
+        for (id item in json) if (![item isKindOfClass:NSString.class]) [NSException raise:@"Invalid JSON" format:@"Invalid array item."];
+        return *error ? nil : map(json, λ(id x, x));
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+QTTopLevel *_Nullable QTTopLevelFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return QTTopLevelFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable QTTopLevelToData(QTTopLevel *topLevel, NSError **error)
+{
+    @try {
+        id json = topLevel;
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable QTTopLevelToJSON(QTTopLevel *topLevel, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = QTTopLevelToData(topLevel, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+NS_ASSUME_NONNULL_END

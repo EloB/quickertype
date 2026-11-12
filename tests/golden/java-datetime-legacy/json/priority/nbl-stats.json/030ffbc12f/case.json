@@ -1,0 +1,60 @@
+{
+  "fixture": "java-datetime-legacy",
+  "input": "json/priority/nbl-stats.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/priority/nbl-stats.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--datetime-provider",
+        "legacy",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/ActionType.java",
+        "src/main/java/io/quicktype/Comp.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/FamilyNameInitial.java",
+        "src/main/java/io/quicktype/FirstNameInitial.java",
+        "src/main/java/io/quicktype/Lds.java",
+        "src/main/java/io/quicktype/LeaddatumElement.java",
+        "src/main/java/io/quicktype/LeaddatumEnum.java",
+        "src/main/java/io/quicktype/Othermatch.java",
+        "src/main/java/io/quicktype/Pbp.java",
+        "src/main/java/io/quicktype/PerType.java",
+        "src/main/java/io/quicktype/Pl.java",
+        "src/main/java/io/quicktype/SBlocks.java",
+        "src/main/java/io/quicktype/SMinutes.java",
+        "src/main/java/io/quicktype/ScoreboardName.java",
+        "src/main/java/io/quicktype/Scorer.java",
+        "src/main/java/io/quicktype/Shot.java",
+        "src/main/java/io/quicktype/SubType.java",
+        "src/main/java/io/quicktype/Team.java",
+        "src/main/java/io/quicktype/Time.java",
+        "src/main/java/io/quicktype/Tm.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Totallds.java"
+      ]
+    }
+  ]
+}

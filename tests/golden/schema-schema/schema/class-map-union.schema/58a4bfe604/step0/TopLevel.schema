@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "union": {
+                    "$ref": "#/definitions/TopLevelUnion"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "TopLevelUnion": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/UnionValue"
+            },
+            "properties": {
+                "foo": {
+                    "$ref": "#/definitions/Foo"
+                },
+                "bar": {
+                    "$ref": "#/definitions/Bar"
+                }
+            },
+            "required": [],
+            "title": "TopLevelUnion"
+        },
+        "BarObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "quux": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "title": "BarObject"
+        },
+        "Bar": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "$ref": "#/definitions/BarObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Bar"
+        },
+        "Foo": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "$ref": "#/definitions/BarObject"
+                }
+            ],
+            "title": "Foo"
+        },
+        "UnionValue": {
+            "anyOf": [
+                {
+                    "type": "boolean"
+                },
+                {
+                    "$ref": "#/definitions/BarObject"
+                }
+            ],
+            "title": "UnionValue"
+        }
+    }
+}

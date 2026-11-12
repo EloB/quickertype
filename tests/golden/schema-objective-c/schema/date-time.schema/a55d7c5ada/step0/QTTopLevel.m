@@ -1,0 +1,318 @@
+#import "QTTopLevel.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface QTTopLevel (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTLocalDate (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTOffsetDateTime (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTOffsetTime (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@implementation QTComplexUnionArrayEnum
++ (NSDictionary<NSString *, QTComplexUnionArrayEnum *> *)values
+{
+    static NSDictionary<NSString *, QTComplexUnionArrayEnum *> *values;
+    return values = values ? values : @{
+        @"foo": [[QTComplexUnionArrayEnum alloc] initWithValue:@"foo"],
+        @"bar": [[QTComplexUnionArrayEnum alloc] initWithValue:@"bar"],
+    };
+}
+
++ (QTComplexUnionArrayEnum *)foo { return QTComplexUnionArrayEnum.values[@"foo"]; }
++ (QTComplexUnionArrayEnum *)bar { return QTComplexUnionArrayEnum.values[@"bar"]; }
+
++ (instancetype _Nullable)withValue:(NSString *)value
+{
+    return QTComplexUnionArrayEnum.values[value];
+}
+
+- (instancetype)initWithValue:(NSString *)value
+{
+    if (self = [super init]) _value = value;
+    return self;
+}
+
+- (NSUInteger)hash { return _value.hash; }
+@end
+
+static id map(id collection, id (^f)(id value)) {
+    id result = nil;
+    if ([collection isKindOfClass:NSArray.class]) {
+            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];
+            for (id x in collection) [result addObject:NSNullify(f(x))];
+    } else if ([collection isKindOfClass:NSDictionary.class]) {
+            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];
+            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];
+    }
+    return result;
+}
+
+#pragma mark - JSON serialization
+
+QTTopLevel *_Nullable QTTopLevelFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        return *error ? nil : [QTTopLevel fromJSONDictionary:json];
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+QTTopLevel *_Nullable QTTopLevelFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return QTTopLevelFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable QTTopLevelToData(QTTopLevel *topLevel, NSError **error)
+{
+    @try {
+        id json = [topLevel JSONDictionary];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable QTTopLevelToJSON(QTTopLevel *topLevel, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = QTTopLevelToData(topLevel, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+@implementation QTTopLevel
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"complex-union-array": @"complexUnionArray",
+        @"date": @"date",
+        @"date-time": @"dateTime",
+        @"local-date-class": @"localDateClass",
+        @"offset-date-time-class": @"offsetDateTimeClass",
+        @"offset-time-class": @"offsetTimeClass",
+        @"time": @"time",
+        @"union-array": @"unionArray",
+    };
+}
+
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error
+{
+    return QTTopLevelFromData(data, error);
+}
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTTopLevelFromJSON(json, encoding, error);
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTTopLevel alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"complex-union-array"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"date"] isKindOfClass:NSString.class]) return nil;
+        if (dict[@"date-time"] && [dict[@"date-time"] rangeOfString:@"^[0-9]{4}-[0-9]{2}-[0-9]{2}T" options:NSRegularExpressionSearch].location == NSNotFound) return nil;
+        if (![dict[@"date-time"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"time"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"union-array"] isKindOfClass:NSArray.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _localDateClass = [QTLocalDate fromJSONDictionary:(id)_localDateClass];
+        if (!_localDateClass && dict[@"local-date-class"] && ![dict[@"local-date-class"] isKindOfClass:NSNull.class]) return nil;
+        _offsetDateTimeClass = [QTOffsetDateTime fromJSONDictionary:(id)_offsetDateTimeClass];
+        if (!_offsetDateTimeClass && dict[@"offset-date-time-class"] && ![dict[@"offset-date-time-class"] isKindOfClass:NSNull.class]) return nil;
+        _offsetTimeClass = [QTOffsetTime fromJSONDictionary:(id)_offsetTimeClass];
+        if (!_offsetTimeClass && dict[@"offset-time-class"] && ![dict[@"offset-time-class"] isKindOfClass:NSNull.class]) return nil;
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTTopLevel.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTTopLevel.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTTopLevel.properties.allValues] mutableCopy];
+
+    for (id jsonName in QTTopLevel.properties) {
+        id propertyName = QTTopLevel.properties[jsonName];
+        if (![jsonName isEqualToString:propertyName]) {
+            dict[jsonName] = dict[propertyName];
+            [dict removeObjectForKey:propertyName];
+        }
+    }
+
+    [dict addEntriesFromDictionary:@{
+        @"local-date-class": NSNullify([_localDateClass isKindOfClass:NSNull.class] ? nil : [_localDateClass JSONDictionary]),
+        @"offset-date-time-class": NSNullify([_offsetDateTimeClass isKindOfClass:NSNull.class] ? nil : [_offsetDateTimeClass JSONDictionary]),
+        @"offset-time-class": NSNullify([_offsetTimeClass isKindOfClass:NSNull.class] ? nil : [_offsetTimeClass JSONDictionary]),
+    }];
+
+    return dict;
+}
+
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error
+{
+    return QTTopLevelToData(self, error);
+}
+
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTTopLevelToJSON(self, encoding, error);
+}
+@end
+
+@implementation QTLocalDate
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTLocalDate alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTLocalDate.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTLocalDate.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTLocalDate.properties.allValues];
+}
+@end
+
+@implementation QTOffsetDateTime
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTOffsetDateTime alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTOffsetDateTime.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTOffsetDateTime.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTOffsetDateTime.properties.allValues];
+}
+@end
+
+@implementation QTOffsetTime
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTOffsetTime alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTOffsetTime.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTOffsetTime.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTOffsetTime.properties.allValues];
+}
+@end
+
+NS_ASSUME_NONNULL_END

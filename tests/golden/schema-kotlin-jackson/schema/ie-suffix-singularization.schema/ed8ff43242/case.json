@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-kotlin-jackson",
+  "input": "schema/ie-suffix-singularization.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "kotlin",
+        "--src",
+        "{INPUTS}/schema/ie-suffix-singularization.schema",
+        "--out",
+        "TopLevel.kt",
+        "--top-level",
+        "TopLevel",
+        "--framework",
+        "jackson",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.kt"
+      ]
+    }
+  ]
+}

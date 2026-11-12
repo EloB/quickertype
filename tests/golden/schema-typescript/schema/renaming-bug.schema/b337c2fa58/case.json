@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-typescript",
+  "input": "schema/renaming-bug.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/schema/renaming-bug.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

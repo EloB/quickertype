@@ -1,0 +1,45 @@
+{
+  "fixture": "graphql-java-datetime-legacy",
+  "input": "graphql/github3.graphql",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/graphql/github3.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--datetime-provider",
+        "legacy",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Data.java",
+        "src/main/java/io/quicktype/Error.java",
+        "src/main/java/io/quicktype/PullRequest.java",
+        "src/main/java/io/quicktype/PullRequestConnection.java",
+        "src/main/java/io/quicktype/PullRequestState.java",
+        "src/main/java/io/quicktype/Repository.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/User.java"
+      ]
+    }
+  ]
+}

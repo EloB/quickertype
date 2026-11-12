@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enum": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Enum"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "enum"
+            ],
+            "title": "TopLevel"
+        },
+        "Enum": {
+            "type": "string",
+            "enum": [
+                "foo",
+                "bar"
+            ],
+            "title": "Enum"
+        }
+    }
+}

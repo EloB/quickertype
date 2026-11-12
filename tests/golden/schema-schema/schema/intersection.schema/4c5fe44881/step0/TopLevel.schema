@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "intersection": {
+                    "$ref": "#/definitions/Intersection"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Intersection": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "foo": {
+                    "type": "number"
+                },
+                "bar": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "foo"
+            ],
+            "title": "Intersection"
+        }
+    }
+}

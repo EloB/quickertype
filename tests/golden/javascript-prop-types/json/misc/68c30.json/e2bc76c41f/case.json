@@ -1,0 +1,31 @@
+{
+  "fixture": "javascript-prop-types",
+  "input": "json/misc/68c30.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "javascript-prop-types",
+        "--src",
+        "{INPUTS}/json/misc/68c30.json",
+        "--out",
+        "toplevel.js",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--module-system",
+        "es6",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "toplevel.js"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-crystal",
+  "input": "schema/integer-type.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/schema/integer-type.schema",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

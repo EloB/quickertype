@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-crystal",
+  "input": "schema/intersection-nested.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "crystal",
+        "--src",
+        "{INPUTS}/schema/intersection-nested.schema",
+        "--out",
+        "TopLevel.cr",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.cr"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "fixture": "typescript-effect-schema",
+  "input": "json/samples/us-senators.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript-effect-schema",
+        "--src",
+        "{INPUTS}/json/samples/us-senators.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

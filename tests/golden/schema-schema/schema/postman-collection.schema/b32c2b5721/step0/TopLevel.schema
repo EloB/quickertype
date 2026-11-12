@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "item": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TopLevel"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "response": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Response"
+                    }
+                }
+            },
+            "required": [],
+            "title": "TopLevel",
+            "description": "Postman collection"
+        },
+        "Response": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "body": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Response"
+        }
+    }
+}

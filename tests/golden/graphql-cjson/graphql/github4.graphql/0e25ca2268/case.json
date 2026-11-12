@@ -1,0 +1,30 @@
+{
+  "fixture": "graphql-cjson",
+  "input": "graphql/github4.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/graphql/github4.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}

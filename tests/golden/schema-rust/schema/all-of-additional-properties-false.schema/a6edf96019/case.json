@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-rust",
+  "input": "schema/all-of-additional-properties-false.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/schema/all-of-additional-properties-false.schema",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

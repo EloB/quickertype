@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "bar": {
+                    "$ref": "#/definitions/BarUnion"
+                },
+                "foo": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "bar",
+                "foo"
+            ],
+            "title": "TopLevel"
+        },
+        "BarUnion": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                {
+                    "$ref": "#/definitions/BarEnum"
+                }
+            ],
+            "title": "BarUnion"
+        },
+        "BarEnum": {
+            "type": "string",
+            "enum": [
+                "quux"
+            ],
+            "title": "BarEnum"
+        }
+    }
+}

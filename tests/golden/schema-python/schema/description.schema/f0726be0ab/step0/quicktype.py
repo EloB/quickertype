@@ -1,0 +1,122 @@
+from enum import Enum
+from dataclasses import dataclass
+from typing import Any, TypeVar, Type, cast
+
+
+T = TypeVar("T")
+EnumT = TypeVar("EnumT", bound=Enum)
+
+
+def from_float(x: Any) -> float:
+    assert isinstance(x, (float, int)) and not isinstance(x, bool)
+    return float(x)
+
+
+def to_float(x: Any) -> float:
+    assert isinstance(x, (int, float))
+    return x
+
+
+def from_str(x: Any) -> str:
+    assert isinstance(x, str)
+    return x
+
+
+def from_union(fs, x):
+    for f in fs:
+        try:
+            return f(x)
+        except:
+            pass
+    assert False
+
+
+def from_bool(x: Any) -> bool:
+    assert isinstance(x, bool)
+    return x
+
+
+def from_none(x: Any) -> Any:
+    assert x is None
+    return x
+
+
+def to_enum(c: Type[EnumT], x: Any) -> EnumT:
+    assert isinstance(x, c)
+    return x.value
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+class EnumEnum(Enum):
+    """An enumeration"""
+
+    FOO = "foo"
+    BAR = "bar"
+
+
+@dataclass
+class ObjectOrStringClass:
+    prop: float
+    """This must not get lost"""
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'ObjectOrStringClass':
+        assert isinstance(obj, dict)
+        prop = from_float(obj["prop"])
+        return ObjectOrStringClass(prop)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["prop"] = to_float(self.prop)
+        return result
+
+
+@dataclass
+class TopLevel:
+    """The top-level class.
+    Its description has two lines.
+    """
+    enum: EnumEnum
+    """An enumeration"""
+
+    object_or_string: str | ObjectOrStringClass
+    union: float | str
+    """Either a number or a string"""
+
+    bar: bool | None = None
+    """A pretty boolean"""
+
+    foo: float | None = None
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'TopLevel':
+        assert isinstance(obj, dict)
+        enum = EnumEnum(obj["enum"])
+        object_or_string = from_union([from_str, ObjectOrStringClass.from_dict], obj["object-or-string"])
+        union = from_union([from_float, from_str], obj["union"])
+        bar = from_union([from_bool, from_none], obj.get("bar"))
+        foo = from_union([from_float, from_none], obj.get("foo"))
+        return TopLevel(enum, object_or_string, union, bar, foo)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["enum"] = to_enum(EnumEnum, self.enum)
+        result["object-or-string"] = from_union([from_str, lambda x: to_class(ObjectOrStringClass, x)], self.object_or_string)
+        result["union"] = from_union([to_float, from_str], self.union)
+        if self.bar is not None:
+            result["bar"] = from_union([from_bool, from_none], self.bar)
+        if self.foo is not None:
+            result["foo"] = from_union([to_float, from_none], self.foo)
+        return result
+
+
+def top_level_from_dict(s: Any) -> TopLevel:
+    return TopLevel.from_dict(s)
+
+
+def top_level_to_dict(x: TopLevel) -> Any:
+    return to_class(TopLevel, x)

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-php",
+  "input": "schema/object-type-required.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "php",
+        "--src",
+        "{INPUTS}/schema/object-type-required.schema",
+        "--out",
+        "TopLevel.php",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.php"
+      ]
+    }
+  ]
+}

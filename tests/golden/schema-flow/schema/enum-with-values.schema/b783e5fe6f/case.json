@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-flow",
+  "input": "schema/enum-with-values.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "flow",
+        "--src",
+        "{INPUTS}/schema/enum-with-values.schema",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

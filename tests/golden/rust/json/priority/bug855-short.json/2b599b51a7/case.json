@@ -1,0 +1,29 @@
+{
+  "fixture": "rust",
+  "input": "json/priority/bug855-short.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/json/priority/bug855-short.json",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

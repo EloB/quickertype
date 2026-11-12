@@ -1,0 +1,91 @@
+// Example usage:
+//
+// import { MyShape } from ./myShape.js;
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+import PropTypes from "prop-types";
+const Integer = (props, name) => props[name] == null || Number.isInteger(props[name]) ? null : new Error("Expected integer");
+
+let _TopLevel;
+let _Artist;
+let _ExternalUrls;
+let _Copyright;
+let _ExternalIDS;
+let _Image;
+let _Tracks;
+let _Item;
+_ExternalUrls = PropTypes.shape({
+    "spotify": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Artist = PropTypes.shape({
+    "external_urls": _ExternalUrls,
+    "href": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "id": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "uri": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Copyright = PropTypes.shape({
+    "text": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_ExternalIDS = PropTypes.shape({
+    "upc": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Image = PropTypes.shape({
+    "height": PropTypes.oneOfType([Integer]).isRequired,
+    "url": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "width": PropTypes.oneOfType([Integer]).isRequired,
+});
+_Item = PropTypes.shape({
+    "artists": PropTypes.oneOfType([PropTypes.arrayOf(_Artist)]).isRequired,
+    "available_markets": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+    "disc_number": PropTypes.oneOfType([Integer]).isRequired,
+    "duration_ms": PropTypes.oneOfType([Integer]).isRequired,
+    "explicit": PropTypes.oneOfType([PropTypes.bool]).isRequired,
+    "external_urls": _ExternalUrls,
+    "href": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "id": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "preview_url": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "track_number": PropTypes.oneOfType([Integer]).isRequired,
+    "type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "uri": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Tracks = PropTypes.shape({
+    "href": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "items": PropTypes.oneOfType([PropTypes.arrayOf(_Item)]).isRequired,
+    "limit": PropTypes.oneOfType([Integer]).isRequired,
+    "next": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOf([null])])(props, name, ...args),
+    "offset": PropTypes.oneOfType([Integer]).isRequired,
+    "previous": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOf([null])])(props, name, ...args),
+    "total": PropTypes.oneOfType([Integer]).isRequired,
+});
+_TopLevel = PropTypes.shape({
+    "album_type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "artists": PropTypes.oneOfType([PropTypes.arrayOf(_Artist)]).isRequired,
+    "available_markets": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+    "copyrights": PropTypes.oneOfType([PropTypes.arrayOf(_Copyright)]).isRequired,
+    "external_ids": _ExternalIDS,
+    "external_urls": _ExternalUrls,
+    "genres": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.any)]).isRequired,
+    "href": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "id": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "images": PropTypes.oneOfType([PropTypes.arrayOf(_Image)]).isRequired,
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "popularity": PropTypes.oneOfType([Integer]).isRequired,
+    "release_date": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "release_date_precision": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "tracks": _Tracks,
+    "type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "uri": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+
+export const TopLevel = _TopLevel;

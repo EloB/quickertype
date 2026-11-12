@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-dart",
+  "input": "schema/vega-lite.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "dart",
+        "--src",
+        "{INPUTS}/schema/vega-lite.schema",
+        "--out",
+        "TopLevel.dart",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.dart"
+      ]
+    }
+  ]
+}

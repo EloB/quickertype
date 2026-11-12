@@ -1,0 +1,49 @@
+{
+  "fixture": "java",
+  "input": "json/misc/00ec5.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/00ec5.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/BusinessServiceProvidersSearch.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Definitions.java",
+        "src/main/java/io/quicktype/Get.java",
+        "src/main/java/io/quicktype/Info.java",
+        "src/main/java/io/quicktype/Parameter.java",
+        "src/main/java/io/quicktype/Paths.java",
+        "src/main/java/io/quicktype/Property.java",
+        "src/main/java/io/quicktype/Provider.java",
+        "src/main/java/io/quicktype/Responses.java",
+        "src/main/java/io/quicktype/Schema.java",
+        "src/main/java/io/quicktype/The200.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Type.java"
+      ]
+    }
+  ]
+}

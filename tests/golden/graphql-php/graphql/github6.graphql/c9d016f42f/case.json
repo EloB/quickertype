@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-php",
+  "input": "graphql/github6.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "php",
+        "--src",
+        "{INPUTS}/graphql/github6.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.php",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.php"
+      ]
+    }
+  ]
+}

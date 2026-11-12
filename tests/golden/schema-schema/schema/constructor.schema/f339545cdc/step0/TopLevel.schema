@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "constructor": {
+                    "$ref": "#/definitions/UnionConstructor"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Constructor": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Constructor"
+        },
+        "UnionConstructor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Constructor"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConstructor"
+        }
+    }
+}

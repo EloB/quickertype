@@ -1,0 +1,32 @@
+{
+  "fixture": "schema-csharp-records",
+  "input": "schema/multi-type-enum.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "csharp",
+        "--src",
+        "{INPUTS}/schema/multi-type-enum.schema",
+        "--out",
+        "QuickType.cs",
+        "--top-level",
+        "TopLevel",
+        "--check-required",
+        "--framework",
+        "NewtonSoft",
+        "--use-records",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.cs"
+      ]
+    }
+  ]
+}

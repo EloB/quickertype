@@ -1,0 +1,42 @@
+{
+  "fixture": "graphql-java",
+  "input": "graphql/github9.graphql",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/graphql/github9.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/AddReactionPayload.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Data.java",
+        "src/main/java/io/quicktype/Error.java",
+        "src/main/java/io/quicktype/Reactable.java",
+        "src/main/java/io/quicktype/Reaction.java",
+        "src/main/java/io/quicktype/ReactionContent.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

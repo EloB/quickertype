@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-elixir",
+  "input": "schema/mutually-recursive.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "elixir",
+        "--src",
+        "{INPUTS}/schema/mutually-recursive.schema",
+        "--out",
+        "QuickType.ex",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.ex"
+      ]
+    }
+  ]
+}

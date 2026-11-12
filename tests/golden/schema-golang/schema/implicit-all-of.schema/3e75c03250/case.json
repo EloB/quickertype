@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-golang",
+  "input": "schema/implicit-all-of.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/schema/implicit-all-of.schema",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

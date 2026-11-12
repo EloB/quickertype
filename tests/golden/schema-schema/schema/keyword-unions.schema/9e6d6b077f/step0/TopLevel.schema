@@ -1,0 +1,6800 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "_": {
+                    "$ref": "#/definitions/UnionUnion"
+                },
+                "_Bool": {
+                    "$ref": "#/definitions/UnionBool"
+                },
+                "_Complex": {
+                    "$ref": "#/definitions/UnionComplex"
+                },
+                "_Imaginery": {
+                    "$ref": "#/definitions/UnionImaginery"
+                },
+                "abstract": {
+                    "$ref": "#/definitions/UnionAbstract"
+                },
+                "alignas": {
+                    "$ref": "#/definitions/UnionAlignas"
+                },
+                "alignof": {
+                    "$ref": "#/definitions/UnionAlignof"
+                },
+                "and": {
+                    "$ref": "#/definitions/UnionAnd"
+                },
+                "and_eq": {
+                    "$ref": "#/definitions/UnionAndEq"
+                },
+                "any": {
+                    "$ref": "#/definitions/UnionAnyUnion"
+                },
+                "Any": {
+                    "$ref": "#/definitions/UnionAny"
+                },
+                "array": {
+                    "$ref": "#/definitions/UnionArray"
+                },
+                "ArrayNode": {
+                    "$ref": "#/definitions/UnionArrayNode"
+                },
+                "as": {
+                    "$ref": "#/definitions/UnionAs"
+                },
+                "asm": {
+                    "$ref": "#/definitions/UnionASM"
+                },
+                "assert": {
+                    "$ref": "#/definitions/UnionAssert"
+                },
+                "associatedtype": {
+                    "$ref": "#/definitions/UnionAssociatedtype"
+                },
+                "associativity": {
+                    "$ref": "#/definitions/UnionAssociativity"
+                },
+                "async": {
+                    "$ref": "#/definitions/UnionAsync"
+                },
+                "atomic": {
+                    "$ref": "#/definitions/UnionAtomic"
+                },
+                "atomic_cancel": {
+                    "$ref": "#/definitions/UnionAtomicCancel"
+                },
+                "atomic_commit": {
+                    "$ref": "#/definitions/UnionAtomicCommit"
+                },
+                "atomic_noexcept": {
+                    "$ref": "#/definitions/UnionAtomicNoexcept"
+                },
+                "auto": {
+                    "$ref": "#/definitions/UnionAuto"
+                },
+                "await": {
+                    "$ref": "#/definitions/UnionAwait"
+                },
+                "base": {
+                    "$ref": "#/definitions/UnionBase"
+                },
+                "bitand": {
+                    "$ref": "#/definitions/UnionBitand"
+                },
+                "bitor": {
+                    "$ref": "#/definitions/UnionBitor"
+                },
+                "BOOL": {
+                    "$ref": "#/definitions/UnionBOOL"
+                },
+                "bool": {
+                    "$ref": "#/definitions/UnionBoolUnion"
+                },
+                "boolean": {
+                    "$ref": "#/definitions/UnionBoolean"
+                },
+                "BooleanNode": {
+                    "$ref": "#/definitions/UnionBooleanNode"
+                },
+                "break": {
+                    "$ref": "#/definitions/UnionBreak"
+                },
+                "bycopy": {
+                    "$ref": "#/definitions/UnionBycopy"
+                },
+                "byref": {
+                    "$ref": "#/definitions/UnionByref"
+                },
+                "byte": {
+                    "$ref": "#/definitions/UnionByte"
+                },
+                "Calendar": {
+                    "$ref": "#/definitions/UnionCalendar"
+                },
+                "case": {
+                    "$ref": "#/definitions/UnionCase"
+                },
+                "catch": {
+                    "$ref": "#/definitions/UnionCatch"
+                },
+                "chan": {
+                    "$ref": "#/definitions/UnionChan"
+                },
+                "char": {
+                    "$ref": "#/definitions/UnionChar"
+                },
+                "char16_t": {
+                    "$ref": "#/definitions/UnionChar16T"
+                },
+                "char32_t": {
+                    "$ref": "#/definitions/UnionChar32T"
+                },
+                "checked": {
+                    "$ref": "#/definitions/UnionChecked"
+                },
+                "class": {
+                    "$ref": "#/definitions/UnionClassUnion"
+                },
+                "Class": {
+                    "$ref": "#/definitions/UnionClass"
+                },
+                "clone": {
+                    "$ref": "#/definitions/UnionClone"
+                },
+                "co_await": {
+                    "$ref": "#/definitions/UnionCoAwait"
+                },
+                "co_return": {
+                    "$ref": "#/definitions/UnionCoReturn"
+                },
+                "co_yield": {
+                    "$ref": "#/definitions/UnionCoYield"
+                },
+                "Codable": {
+                    "$ref": "#/definitions/UnionCodable"
+                },
+                "CodingKey": {
+                    "$ref": "#/definitions/UnionCodingKey"
+                },
+                "CodingKeys": {
+                    "$ref": "#/definitions/UnionCodingKeys"
+                },
+                "compl": {
+                    "$ref": "#/definitions/UnionCompl"
+                },
+                "concept": {
+                    "$ref": "#/definitions/UnionConcept"
+                },
+                "console": {
+                    "$ref": "#/definitions/UnionConsole"
+                },
+                "const": {
+                    "$ref": "#/definitions/UnionConst"
+                },
+                "const_cast": {
+                    "$ref": "#/definitions/UnionConstCast"
+                },
+                "constexpr": {
+                    "$ref": "#/definitions/UnionConstexpr"
+                },
+                "constructor": {
+                    "$ref": "#/definitions/UnionConstructor"
+                },
+                "continue": {
+                    "$ref": "#/definitions/UnionContinue"
+                },
+                "convenience": {
+                    "$ref": "#/definitions/UnionConvenience"
+                },
+                "convert": {
+                    "$ref": "#/definitions/UnionConvert"
+                },
+                "converter": {
+                    "$ref": "#/definitions/UnionConverter"
+                },
+                "CultureInfo": {
+                    "$ref": "#/definitions/UnionCultureInfo"
+                },
+                "date": {
+                    "$ref": "#/definitions/UnionDate"
+                },
+                "date_parse_handling": {
+                    "$ref": "#/definitions/UnionDateParseHandling"
+                },
+                "DateFormatter": {
+                    "$ref": "#/definitions/UnionDateFormatter"
+                },
+                "DateOnly": {
+                    "$ref": "#/definitions/UnionDateOnly"
+                },
+                "DateOnlyConverter": {
+                    "$ref": "#/definitions/UnionDateOnlyConverter"
+                },
+                "DateTime": {
+                    "$ref": "#/definitions/UnionDateTime"
+                },
+                "DateTimeStyles": {
+                    "$ref": "#/definitions/UnionDateTimeStyles"
+                },
+                "debugger": {
+                    "$ref": "#/definitions/UnionDebugger"
+                },
+                "decimal": {
+                    "$ref": "#/definitions/UnionDecimal"
+                },
+                "declare": {
+                    "$ref": "#/definitions/UnionDeclare"
+                },
+                "decltype": {
+                    "$ref": "#/definitions/UnionDecltype"
+                },
+                "decode_string": {
+                    "$ref": "#/definitions/UnionDecodeString"
+                },
+                "Decoder": {
+                    "$ref": "#/definitions/UnionDecoder"
+                },
+                "DecodingError": {
+                    "$ref": "#/definitions/UnionDecodingError"
+                },
+                "def": {
+                    "$ref": "#/definitions/UnionDef"
+                },
+                "default": {
+                    "$ref": "#/definitions/UnionDefault"
+                },
+                "defer": {
+                    "$ref": "#/definitions/UnionDefer"
+                },
+                "deinit": {
+                    "$ref": "#/definitions/UnionDeinit"
+                },
+                "del": {
+                    "$ref": "#/definitions/UnionDel"
+                },
+                "delegate": {
+                    "$ref": "#/definitions/UnionDelegate"
+                },
+                "delete": {
+                    "$ref": "#/definitions/UnionDelete"
+                },
+                "DeserializationFeature": {
+                    "$ref": "#/definitions/UnionDeserializationFeature"
+                },
+                "dict": {
+                    "$ref": "#/definitions/UnionDict"
+                },
+                "dictionary": {
+                    "$ref": "#/definitions/UnionDictionary"
+                },
+                "didSet": {
+                    "$ref": "#/definitions/UnionDidSet"
+                },
+                "do": {
+                    "$ref": "#/definitions/UnionDo"
+                },
+                "double": {
+                    "$ref": "#/definitions/UnionDouble"
+                },
+                "DoubleNode": {
+                    "$ref": "#/definitions/UnionDoubleNode"
+                },
+                "dummy": {
+                    "type": "number"
+                },
+                "dynamic": {
+                    "$ref": "#/definitions/UnionDynamic"
+                },
+                "dynamic_cast": {
+                    "$ref": "#/definitions/UnionDynamicCast"
+                },
+                "elif": {
+                    "$ref": "#/definitions/UnionElif"
+                },
+                "else": {
+                    "$ref": "#/definitions/UnionElse"
+                },
+                "encode_quick_type": {
+                    "$ref": "#/definitions/UnionEncodeQuickType"
+                },
+                "Encoder": {
+                    "$ref": "#/definitions/UnionEncoder"
+                },
+                "enum": {
+                    "$ref": "#/definitions/UnionEnum"
+                },
+                "EnumValues": {
+                    "$ref": "#/definitions/UnionEnumValues"
+                },
+                "equalityContract": {
+                    "$ref": "#/definitions/UnionEqualityContract"
+                },
+                "Equatable": {
+                    "$ref": "#/definitions/UnionEquatable"
+                },
+                "event": {
+                    "$ref": "#/definitions/UnionEvent"
+                },
+                "except": {
+                    "$ref": "#/definitions/UnionExcept"
+                },
+                "exception": {
+                    "$ref": "#/definitions/UnionException"
+                },
+                "explicit": {
+                    "$ref": "#/definitions/UnionExplicit"
+                },
+                "export": {
+                    "$ref": "#/definitions/UnionExport"
+                },
+                "exposing": {
+                    "$ref": "#/definitions/UnionExposing"
+                },
+                "extends": {
+                    "$ref": "#/definitions/UnionExtends"
+                },
+                "extension": {
+                    "$ref": "#/definitions/UnionExtension"
+                },
+                "extern": {
+                    "$ref": "#/definitions/UnionExtern"
+                },
+                "fallthrough": {
+                    "$ref": "#/definitions/UnionFallthrough"
+                },
+                "false": {
+                    "$ref": "#/definitions/UnionFalseUnion"
+                },
+                "False": {
+                    "$ref": "#/definitions/UnionFalse"
+                },
+                "fileprivate": {
+                    "$ref": "#/definitions/UnionFileprivate"
+                },
+                "final": {
+                    "$ref": "#/definitions/UnionFinal"
+                },
+                "finally": {
+                    "$ref": "#/definitions/UnionFinally"
+                },
+                "fixed": {
+                    "$ref": "#/definitions/UnionFixed"
+                },
+                "float": {
+                    "$ref": "#/definitions/UnionFloat"
+                },
+                "for": {
+                    "$ref": "#/definitions/UnionFor"
+                },
+                "foreach": {
+                    "$ref": "#/definitions/UnionForeach"
+                },
+                "FormatException": {
+                    "$ref": "#/definitions/UnionFormatException"
+                },
+                "friend": {
+                    "$ref": "#/definitions/UnionFriend"
+                },
+                "from": {
+                    "$ref": "#/definitions/UnionFrom"
+                },
+                "from_dict": {
+                    "$ref": "#/definitions/UnionFromDict"
+                },
+                "from_json": {
+                    "$ref": "#/definitions/UnionFromJSON"
+                },
+                "func": {
+                    "$ref": "#/definitions/UnionFunc"
+                },
+                "function": {
+                    "$ref": "#/definitions/UnionFunction"
+                },
+                "get": {
+                    "$ref": "#/definitions/UnionGet"
+                },
+                "global": {
+                    "$ref": "#/definitions/UnionGlobal"
+                },
+                "go": {
+                    "$ref": "#/definitions/UnionGo"
+                },
+                "goto": {
+                    "$ref": "#/definitions/UnionGoto"
+                },
+                "guard": {
+                    "$ref": "#/definitions/UnionGuard"
+                },
+                "Hashable": {
+                    "$ref": "#/definitions/UnionHashable"
+                },
+                "hashCode": {
+                    "$ref": "#/definitions/UnionHashCode"
+                },
+                "Hasher": {
+                    "$ref": "#/definitions/UnionHasher"
+                },
+                "hasOwnProperty": {
+                    "$ref": "#/definitions/UnionHasOwnProperty"
+                },
+                "id": {
+                    "$ref": "#/definitions/UnionID"
+                },
+                "if": {
+                    "$ref": "#/definitions/UnionIf"
+                },
+                "IMP": {
+                    "$ref": "#/definitions/UnionIMP"
+                },
+                "implements": {
+                    "$ref": "#/definitions/UnionImplements"
+                },
+                "implicit": {
+                    "$ref": "#/definitions/UnionImplicit"
+                },
+                "import": {
+                    "$ref": "#/definitions/UnionImport"
+                },
+                "in": {
+                    "$ref": "#/definitions/UnionIn"
+                },
+                "indirect": {
+                    "$ref": "#/definitions/UnionIndirect"
+                },
+                "infix": {
+                    "$ref": "#/definitions/UnionInfix"
+                },
+                "init": {
+                    "$ref": "#/definitions/UnionInit"
+                },
+                "inline": {
+                    "$ref": "#/definitions/UnionInline"
+                },
+                "inout": {
+                    "$ref": "#/definitions/UnionInout"
+                },
+                "instanceof": {
+                    "$ref": "#/definitions/UnionInstanceof"
+                },
+                "int": {
+                    "$ref": "#/definitions/UnionInt"
+                },
+                "interface": {
+                    "$ref": "#/definitions/UnionInterface"
+                },
+                "internal": {
+                    "$ref": "#/definitions/UnionInternal"
+                },
+                "IntNode": {
+                    "$ref": "#/definitions/UnionIntNode"
+                },
+                "is": {
+                    "$ref": "#/definitions/UnionIs"
+                },
+                "IsoDateTimeOffsetConverter": {
+                    "$ref": "#/definitions/UnionISODateTimeOffsetConverter"
+                },
+                "iterable": {
+                    "$ref": "#/definitions/UnionIterable"
+                },
+                "jdec": {
+                    "$ref": "#/definitions/UnionJdec"
+                },
+                "jenc": {
+                    "$ref": "#/definitions/UnionJenc"
+                },
+                "jpipe": {
+                    "$ref": "#/definitions/UnionJpipe"
+                },
+                "json": {
+                    "$ref": "#/definitions/UnionJSON"
+                },
+                "json_converter": {
+                    "$ref": "#/definitions/UnionJSONConverter"
+                },
+                "json_serializer": {
+                    "$ref": "#/definitions/UnionJSONSerializer"
+                },
+                "json_token": {
+                    "$ref": "#/definitions/UnionJSONToken"
+                },
+                "json_writer": {
+                    "$ref": "#/definitions/UnionJSONWriter"
+                },
+                "JSONAny": {
+                    "$ref": "#/definitions/UnionJSONAny"
+                },
+                "JSONCodingKey": {
+                    "$ref": "#/definitions/UnionJSONCodingKey"
+                },
+                "JSONDecoder": {
+                    "$ref": "#/definitions/UnionJSONDecoder"
+                },
+                "JSONEncoder": {
+                    "$ref": "#/definitions/UnionJSONEncoder"
+                },
+                "JsonException": {
+                    "$ref": "#/definitions/UnionJSONException"
+                },
+                "JsonGenerator": {
+                    "$ref": "#/definitions/UnionJSONGenerator"
+                },
+                "JsonNode": {
+                    "$ref": "#/definitions/UnionJSONNode"
+                },
+                "JSONNull": {
+                    "$ref": "#/definitions/UnionJSONNull"
+                },
+                "JsonParser": {
+                    "$ref": "#/definitions/UnionJSONParser"
+                },
+                "JsonReader": {
+                    "$ref": "#/definitions/UnionJSONReader"
+                },
+                "JsonTokenType": {
+                    "$ref": "#/definitions/UnionJSONTokenType"
+                },
+                "KSerializer": {
+                    "$ref": "#/definitions/UnionKSerializer"
+                },
+                "lambda": {
+                    "$ref": "#/definitions/UnionLambda"
+                },
+                "lazy": {
+                    "$ref": "#/definitions/UnionLazy"
+                },
+                "left": {
+                    "$ref": "#/definitions/UnionLeft"
+                },
+                "let": {
+                    "$ref": "#/definitions/UnionLet"
+                },
+                "list": {
+                    "$ref": "#/definitions/UnionList"
+                },
+                "LocalDate": {
+                    "$ref": "#/definitions/UnionLocalDate"
+                },
+                "Locale": {
+                    "$ref": "#/definitions/UnionLocale"
+                },
+                "lock": {
+                    "$ref": "#/definitions/UnionLock"
+                },
+                "long": {
+                    "$ref": "#/definitions/UnionLong"
+                },
+                "LongNode": {
+                    "$ref": "#/definitions/UnionLongNode"
+                },
+                "map": {
+                    "$ref": "#/definitions/UnionMap"
+                },
+                "MapEntry": {
+                    "$ref": "#/definitions/UnionMapEntry"
+                },
+                "MarshalJSON": {
+                    "$ref": "#/definitions/UnionMarshalJSON"
+                },
+                "metadata_property_handling": {
+                    "$ref": "#/definitions/UnionMetadataPropertyHandling"
+                },
+                "module": {
+                    "$ref": "#/definitions/UnionModule"
+                },
+                "mutable": {
+                    "$ref": "#/definitions/UnionMutable"
+                },
+                "mutating": {
+                    "$ref": "#/definitions/UnionMutating"
+                },
+                "namespace": {
+                    "$ref": "#/definitions/UnionNamespace"
+                },
+                "native": {
+                    "$ref": "#/definitions/UnionNative"
+                },
+                "new": {
+                    "$ref": "#/definitions/UnionNew"
+                },
+                "newtonsoft": {
+                    "$ref": "#/definitions/UnionNewtonsoft"
+                },
+                "nil": {
+                    "$ref": "#/definitions/UnionNil"
+                },
+                "NO": {
+                    "$ref": "#/definitions/UnionNO"
+                },
+                "noexcept": {
+                    "$ref": "#/definitions/UnionNoexcept"
+                },
+                "nonatomic": {
+                    "$ref": "#/definitions/UnionNonatomic"
+                },
+                "none": {
+                    "$ref": "#/definitions/UnionNoneUnion"
+                },
+                "None": {
+                    "$ref": "#/definitions/UnionNone"
+                },
+                "nonlocal": {
+                    "$ref": "#/definitions/UnionNonlocal"
+                },
+                "nonmutating": {
+                    "$ref": "#/definitions/UnionNonmutating"
+                },
+                "noSuchMethod": {
+                    "$ref": "#/definitions/UnionNoSuchMethod"
+                },
+                "not": {
+                    "$ref": "#/definitions/UnionNot"
+                },
+                "not_eq": {
+                    "$ref": "#/definitions/UnionNotEq"
+                },
+                "NSError": {
+                    "$ref": "#/definitions/UnionNSError"
+                },
+                "NSObject": {
+                    "$ref": "#/definitions/UnionNSObject"
+                },
+                "NSString": {
+                    "$ref": "#/definitions/UnionNSString"
+                },
+                "NULL": {
+                    "$ref": "#/definitions/UnionNULL"
+                },
+                "null": {
+                    "$ref": "#/definitions/UnionNull"
+                },
+                "NullNode": {
+                    "$ref": "#/definitions/UnionNullNode"
+                },
+                "nullptr": {
+                    "$ref": "#/definitions/UnionNullptr"
+                },
+                "number": {
+                    "$ref": "#/definitions/UnionNumber"
+                },
+                "object": {
+                    "$ref": "#/definitions/UnionObject"
+                },
+                "ObjectMapper": {
+                    "$ref": "#/definitions/UnionObjectMapper"
+                },
+                "ObjectNode": {
+                    "$ref": "#/definitions/UnionObjectNode"
+                },
+                "ObjectReader": {
+                    "$ref": "#/definitions/UnionObjectReader"
+                },
+                "ObjectWriter": {
+                    "$ref": "#/definitions/UnionObjectWriter"
+                },
+                "of": {
+                    "$ref": "#/definitions/UnionOf"
+                },
+                "OffsetDateTime": {
+                    "$ref": "#/definitions/UnionOffsetDateTime"
+                },
+                "OffsetTime": {
+                    "$ref": "#/definitions/UnionOffsetTime"
+                },
+                "oneway": {
+                    "$ref": "#/definitions/UnionOneway"
+                },
+                "open": {
+                    "$ref": "#/definitions/UnionOpen"
+                },
+                "operator": {
+                    "$ref": "#/definitions/UnionOperator"
+                },
+                "optional": {
+                    "$ref": "#/definitions/UnionOptional"
+                },
+                "or": {
+                    "$ref": "#/definitions/UnionOr"
+                },
+                "or_eq": {
+                    "$ref": "#/definitions/UnionOrEq"
+                },
+                "out": {
+                    "$ref": "#/definitions/UnionOut"
+                },
+                "override": {
+                    "$ref": "#/definitions/UnionOverride"
+                },
+                "package": {
+                    "$ref": "#/definitions/UnionPackage"
+                },
+                "params": {
+                    "$ref": "#/definitions/UnionParams"
+                },
+                "pass": {
+                    "$ref": "#/definitions/UnionPass"
+                },
+                "port": {
+                    "$ref": "#/definitions/UnionPort"
+                },
+                "postfix": {
+                    "$ref": "#/definitions/UnionPostfix"
+                },
+                "precedence": {
+                    "$ref": "#/definitions/UnionPrecedence"
+                },
+                "prefix": {
+                    "$ref": "#/definitions/UnionPrefix"
+                },
+                "PrimitiveKind": {
+                    "$ref": "#/definitions/UnionPrimitiveKind"
+                },
+                "print": {
+                    "$ref": "#/definitions/UnionPrint"
+                },
+                "printf": {
+                    "$ref": "#/definitions/UnionPrintf"
+                },
+                "printMembers": {
+                    "$ref": "#/definitions/UnionPrintMembers"
+                },
+                "private": {
+                    "$ref": "#/definitions/UnionPrivate"
+                },
+                "protected": {
+                    "$ref": "#/definitions/UnionProtected"
+                },
+                "Protocol": {
+                    "$ref": "#/definitions/UnionProtocol"
+                },
+                "protocol": {
+                    "$ref": "#/definitions/UnionProtocolUnion"
+                },
+                "public": {
+                    "$ref": "#/definitions/UnionPublic"
+                },
+                "quicktype": {
+                    "$ref": "#/definitions/UnionQuicktype"
+                },
+                "raise": {
+                    "$ref": "#/definitions/UnionRaise"
+                },
+                "range": {
+                    "$ref": "#/definitions/UnionRange"
+                },
+                "readonly": {
+                    "$ref": "#/definitions/UnionReadonly"
+                },
+                "ref": {
+                    "$ref": "#/definitions/UnionRef"
+                },
+                "RegExp": {
+                    "$ref": "#/definitions/UnionRegExp"
+                },
+                "register": {
+                    "$ref": "#/definitions/UnionRegister"
+                },
+                "reinterpret_cast": {
+                    "$ref": "#/definitions/UnionReinterpretCast"
+                },
+                "repeat": {
+                    "$ref": "#/definitions/UnionRepeat"
+                },
+                "require": {
+                    "$ref": "#/definitions/UnionRequire"
+                },
+                "required": {
+                    "$ref": "#/definitions/UnionRequired"
+                },
+                "requires": {
+                    "$ref": "#/definitions/UnionRequires"
+                },
+                "restrict": {
+                    "$ref": "#/definitions/UnionRestrict"
+                },
+                "retain": {
+                    "$ref": "#/definitions/UnionRetain"
+                },
+                "rethrows": {
+                    "$ref": "#/definitions/UnionRethrows"
+                },
+                "return": {
+                    "$ref": "#/definitions/UnionReturn"
+                },
+                "right": {
+                    "$ref": "#/definitions/UnionRight"
+                },
+                "runtimeType": {
+                    "$ref": "#/definitions/UnionRuntimeType"
+                },
+                "s": {
+                    "$ref": "#/definitions/UnionS"
+                },
+                "sbyte": {
+                    "$ref": "#/definitions/UnionSbyte"
+                },
+                "sealed": {
+                    "$ref": "#/definitions/UnionSealed"
+                },
+                "SEL": {
+                    "$ref": "#/definitions/UnionSEL"
+                },
+                "select": {
+                    "$ref": "#/definitions/UnionSelect"
+                },
+                "Self": {
+                    "$ref": "#/definitions/UnionSelf"
+                },
+                "self": {
+                    "$ref": "#/definitions/UnionSelfUnion"
+                },
+                "Sendable": {
+                    "$ref": "#/definitions/UnionSendable"
+                },
+                "SerialDescriptor": {
+                    "$ref": "#/definitions/UnionSerialDescriptor"
+                },
+                "Serializable": {
+                    "$ref": "#/definitions/UnionSerializable"
+                },
+                "SerializationFeature": {
+                    "$ref": "#/definitions/UnionSerializationFeature"
+                },
+                "serialize": {
+                    "$ref": "#/definitions/UnionSerialize"
+                },
+                "SerializerProvider": {
+                    "$ref": "#/definitions/UnionSerializerProvider"
+                },
+                "SerialName": {
+                    "$ref": "#/definitions/UnionSerialName"
+                },
+                "set": {
+                    "$ref": "#/definitions/UnionSet"
+                },
+                "short": {
+                    "$ref": "#/definitions/UnionShort"
+                },
+                "signed": {
+                    "$ref": "#/definitions/UnionSigned"
+                },
+                "SimpleModule": {
+                    "$ref": "#/definitions/UnionSimpleModule"
+                },
+                "sizeof": {
+                    "$ref": "#/definitions/UnionSizeof"
+                },
+                "stackalloc": {
+                    "$ref": "#/definitions/UnionStackalloc"
+                },
+                "Standards": {
+                    "$ref": "#/definitions/UnionStandards"
+                },
+                "static": {
+                    "$ref": "#/definitions/UnionStatic"
+                },
+                "static_assert": {
+                    "$ref": "#/definitions/UnionStaticAssert"
+                },
+                "static_cast": {
+                    "$ref": "#/definitions/UnionStaticCast"
+                },
+                "StdDeserializer": {
+                    "$ref": "#/definitions/UnionStdDeserializer"
+                },
+                "StdSerializer": {
+                    "$ref": "#/definitions/UnionStdSerializer"
+                },
+                "strictfp": {
+                    "$ref": "#/definitions/UnionStrictfp"
+                },
+                "string": {
+                    "$ref": "#/definitions/UnionString"
+                },
+                "struct": {
+                    "$ref": "#/definitions/UnionStruct"
+                },
+                "subscript": {
+                    "$ref": "#/definitions/UnionSubscript"
+                },
+                "super": {
+                    "$ref": "#/definitions/UnionSuper"
+                },
+                "switch": {
+                    "$ref": "#/definitions/UnionSwitch"
+                },
+                "symbol": {
+                    "$ref": "#/definitions/UnionSymbol"
+                },
+                "synchronized": {
+                    "$ref": "#/definitions/UnionSynchronized"
+                },
+                "system": {
+                    "$ref": "#/definitions/UnionSystem"
+                },
+                "template": {
+                    "$ref": "#/definitions/UnionTemplate"
+                },
+                "TextNode": {
+                    "$ref": "#/definitions/UnionTextNode"
+                },
+                "then": {
+                    "$ref": "#/definitions/UnionThen"
+                },
+                "this": {
+                    "$ref": "#/definitions/UnionThis"
+                },
+                "thread_local": {
+                    "$ref": "#/definitions/UnionThreadLocal"
+                },
+                "throw": {
+                    "$ref": "#/definitions/UnionThrow"
+                },
+                "throws": {
+                    "$ref": "#/definitions/UnionThrows"
+                },
+                "TimeOnly": {
+                    "$ref": "#/definitions/UnionTimeOnly"
+                },
+                "TimeOnlyConverter": {
+                    "$ref": "#/definitions/UnionTimeOnlyConverter"
+                },
+                "TimeZone": {
+                    "$ref": "#/definitions/UnionTimeZone"
+                },
+                "to_dict": {
+                    "$ref": "#/definitions/UnionToDict"
+                },
+                "to_json": {
+                    "$ref": "#/definitions/UnionToJSON"
+                },
+                "top_level": {
+                    "$ref": "#/definitions/UnionTopLevel"
+                },
+                "toString": {
+                    "$ref": "#/definitions/UnionToString"
+                },
+                "transient": {
+                    "$ref": "#/definitions/UnionTransient"
+                },
+                "True": {
+                    "$ref": "#/definitions/UnionTrue"
+                },
+                "true": {
+                    "$ref": "#/definitions/UnionTrueUnion"
+                },
+                "try": {
+                    "$ref": "#/definitions/UnionTry"
+                },
+                "Type": {
+                    "$ref": "#/definitions/UnionType"
+                },
+                "type": {
+                    "$ref": "#/definitions/UnionTypeUnion"
+                },
+                "typealias": {
+                    "$ref": "#/definitions/UnionTypealias"
+                },
+                "typedef": {
+                    "$ref": "#/definitions/UnionTypedef"
+                },
+                "typeid": {
+                    "$ref": "#/definitions/UnionTypeid"
+                },
+                "typename": {
+                    "$ref": "#/definitions/UnionTypename"
+                },
+                "typeof": {
+                    "$ref": "#/definitions/UnionTypeof"
+                },
+                "uint": {
+                    "$ref": "#/definitions/UnionUint"
+                },
+                "ulong": {
+                    "$ref": "#/definitions/UnionUlong"
+                },
+                "unchecked": {
+                    "$ref": "#/definitions/UnionUnchecked"
+                },
+                "undefined": {
+                    "$ref": "#/definitions/UnionUndefined"
+                },
+                "union": {
+                    "$ref": "#/definitions/UnionUnionUnion"
+                },
+                "UnmarshalJSON": {
+                    "$ref": "#/definitions/UnionUnmarshalJSON"
+                },
+                "unowned": {
+                    "$ref": "#/definitions/UnionUnowned"
+                },
+                "unsafe": {
+                    "$ref": "#/definitions/UnionUnsafe"
+                },
+                "unsigned": {
+                    "$ref": "#/definitions/UnionUnsigned"
+                },
+                "UseSerializers": {
+                    "$ref": "#/definitions/UnionUseSerializers"
+                },
+                "ushort": {
+                    "$ref": "#/definitions/UnionUshort"
+                },
+                "using": {
+                    "$ref": "#/definitions/UnionUsing"
+                },
+                "Utf8JsonReader": {
+                    "$ref": "#/definitions/UnionUtf8JSONReader"
+                },
+                "Utf8JsonWriter": {
+                    "$ref": "#/definitions/UnionUtf8JSONWriter"
+                },
+                "UUID": {
+                    "$ref": "#/definitions/UnionUUID"
+                },
+                "var": {
+                    "$ref": "#/definitions/UnionVar"
+                },
+                "virtual": {
+                    "$ref": "#/definitions/UnionVirtual"
+                },
+                "void": {
+                    "$ref": "#/definitions/UnionVoid"
+                },
+                "volatile": {
+                    "$ref": "#/definitions/UnionVolatile"
+                },
+                "wchar_t": {
+                    "$ref": "#/definitions/UnionWcharT"
+                },
+                "weak": {
+                    "$ref": "#/definitions/UnionWeak"
+                },
+                "where": {
+                    "$ref": "#/definitions/UnionWhere"
+                },
+                "while": {
+                    "$ref": "#/definitions/UnionWhile"
+                },
+                "willSet": {
+                    "$ref": "#/definitions/UnionWillSet"
+                },
+                "with": {
+                    "$ref": "#/definitions/UnionWith"
+                },
+                "xor": {
+                    "$ref": "#/definitions/UnionXor"
+                },
+                "xor_eq": {
+                    "$ref": "#/definitions/UnionXorEq"
+                },
+                "YES": {
+                    "$ref": "#/definitions/UnionYES"
+                },
+                "yield": {
+                    "$ref": "#/definitions/UnionYield"
+                }
+            },
+            "required": [],
+            "title": "TopLevel"
+        },
+        "Any": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Any"
+        },
+        "ArrayNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ArrayNode"
+        },
+        "Bool": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Bool"
+        },
+        "BooleanNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "BooleanNode"
+        },
+        "Calendar": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Calendar"
+        },
+        "Class": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Class"
+        },
+        "Codable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Codable"
+        },
+        "CodingKey": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CodingKey"
+        },
+        "CodingKeys": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CodingKeys"
+        },
+        "CultureInfo": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CultureInfo"
+        },
+        "DateFormatter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateFormatter"
+        },
+        "DateOnly": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateOnly"
+        },
+        "DateOnlyConverter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateOnlyConverter"
+        },
+        "DateTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateTime"
+        },
+        "DateTimeStyles": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateTimeStyles"
+        },
+        "Decoder": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Decoder"
+        },
+        "DecodingError": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DecodingError"
+        },
+        "DeserializationFeature": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DeserializationFeature"
+        },
+        "DoubleNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DoubleNode"
+        },
+        "Encoder": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Encoder"
+        },
+        "EnumValues": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "EnumValues"
+        },
+        "Equatable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Equatable"
+        },
+        "False": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "False"
+        },
+        "FormatException": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "FormatException"
+        },
+        "Hashable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Hashable"
+        },
+        "Hasher": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Hasher"
+        },
+        "Imp": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Imp"
+        },
+        "IntNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "IntNode"
+        },
+        "ISODateTimeOffsetConverter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ISODateTimeOffsetConverter"
+        },
+        "JSONAny": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONAny"
+        },
+        "JSONCodingKey": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONCodingKey"
+        },
+        "JSONDecoder": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONDecoder"
+        },
+        "JSONEncoder": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONEncoder"
+        },
+        "JSONNull": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONNull"
+        },
+        "JSONException": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONException"
+        },
+        "JSONGenerator": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONGenerator"
+        },
+        "JSONNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONNode"
+        },
+        "JSONParser": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONParser"
+        },
+        "JSONReader": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONReader"
+        },
+        "JSONTokenType": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONTokenType"
+        },
+        "KSerializer": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "KSerializer"
+        },
+        "LocalDate": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "LocalDate"
+        },
+        "Locale": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Locale"
+        },
+        "LongNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "LongNode"
+        },
+        "MapEntry": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "MapEntry"
+        },
+        "MarshalJSON": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "MarshalJSON"
+        },
+        "No": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "No"
+        },
+        "NSError": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NSError"
+        },
+        "NSObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NSObject"
+        },
+        "NSString": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NSString"
+        },
+        "Null": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Null"
+        },
+        "None": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "None"
+        },
+        "NullNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NullNode"
+        },
+        "ObjectMapper": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ObjectMapper"
+        },
+        "ObjectNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ObjectNode"
+        },
+        "ObjectReader": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ObjectReader"
+        },
+        "ObjectWriter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ObjectWriter"
+        },
+        "OffsetDateTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetDateTime"
+        },
+        "OffsetTime": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OffsetTime"
+        },
+        "PrimitiveKind": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "PrimitiveKind"
+        },
+        "Protocol": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Protocol"
+        },
+        "RegExp": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "RegExp"
+        },
+        "Sel": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Sel"
+        },
+        "Self": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Self"
+        },
+        "Sendable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Sendable"
+        },
+        "SerialDescriptor": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SerialDescriptor"
+        },
+        "SerialName": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SerialName"
+        },
+        "Serializable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Serializable"
+        },
+        "SerializationFeature": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SerializationFeature"
+        },
+        "SerializerProvider": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SerializerProvider"
+        },
+        "SimpleModule": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SimpleModule"
+        },
+        "Standards": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Standards"
+        },
+        "StdDeserializer": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "StdDeserializer"
+        },
+        "StdSerializer": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "StdSerializer"
+        },
+        "TextNode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TextNode"
+        },
+        "TimeOnly": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TimeOnly"
+        },
+        "TimeOnlyConverter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TimeOnlyConverter"
+        },
+        "TimeZone": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TimeZone"
+        },
+        "True": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "True"
+        },
+        "Type": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Type"
+        },
+        "UUID": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "UUID"
+        },
+        "UnmarshalJSON": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "UnmarshalJSON"
+        },
+        "UseSerializers": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "UseSerializers"
+        },
+        "Utf8JSONReader": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Utf8JSONReader"
+        },
+        "Utf8JSONWriter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Utf8JSONWriter"
+        },
+        "Yes": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Yes"
+        },
+        "Empty": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Empty"
+        },
+        "BoolClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "BoolClass"
+        },
+        "Complex": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Complex"
+        },
+        "Imaginery": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Imaginery"
+        },
+        "Abstract": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Abstract"
+        },
+        "Alignas": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Alignas"
+        },
+        "Alignof": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Alignof"
+        },
+        "And": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "And"
+        },
+        "AndEq": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "AndEq"
+        },
+        "AnyClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "AnyClass"
+        },
+        "Array": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Array"
+        },
+        "As": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "As"
+        },
+        "ASM": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ASM"
+        },
+        "Assert": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Assert"
+        },
+        "Associatedtype": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Associatedtype"
+        },
+        "Associativity": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Associativity"
+        },
+        "Async": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Async"
+        },
+        "Atomic": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Atomic"
+        },
+        "AtomicCancel": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "AtomicCancel"
+        },
+        "AtomicCommit": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "AtomicCommit"
+        },
+        "AtomicNoexcept": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "AtomicNoexcept"
+        },
+        "Auto": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Auto"
+        },
+        "Await": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Await"
+        },
+        "Base": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Base"
+        },
+        "Bitand": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Bitand"
+        },
+        "Bitor": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Bitor"
+        },
+        "UnionBoolBool": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "UnionBoolBool"
+        },
+        "Boolean": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Boolean"
+        },
+        "Break": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Break"
+        },
+        "Bycopy": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Bycopy"
+        },
+        "Byref": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Byref"
+        },
+        "Byte": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Byte"
+        },
+        "Case": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Case"
+        },
+        "Catch": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Catch"
+        },
+        "Chan": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Chan"
+        },
+        "Char": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Char"
+        },
+        "Char16T": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Char16T"
+        },
+        "Char32T": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Char32T"
+        },
+        "Checked": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Checked"
+        },
+        "ClassClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ClassClass"
+        },
+        "Clone": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Clone"
+        },
+        "CoAwait": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CoAwait"
+        },
+        "CoReturn": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CoReturn"
+        },
+        "CoYield": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "CoYield"
+        },
+        "Compl": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Compl"
+        },
+        "Concept": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Concept"
+        },
+        "Console": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Console"
+        },
+        "Const": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Const"
+        },
+        "ConstCast": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ConstCast"
+        },
+        "Constexpr": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Constexpr"
+        },
+        "Constructor": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Constructor"
+        },
+        "Continue": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Continue"
+        },
+        "Convenience": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Convenience"
+        },
+        "Convert": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Convert"
+        },
+        "Converter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Converter"
+        },
+        "Date": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Date"
+        },
+        "DateParseHandling": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DateParseHandling"
+        },
+        "Debugger": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Debugger"
+        },
+        "Decimal": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Decimal"
+        },
+        "Declare": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Declare"
+        },
+        "Decltype": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Decltype"
+        },
+        "DecodeString": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DecodeString"
+        },
+        "Def": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Def"
+        },
+        "Default": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Default"
+        },
+        "Defer": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Defer"
+        },
+        "Deinit": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Deinit"
+        },
+        "Del": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Del"
+        },
+        "Delegate": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Delegate"
+        },
+        "Delete": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Delete"
+        },
+        "Dict": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Dict"
+        },
+        "Dictionary": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Dictionary"
+        },
+        "DidSet": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DidSet"
+        },
+        "Do": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Do"
+        },
+        "Double": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Double"
+        },
+        "Dynamic": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Dynamic"
+        },
+        "DynamicCast": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "DynamicCast"
+        },
+        "Elif": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Elif"
+        },
+        "Else": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Else"
+        },
+        "EncodeQuickType": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "EncodeQuickType"
+        },
+        "Enum": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Enum"
+        },
+        "EqualityContract": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "EqualityContract"
+        },
+        "Event": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Event"
+        },
+        "Except": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Except"
+        },
+        "Exception": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Exception"
+        },
+        "Explicit": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Explicit"
+        },
+        "Export": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Export"
+        },
+        "Exposing": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Exposing"
+        },
+        "Extends": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Extends"
+        },
+        "Extension": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Extension"
+        },
+        "Extern": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Extern"
+        },
+        "Fallthrough": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Fallthrough"
+        },
+        "FalseClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "FalseClass"
+        },
+        "Fileprivate": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Fileprivate"
+        },
+        "Final": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Final"
+        },
+        "Finally": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Finally"
+        },
+        "Fixed": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Fixed"
+        },
+        "Float": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Float"
+        },
+        "For": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "For"
+        },
+        "Foreach": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Foreach"
+        },
+        "Friend": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Friend"
+        },
+        "From": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "From"
+        },
+        "FromDict": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "FromDict"
+        },
+        "FromJSON": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "FromJSON"
+        },
+        "Func": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Func"
+        },
+        "Function": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Function"
+        },
+        "Get": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Get"
+        },
+        "Global": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Global"
+        },
+        "Go": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Go"
+        },
+        "Goto": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Goto"
+        },
+        "Guard": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Guard"
+        },
+        "HasOwnProperty": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "HasOwnProperty"
+        },
+        "HashCode": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "HashCode"
+        },
+        "ID": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ID"
+        },
+        "If": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "If"
+        },
+        "Implements": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Implements"
+        },
+        "Implicit": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Implicit"
+        },
+        "Import": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Import"
+        },
+        "In": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "In"
+        },
+        "Indirect": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Indirect"
+        },
+        "Infix": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Infix"
+        },
+        "Init": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Init"
+        },
+        "Inline": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Inline"
+        },
+        "Inout": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Inout"
+        },
+        "Instanceof": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Instanceof"
+        },
+        "Int": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Int"
+        },
+        "Interface": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Interface"
+        },
+        "Internal": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Internal"
+        },
+        "Is": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Is"
+        },
+        "Iterable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Iterable"
+        },
+        "Jdec": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Jdec"
+        },
+        "Jenc": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Jenc"
+        },
+        "Jpipe": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Jpipe"
+        },
+        "JSON": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSON"
+        },
+        "JSONConverter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONConverter"
+        },
+        "JSONSerializer": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONSerializer"
+        },
+        "JSONToken": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONToken"
+        },
+        "JSONWriter": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "JSONWriter"
+        },
+        "Lambda": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Lambda"
+        },
+        "Lazy": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Lazy"
+        },
+        "Left": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Left"
+        },
+        "Let": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Let"
+        },
+        "List": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "List"
+        },
+        "Lock": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Lock"
+        },
+        "Long": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Long"
+        },
+        "Map": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Map"
+        },
+        "MetadataPropertyHandling": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "MetadataPropertyHandling"
+        },
+        "Module": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Module"
+        },
+        "Mutable": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Mutable"
+        },
+        "Mutating": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Mutating"
+        },
+        "Namespace": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Namespace"
+        },
+        "Native": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Native"
+        },
+        "New": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "New"
+        },
+        "Newtonsoft": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Newtonsoft"
+        },
+        "Nil": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Nil"
+        },
+        "NoSuchMethod": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NoSuchMethod"
+        },
+        "Noexcept": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Noexcept"
+        },
+        "Nonatomic": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Nonatomic"
+        },
+        "NoneClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NoneClass"
+        },
+        "Nonlocal": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Nonlocal"
+        },
+        "Nonmutating": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Nonmutating"
+        },
+        "Not": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Not"
+        },
+        "NotEq": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NotEq"
+        },
+        "NullClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "NullClass"
+        },
+        "Nullptr": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Nullptr"
+        },
+        "Number": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Number"
+        },
+        "Object": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Object"
+        },
+        "Of": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Of"
+        },
+        "Oneway": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Oneway"
+        },
+        "Open": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Open"
+        },
+        "Operator": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Operator"
+        },
+        "Optional": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Optional"
+        },
+        "Or": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Or"
+        },
+        "OrEq": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "OrEq"
+        },
+        "Out": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Out"
+        },
+        "Override": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Override"
+        },
+        "Package": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Package"
+        },
+        "Params": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Params"
+        },
+        "Pass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Pass"
+        },
+        "Port": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Port"
+        },
+        "Postfix": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Postfix"
+        },
+        "Precedence": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Precedence"
+        },
+        "Prefix": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Prefix"
+        },
+        "Print": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Print"
+        },
+        "PrintMembers": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "PrintMembers"
+        },
+        "Printf": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Printf"
+        },
+        "Private": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Private"
+        },
+        "Protected": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Protected"
+        },
+        "ProtocolClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ProtocolClass"
+        },
+        "Public": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Public"
+        },
+        "Quicktype": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Quicktype"
+        },
+        "Raise": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Raise"
+        },
+        "Range": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Range"
+        },
+        "Readonly": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Readonly"
+        },
+        "Ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Ref"
+        },
+        "Register": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Register"
+        },
+        "ReinterpretCast": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ReinterpretCast"
+        },
+        "Repeat": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Repeat"
+        },
+        "Require": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Require"
+        },
+        "Required": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Required"
+        },
+        "Requires": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Requires"
+        },
+        "Restrict": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Restrict"
+        },
+        "Retain": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Retain"
+        },
+        "Rethrows": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Rethrows"
+        },
+        "Return": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Return"
+        },
+        "Right": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Right"
+        },
+        "RuntimeType": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "RuntimeType"
+        },
+        "S": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "S"
+        },
+        "Sbyte": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Sbyte"
+        },
+        "Sealed": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Sealed"
+        },
+        "Select": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Select"
+        },
+        "SelfClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "SelfClass"
+        },
+        "Serialize": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Serialize"
+        },
+        "Set": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Set"
+        },
+        "Short": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Short"
+        },
+        "Signed": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Signed"
+        },
+        "Sizeof": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Sizeof"
+        },
+        "Stackalloc": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Stackalloc"
+        },
+        "Static": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Static"
+        },
+        "StaticAssert": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "StaticAssert"
+        },
+        "StaticCast": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "StaticCast"
+        },
+        "Strictfp": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Strictfp"
+        },
+        "String": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "String"
+        },
+        "Struct": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Struct"
+        },
+        "Subscript": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Subscript"
+        },
+        "Super": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Super"
+        },
+        "Switch": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Switch"
+        },
+        "Symbol": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Symbol"
+        },
+        "Synchronized": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Synchronized"
+        },
+        "System": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "System"
+        },
+        "Template": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Template"
+        },
+        "Then": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Then"
+        },
+        "This": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "This"
+        },
+        "ThreadLocal": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ThreadLocal"
+        },
+        "Throw": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Throw"
+        },
+        "Throws": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Throws"
+        },
+        "ToString": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ToString"
+        },
+        "ToDict": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ToDict"
+        },
+        "ToJSON": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "ToJSON"
+        },
+        "TopLevelClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TopLevelClass"
+        },
+        "Transient": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Transient"
+        },
+        "TrueClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TrueClass"
+        },
+        "Try": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Try"
+        },
+        "TypeClass": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "TypeClass"
+        },
+        "Typealias": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Typealias"
+        },
+        "Typedef": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Typedef"
+        },
+        "Typeid": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Typeid"
+        },
+        "Typename": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Typename"
+        },
+        "Typeof": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Typeof"
+        },
+        "Uint": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Uint"
+        },
+        "Ulong": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Ulong"
+        },
+        "Unchecked": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Unchecked"
+        },
+        "Undefined": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Undefined"
+        },
+        "Union": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Union"
+        },
+        "Unowned": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Unowned"
+        },
+        "Unsafe": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Unsafe"
+        },
+        "Unsigned": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Unsigned"
+        },
+        "Ushort": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Ushort"
+        },
+        "Using": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Using"
+        },
+        "Var": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Var"
+        },
+        "Virtual": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Virtual"
+        },
+        "Void": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Void"
+        },
+        "Volatile": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Volatile"
+        },
+        "WcharT": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "WcharT"
+        },
+        "Weak": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Weak"
+        },
+        "Where": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Where"
+        },
+        "While": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "While"
+        },
+        "WillSet": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "WillSet"
+        },
+        "With": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "With"
+        },
+        "Xor": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Xor"
+        },
+        "XorEq": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "XorEq"
+        },
+        "Yield": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Yield"
+        },
+        "UnionAny": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Any"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAny"
+        },
+        "UnionArrayNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ArrayNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionArrayNode"
+        },
+        "UnionBOOL": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Bool"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBOOL"
+        },
+        "UnionBooleanNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/BooleanNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBooleanNode"
+        },
+        "UnionCalendar": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Calendar"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCalendar"
+        },
+        "UnionClass": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Class"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionClass"
+        },
+        "UnionCodable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Codable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCodable"
+        },
+        "UnionCodingKey": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CodingKey"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCodingKey"
+        },
+        "UnionCodingKeys": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CodingKeys"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCodingKeys"
+        },
+        "UnionCultureInfo": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CultureInfo"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCultureInfo"
+        },
+        "UnionDateFormatter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateFormatter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateFormatter"
+        },
+        "UnionDateOnly": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateOnly"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateOnly"
+        },
+        "UnionDateOnlyConverter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateOnlyConverter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateOnlyConverter"
+        },
+        "UnionDateTime": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateTime"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateTime"
+        },
+        "UnionDateTimeStyles": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateTimeStyles"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateTimeStyles"
+        },
+        "UnionDecoder": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Decoder"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDecoder"
+        },
+        "UnionDecodingError": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DecodingError"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDecodingError"
+        },
+        "UnionDeserializationFeature": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DeserializationFeature"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDeserializationFeature"
+        },
+        "UnionDoubleNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DoubleNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDoubleNode"
+        },
+        "UnionEncoder": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Encoder"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEncoder"
+        },
+        "UnionEnumValues": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/EnumValues"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEnumValues"
+        },
+        "UnionEquatable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Equatable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEquatable"
+        },
+        "UnionFalse": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/False"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFalse"
+        },
+        "UnionFormatException": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FormatException"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFormatException"
+        },
+        "UnionHashable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Hashable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionHashable"
+        },
+        "UnionHasher": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Hasher"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionHasher"
+        },
+        "UnionIMP": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Imp"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIMP"
+        },
+        "UnionIntNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/IntNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIntNode"
+        },
+        "UnionISODateTimeOffsetConverter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ISODateTimeOffsetConverter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionISODateTimeOffsetConverter"
+        },
+        "UnionJSONAny": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONAny"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONAny"
+        },
+        "UnionJSONCodingKey": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONCodingKey"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONCodingKey"
+        },
+        "UnionJSONDecoder": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONDecoder"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONDecoder"
+        },
+        "UnionJSONEncoder": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONEncoder"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONEncoder"
+        },
+        "UnionJSONNull": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONNull"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONNull"
+        },
+        "UnionJSONException": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONException"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONException"
+        },
+        "UnionJSONGenerator": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONGenerator"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONGenerator"
+        },
+        "UnionJSONNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONNode"
+        },
+        "UnionJSONParser": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONParser"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONParser"
+        },
+        "UnionJSONReader": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONReader"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONReader"
+        },
+        "UnionJSONTokenType": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONTokenType"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONTokenType"
+        },
+        "UnionKSerializer": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/KSerializer"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionKSerializer"
+        },
+        "UnionLocalDate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/LocalDate"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLocalDate"
+        },
+        "UnionLocale": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Locale"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLocale"
+        },
+        "UnionLongNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/LongNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLongNode"
+        },
+        "UnionMapEntry": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/MapEntry"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMapEntry"
+        },
+        "UnionMarshalJSON": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/MarshalJSON"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMarshalJSON"
+        },
+        "UnionNO": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/No"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNO"
+        },
+        "UnionNSError": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NSError"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNSError"
+        },
+        "UnionNSObject": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NSObject"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNSObject"
+        },
+        "UnionNSString": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NSString"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNSString"
+        },
+        "UnionNULL": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Null"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNULL"
+        },
+        "UnionNone": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/None"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNone"
+        },
+        "UnionNullNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NullNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNullNode"
+        },
+        "UnionObjectMapper": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ObjectMapper"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionObjectMapper"
+        },
+        "UnionObjectNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ObjectNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionObjectNode"
+        },
+        "UnionObjectReader": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ObjectReader"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionObjectReader"
+        },
+        "UnionObjectWriter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ObjectWriter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionObjectWriter"
+        },
+        "UnionOffsetDateTime": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/OffsetDateTime"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOffsetDateTime"
+        },
+        "UnionOffsetTime": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/OffsetTime"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOffsetTime"
+        },
+        "UnionPrimitiveKind": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/PrimitiveKind"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrimitiveKind"
+        },
+        "UnionProtocol": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Protocol"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionProtocol"
+        },
+        "UnionRegExp": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/RegExp"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRegExp"
+        },
+        "UnionSEL": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Sel"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSEL"
+        },
+        "UnionSelf": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Self"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSelf"
+        },
+        "UnionSendable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Sendable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSendable"
+        },
+        "UnionSerialDescriptor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SerialDescriptor"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerialDescriptor"
+        },
+        "UnionSerialName": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SerialName"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerialName"
+        },
+        "UnionSerializable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Serializable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerializable"
+        },
+        "UnionSerializationFeature": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SerializationFeature"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerializationFeature"
+        },
+        "UnionSerializerProvider": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SerializerProvider"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerializerProvider"
+        },
+        "UnionSimpleModule": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SimpleModule"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSimpleModule"
+        },
+        "UnionStandards": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Standards"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStandards"
+        },
+        "UnionStdDeserializer": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/StdDeserializer"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStdDeserializer"
+        },
+        "UnionStdSerializer": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/StdSerializer"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStdSerializer"
+        },
+        "UnionTextNode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TextNode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTextNode"
+        },
+        "UnionTimeOnly": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TimeOnly"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTimeOnly"
+        },
+        "UnionTimeOnlyConverter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TimeOnlyConverter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTimeOnlyConverter"
+        },
+        "UnionTimeZone": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TimeZone"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTimeZone"
+        },
+        "UnionTrue": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/True"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTrue"
+        },
+        "UnionType": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Type"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionType"
+        },
+        "UnionUUID": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UUID"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUUID"
+        },
+        "UnionUnmarshalJSON": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UnmarshalJSON"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnmarshalJSON"
+        },
+        "UnionUseSerializers": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UseSerializers"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUseSerializers"
+        },
+        "UnionUtf8JSONReader": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Utf8JSONReader"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUtf8JSONReader"
+        },
+        "UnionUtf8JSONWriter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Utf8JSONWriter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUtf8JSONWriter"
+        },
+        "UnionYES": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Yes"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionYES"
+        },
+        "UnionUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Empty"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnion"
+        },
+        "UnionBool": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/BoolClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBool"
+        },
+        "UnionComplex": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Complex"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionComplex"
+        },
+        "UnionImaginery": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Imaginery"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionImaginery"
+        },
+        "UnionAbstract": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Abstract"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAbstract"
+        },
+        "UnionAlignas": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Alignas"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAlignas"
+        },
+        "UnionAlignof": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Alignof"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAlignof"
+        },
+        "UnionAnd": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/And"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAnd"
+        },
+        "UnionAndEq": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AndEq"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAndEq"
+        },
+        "UnionAnyUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AnyClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAnyUnion"
+        },
+        "UnionArray": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Array"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionArray"
+        },
+        "UnionAs": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/As"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAs"
+        },
+        "UnionASM": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ASM"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionASM"
+        },
+        "UnionAssert": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Assert"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAssert"
+        },
+        "UnionAssociatedtype": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Associatedtype"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAssociatedtype"
+        },
+        "UnionAssociativity": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Associativity"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAssociativity"
+        },
+        "UnionAsync": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Async"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAsync"
+        },
+        "UnionAtomic": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Atomic"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAtomic"
+        },
+        "UnionAtomicCancel": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AtomicCancel"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAtomicCancel"
+        },
+        "UnionAtomicCommit": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AtomicCommit"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAtomicCommit"
+        },
+        "UnionAtomicNoexcept": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AtomicNoexcept"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAtomicNoexcept"
+        },
+        "UnionAuto": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Auto"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAuto"
+        },
+        "UnionAwait": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Await"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionAwait"
+        },
+        "UnionBase": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Base"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBase"
+        },
+        "UnionBitand": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Bitand"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBitand"
+        },
+        "UnionBitor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Bitor"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBitor"
+        },
+        "UnionBoolUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UnionBoolBool"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBoolUnion"
+        },
+        "UnionBoolean": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Boolean"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBoolean"
+        },
+        "UnionBreak": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Break"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBreak"
+        },
+        "UnionBycopy": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Bycopy"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionBycopy"
+        },
+        "UnionByref": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Byref"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionByref"
+        },
+        "UnionByte": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Byte"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionByte"
+        },
+        "UnionCase": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Case"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCase"
+        },
+        "UnionCatch": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Catch"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCatch"
+        },
+        "UnionChan": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Chan"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionChan"
+        },
+        "UnionChar": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Char"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionChar"
+        },
+        "UnionChar16T": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Char16T"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionChar16T"
+        },
+        "UnionChar32T": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Char32T"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionChar32T"
+        },
+        "UnionChecked": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Checked"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionChecked"
+        },
+        "UnionClassUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ClassClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionClassUnion"
+        },
+        "UnionClone": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Clone"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionClone"
+        },
+        "UnionCoAwait": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CoAwait"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCoAwait"
+        },
+        "UnionCoReturn": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CoReturn"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCoReturn"
+        },
+        "UnionCoYield": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/CoYield"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCoYield"
+        },
+        "UnionCompl": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Compl"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionCompl"
+        },
+        "UnionConcept": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Concept"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConcept"
+        },
+        "UnionConsole": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Console"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConsole"
+        },
+        "UnionConst": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Const"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConst"
+        },
+        "UnionConstCast": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ConstCast"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConstCast"
+        },
+        "UnionConstexpr": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Constexpr"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConstexpr"
+        },
+        "UnionConstructor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Constructor"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConstructor"
+        },
+        "UnionContinue": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Continue"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionContinue"
+        },
+        "UnionConvenience": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Convenience"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConvenience"
+        },
+        "UnionConvert": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Convert"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConvert"
+        },
+        "UnionConverter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Converter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionConverter"
+        },
+        "UnionDate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Date"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDate"
+        },
+        "UnionDateParseHandling": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DateParseHandling"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDateParseHandling"
+        },
+        "UnionDebugger": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Debugger"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDebugger"
+        },
+        "UnionDecimal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Decimal"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDecimal"
+        },
+        "UnionDeclare": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Declare"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDeclare"
+        },
+        "UnionDecltype": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Decltype"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDecltype"
+        },
+        "UnionDecodeString": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DecodeString"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDecodeString"
+        },
+        "UnionDef": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Def"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDef"
+        },
+        "UnionDefault": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Default"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDefault"
+        },
+        "UnionDefer": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Defer"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDefer"
+        },
+        "UnionDeinit": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Deinit"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDeinit"
+        },
+        "UnionDel": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Del"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDel"
+        },
+        "UnionDelegate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Delegate"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDelegate"
+        },
+        "UnionDelete": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Delete"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDelete"
+        },
+        "UnionDict": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Dict"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDict"
+        },
+        "UnionDictionary": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Dictionary"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDictionary"
+        },
+        "UnionDidSet": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DidSet"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDidSet"
+        },
+        "UnionDo": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Do"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDo"
+        },
+        "UnionDouble": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Double"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDouble"
+        },
+        "UnionDynamic": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Dynamic"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDynamic"
+        },
+        "UnionDynamicCast": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/DynamicCast"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionDynamicCast"
+        },
+        "UnionElif": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Elif"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionElif"
+        },
+        "UnionElse": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Else"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionElse"
+        },
+        "UnionEncodeQuickType": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/EncodeQuickType"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEncodeQuickType"
+        },
+        "UnionEnum": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Enum"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEnum"
+        },
+        "UnionEqualityContract": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/EqualityContract"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEqualityContract"
+        },
+        "UnionEvent": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Event"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionEvent"
+        },
+        "UnionExcept": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Except"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExcept"
+        },
+        "UnionException": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Exception"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionException"
+        },
+        "UnionExplicit": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Explicit"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExplicit"
+        },
+        "UnionExport": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Export"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExport"
+        },
+        "UnionExposing": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Exposing"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExposing"
+        },
+        "UnionExtends": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Extends"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExtends"
+        },
+        "UnionExtension": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Extension"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExtension"
+        },
+        "UnionExtern": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Extern"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionExtern"
+        },
+        "UnionFallthrough": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Fallthrough"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFallthrough"
+        },
+        "UnionFalseUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FalseClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFalseUnion"
+        },
+        "UnionFileprivate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Fileprivate"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFileprivate"
+        },
+        "UnionFinal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Final"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFinal"
+        },
+        "UnionFinally": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Finally"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFinally"
+        },
+        "UnionFixed": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Fixed"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFixed"
+        },
+        "UnionFloat": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Float"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFloat"
+        },
+        "UnionFor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/For"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFor"
+        },
+        "UnionForeach": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Foreach"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionForeach"
+        },
+        "UnionFriend": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Friend"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFriend"
+        },
+        "UnionFrom": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/From"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFrom"
+        },
+        "UnionFromDict": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FromDict"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFromDict"
+        },
+        "UnionFromJSON": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FromJSON"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFromJSON"
+        },
+        "UnionFunc": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Func"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFunc"
+        },
+        "UnionFunction": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Function"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionFunction"
+        },
+        "UnionGet": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Get"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionGet"
+        },
+        "UnionGlobal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Global"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionGlobal"
+        },
+        "UnionGo": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Go"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionGo"
+        },
+        "UnionGoto": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Goto"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionGoto"
+        },
+        "UnionGuard": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Guard"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionGuard"
+        },
+        "UnionHasOwnProperty": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/HasOwnProperty"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionHasOwnProperty"
+        },
+        "UnionHashCode": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/HashCode"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionHashCode"
+        },
+        "UnionID": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ID"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionID"
+        },
+        "UnionIf": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/If"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIf"
+        },
+        "UnionImplements": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Implements"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionImplements"
+        },
+        "UnionImplicit": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Implicit"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionImplicit"
+        },
+        "UnionImport": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Import"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionImport"
+        },
+        "UnionIn": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/In"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIn"
+        },
+        "UnionIndirect": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Indirect"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIndirect"
+        },
+        "UnionInfix": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Infix"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInfix"
+        },
+        "UnionInit": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Init"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInit"
+        },
+        "UnionInline": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Inline"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInline"
+        },
+        "UnionInout": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Inout"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInout"
+        },
+        "UnionInstanceof": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Instanceof"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInstanceof"
+        },
+        "UnionInt": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Int"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInt"
+        },
+        "UnionInterface": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Interface"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInterface"
+        },
+        "UnionInternal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Internal"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionInternal"
+        },
+        "UnionIs": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Is"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIs"
+        },
+        "UnionIterable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Iterable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionIterable"
+        },
+        "UnionJdec": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Jdec"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJdec"
+        },
+        "UnionJenc": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Jenc"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJenc"
+        },
+        "UnionJpipe": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Jpipe"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJpipe"
+        },
+        "UnionJSON": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSON"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSON"
+        },
+        "UnionJSONConverter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONConverter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONConverter"
+        },
+        "UnionJSONSerializer": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONSerializer"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONSerializer"
+        },
+        "UnionJSONToken": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONToken"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONToken"
+        },
+        "UnionJSONWriter": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/JSONWriter"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionJSONWriter"
+        },
+        "UnionLambda": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Lambda"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLambda"
+        },
+        "UnionLazy": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Lazy"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLazy"
+        },
+        "UnionLeft": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Left"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLeft"
+        },
+        "UnionLet": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Let"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLet"
+        },
+        "UnionList": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/List"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionList"
+        },
+        "UnionLock": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Lock"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLock"
+        },
+        "UnionLong": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Long"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionLong"
+        },
+        "UnionMap": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Map"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMap"
+        },
+        "UnionMetadataPropertyHandling": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/MetadataPropertyHandling"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMetadataPropertyHandling"
+        },
+        "UnionModule": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Module"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionModule"
+        },
+        "UnionMutable": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Mutable"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMutable"
+        },
+        "UnionMutating": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Mutating"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionMutating"
+        },
+        "UnionNamespace": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Namespace"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNamespace"
+        },
+        "UnionNative": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Native"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNative"
+        },
+        "UnionNew": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/New"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNew"
+        },
+        "UnionNewtonsoft": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Newtonsoft"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNewtonsoft"
+        },
+        "UnionNil": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Nil"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNil"
+        },
+        "UnionNoSuchMethod": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NoSuchMethod"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNoSuchMethod"
+        },
+        "UnionNoexcept": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Noexcept"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNoexcept"
+        },
+        "UnionNonatomic": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Nonatomic"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNonatomic"
+        },
+        "UnionNoneUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NoneClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNoneUnion"
+        },
+        "UnionNonlocal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Nonlocal"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNonlocal"
+        },
+        "UnionNonmutating": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Nonmutating"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNonmutating"
+        },
+        "UnionNot": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Not"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNot"
+        },
+        "UnionNotEq": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NotEq"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNotEq"
+        },
+        "UnionNull": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/NullClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNull"
+        },
+        "UnionNullptr": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Nullptr"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNullptr"
+        },
+        "UnionNumber": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Number"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionNumber"
+        },
+        "UnionObject": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Object"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionObject"
+        },
+        "UnionOf": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Of"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOf"
+        },
+        "UnionOneway": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Oneway"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOneway"
+        },
+        "UnionOpen": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Open"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOpen"
+        },
+        "UnionOperator": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Operator"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOperator"
+        },
+        "UnionOptional": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Optional"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOptional"
+        },
+        "UnionOr": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Or"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOr"
+        },
+        "UnionOrEq": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/OrEq"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOrEq"
+        },
+        "UnionOut": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Out"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOut"
+        },
+        "UnionOverride": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Override"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionOverride"
+        },
+        "UnionPackage": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Package"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPackage"
+        },
+        "UnionParams": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Params"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionParams"
+        },
+        "UnionPass": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Pass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPass"
+        },
+        "UnionPort": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Port"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPort"
+        },
+        "UnionPostfix": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Postfix"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPostfix"
+        },
+        "UnionPrecedence": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Precedence"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrecedence"
+        },
+        "UnionPrefix": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Prefix"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrefix"
+        },
+        "UnionPrint": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Print"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrint"
+        },
+        "UnionPrintMembers": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/PrintMembers"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrintMembers"
+        },
+        "UnionPrintf": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Printf"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrintf"
+        },
+        "UnionPrivate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Private"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPrivate"
+        },
+        "UnionProtected": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Protected"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionProtected"
+        },
+        "UnionProtocolUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ProtocolClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionProtocolUnion"
+        },
+        "UnionPublic": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Public"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionPublic"
+        },
+        "UnionQuicktype": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Quicktype"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionQuicktype"
+        },
+        "UnionRaise": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Raise"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRaise"
+        },
+        "UnionRange": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Range"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRange"
+        },
+        "UnionReadonly": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Readonly"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionReadonly"
+        },
+        "UnionRef": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Ref"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRef"
+        },
+        "UnionRegister": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Register"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRegister"
+        },
+        "UnionReinterpretCast": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ReinterpretCast"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionReinterpretCast"
+        },
+        "UnionRepeat": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Repeat"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRepeat"
+        },
+        "UnionRequire": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Require"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRequire"
+        },
+        "UnionRequired": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Required"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRequired"
+        },
+        "UnionRequires": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Requires"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRequires"
+        },
+        "UnionRestrict": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Restrict"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRestrict"
+        },
+        "UnionRetain": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Retain"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRetain"
+        },
+        "UnionRethrows": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Rethrows"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRethrows"
+        },
+        "UnionReturn": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Return"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionReturn"
+        },
+        "UnionRight": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Right"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRight"
+        },
+        "UnionRuntimeType": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/RuntimeType"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionRuntimeType"
+        },
+        "UnionS": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/S"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionS"
+        },
+        "UnionSbyte": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Sbyte"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSbyte"
+        },
+        "UnionSealed": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Sealed"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSealed"
+        },
+        "UnionSelect": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Select"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSelect"
+        },
+        "UnionSelfUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/SelfClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSelfUnion"
+        },
+        "UnionSerialize": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Serialize"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSerialize"
+        },
+        "UnionSet": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Set"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSet"
+        },
+        "UnionShort": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Short"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionShort"
+        },
+        "UnionSigned": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Signed"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSigned"
+        },
+        "UnionSizeof": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Sizeof"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSizeof"
+        },
+        "UnionStackalloc": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Stackalloc"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStackalloc"
+        },
+        "UnionStatic": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Static"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStatic"
+        },
+        "UnionStaticAssert": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/StaticAssert"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStaticAssert"
+        },
+        "UnionStaticCast": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/StaticCast"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStaticCast"
+        },
+        "UnionStrictfp": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Strictfp"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStrictfp"
+        },
+        "UnionString": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/String"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionString"
+        },
+        "UnionStruct": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Struct"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionStruct"
+        },
+        "UnionSubscript": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Subscript"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSubscript"
+        },
+        "UnionSuper": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Super"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSuper"
+        },
+        "UnionSwitch": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Switch"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSwitch"
+        },
+        "UnionSymbol": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Symbol"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSymbol"
+        },
+        "UnionSynchronized": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Synchronized"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSynchronized"
+        },
+        "UnionSystem": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/System"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionSystem"
+        },
+        "UnionTemplate": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Template"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTemplate"
+        },
+        "UnionThen": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Then"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionThen"
+        },
+        "UnionThis": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/This"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionThis"
+        },
+        "UnionThreadLocal": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ThreadLocal"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionThreadLocal"
+        },
+        "UnionThrow": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Throw"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionThrow"
+        },
+        "UnionThrows": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Throws"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionThrows"
+        },
+        "UnionToString": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ToString"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionToString"
+        },
+        "UnionToDict": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ToDict"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionToDict"
+        },
+        "UnionToJSON": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ToJSON"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionToJSON"
+        },
+        "UnionTopLevel": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TopLevelClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTopLevel"
+        },
+        "UnionTransient": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Transient"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTransient"
+        },
+        "UnionTrueUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TrueClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTrueUnion"
+        },
+        "UnionTry": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Try"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTry"
+        },
+        "UnionTypeUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/TypeClass"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypeUnion"
+        },
+        "UnionTypealias": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Typealias"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypealias"
+        },
+        "UnionTypedef": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Typedef"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypedef"
+        },
+        "UnionTypeid": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Typeid"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypeid"
+        },
+        "UnionTypename": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Typename"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypename"
+        },
+        "UnionTypeof": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Typeof"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionTypeof"
+        },
+        "UnionUint": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Uint"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUint"
+        },
+        "UnionUlong": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Ulong"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUlong"
+        },
+        "UnionUnchecked": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Unchecked"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnchecked"
+        },
+        "UnionUndefined": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Undefined"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUndefined"
+        },
+        "UnionUnionUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Union"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnionUnion"
+        },
+        "UnionUnowned": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Unowned"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnowned"
+        },
+        "UnionUnsafe": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Unsafe"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnsafe"
+        },
+        "UnionUnsigned": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Unsigned"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUnsigned"
+        },
+        "UnionUshort": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Ushort"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUshort"
+        },
+        "UnionUsing": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Using"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionUsing"
+        },
+        "UnionVar": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Var"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionVar"
+        },
+        "UnionVirtual": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Virtual"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionVirtual"
+        },
+        "UnionVoid": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Void"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionVoid"
+        },
+        "UnionVolatile": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Volatile"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionVolatile"
+        },
+        "UnionWcharT": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/WcharT"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWcharT"
+        },
+        "UnionWeak": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Weak"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWeak"
+        },
+        "UnionWhere": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Where"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWhere"
+        },
+        "UnionWhile": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/While"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWhile"
+        },
+        "UnionWillSet": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/WillSet"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWillSet"
+        },
+        "UnionWith": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/With"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionWith"
+        },
+        "UnionXor": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Xor"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionXor"
+        },
+        "UnionXorEq": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/XorEq"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionXorEq"
+        },
+        "UnionYield": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Yield"
+                },
+                {
+                    "type": "number"
+                }
+            ],
+            "title": "UnionYield"
+        }
+    }
+}

@@ -1,0 +1,51 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/7d397.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/7d397.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/ConsolidatedScreeningListSearch.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Definitions.java",
+        "src/main/java/io/quicktype/Get.java",
+        "src/main/java/io/quicktype/In.java",
+        "src/main/java/io/quicktype/Info.java",
+        "src/main/java/io/quicktype/Items.java",
+        "src/main/java/io/quicktype/ListClass.java",
+        "src/main/java/io/quicktype/Parameter.java",
+        "src/main/java/io/quicktype/Paths.java",
+        "src/main/java/io/quicktype/Property.java",
+        "src/main/java/io/quicktype/Responses.java",
+        "src/main/java/io/quicktype/Schema.java",
+        "src/main/java/io/quicktype/The200.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Type.java"
+      ]
+    }
+  ]
+}

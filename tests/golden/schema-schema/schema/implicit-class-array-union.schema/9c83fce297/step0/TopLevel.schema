@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "foo": {
+                    "$ref": "#/definitions/FooUnion"
+                }
+            },
+            "required": [
+                "foo"
+            ],
+            "title": "TopLevel"
+        },
+        "FooObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "bar": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "bar"
+            ],
+            "title": "FooObject"
+        },
+        "FooUnion": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/FooObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "FooUnion"
+        }
+    }
+}

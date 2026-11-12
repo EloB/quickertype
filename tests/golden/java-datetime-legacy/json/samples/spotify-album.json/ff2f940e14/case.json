@@ -1,0 +1,46 @@
+{
+  "fixture": "java-datetime-legacy",
+  "input": "json/samples/spotify-album.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/samples/spotify-album.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--datetime-provider",
+        "legacy",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Artist.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Copyright.java",
+        "src/main/java/io/quicktype/ExternalIDS.java",
+        "src/main/java/io/quicktype/ExternalUrls.java",
+        "src/main/java/io/quicktype/Image.java",
+        "src/main/java/io/quicktype/Item.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Tracks.java"
+      ]
+    }
+  ]
+}

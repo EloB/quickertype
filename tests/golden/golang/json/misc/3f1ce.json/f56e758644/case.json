@@ -1,0 +1,29 @@
+{
+  "fixture": "golang",
+  "input": "json/misc/3f1ce.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/json/misc/3f1ce.json",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

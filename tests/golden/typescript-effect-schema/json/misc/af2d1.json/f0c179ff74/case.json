@@ -1,0 +1,29 @@
+{
+  "fixture": "typescript-effect-schema",
+  "input": "json/misc/af2d1.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript-effect-schema",
+        "--src",
+        "{INPUTS}/json/misc/af2d1.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

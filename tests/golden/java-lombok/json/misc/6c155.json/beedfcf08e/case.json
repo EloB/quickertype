@@ -1,0 +1,43 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/6c155.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/6c155.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Component.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Location.java",
+        "src/main/java/io/quicktype/Metadata.java",
+        "src/main/java/io/quicktype/ResponseInfo.java",
+        "src/main/java/io/quicktype/Result.java",
+        "src/main/java/io/quicktype/Resultset.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

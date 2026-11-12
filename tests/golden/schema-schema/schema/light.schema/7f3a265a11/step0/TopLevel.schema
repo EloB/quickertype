@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "LightParams": {
+                    "$ref": "#/definitions/LightParams"
+                }
+            },
+            "required": [
+                "LightParams"
+            ],
+            "title": "TopLevel"
+        },
+        "LightParams": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "outlet_id": {
+                    "type": "string"
+                },
+                "rgba": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "app_id",
+                "outlet_id",
+                "rgba"
+            ],
+            "title": "LightParams"
+        }
+    }
+}

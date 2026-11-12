@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-pike",
+  "input": "graphql/github6.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "pike",
+        "--src",
+        "{INPUTS}/graphql/github6.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.pmod",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.pmod"
+      ]
+    }
+  ]
+}

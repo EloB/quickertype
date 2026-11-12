@@ -1,0 +1,29 @@
+{
+  "fixture": "rust",
+  "input": "json/samples/spotify-album.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "rust",
+        "--src",
+        "{INPUTS}/json/samples/spotify-album.json",
+        "--out",
+        "module_under_test.rs",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "module_under_test.rs"
+      ]
+    }
+  ]
+}

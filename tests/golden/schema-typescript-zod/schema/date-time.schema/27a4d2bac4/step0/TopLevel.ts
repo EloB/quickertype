@@ -1,0 +1,32 @@
+import * as z from "zod";
+
+
+export const ComplexUnionArrayEnumSchema = z.enum([
+    "foo",
+    "bar",
+]);
+export type ComplexUnionArrayEnum = z.infer<typeof ComplexUnionArrayEnumSchema>;
+
+export const LocalDateSchema = z.object({
+});
+export type LocalDate = z.infer<typeof LocalDateSchema>;
+
+export const OffsetDateTimeSchema = z.object({
+});
+export type OffsetDateTime = z.infer<typeof OffsetDateTimeSchema>;
+
+export const OffsetTimeSchema = z.object({
+});
+export type OffsetTime = z.infer<typeof OffsetTimeSchema>;
+
+export const TopLevelSchema = z.object({
+    "complex-union-array": z.array(z.union([ComplexUnionArrayEnumSchema, z.number().int(), z.string().pipe(z.coerce.date())])),
+    "date": z.string(),
+    "date-time": z.string().pipe(z.coerce.date()),
+    "local-date-class": LocalDateSchema.optional(),
+    "offset-date-time-class": OffsetDateTimeSchema.optional(),
+    "offset-time-class": OffsetTimeSchema.optional(),
+    "time": z.string(),
+    "union-array": z.array(z.string()),
+});
+export type TopLevel = z.infer<typeof TopLevelSchema>;

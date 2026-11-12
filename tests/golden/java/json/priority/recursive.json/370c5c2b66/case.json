@@ -1,0 +1,53 @@
+{
+  "fixture": "java",
+  "input": "json/priority/recursive.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/priority/recursive.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Category.java",
+        "src/main/java/io/quicktype/CategoryThumbnail.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Currency.java",
+        "src/main/java/io/quicktype/Date.java",
+        "src/main/java/io/quicktype/Details.java",
+        "src/main/java/io/quicktype/Eonandyear.java",
+        "src/main/java/io/quicktype/Format.java",
+        "src/main/java/io/quicktype/FormatsClass.java",
+        "src/main/java/io/quicktype/LinkElement.java",
+        "src/main/java/io/quicktype/LinkLink.java",
+        "src/main/java/io/quicktype/ProductElement.java",
+        "src/main/java/io/quicktype/ProductProduct.java",
+        "src/main/java/io/quicktype/Rating.java",
+        "src/main/java/io/quicktype/Specification.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Useraveragerating.java",
+        "src/main/java/io/quicktype/Xmlschematype.java"
+      ]
+    }
+  ]
+}

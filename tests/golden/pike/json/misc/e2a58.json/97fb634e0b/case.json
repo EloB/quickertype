@@ -1,0 +1,29 @@
+{
+  "fixture": "pike",
+  "input": "json/misc/e2a58.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "pike",
+        "--src",
+        "{INPUTS}/json/misc/e2a58.json",
+        "--out",
+        "TopLevel.pmod",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.pmod"
+      ]
+    }
+  ]
+}

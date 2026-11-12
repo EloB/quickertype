@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-javascript",
+  "input": "schema/boolean-subschema.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "javascript",
+        "--src",
+        "{INPUTS}/schema/boolean-subschema.schema",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

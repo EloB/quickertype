@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-zod",
+  "input": "schema/comment-injection-enum-nested-comment.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-zod",
+        "--src",
+        "{INPUTS}/schema/comment-injection-enum-nested-comment.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

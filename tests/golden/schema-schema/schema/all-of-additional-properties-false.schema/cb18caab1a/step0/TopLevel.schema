@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "frequency": {
+                    "$ref": "#/definitions/Frequency"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/Type"
+                }
+            },
+            "required": [
+                "amount",
+                "frequency",
+                "type"
+            ],
+            "title": "TopLevel"
+        },
+        "Frequency": {
+            "type": "string",
+            "enum": [
+                "Weekly",
+                "Monthly",
+                "Annually"
+            ],
+            "title": "Frequency"
+        },
+        "Type": {
+            "type": "string",
+            "enum": [
+                "GrossSalaryAmount",
+                "Overtime"
+            ],
+            "title": "Type"
+        }
+    }
+}

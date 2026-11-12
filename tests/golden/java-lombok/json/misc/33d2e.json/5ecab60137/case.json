@@ -1,0 +1,45 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/33d2e.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/33d2e.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/AffiliationClass.java",
+        "src/main/java/io/quicktype/AffiliationElement.java",
+        "src/main/java/io/quicktype/BornEnum.java",
+        "src/main/java/io/quicktype/BornUnion.java",
+        "src/main/java/io/quicktype/Category.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Gender.java",
+        "src/main/java/io/quicktype/Laureate.java",
+        "src/main/java/io/quicktype/Prize.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

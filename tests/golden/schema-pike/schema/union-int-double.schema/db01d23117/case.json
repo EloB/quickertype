@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-pike",
+  "input": "schema/union-int-double.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "pike",
+        "--src",
+        "{INPUTS}/schema/union-int-double.schema",
+        "--out",
+        "TopLevel.pmod",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.pmod"
+      ]
+    }
+  ]
+}

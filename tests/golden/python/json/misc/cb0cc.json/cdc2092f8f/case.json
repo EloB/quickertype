@@ -1,0 +1,29 @@
+{
+  "fixture": "python",
+  "input": "json/misc/cb0cc.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "python",
+        "--src",
+        "{INPUTS}/json/misc/cb0cc.json",
+        "--out",
+        "quicktype.py",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.py"
+      ]
+    }
+  ]
+}

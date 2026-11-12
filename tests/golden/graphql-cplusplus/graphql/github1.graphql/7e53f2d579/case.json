@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-cplusplus",
+  "input": "graphql/github1.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/graphql/github1.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

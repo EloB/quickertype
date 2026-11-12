@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "shortcut": {
+                    "$ref": "#/definitions/Shortcut"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "title": "TopLevel"
+        },
+        "Shortcut": {
+            "type": "string",
+            "enum": [
+                "hidden",
+                "visible"
+            ],
+            "title": "Shortcut"
+        }
+    }
+}

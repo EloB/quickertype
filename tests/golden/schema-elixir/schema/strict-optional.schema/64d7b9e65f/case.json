@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-elixir",
+  "input": "schema/strict-optional.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "elixir",
+        "--src",
+        "{INPUTS}/schema/strict-optional.schema",
+        "--out",
+        "QuickType.ex",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.ex"
+      ]
+    }
+  ]
+}

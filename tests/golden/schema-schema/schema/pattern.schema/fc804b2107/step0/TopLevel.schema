@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "pattern1": {
+                    "type": "string",
+                    "pattern": "a[.]*"
+                },
+                "pattern2": {
+                    "type": "string",
+                    "pattern": "b[.]*"
+                },
+                "RegExp": {
+                    "$ref": "#/definitions/RegExp"
+                },
+                "union": {
+                    "type": "string",
+                    "pattern": "(b[.]*)|(c[.]*)"
+                }
+            },
+            "required": [
+                "pattern1",
+                "pattern2",
+                "union"
+            ],
+            "title": "TopLevel"
+        },
+        "RegExp": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "pattern3": {
+                    "type": "string",
+                    "pattern": "d[.]*"
+                }
+            },
+            "required": [
+                "pattern3"
+            ],
+            "title": "RegExp"
+        }
+    }
+}

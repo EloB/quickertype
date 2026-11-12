@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-haskell",
+  "input": "schema/go-schema-pattern-properties.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/schema/go-schema-pattern-properties.schema",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

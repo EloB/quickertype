@@ -1,0 +1,41 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+default-members = ["crates/*"]
+
+[workspace.package]
+version = "24.0.0"
+edition = "2024"
+rust-version = "1.85"
+license = "Apache-2.0"
+repository = "https://github.com/glideapps/quicktype"
+authors = ["quicktype contributors"]
+
+# Shared dependency versions. Several exist specifically to reproduce
+# JavaScript semantics byte-for-byte; see docs/PARITY.md before adding one.
+[workspace.dependencies]
+quicktype-core = { path = "crates/quicktype-core" }
+quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
+indexmap = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 2

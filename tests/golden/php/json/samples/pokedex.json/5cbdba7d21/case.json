@@ -1,0 +1,29 @@
+{
+  "fixture": "php",
+  "input": "json/samples/pokedex.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "php",
+        "--src",
+        "{INPUTS}/json/samples/pokedex.json",
+        "--out",
+        "TopLevel.php",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.php"
+      ]
+    }
+  ]
+}

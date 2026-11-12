@@ -1,0 +1,29 @@
+{
+  "fixture": "graphql-flow",
+  "input": "graphql/github5.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "flow",
+        "--src",
+        "{INPUTS}/graphql/github5.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "TopLevel.js",
+        "--top-level",
+        "TopLevel",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "TopLevel.js"
+      ]
+    }
+  ]
+}

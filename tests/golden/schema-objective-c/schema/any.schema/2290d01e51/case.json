@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-objective-c",
+  "input": "schema/any.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "objective-c",
+        "--src",
+        "{INPUTS}/schema/any.schema",
+        "--out",
+        "QTTopLevel.m",
+        "--top-level",
+        "QTTopLevel",
+        "--functions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "QTTopLevel.h",
+        "QTTopLevel.m"
+      ]
+    }
+  ]
+}

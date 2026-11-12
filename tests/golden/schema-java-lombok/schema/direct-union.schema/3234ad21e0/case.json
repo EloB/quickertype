@@ -1,0 +1,46 @@
+{
+  "fixture": "schema-java-lombok",
+  "input": "schema/direct-union.schema",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/schema/direct-union.schema",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Anything.java",
+        "src/main/java/io/quicktype/ArrayNode.java",
+        "src/main/java/io/quicktype/BooleanNode.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/DoubleNode.java",
+        "src/main/java/io/quicktype/IntNode.java",
+        "src/main/java/io/quicktype/LongNode.java",
+        "src/main/java/io/quicktype/NullNode.java",
+        "src/main/java/io/quicktype/ObjectNode.java",
+        "src/main/java/io/quicktype/TextNode.java",
+        "src/main/java/io/quicktype/Thing.java",
+        "src/main/java/io/quicktype/TopLevel.java"
+      ]
+    }
+  ]
+}

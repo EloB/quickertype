@@ -1,0 +1,30 @@
+//! Port of `packages/quicktype-core/src/index.ts`.
+
+pub mod annotation;
+pub mod attributes;
+pub mod convenience_renderer;
+pub mod cycle_breaker;
+pub mod date_time;
+pub mod declaration_ir;
+pub mod gather_names;
+pub mod graph;
+pub mod graph_rewriting;
+pub mod inference;
+pub mod input;
+pub mod language;
+pub mod make_transformations;
+pub mod markov_chain;
+pub mod messages;
+pub mod naming;
+pub mod renderer;
+pub mod renderer_options;
+pub mod rewrites;
+pub mod run;
+pub mod source;
+pub mod support;
+pub mod target_language;
+pub mod transformers;
+pub mod ty;
+pub mod types;
+pub mod unify_classes;
+pub mod union_builder;

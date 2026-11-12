@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-cjson",
+  "input": "schema/required-draft3.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/schema/required-draft3.schema",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}

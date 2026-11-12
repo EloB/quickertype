@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "type": "array",
+    "items": {
+        "$ref": "#/definitions/TextClassificationOutputElement"
+    },
+    "definitions": {
+        "TextClassificationOutputElement": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "label",
+                "score"
+            ],
+            "title": "TextClassificationOutputElement"
+        }
+    }
+}

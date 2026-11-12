@@ -1,0 +1,38 @@
+// Example usage:
+//
+// import { MyShape } from ./myShape.js;
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+import PropTypes from "prop-types";
+const Integer = (props, name) => props[name] == null || Number.isInteger(props[name]) ? null : new Error("Expected integer");
+
+let _TopLevel;
+let _LocalDate;
+let _OffsetDateTime;
+let _OffsetTime;
+const _ComplexUnionArrayEnum = PropTypes.oneOf(['foo', 'bar']);
+_LocalDate = PropTypes.shape({
+});
+_OffsetDateTime = PropTypes.shape({
+});
+_OffsetTime = PropTypes.shape({
+});
+_TopLevel = PropTypes.shape({
+    "complex-union-array": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.oneOfType([(props, name) => props[name] == null || typeof props[name] === "string" && !Number.isNaN(Date.parse(props[name])) ? null : new Error("Expected date-time"), _ComplexUnionArrayEnum, Integer]))]).isRequired,
+    "date": PropTypes.oneOfType([(props, name) => props[name] == null || typeof props[name] === "string" && !Number.isNaN(Date.parse(props[name])) ? null : new Error("Expected date-time")]).isRequired,
+    "date-time": PropTypes.oneOfType([(props, name) => props[name] == null || typeof props[name] === "string" && !Number.isNaN(Date.parse(props[name])) ? null : new Error("Expected date-time")]).isRequired,
+    "local-date-class": PropTypes.oneOfType([_LocalDate, PropTypes.oneOf([null])]),
+    "offset-date-time-class": PropTypes.oneOfType([_OffsetDateTime, PropTypes.oneOf([null])]),
+    "offset-time-class": PropTypes.oneOfType([_OffsetTime, PropTypes.oneOf([null])]),
+    "time": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "union-array": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+});
+
+export const TopLevel = _TopLevel;

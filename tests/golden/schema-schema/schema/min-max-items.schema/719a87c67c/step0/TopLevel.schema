@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "maxOnly": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "maxItems": 3
+                },
+                "minAndMax": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "minItems": 1,
+                    "maxItems": 4
+                },
+                "minOnly": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 2
+                },
+                "plain": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "unionItems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UnionItem"
+                    },
+                    "minItems": 2
+                }
+            },
+            "required": [
+                "maxOnly",
+                "minAndMax",
+                "minOnly",
+                "plain",
+                "unionItems"
+            ],
+            "title": "TopLevel"
+        },
+        "UnionItem": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "UnionItem"
+        }
+    }
+}

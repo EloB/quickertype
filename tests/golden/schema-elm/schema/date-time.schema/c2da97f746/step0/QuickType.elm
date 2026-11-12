@@ -1,0 +1,140 @@
+-- To decode the JSON data, add this file to your project, run
+--
+--     elm install NoRedInk/elm-json-decode-pipeline
+--
+-- add these imports
+--
+--     import Json.Decode exposing (decodeString)
+--     import QuickType exposing (quickType)
+--
+-- and you're off to the races with
+--
+--     decodeString quickType myJsonString
+
+module QuickType exposing
+    ( QuickType
+    , quickTypeToString
+    , quickType
+    , LocalDate
+    , OffsetDateTime
+    , OffsetTime
+    , ComplexUnionArray(..)
+    )
+
+import Json.Decode as Jdec
+import Json.Decode.Pipeline as Jpipe
+import Json.Encode as Jenc
+import Dict exposing (Dict)
+
+type alias QuickType =
+    { complexUnionArray : List ComplexUnionArray
+    , date : String
+    , dateTime : String
+    , localDateClass : Maybe LocalDate
+    , offsetDateTimeClass : Maybe OffsetDateTime
+    , offsetTimeClass : Maybe OffsetTime
+    , time : String
+    , unionArray : List String
+    }
+
+type ComplexUnionArray
+    = IntegerInComplexUnionArray Int
+    | StringInComplexUnionArray String
+
+type alias LocalDate =
+    {
+    }
+
+type alias OffsetDateTime =
+    {
+    }
+
+type alias OffsetTime =
+    {
+    }
+
+-- decoders and encoders
+optionalField key decoder fallback =
+    Jdec.dict Jdec.value
+        |> Jdec.andThen (\m ->
+            case Dict.get key m of
+                Nothing -> Jdec.succeed fallback
+                Just x -> Jdec.decodeValue decoder x |> Result.map Jdec.succeed |> Result.withDefault (Jdec.fail ("Invalid " ++ key)))
+
+quickTypeToString : QuickType -> String
+quickTypeToString r = Jenc.encode 0 (encodeQuickType r)
+
+quickType : Jdec.Decoder QuickType
+quickType =
+    Jdec.succeed QuickType
+        |> Jpipe.required "complex-union-array" (Jdec.list complexUnionArray )
+        |> Jpipe.required "date" Jdec.string
+        |> Jpipe.required "date-time" Jdec.string
+        |> Jpipe.custom (optionalField "local-date-class" (Jdec.map Just localDate) Nothing)
+        |> Jpipe.custom (optionalField "offset-date-time-class" (Jdec.map Just offsetDateTime) Nothing)
+        |> Jpipe.custom (optionalField "offset-time-class" (Jdec.map Just offsetTime) Nothing)
+        |> Jpipe.required "time" Jdec.string
+        |> Jpipe.required "union-array" (Jdec.list Jdec.string )
+
+encodeQuickType : QuickType -> Jenc.Value
+encodeQuickType x =
+    Jenc.object
+        [ ("complex-union-array", Jenc.list encodeComplexUnionArray x.complexUnionArray)
+        , ("date", Jenc.string x.date)
+        , ("date-time", Jenc.string x.dateTime)
+        , ("local-date-class", makeNullableEncoder encodeLocalDate x.localDateClass)
+        , ("offset-date-time-class", makeNullableEncoder encodeOffsetDateTime x.offsetDateTimeClass)
+        , ("offset-time-class", makeNullableEncoder encodeOffsetTime x.offsetTimeClass)
+        , ("time", Jenc.string x.time)
+        , ("union-array", Jenc.list Jenc.string x.unionArray)
+        ]
+
+complexUnionArray : Jdec.Decoder ComplexUnionArray
+complexUnionArray =
+    Jdec.oneOf
+        [ Jdec.map IntegerInComplexUnionArray Jdec.int
+        , Jdec.map StringInComplexUnionArray Jdec.string
+        ]
+
+encodeComplexUnionArray : ComplexUnionArray -> Jenc.Value
+encodeComplexUnionArray x = case x of
+    IntegerInComplexUnionArray y -> Jenc.int y
+    StringInComplexUnionArray y -> Jenc.string y
+
+localDate : Jdec.Decoder LocalDate
+localDate =
+    Jdec.dict Jdec.value |> Jdec.map (\_ -> LocalDate)
+
+encodeLocalDate : LocalDate -> Jenc.Value
+encodeLocalDate x =
+    Jenc.object
+        [
+        ]
+
+offsetDateTime : Jdec.Decoder OffsetDateTime
+offsetDateTime =
+    Jdec.dict Jdec.value |> Jdec.map (\_ -> OffsetDateTime)
+
+encodeOffsetDateTime : OffsetDateTime -> Jenc.Value
+encodeOffsetDateTime x =
+    Jenc.object
+        [
+        ]
+
+offsetTime : Jdec.Decoder OffsetTime
+offsetTime =
+    Jdec.dict Jdec.value |> Jdec.map (\_ -> OffsetTime)
+
+encodeOffsetTime : OffsetTime -> Jenc.Value
+encodeOffsetTime x =
+    Jenc.object
+        [
+        ]
+
+--- encoder helpers
+
+makeNullableEncoder : (a -> Jenc.Value) -> Maybe a -> Jenc.Value
+makeNullableEncoder f m =
+    case m of
+    Just x -> f x
+    Nothing -> Jenc.null

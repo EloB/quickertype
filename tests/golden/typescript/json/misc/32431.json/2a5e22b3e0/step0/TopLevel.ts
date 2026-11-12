@@ -1,0 +1,334 @@
+// To parse this data:
+//
+//   import { Convert, TopLevel } from "./TopLevel";
+//
+//   const topLevel = Convert.toTopLevel(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
+export interface TopLevel {
+    bbox:     number[];
+    features: Feature[];
+    metadata: Metadata;
+    type:     string;
+}
+
+export interface Feature {
+    geometry:   Geometry;
+    id:         string;
+    properties: Properties;
+    type:       FeatureType;
+}
+
+export interface Geometry {
+    coordinates: number[];
+    type:        GeometryType;
+}
+
+export type GeometryType = "Point";
+
+export interface Properties {
+    alert:   null;
+    cdi:     null;
+    code:    string;
+    detail:  string;
+    dmin:    number | null;
+    felt:    null;
+    gap:     number | null;
+    ids:     string;
+    mag:     number;
+    magType: MagType;
+    mmi:     null;
+    net:     string;
+    nst:     number | null;
+    place:   string;
+    rms:     number;
+    sig:     number;
+    sources: string;
+    status:  Status;
+    time:    number;
+    title:   string;
+    tsunami: number;
+    type:    PropertiesType;
+    types:   string;
+    tz:      number;
+    updated: number;
+    url:     string;
+}
+
+export type MagType = "md" | "ml" | "mb";
+
+export type Status = "automatic" | "reviewed";
+
+export type PropertiesType = "earthquake";
+
+export type FeatureType = "Feature";
+
+export interface Metadata {
+    api:       string;
+    count:     number;
+    generated: number;
+    status:    number;
+    title:     string;
+    url:       string;
+}
+
+// Converts JSON strings to/from your types
+// and asserts the results of JSON.parse at runtime
+export class Convert {
+    public static toTopLevel(json: string): TopLevel {
+        return cast(JSON.parse(json), r("TopLevel"));
+    }
+
+    public static topLevelToJson(value: TopLevel): string {
+        return JSON.stringify(uncast(value, r("TopLevel")), null, 2);
+    }
+}
+
+function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
+    const prettyTyp = prettyTypeName(typ);
+    const parentText = parent ? ` on ${parent}` : '';
+    const keyText = key ? ` for key "${key}"` : '';
+    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);
+}
+
+function prettyTypeName(typ: any): string {
+    if (Array.isArray(typ)) {
+        if (typ.length === 2 && typ[0] === undefined) {
+            return `an optional ${prettyTypeName(typ[1])}`;
+        } else {
+            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(", ")}]`;
+        }
+    } else if (typeof typ === "object" && typ.literal !== undefined) {
+        return typ.literal;
+    } else {
+        return typeof typ;
+    }
+}
+
+function jsonToJSProps(typ: any): any {
+    if (typ.jsonToJS === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });
+        typ.jsonToJS = map;
+    }
+    return typ.jsonToJS;
+}
+
+function jsToJSONProps(typ: any): any {
+    if (typ.jsToJSON === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });
+        typ.jsToJSON = map;
+    }
+    return typ.jsToJSON;
+}
+
+function transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {
+    function transformPrimitive(typ: string, val: any): any {
+        if (typeof typ === typeof val) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+
+    function transformUnion(typs: any[], val: any): any {
+        // val must validate against one typ in typs
+        const l = typs.length;
+        for (let i = 0; i < l; i++) {
+            const typ = typs[i];
+            try {
+                return transform(val, typ, getProps);
+            } catch (_) {}
+        }
+        return invalidValue(typs, val, key, parent);
+    }
+
+    function transformEnum(cases: string[], val: any): any {
+        if (cases.indexOf(val) !== -1) return val;
+        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);
+    }
+
+    function transformArray(typ: any, val: any): any {
+        // val must be an array with no invalid elements
+        if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
+
+        return val.map(el => transform(el, typ, getProps));
+    }
+
+    function transformDate(val: any): any {
+        if (val === null) {
+            return null;
+        }
+        const d = new Date(val);
+        if (isNaN(d.valueOf())) {
+            return invalidValue(l("Date"), val, key, parent);
+        }
+        return d;
+    }
+
+    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {
+        if (val === null || typeof val !== "object" || Array.isArray(val)) {
+            return invalidValue(l(ref || "object"), val, key, parent);
+        }
+        const result: any = {};
+        Object.getOwnPropertyNames(props).forEach(key => {
+            const prop = props[key];
+            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
+            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+        });
+        Object.getOwnPropertyNames(val).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) {
+                result[key] = transform(val[key], additional, getProps, key, ref);
+            }
+        });
+        return result;
+    }
+
+    if (typ === "any") return val;
+    if (typ === null) {
+        if (val === null) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+    if (typ === false) return invalidValue(typ, val, key, parent);
+    let ref: any = undefined;
+    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }
+    if (Array.isArray(typ)) return transformEnum(typ, val);
+    if (typeof typ === "object") {
+        return typ.hasOwnProperty("pattern")      ? typeof val === "string" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("string")       ? typeof val === "string" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("number")       ? typeof val === "number" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("integer")      ? typeof val === "number" && val % 1 === 0 ? val : invalidValue(l("integer"), val, key, parent)
+            : typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
+            : invalidValue(typ, val, key, parent);
+    }
+    // Numbers can be parsed by Date but shouldn't be.
+    if (typ === Date && (typeof val === "string" || val instanceof Date)) return transformDate(val);
+    return transformPrimitive(typ, val);
+}
+
+function cast<T>(val: any, typ: any): T {
+    return transform(val, typ, jsonToJSProps);
+}
+
+function uncast<T>(val: T, typ: any): any {
+    return transform(val, typ, jsToJSONProps);
+}
+
+function l(typ: any) {
+    return { literal: typ };
+}
+
+function a(typ: any) {
+    return { arrayItems: typ };
+}
+
+function i(typ: any) {
+    return { integer: typ };
+}
+
+function p(pattern: any) {
+    return { pattern };
+}
+
+function s(typ: any, min: any, max: any) {
+    return { string: typ, min, max };
+}
+
+function n(typ: any, min: any, max: any) {
+    return { number: typ, min, max };
+}
+
+function u(...typs: any[]) {
+    return { unionMembers: typs };
+}
+
+function o(props: any[], additional: any) {
+    return { props, additional };
+}
+
+function m(additional: any) {
+    const props: any[] = [];
+    return { props, additional };
+}
+
+function r(name: string) {
+    return { ref: name };
+}
+
+const typeMap: any = {
+    "TopLevel": o([
+        { json: "bbox", js: "bbox", typ: a(3.14) },
+        { json: "features", js: "features", typ: a(r("Feature")) },
+        { json: "metadata", js: "metadata", typ: r("Metadata") },
+        { json: "type", js: "type", typ: "" },
+    ], false),
+    "Feature": o([
+        { json: "geometry", js: "geometry", typ: r("Geometry") },
+        { json: "id", js: "id", typ: "" },
+        { json: "properties", js: "properties", typ: r("Properties") },
+        { json: "type", js: "type", typ: r("FeatureType") },
+    ], false),
+    "Geometry": o([
+        { json: "coordinates", js: "coordinates", typ: a(3.14) },
+        { json: "type", js: "type", typ: r("GeometryType") },
+    ], false),
+    "Properties": o([
+        { json: "alert", js: "alert", typ: null },
+        { json: "cdi", js: "cdi", typ: null },
+        { json: "code", js: "code", typ: "" },
+        { json: "detail", js: "detail", typ: "" },
+        { json: "dmin", js: "dmin", typ: u(3.14, null) },
+        { json: "felt", js: "felt", typ: null },
+        { json: "gap", js: "gap", typ: u(i(0), null) },
+        { json: "ids", js: "ids", typ: "" },
+        { json: "mag", js: "mag", typ: 3.14 },
+        { json: "magType", js: "magType", typ: r("MagType") },
+        { json: "mmi", js: "mmi", typ: null },
+        { json: "net", js: "net", typ: "" },
+        { json: "nst", js: "nst", typ: u(i(0), null) },
+        { json: "place", js: "place", typ: "" },
+        { json: "rms", js: "rms", typ: 3.14 },
+        { json: "sig", js: "sig", typ: i(0) },
+        { json: "sources", js: "sources", typ: "" },
+        { json: "status", js: "status", typ: r("Status") },
+        { json: "time", js: "time", typ: i(0) },
+        { json: "title", js: "title", typ: "" },
+        { json: "tsunami", js: "tsunami", typ: i(0) },
+        { json: "type", js: "type", typ: r("PropertiesType") },
+        { json: "types", js: "types", typ: "" },
+        { json: "tz", js: "tz", typ: i(0) },
+        { json: "updated", js: "updated", typ: i(0) },
+        { json: "url", js: "url", typ: "" },
+    ], false),
+    "Metadata": o([
+        { json: "api", js: "api", typ: "" },
+        { json: "count", js: "count", typ: i(0) },
+        { json: "generated", js: "generated", typ: i(0) },
+        { json: "status", js: "status", typ: i(0) },
+        { json: "title", js: "title", typ: "" },
+        { json: "url", js: "url", typ: "" },
+    ], false),
+    "GeometryType": [
+        "Point",
+    ],
+    "MagType": [
+        "md",
+        "ml",
+        "mb",
+    ],
+    "Status": [
+        "automatic",
+        "reviewed",
+    ],
+    "PropertiesType": [
+        "earthquake",
+    ],
+    "FeatureType": [
+        "Feature",
+    ],
+};

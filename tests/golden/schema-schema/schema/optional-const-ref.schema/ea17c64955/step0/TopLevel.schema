@@ -1,0 +1,72 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "coordinates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Coordinate"
+                    }
+                },
+                "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                },
+                "label": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 16
+                },
+                "requiredCoordinates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Coordinate"
+                    }
+                },
+                "requiredCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                },
+                "requiredLabel": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 16
+                },
+                "weight": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 99.5
+                }
+            },
+            "required": [
+                "requiredCoordinates",
+                "requiredCount",
+                "requiredLabel"
+            ],
+            "title": "TopLevel"
+        },
+        "Coordinate": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "latitude",
+                "longitude"
+            ],
+            "title": "Coordinate"
+        }
+    }
+}

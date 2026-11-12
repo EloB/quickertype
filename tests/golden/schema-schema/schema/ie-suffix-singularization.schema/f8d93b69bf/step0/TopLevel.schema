@@ -1,0 +1,39 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "cookies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Cookie"
+                    }
+                }
+            },
+            "required": [
+                "cookies"
+            ],
+            "title": "TopLevel"
+        },
+        "Cookie": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "value"
+            ],
+            "title": "Cookie"
+        }
+    }
+}

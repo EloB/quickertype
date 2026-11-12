@@ -1,0 +1,90 @@
+// Example usage:
+//
+// import { MyShape } from ./myShape.js;
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+import PropTypes from "prop-types";
+
+let _TopLevel;
+let _Definitions;
+let _Rate;
+let _Property;
+let _Info;
+let _Paths;
+let _TariffRatesSearch;
+let _Get;
+let _Parameter;
+let _Responses;
+let _The200;
+let _Schema;
+let _Items;
+const _Type = PropTypes.oneOf(['string']);
+_Property = PropTypes.shape({
+    "description": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "type": _Type,
+});
+_Rate = PropTypes.shape({
+    "properties": PropTypes.oneOfType([PropTypes.objectOf(_Property)]).isRequired,
+});
+_Definitions = PropTypes.shape({
+    "Rate": _Rate,
+});
+_Info = PropTypes.shape({
+    "description": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "title": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "version": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Parameter = PropTypes.shape({
+    "description": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "format": _Type,
+    "in": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "required": PropTypes.oneOfType([PropTypes.bool]).isRequired,
+    "type": _Type,
+});
+_Items = PropTypes.shape({
+    "$ref": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Schema = PropTypes.shape({
+    "items": _Items,
+    "type": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_The200 = PropTypes.shape({
+    "description": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "schema": _Schema,
+});
+_Responses = PropTypes.shape({
+    "200": _The200,
+});
+_Get = PropTypes.shape({
+    "description": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "parameters": PropTypes.oneOfType([PropTypes.arrayOf(_Parameter)]).isRequired,
+    "responses": _Responses,
+    "summary": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "tags": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+});
+_TariffRatesSearch = PropTypes.shape({
+    "get": _Get,
+});
+_Paths = PropTypes.shape({
+    "/tariff_rates/search": _TariffRatesSearch,
+});
+_TopLevel = PropTypes.shape({
+    "basePath": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "definitions": _Definitions,
+    "host": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "info": _Info,
+    "paths": _Paths,
+    "produces": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+    "schemes": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string)]).isRequired,
+    "swagger": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+
+export const TopLevel = _TopLevel;

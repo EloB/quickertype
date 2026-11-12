@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "b": {
+                    "anyOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "kind": {
+                    "$ref": "#/definitions/Kind"
+                }
+            },
+            "required": [
+                "kind"
+            ],
+            "title": "TopLevel"
+        },
+        "Kind": {
+            "type": "string",
+            "enum": [
+                "one",
+                "two"
+            ],
+            "title": "Kind"
+        }
+    }
+}

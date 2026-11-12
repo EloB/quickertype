@@ -1,0 +1,28 @@
+{
+  "fixture": "graphql-haskell",
+  "input": "graphql/github8.graphql",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "graphql",
+        "--lang",
+        "haskell",
+        "--src",
+        "{INPUTS}/graphql/github8.graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "--out",
+        "QuickType.hs",
+        "--top-level",
+        "QuickType",
+        "--quiet",
+        "--telemetry",
+        "disable"
+      ],
+      "files": [
+        "QuickType.hs"
+      ]
+    }
+  ]
+}

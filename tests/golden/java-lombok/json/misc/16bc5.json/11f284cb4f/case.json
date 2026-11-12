@@ -1,0 +1,50 @@
+{
+  "fixture": "java-lombok",
+  "input": "json/misc/16bc5.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/16bc5.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Astronomy.java",
+        "src/main/java/io/quicktype/Atmosphere.java",
+        "src/main/java/io/quicktype/Channel.java",
+        "src/main/java/io/quicktype/Condition.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Forecast.java",
+        "src/main/java/io/quicktype/GUID.java",
+        "src/main/java/io/quicktype/Image.java",
+        "src/main/java/io/quicktype/Item.java",
+        "src/main/java/io/quicktype/Location.java",
+        "src/main/java/io/quicktype/Query.java",
+        "src/main/java/io/quicktype/Results.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Units.java",
+        "src/main/java/io/quicktype/Wind.java"
+      ]
+    }
+  ]
+}

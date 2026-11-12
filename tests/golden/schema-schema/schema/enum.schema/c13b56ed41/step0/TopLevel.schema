@@ -1,0 +1,75 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "arr": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Arr"
+                    }
+                },
+                "for": {
+                    "type": "string"
+                },
+                "gve": {
+                    "$ref": "#/definitions/Gve"
+                },
+                "lvc": {
+                    "$ref": "#/definitions/Lvc"
+                },
+                "otherArr": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OtherArr"
+                    }
+                }
+            },
+            "required": [
+                "gve"
+            ],
+            "title": "TopLevel"
+        },
+        "Arr": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/OtherArr"
+                },
+                {
+                    "type": "integer"
+                }
+            ],
+            "title": "Arr"
+        },
+        "OtherArr": {
+            "type": "string",
+            "enum": [
+                "foo",
+                "bar",
+                "if"
+            ],
+            "title": "OtherArr"
+        },
+        "Gve": {
+            "type": "string",
+            "enum": [
+                "good",
+                "neutral",
+                "evil"
+            ],
+            "title": "Gve"
+        },
+        "Lvc": {
+            "type": "string",
+            "enum": [
+                "lawful",
+                "neutral",
+                "chaotic"
+            ],
+            "title": "Lvc"
+        }
+    }
+}

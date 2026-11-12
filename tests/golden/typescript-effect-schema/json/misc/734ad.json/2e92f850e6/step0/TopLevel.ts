@@ -1,0 +1,82 @@
+import * as S from "effect/Schema";
+
+
+export const Status = S.Literal(
+    "active",
+    "inactive",
+);
+export type Status = S.Schema.Type<typeof Status>;
+
+export class Result extends S.Class<Result>("Result")({
+    "acronym": S.NullOr(S.String),
+    "activity_consult_committees": S.String,
+    "activity_eu_legislative": S.String,
+    "activity_expert_groups": S.String,
+    "activity_high_level_groups": S.String,
+    "activity_industry_forums": S.String,
+    "activity_inter_groups": S.String,
+    "activity_other": S.NullOr(S.String),
+    "activity_relevant_comm": S.String,
+    "be_office_country": S.optional(S.String),
+    "be_office_lat": S.optional(S.NullOr(S.Number)),
+    "be_office_lon": S.optional(S.NullOr(S.Number)),
+    "be_office_phone": S.optional(S.String),
+    "be_office_post_code": S.optional(S.NullOr(S.String.pipe(S.pattern(/^-?\d+$/)))),
+    "be_office_postbox": S.optional(S.NullOr(S.String.pipe(S.pattern(/^-?\d+$/)))),
+    "be_office_street": S.optional(S.String),
+    "be_office_town": S.optional(S.String),
+    "code_of_conduct": S.String,
+    "contact_country": S.Int,
+    "created_at": S.String.pipe(S.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/)),
+    "entity": S.String,
+    "goals": S.String,
+    "head": S.String,
+    "head_office_country": S.String,
+    "head_office_lat": S.NullOr(S.Number),
+    "head_office_lon": S.NullOr(S.Number),
+    "head_office_phone": S.String,
+    "head_office_post_code": S.NullOr(S.String),
+    "head_office_postbox": S.NullOr(S.String),
+    "head_office_street": S.String,
+    "head_office_town": S.String,
+    "id": S.String,
+    "identification_code": S.String,
+    "info_members": S.String,
+    "last_update_date": S.String.pipe(S.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/)),
+    "legal": S.String,
+    "legal_status": S.String,
+    "main_category": S.Int,
+    "main_category_title": S.String,
+    "members": S.Int,
+    "members_100": S.NullOr(S.Int),
+    "members_25": S.NullOr(S.Int),
+    "members_50": S.NullOr(S.Int),
+    "members_75": S.NullOr(S.Int),
+    "members_fte": S.Number,
+    "name": S.String,
+    "native_name": S.Null,
+    "networking": S.NullOr(S.String),
+    "number_of_natural_persons": S.NullOr(S.Int),
+    "other_code_of_conduct": S.NullOr(S.String),
+    "registration_date": S.String.pipe(S.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/)),
+    "status": Status,
+    "structure_members": S.String,
+    "sub_category": S.Int,
+    "sub_category_title": S.String,
+    "updated_at": S.String.pipe(S.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/)),
+    "uri": S.String,
+    "web_site_url": S.NullOr(S.String),
+}) {}
+
+export class Facets extends S.Class<Facets>("Facets")(S.Struct({}).pipe(S.filter(value => typeof value === "object" && value !== null && !Array.isArray(value)))
+) {}
+
+export class TopLevel extends S.Class<TopLevel>("TopLevel")({
+    "count": S.Int,
+    "facets": Facets,
+    "limit": S.Int,
+    "next": S.String,
+    "offset": S.Int,
+    "previous": S.Boolean,
+    "results": S.Array(Result),
+}) {}

@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-golang",
+  "input": "schema/renaming-bug.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "golang",
+        "--src",
+        "{INPUTS}/schema/renaming-bug.schema",
+        "--out",
+        "quicktype.go",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.go"
+      ]
+    }
+  ]
+}

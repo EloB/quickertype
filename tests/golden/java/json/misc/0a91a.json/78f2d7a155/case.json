@@ -1,0 +1,49 @@
+{
+  "fixture": "java",
+  "input": "json/misc/0a91a.json",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/json/misc/0a91a.json",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Actor.java",
+        "src/main/java/io/quicktype/Author.java",
+        "src/main/java/io/quicktype/Base.java",
+        "src/main/java/io/quicktype/BaseRepo.java",
+        "src/main/java/io/quicktype/Comments.java",
+        "src/main/java/io/quicktype/Commit.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Links.java",
+        "src/main/java/io/quicktype/MergedBy.java",
+        "src/main/java/io/quicktype/Payload.java",
+        "src/main/java/io/quicktype/PullRequest.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/TopLevelRepo.java",
+        "src/main/java/io/quicktype/Type.java"
+      ]
+    }
+  ]
+}

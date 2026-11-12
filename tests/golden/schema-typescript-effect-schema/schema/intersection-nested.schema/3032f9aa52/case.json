@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-typescript-effect-schema",
+  "input": "schema/intersection-nested.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript-effect-schema",
+        "--src",
+        "{INPUTS}/schema/intersection-nested.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

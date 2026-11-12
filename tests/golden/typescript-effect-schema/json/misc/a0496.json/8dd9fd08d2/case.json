@@ -1,0 +1,29 @@
+{
+  "fixture": "typescript-effect-schema",
+  "input": "json/misc/a0496.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "typescript-effect-schema",
+        "--src",
+        "{INPUTS}/json/misc/a0496.json",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

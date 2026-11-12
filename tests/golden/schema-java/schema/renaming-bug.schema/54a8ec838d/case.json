@@ -1,0 +1,51 @@
+{
+  "fixture": "schema-java",
+  "input": "schema/renaming-bug.schema",
+  "dirs": [
+    "src",
+    "src/main",
+    "src/main/java",
+    "src/main/java/io",
+    "src/main/java/io/quicktype"
+  ],
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "java",
+        "--src",
+        "{INPUTS}/schema/renaming-bug.schema",
+        "--out",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "src/main/java/io/quicktype/Axis.java",
+        "src/main/java/io/quicktype/Berry.java",
+        "src/main/java/io/quicktype/CircularShape.java",
+        "src/main/java/io/quicktype/Color.java",
+        "src/main/java/io/quicktype/Converter.java",
+        "src/main/java/io/quicktype/Fruit.java",
+        "src/main/java/io/quicktype/Geometry.java",
+        "src/main/java/io/quicktype/History.java",
+        "src/main/java/io/quicktype/Limit.java",
+        "src/main/java/io/quicktype/Name.java",
+        "src/main/java/io/quicktype/Part.java",
+        "src/main/java/io/quicktype/RectShape.java",
+        "src/main/java/io/quicktype/Shape.java",
+        "src/main/java/io/quicktype/Speed.java",
+        "src/main/java/io/quicktype/TopLevel.java",
+        "src/main/java/io/quicktype/Vehicle.java",
+        "src/main/java/io/quicktype/VehicleType.java"
+      ]
+    }
+  ]
+}

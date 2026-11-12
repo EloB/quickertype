@@ -1,0 +1,31 @@
+{
+  "fixture": "scala3-upickle",
+  "input": "json/misc/a3d8c.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "scala3",
+        "--src",
+        "{INPUTS}/json/misc/a3d8c.json",
+        "--out",
+        "TopLevel.scala",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--framework",
+        "upickle",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.scala"
+      ]
+    }
+  ]
+}

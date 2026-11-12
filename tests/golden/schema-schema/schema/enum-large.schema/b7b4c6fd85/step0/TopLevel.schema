@@ -1,0 +1,58 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "callsign": {
+                    "$ref": "#/definitions/Callsign"
+                },
+                "priority": {
+                    "$ref": "#/definitions/Priority"
+                }
+            },
+            "required": [
+                "callsign",
+                "priority"
+            ],
+            "title": "TopLevel"
+        },
+        "Callsign": {
+            "type": "string",
+            "enum": [
+                "alpha",
+                "bravo",
+                "charlie",
+                "delta",
+                "echo",
+                "foxtrot",
+                "golf",
+                "hotel",
+                "india",
+                "juliett",
+                "kilo",
+                "lima",
+                "mike",
+                "november",
+                "oscar",
+                "papa",
+                "quebec",
+                "romeo",
+                "sierra",
+                "tango"
+            ],
+            "title": "Callsign"
+        },
+        "Priority": {
+            "type": "string",
+            "enum": [
+                "low",
+                "medium",
+                "high"
+            ],
+            "title": "Priority"
+        }
+    }
+}

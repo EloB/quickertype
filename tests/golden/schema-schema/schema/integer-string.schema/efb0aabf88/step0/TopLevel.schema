@@ -1,0 +1,99 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/TopLevel",
+    "definitions": {
+        "TopLevel": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "arrNullable": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "arrOne": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "integer"
+                    }
+                },
+                "nullable": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "format": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "one": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "optional": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "unionWithInt": {
+                    "$ref": "#/definitions/UnionWithInt"
+                },
+                "unionWithIntAndEnum": {
+                    "$ref": "#/definitions/UnionWithIntAndEnumUnion"
+                }
+            },
+            "required": [
+                "nullable",
+                "one",
+                "unionWithInt",
+                "unionWithIntAndEnum"
+            ],
+            "title": "TopLevel"
+        },
+        "UnionWithInt": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string",
+                    "format": "integer"
+                }
+            ],
+            "title": "UnionWithInt"
+        },
+        "UnionWithIntAndEnumUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/UnionWithIntAndEnumEnum"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string",
+                    "format": "integer"
+                }
+            ],
+            "title": "UnionWithIntAndEnumUnion"
+        },
+        "UnionWithIntAndEnumEnum": {
+            "type": "string",
+            "enum": [
+                "foo"
+            ],
+            "title": "UnionWithIntAndEnumEnum"
+        }
+    }
+}

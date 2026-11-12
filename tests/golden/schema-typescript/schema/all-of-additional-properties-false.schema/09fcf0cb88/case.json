@@ -1,0 +1,29 @@
+{
+  "fixture": "schema-typescript",
+  "input": "schema/all-of-additional-properties-false.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/schema/all-of-additional-properties-false.schema",
+        "--out",
+        "TopLevel.ts",
+        "--top-level",
+        "TopLevel",
+        "--explicit-unions",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.ts"
+      ]
+    }
+  ]
+}

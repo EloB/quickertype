@@ -1,0 +1,28 @@
+{
+  "fixture": "schema-cplusplus",
+  "input": "schema/direct-union.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cplusplus",
+        "--src",
+        "{INPUTS}/schema/direct-union.schema",
+        "--out",
+        "quicktype.hpp",
+        "--top-level",
+        "TopLevel",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.hpp"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+from dataclasses import dataclass
+from typing import Any, TypeVar, Type, cast
+
+
+T = TypeVar("T")
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
+
+
+def from_str(x: Any) -> str:
+    assert isinstance(x, str)
+    return x
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+@dataclass
+class TopLevel:
+    copy_with: int
+    name: str
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'TopLevel':
+        assert isinstance(obj, dict)
+        copy_with = from_int(obj["copyWith"])
+        name = from_str(obj["name"])
+        return TopLevel(copy_with, name)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["copyWith"] = from_int(self.copy_with)
+        result["name"] = from_str(self.name)
+        return result
+
+
+def top_level_from_dict(s: Any) -> TopLevel:
+    return TopLevel.from_dict(s)
+
+
+def top_level_to_dict(x: TopLevel) -> Any:
+    return to_class(TopLevel, x)

@@ -1,0 +1,29 @@
+{
+  "fixture": "python",
+  "input": "json/priority/uuids.json",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--lang",
+        "python",
+        "--src",
+        "{INPUTS}/json/priority/uuids.json",
+        "--out",
+        "quicktype.py",
+        "--top-level",
+        "TopLevel",
+        "--alphabetize-properties",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "quicktype.py"
+      ]
+    }
+  ]
+}

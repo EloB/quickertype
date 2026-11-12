@@ -1,0 +1,30 @@
+{
+  "fixture": "schema-cjson",
+  "input": "schema/ref-remote.schema",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "schema",
+        "--lang",
+        "cjson",
+        "--src",
+        "{INPUTS}/schema/ref-remote.schema",
+        "--out",
+        "TopLevel.h",
+        "--top-level",
+        "TopLevel",
+        "--no-header-only",
+        "--quiet",
+        "--telemetry",
+        "disable",
+        "--debug",
+        "provenance"
+      ],
+      "files": [
+        "TopLevel.c",
+        "TopLevel.h"
+      ]
+    }
+  ]
+}
