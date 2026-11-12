@@ -28,37 +28,83 @@ JS API differential suite.
 
 ## Rules
 
-1. **Iteration order is output.** JS `Map`, `Set` and object keys iterate in
-   insertion order. Use `IndexMap` / `IndexSet`; never iterate a `HashMap` or
-   `HashSet` where order can reach output.
-2. **Objects with integer-like keys reorder.** For a JS object (not a `Map`),
-   keys that are array indices (`"0"`, `"42"`) iterate first, ascending, then
-   the rest in insertion order. Reproduce this wherever the TypeScript uses
-   plain objects as maps (notably `JSON.parse` results).
-3. **Strings are UTF-16 in JS.** `length`, `charCodeAt`, `slice` and indexing
-   count UTF-16 code units. Use explicit helpers when porting such code; do
-   not index Rust `str` bytes.
-4. **Default `sort()` compares UTF-16 code units**, and is stable. Rust's
-   `str` ordering compares UTF-8 bytes, which differs for characters above
-   U+FFFF versus U+E000–U+FFFF. Use a JS-compatible comparator.
-5. **Number formatting** must match JS `Number.prototype.toString`
-   (e.g. `1e21`, `0.1`, `-0` → `"0"`). Use a JS-compatible formatter, not
-   `format!("{}")`.
-6. **`JSON.stringify`** escaping differs from `serde_json` in corner cases;
-   use the shared helper.
-7. **Case mapping** (`toUpperCase` / `toLowerCase`) follows full Unicode
-   special casing in JS (`ß` → `SS`). Rust's `to_uppercase` does too, but
-   char-by-char ports may not; test non-ASCII.
-8. **Regexes:** most JS regexes in quicktype map onto the `regex` crate;
-   lookaround or backreferences need care. Note each one you port.
-9. **No hidden nondeterminism:** no hash-order iteration, no time or
-   randomness in output paths.
+Details and evidence for every rule are in `docs/research/` (01 type graph,
+02 inputs, 03 rendering/naming, 04 languages, 05 CLI/API, 06 dependencies).
+
+### Ordering
+
+1. **Iteration order is output.** JS `Map`/`Set` (and `collection-utils`,
+   which is insertion-ordered even under hash collisions) iterate in
+   insertion order: use `IndexMap`/`IndexSet`. Never let `HashMap`/`HashSet`
+   iteration reach output.
+2. **Plain objects reorder integer-like keys** (`"0"`, `"42"` first,
+   ascending, then insertion order). This applies to `JSON.parse` results
+   (API path), YAML, and JSON Schema output; a `"__proto__"` key is also
+   special. The CLI's streaming parser keeps source order instead.
+3. **Type index order decides output.** Declaration order, duplicate
+   resolution and name-suffix assignment follow the order in which types get
+   created during graph rebuilding. Port `TypeBuilder`/`GraphRewriting`
+   traversal order exactly, including quirks (research 01).
+4. **Type identity uses quicktype's hashing.** `EqualityMap` and structural
+   type hashing must reproduce the JS hash functions and probing; a derived
+   `Eq` + `HashMap` changes which duplicate wins.
+5. **Sorting:** default `sort()` compares UTF-16 code units and is stable;
+   Rust `str` ordering differs above U+FFFF. Use `js_compat` comparators.
+   Comparators that are inconsistent (e.g. `quicktypePropertyOrder` mixing
+   numbers and strings) depend on V8's TimSort, so use the `js_compat`
+   TimSort port, never `sort_by` (which may panic or differ).
+
+### Strings and Unicode
+
+6. **Strings are UTF-16 in JS.** `length`, indexing, `slice`, `s[0]`,
+   table-column widths, word wrapping and interning limits all count UTF-16
+   code units. Use the `js_compat` helpers; never index `str` bytes.
+7. **Character categories come from `unicode-properties` 1.4.1** (Unicode
+   12.0; unassigned code points are `Cc`, not `Cn`), via a table generated
+   from the npm package. Rust's `char` methods give different answers.
+8. **Case mapping:** Rust `to_uppercase`/`to_lowercase` match Node on every
+   code point. Whitespace does not: JS `\s`/`trim()` and Rust differ at
+   U+0085 and U+FEFF; use `js_compat`.
+9. **Regexes:** the `regex` crate suffices (no lookaround/backreferences
+   are used), but translate JS semantics explicitly: JS `\d` is ASCII-only,
+   `.` excludes line terminators, `/i` without `/u` is ASCII-ish.
+
+### Numbers and JSON
+
+10. **Number formatting** must match JS `Number.prototype.toString`
+    (`1e+21`, `1e-7`, `-0` → `"0"`). Use `js_compat::number` (ryu digits + JS
+    layout), never `format!("{}")`.
+11. **Two JSON parsers.** The CLI reads JSON with stream-json (literal-text
+    number classification: `1.0` is a double, duplicate keys are kept,
+    source key order, its own error text). The JS API uses `JSON.parse`
+    (`1.0` is an integer, last duplicate wins, integer-like keys first, V8
+    error text). Port both; do not use `serde_json` for inputs.
+12. **`Math.pow`/`**`:** V8 uses the platform `pow` with special cases
+    `y == 2 → x*x` and `y == 0.5 → sqrt(x)`. Natively use `f64::powf` plus
+    those cases (verified identical on 300k samples); the `libm` crate is
+    not (7–9% mismatches). WASM needs a correctly rounded `pow` port.
+13. **`JSON.stringify`** escaping and number output differ from
+    `serde_json`; use `js_compat::json`.
+
+### Libraries and errors
+
+14. **Hand-port, don't substitute:** `pluralize` 8.0.0, `urijs` 1.19.11
+    (not the `url` crate), `wordwrap`, `command-line-args`/`-usage`,
+    `stream-json`. No Rust crate matches them exactly.
+15. **Errors are output.** quicktype's `messageError` texts (including
+    `String.replace` `$`-pattern quirks), and the Node/V8 messages that leak
+    through (ENOENT text, `JSON.parse` errors, `fetch failed`), must match.
+    Return `Result` everywhere; never panic on user input (release builds
+    abort on panic).
+16. **No hidden nondeterminism:** no time or randomness in output paths.
+    quicktype's own seeded random-name generator (`support/Chance.ts`) is
+    deterministic and must be ported exactly, including when it is consumed.
 
 ## Dependency choices
 
 Recorded here when a crate replaces a JavaScript library, with how its
-semantics were verified. (Filled in as dependencies are added.)
+semantics were verified.
 
 | JS library | Rust replacement | Verified how |
 |---|---|---|
-| | | |
+| `collection-utils` (sets/maps) | `indexmap` | insertion-ordered, as is collection-utils (research 06) |
