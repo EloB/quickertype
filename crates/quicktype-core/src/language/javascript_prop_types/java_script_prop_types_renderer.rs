@@ -4,8 +4,6 @@
 //! shape is declared before the shapes that use it, by looking for the
 //! names each gathered shape references.
 
-use std::collections::HashMap;
-
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -17,6 +15,7 @@ use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
@@ -421,7 +420,7 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
         // `find(value)` for every shape, once: the shapes (as indexes into
         // `map_key`, by `mapKey.indexOf(name)`) its gathered source refers
         // to, other than itself.
-        let mut index_of_name: HashMap<Name, usize> = HashMap::new();
+        let mut index_of_name: HashMap<Name, usize> = HashMap::default();
         for (index, &name) in map_key.iter().enumerate() {
             index_of_name.entry(name).or_insert(index);
         }

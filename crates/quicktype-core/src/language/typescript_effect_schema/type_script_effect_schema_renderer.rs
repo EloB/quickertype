@@ -4,8 +4,6 @@
 //! that is not emitted yet is wrapped in `S.suspend`, so the output depends
 //! on the order in which schemas are rendered (`emittedObjects`).
 
-use std::collections::{HashMap, HashSet};
-
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -15,6 +13,7 @@ use crate::graph::Graph;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
@@ -124,7 +123,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
         TypeScriptEffectSchemaRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
-            emitted_objects: HashSet::new(),
+            emitted_objects: HashSet::default(),
         }
     }
 
@@ -429,7 +428,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
     ) -> Result<Vec<usize>> {
         let graph = self.type_graph();
         let mut dependencies = Vec::new();
-        let mut visited: HashSet<TypeRef> = HashSet::new();
+        let mut visited: HashSet<TypeRef> = HashSet::default();
         let mut stack: Vec<TypeRef> = graph
             .type_at(object_type)?
             .properties()?
@@ -465,7 +464,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
     /// strongly connected components of the object graph, computed once.
     fn object_ordinals(&self, map_key: &[Name], map_value: &[TypeRef]) -> Result<Vec<usize>> {
         let count = map_key.len();
-        let mut index_of_name: HashMap<Name, usize> = HashMap::new();
+        let mut index_of_name: HashMap<Name, usize> = HashMap::default();
         for (index, &name) in map_key.iter().enumerate() {
             index_of_name.entry(name).or_insert(index);
         }

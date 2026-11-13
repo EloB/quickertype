@@ -485,3 +485,83 @@ fn a_bad_sample_is_reported_before_stdin_is_read() {
         "Error: Syntax error in input JSON TopLevel: Parser has expected a value.\n"
     );
 }
+
+/// A JSON array whose last element's string has `probe` starting `split`
+/// bytes before offset 65536, where Node's file stream (and ours) starts a
+/// new chunk.
+fn document_with_probe_at_chunk_boundary(probe: &[u8], split: usize) -> Vec<u8> {
+    const BOUNDARY: usize = 64 * 1024;
+    let pad = br#"{"v":"x"},"#;
+    let lead = br#"[{"v":"q"#;
+    let before = BOUNDARY - split - lead.len();
+    let mut doc = b"[".to_vec();
+    doc.extend(pad.repeat(before / pad.len()));
+    doc.extend_from_slice(br#"{"v":"q"#);
+    doc.extend(b"q".repeat(before % pad.len()));
+    doc.extend_from_slice(probe);
+    doc.extend_from_slice(br#"z"}]"#);
+    assert_eq!(doc.len() - probe.len() - 4, BOUNDARY - split);
+    doc
+}
+
+/// The sample is read chunk by chunk, so a UTF-8 sequence split between
+/// chunks, an invalid byte there, or a sequence cut off at the end, must
+/// decode as Node decodes the whole stream (expectations from the
+/// reference CLI, also via standard input).
+#[test]
+fn utf8_split_between_stream_chunks_decodes_like_node() {
+    let dir = work_dir("utf8-chunks");
+    let cases: [(&[u8], usize, &str); 4] = [
+        (b"\xF0\x9F\x98\x80", 2, r#"\ud83d\ude00z""#),
+        (b"\xC3\xA9", 1, "\u{e9}z\""),
+        (b"\xE2\x82A", 1, "\u{FFFD}Az\""),
+        (b"\xFF", 0, "\u{FFFD}z\""),
+    ];
+    for (i, (probe, split, expected)) in cases.into_iter().enumerate() {
+        let doc = document_with_probe_at_chunk_boundary(probe, split);
+        let file = format!("sample{i}.json");
+        fs::write(dir.join(&file), &doc).unwrap();
+        for output in [
+            quicktype_in(&dir, &["--lang", "ts", "--just-types", &file], None),
+            quicktype_in(&dir, &["--lang", "ts", "--just-types"], Some(&doc)),
+        ] {
+            assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+            let out = stdout(&output);
+            let line = out
+                .lines()
+                .find(|l| l.starts_with("export type V"))
+                .unwrap();
+            assert!(
+                line.ends_with(&format!("{expected};")),
+                "{probe:02X?}: {line}"
+            );
+        }
+    }
+    // Cut off inside the sequence at the boundary: the string never ends.
+    let doc = document_with_probe_at_chunk_boundary(b"\xF0\x9F\x98\x80", 1);
+    let cut = &doc[..64 * 1024];
+    fs::write(dir.join("cut.json"), cut).unwrap();
+    let output = quicktype_in(&dir, &["--lang", "ts", "cut.json"], None);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        stderr(&output),
+        "Error: Syntax error in input JSON cut: Parser has expected a string value.\n"
+    );
+}
+
+/// A read that fails after the sample was opened (a symbolic link to a
+/// directory) is Node's stream error, `read` without a path. (The reference
+/// crashes with it as an unhandled `error` event; see docs/PARITY.md.)
+#[cfg(unix)]
+#[test]
+fn a_failed_read_is_node_s_read_error() {
+    let dir = work_dir("read-error");
+    fs::create_dir(dir.join("adir")).unwrap();
+    std::os::unix::fs::symlink("adir", dir.join("alink")).unwrap();
+    let output = quicktype_in(&dir, &["--lang", "ts", "alink"], None);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        stderr(&output),
+        "Error: EISDIR: illegal operation on a directory, read.\n"
+    );
+}

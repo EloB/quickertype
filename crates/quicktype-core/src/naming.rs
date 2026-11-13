@@ -15,13 +15,14 @@
 //! matters for output, because each group gets its own prefix sequence
 //! (`Purple`, `Fluffy`, ...) and suffix counter.
 
-use std::collections::{HashMap, HashSet};
+use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
 
 use crate::messages::Result;
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::{assert, defined, panic};
 
 /// A name to be assigned (TS `Name`). Resolve it with [`Names::get`] once
@@ -57,6 +58,10 @@ struct NamerData {
     prefixes: Vec<String>,
     prefix_set: IndexSet<String>,
     case_insensitive_styled_names: bool,
+    /// `name_style` results by raw name. Name styles are pure functions,
+    /// and naming styles every name several times (to group the names, to
+    /// try each proposal), so each raw name is styled once per namer.
+    styled: RefCell<HashMap<String, String>>,
 }
 
 /// `Namer`: styles names and resolves conflicts between them.
@@ -104,6 +109,7 @@ impl Namer {
             prefixes,
             prefix_set,
             case_insensitive_styled_names,
+            styled: RefCell::default(),
         }))
     }
 
@@ -119,7 +125,15 @@ impl Namer {
 
     /// `nameStyle(rawName)`.
     pub fn name_style(&self, raw_name: &str) -> String {
-        (self.0.name_style)(raw_name)
+        if let Some(styled) = self.0.styled.borrow().get(raw_name) {
+            return styled.clone();
+        }
+        let styled = (self.0.name_style)(raw_name);
+        self.0
+            .styled
+            .borrow_mut()
+            .insert(raw_name.to_owned(), styled.clone());
+        styled
     }
 
     /// The style function itself, for renderers that reuse it outside of
@@ -141,6 +155,10 @@ impl Namer {
     /// get the namer's prefixes, `"<prefix>_<first proposal>"`, one after
     /// the other across the whole group, then numeric suffixes
     /// `"<first proposal>_<n>"` with one counter for the group.
+    ///
+    /// This is TS `Namer.assignNames`, kept as part of the public API; the
+    /// naming algorithm itself ([`assign_names`](crate::naming::assign_names)) calls
+    /// `assign_names_avoiding`, which shares the forbidden set across groups.
     pub fn assign_names(
         &self,
         naming: &Naming,
@@ -148,11 +166,27 @@ impl Namer {
         forbidden_names: &IndexSet<String>,
         names_to_assign: &[Name],
     ) -> Result<Vec<(Name, String)>> {
-        let mut forbidden = ForbiddenSet::new(self.0.case_insensitive_styled_names);
+        let mut forbidden = ForbiddenSet::default();
         for f in forbidden_names {
             forbidden.insert(f.clone());
         }
+        self.assign_names_avoiding(naming, names, &mut forbidden, names_to_assign)
+    }
 
+    /// [`assign_names`](Self::assign_names) with the forbidden names in a
+    /// set the caller keeps: every assigned string is added to `forbidden`.
+    ///
+    /// TypeScript copies the forbidden names into a new `Set` for every
+    /// group, which is quadratic in the size of a namespace; the caller of
+    /// this adds the assigned strings to the forbidden names after each
+    /// group anyway, so one set can serve all groups.
+    fn assign_names_avoiding(
+        &self,
+        naming: &Naming,
+        names: &Names,
+        forbidden: &mut ForbiddenSet,
+        names_to_assign: &[Name],
+    ) -> Result<Vec<(Name, String)>> {
         assert(
             !names_to_assign.is_empty(),
             "Number of names can't be less than 1",
@@ -226,29 +260,28 @@ impl Namer {
     }
 }
 
-/// The forbidden-name set inside [`Namer::assign_names`], with the
-/// case-insensitive lookup of the first pass.
+/// The forbidden strings of a namespace while its names are assigned
+/// ([`Namer::assign_names`]), with the case-insensitive lookup that
+/// `caseInsensitiveStyledNames` namers need. Only looked up, never
+/// iterated in an order that matters.
+#[derive(Default)]
 struct ForbiddenSet {
     exact: HashSet<String>,
+    /// The strings by their lower case; built on the first lookup by a
+    /// case-insensitive namer and kept up to date from then on.
     by_lowercase: Option<HashMap<String, Vec<String>>>,
 }
 
 impl ForbiddenSet {
-    fn new(case_insensitive: bool) -> Self {
-        ForbiddenSet {
-            exact: HashSet::new(),
-            by_lowercase: case_insensitive.then(HashMap::new),
-        }
-    }
-
     fn insert(&mut self, name: String) {
+        if self.exact.contains(&name) {
+            return;
+        }
         if let Some(by_lowercase) = &mut self.by_lowercase {
-            if !self.exact.contains(&name) {
-                by_lowercase
-                    .entry(name.to_lowercase())
-                    .or_default()
-                    .push(name.clone());
-            }
+            by_lowercase
+                .entry(name.to_lowercase())
+                .or_default()
+                .push(name.clone());
         }
         self.exact.insert(name);
     }
@@ -259,13 +292,24 @@ impl ForbiddenSet {
 
     /// `isForbidden(candidate)`: exact, or (case-insensitive namers) equal
     /// ignoring case to a forbidden name, if both are already styled.
-    fn is_forbidden(&self, namer: &Namer, candidate: &str) -> bool {
+    fn is_forbidden(&mut self, namer: &Namer, candidate: &str) -> bool {
         if self.exact.contains(candidate) {
             return true;
         }
-        let Some(by_lowercase) = &self.by_lowercase else {
+        if !namer.0.case_insensitive_styled_names {
             return false;
-        };
+        }
+        let exact = &self.exact;
+        let by_lowercase = self.by_lowercase.get_or_insert_with(|| {
+            let mut by_lowercase: HashMap<String, Vec<String>> = HashMap::default();
+            for name in exact {
+                by_lowercase
+                    .entry(name.to_lowercase())
+                    .or_default()
+                    .push(name.clone());
+            }
+            by_lowercase
+        });
         let Some(same_lowercase) = by_lowercase.get(&candidate.to_lowercase()) else {
             return false;
         };
@@ -696,8 +740,8 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         names: Names {
             assigned: vec![None; naming.names.len()],
         },
-        nameds_for_name: HashMap::new(),
-        forbidden_nameds: HashMap::new(),
+        nameds_for_name: HashMap::default(),
+        forbidden_nameds: HashMap::default(),
     };
 
     // Assign all fixed names.
@@ -736,14 +780,10 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         };
 
         let members = naming.members(namespace);
-        let mut forbidden_names: IndexSet<String> = IndexSet::new();
+        let mut forbidden_names = ForbiddenSet::default();
         ctx.cache_forbidden_nameds(namespace);
         let forbidden_nameds = &ctx.forbidden_nameds[&namespace];
-        let mut seen: HashSet<Name> = HashSet::new();
         for &n in members.iter().chain(forbidden_nameds.iter()) {
-            if !seen.insert(n) {
-                continue;
-            }
             if let Some(s) = ctx.names.get(n) {
                 forbidden_names.insert(s.to_owned());
             }
@@ -785,12 +825,16 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
                 }
                 for (_, nameds) in by_proposed {
                     // 3. Use each set's naming function to name its members.
-                    let assigned =
-                        namer.assign_names(naming, &ctx.names, &forbidden_names, &nameds)?;
+                    // (It adds the assigned strings to the forbidden names.)
+                    let assigned = namer.assign_names_avoiding(
+                        naming,
+                        &ctx.names,
+                        &mut forbidden_names,
+                        &nameds,
+                    )?;
                     for (name, s) in &assigned {
                         ctx.assign(*name, namespace, s)?;
                     }
-                    forbidden_names.extend(assigned.into_iter().map(|(_, s)| s));
                 }
             }
         }

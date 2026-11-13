@@ -12,8 +12,6 @@
 //!
 //! Every class, enum and union goes into its own `<Name>.java` file.
 
-use std::collections::HashMap;
-
 use quicktype_js_compat::sort::sort_strings;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -21,6 +19,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::capitalize;
 use crate::support::support::{assert, defined, panic};
@@ -113,7 +112,7 @@ impl JavaState {
             ),
             options,
             current_filename: None,
-            getters_and_setters_for_property_name: HashMap::new(),
+            getters_and_setters_for_property_name: HashMap::default(),
             have_emitted_leading_comments: false,
             converter_classname,
         }

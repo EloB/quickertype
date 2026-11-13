@@ -500,7 +500,7 @@ fn language_inference_hooks_match_reference() {
             }
             let actual = match language.get_supported_integer_range(&renderer_options) {
                 None => Value::Null,
-                Some(r) => serde_json::json!([r.min, r.max]),
+                Some(r) => serde_json::json!([r.min(), r.max()]),
             };
             assert_eq!(&actual, range, "{name} getSupportedIntegerRange({options})");
         }

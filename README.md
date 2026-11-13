@@ -60,6 +60,10 @@ cargo xtask golden ../quicktype # re-record the corpus from a built quicktype ch
 # run the TypeScript CLI and ours side by side on any arguments and compare
 cargo xtask diff -- my.json --lang go
 cargo xtask diff --each tests/inputs/json/samples -- --lang rust --just-types
+
+# time ours against the TypeScript CLI (see docs/BENCHMARKS.md)
+cargo xtask bench
+cargo xtask bench --corpus --in-process
 ```
 
 Validate the corpus itself against the TypeScript implementation (every case

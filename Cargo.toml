@@ -18,8 +18,13 @@ quicktype-core = { path = "crates/quicktype-core" }
 quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
 quicktype-js-compat = { path = "crates/quicktype-js-compat" }
 quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
+foldhash = "0.2"
+hashbrown = { version = "0.17", default-features = false }
 indexmap = "2"
+mimalloc = { version = "0.1", default-features = false }
 regex = "1"
+# The engine under `regex`, used directly for multi-pattern searches.
+regex-automata = { version = "0.4", default-features = false, features = ["std", "meta", "syntax"] }
 ryu = "1"
 saphyr-parser = "0.3.4"
 stacker = "0.1.25"
@@ -53,3 +58,10 @@ strip = true
 
 [profile.dev.package."*"]
 opt-level = 2
+
+# `cargo build --profile profiling`: the release build with symbols, for
+# profilers (samply, Instruments, perf). See docs/BENCHMARKS.md.
+[profile.profiling]
+inherits = "release"
+debug = "line-tables-only"
+strip = false

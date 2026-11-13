@@ -35,7 +35,7 @@ use quicktype_core::internal::{block_on, train_markov_chain};
 use quicktype_core::{
     Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, INFERENCE_FLAGS, InferenceFlags,
     InputData, JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData,
-    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, StdIo,
+    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, SampleReader, StdIo,
     TargetLanguage, default_target_languages, json_input_for_target_language, parse_json,
     quicktype_multi_file, set_console_sink, sources_from_postman_collection,
 };
@@ -46,6 +46,10 @@ use crate::chalk::Chalk;
 use crate::cli_options::{CliOptions, parse_cli_options};
 use crate::messages::{CliError, message_error};
 use crate::type_source::{JsonTypeSource, TypeSource};
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 /// `packageJSON.version`.
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -189,10 +193,12 @@ async fn add_json_source(
         return Ok(input_data.add_source("json", empty, make_input).await?);
     }
     for sample in samples {
-        let text = node_fs::read(sample).await?;
+        // Read chunk by chunk as it is parsed, like TypeScript's stream:
+        // a large file is never held whole.
+        let reader = sample.open_std().map_err(CliError::Io)?;
         let one = JsonSourceData {
             name: name.clone(),
-            samples: vec![JsonSample::Stream(text.into_bytes())],
+            samples: vec![JsonSample::Reader(SampleReader::new(reader))],
             description: description.clone(),
         };
         input_data.add_source("json", one, make_input).await?;

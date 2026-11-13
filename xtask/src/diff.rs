@@ -260,7 +260,7 @@ fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
 /// Locates the built TypeScript CLI: `$QUICKTYPE_REF/dist/index.js`, else the
 /// nearest `quicktype/dist/index.js` beside the workspace or one of its
 /// ancestors (so it works from git worktrees too).
-fn find_reference(root: &Path) -> Option<PathBuf> {
+pub(crate) fn find_reference(root: &Path) -> Option<PathBuf> {
     if let Some(dir) = std::env::var_os("QUICKTYPE_REF") {
         let script = PathBuf::from(dir).join("dist/index.js");
         return script.is_file().then_some(script);

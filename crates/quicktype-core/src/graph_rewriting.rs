@@ -17,7 +17,6 @@
 //! one-shot helper through which a type of the old graph rebuilds itself
 //! (see `reconstitute` in [`crate::ty::ty`]).
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
@@ -27,6 +26,7 @@ use crate::attributes::type_attributes::{
 };
 use crate::messages::Result;
 use crate::support::collection_utils::EqualityMap;
+use crate::support::fast_hash::HashMap;
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::ty::{self, ClassProperty};
@@ -94,7 +94,7 @@ impl<'g> TypeBuilder<'g> {
         debug_print_reconstitution: bool,
         replacer: Replacer<'g>,
     ) -> Result<TypeBuilder<'g>> {
-        let mut sets_to_replace_by_member = HashMap::new();
+        let mut sets_to_replace_by_member = HashMap::default();
         let mut groups = Vec::with_capacity(sets_to_replace.len());
         for types in sets_to_replace {
             let set: IndexSet<TypeRef> = types.into_iter().collect();
@@ -133,7 +133,7 @@ impl<'g> TypeBuilder<'g> {
         map: IndexMap<TypeRef, TypeRef>,
         debug_print_remapping: bool,
     ) -> Result<TypeBuilder<'g>> {
-        let mut attribute_sources: HashMap<TypeRef, Vec<TypeRef>> = HashMap::new();
+        let mut attribute_sources: HashMap<TypeRef, Vec<TypeRef>> = HashMap::default();
         for (&source, &target) in &map {
             attribute_sources
                 .entry(target)

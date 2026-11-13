@@ -445,7 +445,7 @@ pub async fn readable_from_file_or_url(
                 );
             };
             return Ok(Some(Readable::Text(
-                String::from_utf8_lossy(&body).into_owned(),
+                quicktype_js_compat::utf8::decode_owned(body),
             )));
         }
         if io.is_node() {
@@ -510,6 +510,56 @@ mod std_io {
         IoError::from_fs(e, syscall, Some(path))
     }
 
+    /// A reader whose errors wrap the [`IoError`] Node would report.
+    struct NodeReader<R> {
+        inner: R,
+        error: fn(&std::io::Error) -> IoError,
+    }
+
+    impl<R: Read> Read for NodeReader<R> {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            self.inner.read(buf).map_err(|e| {
+                if e.kind() == std::io::ErrorKind::Interrupted {
+                    e
+                } else {
+                    std::io::Error::other((self.error)(&e))
+                }
+            })
+        }
+    }
+
+    impl super::Readable {
+        /// Opens the source to be read chunk by chunk (as a
+        /// [`JsonSample::Reader`](crate::JsonSample::Reader)) rather than
+        /// whole ([`read`](Self::read) with [`StdIo`]): a URL's text from
+        /// memory, standard input, or the file, as Node's `ReadStream`s do.
+        /// Opening a file fails with Node's `open` error (`ENOENT: …, open
+        /// 'x'`); a read that fails after that is Node's `read` error,
+        /// without a path (`EISDIR: illegal operation on a directory,
+        /// read` for a symbolic link to a directory), wrapped in the
+        /// reader's [`std::io::Error`].
+        pub fn open_std(self) -> Result<Box<dyn Read>, IoError> {
+            let read_error: fn(&std::io::Error) -> IoError = |e| IoError::from_fs(e, "read", None);
+            match self {
+                super::Readable::Text(text) => {
+                    Ok(Box::new(std::io::Cursor::new(text.into_bytes())))
+                }
+                super::Readable::Stdin => Ok(Box::new(NodeReader {
+                    inner: std::io::stdin(),
+                    error: read_error,
+                })),
+                super::Readable::File(path) => {
+                    let file =
+                        std::fs::File::open(&path).map_err(|e| node_error(&e, "open", &path))?;
+                    Ok(Box::new(NodeReader {
+                        inner: file,
+                        error: read_error,
+                    }))
+                }
+            }
+        }
+    }
+
     impl Io for StdIo {
         fn is_symbolic_link(&self, path: &str) -> Result<bool, IoError> {
             std::fs::symlink_metadata(path)
@@ -534,7 +584,7 @@ mod std_io {
                     return Ok(String::new());
                 }
                 std::fs::read(path)
-                    .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                    .map(quicktype_js_compat::utf8::decode_owned)
                     .map_err(|e| node_error(&e, "open", path))
             })
         }
@@ -545,7 +595,7 @@ mod std_io {
                 std::io::stdin()
                     .read_to_end(&mut bytes)
                     .map_err(|e| IoError::from_fs(&e, "read", None))?;
-                Ok(String::from_utf8_lossy(&bytes).into_owned())
+                Ok(quicktype_js_compat::utf8::decode_owned(bytes))
             })
         }
 

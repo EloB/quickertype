@@ -37,8 +37,9 @@
 //! Singular names come from `pluralize.singular` directly (so `cookies`
 //! becomes `cooky`, unlike `TypeNames.singularize`).
 
+use std::collections::VecDeque;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet, VecDeque};
+
 use std::rc::Rc;
 
 use indexmap::IndexSet;
@@ -50,6 +51,7 @@ use crate::attributes::type_names::{
 };
 use crate::messages::Result;
 use crate::support::collection_utils::sort_by_string_key;
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::{console_log, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_graph::TypeGraph;
@@ -104,6 +106,19 @@ fn members_sorted_by_kind(graph: &TypeGraph, t: TypeRef) -> Result<Vec<TypeRef>>
         .collect::<Result<_>>()?;
     sort_by_string_key(&mut members, |(_, k)| k.as_str());
     Ok(members.into_iter().map(|(m, _)| m).collect())
+}
+
+/// `parts.join("_")`, without the formatting machinery (alternative names
+/// are built for every name of every type).
+fn underscored(parts: &[&str]) -> String {
+    let mut s = String::with_capacity(parts.iter().map(|p| p.len() + 1).sum());
+    for (i, part) in parts.iter().enumerate() {
+        if i > 0 {
+            s.push('_');
+        }
+        s.push_str(part);
+    }
+    s
 }
 
 /// `addAlternatives(existing, alternatives)` on a stored value (`None`:
@@ -257,12 +272,12 @@ impl Gatherer<'_> {
                                 let mut alternatives = Vec::new();
                                 for name in names.iter() {
                                     alternatives.extend(
-                                        ancestor_names.iter().map(|an| format!("{an}_{name}")),
+                                        ancestor_names.iter().map(|an| underscored(&[an, name])),
                                     );
                                     alternatives.extend(
                                         ancestor_names
                                             .iter()
-                                            .map(|an| format!("{an}_{name}_{kind}")),
+                                            .map(|an| underscored(&[an, name, kind.as_str()])),
                                     );
                                 }
                                 ancestor_alternatives =
@@ -277,7 +292,7 @@ impl Gatherer<'_> {
                     if direct_alternatives != Some(None) {
                         let alternatives = names
                             .iter()
-                            .map(|name| format!("{name}_{suffix}"))
+                            .map(|name| underscored(&[name, suffix]))
                             .collect();
                         direct_alternatives = add_alternatives(direct_alternatives, alternatives);
                     }
@@ -361,10 +376,10 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
     let mut gatherer = Gatherer {
         graph,
         queue: UniqueQueue::default(),
-        names_for_type: HashMap::new(),
-        direct_alternatives_for_type: HashMap::new(),
-        ancestor_alternatives_for_type: HashMap::new(),
-        pairs_processed: HashMap::new(),
+        names_for_type: HashMap::default(),
+        direct_alternatives_for_type: HashMap::default(),
+        ancestor_alternatives_for_type: HashMap::default(),
+        pairs_processed: HashMap::default(),
     };
 
     let top_levels: Vec<(String, TypeRef)> = gatherer
@@ -434,7 +449,7 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
             continue;
         };
         let kind = graph.kind(t)?;
-        let alternatives = names.iter().map(|name| format!("{name}_{kind}"));
+        let alternatives = names.iter().map(|name| underscored(&[name, kind.as_str()]));
         match direct_alternatives_for_type.entry(t) {
             Entry::Occupied(mut e) => match e.get_mut() {
                 None => continue,

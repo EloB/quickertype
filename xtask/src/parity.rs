@@ -51,7 +51,7 @@ cargo xtask parity [options]
 ";
 
 #[derive(Deserialize)]
-struct Case {
+pub(crate) struct Case {
     /// Directories that must exist before the first step (quicktype does not
     /// create output directories itself).
     #[serde(default)]
@@ -59,22 +59,22 @@ struct Case {
     /// Extra environment variables for every step.
     #[serde(default)]
     env: BTreeMap<String, String>,
-    steps: Vec<Step>,
+    pub(crate) steps: Vec<Step>,
 }
 
 #[derive(Deserialize)]
-struct Step {
+pub(crate) struct Step {
     args: Vec<String>,
     files: Vec<String>,
     #[serde(default)]
-    expect_failure: bool,
+    pub(crate) expect_failure: bool,
     /// File (usually below `{INPUTS}`) piped to stdin; stdin is empty otherwise.
     #[serde(default)]
     stdin: Option<String>,
     /// Expected exit code. Its presence makes this a CLI-behavior step whose
     /// stdout and stderr are compared as well.
     #[serde(default)]
-    exit: Option<i32>,
+    pub(crate) exit: Option<i32>,
 }
 
 /// Environment variables removed from every step: they would let the
@@ -127,7 +127,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
     Ok(o)
 }
 
-fn find_cases(dir: &Path, out: &mut Vec<PathBuf>) {
+pub(crate) fn find_cases(dir: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
@@ -262,12 +262,26 @@ pub(crate) fn first_difference(expected: &[u8], actual: &[u8]) -> String {
     "identical text, different bytes".into()
 }
 
-fn run_case(
-    bin: &[String],
-    inputs: &str,
-    case_dir: &Path,
-    work: &Path,
-) -> Result<Duration, String> {
+/// A quicktype command (`bin`, plus its leading arguments) run in `work`
+/// with the environment every recorded run had: `TZ=UTC`,
+/// `NODE_NO_WARNINGS=1`, and none of [`SCRUBBED_ENV`]. Stdin is empty.
+pub(crate) fn base_command(bin: &[String], work: &Path) -> Command {
+    let mut command = Command::new(&bin[0]);
+    command
+        .args(&bin[1..])
+        .current_dir(work)
+        .stdin(Stdio::null())
+        .env("TZ", "UTC")
+        .env("NODE_NO_WARNINGS", "1");
+    for name in SCRUBBED_ENV {
+        command.env_remove(name);
+    }
+    command
+}
+
+/// Reads a golden case and prepares a fresh work directory for it, with
+/// the directories it needs.
+pub(crate) fn prepare_case(case_dir: &Path, work: &Path) -> Result<Case, String> {
     let bytes = fs::read(case_dir.join("case.json")).map_err(|e| e.to_string())?;
     let case: Case = serde_json::from_slice(&bytes).map_err(|e| format!("bad case.json: {e}"))?;
     let _ = fs::remove_dir_all(work);
@@ -275,6 +289,37 @@ fn run_case(
     for dir in &case.dirs {
         fs::create_dir_all(work.join(dir)).map_err(|e| e.to_string())?;
     }
+    Ok(case)
+}
+
+/// The command for one step of a golden case, as the recorder ran it: the
+/// step's arguments with `{INPUTS}` replaced, its stdin file (if any), and
+/// the case's environment, which overrides [`base_command`]'s.
+pub(crate) fn step_command(
+    bin: &[String],
+    inputs: &str,
+    case: &Case,
+    step: &Step,
+    work: &Path,
+) -> Result<Command, String> {
+    let mut command = base_command(bin, work);
+    command.args(step.args.iter().map(|a| a.replace("{INPUTS}", inputs)));
+    if let Some(path) = &step.stdin {
+        let path = path.replace("{INPUTS}", inputs);
+        let file = fs::File::open(&path).map_err(|e| format!("stdin {path}: {e}"))?;
+        command.stdin(Stdio::from(file));
+    }
+    command.envs(&case.env);
+    Ok(command)
+}
+
+fn run_case(
+    bin: &[String],
+    inputs: &str,
+    case_dir: &Path,
+    work: &Path,
+) -> Result<Duration, String> {
+    let case = prepare_case(case_dir, work)?;
 
     let mut placeholders = path_forms(Path::new(inputs), "{INPUTS}");
     placeholders.extend(path_forms(work, "{CWD}"));
@@ -282,32 +327,7 @@ fn run_case(
     let mut elapsed = Duration::ZERO;
     for (i, step) in case.steps.iter().enumerate() {
         let before = snapshot(work);
-        let args: Vec<String> = step
-            .args
-            .iter()
-            .map(|a| a.replace("{INPUTS}", inputs))
-            .collect();
-        let stdin = match &step.stdin {
-            Some(path) => {
-                let path = path.replace("{INPUTS}", inputs);
-                Stdio::from(fs::File::open(&path).map_err(|e| format!("stdin {path}: {e}"))?)
-            }
-            None => Stdio::null(),
-        };
-        let mut command = Command::new(&bin[0]);
-        command
-            .args(&bin[1..])
-            .args(&args)
-            .current_dir(work)
-            .stdin(stdin)
-            .env("TZ", "UTC")
-            .env("NODE_NO_WARNINGS", "1")
-            .envs(&case.env);
-        for name in SCRUBBED_ENV {
-            if !case.env.contains_key(*name) {
-                command.env_remove(name);
-            }
-        }
+        let mut command = step_command(bin, inputs, &case, step, work)?;
         let start = Instant::now();
         let out = command
             .output()

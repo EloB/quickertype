@@ -4,8 +4,6 @@
 //! `NSObject` model classes with KVC-based JSON conversion, boxed enums,
 //! and C functions that marshal the top-levels.
 
-use std::collections::HashMap;
-
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -14,6 +12,7 @@ use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::naming::Namer;
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::comments::CommentOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::{guard, stack_overflow};
 use crate::support::strings::{camel_case, fast_is_upper_case, repeat_string, string_escape};
 use crate::support::support::{assert, defined};
@@ -1559,7 +1558,7 @@ impl<'a> ObjectiveCRenderer<'a> {
     /// that needs) a map or an array.
     fn needs_map(&self) -> Result<bool> {
         // TODO this isn't complete (needs union support, for example)
-        let mut memo = HashMap::new();
+        let mut memo = HashMap::default();
         for t in self.type_graph().all_types_unordered() {
             if self.type_needs_map(t, &mut memo)? {
                 return Ok(true);

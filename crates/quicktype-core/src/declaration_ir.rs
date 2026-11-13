@@ -6,13 +6,12 @@
 //! break cycles in languages that need indirection for recursive types
 //! ([`cycle_breaker_types_for_graph`]).
 
-use std::collections::HashSet;
-
 use indexmap::IndexSet;
 
 use crate::graph::Graph;
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{set_intersect, set_subtract};
+use crate::support::fast_hash::HashSet;
 use crate::support::support::{assert, panic};
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -82,7 +81,7 @@ pub fn cycle_breaker_types_for_graph(
     is_implicit_cycle_breaker: TypePredicate<'_>,
     can_break_cycles: TypePredicate<'_>,
 ) -> Result<IndexSet<TypeRef>> {
-    let mut visited: HashSet<TypeRef> = HashSet::new();
+    let mut visited: HashSet<TypeRef> = HashSet::default();
     let mut cycle_breaker_types: IndexSet<TypeRef> = IndexSet::new();
     let mut queue: Vec<TypeRef> = graph.top_levels().values().copied().collect();
 
@@ -96,8 +95,8 @@ pub fn cycle_breaker_types_for_graph(
         let mut frames: Vec<Frame> = Vec::new();
         let mut path: Vec<TypeRef> = Vec::new();
         // How often each type is on `path`, to skip the search when it isn't.
-        let mut on_path: std::collections::HashMap<TypeRef, usize> =
-            std::collections::HashMap::new();
+        let mut on_path: crate::support::fast_hash::HashMap<TypeRef, usize> =
+            crate::support::fast_hash::HashMap::default();
         let mut to_visit = Some(root);
         loop {
             if let Some(t) = to_visit.take() {
@@ -286,7 +285,7 @@ pub fn declarations_for_graph(
         top_down: can_be_forward_declared.is_none(),
         declarations: Vec::new(),
         forwarded_types: IndexSet::new(),
-        visited_components: HashSet::new(),
+        visited_components: HashSet::default(),
     };
     let full_graph = type_graph.make_graph(false, children_of_type)?;
     builder.process_graph(&full_graph)?;
