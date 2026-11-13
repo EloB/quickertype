@@ -9,10 +9,7 @@ default-members = ["crates/*"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-# The oldest Rust that builds the published crates (let chains need 1.88;
-# checked with `cargo +1.88 check -p quickertype`). Development uses
-# rust-toolchain.toml.
-rust-version = "1.88"
+rust-version = "1.85"
 license = "Apache-2.0"
 repository = "https://github.com/EloB/quickertype"
 homepage = "https://github.com/EloB/quickertype"
