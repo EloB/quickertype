@@ -93,31 +93,75 @@ fn split_command(s: &str) -> Vec<String> {
     s.split_whitespace().map(String::from).collect()
 }
 
-/// Makes input paths absolute so both runs can execute in their own temp
-/// dirs. The value of `-o`/`--out` is left alone so outputs stay inside the
-/// temp dirs (and never overwrite files in the current directory).
-fn absolutize_inputs(args: &[String], cwd: &Path) -> Vec<String> {
-    let mut out = Vec::with_capacity(args.len());
-    let mut next_is_output = false;
-    for a in args {
-        if next_is_output {
-            out.push(a.clone());
-            next_is_output = false;
-            continue;
-        }
-        if a == "-o" || a == "--out" {
-            next_is_output = true;
-            out.push(a.clone());
-            continue;
-        }
-        let candidate = cwd.join(a);
-        if !a.starts_with('-') && !Path::new(a).is_absolute() && candidate.exists() {
-            out.push(candidate.to_string_lossy().into_owned());
+/// Options whose value is never a path (so it is never absolutized, even if
+/// a file of that name happens to exist in the current directory).
+const NON_PATH_VALUE_OPTIONS: &[&str] = &[
+    "-l",
+    "--lang",
+    "-s",
+    "--src-lang",
+    "-t",
+    "--top-level",
+    "--debug",
+    "--telemetry",
+    "--http-method",
+    "--http-header",
+    "--graphql-introspect",
+];
+
+/// Prepares quicktype args so both runs can execute in their own temp dirs:
+/// input paths (`x.json`, `--src x.json`, `--src=x.json`) become absolute.
+/// The `-o`/`--out` value must be relative, so outputs land in the temp dirs;
+/// an absolute one is rejected because both runs would write the same real file.
+fn prepare_args(args: &[String], cwd: &Path) -> Result<Vec<String>, String> {
+    let absolutize = |value: &str| -> String {
+        let candidate = cwd.join(value);
+        if !Path::new(value).is_absolute() && candidate.exists() {
+            candidate.to_string_lossy().into_owned()
         } else {
+            value.to_owned()
+        }
+    };
+    let check_out = |value: &str| -> Result<(), String> {
+        if Path::new(value).is_absolute() || value.split('/').any(|c| c == "..") {
+            return Err(format!(
+                "--out {value}: use a relative path inside the run dir; both CLIs would \
+                 otherwise write the same real file"
+            ));
+        }
+        Ok(())
+    };
+
+    let mut out = Vec::with_capacity(args.len());
+    let mut iter = args.iter().peekable();
+    while let Some(a) = iter.next() {
+        if let Some((flag, value)) = a.split_once('=').filter(|(f, _)| f.starts_with("--")) {
+            if flag == "--out" {
+                check_out(value)?;
+                out.push(a.clone());
+            } else if NON_PATH_VALUE_OPTIONS.contains(&flag) {
+                out.push(a.clone());
+            } else {
+                out.push(format!("{flag}={}", absolutize(value)));
+            }
+        } else if a == "-o" || a == "--out" {
             out.push(a.clone());
+            if let Some(value) = iter.next() {
+                check_out(value)?;
+                out.push(value.clone());
+            }
+        } else if NON_PATH_VALUE_OPTIONS.contains(&a.as_str()) {
+            out.push(a.clone());
+            if let Some(value) = iter.next() {
+                out.push(value.clone());
+            }
+        } else if a.starts_with('-') {
+            out.push(a.clone());
+        } else {
+            out.push(absolutize(a));
         }
     }
-    out
+    Ok(out)
 }
 
 struct RunResult {
@@ -148,10 +192,18 @@ fn run_one(
         .output()
         .map_err(|e| format!("cannot spawn {}: {e}", cmd[0]))?;
     // Each run has its own temp dir; normalize it so messages compare equal.
-    let dir_str = dir.to_string_lossy();
+    // Children see the resolved path (getcwd), so replace that form too.
+    let given = dir.to_string_lossy().into_owned();
+    let resolved = dir
+        .canonicalize()
+        .map_or_else(|_| given.clone(), |p| p.to_string_lossy().into_owned());
     let normalize = |b: Vec<u8>| -> Vec<u8> {
         String::from_utf8(b)
-            .map(|s| s.replace(dir_str.as_ref(), "{CWD}").into_bytes())
+            .map(|s| {
+                s.replace(&resolved, "{CWD}")
+                    .replace(&given, "{CWD}")
+                    .into_bytes()
+            })
             .unwrap_or_else(|e| e.into_bytes())
     };
     Ok(RunResult {
@@ -218,19 +270,29 @@ fn find_reference(root: &Path) -> Option<PathBuf> {
         .find(|p| p.is_file())
 }
 
+/// Collects the inputs for `--each`: a single file is always used as is; a
+/// directory is walked recursively (sorted) for files with one of `exts`.
 fn collect_inputs(path: &Path, exts: &[String], out: &mut Vec<PathBuf>) {
+    if path.is_file() {
+        out.push(path.to_path_buf());
+    } else {
+        collect_dir(path, exts, out);
+    }
+}
+
+fn collect_dir(path: &Path, exts: &[String], out: &mut Vec<PathBuf>) {
     if path.is_dir() {
         let mut entries: Vec<PathBuf> = fs::read_dir(path)
             .map(|rd| rd.flatten().map(|e| e.path()).collect())
             .unwrap_or_default();
         entries.sort();
         for entry in entries {
-            collect_inputs(&entry, exts, out);
+            collect_dir(&entry, exts, out);
         }
-    } else if path
-        .extension()
-        .is_some_and(|e| exts.iter().any(|x| e == x.as_str()))
-    {
+    } else if path.extension().is_some_and(|e| {
+        exts.iter()
+            .any(|x| e.to_string_lossy().eq_ignore_ascii_case(x))
+    }) {
         out.push(path.to_path_buf());
     }
 }
@@ -254,7 +316,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         _ => build_cli(root)?,
     };
 
-    let base_args = absolutize_inputs(&o.args, &cwd);
+    let base_args = prepare_args(&o.args, &cwd)?;
     let runs: Vec<(String, Vec<String>)> = match &o.each {
         None => vec![(base_args.join(" "), base_args.clone())],
         Some(path) => {
@@ -283,11 +345,15 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         }
     };
 
-    let work = root.join("target/diff");
+    // Per-invocation dir so concurrent `cargo xtask diff` runs don't collide.
+    let work = root
+        .join("target/diff")
+        .join(std::process::id().to_string());
     let stdin = o.stdin.as_ref().map(|p| cwd.join(p));
     let next = AtomicUsize::new(0);
     let mismatches = Mutex::new(Vec::new());
     let errors = Mutex::new(Vec::new());
+    let both_failed = Mutex::new(Vec::new());
     std::thread::scope(|s| {
         for _ in 0..o.jobs.max(1).min(runs.len()) {
             s.spawn(|| {
@@ -313,6 +379,8 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                                     .lock()
                                     .expect("lock")
                                     .push((label.clone(), problem));
+                            } else if r.code != Some(0) {
+                                both_failed.lock().expect("lock").push(label.clone());
                             }
                         }
                         Err(e) => errors.lock().expect("lock").push((label.clone(), e)),
@@ -336,6 +404,17 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     for (label, e) in &errors {
         println!("ERROR {label}: {e}");
     }
+    let _ = fs::remove_dir_all(&work);
+    // Identical failures are parity too (error paths matter), but they also
+    // happen when the arguments themselves are wrong, so call them out.
+    let both_failed = both_failed.into_inner().expect("lock");
+    if !both_failed.is_empty() {
+        println!(
+            "note: {} identical run(s) failed in both CLIs (nonzero exit), e.g. {}",
+            both_failed.len(),
+            both_failed[0]
+        );
+    }
     let total = runs.len();
     let matched = total - mismatches.len() - errors.len();
     println!("diff: {matched}/{total} runs identical to the reference");
@@ -346,18 +425,60 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn output_paths_stay_relative_and_inputs_become_absolute() {
-        let dir = std::env::temp_dir().join("xtask-diff-test");
-        fs::create_dir_all(&dir).unwrap();
+    fn strings(xs: &[&str]) -> Vec<String> {
+        xs.iter().map(|x| (*x).to_owned()).collect()
+    }
+
+    fn fixture_dir() -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("xtask-diff-test-{}", std::process::id()));
+        fs::create_dir_all(dir.join("json")).unwrap();
         fs::write(dir.join("in.json"), "{}").unwrap();
         fs::write(dir.join("out.ts"), "").unwrap();
-        let args: Vec<String> = ["in.json", "-o", "out.ts", "--lang", "ts"]
-            .map(String::from)
-            .into();
-        let got = absolutize_inputs(&args, &dir);
-        assert_eq!(got[0], dir.join("in.json").to_string_lossy());
-        assert_eq!(&got[1..], ["-o", "out.ts", "--lang", "ts"]);
+        dir
+    }
+
+    #[test]
+    fn inputs_become_absolute_in_every_form() {
+        let dir = fixture_dir();
+        let abs = dir.join("in.json").to_string_lossy().into_owned();
+        let got = prepare_args(
+            &strings(&["in.json", "--src", "in.json", "--src=in.json"]),
+            &dir,
+        )
+        .unwrap();
+        assert_eq!(
+            got,
+            [
+                abs.clone(),
+                "--src".into(),
+                abs.clone(),
+                format!("--src={abs}")
+            ]
+        );
+    }
+
+    #[test]
+    fn output_and_non_path_values_are_untouched() {
+        let dir = fixture_dir();
+        let args = strings(&[
+            "-o",
+            "out.ts",
+            "--src-lang",
+            "json",
+            "--lang=json",
+            "--top-level",
+            "json",
+        ]);
+        assert_eq!(prepare_args(&args, &dir).unwrap(), args);
+    }
+
+    #[test]
+    fn absolute_or_escaping_output_is_rejected() {
+        let dir = fixture_dir();
+        for out in [["-o", "/tmp/x.ts"], ["--out", "../x.ts"]] {
+            assert!(prepare_args(&strings(&out), &dir).is_err());
+        }
+        assert!(prepare_args(&strings(&["--out=/tmp/x.ts"]), &dir).is_err());
     }
 
     #[test]

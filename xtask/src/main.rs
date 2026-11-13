@@ -44,7 +44,11 @@ fn main() -> ExitCode {
         }
         Some("diff") => {
             let rest: Vec<String> = args.collect();
-            if rest.first().is_some_and(|a| a == "-h" || a == "--help") {
+            let before_separator = rest.iter().take_while(|a| *a != "--");
+            if before_separator
+                .into_iter()
+                .any(|a| a == "-h" || a == "--help")
+            {
                 print!("{}", diff::USAGE);
                 return ExitCode::SUCCESS;
             }
