@@ -104,8 +104,8 @@ for every run are both skipped.
 **Design.** `parseSync` first asks `src/native/samples.ts`. For a
 `CompressedJSONFromString` that is exactly quicktype's (its prototype and
 own fields, a built-in date/time recognizer, a valid integer range) and a
-string sample that is well-formed UTF-16, while the engine is loaded and
-not forced off, that is **one engine call per sample**:
+string sample that is well-formed UTF-16, while the engine is compiled
+(see below) and not forced off, that is **one engine call per sample**:
 `jsonRead(id, text)` reads the text with the port's `JSON.parse`-semantics
 reader (`CompressedJson::read_string_sample` in quicktype-core: V8's
 grammar, own-property order, the last of duplicate keys) into a compressed
@@ -114,12 +114,22 @@ form held in WebAssembly memory, one per `CompressedJSON` (`id`, made by
 `Value`. `parseSync` returns it, and `JSONInput` stores it in `_topLevels`
 as it would its own. The `CompressedJSON`'s four table fields (`_strings`,
 `_stringIndexes`, `_objects`, `_arrays`) stay empty and become accessors:
-the first read or write of any of them fills all four by reading the
-recorded texts again, in order, with TypeScript's own `process`
-(`materialize`), and from then on the `CompressedJSON` is an ordinary one
-whose samples TypeScript reads. A run on the engine sends the compressed
-form's id instead of the tables (`kind: "jsonShared"`); a run on the
-TypeScript engine reads the tables, which fills them.
+the first read or write of any of them fills all four with the engine's
+tables (`materialize`: `jsonExport`, one conversion, no parsing), which
+are the ones TypeScript builds from the same samples, and from then on the
+`CompressedJSON` is an ordinary one whose samples TypeScript reads. A run
+on the engine sends a lease on the compressed form instead of the tables
+(`kind: "jsonShared"`); a run on the TypeScript engine reads the tables,
+which fills them.
+
+**When the engine reads samples.** Only once it is compiled: in browsers
+the module compiles in the background from the start, and samples added
+before that are read by TypeScript; in Node, where compiling is
+synchronous, the first run that uses the engine compiles it, and so does
+a sample of at least 1 Mi code units (reading a sample that large on the
+engine saves more than compiling costs, some 20 ms of CPU). A smaller
+sample never compiles it: if the run goes to the TypeScript engine (a
+custom language, say), compiling would be wasted.
 
 The engine leaves a sample to TypeScript (after filling the tables, so
 that TypeScript continues from the state it would have) when it cannot
@@ -131,7 +141,7 @@ fuller stack; such a sample keeps whatever TypeScript does with it), a
 `\u` escape that leaves a surrogate unpaired (a Rust string cannot hold
 it), a configuration (`dateTimeRecognizer`, `handleRefs`,
 `supportedIntegerRange`) that changed since the first sample, a compressed
-form that a run is using right now, and an engine instance that failed.
+form that a run holds, and an engine instance that failed.
 A sample that is not JSON is not read at all: the engine reports that it
 is not JSON, without changing anything, and `parseSync` goes on to
 `JSON.parse`, which throws.
@@ -140,17 +150,26 @@ is not JSON, without changing anything, and `parseSync` goes on to
 does, so that any number of runs can use it: a `FinalizationRegistry` on
 the `CompressedJSON` frees it once the input is collected (a run that
 never happens costs nothing beyond that), and filling the tables frees it
-at once. A run takes its own reference (an `Rc`) when it starts, so it
-keeps the samples it started with even if the `CompressedJSON` is
-collected or its tables filled meanwhile; the request keeps the
-`CompressedJSON` alive until the run has taken it. Runs at once on the
-same input share it. A sample added while a run holds it is left to
-TypeScript (the engine never changes a compressed form a run is reading).
-When an instance fails, its compressed forms are gone with it; the texts
-are still recorded, so the tables are filled by TypeScript the next time
-anything needs them, and a run whose samples were read by another
-instance than the one it would run on goes to the TypeScript engine.
-Hosts without `FinalizationRegistry` read every sample with TypeScript.
+at once. A run takes its own reference (an `Rc`, the *lease*,
+`jsonAcquire`) when it is encoded, synchronously, before it waits for the
+engine, and keeps it until it ends: it keeps the samples it was encoded
+with even if the `CompressedJSON` is collected or its tables filled
+before it starts (a run on the TypeScript engine in between, say). A run
+that does not start on that instance lets go of its leases. Ids of runs,
+compressed forms and leases are never reused: each carries its slot's
+generation, so an id that outlived its value finds nothing, never another
+input's samples (`crates/quicktype-wasm/src/slots.rs`). Runs at once on
+the same input share the compressed form. A sample added while a run
+holds it is left to TypeScript (the engine never changes a compressed
+form a run is reading). The texts of the samples are not kept, except
+while an input's add up to at most 4 Mi code units: if an instance fails,
+those are read again by TypeScript the next time anything needs the
+tables, and a larger input's tables are taken from the failed instance's
+memory, which a panic, running out of memory or a stack overflow leaves
+readable (should even that fail, every use of the tables throws). A run
+whose samples were read by another instance than the one it would run on
+goes to the TypeScript engine. Hosts without `FinalizationRegistry` read
+every sample with TypeScript.
 
 **Why this cannot be told apart from TypeScript reading the samples:**
 
@@ -178,17 +197,25 @@ Hosts without `FinalizationRegistry` read every sample with TypeScript.
   that could observe them (TypeScript's inference, `hashCode`,
   `getStringForValue`, a user's `CompressedJSON` shared by inputs,
   `JSON.stringify`, reading the private fields) goes through the
-  accessors first. Filling them runs TypeScript's own `JSON.parse` and
-  `process` on the same texts, in the same order, with the configuration
-  each was read with, starting from the empty tables the
-  `CompressedJSON` had (the engine only starts on a fresh one), with the
-  reading in progress (if a read touched a table first) set aside
-  meanwhile; the arrays and the object are the originals. The result is
-  the tables TypeScript would have built. The other fields a read creates
-  (`_ctx`, `_rootValue`) are created by the engine's reads as `process`
-  would create them, in the same order. What remains observable is that
-  `Object.getOwnPropertyDescriptor` shows the four fields as accessors
-  until they are first used.
+  accessors first. The engine's tables are TypeScript's for the same
+  samples: it interns strings where `process` does (a value's strings,
+  then its key, as `commitValue` interns `currentKey`; only the members
+  `JSON.parse` keeps, so one `"__proto__"` of two; a new index for every
+  `"__proto__"`; a string format's kind name; nothing of a sample that is
+  not JSON or that it declines), numbers objects and arrays in the order
+  they end, and encodes values as `makeValue` does
+  (`CompressedJson::encode_value`). The fill starts from the empty tables
+  the `CompressedJSON` had (the engine only starts on a fresh one), adds
+  the strings as `internString` does (the same `_stringIndexes`, in the
+  same property order), and leaves out a sample the engine read and then
+  declined (a string root); the arrays and the object are the originals.
+  The other fields a read creates (`_ctx`, `_rootValue`) are created by
+  the engine's reads as `process` would create them, in the same order.
+  What remains observable is that `Object.getOwnPropertyDescriptor` shows
+  the four fields as accessors until they are first used. (After an
+  engine failure, a small input's samples are read again by TypeScript's
+  own `process`, with the configuration each was read with and any read in
+  progress set aside, which gives the same tables.)
 - *The same timing.* `parseSync` stays synchronous and `parse` still
   awaits it once, so `addSource` settles after the same number of
   microtask ticks, and concurrent `addSource` calls on one input
@@ -199,8 +226,8 @@ Hosts without `FinalizationRegistry` read every sample with TypeScript.
   starts, as before. Reading samples prints nothing and reports no timing
   in TypeScript, nor here; a run's `read input` timing covers inference
   in both. `quicktypeMultiFileSync` uses the shared samples like
-  `quicktype()`; in a browser where the engine is not loaded yet,
-  samples are read by TypeScript in the first place.
+  `quicktype()`; where the engine is not compiled yet, samples are read
+  by TypeScript in the first place.
 - *Everything else is TypeScript.* Whenever the engine does not take a
   sample (see above), or the TypeScript engine runs, the tables are
   filled first and TypeScript's code runs on the state it would have.
@@ -211,9 +238,11 @@ The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
 (4.9 MiB, 1.8 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
 (`dist/esm/`) builds.
 
-- **Node**: nothing happens at import. The first run (or the first JSON
-  sample added) reads and compiles the file synchronously, so
-  `quicktypeMultiFileSync` works from the start.
+- **Node**: nothing happens at import. The first run reads and compiles
+  the file synchronously, so `quicktypeMultiFileSync` works from the
+  start. A JSON sample added before that compiles it only if it has at
+  least 1 Mi code units; smaller ones are read by TypeScript (see [JSON
+  samples](#json-samples)).
 - **Browsers**: the ES module build starts `WebAssembly.compileStreaming` at
   import, from `new URL("../../../native/wasm/quicktype_wasm_bg.wasm",
   import.meta.url)`, which bundlers with asset support (Vite, webpack 5,

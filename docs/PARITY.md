@@ -227,8 +227,9 @@ the others name the fix they need.
   Beyond that, only these differ:
   - JSON samples of quicktype's own `CompressedJSONFromString` are read by
     the engine as they are added, and its TypeScript tables are filled
-    when first used, by TypeScript reading the same texts (the package
-    README, "JSON samples"); until then `Object.getOwnPropertyDescriptor`
+    when first used, from the engine's tables, which are TypeScript's for
+    the same samples (the package README, "JSON samples"); until then
+    `Object.getOwnPropertyDescriptor`
     shows its four table fields (`_strings`, `_stringIndexes`, `_objects`,
     `_arrays`) as accessors;
   - a custom `JSONSchemaStore` can return documents holding `undefined`
