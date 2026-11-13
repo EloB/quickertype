@@ -27,12 +27,17 @@
 // quicktype runs, runs an engine only for an input it has not run, works
 // with the arrow keys, and, once both engines have run the input, reports
 // identical output with both times, warm medians when measured (a link from
-// the old compare mode, `c=1`, runs both); that invalid JSON shows
-// quicktype's error; that the input survives a reload (localStorage); and
-// that 360 px and 390 px widths do not scroll sideways. And three things
-// that once went wrong: the code shown after a slow run during which the
-// engine was switched; a measurement asked for while a run is under way;
-// and a worker failing after it loaded.
+// the old compare mode, `c=1`, runs both); that the two workers never run
+// at the same time (on every page, from the page's log of requests),
+// including a switch during a run and during a measurement; that a worker
+// failure is shown but not kept, so a switch back tries again, and stops a
+// measurement with a message; that after a sample fails to load, switching
+// engine runs nothing; that invalid JSON shows quicktype's error; that the
+// input survives a reload (localStorage); and that 360 px and 390 px widths
+// do not scroll sideways. And three things that once went wrong: the code
+// shown after a slow run during which the engine was switched; a
+// measurement asked for while a run is under way; and a worker failing
+// after it loaded.
 //
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
 // (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
@@ -264,6 +269,58 @@ if (!fs.existsSync(path.join(dist, "index.html"))) throw new Error("site/dist is
 
 const { server, requests, url } = await serve(dist);
 const page = await launch(browser);
+
+/**
+ * The page's requests to its two workers never overlapped: each was sent
+ * after the one before had replied (no time is taken while the other engine
+ * runs). Returns how many there were.
+ */
+async function oneAtATime(what) {
+    const log = await page.evaluate("globalThis.playground?.engines.wasm.lane.history ?? []");
+    const sorted = [...log].sort((a, b) => a.sent - b.sent);
+    for (let i = 1; i < sorted.length; i++) {
+        const [before, after] = [sorted[i - 1], sorted[i]];
+        assert.ok(
+            after.sent >= before.received,
+            `${what}: ${after.engine} request ${after.id} was sent while ${before.engine} request ${before.id} ran`,
+        );
+    }
+
+    return log.length;
+}
+
+/** Checked on every page before leaving it. */
+let requestsChecked = 0;
+const navigateTo = page.navigate;
+page.navigate = async (target) => {
+    requestsChecked += await oneAtATime(`the requests on ${await page.evaluate("location.href")}`);
+    await navigateTo(target);
+};
+
+/**
+ * In the page: `start` (code) starts a request to `engine`'s worker; then
+ * `then` (code) runs while it is in flight. False if it was over before the
+ * page could see it.
+ */
+const whileInFlight = (engine, start, then) =>
+    page.evaluate(`(async () => {
+        const client = playground.engines.${engine};
+        const id = client.nextId;
+        ${start};
+        while (client.inFlight?.id !== id) {
+            if (client.nextId > id) return false;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        ${then};
+        return true;
+    })()`);
+
+/** The span of the request `id` to `engine`'s worker, from the page's log. */
+async function spanOf(engine, id) {
+    const span = await page.evaluate(`playground.engines.wasm.lane.history.find((s) => s.engine === "${engine}" && s.id === ${id})`);
+    assert.ok(span !== undefined, `no request ${id} to the ${engine} worker`);
+    return span;
+}
 const settled = "playground.generation > 0 && playground.view.settled === playground.generation";
 const shown = () =>
     page.evaluate(`({
@@ -766,6 +823,37 @@ try {
     console.log(`ok: warm runs: ${compare}\n    quickertype ${medians(bench.wasm)}\n    quicktype   ${medians(bench.ts)}`);
     await page.screenshot("compare.png");
 
+    // A switch while warm runs are measured: its run waits its turn, after
+    // the measurement's run on the other engine, never beside it; then the
+    // measurement goes on, and both finish.
+    await page.navigate(`${url}#v=2&l=typescript&s=pokedex`);
+    await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run before measuring");
+    let counts = await runCounts();
+    assert.ok(
+        await whileInFlight("wasm", `document.getElementById("measure").click()`, `document.querySelector("input[name=engine][value=ts]").click()`),
+        "quickertype's warm runs were over before the switch",
+    );
+    await page.waitFor(
+        `${measuredDone} && playground.engine === "ts" && ${settled} && document.body.dataset.status === "done"`,
+        "the measurement and the switch made during it",
+        300_000,
+    );
+    await sameAsCli("a switch to quicktype during a measurement", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    compare = await comparedIdentical("a switch to quicktype during a measurement", true);
+    {
+        const after = await runCounts();
+        assert.deepEqual([after.generation, after.wasm - counts.wasm, after.ts - counts.ts], [counts.generation, 1, 2]);
+        const measuredWasm = await spanOf("wasm", counts.wasm);
+        const switched = await spanOf("ts", counts.ts);
+        const measuredTs = await spanOf("ts", counts.ts + 1);
+        assert.ok(switched.sent >= measuredWasm.received, "the switch's run started before quickertype's warm runs ended");
+        assert.ok(measuredTs.sent >= switched.received, "quicktype's warm runs started before the switch's run ended");
+    }
+    await oneAtATime("a switch during a measurement");
+    console.log(`ok: a switch during a measurement runs after quickertype's warm runs, never beside them: ${compare}`);
+    ran = await switchEngine("wasm", "back to quickertype after a switch during a measurement");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 }, "back to quickertype after a switch during a measurement: it ran");
+
     // A JSON Schema sample.
     await select("sample", "description");
     await sameAsCli(
@@ -932,7 +1020,8 @@ try {
 
     // A run under way (another language) while the engine is switched: the
     // page re-renders mid-run, and must draw the new request's result, from
-    // the engine picked.
+    // the engine picked, which runs after the run under way, not beside it.
+    counts = await runCounts();
     await andRun(
         `(() => {
             const lang = document.getElementById("lang");
@@ -950,6 +1039,11 @@ try {
         engine: playground.view.shown.engine,
     })`);
     assert.deepEqual(drawn, { lang: "go", same: true, go: true, engine: "ts" });
+    {
+        const first = await spanOf("wasm", counts.wasm);
+        const second = await spanOf("ts", counts.ts);
+        assert.ok(second.sent >= first.received, "quicktype started before quickertype's run of the same input ended");
+    }
     await sameAsCli("big-senators.json → Go on quicktype", "quicktype --lang go --top-level BigSenators big-senators.json", "ts");
     ran = await switchEngine("wasm", "back to quickertype after a switch during a run");
     assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype after a switch during a run ran");
@@ -1007,6 +1101,93 @@ try {
     );
     console.log(`ok: a worker failing after it loaded: "${failure}"`);
 
+    // A worker failing is not that engine's result: shown, not kept. A
+    // switch away and back runs the input again, on a new worker.
+    let caught;
+    ran = await switchEngine("ts", "a switch to quicktype whose worker fails", async () => {
+        caught = await whileInFlight(
+            "ts",
+            `document.querySelector("input[name=engine][value=ts]").click()`,
+            `globalThis.failedTs = client.worker; client.worker.dispatchEvent(new ErrorEvent("error", { message: "simulated failure" }))`,
+        );
+    });
+    assert.ok(caught, "quicktype's run was over before its worker could fail");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 });
+    const tsFailure = await page.evaluate(`({
+        status: document.body.dataset.status,
+        message: document.querySelector(".error-message")?.textContent,
+        kept: playground.view.results.ts !== undefined,
+    })`);
+    assert.deepEqual(tsFailure, {
+        status: "error",
+        message: "The TypeScript worker stopped (simulated failure); the next run starts a new one.",
+        kept: false,
+    });
+    ran = await switchEngine("wasm", "back to quickertype after quicktype's worker failed");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 });
+    await sameAsCli("back on quickertype after quicktype's worker failed: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators --density dense big-senators.json");
+    ran = await switchEngine("ts", "quicktype again after its worker failed");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 }, "quicktype again after its worker failed: it ran");
+    assert.ok(await page.evaluate("playground.engines.ts.worker !== globalThis.failedTs"), "quicktype's worker was not replaced");
+    await sameAsCli("quicktype again after its worker failed: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators --density dense big-senators.json", "ts");
+    await comparedIdentical("quicktype again after its worker failed");
+    console.log(`ok: a worker failure is shown, not kept ("${tsFailure.message}"); switching back runs again, on a new worker`);
+
+    // A worker failing during a measurement stops it, with a message; the
+    // results shown and kept stay; measuring again works.
+    assert.ok(
+        await whileInFlight(
+            "wasm",
+            `document.getElementById("measure").click()`,
+            `client.worker.dispatchEvent(new ErrorEvent("error", { message: "simulated failure" }))`,
+        ),
+        "quickertype's warm runs were over before its worker could fail",
+    );
+    await page.waitFor("document.querySelector('#meter .bench-failure') !== null", "the measurement's failure");
+    const benchFailure = await page.evaluate(`({
+        text: document.querySelector("#meter .bench-failure").textContent,
+        button: document.getElementById("measure").getAttribute("aria-disabled"),
+        status: document.body.dataset.status,
+        engine: playground.view.shown.engine,
+        kept: [playground.view.results.wasm?.result.ok, playground.view.results.ts?.result.ok],
+        compare: document.body.dataset.compare,
+    })`);
+    assert.deepEqual(benchFailure, {
+        text: "Measuring warm runs stopped: The WebAssembly worker stopped (simulated failure); the next run starts a new one.",
+        button: null,
+        status: "done",
+        engine: "ts",
+        kept: [true, true],
+        compare: "identical",
+    });
+    await page.evaluate("document.getElementById('measure').click()");
+    await page.waitFor(measuredDone, "measuring again after a worker failed", 600_000);
+    await comparedIdentical("measuring again after a worker failed", true);
+    console.log(`ok: a worker failing during a measurement: "${benchFailure.text}"; the results stay, and measuring again works`);
+
+    // A sample that does not load: no current input, so switching engine
+    // runs nothing, and the error stays.
+    await page.evaluate(`(() => {
+        const fetchFile = globalThis.fetch;
+        globalThis.fetch = (resource, ...rest) =>
+            String(resource).includes("samples/reddit") ? Promise.reject(new TypeError("simulated network failure")) : fetchFile(resource, ...rest);
+    })()`);
+    await select("sample", "reddit");
+    const sampleError = "Could not load the sample samples/reddit.json: simulated network failure";
+    const notLoaded = () =>
+        page.evaluate(`({
+            status: document.body.dataset.status,
+            message: document.querySelector(".error-message")?.textContent,
+            request: playground.view.request === undefined,
+        })`);
+    assert.deepEqual(await notLoaded(), { status: "error", message: sampleError, request: true });
+    for (const engine of ["wasm", "ts"]) {
+        ran = await switchEngine(engine, `a switch to ${engine} after a sample did not load`);
+        assert.deepEqual(ran, { wasm: 0, ts: 0 }, `a switch to ${engine} after a sample did not load ran`);
+        assert.deepEqual(await notLoaded(), { status: "error", message: sampleError, request: true });
+    }
+    console.log("ok: after a sample does not load, switching engine runs nothing and the error stays");
+
     // Phones: stacked, no sideways scrolling, and a long command wrapped.
     for (const width of [360, 390]) {
         await page.viewport(width, 844, { mobile: true });
@@ -1029,6 +1210,8 @@ try {
     assert.ok(wasmRequests.length >= 1);
     assert.deepEqual(page.problems, [], "errors in the page");
     console.log(`ok: ${requests.length} requests, all under /quickertype/ and found; no errors in the page`);
+    requestsChecked += await oneAtATime("the requests on the last page");
+    console.log(`ok: ${requestsChecked} requests to the workers, on every page, never two at a time`);
 } catch (e) {
     failed = true;
     console.log(`FAILED: ${e.stack ?? e}`);

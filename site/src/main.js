@@ -17,7 +17,7 @@
 
 /* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
 
-import { EngineClient } from "./engine-client.js";
+import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
@@ -409,9 +409,9 @@ function showInputInfo() {
 // engine picked runs the current one only if it has not yet, so switching
 // back and forth leaves both results, which the page then compares.
 
-const engines = { wasm: new EngineClient("wasm"), ts: new EngineClient("ts") };
-/** The engines as what they are, for the fine print. */
-const engineKinds = { wasm: "WebAssembly", ts: "TypeScript" };
+// One request at a time across both workers: no time is taken while the other engine runs.
+const workerLane = new Lane();
+const engines = { wasm: new EngineClient("wasm", workerLane), ts: new EngineClient("ts", workerLane) };
 
 /** What the output pane shows. */
 const view = {
@@ -421,11 +421,16 @@ const view = {
     /**
      * Each engine's latest run, { gen, result }, the result "running" while
      * it runs. One for the current request is that engine's result for it.
+     * A worker failure is not kept: the next switch or run tries again.
      */
     results: { wasm: undefined, ts: undefined },
     /** What the output pane shows: `engine`'s result for the request of run `gen`, which had `lang` and `name`. */
     shown: { gen: 0, engine: defaultEngine, result: undefined, lang: undefined, name: "" },
-    /** A warm measurement of both engines on the request of run `gen`: { gen, wasm, ts }, each a result, "running" or undefined. */
+    /**
+     * A warm measurement of both engines on the request of run `gen`:
+     * { gen, wasm, ts, failure }, each side a result, "running" or
+     * undefined; `failure` says why it stopped, if a worker failed.
+     */
     bench: undefined,
     files: [],
     tab: 0,
@@ -482,8 +487,8 @@ const typingDelay = () => Math.min(1000, 200 + state.text.length / 5000);
 
 /**
  * Runs the input as it is now, a new request, on the engine picked; with
- * `compare` (a link from compare mode), then on the other engine too. A
- * newer run replaces it.
+ * `compare` (a link from compare mode), then on the other engine too (the
+ * lane runs them one after the other). A newer run replaces it.
  */
 function run({ compare = false } = {}) {
     clearTimeout(runTimer);
@@ -504,14 +509,15 @@ function run({ compare = false } = {}) {
 
     setRunning(true);
     const first = runOn(state.engine);
-    if (!compare) return first;
-    return track(first.then(() => (gen === generation ? runOn(otherEngine(state.engine)) : undefined)));
+    if (compare) void runOn(otherEngine(state.engine));
+    return first;
 }
 
 /**
  * Runs the current request on `engine`, unless it has run it or is running
- * it. The result is shown if `engine` is the one picked, and kept for the
- * comparison either way.
+ * it; after whatever runs on the other engine, never beside it (the lane).
+ * The result is shown if `engine` is the one picked, and kept for the
+ * comparison either way, unless the worker failed.
  */
 function runOn(engine) {
     const gen = generation;
@@ -531,7 +537,9 @@ function runOn(engine) {
                 return;
             }
 
-            view.results[engine] = { gen, result };
+            // A worker that failed is not this engine's result for the request:
+            // shown, but not kept, so that the next switch or run tries again.
+            view.results[engine] = result.workerFailure ? undefined : { gen, result };
             if (engine === state.engine) show(engine, gen, result);
             render();
         }),
@@ -555,7 +563,7 @@ function setEngine(engine) {
     state.engine = engine;
     writeHash();
     if (view.request === undefined || view.status === "empty") {
-        // Nothing to run yet: the first run is on this engine.
+        // No input to run (none yet, or a sample that did not load): the next run is on this engine.
         view.shown = { ...view.shown, engine };
         render();
         return;
@@ -604,6 +612,14 @@ async function measure() {
         const result = await engines[engine].run({ ...req, ...repeat });
         if (!current()) return;
         if (result === undefined) return giveUp();
+        if (result.workerFailure) {
+            // Said under the result shown, which stays; measuring again starts a new worker.
+            bench[engine] = undefined;
+            bench.failure = result.error.message;
+            render();
+            return;
+        }
+
         bench[engine] = result;
         // It is the engine's result for this request too: switching to it needs no run.
         if (resultOf(engine, bench.gen) === undefined) view.results[engine] = { gen: bench.gen, result: { ...result, first: false } };
@@ -924,7 +940,11 @@ function renderMeter() {
     const boot = bootNote(lanes);
     if (boot) fine.push(boot);
 
-    const measuring = bench !== undefined && !(isResult(bench.wasm) && isResult(bench.ts));
+    if (bench?.failure !== undefined) {
+        html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
+    }
+
+    const measuring = bench !== undefined && bench.failure === undefined && !(isResult(bench.wasm) && isResult(bench.ts));
     const label = !measuring
         ? "Measure warm runs (5×)"
         : bench.wasm === "running"
@@ -1002,9 +1022,18 @@ async function loadSample(sample, keepName = false, compare = false) {
     try {
         setInput(await fetchSample(sample), { type: "sample", id: sample.id }, sample.kind, sample.name, keepName);
     } catch (e) {
+        // No current input: what runs or waits is for the input before, and
+        // switching engine runs nothing until there is one.
+        clearTimeout(runTimer);
+        const gen = ++generation;
+        view.request = undefined;
+        view.bench = undefined;
+        engines.wasm.drop();
+        engines.ts.drop();
+        setRunning(false);
         view.status = "done";
         const failure = { ok: false, error: { message: `Could not load the sample ${sample.path}: ${e.message}` }, times: [] };
-        view.shown = { gen: generation, engine: state.engine, result: failure, lang: state.lang, name: topLevelName() };
+        view.shown = { gen, engine: state.engine, result: failure, lang: state.lang, name: topLevelName() };
         render();
         return;
     }

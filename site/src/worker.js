@@ -6,7 +6,8 @@
 // Request:  { id, kind: "json" | "schema", lang, name, text, rendererOptions,
 //             options, warmup?, repeat? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
-//           { type: "result", id, ok, files | error, ms, times, inputTimes, ran, reason, first }
+//           { type: "result", id, ok, files | error, ms, times, inputTimes, ran, reason, first,
+//             workerFailure (a failure that is not quicktype's) }
 //
 // `options` are `quicktype()` options from the page's general options
 // (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
@@ -121,10 +122,10 @@ async function handle(request) {
     return { type: "result", id: request.id, ms: times[times.length - 1], times, inputTimes, first, ...reply };
 }
 
-/** A result for a request the worker could not handle at all. */
+/** A result for a request the worker could not handle at all: not quicktype's (the page does not keep it). */
 function failure(request, e) {
     const message = `The worker could not handle this run: ${String(e?.message ?? e)}`;
-    return { type: "result", id: request?.id, ok: false, error: { message }, times: [], inputTimes: [] };
+    return { type: "result", id: request?.id, ok: false, error: { message }, times: [], inputTimes: [], workerFailure: true };
 }
 
 // One request at a time, in order. Whatever goes wrong with one (outside

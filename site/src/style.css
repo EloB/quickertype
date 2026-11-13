@@ -803,6 +803,12 @@ textarea:focus-visible {
     line-height: 1;
 }
 
+.bench-failure {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--bad);
+}
+
 .fine {
     display: flex;
     flex-wrap: wrap;
