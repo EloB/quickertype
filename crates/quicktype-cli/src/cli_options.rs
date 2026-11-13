@@ -273,8 +273,6 @@ pub struct CliOptions {
     /// `--graphql-introspect`.
     pub graphql_introspect: Option<String>,
     /// `--http-method`.
-    // TODO(graphql): read by `--graphql-introspect` (Phase 5).
-    #[allow(dead_code)]
     pub http_method: Option<String>,
     /// `--http-header`.
     pub http_header: Option<Vec<String>>,
