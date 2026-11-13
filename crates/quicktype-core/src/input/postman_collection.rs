@@ -12,7 +12,6 @@
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::{number, whitespace};
 
-use super::compressed_json::drop_iteratively;
 use super::inputs::JsonSourceData;
 use crate::messages::{ErrorKind, QuickTypeError, Result};
 
@@ -39,9 +38,7 @@ pub fn sources_from_postman_collection(
     )?;
     let mut sources = Vec::new();
     let mut descriptions = Vec::new();
-    let result = process_collection(&collection, &mut sources, &mut descriptions);
-    drop_iteratively(collection);
-    result?;
+    process_collection(&collection, &mut sources, &mut descriptions)?;
 
     let joined = descriptions.join("\n\n");
     let joined = whitespace::trim(&joined);
@@ -179,8 +176,7 @@ fn add_request(c: &JsonValue, sources: &mut Vec<JsonSourceData<String>>) -> Resu
         }
         if let Some(JsonValue::String(body)) = get(r, "body")? {
             // `isValidJSON(r.body)`
-            if let Ok(value) = json::parse(body) {
-                drop_iteratively(value);
+            if json::parse(body).is_ok() {
                 samples.push(body.clone());
             }
         }

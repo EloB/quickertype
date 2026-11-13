@@ -6,7 +6,8 @@
 //!   own-property order: array-index keys (`"0"` … `"4294967294"`) first in
 //!   ascending order, then every other key in source order. A duplicate key
 //!   keeps the slot of its first occurrence and takes the value of its last
-//!   ([`insert_js_property`]); `"__proto__"` is an ordinary key. Numbers are
+//!   ([`insert_js_property`](super::insert_js_property)); `"__proto__"` is
+//!   an ordinary key. Numbers are
 //!   `f64`, correctly rounded, overflowing to ±∞ (`1e400`).
 //! - **Errors.** The `SyntaxError` message is V8's, character for character:
 //!   which of V8's twenty templates fires, the position (in UTF-16 code
@@ -21,7 +22,7 @@
 
 use std::fmt;
 
-use super::{IndexMap, JsonValue, insert_js_property};
+use super::{IndexMap, JsonValue, array_index};
 
 /// The `SyntaxError` `JSON.parse` throws; [`message`](Self::message) is V8's
 /// text, e.g. `Unexpected end of JSON input`.
@@ -172,7 +173,10 @@ const MIN_ORIGINAL_SOURCE_LENGTH_FOR_CONTEXT: usize = MAX_CONTEXT_CHARACTERS * 2
 /// continuation stack).
 enum Frame {
     Array(Vec<JsonValue>),
-    Object(IndexMap<String, JsonValue>, String),
+    /// The members so far in source order (a repeated key keeps its first
+    /// slot), the key of the member being parsed, and whether any key is an
+    /// array index.
+    Object(IndexMap<String, JsonValue>, String, bool),
 }
 
 struct Parser<'a> {
@@ -267,7 +271,7 @@ impl Parser<'_> {
                         JsonValue::Object(IndexMap::new())
                     } else {
                         let key = self.scan_property_key(Positional::ExpectedPropNameOrRBrace)?;
-                        stack.push(Frame::Object(IndexMap::new(), key));
+                        stack.push(Frame::Object(IndexMap::new(), key, false));
                         continue 'value;
                     }
                 }
@@ -303,17 +307,25 @@ impl Parser<'_> {
                         };
                         value = JsonValue::Array(items);
                     }
-                    Some(Frame::Object(map, key)) => {
-                        insert_js_property(map, std::mem::take(key), value);
+                    Some(Frame::Object(map, key, has_index_key)) => {
+                        let key = std::mem::take(key);
+                        *has_index_key |= array_index(&key).is_some();
+                        map.insert(key, value);
                         if self.check(Token::Comma) {
+                            let Some(Frame::Object(_, key, _)) = stack.last_mut() else {
+                                unreachable!("the top frame is an object")
+                            };
                             *key = self
                                 .scan_property_key(Positional::ExpectedDoubleQuotedPropertyName)?;
                             continue 'value;
                         }
                         self.expect(Token::RBrace, Positional::ExpectedCommaOrRBrace)?;
-                        let Some(Frame::Object(map, _)) = stack.pop() else {
+                        let Some(Frame::Object(mut map, _, has_index_key)) = stack.pop() else {
                             unreachable!("the top frame is an object")
                         };
+                        if has_index_key {
+                            order_array_index_keys_first(&mut map);
+                        }
                         value = JsonValue::Object(map);
                     }
                 }
@@ -595,6 +607,23 @@ impl Parser<'_> {
     }
 }
 
+/// Reorders an object's members into JavaScript own-property order: the
+/// array-index keys first, ascending, then the others in source order. The
+/// same order [`insert_js_property`](super::insert_js_property) maintains,
+/// but in O(n log n) for the whole object rather than O(n) per key.
+fn order_array_index_keys_first(map: &mut IndexMap<String, JsonValue>) {
+    let mut entries: Vec<(Option<u32>, String, JsonValue)> = map
+        .drain(..)
+        .map(|(key, value)| (array_index(&key), key, value))
+        .collect();
+    // Stable, so the other keys keep their order.
+    entries.sort_by_key(|(index, _, _)| match index {
+        Some(i) => (0, *i),
+        None => (1, 0),
+    });
+    map.extend(entries.into_iter().map(|(_, key, value)| (key, value)));
+}
+
 /// `IsSpecialString()`: the whole source is what `JSON.parse` receives for
 /// `undefined`, `NaN`, `Infinity` or a plain object.
 fn is_special_string(text: &str) -> bool {
@@ -662,12 +691,59 @@ mod tests {
     // and YAML cases are `parseJSON`'s, not `JSON.parse`'s).
     #[test]
     fn parses_strict_json() {
-        let JsonValue::Object(map) = parse(r#"{"name":"quicktype","count":2}"#).unwrap() else {
+        let value = parse(r#"{"name":"quicktype","count":2}"#).unwrap();
+        let JsonValue::Object(map) = &value else {
             panic!("an object")
         };
         assert_eq!(map["name"], JsonValue::String("quicktype".to_owned()));
         assert_eq!(map["count"], JsonValue::Number(2.0));
         assert_eq!(map.len(), 2);
+    }
+
+    /// Deep values are built, and dropped, without recursion: on success,
+    /// and on errors after the root value and inside it.
+    #[test]
+    fn deep_nesting_on_every_path() {
+        let n = 1_000_000;
+        let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
+        assert!(matches!(parse(&deep), Ok(JsonValue::Array(_))));
+        assert_eq!(
+            err(&format!("{deep} x")),
+            "Unexpected non-whitespace character after JSON at position 2000001 (line 1 column 2000002)"
+        );
+        assert_eq!(
+            err(&format!("{}x", "[".repeat(n))),
+            "Unexpected token 'x', ...\"[[[[[[[[[[x\" is not valid JSON"
+        );
+        let objects = format!("{}1{}", r#"{"a":"#.repeat(n), "}".repeat(n));
+        assert!(matches!(parse(&objects), Ok(JsonValue::Object(_))));
+        assert!(parse(&format!("{}1", r#"{"a":[{"b":"#.repeat(n / 2))).is_err());
+    }
+
+    /// Array-index keys out of order cost O(n log n), not O(n²).
+    #[test]
+    fn many_descending_index_keys() {
+        let n = 100_000;
+        let text = format!(
+            "{{{}}}",
+            (0..n)
+                .rev()
+                .map(|i| format!("\"{i}\":{i},\"k{i}\":0"))
+                .collect::<Vec<_>>()
+                .join(",")
+        );
+        let start = std::time::Instant::now();
+        let value = parse(&text).unwrap();
+        assert!(start.elapsed().as_secs() < 5, "took {:?}", start.elapsed());
+        let JsonValue::Object(map) = &value else {
+            panic!("an object")
+        };
+        let keys: Vec<&str> = map.keys().take(3).map(String::as_str).collect();
+        assert_eq!(keys, ["0", "1", "2"]);
+        assert_eq!(
+            map.get_index(n).map(|(k, _)| k.as_str()),
+            Some(format!("k{}", n - 1).as_str())
+        );
     }
 
     #[test]

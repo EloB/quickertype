@@ -562,22 +562,7 @@ impl CompressedJsonReader for CompressedJsonFromString {
         if result.is_err() {
             self.cjson.reset_partial_sample();
         }
-        // Dropping a deeply nested value recurses; drop it iteratively.
-        drop_iteratively(json);
         Ok(result?)
-    }
-}
-
-/// Drops a [`JsonValue`] without recursing, so deep nesting cannot
-/// overflow the stack.
-pub(crate) fn drop_iteratively(value: JsonValue) {
-    let mut stack = vec![value];
-    while let Some(value) = stack.pop() {
-        match value {
-            JsonValue::Array(items) => stack.extend(items),
-            JsonValue::Object(map) => stack.extend(map.into_values()),
-            _ => {}
-        }
     }
 }
 

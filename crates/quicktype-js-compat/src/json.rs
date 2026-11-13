@@ -45,6 +45,42 @@ pub enum JsonValue {
     Object(IndexMap<String, JsonValue>),
 }
 
+/// Dropping a value never recurses (the derived drop glue would, once per
+/// nesting level), so the arbitrarily deep values [`parse()`] accepts
+/// cannot overflow the stack.
+impl Drop for JsonValue {
+    fn drop(&mut self) {
+        let mut children: Vec<JsonValue> = match self {
+            JsonValue::Array(items) if items.iter().any(JsonValue::has_children) => {
+                std::mem::take(items)
+            }
+            JsonValue::Object(map) if map.values().any(JsonValue::has_children) => {
+                std::mem::take(map).into_values().collect()
+            }
+            _ => return,
+        };
+        while let Some(mut child) = children.pop() {
+            match &mut child {
+                JsonValue::Array(items) => children.append(items),
+                JsonValue::Object(map) => children.extend(std::mem::take(map).into_values()),
+                _ => {}
+            }
+            // `child` is now childless and drops without recursing.
+        }
+    }
+}
+
+impl JsonValue {
+    /// Whether this is a non-empty array or object.
+    fn has_children(&self) -> bool {
+        match self {
+            JsonValue::Array(items) => !items.is_empty(),
+            JsonValue::Object(map) => !map.is_empty(),
+            _ => false,
+        }
+    }
+}
+
 /// `JSON.stringify(s)` for a string: `s` in double quotes, escaped.
 pub fn quote(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
@@ -239,7 +275,7 @@ pub fn insert_js_property<V>(map: &mut IndexMap<String, V>, key: String, value: 
 }
 
 /// The numeric value of an array-index key.
-fn array_index(key: &str) -> Option<u32> {
+pub(crate) fn array_index(key: &str) -> Option<u32> {
     if is_array_index(key) {
         key.parse().ok()
     } else {

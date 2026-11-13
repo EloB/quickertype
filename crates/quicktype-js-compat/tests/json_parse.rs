@@ -10,7 +10,7 @@ use serde_json::Value;
 
 #[test]
 fn json_parse_matches_v8() {
-    // The parser is iterative, but `stringify` and dropping a value recurse,
+    // The parser and dropping a value are iterative, but `stringify` recurses,
     // and some vectors nest 5,000 levels deep.
     std::thread::Builder::new()
         .stack_size(256 << 20)
