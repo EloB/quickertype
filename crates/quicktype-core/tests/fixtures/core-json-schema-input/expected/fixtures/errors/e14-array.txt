@@ -1,0 +1,4 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema
+error: An array is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema#

@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "extra": {
+      "$ref": "http://example.com/extra.json#/definitions/Extra"
+    }
+  }
+}

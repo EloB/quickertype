@@ -1,0 +1,15 @@
+resolving # relative to tests/inputs/schema/comment-injection-enum.schema# (tests/inputs/schema/comment-injection-enum.schema#)
+trying to fetch tests/inputs/schema/comment-injection-enum.schema
+successully fetched tests/inputs/schema/comment-injection-enum.schema
+resolved to # (tests/inputs/schema/comment-injection-enum.schema#)
+resolving # relative to tests/inputs/schema/comment-injection-enum.schema# (tests/inputs/schema/comment-injection-enum.schema#)
+resolved to # (tests/inputs/schema/comment-injection-enum.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 5 | 0 | given TopLevel ()
+1: intersection kind | children 3 | 1 | distance 2 kind () | Comme...
+2: string kind | 2 | distance 3 kind () | 1 enums: ok (1), ...
+3: union kind | children 2 | 3 | distance 3 kind ()
+4: object TopLevel | children 1 | 4 | distance 1 TopLevel () | prop descs: 1
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

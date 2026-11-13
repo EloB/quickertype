@@ -1,0 +1,23 @@
+resolving # relative to tests/inputs/schema/tuple.schema# (tests/inputs/schema/tuple.schema#)
+trying to fetch tests/inputs/schema/tuple.schema
+successully fetched tests/inputs/schema/tuple.schema
+resolved to # (tests/inputs/schema/tuple.schema#)
+resolving # relative to tests/inputs/schema/tuple.schema# (tests/inputs/schema/tuple.schema#)
+resolved to # (tests/inputs/schema/tuple.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 13 | 0 | given TopLevel ()
+1: intersection tuple | children 10 | 1 | distance 2 tuple ()
+2: intersection tuple | children 4 | 2 | distance 5 tuple ()
+3: integer | 3
+4: union tuple | children 3 | 4 | distance 6 tuple ()
+5: intersection tuple | children 7 | 5 | distance 5 tuple ()
+6: bool | 6
+7: union tuple | children 6 | 7 | distance 6 tuple ()
+8: union tuple | children 2,5 | 8 | distance 4 tuple ()
+9: array | children 8 | 9
+10: union tuple | children 9 | 10 | distance 3 tuple ()
+11: any | 11
+12: object TopLevel | children 1,11 | 12 | distance 1 TopLevel ()
+13: union TopLevel | children 12 | 13 | distance 1 TopLevel ()
+# attributes

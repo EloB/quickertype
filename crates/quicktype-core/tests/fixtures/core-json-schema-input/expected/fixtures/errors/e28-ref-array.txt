@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#)
+resolving #/a relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: An array is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema#

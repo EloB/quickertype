@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema#)
+error: Internal error: Value must be an array, but is http

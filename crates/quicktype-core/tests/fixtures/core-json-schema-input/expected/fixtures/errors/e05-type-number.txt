@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema#)
+error: `type` must be string or array of strings, but is 5

@@ -1,0 +1,31 @@
+resolving # relative to tests/inputs/schema/prefix-items.schema# (tests/inputs/schema/prefix-items.schema#)
+trying to fetch tests/inputs/schema/prefix-items.schema
+successully fetched tests/inputs/schema/prefix-items.schema
+resolved to # (tests/inputs/schema/prefix-items.schema#)
+resolving # relative to tests/inputs/schema/prefix-items.schema# (tests/inputs/schema/prefix-items.schema#)
+resolved to # (tests/inputs/schema/prefix-items.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 21 | 0 | given TopLevel ()
+1: intersection open | children 10 | 1 | distance 2 open ()
+2: intersection open | children 4 | 2 | distance 5 open ()
+3: bool | 3
+4: union open | children 3 | 4 | distance 6 open ()
+5: intersection open | children 7 | 5 | distance 5 open ()
+6: integer | 6
+7: union open | children 6 | 7 | distance 6 open ()
+8: union open | children 2,5 | 8 | distance 4 open ()
+9: array | children 8 | 9
+10: union open | children 9 | 10 | distance 3 open ()
+11: intersection tuple | children 18 | 11 | distance 2 tuple ()
+12: intersection tuple | children 13 | 12 | distance 5 tuple ()
+13: union tuple | children 6 | 13 | distance 6 tuple ()
+14: intersection tuple | children 15 | 14 | distance 5 tuple ()
+15: union tuple | children 3 | 15 | distance 6 tuple ()
+16: union tuple | children 12,14 | 16 | distance 4 tuple ()
+17: array | children 16 | 17
+18: union tuple | children 17 | 18 | distance 3 tuple ()
+19: any | 19
+20: object TopLevel | children 1,11,19 | 20 | distance 1 TopLevel ()
+21: union TopLevel | children 20 | 21 | distance 1 TopLevel ()
+# attributes

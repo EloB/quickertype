@@ -1,0 +1,76 @@
+resolving # relative to tests/inputs/schema/minmaxlength.schema# (tests/inputs/schema/minmaxlength.schema#)
+trying to fetch tests/inputs/schema/minmaxlength.schema
+successully fetched tests/inputs/schema/minmaxlength.schema
+resolved to # (tests/inputs/schema/minmaxlength.schema#)
+resolving # relative to tests/inputs/schema/minmaxlength.schema# (tests/inputs/schema/minmaxlength.schema#)
+resolved to # (tests/inputs/schema/minmaxlength.schema#)
+resolving #/properties/union/oneOf/0 relative to #/properties/intersection/allOf/0 (tests/inputs/schema/minmaxlength.schema#/properties/intersection/allOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/union/oneOf/0 (tests/inputs/schema/minmaxlength.schema#/properties/union/oneOf/0)
+resolving #/properties/minmaxlength relative to #/properties/union/oneOf/0 (tests/inputs/schema/minmaxlength.schema#/properties/union/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/minmaxlength (tests/inputs/schema/minmaxlength.schema#/properties/minmaxlength)
+resolving #/properties/union/oneOf/1 relative to #/properties/intersection/allOf/1 (tests/inputs/schema/minmaxlength.schema#/properties/intersection/allOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/union/oneOf/1 (tests/inputs/schema/minmaxlength.schema#/properties/union/oneOf/1)
+resolving #/properties/minmaxlength relative to #/properties/inUnion/oneOf/1 (tests/inputs/schema/minmaxlength.schema#/properties/inUnion/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/minmaxlength (tests/inputs/schema/minmaxlength.schema#/properties/minmaxlength)
+resolving #/properties/minlength relative to #/properties/minMaxIntersection/allOf/0 (tests/inputs/schema/minmaxlength.schema#/properties/minMaxIntersection/allOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/minlength (tests/inputs/schema/minmaxlength.schema#/properties/minlength)
+resolving #/properties/maxlength relative to #/properties/minMaxIntersection/allOf/1 (tests/inputs/schema/minmaxlength.schema#/properties/minMaxIntersection/allOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/maxlength (tests/inputs/schema/minmaxlength.schema#/properties/maxlength)
+resolving #/properties/minlength relative to #/properties/minMaxUnion/oneOf/0 (tests/inputs/schema/minmaxlength.schema#/properties/minMaxUnion/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/minlength (tests/inputs/schema/minmaxlength.schema#/properties/minlength)
+resolving #/properties/maxlength relative to #/properties/minMaxUnion/oneOf/1 (tests/inputs/schema/minmaxlength.schema#/properties/minMaxUnion/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/maxlength (tests/inputs/schema/minmaxlength.schema#/properties/maxlength)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 34 | 0 | given TopLevel ()
+1: intersection intersection | children 2,7 | 1 | distance 2 intersection ()
+2: intersection intersection | children 3 | 2 | distance 4 intersection ()
+3: intersection 0 | children 4 | 3 | distance 2 0 ()
+4: intersection minmaxlength | children 6 | 4 | distance 2 minmaxlength ()
+5: string minmaxlength | 5 | distance 3 minmaxlength () | 3-5 | unrestricted
+6: union minmaxlength | children 5 | 6 | distance 3 minmaxlength ()
+7: intersection intersection | children 8 | 7 | distance 4 intersection ()
+8: intersection 1 | children 10 | 8 | distance 2 1 ()
+9: string 1 | 9 | distance 3 1 () | 4-6 | unrestricted
+10: union 1 | children 9 | 10 | distance 3 1 ()
+11: intersection inUnion | children 16 | 11 | distance 2 inUnion ()
+12: intersection inUnion | children 14 | 12 | distance 4 inUnion ()
+13: double | 13
+14: union inUnion | children 13 | 14 | distance 5 inUnion ()
+15: intersection inUnion | children 4 | 15 | distance 4 inUnion ()
+16: union inUnion | children 12,15 | 16 | distance 3 inUnion ()
+17: intersection maxlength | children 19 | 17 | distance 2 maxlength ()
+18: string maxlength | 18 | distance 3 maxlength () | undefined-5 | unrestricted
+19: union maxlength | children 18 | 19 | distance 3 maxlength ()
+20: intersection minlength | children 22 | 20 | distance 2 minlength ()
+21: string minlength | 21 | distance 3 minlength () | 3-undefined | unrestricted
+22: union minlength | children 21 | 22 | distance 3 minlength ()
+23: intersection minMaxIntersection | children 24,25 | 23 | distance 2 minMaxIntersection ()
+24: intersection minMaxIntersection | children 20 | 24 | distance 4 minMaxIntersection ()
+25: intersection minMaxIntersection | children 17 | 25 | distance 4 minMaxIntersection ()
+26: intersection minMaxUnion | children 29 | 26 | distance 2 minMaxUnion ()
+27: intersection minMaxUnion | children 20 | 27 | distance 4 minMaxUnion ()
+28: intersection minMaxUnion | children 17 | 28 | distance 4 minMaxUnion ()
+29: union minMaxUnion | children 27,28 | 29 | distance 3 minMaxUnion ()
+30: intersection union | children 31 | 30 | distance 2 union ()
+31: union union | children 3,8 | 31 | distance 3 union ()
+32: any | 32
+33: object TopLevel | children 11,1,17,23,26,20,4,30,32 | 33 | distance 1 TopLevel ()
+34: union TopLevel | children 33 | 34 | distance 1 TopLevel ()
+# attributes

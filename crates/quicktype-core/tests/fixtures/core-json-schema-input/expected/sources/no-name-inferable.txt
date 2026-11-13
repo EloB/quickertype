@@ -1,0 +1,5 @@
+resolving # relative to http://localhost/# (http://localhost/#)
+trying to fetch http://localhost/
+successully fetched http://localhost/
+resolved to # (http://localhost/#)
+error: Cannot infer name for schema http://localhost/

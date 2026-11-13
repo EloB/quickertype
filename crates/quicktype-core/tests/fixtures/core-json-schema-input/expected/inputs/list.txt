@@ -1,0 +1,23 @@
+resolving # relative to tests/inputs/schema/list.schema# (tests/inputs/schema/list.schema#)
+trying to fetch tests/inputs/schema/list.schema
+successully fetched tests/inputs/schema/list.schema
+resolved to # (tests/inputs/schema/list.schema#)
+resolving # relative to tests/inputs/schema/list.schema# (tests/inputs/schema/list.schema#)
+resolved to # (tests/inputs/schema/list.schema#)
+resolving #/definitions/List relative to # (tests/inputs/schema/list.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/List (tests/inputs/schema/list.schema#/definitions/List)
+resolving #/definitions/List relative to #/definitions/List/properties/next (tests/inputs/schema/list.schema#/definitions/List/properties/next)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/List (tests/inputs/schema/list.schema#/definitions/List)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 5 | 1 | given TopLevel () | A rec...
+2: intersection next | children 1 | 2 | distance 2 next ()
+3: any | 3
+4: object TopLevel | children 2,3 | 4 | distance 1 TopLevel ()
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

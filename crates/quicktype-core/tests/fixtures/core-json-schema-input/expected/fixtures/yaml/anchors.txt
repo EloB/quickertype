@@ -1,0 +1,24 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 14 | 0 | given TopLevel ()
+1: intersection first | children 7 | 1 | distance 2 first ()
+2: intersection id | children 4 | 2 | distance 2 id ()
+3: integer | 3
+4: union id | children 3 | 4 | distance 3 id ()
+5: any | 5
+6: object first | children 2,5 | 6 | distance 3 first ()
+7: union first | children 6 | 7 | distance 3 first ()
+8: intersection second | children 12 | 8 | distance 2 second ()
+9: intersection id | children 10 | 9 | distance 2 id ()
+10: union id | children 3 | 10 | distance 3 id ()
+11: object second | children 9,5 | 11 | distance 3 second ()
+12: union second | children 11 | 12 | distance 3 second ()
+13: object TopLevel | children 1,8,5 | 13 | distance 1 TopLevel ()
+14: union TopLevel | children 13 | 14 | distance 1 TopLevel ()
+# attributes

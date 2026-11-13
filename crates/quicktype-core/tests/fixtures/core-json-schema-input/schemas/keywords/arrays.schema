@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "tuple": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "prefix": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        }
+      ],
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "prefixClosed": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        }
+      ],
+      "items": false
+    },
+    "noItems": {
+      "type": "array"
+    },
+    "boolItems": {
+      "type": "array",
+      "items": false
+    },
+    "objectItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "minMax": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

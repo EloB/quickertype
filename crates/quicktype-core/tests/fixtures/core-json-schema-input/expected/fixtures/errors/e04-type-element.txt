@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema#)
+error: `type` must contain only strings, but it has 5

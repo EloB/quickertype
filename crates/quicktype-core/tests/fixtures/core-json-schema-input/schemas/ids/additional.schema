@@ -1,0 +1,13 @@
+{
+  "$id": "http://example.com/extra.json",
+  "definitions": {
+    "Extra": {
+      "type": "object",
+      "properties": {
+        "e": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema#)
+error: Invalid type strin in JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema#

@@ -1,0 +1,29 @@
+resolving # relative to tests/inputs/schema/non-standard-ref.schema# (tests/inputs/schema/non-standard-ref.schema#)
+trying to fetch tests/inputs/schema/non-standard-ref.schema
+successully fetched tests/inputs/schema/non-standard-ref.schema
+resolved to # (tests/inputs/schema/non-standard-ref.schema#)
+resolving # relative to tests/inputs/schema/non-standard-ref.schema# (tests/inputs/schema/non-standard-ref.schema#)
+resolved to # (tests/inputs/schema/non-standard-ref.schema#)
+resolving #/properties/foo relative to #/properties/bar (tests/inputs/schema/non-standard-ref.schema#/properties/bar)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/foo (tests/inputs/schema/non-standard-ref.schema#/properties/foo)
+resolving #/bla/0 relative to #/properties/quux (tests/inputs/schema/non-standard-ref.schema#/properties/quux)
+trying to fetch 
+couldn't fetch 
+resolved to #/bla/0 (tests/inputs/schema/non-standard-ref.schema#/bla/0)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 11 | 0 | given TopLevel ()
+1: intersection bar | children 2 | 1 | distance 2 bar ()
+2: intersection non-standard-ref | children 4 | 2 | distance 2 non-standard-ref ()
+3: integer | 3
+4: union non-standard-ref | children 3 | 4 | distance 3 non-standard-ref ()
+5: intersection quux | children 6 | 5 | distance 2 quux ()
+6: intersection 0 | children 8 | 6 | distance 2 0 ()
+7: bool | 7
+8: union 0 | children 7 | 8 | distance 3 0 ()
+9: any | 9
+10: object TopLevel | children 1,2,5,9 | 10 | distance 1 TopLevel ()
+11: union TopLevel | children 10 | 11 | distance 1 TopLevel ()
+# attributes

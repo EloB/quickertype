@@ -1,0 +1,20 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 10 | 0 | given TopLevel ()
+1: intersection beta | children 3 | 1 | distance 2 beta ()
+2: string beta | 2 | distance 3 beta,alpha,gamma () | unrestricted
+3: union beta | children 2 | 3 | distance 3 beta ()
+4: intersection alpha | children 5 | 4 | distance 2 alpha ()
+5: union alpha | children 2 | 5 | distance 3 alpha ()
+6: intersection gamma | children 7 | 6 | distance 2 gamma ()
+7: union gamma | children 2 | 7 | distance 3 gamma ()
+8: any | 8
+9: object TopLevel | children 4,1,6,8 | 9 | distance 1 TopLevel ()
+10: union TopLevel | children 9 | 10 | distance 1 TopLevel ()
+# attributes

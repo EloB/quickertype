@@ -1,0 +1,15 @@
+resolving # relative to tests/inputs/schema/default-value.schema# (tests/inputs/schema/default-value.schema#)
+trying to fetch tests/inputs/schema/default-value.schema
+successully fetched tests/inputs/schema/default-value.schema
+resolved to # (tests/inputs/schema/default-value.schema#)
+resolving # relative to tests/inputs/schema/default-value.schema# (tests/inputs/schema/default-value.schema#)
+resolved to # (tests/inputs/schema/default-value.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 5 | 0 | given TopLevel () | An ob...
+1: intersection id | children 3 | 1 | distance 2 id ()
+2: integer | 2 | 0
+3: union id | children 2 | 3 | distance 3 id ()
+4: object TopLevel | children 1 | 4 | distance 1 TopLevel ()
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

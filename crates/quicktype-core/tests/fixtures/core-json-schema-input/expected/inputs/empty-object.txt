@@ -1,0 +1,13 @@
+resolving # relative to tests/inputs/schema/empty-object.schema# (tests/inputs/schema/empty-object.schema#)
+trying to fetch tests/inputs/schema/empty-object.schema
+successully fetched tests/inputs/schema/empty-object.schema
+resolved to # (tests/inputs/schema/empty-object.schema#)
+resolving # relative to tests/inputs/schema/empty-object.schema# (tests/inputs/schema/empty-object.schema#)
+resolved to # (tests/inputs/schema/empty-object.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 3 | 0 | given TopLevel ()
+1: any | 1
+2: object TopLevel | children 1 | 2 | distance 1 TopLevel ()
+3: union TopLevel | children 2 | 3 | distance 1 TopLevel ()
+# attributes

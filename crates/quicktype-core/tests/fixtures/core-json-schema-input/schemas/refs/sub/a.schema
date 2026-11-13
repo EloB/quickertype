@@ -1,0 +1,19 @@
+{
+  "title": "ATitle",
+  "type": "object",
+  "properties": {
+    "c": {
+      "$ref": "../c.schema#/x"
+    }
+  },
+  "definitions": {
+    "A": {
+      "type": "object",
+      "properties": {
+        "b": {
+          "$ref": "b.schema#/definitions/B"
+        }
+      }
+    }
+  }
+}
