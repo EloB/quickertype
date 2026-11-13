@@ -12,18 +12,18 @@
 // editor; that compare mode reports identical output with each engine in its
 // own worker; that invalid JSON shows quicktype's error; that the input
 // survives a reload (localStorage); and that 360 px and 390 px widths do not
-// scroll sideways.
+// scroll sideways. And three things that once went wrong: the code shown
+// after a slow run during which compare mode was turned off; a measurement
+// asked for while a run is under way; and a worker failing after it loaded.
 //
-// The CLI is $QUICKTYPE_CLI, else target/release/quicktype
-// (`cargo build --release -p quicktype-cli`). Without it, outside CI, the
-// reference is quicktype-core in Node on the TypeScript engine. The browser
-// is $CHROME, else Google Chrome or Chromium; without one the test says so
-// and exits 0 (in CI it fails).
+// The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
+// (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
+// Google Chrome or Chromium; without one the test says so and exits 0 (in
+// CI it fails).
 
 import assert from "node:assert/strict";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import * as fs from "node:fs";
-import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,8 +63,10 @@ function findBrowser() {
 // Expected output
 
 const cli = process.env.QUICKTYPE_CLI ?? path.join(repositoryRoot, "target", "release", "quicktype");
-const haveCli = fs.existsSync(cli);
-if (!haveCli && process.env.CI) throw new Error(`no quicktype CLI at ${cli}`);
+if (!fs.existsSync(cli)) {
+    console.log(`No quicktype CLI at ${cli}: build it with \`cargo build --release -p quicktype-cli\` or set QUICKTYPE_CLI.`);
+    process.exit(1);
+}
 
 /** The input files the page names, by name: samples, and later the uploaded file. */
 const sampleFiles = {
@@ -77,41 +79,18 @@ const sampleFiles = {
  * Runs the command the page shows ("quicktype --lang rust … pokedex.json"):
  * the output, and the issues quicktype reports as `Line n: message`.
  */
-async function expectedFor(command) {
+function expectedFor(command) {
     const args = command.split(" ");
     assert.equal(args.shift(), "quicktype");
     const input = args.pop();
     assert.ok(input in sampleFiles, `unexpected input file ${input}`);
-    const inputPath = path.resolve(repositoryRoot, sampleFiles[input]);
-    if (haveCli) {
-        const run = spawnSync(cli, [...args, inputPath], { encoding: "utf8", maxBuffer: 1 << 28 });
-        assert.equal(run.status, 0, run.stderr);
-        const issues = [...run.stderr.matchAll(/^Issue in line (\d+): (.*)$/gm)].map((m) => `Line ${m[1]}: ${m[2]}`);
-        return { text: run.stdout, issues };
-    }
-
-    // quicktype-core in Node, on the TypeScript engine.
-    const require = createRequire(import.meta.url);
-    const qt = require(path.join(repositoryRoot, "npm", "quicktype-core", "dist", "index.js"));
-    globalThis[Symbol.for("quicktype-core.engine")] = "ts";
-    const flag = (name) => args[args.indexOf(name) + 1];
-    const lang = flag("--lang");
-    const name = flag("--top-level");
-    const text = fs.readFileSync(inputPath, "utf8");
-    const inputData = new qt.InputData();
-    if (args.includes("--src-lang")) {
-        const schema = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore());
-        await schema.addSource({ name, schema: text });
-        inputData.addInput(schema);
-    } else {
-        const json = qt.jsonInputForTargetLanguage(lang);
-        await json.addSource({ name, samples: [text] });
-        inputData.addInput(json);
-    }
-
-    const { lines, annotations } = await qt.quicktype({ inputData, lang });
-    const issues = annotations.map((a) => `Line ${a.span.start.line + 1}: ${a.annotation.message}`);
-    return { text: lines.join("\n"), issues };
+    const run = spawnSync(cli, [...args, path.resolve(repositoryRoot, sampleFiles[input])], {
+        encoding: "utf8",
+        maxBuffer: 1 << 28,
+    });
+    assert.equal(run.status, 0, run.stderr);
+    const issues = [...run.stderr.matchAll(/^Issue in line (\d+): (.*)$/gm)].map((m) => `Line ${m[1]}: ${m[2]}`);
+    return { text: run.stdout, issues };
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +240,6 @@ if (!fs.existsSync(path.join(dist, "index.html"))) throw new Error("site/dist is
 const { server, requests, url } = await serve(dist);
 const page = await launch(browser);
 const settled = "playground.generation > 0 && playground.view.settled === playground.generation";
-const settledCompare = `${settled} && playground.view.settledTs === playground.generation`;
 const shown = () =>
     page.evaluate(`({
         files: playground.view.files.map((f) => ({ name: f.name, text: f.text })),
@@ -280,6 +258,29 @@ async function andRun(action, what, until = settled) {
     await page.waitFor(`playground.generation > ${before} && ${until}`, what);
 }
 
+/** Ticks or unticks compare mode; ticking it runs only the TypeScript side (no new run). */
+async function toggleCompare(what) {
+    const before = await page.evaluate(`({
+        generation: playground.generation,
+        comparisons: playground.view.comparisons,
+        on: document.getElementById("compare").checked,
+    })`);
+    await page.evaluate("document.getElementById('compare').click()");
+    if (before.on) return;
+    await page.waitFor(
+        `playground.view.comparisons > ${before.comparisons} && document.body.dataset.compare !== "running"`,
+        what,
+    );
+    assert.equal(await page.evaluate("playground.generation"), before.generation, "ticking compare started a new run");
+}
+
+/** A warm measurement of what the page shows has finished (both engines' when comparing). */
+const measuredDone = `(() => {
+    const bench = playground.view.bench;
+    return bench !== undefined && typeof bench.wasm === "object" &&
+        (!document.getElementById("compare").checked || typeof bench.ts === "object");
+})()`;
+
 function select(id, value) {
     return andRun(
         `(() => {
@@ -297,12 +298,12 @@ async function sameAsCli(label, expectedCommand) {
     assert.equal(result.ran, "wasm", `${label} ran on ${result.ran}`);
     assert.equal(result.cli, expectedCommand);
     assert.equal(result.files.length, 1);
-    const expected = await expectedFor(result.cli);
-    assert.ok(result.files[0].text === expected.text, `${label}: output differs from ${haveCli ? "the CLI" : "quicktype-core"}`);
+    const expected = expectedFor(result.cli);
+    assert.ok(result.files[0].text === expected.text, `${label}: output differs from the CLI`);
     assert.ok(result.code === expected.text, `${label}: the code shown differs from the output`);
     assert.deepEqual(result.notes, expected.issues, `${label}: issues`);
     const issues = expected.issues.length > 0 ? `, ${expected.issues.length} issue(s) shown as on the CLI` : "";
-    console.log(`ok: ${label} = \`${result.cli}\` (${expected.text.length} characters${issues}, ${haveCli ? "CLI" : "quicktype-core in Node"})`);
+    console.log(`ok: ${label} = \`${result.cli}\` (${expected.text.length} characters${issues})`);
 }
 
 /** "median 3.2 ms (reading the input 1.1, generating 2.1)" for one engine's warm runs. */
@@ -316,7 +317,7 @@ function medians({ times, inputTimes }) {
 let failed = false;
 try {
     console.log(`page: ${url}  browser: ${browser}`);
-    console.log(`reference: ${haveCli ? cli : "quicktype-core in Node, TypeScript engine (no CLI)"}`);
+    console.log(`reference: ${cli}`);
 
     await page.viewport(1440, 900);
     await page.navigate(`${url}#l=rust&s=pokedex`);
@@ -335,7 +336,7 @@ try {
     await page.screenshot("desktop-light.png");
 
     // Compare mode: the same input on the TypeScript engine, in a second worker.
-    await andRun("document.getElementById('compare').click()", "the comparison", settledCompare);
+    await toggleCompare("the comparison");
     await page.waitFor("document.body.dataset.compare !== 'running'", "the verdict");
     let compare = await page.evaluate(
         "({ verdict: document.body.dataset.compare, wasm: playground.view.wasm.ran, ts: playground.view.ts.ran, text: document.querySelector('.verdict')?.textContent, hash: location.hash })",
@@ -346,11 +347,7 @@ try {
     assert.match(compare.hash, /(^#|&)c=1(&|$)/);
     console.log(`ok: compare mode: ${compare.text}`);
     await page.evaluate("document.getElementById('measure').click()");
-    await page.waitFor(
-        "playground.view.bench && playground.view.bench !== 'running' && playground.view.bench.ts && playground.view.bench.ts !== 'running'",
-        "the warm measurement",
-        180_000,
-    );
+    await page.waitFor(measuredDone, "the warm measurement", 180_000);
     compare = await page.evaluate(
         "({ verdict: document.body.dataset.compare, text: document.querySelector('.verdict')?.textContent, wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })",
     );
@@ -460,14 +457,9 @@ try {
         `uploaded big-senators.json (${(fs.statSync(big).size / 1e6).toFixed(1)} MB) → Rust`,
         "quicktype --lang rust --top-level BigSenators big-senators.json",
     );
-    fs.rmSync(path.dirname(big), { recursive: true, force: true });
-    await andRun("document.getElementById('compare').click()", "the comparison on the large file", settledCompare);
+    await toggleCompare("the comparison on the large file");
     await page.evaluate("document.getElementById('measure').click()");
-    await page.waitFor(
-        "playground.view.bench && playground.view.bench !== 'running' && playground.view.bench.ts && playground.view.bench.ts !== 'running'",
-        "the warm measurement on the large file",
-        300_000,
-    );
+    await page.waitFor(measuredDone, "the warm measurement on the large file", 300_000);
     const bigCompare = await page.evaluate(
         "({ verdict: document.body.dataset.compare, text: document.querySelector('.verdict')?.textContent, wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })",
     );
@@ -475,7 +467,73 @@ try {
     console.log(
         `ok: large file, warm runs: ${bigCompare.text}\n    WebAssembly ${medians(bigCompare.wasm)}\n    TypeScript  ${medians(bigCompare.ts)}`,
     );
-    await page.evaluate("document.getElementById('compare').click()");
+
+    // A run under way (another language) while compare mode is turned off:
+    // the page re-renders mid-run, and must still draw the new result.
+    await andRun(
+        `(() => {
+            const lang = document.getElementById("lang");
+            lang.value = "go";
+            lang.dispatchEvent(new Event("change", { bubbles: true }));
+            document.getElementById("compare").click();
+        })()`,
+        "the run during which compare mode was turned off",
+        `${settled} && document.body.dataset.status === "done"`,
+    );
+    const drawn = await page.evaluate(`({
+        lang: playground.view.shown.lang.names[0],
+        same: document.getElementById("code").textContent === playground.view.files[playground.view.tab].text,
+        go: playground.view.files[0].text.includes("package main"),
+        compare: document.getElementById("compare").checked,
+    })`);
+    assert.deepEqual(drawn, { lang: "go", same: true, go: true, compare: false });
+    console.log("ok: compare mode turned off during a run: the new result is drawn, and Copy/Download give what is shown");
+
+    // A measurement asked for while a run is under way waits for it, measures
+    // what it shows, and the page does not stay "Running".
+    await andRun(
+        `(() => {
+            const lang = document.getElementById("lang");
+            lang.value = "rust";
+            lang.dispatchEvent(new Event("change", { bubbles: true }));
+            document.getElementById("measure").click();
+        })()`,
+        "the run during which a measurement was asked for",
+        `${settled} && document.body.dataset.status === "done"`,
+    );
+    await page.waitFor(measuredDone, "the measurement asked for during a run", 120_000);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const measuredRun = await page.evaluate(`({
+        status: document.body.dataset.status,
+        running: document.getElementById("meter").textContent.includes("Running"),
+        lang: playground.view.shown.lang.names[0],
+        same: playground.view.bench.wasm.files[0].text === playground.view.files[0].text,
+        runs: playground.view.bench.wasm.times.length,
+    })`);
+    assert.deepEqual(measuredRun, { status: "done", running: false, lang: "rust", same: true, runs: 5 });
+    console.log("ok: a measurement asked for during a run measures the result shown; nothing stays running");
+
+    // The worker fails after it loaded, during a run: that run shows a
+    // readable error, and the next run gets a new worker.
+    await andRun(
+        `(async () => {
+            const lang = document.getElementById("lang");
+            lang.value = "go";
+            lang.dispatchEvent(new Event("change", { bubbles: true }));
+            const client = playground.engines.wasm;
+            while (client.inFlight === undefined) await new Promise((resolve) => setTimeout(resolve, 0));
+            globalThis.failedWorker = client.worker;
+            client.worker.dispatchEvent(new ErrorEvent("error", { message: "simulated failure" }));
+        })()`,
+        "the run whose worker failed",
+        `${settled} && document.body.dataset.status === "error"`,
+    );
+    const failure = await page.evaluate("document.querySelector('.error-message')?.textContent");
+    assert.equal(failure, "The WebAssembly worker stopped (simulated failure); the next run starts a new one.");
+    await select("lang", "rust");
+    assert.ok(await page.evaluate("playground.engines.wasm.worker !== globalThis.failedWorker"), "the worker was not replaced");
+    await sameAsCli("after the worker failed, a new one: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators big-senators.json");
+    console.log(`ok: a worker failing after it loaded: "${failure}"`);
 
     // Phones: stacked, no sideways scrolling.
     for (const width of [360, 390]) {
@@ -498,6 +556,10 @@ try {
     failed = true;
     console.log(`FAILED: ${e.stack ?? e}`);
 } finally {
+    if (sampleFiles["big-senators.json"] !== undefined) {
+        fs.rmSync(path.dirname(sampleFiles["big-senators.json"]), { recursive: true, force: true });
+    }
+
     await page.close();
     server.close();
 }

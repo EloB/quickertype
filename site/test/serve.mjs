@@ -27,9 +27,16 @@ export async function serve(root, port = 0) {
         let status = 404;
         let file;
         if (url.pathname.startsWith(base)) {
-            const relative = decodeURIComponent(url.pathname.slice(base.length)) || "index.html";
-            const candidate = path.join(root, relative);
-            if (candidate.startsWith(root + path.sep) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+            let relative;
+            try {
+                relative = decodeURIComponent(url.pathname.slice(base.length)) || "index.html";
+            } catch {
+                // A malformed escape (%zz).
+                status = 400;
+            }
+
+            const candidate = relative === undefined ? undefined : path.join(root, relative);
+            if (candidate?.startsWith(root + path.sep) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
                 file = candidate;
                 status = 200;
             }
@@ -41,8 +48,8 @@ export async function serve(root, port = 0) {
 
         requests.push([status, url.pathname]);
         if (file === undefined) {
-            response.writeHead(404, { "content-type": "text/plain" });
-            response.end("not found");
+            response.writeHead(status, { "content-type": "text/plain" });
+            response.end(status === 400 ? "bad request" : "not found");
             return;
         }
 
