@@ -48,7 +48,7 @@ export function scenarios() {
                 async run(qt) {
                     const inputData = new qt.InputData();
                     const extra = {};
-                    if (kase.src === "json" || kase.src === "postman") {
+                    if (kase.src === "json" || kase.src === "postman" || kase.src === "mixed") {
                         let topLevels = kase.topLevels;
                         if (kase.src === "postman") {
                             // What the CLI does with a collection (its src/index.ts).
@@ -62,7 +62,9 @@ export function scenarios() {
                         const input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.rendererOptions);
                         for (const tl of topLevels) await input.addSource(tl);
                         inputData.addInput(input);
-                    } else {
+                    }
+
+                    if (kase.src === "schema" || kase.src === "mixed") {
                         const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
                         for (const s of kase.schemas) await input.addSource(s.uris === undefined ? { name: s.name, schema: s.text } : { name: s.name, schema: s.text, uris: s.uris });
                         inputData.addInput(input);

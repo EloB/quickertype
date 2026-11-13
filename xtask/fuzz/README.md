@@ -47,6 +47,9 @@ awkward names), general options (`--no-maps`, `--no-enums`, `--no-uuids`,
   language keywords (`tests/keywords.txt`), acronyms (`tests/acronyms.txt`),
   integer-like strings, `__proto__` and other `Object.prototype` names,
   the empty string, whitespace, unicode and astral characters.
+- **JSON and JSON Schema together** (`mixed`): JSON top-levels and a
+  schema in one run (through the CLI: a directory of `.json` and `.schema`
+  files).
 - **A Postman collection** (`--src-lang postman`; in-process as the CLI
   does it: `sourcesFromPostmanCollection`, the request descriptions as
   top-level descriptions, the collection's description word-wrapped into

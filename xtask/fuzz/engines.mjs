@@ -131,7 +131,8 @@ export async function runInProcess(side, kase, mode) {
     const { qt } = side;
     const inputData = new qt.InputData();
     const options = quicktypeOptions(kase, inputData, mode === "api");
-    if (kase.src === "json" || kase.src === "postman") {
+    // "mixed": JSON top-levels and a JSON Schema in one run.
+    if (kase.src === "json" || kase.src === "postman" || kase.src === "mixed") {
         let topLevels = kase.topLevels;
         if (kase.src === "postman") {
             // What the CLI does with a collection (src/index.ts).
@@ -158,7 +159,9 @@ export async function runInProcess(side, kase, mode) {
         }
 
         inputData.addInput(input);
-    } else {
+    }
+
+    if (kase.src === "schema" || kase.src === "mixed") {
         const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
         for (const s of kase.schemas) await input.addSource(s.uris === undefined ? { name: s.name, schema: s.text } : { name: s.name, schema: s.text, uris: s.uris });
         inputData.addInput(input);
@@ -200,6 +203,12 @@ export function cliInvocation(kase) {
 
             args.push("in");
         }
+    } else if (kase.src === "mixed") {
+        // A directory of JSON samples and schemas, each a top-level named after its file.
+        args.push("--src-lang", "json");
+        for (const tl of kase.topLevels) files.set(`in/${tl.name}.json`, tl.samples[0]);
+        for (const s of kase.schemas) files.set(`in/${s.name}.schema`, s.text);
+        args.push("in");
     } else if (kase.src === "postman") {
         args.push("--src-lang", "postman");
         files.set("in/collection.json", kase.postman);
@@ -242,6 +251,14 @@ export function cliInvocation(kase) {
 /** Whether a CLI run can reproduce the case at all (one sample per top-level for directories). */
 export function cliCompatible(kase) {
     if (kase.src === "schema" && kase.schemas.length > 1) return false;
+    if (kase.src === "mixed") {
+        const names = [...kase.topLevels.map((tl) => tl.name), ...kase.schemas.map((s) => s.name)];
+        if (kase.topLevels.some((tl) => tl.samples.length !== 1)) return false;
+        if (names.some((n) => n === "" || n.includes("/") || n.startsWith(".") || n.length > 100)) return false;
+        if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) return false;
+        if (kase.schemas.some((s) => s.uris !== undefined)) return false;
+    }
+
     if (kase.src === "json" && kase.topLevels.length > 1) {
         const names = kase.topLevels.map((tl) => tl.name);
         if (names.some((n) => n === "" || n.includes("/") || n.startsWith(".") || n.length > 100)) return false;

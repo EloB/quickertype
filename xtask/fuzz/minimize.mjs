@@ -230,7 +230,7 @@ async function shrinkTree(get, set) {
 // ---- The case --------------------------------------------------------------------
 
 async function shrinkInputs() {
-    if (current.src === "json") {
+    if (current.src === "json" || current.src === "mixed") {
         for (let t = current.topLevels.length - 1; t >= 0 && current.topLevels.length > 1; t--) {
             await attempt((c) => {
                 c.topLevels.splice(t, 1);
@@ -344,9 +344,21 @@ async function shrinkInputs() {
     }
 }
 
+async function shrinkMixedSchema() {
+    if (current.src !== "mixed") return;
+    await shrinkTree(
+        (c) => parse(c.schemas[0].text),
+        (c, tree) => {
+            c.schemas[0].text = toText(tree);
+            return c;
+        },
+    );
+}
+
 const started = Date.now();
 await shrinkOptions();
 await shrinkInputs();
+await shrinkMixedSchema();
 await shrinkOptions();
 
 // Readable text at the end, if the divergence survives pretty-printing.

@@ -27,7 +27,7 @@ export async function makeChecker({ reference, bin }) {
      * it: a trap or panic, reported as a divergence), "ts" or "mixed".
      */
     async function check(kase, mode) {
-        if (mode === "stream" && kase.src !== "json" && kase.src !== "postman") return { status: "skip" };
+        if (mode === "stream" && kase.src !== "json" && kase.src !== "postman" && kase.src !== "mixed") return { status: "skip" };
         // The WebAssembly engine has no GraphQL input: GraphQL runs only through the CLIs.
         if (kase.src === "graphql" && mode !== "cli") return { status: "skip" };
         if (mode === "cli") {

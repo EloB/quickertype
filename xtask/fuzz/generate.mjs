@@ -1066,12 +1066,17 @@ function genLeadingComments(rng) {
 export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, src } = {}) {
     const rng = new Rng(seed);
     const lang = rng.pick(languages);
-    const kind = src ?? rng.weighted([[53, "json"], [36, "schema"], [5, "graphql"], [6, "postman"]]);
+    const kind = src ?? rng.weighted([[50, "json"], [34, "schema"], [5, "graphql"], [6, "postman"], [5, "mixed"]]);
     const kase = { seed, lang, src: kind };
     const inputRng = rng.fork();
     if (kind === "json") kase.topLevels = genJsonTopLevels(inputRng, lang);
     else if (kind === "schema") kase.schemas = genSchemas(inputRng);
     else if (kind === "postman") kase.postman = genPostman(inputRng);
+    else if (kind === "mixed") {
+        kase.topLevels = genJsonTopLevels(inputRng, lang).map((tl) => ({ name: tl.name, samples: tl.samples.slice(0, 1) }));
+        kase.schemas = genSchemas(inputRng).slice(0, 1);
+        if (kase.topLevels.some((tl) => tl.name === kase.schemas[0].name)) kase.schemas[0].name = `${kase.schemas[0].name}Schema`;
+    }
     else kase.graphql = { name: inputRng.chance(0.6) ? "TopLevel" : capitalize(compoundName(inputRng)), ...genGraphQL(inputRng, genKey, DESCRIPTIONS) };
     const optionRng = rng.fork();
     kase.rendererOptions = genRendererOptions(optionRng, optionDefinitions[lang] ?? []);
