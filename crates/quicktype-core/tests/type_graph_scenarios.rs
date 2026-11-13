@@ -60,6 +60,7 @@ use quicktype_core::rewrites::flatten_unions::flatten_unions;
 use quicktype_core::rewrites::infer_maps::infer_maps;
 use quicktype_core::rewrites::replace_object_type::replace_object_type;
 use quicktype_core::rewrites::resolve_intersections::resolve_intersections;
+use quicktype_core::run::RunContext;
 use quicktype_core::transformers::{downcast_transformation, transformation_for_type};
 
 fn err(message: impl Into<String>) -> QuickTypeError {
@@ -505,8 +506,8 @@ impl Interpreter {
             }
             "combine" => {
                 let g = combine_classes(
+                    &RunContext::new(self.stm.clone()),
                     self.graph()?,
-                    &self.stm,
                     flag("alpha"),
                     flag("conflate"),
                     flag("same"),

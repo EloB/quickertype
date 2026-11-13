@@ -621,7 +621,7 @@ impl TargetLanguage {
 }
 pub fn default_target_languages() -> &'static [&'static TargetLanguage];   // All.ts order
 pub fn language_named(name: &str) -> Option<&'static TargetLanguage>;
-pub fn get_target_language(name: &str) -> Result<&'static TargetLanguage, Error>; // DriverUnknownOutputLanguage
+pub fn get_target_language(name: &str) -> Result<&'static TargetLanguage, Error>; // see note below
 
 pub struct OptionDefinition { pub name: &'static str, pub kind: OptionKind, pub option_type: OptionType,
     pub description: &'static str, pub type_label: Option<&'static str>, pub default_value: OptionValue,
@@ -725,6 +725,11 @@ impl QuicktypeError { pub fn message_name(&self) -> &'static str; pub fn error_m
 ```
 
 Design notes:
+* **`get_target_language`** (decided in Phase 3): for an unknown name, `getTargetLanguage` never reaches its
+  `DriverUnknownOutputLanguage`, because `languageNamed` throws first: a plain `Error("Unknown language name:
+  cobol")` (verified on Node 24). The Rust function returns that JavaScript exception
+  (`QuickTypeError::js_exception(JsErrorName::Error, …)`), not the message kind. The CLI validates names itself and
+  reports `DriverUnknownOutputLanguage` (`Unknown output language cobol`) as before.
 * **Renderer options:** both forms exist. The **canonical form is the dynamic `RendererOptions` map**, because the CLI
   produces it (with all defaults injected, §1.3) and the WASM layer forwards the raw JS object. One port of
   `getOptionValues` turns it into each language's private typed `ResolvedOptions`. The public typed structs are only

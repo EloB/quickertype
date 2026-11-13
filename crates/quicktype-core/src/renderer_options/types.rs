@@ -13,6 +13,7 @@ use super::OptionValue;
 /// Where an option shows up: primary options appear in the web UI's
 /// "Language" tab, secondary ones under "Other", and `Cli` options exist only
 /// on the command line.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum OptionKind {
     /// `"primary"`.
@@ -35,6 +36,7 @@ impl OptionKind {
 }
 
 /// The value type of an option.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum OptionType {
     /// `"string"`: takes a free-form value.
