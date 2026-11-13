@@ -20,6 +20,7 @@ files.
 | JSON Schema (vega-lite, 306 KB) → TS | 418 ms | 61.3 ms | 37.4 ms | 11× | 1.6× |
 | Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 571.7 s | 18.4 s | 12.5 s | 46× | 1.5× |
 | In process, 112 runs (engine as a library) | 369 ms (warm Node) | 288 ms | 153 ms | 2.4× | 1.9× |
+| JS API in Chrome, 20 MB JSON (WebAssembly engine, warm; see [WebAssembly](#webassembly)) | 435 ms | 502 ms (main) | 230 ms | 1.9× | 2.2× |
 | Peak RSS, 40 MB input | 625 MiB | 221 MiB | 154 MiB | 4.1× less | 1.4× less |
 | Peak RSS, 2.6 GB input | — | 6.73 GiB | 5.76 GiB | — | 1.2× less |
 
@@ -279,51 +280,169 @@ Where the time goes now:
 
 ## WebAssembly
 
-The JS API's engine is `crates/quicktype-wasm` behind `npm/quicktype-core`:
-the facade parses JSON samples and builds `CompressedJSON` **in
-JavaScript**, encodes its tables, and hands one request per run to the
-engine (inference, rewrites, naming, rendering). Before this phase it ran
-about as fast as warm TypeScript in process (660 runs: 1.56 s vs 1.53 s).
+The JS API's engine is `crates/quicktype-wasm` behind `npm/quicktype-core`.
+Until `feat/wasm-native-json`, the facade parsed every JSON sample in
+JavaScript (`JSON.parse` and quicktype's `CompressedJSON`), and each run
+converted those tables and copied them into the engine. On large inputs
+that made the WebAssembly engine *slower* than TypeScript in the browser.
+Since then the engine reads JSON samples itself as they are added (the
+package README, "JSON samples"), and the build was tuned step by step.
 
-Native measurements of the same split (in-process table above) say why:
+`node --expose-gc npm/quicktype-core/test/bench/compare.mjs [--browser]
+[--cold N] [--variant name=dir ...]` measures `addSource` plus
+`quicktypeMultiFile` to TypeScript, every build in one process (or page),
+interleaved, on four inputs:
 
-- The **engine** was the cost, not the boundary. Natively, inference to
-  rendering took 221 ms for the 112 runs where warm TypeScript takes
-  298 ms (1.35×); WebAssembly typically runs 1.3–2× slower than native
-  code, so the old engine could at best match TypeScript. The facade's own
-  share (V8's `JSON.parse` plus `CompressedJSON`, 72 of TypeScript's
-  369 ms here) is the same with either engine.
-- Everything in quicktype-core and quicktype-js-compat above **ports to
-  WebAssembly unchanged**: the naming fix, pluralize, foldhash, the JSON
-  reader fixes (for `JsonSample::String`), the category table, name-style
-  memoization, `gatherNames`, `expandStrings`. With the system allocator
-  the native engine phase drops from 221 to 138 ms (1.6×), i.e. 2.2×
-  faster than warm TypeScript; with the same WebAssembly overhead as
-  before, the WASM engine should now be clearly ahead of TypeScript.
-- **Not portable**: mimalloc (native only), and the precomputed Markov
-  chain (deliberately: on `wasm32` the chain is decoded once per instance,
-  which a long-lived instance amortizes, and the module stays 268 KB
-  smaller).
+- pokedex (82 KB);
+- generated inputs of 2 MB and 20 MB (`test/bench/generate.mjs`, a port of
+  this benchmark's generator);
+- a 27 MB array of 100k small records, each a UUID, a two-value enum, a date
+  and a comment of 8 to 37 words. This is a synthetic version of a public
+  card-rulings dump that a user found slower on WebAssembly in the
+  playground.
 
-What to try on the WebAssembly side (not changed here: the WASM crate and
-the facade were on `feat/wasm-js-api` when this branch started):
+The machine (M2 Max) ran other agents throughout, with a load average
+between 150 and 450. Headless Chrome kept getting enough CPU, and its
+numbers look like those of an idle machine. Wall-clock times in Node did
+not: they vary several-fold from run to run. So Chrome's medians are the
+reference here, and the Node tables give CPU time
+(`process.cpuUsage`, which also counts V8's GC threads and so overstates
+the TypeScript side).
 
-1. **The allocator.** mimalloc made the native engine 1.35× faster in
-   process (and the CLI 1.1–1.4×); `wasm32-unknown-unknown` uses Rust's
-   built-in dlmalloc port. A faster WASM allocator (e.g. `talc`), or a
-   bump arena reset after each run (a run's allocations all die with it),
-   is likely the biggest single win.
-2. **`wasm-opt -O3`** on the module: `npm/quicktype-core/script/build.mjs`
-   runs `cargo build` and `wasm-bindgen` but not Binaryen; `wasm-opt -O3`
-   usually gains 10–20% speed (and size).
-3. **`bulk-memory`**: `memmove`/`memcpy` are ~9% of native time; make sure
-   the build uses `memory.copy`/`memory.fill` (`-C
-   target-feature=+bulk-memory` if the toolchain's default does not
-   include it).
-4. **Fewer copies at the boundary**: strings travel as one UTF-8 blob plus
-   UTF-16 lengths and are split into `String`s; the CompressedJSON string
-   table could be split lazily, and the result lines could be returned as
-   one joined string instead of an array of strings.
+### Warm runs in Chrome, step by step
+
+Medians in ms (×: TypeScript's time over the build's, TypeScript measured
+in the same page):
+
+| Build | pokedex | 2 MB | 20 MB | 27 MB records |
+|---|---:|---:|---:|---:|
+| main (TypeScript parses, tables copied in) | 3.10 (1.42×) | 46.5 (1.03×) | 502 (0.90×) | 195 (0.86×) |
+| + the engine reads JSON samples | 2.60 (1.69×) | 25.5 (1.87×) | 244 (1.86×) | 154 (1.09×) |
+| + `wasm-opt -O3` | 2.40 (1.83×) | 24.8 (1.92×) | 240 (1.89×) | 150 (1.12×) |
+| + reader tweaks: UTF-16 length, date-time check | 2.40 (1.83×) | 24.5 (1.95×) | 237 (1.91×) | 144 (1.17×) |
+| TypeScript (same page) | 4.40 | 47.7 | 454 | 169 |
+| + reader tweaks: key cache, string kinds | 2.30 (1.91×) | 23.6 (1.99×) | 225 (1.94×) | 131 (1.26×) |
+| + geometric memory growth (the branch) | **2.40 (1.83×)** | **24.1 (1.95×)** | **230 (1.89×)** | **133 (1.24×)** |
+| TypeScript (same page) | 4.40 | 47.0 | 435 | 165 |
+
+Where the branch's time goes: reading against generating, in ms:
+
+| Input | WebAssembly read + generate | TypeScript read + generate |
+|---|---:|---:|
+| pokedex | 0.60 + 1.80 | 0.80 + 3.60 |
+| 2 MB | 10.2 + 13.8 | 22.0 + 24.9 |
+| 20 MB | 106 + 124 | 275 + 161 |
+| 27 MB records | 57.4 + 75.6 | 85.3 + 79.3 |
+
+In Node the same runs give the following CPU time per run, in ms. The
+spread between repeated runs was large at this load (±50% on the big
+inputs), so these show the direction, not the size:
+
+| Build | pokedex | 2 MB | 20 MB | 27 MB records |
+|---|---:|---:|---:|---:|
+| main | 8.9 | 69.7 | 835 | 365 |
+| the branch | 6.1 | 39.5 | 337 | 252 |
+| TypeScript | 12.7 | 93.5 | 1,444 | 694 |
+
+Build settings measured and **not** adopted. Each was compared with the
+same engine with `wasm-opt` in one page; TypeScript was 5.10, 49.1, 476
+and 173 ms there:
+
+| Variant | pokedex | 2 MB | 20 MB | 27 MB records | .wasm (gzip -9) |
+|---|---:|---:|---:|---:|---:|
+| baseline (dlmalloc, opt-level 3) | 2.50 | 24.8 | 239 | 148 | 5.11 MB (1.88) |
+| `talc` 5.1 as the global allocator | 2.40 | 24.9 | 239 | 148 | 5.10 MB (1.88) |
+| `-C target-feature=+simd128` | 2.40 | 24.8 | 239 | 149 | 5.02 MB (1.86) |
+| `opt-level = "s"` for quicktype-wasm | 2.40 | 24.8 | 242 | 148 | 5.11 MB (1.88); 6.51 MB before wasm-opt |
+
+None of them is measurably faster, so none was adopted: no new
+dependency, and no change to the browsers the engine supports (SIMD would
+raise Safari's floor from 15 to 16.4). wasm32's default target features in
+Rust 1.99 already include bulk memory (`memory.copy`/`fill`), sign
+extension, non-trapping float-to-int, mutable globals, multi-value and
+reference types (`rustc --print cfg --target wasm32-unknown-unknown`).
+
+Module sizes (bytes of `quicktype_wasm_bg.wasm`, gzipped with `-9`):
+
+| Build | Raw | gzip -9 |
+|---|---:|---:|
+| main | 5,504,199 | 1,820,220 |
+| + the engine reads JSON samples | 5,540,170 | 1,836,379 |
+| + `wasm-opt -O3` | 5,106,071 | 1,879,156 |
+| the branch | 5,123,647 | 1,887,315 |
+
+`wasm-opt` makes the module 8% smaller but 2% larger gzipped (inlining).
+It is kept for the 2–8% of speed.
+
+### Cold runs, 27 MB records
+
+These are first runs: a fresh browser, or a fresh Node process, each time.
+The medians are of 5 (Chrome) or 7 (Node) runs.
+- **Chrome.** The page compiles the module first, as the playground's
+  worker does when it starts. The run then includes instantiating it, the
+  engine's one-time set-up (about 13 ms) and V8 tiering the hot functions
+  up from its baseline compiler. main 223 ms (0.90×); the branch 182 ms
+  (1.10×); TypeScript 201 ms.
+- **Node.** The first JSON sample compiles the module, synchronously.
+  - On pokedex this start-up dominates: main 177 ms of CPU, the branch 235,
+    TypeScript 70.
+  - On the 27 MB records: main 544 ms of CPU, the branch 452, TypeScript 574.
+
+### Phase breakdown, 27 MB records
+
+The breakdown is one warm run, marked by timestamps: `encodeRun` is
+wrapped, the engine's `onTiming` marks where compute starts and ends, and
+the rest is output. Chrome wall time, the earlier native-JSON build, ms:
+
+| Phase | main | branch | TypeScript | native Rust, CPU |
+|---|---:|---:|---:|---:|
+| (a) read the sample | 94 (`JSON.parse` + `process`) | 78 (copy in + Rust reader) | 83–94 | 39 |
+| (b) into the engine (encode tables, copy, decode) | 22.5 | 0.4 | – | – |
+| (c) engine compute (inference to rendering) | 73.6 | 73.2 | 75–80 | 75 |
+| (d) output back to JavaScript | 0.1 | 0.1 | – | – |
+
+On this input the engine's compute (c) runs as fast as native Rust with
+the system allocator, and no faster than V8's JIT runs the TypeScript. A
+profile of (c) on WebAssembly shows:
+- about 18% in the allocator;
+- about 10% in SipHash (std's `RandomState` under `IndexMap`);
+- about 30% in the union accumulators' attribute sets: one set per string
+  value, combined value by value.
+
+The streaming-inference work replaces those sets with tallies. With
+foldhash for `IndexMap` (a separate change to quicktype-core's types),
+that is where (c) gains next. The reading (a) and the boundary (b) are
+what this branch changed. In (a), what is left is the copy of the text
+into WebAssembly memory (`TextEncoder.encodeInto`, about 12 ms for 27 MB)
+and the reader itself.
+
+### Large outputs
+
+An 8-million-line PHP file from the differential fuzzer took 726 s on
+WebAssembly, against TypeScript's 126 s and the native CLI's 14 s of CPU.
+
+The time grew faster than linearly with the output, and almost all of it
+was spent growing memory:
+- Rust's wasm32 allocator (dlmalloc) grows the memory just enough for each
+  allocation, 64 KiB at a time.
+- Each `memory.grow` costs V8 about 0.5 ms, and 4–5 ms past 2 GiB, plus
+  garbage collections for the "external" memory.
+- A profile put 24% of the time in `memory.grow` and 22% in V8's GC.
+
+The engine's allocator (`crates/quicktype-wasm/src/allocator.rs`) now
+grows the memory by a quarter more whenever an allocation grew it, so it
+grows a few dozen times instead of tens of thousands.
+
+| Output | Before | After | TypeScript |
+|---|---:|---:|---:|
+| 8.0M lines of PHP (the fuzz case), wall | 726 s | 61 s (24 s CPU) | 126 s |
+| 5.4M lines of PHP (8,000 classes), CPU | 110 s | 15 s | 83 s |
+| 1.35M lines of PHP (2,000 classes), CPU | 6.0 s | 2.5 s | – |
+
+`npm test` renders 540,000 lines of PHP and checks that the memory grew
+fewer than 60 times (`__memoryGrowths`). Converting the output back to
+JavaScript (`TextDecoder`, then slicing lines) stays under 1% of a run,
+even for 490 KB of Java.
 
 ## Reproducing
 
@@ -341,6 +460,12 @@ cargo xtask bench --out report.md     # also write the Markdown table
 git worktree add ../qt-before 11091954f
 (cd ../qt-before && cargo build --release -p quicktype-cli)
 cargo xtask bench --baseline ../qt-before/target/release/quicktype --corpus
+
+# WebAssembly against TypeScript (npm/quicktype-core, after npm run build).
+node --expose-gc npm/quicktype-core/test/bench/compare.mjs             # Node, warm
+node npm/quicktype-core/test/bench/compare.mjs --browser               # headless Chrome
+node npm/quicktype-core/test/bench/compare.mjs --browser --cold 5      # first runs
+node npm/quicktype-core/test/bench/compare.mjs --variant main=../main-pkg --variant new=npm/quicktype-core
 
 # The in-process benchmark alone.
 cargo bench -p quicktype-cli --bench in_process -- --per-input
