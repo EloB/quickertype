@@ -121,7 +121,11 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     `String.replace` `$`-pattern quirks), and the Node/V8 messages that leak
     through (ENOENT text, `JSON.parse` errors, `fetch failed`), must match.
     Return `Result` everywhere; never panic on user input (release builds
-    abort on panic).
+    abort on panic). Where the TypeScript throws before its own
+    `messageError` is reached, the thrown error wins: `getTargetLanguage`
+    of an unknown name is `languageNamed`'s plain `Error: Unknown language
+    name: x`, not `DriverUnknownOutputLanguage` as research 05 first
+    specified.
 16. **No hidden nondeterminism:** no time or randomness in output paths.
     quicktype's own seeded random-name generator (`support/Chance.ts`) is
     deterministic and must be ported exactly, including when it is consumed.
