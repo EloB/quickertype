@@ -20,7 +20,9 @@
 // The input is `text`, or a `file` (a File, which the page posts without
 // reading it, so that a large file never passes through the page's main
 // thread): read here once, before the timed runs, and kept for the next
-// request on the same file (its name, size and modification time).
+// request on the same file (its name, size and modification time). A
+// request that does not carry that file (typed text, a sample, another
+// file) lets it go: its text can be most of a gigabyte.
 
 import { tooLarge, unreadable } from "./input-file.js";
 import { boot } from "./worker-boot.js";
@@ -91,18 +93,18 @@ function serialize(result) {
 
 let runs = 0;
 
-/** The file read last: { key, text }. */
+/** The file read last, while requests carry it: { key, text }. */
 let lastFile;
 
 /** The input's text: `text`, or the file's, read once per file. Throws { title, message, link? } if it cannot be read. */
 async function inputText({ text, file }) {
+    const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type]);
+    // Another input than the file kept: let its text go (before reading the next file, if there is one).
+    if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
     if (file === undefined) return text;
-    const key = JSON.stringify([file.name, file.size, file.lastModified, file.type]);
-    if (lastFile?.key === key) return lastFile.text;
+    if (lastFile !== undefined) return lastFile.text;
     const large = tooLarge(file.name, file.size);
     if (large !== undefined) throw large;
-    // Let the previous file's text go before reading the next.
-    lastFile = undefined;
     let read;
     try {
         read = await file.text();

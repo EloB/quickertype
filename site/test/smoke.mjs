@@ -47,6 +47,8 @@
 // browser's longest string (its size faked), one that cannot be read, a
 // dropped one, and one deleted before a worker read it each show why in the
 // output pane, name the file and its CLI command, and leave nothing running.
+// A worker keeps a large file's text only while requests carry that file: it
+// lets it go once a sample is loaded.
 //
 // The speed story: the build refuses benchmark data that is incomplete or
 // inconsistent, or that would make a summary claim false; test data derived
@@ -1700,6 +1702,7 @@ try {
     const goneFile = chosen("gone.json", JSON.stringify(Array.from({ length: 12 }, () => JSON.parse(readInput("us-senators.json"))), undefined, 2));
     await openFile(goneFile);
     await sameAsCli("Open file: gone.json → TypeScript", "quicktype --lang typescript --top-level Gone gone.json");
+    await page.evaluate("globalThis.goneFile = playground.view.request.file");
     fs.rmSync(goneFile);
     ran = await switchEngine("ts", "quicktype on a file deleted after it was opened");
     assert.deepEqual(ran, { wasm: 0, ts: 1 });
@@ -1717,6 +1720,23 @@ try {
     assert.deepEqual(ran, { wasm: 0, ts: 0 });
     assert.equal(await page.evaluate("document.body.dataset.status"), "done");
     console.log(`ok: a file deleted after it was opened: "${gone.message}"; quickertype's result, read before, stays`);
+
+    // A worker keeps a large file's text only while requests carry that
+    // file. gone.json is gone from the disk, so only the text kept can
+    // answer for it: quickertype's worker does, until a sample is loaded;
+    // then it has let the text go, and must read the file again, which it
+    // cannot.
+    const fromKeptText = () =>
+        page.evaluate(`(async () => {
+            const { text, ...request } = playground.view.request;
+            const reply = await playground.engines.wasm.run({ ...request, file: globalThis.goneFile });
+            return { ok: reply.ok, title: reply.error?.title ?? null };
+        })()`);
+    assert.deepEqual(await fromKeptText(), { ok: true, title: null }, "quickertype's worker did not keep the text of the file it read");
+    await select("sample", "pokedex");
+    await sameAsCli("a sample after gone.json", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    assert.deepEqual(await fromKeptText(), { ok: false, title: "Could not read gone.json" }, "quickertype's worker kept the large file after a sample");
+    console.log("ok: a worker lets a large file's text go once a request does not carry that file (a sample)");
 
     // The benchmarks page: rendered from site/data/*.json at build time.
     {
