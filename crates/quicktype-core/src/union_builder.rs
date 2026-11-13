@@ -14,6 +14,7 @@ use crate::attributes::type_attributes::{
     combine_type_attributes2, increase_type_attributes_distance, make_type_attributes_inferred,
 };
 use crate::messages::Result;
+use crate::support::recursion::guard;
 use crate::support::support::{assert, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -430,7 +431,9 @@ fn attributes_for_types(
                 let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
                 path.push(UnionOrFaux::Union(t));
                 for &m in members {
-                    self.traverse(graph, m, path, is_equivalent_to_root)?;
+                    // Endless for a union that contains itself, where
+                    // TypeScript overflows the stack.
+                    guard(|| self.traverse(graph, m, path, is_equivalent_to_root))?;
                 }
                 path.pop();
             } else {

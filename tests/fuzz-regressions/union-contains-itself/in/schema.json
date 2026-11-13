@@ -1,0 +1,13 @@
+{
+  "$ref": "#/$defs/ANALYSIS-PROPERTY",
+  "$defs": {
+    "ANALYSIS-PROPERTY": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ANALYSIS-PROPERTY"
+        },
+        {}
+      ]
+    }
+  }
+}
