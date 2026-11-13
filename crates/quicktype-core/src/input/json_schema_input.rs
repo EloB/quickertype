@@ -2147,8 +2147,9 @@ impl JsonSchemaInput {
             canonizer,
         };
 
+        // `this.addTopLevel(…)` as each source resolves, so that a failure
+        // leaves the top-levels found so far, as in TypeScript.
         let single_source = self.schema_sources.len() == 1;
-        let mut top_levels = std::mem::take(&mut self.top_levels);
         for (normalized_uri, source) in &self.schema_sources {
             match refs_in_schema_for_uri(&mut resolver, normalized_uri).await? {
                 SchemaRefs::Single(name, r) => {
@@ -2157,16 +2158,15 @@ impl JsonSchemaInput {
                     } else {
                         name
                     };
-                    top_levels.insert(name, r);
+                    self.top_levels.insert(name, r);
                 }
                 SchemaRefs::Many(refs) => {
                     for (name, r) in refs {
-                        top_levels.insert(name, r);
+                        self.top_levels.insert(name, r);
                     }
                 }
             }
         }
-        self.top_levels = top_levels;
 
         let mut adder = TypeAdder {
             resolver,
