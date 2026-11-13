@@ -14,6 +14,7 @@
 
 pub mod json;
 pub mod number;
+pub mod pluralize;
 pub mod sort;
 pub mod unicode;
 mod unicode_table;
