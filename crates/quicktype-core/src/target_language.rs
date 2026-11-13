@@ -1,8 +1,10 @@
 //! Port of `packages/quicktype-core/src/TargetLanguage.ts`.
 //!
-//! Only the language *metadata* is ported so far: names, display name,
-//! output extension and the renderer option declarations, which is all the
-//! CLI needs to parse arguments and print `--help`.
+//! The language *metadata* (names, display name, output extension and the
+//! renderer option declarations, which is all the CLI needs to parse
+//! arguments and print `--help`) and the renderer hooks (`render`,
+//! `render_graph_and_serialize`, `default_indentation`,
+//! `supports_full_object_type`).
 
 use crate::renderer_options::{CliOptionDefinitions, OptionDefinition, RendererOption};
 
@@ -24,12 +26,11 @@ pub struct LanguageConfig {
 /// [`crate::language::all`] is the registry. Implementors provide the
 /// [`config`](Self::config) and the [`options`](Self::options) declarations;
 /// everything else is derived from them.
-// TODO(renderer): port the remaining TargetLanguage members once the type
-// graph and renderer exist: `makeRenderer`, `renderGraphAndSerialize`,
-// `defaultIndentation`, `stringTypeMapping`, `supportsOptionalClassProperties`,
-// `supportsUnionsWithBothNumberTypes`, `supportsFullObjectType`,
-// `needsTransformerForType`, `dateTimeRecognizer` and
-// `getSupportedIntegerRange`. Each language module notes its overrides.
+// TODO(inference): port the inference-time TargetLanguage members:
+// `stringTypeMapping`, `supportsOptionalClassProperties`,
+// `supportsUnionsWithBothNumberTypes`, `needsTransformerForType`,
+// `dateTimeRecognizer` and `getSupportedIntegerRange`. Each language module
+// notes its overrides.
 pub trait TargetLanguage: Sync {
     /// Names, display name and extension.
     fn config(&self) -> &'static LanguageConfig;
