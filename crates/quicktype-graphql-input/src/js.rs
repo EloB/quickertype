@@ -9,7 +9,7 @@
 //! literals of quicktype's messages.
 
 use quicktype_core::{JsErrorName, QuickTypeError, Result};
-use quicktype_js_compat::json::JsonValue;
+use quicktype_js_compat::json::{self, JsonValue};
 
 /// A JavaScript value: `undefined`, a value of the parsed JSON, or a
 /// string that is not in the JSON (the name of a built-in function).
@@ -33,18 +33,14 @@ impl<'a> JsVal<'a> {
     /// unless the value is an object with that own property, a
     /// `TypeError` for `undefined` and `null`.
     pub(crate) fn get(self, key: &str) -> Result<JsVal<'a>> {
-        match self {
-            JsVal::Undefined => Err(type_error(format!(
-                "Cannot read properties of undefined (reading '{key}')"
-            ))),
-            JsVal::Json(JsonValue::Null) => Err(type_error(format!(
-                "Cannot read properties of null (reading '{key}')"
-            ))),
-            JsVal::Json(JsonValue::Object(map)) => {
-                Ok(map.get(key).map_or(JsVal::Undefined, JsVal::Json))
-            }
-            JsVal::Json(_) | JsVal::Str(_) => Ok(JsVal::Undefined),
-        }
+        let value = match self {
+            JsVal::Undefined => None,
+            JsVal::Json(v) => Some(v),
+            JsVal::Str(_) => return Ok(JsVal::Undefined),
+        };
+        json::get_property(value, key)
+            .map(|v| v.map_or(JsVal::Undefined, JsVal::Json))
+            .map_err(|e| type_error(e.message()))
     }
 
     /// The elements of `value.map(...)`, whose source text (for the error)
@@ -75,13 +71,7 @@ impl<'a> JsVal<'a> {
         match self {
             JsVal::Undefined => false,
             JsVal::Str(s) => !s.is_empty(),
-            JsVal::Json(v) => match v {
-                JsonValue::Null => false,
-                JsonValue::Bool(b) => *b,
-                JsonValue::Number(n) => *n != 0.0 && !n.is_nan(),
-                JsonValue::String(s) => !s.is_empty(),
-                JsonValue::Array(_) | JsonValue::Object(_) => true,
-            },
+            JsVal::Json(v) => json::is_truthy(v),
         }
     }
 

@@ -83,7 +83,7 @@ impl Value {
         match self {
             Value::Undefined | Value::Null => false,
             Value::Bool(b) => *b,
-            Value::Number(n) => *n != 0.0 && !n.is_nan(),
+            Value::Number(n) => quicktype_js_compat::json::is_truthy_number(*n),
             Value::String(s) => !s.is_empty(),
             Value::Array(_) | Value::Object(_) | Value::Opaque(_) => true,
         }

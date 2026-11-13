@@ -31,28 +31,11 @@ fn match_header(s: &str) -> Option<(&str, &str)> {
     Some((&s[..colon], value))
 }
 
-/// Whether a JSON value is truthy.
-fn truthy(value: &JsonValue) -> bool {
-    match value {
-        JsonValue::Null => false,
-        JsonValue::Bool(b) => *b,
-        JsonValue::Number(n) => *n != 0.0 && !n.is_nan(),
-        JsonValue::String(s) => !s.is_empty(),
-        JsonValue::Array(_) | JsonValue::Object(_) => true,
-    }
-}
-
 /// `result[key]` for a key no prototype has: `None` for `undefined`, a
 /// `TypeError` if `result` is `null`.
 fn get<'a>(result: &'a JsonValue, key: &str) -> Result<Option<&'a JsonValue>, QuickTypeError> {
-    match result {
-        JsonValue::Null => Err(QuickTypeError::js_exception(
-            JsErrorName::TypeError,
-            format!("Cannot read properties of null (reading '{key}')"),
-        )),
-        JsonValue::Object(map) => Ok(map.get(key)),
-        _ => Ok(None),
-    }
+    json::get_property(Some(result), key)
+        .map_err(|e| QuickTypeError::js_exception(JsErrorName::TypeError, e.message()))
 }
 
 /// `await response.json()`: the body as UTF-8 (without a byte-order mark,
@@ -112,14 +95,14 @@ pub async fn introspect_server(
         })?;
 
     if let Some(errors) = get(&result, "errors")?
-        && truthy(errors)
+        && json::is_truthy(errors)
     {
         return Err(panic(format!(
             "Errors in introspection query result: {}",
             json::stringify(errors, None)
         )));
     }
-    if !get(&result, "data")?.is_some_and(truthy) {
+    if !get(&result, "data")?.is_some_and(json::is_truthy) {
         return Err(panic(format!(
             "No introspection query result data found, server responded with: {}",
             json::stringify(&result, None)
