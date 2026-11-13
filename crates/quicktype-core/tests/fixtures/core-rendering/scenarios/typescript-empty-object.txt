@@ -1,0 +1,10 @@
+# quicktype's test/unit/typescript-empty-object.test.ts: an empty object
+# becomes `object` instead of an empty interface, with and without
+# just-types (API defaults: output to stdout).
+input json Welcome {"labels": {"accountNumber": "Accountnumber"}, "hints": {}}
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": true}}
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": false}}
+render flow {"filename": "stdout", "rendererOptions": {"just-types": false}}
+render javascript {"filename": "stdout"}

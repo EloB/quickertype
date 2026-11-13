@@ -43,8 +43,6 @@ pub const JAVA_SCRIPT_PROP_TYPES_LANGUAGE_CONFIG: LanguageConfig = LanguageConfi
 #[derive(Clone, Copy, Debug, Default)]
 pub struct JavaScriptPropTypesTargetLanguage;
 
-// TODO(renderer): port the hooks JavaScriptPropTypesTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for JavaScriptPropTypesTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JAVA_SCRIPT_PROP_TYPES_LANGUAGE_CONFIG
@@ -76,4 +74,29 @@ impl TargetLanguage for JavaScriptPropTypesTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: a `JavaScriptPropTypesRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::java_script_prop_types_renderer::JavaScriptPropTypesOptions::parse(
+            renderer_options,
+        )?;
+        let renderer = super::java_script_prop_types_renderer::JavaScriptPropTypesRenderer::new(
+            self,
+            render_context,
+            options,
+        );
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

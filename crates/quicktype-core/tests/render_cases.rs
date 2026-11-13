@@ -8,13 +8,18 @@
 //! with the golden recording (and, for cases without `--quiet`, the issue
 //! annotations that the CLI prints to stderr). Node is not needed.
 //!
-//! Set `RENDER_CASES_FILTER=<substring>` to run a subset.
+//! Set `RENDER_CASES_FILTER=<substring>` to run a subset, and
+//! `RENDER_CASES_LANG=<lang>[,<lang>...]` to run only the cases rendered
+//! with those languages (any of a language's names: `ts` selects the
+//! `typescript` cases). With `RENDER_CASES_DUMP=<dir>`, the actual output
+//! of every differing file is written to `<dir>/<case id>.<file name>`.
 
 mod render_support;
 
 use std::fs;
 use std::path::Path;
 
+use quicktype_core::language::all::{ALL, language_named};
 use quicktype_core::target_language::MultiFileRenderResult;
 use render_support::{build_graph, first_difference, gather_and_render};
 use serde_json::Value;
@@ -91,10 +96,18 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
         if let Some(expected) = expected
             && actual != expected
         {
-            return Err(format!(
-                "{name} differs at {}",
-                first_difference(&expected, &actual)
-            ));
+            let mut message = format!("{name} differs at {}", first_difference(&expected, &actual));
+            if let Ok(dir) = std::env::var("RENDER_CASES_DUMP") {
+                let id = fixture["id"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .replace('/', "__");
+                let path = Path::new(&dir).join(format!("{id}.{name}"));
+                if let Err(e) = fs::create_dir_all(&dir).and_then(|()| fs::write(&path, &actual)) {
+                    message.push_str(&format!("\n    cannot dump to {}: {e}", path.display()));
+                }
+            }
+            return Err(message);
         }
         if let Some(annotations) = file["annotations"].as_array() {
             let actual: Vec<Value> = serialized
@@ -126,6 +139,17 @@ fn render_cases_match_reference() {
     let dir = manifest.join("tests/fixtures/core-rendering/cases");
     let golden_dir = manifest.join("../../tests/golden");
     let filter = std::env::var("RENDER_CASES_FILTER").unwrap_or_default();
+    // The canonical names (what the recorder stores) of the requested
+    // languages, resolved through every name of each language.
+    let langs: Vec<&str> = std::env::var("RENDER_CASES_LANG")
+        .unwrap_or_default()
+        .split(',')
+        .filter(|l| !l.is_empty())
+        .map(|l| match language_named(l, &ALL) {
+            Some(language) => language.name(),
+            None => panic!("RENDER_CASES_LANG: unknown language {l:?}"),
+        })
+        .collect();
     let mut entries: Vec<_> = fs::read_dir(&dir)
         .unwrap()
         .map(|e| e.unwrap().path())
@@ -139,6 +163,10 @@ fn render_cases_match_reference() {
         let fixture: Value = serde_json::from_str(&text).unwrap();
         let id = fixture["id"].as_str().unwrap_or_default().to_owned();
         if !id.contains(&filter) {
+            continue;
+        }
+        let lang = fixture["render"]["lang"].as_str().unwrap_or_default();
+        if !langs.is_empty() && !langs.contains(&lang) {
             continue;
         }
         total += 1;

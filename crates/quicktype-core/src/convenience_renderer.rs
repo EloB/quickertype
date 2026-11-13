@@ -582,6 +582,32 @@ macro_rules! __convenience_renderer_hook_fn {
             $crate::convenience_renderer::defaults::$name(self $(, $arg)*)
         }
     };
+    ([declare $defaults:ident] [required mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        fn $name(&mut self $(, $arg: $ty)*) -> $ret;
+    };
+    ([declare $defaults:ident] [required ref] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        fn $name(&self $(, $arg: $ty)*) -> $ret;
+    };
+    ([declare $defaults:ident] [mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        ///
+        /// Default: the function of the same name in the family's methods
+        /// module.
+        fn $name(&mut self $(, $arg: $ty)*) -> $ret {
+            $defaults::$name(self $(, $arg)*)
+        }
+    };
+    ([declare $defaults:ident] [ref] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        ///
+        /// Default: the function of the same name in the family's methods
+        /// module.
+        fn $name(&self $(, $arg: $ty)*) -> $ret {
+            $defaults::$name(self $(, $arg)*)
+        }
+    };
     ([forward $module:ident] [$(required)? mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
         fn $name(&mut self $(, $arg: $ty)*) -> $ret {
             $module::$name(self $(, $arg)*)
@@ -617,6 +643,48 @@ macro_rules! __convenience_renderer_hook_fn {
 macro_rules! forward_convenience_renderer_hooks {
     ($module:ident) => {
         $crate::__convenience_renderer_hooks!([forward $module]);
+    };
+}
+
+/// Declares or forwards the methods of a renderer **family** (a TypeScript
+/// mid-level base class such as `JavaScriptRenderer`) from one list, the
+/// way [`forward_convenience_renderer_hooks!`](crate::forward_convenience_renderer_hooks)
+/// does for the hooks (see `docs/RENDERERS.md`).
+///
+/// The entries use the syntax of the hook list: `[ref]`/`[mut]` (with a
+/// default) or `[required ref]`/`[required mut]`, the method's name, its
+/// parameters after `self` and its return type. A family keeps its list in
+/// one macro of its own, which passes the mode through:
+///
+/// - `family_methods!([declare module] ...)` inside the family trait
+///   declares every method; a default calls `module::<method>(self, ...)`,
+///   the function with the base class's body.
+/// - `family_methods!([forward module] ...)` inside a leaf's impl of the
+///   family trait implements every method as `module::<method>(self, ...)`.
+///   `module` glob-imports the methods module of the level above and
+///   defines the methods its level overrides, so no level can forget to
+///   forward one.
+///
+/// ```ignore
+/// macro_rules! javascript_renderer_methods {
+///     ($mode:tt) => {
+///         $crate::family_methods! { $mode
+///             /// `emitTypes()`.
+///             [mut] emit_types() -> $crate::messages::Result<()>;
+///         }
+///     };
+/// }
+/// pub trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> {
+///     javascript_renderer_methods!([declare javascript_methods]);
+/// }
+/// impl<'a> JavaScriptRenderer<'a> for TypeScriptRenderer<'a> {
+///     javascript_renderer_methods!([forward typescript_methods]);
+/// }
+/// ```
+#[macro_export]
+macro_rules! family_methods {
+    ($mode:tt $($entries:tt)*) => {
+        $crate::__convenience_renderer_hook_items! { $mode $($entries)* }
     };
 }
 
@@ -2476,5 +2544,110 @@ mod tests {
             2
         );
         assert_eq!(comment_line_escapes(&[Some("\"\"\"")]).len(), 2);
+    }
+}
+
+/// [`family_methods!`](crate::family_methods): a family trait declared from a
+/// method list, and a leaf that forwards every method to a module that
+/// overrides some of them.
+#[cfg(test)]
+mod family_methods_tests {
+    macro_rules! shape_methods {
+        ($mode:tt) => {
+            crate::family_methods! { $mode
+                /// `name()`.
+                [ref] name() -> String;
+                /// `area(scale)`.
+                [ref] area(scale: f64) -> f64;
+                /// `sides()`: abstract.
+                [required ref] sides() -> u32;
+                /// `grow(by)`.
+                [mut] grow(by: f64) -> f64;
+            }
+        };
+    }
+
+    /// A family trait: state accessors plus the listed methods.
+    trait Shape: Sized {
+        fn size(&self) -> f64;
+        fn set_size(&mut self, size: f64);
+        shape_methods!([declare base_methods]);
+    }
+
+    /// The base class's bodies.
+    mod base_methods {
+        use super::Shape;
+
+        pub fn name<S: Shape>(s: &S) -> String {
+            format!("shape with {} sides", s.sides())
+        }
+
+        pub fn area<S: Shape>(s: &S, scale: f64) -> f64 {
+            s.size() * scale
+        }
+
+        pub fn grow<S: Shape>(s: &mut S, by: f64) -> f64 {
+            let size = s.size() + by;
+            s.set_size(size);
+            size
+        }
+    }
+
+    /// A leaf level: overrides `sides` and `area` (calling `super`).
+    mod square_methods {
+        pub use super::base_methods::*;
+
+        use super::Shape;
+
+        pub fn sides<S: Shape>(_s: &S) -> u32 {
+            4
+        }
+
+        pub fn area<S: Shape>(s: &S, scale: f64) -> f64 {
+            super::base_methods::area(s, scale) * s.size()
+        }
+    }
+
+    struct Square(f64);
+
+    impl Shape for Square {
+        fn size(&self) -> f64 {
+            self.0
+        }
+
+        fn set_size(&mut self, size: f64) {
+            self.0 = size;
+        }
+
+        shape_methods!([forward square_methods]);
+    }
+
+    /// A leaf that keeps the declared defaults.
+    struct Triangle(f64);
+
+    impl Shape for Triangle {
+        fn size(&self) -> f64 {
+            self.0
+        }
+
+        fn set_size(&mut self, size: f64) {
+            self.0 = size;
+        }
+
+        fn sides(&self) -> u32 {
+            3
+        }
+    }
+
+    #[test]
+    fn leaves_forward_or_use_the_declared_defaults() {
+        let mut square = Square(2.0);
+        assert_eq!(square.name(), "shape with 4 sides");
+        assert_eq!(square.area(3.0), 12.0);
+        assert_eq!(square.grow(1.0), 3.0);
+        assert_eq!(square.size(), 3.0);
+        let triangle = Triangle(2.0);
+        assert_eq!(triangle.name(), "shape with 3 sides");
+        assert_eq!(triangle.area(3.0), 6.0);
     }
 }

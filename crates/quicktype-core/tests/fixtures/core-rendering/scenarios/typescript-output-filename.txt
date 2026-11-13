@@ -1,0 +1,12 @@
+# quicktype's test/unit/typescript-output-filename.test.ts: the usage
+# comments import from the output file's base name, or "./file" for stdout.
+input json ExperimentCounts {"experiments": 3}
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "src/cli/ExperimentCounts.ts"}
+render javascript {"filename": "src/cli/ExperimentCounts.js"}
+render flow {"filename": "ExperimentCounts.js"}
+render typescript {"filename": "stdout"}
+render javascript {"filename": "stdout"}
+render javascript {"filename": "C:\\out\\dir.v2\\Counts"}
+render javascript {"filename": "noext."}
