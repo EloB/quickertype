@@ -316,17 +316,37 @@ impl Strings {
         (0..self.len()).filter_map(|i| self.get(i))
     }
 
-    /// The index of `s` if it was registered for lookups.
-    fn find(&self, s: &str) -> Option<u32> {
+    /// `internString(s)`: the index of `s`, appended if it is not there
+    /// yet. `"__proto__"` is never found and gets a new index each time
+    /// (TypeScript's index is a plain object). Hashes `s` once.
+    fn intern(&mut self, s: &str) -> u32 {
+        if s == "__proto__" {
+            return self.append(s, None);
+        }
         let hash = self.hasher.hash_one(s);
+        if let Some(index) = self.find_hashed(s, hash) {
+            return index;
+        }
+        self.append(s, Some(hash))
+    }
+
+    /// Appends a string of an imported table: found from then on if it is
+    /// the first with its text (and not `"__proto__"`).
+    fn import(&mut self, s: &str) -> u32 {
+        let hash = self.hasher.hash_one(s);
+        let findable = s != "__proto__" && self.find_hashed(s, hash).is_none();
+        self.append(s, findable.then_some(hash))
+    }
+
+    fn find_hashed(&self, s: &str, hash: u64) -> Option<u32> {
         self.indexes
             .find(hash, |&i| self.get(i as usize) == Some(s))
             .copied()
     }
 
-    /// Appends `s`, registering it for lookups if `findable`; returns its
-    /// index.
-    fn push(&mut self, s: &str, findable: bool) -> u32 {
+    /// Appends `s`, registered for lookups under `hash` if given; returns
+    /// its index.
+    fn append(&mut self, s: &str, hash: Option<u64>) -> u32 {
         let index = self.spans.len() as u32;
         let fits = self
             .blocks
@@ -343,8 +363,7 @@ impl Strings {
             start: start as u32,
             len: s.len() as u32,
         });
-        if findable {
-            let hash = self.hasher.hash_one(s);
+        if let Some(hash) = hash {
             let Strings {
                 blocks,
                 spans,
@@ -516,10 +535,7 @@ impl CompressedJson {
     /// never found again and gets a new index each time (harmless: strings
     /// are compared by content).
     fn intern_string(&mut self, s: &str) -> u32 {
-        if let Some(index) = self.strings.find(s) {
-            return index;
-        }
-        self.strings.push(s, s != "__proto__")
+        self.strings.intern(s)
     }
 
     /// `makeString(s)`.
@@ -816,8 +832,7 @@ impl CompressedJson {
         let mut cjson = CompressedJson::new(date_time_recognizer, handle_refs, None);
         for s in &tables.strings {
             // The first of equal strings is the one found.
-            let findable = s != "__proto__" && cjson.strings.find(s).is_none();
-            cjson.strings.push(s, findable);
+            cjson.strings.import(s);
         }
         let ranges = |offsets: &[u32], len: usize| -> Result<Vec<(usize, usize)>> {
             let mut ranges = Vec::with_capacity(offsets.len());
