@@ -324,6 +324,14 @@ fixes, 1.61 s on the reference path. (The first measurements, at a load
 average of 130–180, had the parse phase at 419 ms from tallies and 320 ms
 on the reference path, wall time per iteration.)
 
+Since `feat/wasm-native-json` was merged, text samples are read by its
+one-pass `JSON.parse` reader into the tallies too (the reader checks V8's
+grammar on a tape and emits it without building the value; see
+[WebAssembly](#webassembly)). The parse phase into the tallies
+(`--parse-only -n 30`, CPU time of the process, median of five
+interleaved, load average about 30) went from 2.07 s (main at `569e83ddd`)
+to 1.10 s.
+
 To reproduce, as in [Memory on large inputs](#memory-on-large-inputs),
 with `target/before/quicktype` built from `e41fe731d`:
 
@@ -408,8 +416,11 @@ in the same page):
 | + reader tweaks: UTF-16 length, date-time check | 2.40 (1.83×) | 24.5 (1.95×) | 237 (1.91×) | 144 (1.17×) |
 | TypeScript (same page) | 4.40 | 47.7 | 454 | 169 |
 | + reader tweaks: key cache, string kinds | 2.30 (1.91×) | 23.6 (1.99×) | 225 (1.94×) | 131 (1.26×) |
-| + geometric memory growth (the branch) | **2.40 (1.83×)** | **24.1 (1.95×)** | **230 (1.89×)** | **133 (1.24×)** |
+| + geometric memory growth | 2.40 (1.83×) | 24.1 (1.95×) | 230 (1.89×) | 133 (1.24×) |
 | TypeScript (same page) | 4.40 | 47.0 | 435 | 165 |
+| geometric memory growth, again | 2.30 (2.09×) | 23.6 (1.97×) | 218 (1.92×) | 129 (1.29×) |
+| + the code review's fixes (the branch) | **2.30 (2.09×)** | **23.8 (1.96×)** | **222 (1.88×)** | **131 (1.27×)** |
+| TypeScript (same page) | 4.80 | 46.6 | 417 | 166 |
 
 Where the branch's time goes: reading against generating, in ms:
 
@@ -455,7 +466,8 @@ Module sizes (bytes of `quicktype_wasm_bg.wasm`, gzipped with `-9`):
 | main | 5,504,199 | 1,820,220 |
 | + the engine reads JSON samples | 5,540,170 | 1,836,379 |
 | + `wasm-opt -O3` | 5,106,071 | 1,879,156 |
-| the branch | 5,123,647 | 1,887,315 |
+| + geometric memory growth | 5,122,579 | 1,886,059 |
+| the branch (the code review's fixes) | 5,159,057 | 1,900,523 |
 
 `wasm-opt` makes the module 8% smaller but 2% larger gzipped (inlining).
 It is kept for the 2–8% of speed.
@@ -469,10 +481,79 @@ The medians are of 5 (Chrome) or 7 (Node) runs.
   engine's one-time set-up (about 13 ms) and V8 tiering the hot functions
   up from its baseline compiler. main 223 ms (0.90×); the branch 182 ms
   (1.10×); TypeScript 201 ms.
-- **Node.** The first JSON sample compiles the module, synchronously.
+- **Node.** The first run compiles the module, synchronously (so did
+  the first JSON sample, until the code review: now only a sample of at
+  least 1 Mi code units does; see below).
   - On pokedex this start-up dominates: main 177 ms of CPU, the branch 235,
     TypeScript 70.
   - On the 27 MB records: main 544 ms of CPU, the branch 452, TypeScript 574.
+
+### The code review's fixes
+
+A review of the branch found that a run took its hold on an input's
+samples only once it started, which another run could pre-empt; that
+every sample's text was kept for the input's lifetime, only to be parsed
+again by TypeScript if anything read the input's tables; and that the
+first sample compiled the engine in Node even for runs that then went to
+the TypeScript engine. Now a run holds its samples from when it is
+encoded, the tables are filled from the engine's (whose string table is
+TypeScript's), and only a large sample compiles the engine (package
+README, "JSON samples").
+
+**Memory**, one 104 MB sample (`generateJson(150000)`: 525,512 distinct
+keys, 5.4 M members), read with `addSource` in a Node process whose engine
+is instantiated, the caller's copy of the text dropped afterwards;
+V8's external memory (the text, the WebAssembly memory) after
+`addSource` and the process's peak RSS (`/usr/bin/time -l`):
+
+| | Before | After |
+|---|---:|---:|
+| After `addSource`: external memory | 611 MB (the text kept) | 562 MB |
+| WebAssembly memory | 505 MiB | 560 MiB |
+| A run on the engine: peak RSS | 806 MB | 765 MB |
+| A run on the TypeScript engine (a custom language): peak RSS | 2,369 MB | 2,059 MB |
+| the same: CPU time, wall time | 7.3 s, 5.7 s | 4.3 s, 2.9 s |
+
+The text (104 MB) is no longer held. Filling the tables for the run on
+TypeScript copies them from the engine instead of parsing the text
+again. The WebAssembly memory is one step of geometric growth higher:
+the reader's key table, which no longer shares the string table (keys
+are interned when their values are committed, as in TypeScript), adds
+about 40 bytes per distinct key while a sample is read (22.5 MiB here,
+by a native measurement of the reader's peak: 334.1 MiB before, 356.6
+MiB after),
+which pushed the memory past a step; it is freed after the sample. On
+the 27 MB records' generator at 400k records (107 MB, ten distinct
+keys) the WebAssembly memory and the peak are the same before and after
+(321 MiB), and 102 MB less is held after `addSource`.
+
+**Runs that go to the TypeScript engine.** Cold, a custom language, in a
+fresh Node process, median CPU time of 7 runs (machine load about 30):
+
+| Input | Before | After | TypeScript alone |
+|---|---:|---:|---:|
+| pokedex | 95.9 ms | 45.5 ms | 47.7 ms |
+| 2 MB | 296 ms | 234 ms | 194 ms |
+| 27 MB records | 711 ms | 465 ms | 460 ms |
+
+The 2 MB input still compiles the engine (at least 1 Mi code units):
+for a run on the engine, which is the common case, reading it there
+pays for compiling. Cold runs on the engine, CPU time with the policy
+against a build where no sample compiles the engine: 2 MB 258 against
+306 ms, 27 MB records 361 against 507 ms.
+
+**Everything else is unchanged** within the noise, before against after
+in one page or process (load about 25–30):
+
+| | pokedex | 2 MB | 20 MB | 27 MB records |
+|---|---:|---:|---:|---:|
+| Chrome, warm (ms) | 2.30 / 2.30 | 23.6 / 23.8 | 218 / 222 | 129 / 131 |
+| Node, warm (CPU ms) | 5.80 / 5.99 | 28.9 / 29.2 | 250 / 254 | 183 / 179 |
+| Chrome, cold (ms) | 38.5 / 38.6 | 64.8 / 66.1 | 289 / 289 | 182 / 185 |
+| Node, cold (CPU ms) | 157 / 155 | 213 / 219 | 559 / 556 | 325 / 333 |
+
+(The Node warm figure for the 27 MB records is of 21 runs; a first run
+of 9 gave 160 / 180, within this load's spread.)
 
 ### Phase breakdown, 27 MB records
 
