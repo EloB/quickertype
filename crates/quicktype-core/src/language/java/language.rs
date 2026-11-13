@@ -6,6 +6,8 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption, acronym_option,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `javaOptions.useList`.
 pub const USE_LIST: EnumOption = EnumOption::new(
@@ -77,8 +79,6 @@ pub struct JavaTargetLanguage;
 
 // TODO(renderer): port the hooks JavaTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date -> date, time -> time, date-time -> date-time, uuid -> uuid
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for JavaTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JAVA_LANGUAGE_CONFIG
@@ -87,4 +87,25 @@ impl TargetLanguage for JavaTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         JAVA_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Date, TypeKind::Date),
+            (TypeKind::Time, TypeKind::Time),
+            (TypeKind::DateTime, TypeKind::DateTime),
+            (TypeKind::Uuid, TypeKind::Uuid),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }

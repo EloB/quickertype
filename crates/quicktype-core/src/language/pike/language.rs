@@ -2,7 +2,8 @@
 //!
 //! Language metadata and renderer option declarations.
 
-use crate::renderer_options::RendererOption;
+use crate::renderer_options::{RendererOption, RendererOptions};
+use crate::support::integer_range::IntegerRange;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 
 /// TS `pikeOptions`, in declaration order.
@@ -21,7 +22,6 @@ pub struct PikeTargetLanguage;
 
 // TODO(renderer): port the hooks PikeTargetLanguage overrides:
 // - makeRenderer
-// - getSupportedIntegerRange: null
 impl TargetLanguage for PikeTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &PIKE_LANGUAGE_CONFIG
@@ -30,4 +30,16 @@ impl TargetLanguage for PikeTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         PIKE_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: arbitrary-precision integers.
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        None
+    }
+
+    // End of inference hooks.
 }

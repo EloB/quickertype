@@ -6,6 +6,8 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `scala3Options.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -49,9 +51,6 @@ pub struct Scala3TargetLanguage;
 
 // TODO(renderer): port the hooks Scala3TargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date-time -> date-time, uuid -> uuid
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for Scala3TargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SCALA3_LANGUAGE_CONFIG
@@ -60,4 +59,28 @@ impl TargetLanguage for Scala3TargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         SCALA3_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::DateTime, TypeKind::DateTime),
+            (TypeKind::Uuid, TypeKind::Uuid),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

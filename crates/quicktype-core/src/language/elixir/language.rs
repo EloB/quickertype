@@ -2,7 +2,10 @@
 //!
 //! Language metadata and renderer option declarations.
 
-use crate::renderer_options::{BooleanOption, OptionKind, RendererOption, StringOption};
+use crate::renderer_options::{
+    BooleanOption, OptionKind, RendererOption, RendererOptions, StringOption,
+};
+use crate::support::integer_range::IntegerRange;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 
 /// TS `elixirOptions.justTypes`.
@@ -38,8 +41,6 @@ pub struct ElixirTargetLanguage;
 // TODO(renderer): port the hooks ElixirTargetLanguage overrides:
 // - makeRenderer
 // - defaultIndentation: "  "
-// - supportsOptionalClassProperties: true
-// - getSupportedIntegerRange: null
 impl TargetLanguage for ElixirTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &ELIXIR_LANGUAGE_CONFIG
@@ -48,4 +49,21 @@ impl TargetLanguage for ElixirTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         ELIXIR_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: arbitrary-precision integers.
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        None
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

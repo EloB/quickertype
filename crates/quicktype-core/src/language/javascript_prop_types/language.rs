@@ -3,9 +3,12 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    EnumOption, OptionKind, RendererOption, acronym_option, converters_option,
+    EnumOption, OptionKind, RendererOption, RendererOptions, acronym_option, converters_option,
 };
+use crate::support::integer_range::{IntegerRange, JS_SAFE_INTEGER_RANGE};
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `javaScriptPropTypesOptions.acronymStyle`.
 pub const ACRONYM_STYLE: EnumOption = acronym_option("pascal");
@@ -42,8 +45,6 @@ pub struct JavaScriptPropTypesTargetLanguage;
 
 // TODO(renderer): port the hooks JavaScriptPropTypesTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: uuid -> uuid, date -> date-time, date-time -> date-time
-// - getSupportedIntegerRange: JS_SAFE_INTEGER_RANGE
 impl TargetLanguage for JavaScriptPropTypesTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JAVA_SCRIPT_PROP_TYPES_LANGUAGE_CONFIG
@@ -52,4 +53,27 @@ impl TargetLanguage for JavaScriptPropTypesTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         JAVA_SCRIPT_PROP_TYPES_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: JavaScript numbers are exact within ±(2^53 − 1).
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        Some(JS_SAFE_INTEGER_RANGE.clone())
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::Date, TypeKind::DateTime),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }

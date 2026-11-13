@@ -37,8 +37,6 @@ pub struct SmithyTargetLanguage;
 
 // TODO(renderer): port the hooks SmithyTargetLanguage overrides:
 // - makeRenderer
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for SmithyTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SMITHY_LANGUAGE_CONFIG
@@ -47,4 +45,18 @@ impl TargetLanguage for SmithyTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         SMITHY_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

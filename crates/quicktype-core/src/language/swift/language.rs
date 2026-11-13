@@ -2,10 +2,14 @@
 //!
 //! Language metadata and renderer option declarations.
 
+use super::utils::SwiftDateTimeRecognizer;
+use crate::date_time::DateTimeRecognizer;
 use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption, acronym_option,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `swiftOptions.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -183,10 +187,6 @@ pub struct SwiftTargetLanguage;
 
 // TODO(renderer): port the hooks SwiftTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date-time -> date-time, uuid -> uuid
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
-// - dateTimeRecognizer: SwiftDateTimeRecognizer
 impl TargetLanguage for SwiftTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SWIFT_LANGUAGE_CONFIG
@@ -195,4 +195,33 @@ impl TargetLanguage for SwiftTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         SWIFT_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::DateTime, TypeKind::DateTime),
+            (TypeKind::Uuid, TypeKind::Uuid),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `dateTimeRecognizer`: [`SwiftDateTimeRecognizer`].
+    fn date_time_recognizer(&self) -> Box<dyn DateTimeRecognizer> {
+        Box::new(SwiftDateTimeRecognizer)
+    }
+
+    // End of inference hooks.
 }

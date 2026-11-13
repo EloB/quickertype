@@ -6,6 +6,8 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, acronym_option,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `phpOptions.withGet`.
 pub const WITH_GET: BooleanOption =
@@ -56,8 +58,6 @@ pub struct PhpTargetLanguage;
 
 // TODO(renderer): port the hooks PhpTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: uuid -> uuid, date-time -> date-time
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for PhpTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &PHP_LANGUAGE_CONFIG
@@ -66,4 +66,23 @@ impl TargetLanguage for PhpTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         PHP_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }

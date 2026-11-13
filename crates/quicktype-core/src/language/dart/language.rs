@@ -4,6 +4,8 @@
 
 use crate::renderer_options::{BooleanOption, OptionKind, RendererOption, StringOption};
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `dartOptions.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -109,8 +111,6 @@ pub struct DartTargetLanguage;
 
 // TODO(renderer): port the hooks DartTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date -> date, uuid -> uuid, date-time -> date-time
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for DartTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &DART_LANGUAGE_CONFIG
@@ -119,4 +119,24 @@ impl TargetLanguage for DartTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         DART_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Date, TypeKind::Date),
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }
