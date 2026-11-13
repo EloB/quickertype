@@ -1,0 +1,15 @@
+# The Pike renderer on schema features the golden corpus has few of:
+# constraints, optional properties, nullable enums, maps of unions,
+# top-level aliases and converters.
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"small": {"type": "integer", "minimum": -5, "maximum": 100}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 1e21}, "name": {"type": "string", "minLength": 1, "maxLength": 3, "pattern": "^[a-z\"]+$"}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4}, "optSmall": {"type": "integer", "minimum": 1}, "flag": {"type": "boolean"}, "kind": {"enum": ["one-two", "three \"four\""]}, "maybeKind": {"anyOf": [{"enum": ["a", "b"]}, {"type": "null"}]}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}]}, "maybeInt": {"anyOf": [{"type": "integer"}, {"type": "null"}]}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "mixedMap": {"type": "object", "additionalProperties": {"anyOf": [{"type": "integer"}, {"type": "boolean"}]}}, "child": {"type": "object", "properties": {"x": {"type": "number"}}, "required": ["x"]}, "self": {"$ref": "#"}}, "required": ["small", "ratio", "name", "tags", "flag", "kind", "maybeKind", "choice", "maybeInt", "counts", "mixedMap", "child"]}
+input schema Numbers {"type": "array", "items": {"type": "integer"}}
+input schema Doubles {"type": "array", "items": {"type": "number"}}
+input schema Children {"type": "array", "items": {"type": "object", "properties": {"y": {"type": "string"}}}}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema People {"type": "object", "additionalProperties": {"type": "object", "properties": {"z": {"type": "boolean"}}}}
+input schema Alias {"type": "string"}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+pipeline {"lang": "pike"}
+
+render pike {}
+render pike {"alphabetize": true}
