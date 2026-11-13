@@ -29,6 +29,7 @@
 //! U+FFFD, also when a sequence is split between chunks); a byte order mark
 //! is not stripped and is a syntax error, as in the CLI.
 
+use std::borrow::Cow;
 use std::io::Read;
 
 use quicktype_js_compat::utf8;
@@ -62,7 +63,12 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        self.parse_stream_reader(&mut &*sample)
+        // In memory: decode once (borrowing valid UTF-8) and tokenize it
+        // as one window.
+        match utf8::decode(sample) {
+            Cow::Borrowed(text) => self.tokenize(Tokenizer::in_memory(text)),
+            Cow::Owned(text) => self.tokenize(Tokenizer::in_memory(text)),
+        }
     }
 
     /// [`parse_stream`](Self::parse_stream) on a byte stream, read chunk
@@ -79,11 +85,15 @@ impl CompressedJson {
         reader: &mut dyn Read,
         chunk_size: usize,
     ) -> Result<Value, ParseError> {
-        let (result, read_error) = {
-            let mut tokenizer = Tokenizer::new(reader, chunk_size, self);
-            let result = tokenizer.run();
-            (result, tokenizer.read_error.take())
-        };
+        self.tokenize(Tokenizer::streaming(reader, chunk_size))
+    }
+
+    fn tokenize<W: Window>(
+        &mut self,
+        mut tokenizer: Tokenizer<'_, W>,
+    ) -> Result<Value, ParseError> {
+        let result = tokenizer.run(self);
+        let read_error = tokenizer.read_error.take();
         // A failed read looks like the end of the input to the parser; the
         // read error is what is reported.
         let result = match read_error {
@@ -134,22 +144,50 @@ enum Token {
 
 /// stream-json's tokenizer, emitting straight into the builder.
 ///
-/// `text` is the decoded input from the start of the current token on (the
-/// part before it is dropped between tokens); `index` is the position in
-/// it. Every look-ahead goes through [`byte`](Self::byte) or
-/// [`skip`](Self::skip), which read more input first if the window ends
-/// before the byte asked for.
-struct Tokenizer<'a> {
-    reader: &'a mut dyn Read,
+/// `text` is the window of decoded input: the whole sample when it is in
+/// memory, otherwise the input from (at most a chunk before) the current
+/// token on. `index` is the position in it. Every look-ahead goes through
+/// [`byte`](Self::byte) or [`skip`](Self::skip), which read more input
+/// first if the window ends before the byte asked for. The text before the
+/// current token is dropped between tokens and while skipping whitespace;
+/// a single token is held whole, however long (a 1 GB string needs 1 GB).
+struct Tokenizer<'r, W> {
+    /// The rest of the input; `None` when it is all in `text`.
+    reader: Option<&'r mut dyn Read>,
     decoder: utf8::Decoder,
+    /// The read buffer: it starts small and doubles up to the chunk size,
+    /// so that small samples do not pay for a full chunk.
     buffer: Vec<u8>,
+    chunk_size: usize,
     at_end: bool,
     /// The error that ended the input early, if a read failed.
     read_error: Option<ParseError>,
-    text: String,
+    text: W,
     index: usize,
-    cjson: &'a mut CompressedJson,
 }
+
+/// The tokenizer's text: a sample in memory (`&str`, or the `String` it
+/// decoded to), or a stream's window (a `String` that grows and shrinks).
+/// Generic rather than a `Cow`, so that reading a byte costs no branch.
+trait Window: AsRef<str> {
+    /// The text to grow or shrink; `None` for text that is borrowed.
+    fn as_string(&mut self) -> Option<&mut String>;
+}
+
+impl Window for &str {
+    fn as_string(&mut self) -> Option<&mut String> {
+        None
+    }
+}
+
+impl Window for String {
+    fn as_string(&mut self) -> Option<&mut String> {
+        Some(self)
+    }
+}
+
+/// The first read buffer's size.
+const FIRST_READ: usize = 8 * 1024;
 
 /// stream-json's `Error` with `message`.
 fn syntax(message: &str) -> ParseError {
@@ -183,33 +221,69 @@ fn is_plain(b: u8) -> bool {
     b >= 0x20 && b != b'"' && b != b'\\'
 }
 
-impl<'a> Tokenizer<'a> {
-    fn new(reader: &'a mut dyn Read, chunk_size: usize, cjson: &'a mut CompressedJson) -> Self {
+impl<'r, W: Window> Tokenizer<'r, W> {
+    /// A tokenizer over a whole sample in memory.
+    fn in_memory(text: W) -> Self {
         Tokenizer {
-            reader,
+            reader: None,
             decoder: utf8::Decoder::new(),
-            buffer: vec![0; chunk_size.max(1)],
+            buffer: Vec::new(),
+            chunk_size: 0,
+            at_end: true,
+            read_error: None,
+            text,
+            index: 0,
+        }
+    }
+
+    fn text(&self) -> &str {
+        self.text.as_ref()
+    }
+}
+
+impl<'r> Tokenizer<'r, String> {
+    /// A tokenizer that reads `reader` in chunks of up to `chunk_size`.
+    fn streaming(reader: &'r mut dyn Read, chunk_size: usize) -> Self {
+        let chunk_size = chunk_size.max(1);
+        Tokenizer {
+            reader: Some(reader),
+            decoder: utf8::Decoder::new(),
+            buffer: vec![0; chunk_size.min(FIRST_READ)],
+            chunk_size,
             at_end: false,
             read_error: None,
             text: String::new(),
             index: 0,
-            cjson,
         }
     }
+}
 
+impl<W: Window> Tokenizer<'_, W> {
     /// Reads and decodes input until the window grows or the input ends.
     /// Returns whether it grew. A failed read ends the input and is kept
     /// in `read_error`.
     #[cold]
     fn fill(&mut self) -> bool {
+        let Some(reader) = self.reader.as_mut() else {
+            return false;
+        };
         while !self.at_end {
-            let before = self.text.len();
-            match self.reader.read(&mut self.buffer) {
+            let Some(text) = self.text.as_string() else {
+                return false;
+            };
+            let before = text.len();
+            match reader.read(&mut self.buffer) {
                 Ok(0) => {
                     self.at_end = true;
-                    self.decoder.finish(&mut self.text);
+                    self.decoder.finish(text);
                 }
-                Ok(n) => self.decoder.push(&self.buffer[..n], &mut self.text),
+                Ok(n) => {
+                    self.decoder.push(&self.buffer[..n], text);
+                    if n == self.buffer.len() && n < self.chunk_size {
+                        let size = (n * 2).min(self.chunk_size);
+                        self.buffer.resize(size, 0);
+                    }
+                }
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
                 Err(e) => {
                     self.at_end = true;
@@ -217,7 +291,7 @@ impl<'a> Tokenizer<'a> {
                     return false;
                 }
             }
-            if self.text.len() > before {
+            if self.text.as_ref().len() > before {
                 return true;
             }
         }
@@ -229,7 +303,7 @@ impl<'a> Tokenizer<'a> {
     #[inline]
     fn byte(&mut self, offset: usize) -> Option<u8> {
         let i = self.index + offset;
-        match self.text.as_bytes().get(i) {
+        match self.text().as_bytes().get(i) {
             Some(&b) => Some(b),
             None => self.byte_after_fill(i),
         }
@@ -237,12 +311,12 @@ impl<'a> Tokenizer<'a> {
 
     #[cold]
     fn byte_after_fill(&mut self, i: usize) -> Option<u8> {
-        while i >= self.text.len() {
+        while i >= self.text().len() {
             if !self.fill() {
                 return None;
             }
         }
-        Some(self.text.as_bytes()[i])
+        Some(self.text().as_bytes()[i])
     }
 
     #[inline]
@@ -254,26 +328,54 @@ impl<'a> Tokenizer<'a> {
     #[inline]
     fn skip(&mut self, p: impl Fn(u8) -> bool) {
         loop {
-            let rest = &self.text.as_bytes()[self.index..];
+            let rest = &self.text().as_bytes()[self.index..];
             let n = rest.iter().position(|&b| !p(b)).unwrap_or(rest.len());
             self.index += n;
-            if self.index < self.text.len() || !self.fill() {
+            if self.index < self.text().len() || !self.fill() {
                 return;
             }
         }
     }
 
     /// Drops the text before the current position, between tokens, once
-    /// there is enough of it to be worth moving the rest.
+    /// there is enough of it to be worth moving the rest (a sample in
+    /// memory keeps its text).
     fn discard_consumed(&mut self) {
-        if self.index >= self.buffer.len() && self.text.is_char_boundary(self.index) {
-            self.text.drain(..self.index);
-            self.index = 0;
+        if self.reader.is_some()
+            && self.index >= self.chunk_size
+            && self.text().is_char_boundary(self.index)
+        {
+            if let Some(text) = self.text.as_string() {
+                text.drain(..self.index);
+                self.index = 0;
+            }
         }
     }
 
+    /// Skips whitespace, which comes only between tokens: once the window
+    /// is all consumed, it is dropped before more is read, so a long run
+    /// of whitespace never accumulates.
     fn skip_whitespace(&mut self) {
-        self.skip(is_whitespace);
+        loop {
+            let rest = &self.text().as_bytes()[self.index..];
+            let n = rest
+                .iter()
+                .position(|&b| !is_whitespace(b))
+                .unwrap_or(rest.len());
+            self.index += n;
+            if self.index < self.text().len() {
+                return;
+            }
+            if self.reader.is_some() {
+                if let Some(text) = self.text.as_string() {
+                    text.clear();
+                    self.index = 0;
+                }
+            }
+            if !self.fill() {
+                return;
+            }
+        }
     }
 
     /// `expected[parent]`: the state after a complete value.
@@ -285,7 +387,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    fn run(&mut self) -> Result<Value, ParseError> {
+    fn run(&mut self, cjson: &mut CompressedJson) -> Result<Value, ParseError> {
         let mut expect = Expect::Value;
         let mut stack: Vec<Parent> = Vec::new();
         loop {
@@ -301,21 +403,21 @@ impl<'a> Tokenizer<'a> {
                             self.index += 1;
                             match self.string()? {
                                 Token::Range(start, end) => {
-                                    self.cjson.commit_string(&self.text[start..end])?;
+                                    cjson.commit_string(&self.text()[start..end])?;
                                 }
-                                Token::Owned(s) => self.cjson.commit_string(&s)?,
+                                Token::Owned(s) => cjson.commit_string(&s)?,
                             }
                             expect = Self::after_value(&stack);
                         }
                         b'{' => {
                             self.index += 1;
-                            self.cjson.push_object_context();
+                            cjson.push_object_context();
                             stack.push(Parent::Object);
                             expect = Expect::Key1;
                         }
                         b'[' => {
                             self.index += 1;
-                            self.cjson.push_array_context();
+                            cjson.push_array_context();
                             stack.push(Parent::Array);
                             expect = Expect::Value1;
                         }
@@ -326,16 +428,16 @@ impl<'a> Tokenizer<'a> {
                                 ));
                             }
                             self.index += 1;
-                            self.cjson.finish_array()?;
+                            cjson.finish_array()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
                         b'-' | b'0'..=b'9' => {
-                            self.number()?;
+                            self.number(cjson)?;
                             expect = Self::after_value(&stack);
                         }
                         b't' | b'f' | b'n' => {
-                            self.literal()?;
+                            self.literal(cjson)?;
                             expect = Self::after_value(&stack);
                         }
                         _ => return Err(syntax("Parser cannot parse input: expected a value")),
@@ -348,9 +450,9 @@ impl<'a> Tokenizer<'a> {
                             self.index += 1;
                             match self.string()? {
                                 Token::Range(start, end) => {
-                                    self.cjson.set_property_key(&self.text[start..end])?;
+                                    cjson.set_property_key(&self.text()[start..end])?;
                                 }
-                                Token::Owned(key) => self.cjson.set_property_key(&key)?,
+                                Token::Owned(key) => cjson.set_property_key(&key)?,
                             }
                             expect = Expect::Colon;
                         }
@@ -361,7 +463,7 @@ impl<'a> Tokenizer<'a> {
                                 ));
                             }
                             self.index += 1;
-                            self.cjson.finish_object()?;
+                            cjson.finish_object()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
@@ -390,13 +492,13 @@ impl<'a> Tokenizer<'a> {
                         }
                         Some(b']') if in_array => {
                             self.index += 1;
-                            self.cjson.finish_array()?;
+                            cjson.finish_array()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
                         Some(b'}') if !in_array => {
                             self.index += 1;
-                            self.cjson.finish_object()?;
+                            cjson.finish_object()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
@@ -416,7 +518,7 @@ impl<'a> Tokenizer<'a> {
                         return Err(syntax("Parser cannot parse input: unexpected characters"));
                     }
                     // The `end` event.
-                    return Ok(self.cjson.finish()?);
+                    return Ok(cjson.finish()?);
                 }
             }
         }
@@ -441,7 +543,7 @@ impl<'a> Tokenizer<'a> {
             return Ok(Token::Range(start, end));
         }
         let mut units: Option<Vec<u16>> = None;
-        let mut out = String::from(&self.text[start..self.index]);
+        let mut out = String::from(&self.text()[start..self.index]);
         loop {
             let Some(b) = self.peek() else {
                 return Err(syntax("Parser has expected a string value"));
@@ -466,7 +568,7 @@ impl<'a> Tokenizer<'a> {
                             // Four hex digits, all in the window.
                             let complete = self.byte(5).is_some();
                             let hex = self
-                                .text
+                                .text()
                                 .as_bytes()
                                 .get(self.index + 2..self.index + 6)
                                 .filter(|h| complete && h.iter().all(u8::is_ascii_hexdigit))
@@ -490,7 +592,7 @@ impl<'a> Tokenizer<'a> {
                 _ => {
                     let start = self.index;
                     self.skip(is_plain);
-                    let run = &self.text[start..self.index];
+                    let run = &self.text()[start..self.index];
                     match &mut units {
                         Some(units) => units.extend(run.encode_utf16()),
                         None => out.push_str(run),
@@ -501,7 +603,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// `true`, `false` or `null`: `true\b|false\b|null\b` must match.
-    fn literal(&mut self) -> Result<(), ParseError> {
+    fn literal(&mut self, cjson: &mut CompressedJson) -> Result<(), ParseError> {
         let (word, value): (&[u8], Option<bool>) = match self.peek() {
             Some(b't') => (b"true", Some(true)),
             Some(b'f') => (b"false", Some(false)),
@@ -509,15 +611,15 @@ impl<'a> Tokenizer<'a> {
         };
         // The word and the character after it, as far as the input goes.
         self.byte(word.len());
-        let rest = &self.text.as_bytes()[self.index..];
+        let rest = &self.text().as_bytes()[self.index..];
         let matches = rest.starts_with(word) && !rest.get(word.len()).copied().is_some_and(is_word);
         if !matches {
             return Err(syntax("Parser cannot parse input: expected a value"));
         }
         self.index += word.len();
         match value {
-            Some(b) => self.cjson.commit_boolean(b)?,
-            None => self.cjson.commit_null()?,
+            Some(b) => cjson.commit_boolean(b)?,
+            None => cjson.commit_null()?,
         }
         Ok(())
     }
@@ -530,7 +632,7 @@ impl<'a> Tokenizer<'a> {
     /// `handleStartNumber` / `handleNumberChunk` / `handleEndNumber`. The
     /// number is a double iff a chunk contains `.`, `e` or `E`, or the
     /// integer literal does not fit the target's integer range.
-    fn number(&mut self) -> Result<(), ParseError> {
+    fn number(&mut self, cjson: &mut CompressedJson) -> Result<(), ParseError> {
         let start = self.index;
         if self.peek() == Some(b'-') {
             self.index += 1;
@@ -580,11 +682,8 @@ impl<'a> Tokenizer<'a> {
             }
             self.skip(|b| b.is_ascii_digit());
         }
-        let is_double = is_double
-            || !self
-                .cjson
-                .integer_string_fits(&self.text[start..self.index]);
-        self.cjson.commit_number(is_double)?;
+        let is_double = is_double || !cjson.integer_string_fits(&self.text()[start..self.index]);
+        cjson.commit_number(is_double)?;
         Ok(())
     }
 }
@@ -764,8 +863,13 @@ mod tests {
             documents.push(extra.to_vec());
         }
         for doc in &documents {
-            let whole = read_chunked(doc, doc.len().max(1));
-            for size in [1, 2, 3, 4, 5, 7, 16] {
+            // In memory, as parse_stream reads a byte sample.
+            let mut r = reader(Some(INT64_RANGE.clone()));
+            let whole = r
+                .parse_stream(doc)
+                .map(|value| (value, r.to_tables(&[value]).0));
+            assert_eq!(read_chunked(doc, doc.len().max(1)), whole);
+            for size in [1, 2, 3, 4, 5, 7, 16, 8 * 1024] {
                 assert_eq!(
                     read_chunked(doc, size),
                     whole,
@@ -774,6 +878,18 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Whitespace between tokens is dropped while it is skipped, so the
+    /// window stays within a chunk however long the run is.
+    #[test]
+    fn whitespace_does_not_accumulate() {
+        let input = format!("{}1", " \n".repeat(1 << 19));
+        let mut bytes = input.as_bytes();
+        let mut t = Tokenizer::streaming(&mut bytes, 4096);
+        t.skip_whitespace();
+        assert_eq!(t.peek(), Some(b'1'));
+        assert!(t.text.len() <= 4096, "window of {} bytes", t.text.len());
     }
 
     /// A failed read is reported as the exception the reader's error wraps.
