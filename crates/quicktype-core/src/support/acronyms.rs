@@ -1,8 +1,4 @@
 //! Port of `packages/quicktype-core/src/support/Acronyms.ts`.
-//!
-//! The `acronymOption` factory builds an `EnumOption` and belongs with the
-//! `RendererOptions` port; its name, description and choices are exported
-//! here as constants.
 
 use std::cell::Cell;
 
@@ -10,7 +6,7 @@ use super::strings::{
     all_lower_word_style, all_upper_word_style, first_upper_word_style, original_word,
 };
 use crate::messages::{JsErrorName, QuickTypeError, Result};
-use crate::renderer_options::EnumValue;
+use crate::renderer_options::{EnumOption, EnumValue, OptionKind};
 
 /// `AcronymStyleOptions`: how the `acronym-style` renderer option styles
 /// acronyms.
@@ -59,20 +55,16 @@ impl AcronymStyleOptions {
     }
 }
 
-/// The name of the option `acronymOption` creates.
-pub const ACRONYM_OPTION_NAME: &str = "acronym-style";
-
-/// The description of the option `acronymOption` creates.
-pub const ACRONYM_OPTION_DESCRIPTION: &str = "Acronym naming style";
-
-/// The choices of the option `acronymOption` creates, in their order there
-/// (an option of kind `"secondary"`).
-pub const ACRONYM_OPTION_CHOICES: [AcronymStyleOptions; 4] = [
-    AcronymStyleOptions::Original,
-    AcronymStyleOptions::Pascal,
-    AcronymStyleOptions::Camel,
-    AcronymStyleOptions::Lower,
-];
+/// `acronymOption(defaultOption)`: the `acronym-style` renderer option.
+pub const fn acronym_option(default_value: &'static str) -> EnumOption {
+    EnumOption::new(
+        "acronym-style",
+        "Acronym naming style",
+        &["original", "pascal", "camel", "lowerCase"],
+        default_value,
+        OptionKind::Secondary,
+    )
+}
 
 /// `acronymStyle(style)`: the word style for acronyms. Note the naming:
 /// `Pascal` upper-cases the whole acronym, `Camel` capitalizes it.

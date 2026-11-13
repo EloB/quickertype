@@ -620,30 +620,6 @@ pub fn get_option_values(
         .collect()
 }
 
-/// TS `acronymOption(defaultOption)` from `support/Acronyms.ts`.
-// TODO(support): move next to the acronym styles in `support::acronyms`.
-pub const fn acronym_option(default_value: &'static str) -> EnumOption {
-    EnumOption::new(
-        "acronym-style",
-        "Acronym naming style",
-        &["original", "pascal", "camel", "lowerCase"],
-        default_value,
-        OptionKind::Secondary,
-    )
-}
-
-/// TS `convertersOption()` from `support/Converters.ts`.
-// TODO(support): move next to `ConvertersOptions` in `support::converters`.
-pub const fn converters_option() -> EnumOption {
-    EnumOption::new(
-        "converters",
-        "Which converters to generate (top-level by default)",
-        &["top-level", "all-objects"],
-        "top-level",
-        OptionKind::Secondary,
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
