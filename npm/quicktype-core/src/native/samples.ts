@@ -583,9 +583,10 @@ export function materialize(cjson: any): void {
 
         if (tables !== undefined) fill(cjson, tables);
         else replay(cjson, state.config, texts as string[]);
+        // Only tables that were filled.
+        engineStats.tablesFilled++;
     } finally {
         if (exported === undefined) drop(glue, state.id);
-        engineStats.tablesFilled++;
     }
 }
 

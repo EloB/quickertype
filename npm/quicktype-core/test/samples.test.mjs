@@ -672,8 +672,11 @@ test("the samples of a large input are taken from an instance that failed", asyn
             throw new Error("unreadable");
         };
         engine.discardEngine(failing);
+        const filled = engineStats.tablesFilled;
         assert.throws(() => lost._compressedJSON._strings, /samples of this input were lost/);
         await assert.rejects(run(lost, "rust"), /samples of this input were lost/);
+        // Tables that could not be filled are not counted as filled.
+        assert.equal(engineStats.tablesFilled, filled);
     } finally {
         nativeSamples.setKeptTexts(old);
     }
