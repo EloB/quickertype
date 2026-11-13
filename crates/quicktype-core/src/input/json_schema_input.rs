@@ -2244,6 +2244,26 @@ impl JsonSchemaInput {
         Ok(())
     }
 
+    /// Adds a source whose `addSource` already ran elsewhere: the
+    /// JavaScript facade keeps TypeScript's own `JSONSchemaInput` (which
+    /// normalizes the URIs and serves schema text through its own store)
+    /// and hands over each `[normalizedURI, source]` pair of its
+    /// `_schemaSources`. `normalized_uri` is the URI's `toString()`; it is
+    /// parsed, not normalized again. The source's `schema` text is not
+    /// stored: the store that came with [`JsonSchemaInput::new`] serves it.
+    pub fn add_normalized_source(
+        &mut self,
+        normalized_uri: &str,
+        schema_source: JsonSchemaSourceData,
+    ) -> Result<()> {
+        if !schema_source.is_converted {
+            self.need_ir = true;
+        }
+        let uri = Uri::parse(normalized_uri).map_err(uri_error)?;
+        self.schema_sources.push((uri, schema_source));
+        Ok(())
+    }
+
     /// `singleStringSchemaSource()`: the schema text, if every source has
     /// the same one.
     pub fn single_string_schema_source(&self) -> Option<String> {
