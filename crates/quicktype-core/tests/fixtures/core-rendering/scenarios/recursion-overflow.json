@@ -136,6 +136,53 @@
    ],
    "error": "Maximum call stack size exceeded",
    "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Defined value expected, but got undefined",
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "features": "interface"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Defined value expected, but got undefined",
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "features": "implementation",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
   }
  ],
  "id": "recursion-overflow"

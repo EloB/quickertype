@@ -1,0 +1,263 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "ABCWidget"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "k",
+      1,
+      true
+     ],
+     [
+      "x",
+      4,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "k"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     2,
+     3
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "k"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     5,
+     3
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "A"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "y",
+      7,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "y"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     8,
+     3
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "y"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "ABCWidget",
+    0
+   ],
+   [
+    "A",
+    6
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "// To parse this JSON:\n//\n//   NSError *error;\n//   ABCWidget *widget = [ABCWidget fromJSON:json encoding:NSUTF8Encoding error:&error];\n//   ABCA *a = [ABCA fromJSON:json encoding:NSUTF8Encoding error:&error];\n\n#import <Foundation/Foundation.h>\n\n@class ABCWidget;\n@class ABCK;\n@class ABCA;\n\nNS_ASSUME_NONNULL_BEGIN\n\n#pragma mark - Boxed enums\n\n@interface ABCK : NSObject\n@property (nonatomic, readonly, copy) NSString *value;\n+ (instancetype _Nullable)withValue:(NSString *)value;\n+ (ABCK *)a;\n+ (ABCK *)b;\n@end\n\n#pragma mark - Object interfaces\n\n@interface ABCWidget : NSObject\n@property (nonatomic, nullable, assign) ABCK *k;\n@property (nonatomic, nullable, copy)   NSString *x;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\n@interface ABCA : NSObject\n@property (nonatomic, nullable, strong) NSNumber *y;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "out.txt",
+     "text": "#import \"out.h\"\n\n#define λ(decl, expr) (^(decl) { return (expr); })\n\nstatic id NSNullify(id _Nullable x) {\n    return (x == nil || x == NSNull.null) ? NSNull.null : x;\n}\n\nNS_ASSUME_NONNULL_BEGIN\n\n@interface ABCWidget (JSONConversion)\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict;\n- (NSDictionary *)JSONDictionary;\n@end\n\n@interface ABCA (JSONConversion)\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict;\n- (NSDictionary *)JSONDictionary;\n@end\n\n@implementation ABCK\n+ (NSDictionary<NSString *, ABCK *> *)values\n{\n    static NSDictionary<NSString *, ABCK *> *values;\n    return values = values ? values : @{\n        @\"a\": [[ABCK alloc] initWithValue:@\"a\"],\n        @\"b\": [[ABCK alloc] initWithValue:@\"b\"],\n    };\n}\n\n+ (ABCK *)a { return ABCK.values[@\"a\"]; }\n+ (ABCK *)b { return ABCK.values[@\"b\"]; }\n\n+ (instancetype _Nullable)withValue:(NSString *)value\n{\n    return ABCK.values[value];\n}\n\n- (instancetype)initWithValue:(NSString *)value\n{\n    if (self = [super init]) _value = value;\n    return self;\n}\n\n- (NSUInteger)hash { return _value.hash; }\n@end\n\n#pragma mark - JSON serialization\n\nABCWidget *_Nullable ABCWidgetFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        return *error ? nil : [ABCWidget fromJSONDictionary:json];\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nABCWidget *_Nullable ABCWidgetFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return ABCWidgetFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable ABCWidgetToData(ABCWidget *widget, NSError **error)\n{\n    @try {\n        id json = [widget JSONDictionary];\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable ABCWidgetToJSON(ABCWidget *widget, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = ABCWidgetToData(widget, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\nABCA *_Nullable ABCAFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        return *error ? nil : [ABCA fromJSONDictionary:json];\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nABCA *_Nullable ABCAFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return ABCAFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable ABCAToData(ABCA *a, NSError **error)\n{\n    @try {\n        id json = [a JSONDictionary];\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable ABCAToJSON(ABCA *a, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = ABCAToData(a, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\n@implementation ABCWidget\n+ (NSDictionary<NSString *, NSString *> *)properties\n{\n    static NSDictionary<NSString *, NSString *> *properties;\n    return properties = properties ? properties : @{\n        @\"k\": @\"k\",\n        @\"x\": @\"x\",\n    };\n}\n\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error\n{\n    return ABCWidgetFromData(data, error);\n}\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCWidgetFromJSON(json, encoding, error);\n}\n\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict\n{\n    return [dict isKindOfClass:NSDictionary.class] ? [[ABCWidget alloc] initWithJSONDictionary:dict] : nil;\n}\n\n- (instancetype)initWithJSONDictionary:(NSDictionary *)dict\n{\n    if (self = [super init]) {\n        [self setValuesForKeysWithDictionary:dict];\n        _k = [ABCK withValue:(id)_k];\n        if (_k == nil && dict[@\"k\"] && ![dict[@\"k\"] isKindOfClass:NSNull.class]) return nil;\n    }\n    return self;\n}\n\n- (void)setValue:(nullable id)value forKey:(NSString *)key\n{\n    id resolved = ABCWidget.properties[key];\n    if (resolved) [super setValue:value forKey:resolved];\n}\n\n- (void)setNilValueForKey:(NSString *)key\n{\n    id resolved = ABCWidget.properties[key];\n    if (resolved) [super setValue:@(0) forKey:resolved];\n}\n\n- (NSDictionary *)JSONDictionary\n{\n    id dict = [[self dictionaryWithValuesForKeys:ABCWidget.properties.allValues] mutableCopy];\n\n    [dict addEntriesFromDictionary:@{\n        @\"k\": NSNullify([_k value]),\n    }];\n\n    return dict;\n}\n\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error\n{\n    return ABCWidgetToData(self, error);\n}\n\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCWidgetToJSON(self, encoding, error);\n}\n@end\n\n@implementation ABCA\n+ (NSDictionary<NSString *, NSString *> *)properties\n{\n    static NSDictionary<NSString *, NSString *> *properties;\n    return properties = properties ? properties : @{\n        @\"y\": @\"y\",\n    };\n}\n\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error\n{\n    return ABCAFromData(data, error);\n}\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCAFromJSON(json, encoding, error);\n}\n\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict\n{\n    return [dict isKindOfClass:NSDictionary.class] ? [[ABCA alloc] initWithJSONDictionary:dict] : nil;\n}\n\n- (instancetype)initWithJSONDictionary:(NSDictionary *)dict\n{\n    if (self = [super init]) {\n        [self setValuesForKeysWithDictionary:dict];\n    }\n    return self;\n}\n\n- (void)setValue:(nullable id)value forKey:(NSString *)key\n{\n    id resolved = ABCA.properties[key];\n    if (resolved) [super setValue:value forKey:resolved];\n}\n\n- (void)setNilValueForKey:(NSString *)key\n{\n    id resolved = ABCA.properties[key];\n    if (resolved) [super setValue:@(0) forKey:resolved];\n}\n\n- (NSDictionary *)JSONDictionary\n{\n    return [self dictionaryWithValuesForKeys:ABCA.properties.allValues];\n}\n\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error\n{\n    return ABCAToData(self, error);\n}\n\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCAToJSON(self, encoding, error);\n}\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "functions": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Cannot repeat a string a negative number of times",
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "class-prefix": "ABCD"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "// To parse this JSON:\n//\n//   NSError *error;\n//   ABCDABCWidget *aBCWidget = [ABCDABCWidget fromJSON:json encoding:NSUTF8Encoding error:&error];\n//   ABCDA *a = [ABCDA fromJSON:json encoding:NSUTF8Encoding error:&error];\n\n#import <Foundation/Foundation.h>\n\n@class ABCDABCWidget;\n@class ABCDK;\n@class ABCDA;\n\nNS_ASSUME_NONNULL_BEGIN\n\n#pragma mark - Boxed enums\n\n@interface ABCDK : NSObject\n@property (nonatomic, readonly, copy) NSString *value;\n+ (instancetype _Nullable)withValue:(NSString *)value;\n+ (ABCDK *)a;\n+ (ABCDK *)b;\n@end\n\n#pragma mark - Object interfaces\n\n@interface ABCDABCWidget : NSObject\n@property (nonatomic, nullable, assign) ABCDK *k;\n@property (nonatomic, nullable, copy)   NSString *x;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\n@interface ABCDA : NSObject\n@property (nonatomic, nullable, strong) NSNumber *y;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "out.txt",
+     "text": "#import \"out.h\"\n\n#define λ(decl, expr) (^(decl) { return (expr); })\n\nstatic id NSNullify(id _Nullable x) {\n    return (x == nil || x == NSNull.null) ? NSNull.null : x;\n}\n\nNS_ASSUME_NONNULL_BEGIN\n\n@interface ABCDABCWidget (JSONConversion)\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict;\n- (NSDictionary *)JSONDictionary;\n@end\n\n@interface ABCDA (JSONConversion)\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict;\n- (NSDictionary *)JSONDictionary;\n@end\n\n@implementation ABCDK\n+ (NSDictionary<NSString *, ABCDK *> *)values\n{\n    static NSDictionary<NSString *, ABCDK *> *values;\n    return values = values ? values : @{\n        @\"a\": [[ABCDK alloc] initWithValue:@\"a\"],\n        @\"b\": [[ABCDK alloc] initWithValue:@\"b\"],\n    };\n}\n\n+ (ABCDK *)a { return ABCDK.values[@\"a\"]; }\n+ (ABCDK *)b { return ABCDK.values[@\"b\"]; }\n\n+ (instancetype _Nullable)withValue:(NSString *)value\n{\n    return ABCDK.values[value];\n}\n\n- (instancetype)initWithValue:(NSString *)value\n{\n    if (self = [super init]) _value = value;\n    return self;\n}\n\n- (NSUInteger)hash { return _value.hash; }\n@end\n\n#pragma mark - JSON serialization\n\nABCDABCWidget *_Nullable ABCDABCWidgetFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        return *error ? nil : [ABCDABCWidget fromJSONDictionary:json];\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nABCDABCWidget *_Nullable ABCDABCWidgetFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return ABCDABCWidgetFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable ABCDABCWidgetToData(ABCDABCWidget *aBCWidget, NSError **error)\n{\n    @try {\n        id json = [aBCWidget JSONDictionary];\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable ABCDABCWidgetToJSON(ABCDABCWidget *aBCWidget, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = ABCDABCWidgetToData(aBCWidget, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\nABCDA *_Nullable ABCDAFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        return *error ? nil : [ABCDA fromJSONDictionary:json];\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nABCDA *_Nullable ABCDAFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return ABCDAFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable ABCDAToData(ABCDA *a, NSError **error)\n{\n    @try {\n        id json = [a JSONDictionary];\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable ABCDAToJSON(ABCDA *a, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = ABCDAToData(a, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\n@implementation ABCDABCWidget\n+ (NSDictionary<NSString *, NSString *> *)properties\n{\n    static NSDictionary<NSString *, NSString *> *properties;\n    return properties = properties ? properties : @{\n        @\"k\": @\"k\",\n        @\"x\": @\"x\",\n    };\n}\n\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error\n{\n    return ABCDABCWidgetFromData(data, error);\n}\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCDABCWidgetFromJSON(json, encoding, error);\n}\n\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict\n{\n    return [dict isKindOfClass:NSDictionary.class] ? [[ABCDABCWidget alloc] initWithJSONDictionary:dict] : nil;\n}\n\n- (instancetype)initWithJSONDictionary:(NSDictionary *)dict\n{\n    if (self = [super init]) {\n        [self setValuesForKeysWithDictionary:dict];\n        _k = [ABCDK withValue:(id)_k];\n        if (_k == nil && dict[@\"k\"] && ![dict[@\"k\"] isKindOfClass:NSNull.class]) return nil;\n    }\n    return self;\n}\n\n- (void)setValue:(nullable id)value forKey:(NSString *)key\n{\n    id resolved = ABCDABCWidget.properties[key];\n    if (resolved) [super setValue:value forKey:resolved];\n}\n\n- (void)setNilValueForKey:(NSString *)key\n{\n    id resolved = ABCDABCWidget.properties[key];\n    if (resolved) [super setValue:@(0) forKey:resolved];\n}\n\n- (NSDictionary *)JSONDictionary\n{\n    id dict = [[self dictionaryWithValuesForKeys:ABCDABCWidget.properties.allValues] mutableCopy];\n\n    [dict addEntriesFromDictionary:@{\n        @\"k\": NSNullify([_k value]),\n    }];\n\n    return dict;\n}\n\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error\n{\n    return ABCDABCWidgetToData(self, error);\n}\n\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCDABCWidgetToJSON(self, encoding, error);\n}\n@end\n\n@implementation ABCDA\n+ (NSDictionary<NSString *, NSString *> *)properties\n{\n    static NSDictionary<NSString *, NSString *> *properties;\n    return properties = properties ? properties : @{\n        @\"y\": @\"y\",\n    };\n}\n\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error\n{\n    return ABCDAFromData(data, error);\n}\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCDAFromJSON(json, encoding, error);\n}\n\n+ (instancetype)fromJSONDictionary:(NSDictionary *)dict\n{\n    return [dict isKindOfClass:NSDictionary.class] ? [[ABCDA alloc] initWithJSONDictionary:dict] : nil;\n}\n\n- (instancetype)initWithJSONDictionary:(NSDictionary *)dict\n{\n    if (self = [super init]) {\n        [self setValuesForKeysWithDictionary:dict];\n    }\n    return self;\n}\n\n- (void)setValue:(nullable id)value forKey:(NSString *)key\n{\n    id resolved = ABCDA.properties[key];\n    if (resolved) [super setValue:value forKey:resolved];\n}\n\n- (void)setNilValueForKey:(NSString *)key\n{\n    id resolved = ABCDA.properties[key];\n    if (resolved) [super setValue:@(0) forKey:resolved];\n}\n\n- (NSDictionary *)JSONDictionary\n{\n    return [self dictionaryWithValuesForKeys:ABCDA.properties.allValues];\n}\n\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error\n{\n    return ABCDAToData(self, error);\n}\n\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error\n{\n    return ABCDAToJSON(self, encoding, error);\n}\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "class-prefix": "QT",
+    "functions": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Cannot repeat a string a negative number of times",
+   "console": []
+  }
+ ],
+ "id": "objective-c-prefixes"
+}

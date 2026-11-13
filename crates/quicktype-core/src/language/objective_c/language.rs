@@ -31,7 +31,7 @@ pub const CLASS_PREFIX: StringOption = StringOption::new(
     "class-prefix",
     "Class prefix",
     "PREFIX",
-    "QT",
+    super::utils::DEFAULT_CLASS_PREFIX,
     OptionKind::Primary,
 );
 
@@ -63,8 +63,6 @@ pub const OBJECTIVE_C_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ObjectiveCTargetLanguage;
 
-// TODO(renderer): port the hooks ObjectiveCTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for ObjectiveCTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &OBJECTIVE_C_LANGUAGE_CONFIG
@@ -87,4 +85,34 @@ impl TargetLanguage for ObjectiveCTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer` + `render`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::objective_c_renderer::ObjectiveCOptions::parse(renderer_options)?;
+        let renderer =
+            super::objective_c_renderer::ObjectiveCRenderer::new(self, render_context, options)?;
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
+}
+
+/// The values of the `features` option: `all` (both), `interface` or
+/// `implementation`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Features {
+    /// Whether to emit the interface (`.h`) file.
+    pub interface: bool,
+    /// Whether to emit the implementation (`.m`) file.
+    pub implementation: bool,
 }
