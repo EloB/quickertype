@@ -92,6 +92,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "postman"
+path = "fuzz_targets/postman.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "pipeline"
 path = "fuzz_targets/pipeline.rs"
 test = false

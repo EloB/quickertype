@@ -34,6 +34,7 @@ jobs:
           - { target: uri, max_len: 1024, timeout: 10, dict: uri }
           - { target: number, max_len: 256, timeout: 10, dict: "" }
           - { target: cli_args, max_len: 2048, timeout: 20, dict: cli }
+          - { target: postman, max_len: 16384, timeout: 30, dict: json }
           - { target: pipeline, max_len: 16384, timeout: 30, dict: json }
     steps:
       - uses: actions/checkout@v4

@@ -59,9 +59,9 @@ cargo +nightly fuzz run pipeline -s none -- -max_len=16384 -timeout=30 -dict=fuz
 
 The targets: `json_stream` and `json_parse` (the two JSON readers),
 `json_schema` (with `$ref`s between in-memory documents), `graphql_parse`,
-`graphql_input`, `yaml`, `uri`, `number`, `cli_args` (the CLI's option
-parsing) and `pipeline` (JSON to every language with arbitrary run and
-renderer options). Each file in `fuzz/fuzz_targets` describes its input
+`graphql_input`, `postman`, `yaml`, `uri`, `number`, `cli_args` (the
+CLI's option parsing) and `pipeline` (JSON to every language with
+arbitrary run and renderer options). Each file in `fuzz/fuzz_targets` describes its input
 format, `fuzz/dicts` has token dictionaries for them (see
 `.github/workflows/fuzz.yml` for which goes with which, and for the
 lengths and timeouts). `-s none` turns off AddressSanitizer, which adds

@@ -113,6 +113,15 @@ seed("json_schema", cat(header(0, 0x04), twoSchemas));
 seed("json_schema", cat(header(1, 0x08), twoSchemas));
 seed("json_schema", cat(header(2, 0x20), twoSchemas));
 
+// ---- Postman collections ---------------------------------------------------
+
+const postmanVectors = readJSON("crates/quicktype-core/tests/fixtures/core-json-input/postman.json");
+postmanVectors.forEach(({ input }, i) => seed("postman", cat(header(i, 0), input)));
+for (const path of files(join(root, "tests/inputs/schema"), (p) => /postman-collection\.\d+\.json$/.test(p))) {
+  seed("postman", cat(header(byte(), 0), read(path)));
+  seed("postman", cat(header(byte(), byte() & 0xd3, 2), read(path)));
+}
+
 // ---- YAML ------------------------------------------------------------------
 
 for (const { text, path } of readJSON("crates/quicktype-js-compat/tests/vectors/yaml.json")) {
