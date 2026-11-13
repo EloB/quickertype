@@ -287,6 +287,33 @@ pub fn memory_growths() -> u32 {
     0
 }
 
+/// Bytes the engine has allocated and not freed (the allocator's count),
+/// for the facade's tests; 0 outside WebAssembly.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __heapBytes)]
+pub fn heap_bytes() -> f64 {
+    #[cfg(target_arch = "wasm32")]
+    return allocator::in_use() as f64;
+    #[cfg(not(target_arch = "wasm32"))]
+    0.0
+}
+
+/// The most bytes allocated at once since the last call (which starts
+/// the next measurement from the bytes in use), for the facade's tests;
+/// 0 outside WebAssembly.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __heapPeak)]
+pub fn heap_peak() -> f64 {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let peak = allocator::peak();
+        allocator::reset_peak();
+        peak as f64
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    0.0
+}
+
 /// The size of the WebAssembly memory in 64 KiB pages, for the facade's
 /// test of [`memory_growths`]; 0 outside WebAssembly.
 #[doc(hidden)]

@@ -136,6 +136,8 @@ const glueExports = [
     "__jsonLeases",
     "__memoryGrowths",
     "__memoryPages",
+    "__heapBytes",
+    "__heapPeak",
 ];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */

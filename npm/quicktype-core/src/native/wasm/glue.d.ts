@@ -43,6 +43,8 @@ export interface WasmGlue {
     __jsonLeases(): number;
     __memoryGrowths(): number;
     __memoryPages(): number;
+    __heapBytes(): number;
+    __heapPeak(): number;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
