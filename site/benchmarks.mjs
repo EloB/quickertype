@@ -5,6 +5,16 @@
 // build time: the page needs no script. Used by site/build.mjs and
 // site/test/smoke.mjs.
 //
+// Every claim the pages make comes from the data. The build refuses data
+// that would make a summary claim false (the headline says the CLI is
+// faster and uses less memory; the corpus and the native engine are said
+// to be faster), and points out what it shows but should be looked at: a
+// benchmark where quickertype is slower (shown as slower) and unexplained
+// unexpected exits in the corpus (shown as a warning). What only a person
+// knows is added by hand when the snapshot is made: `note`, and
+// `corpus.results.<tool>.unexpected_exits_note`, a sentence saying why
+// that tool's runs exited unexpectedly.
+//
 // The charts are inline SVG in HTML rows: the labels are HTML text (it
 // wraps, and stays legible at any width), the bars SVG, placed in percent
 // of their row. quickertype is the violet accent, quicktype the gray it is
@@ -60,8 +70,11 @@ const groupNames = {
 
 class Problem extends Error {}
 
+/** `file` as the messages name it: relative to the repository. */
+const shortName = (file) => path.relative(path.join(siteRoot, ".."), file);
+
 function check(condition, file, where, what) {
-    if (!condition) throw new Problem(`${path.relative(path.join(siteRoot, ".."), file)}: ${where} ${what}`);
+    if (!condition) throw new Problem(`${shortName(file)}: ${where} ${what}`);
 }
 
 const isObject = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -77,12 +90,29 @@ export function checkBenchmarks(data, file = benchmarksFile) {
     ok(isObject(data) && data.format === 1, "format", "must be 1");
     ok(isDate(data.date), "date", "must be YYYY-MM-DD");
     ok(text(data.command) && data.command.startsWith("cargo xtask bench"), "command", "must be the `cargo xtask bench` command");
+    // The page names the CPU; the rest of the machine is listed as far as it
+    // was recorded (see machineText).
     ok(isObject(data.machine), "machine", "must be an object");
-    for (const key of ["cpu", "cores", "memory", "os"]) ok(text(data.machine[key]), `machine.${key}`, "must be a string");
-    ok(isObject(data.commits), "commits", "must be an object");
-    ok(sha(data.commits.quicktype), "commits.quicktype", "must be a commit (40 hex digits)");
-    ok(sha(data.commits.quickertype), "commits.quickertype", "must be a commit (40 hex digits)");
-    ok(typeof data.commits.quickertype_modified === "boolean", "commits.quickertype_modified", "must be true or false");
+    ok(text(data.machine.cpu), "machine.cpu", "must be a string (the page names the CPU)");
+    for (const key of ["cores", "memory", "os", "rustc", "node", "load_average"]) {
+        ok(data.machine[key] === undefined || text(data.machine[key]), `machine.${key}`, "must be a string if given");
+    }
+    // quickertype's commit is null when bench could not tell which commit the
+    // CLI it ran was built from (a --bin elsewhere); `quickertype_source` says why.
+    const commits = data.commits;
+    ok(isObject(commits), "commits", "must be an object");
+    ok(sha(commits.quicktype), "commits.quicktype", "must be a commit (40 hex digits)");
+    ok(commits.quickertype_source === undefined || text(commits.quickertype_source), "commits.quickertype_source", "must be a string if given");
+    ok(
+        sha(commits.quickertype) || (commits.quickertype === null && text(commits.quickertype_source)),
+        "commits.quickertype",
+        "must be a commit (40 hex digits), or null with quickertype_source saying why",
+    );
+    ok(
+        typeof commits.quickertype_modified === "boolean" || commits.quickertype_modified === null,
+        "commits.quickertype_modified",
+        "must be true, false, or null (not known)",
+    );
     ok(Number.isInteger(data.iterations) && data.iterations > 0, "iterations", "must be a positive integer");
     ok(data.note === undefined || text(data.note), "note", "must be a string if given");
     for (const id of ["typescript", "rust"]) ok(text(data.tools?.[id]?.label), `tools.${id}`, "must be there (run with the TypeScript CLI)");
@@ -119,6 +149,7 @@ export function checkBenchmarks(data, file = benchmarksFile) {
         ok(isObject(c) && count(c.steps) && c.steps > 0, at, "needs steps");
         ok(positive(c.wall_s) && positive(c.cli_time_s), at, "needs wall_s and cli_time_s");
         ok(count(c.unexpected_exits) && c.unexpected_exits <= c.steps, at, "needs unexpected_exits ≤ steps");
+        ok(c.unexpected_exits_note === undefined || text(c.unexpected_exits_note), at, "unexpected_exits_note must be a sentence if given");
     }
     ok(data.corpus.results.typescript.steps === data.corpus.results.rust.steps, "corpus.results", "ran different numbers of steps");
 
@@ -127,7 +158,41 @@ export function checkBenchmarks(data, file = benchmarksFile) {
         const p = data.in_process.results?.[id];
         ok(isObject(p) && text(p.label) && positive(p.total_ms), `in_process.results.${id}`, "needs a label and total_ms");
     }
+
+    // The summary claims (the headline, the corpus, the native engine), which
+    // the page words as "faster" and "less": data that makes one false is
+    // refused. A single benchmark where quickertype is slower is not: the
+    // page shows it as slower (see benchmarkWarnings).
+    const facts = speedFacts(data);
+    ok(facts.topSpeedup > 1, "cli", "has no benchmark where quickertype is faster: the headline says it is");
+    ok(facts.typicalMedian > 1, "cli", `has quickertype ${times(1 / facts.typicalMedian)} slower on the median typical file: the headline says it is faster there`);
+    for (const name of named.memory) {
+        const r = data.cli.find((row) => row.name === name).results;
+        ok(r.rust.peak_rss_mib < r.typescript.peak_rss_mib, `cli (${name})`, "has quickertype using as much memory or more: the headline says it uses a fraction");
+    }
+    ok(facts.corpus > 1, "corpus.results", "has quickertype as slow or slower on the whole corpus: the page says it is faster");
+    const native = data.in_process.results;
+    ok(native.rust.total_ms < native.typescript.total_ms, "in_process.results", "has quickertype's engine as slow or slower: the page says it is faster natively");
     return data;
+}
+
+/**
+ * What the build points out in data it accepts, as messages: the
+ * benchmarks where quickertype is slower (the page shows them as slower),
+ * and unexpected exits in the corpus with no note saying why (the page
+ * shows them as a warning).
+ */
+export function benchmarkWarnings(bench, file = benchmarksFile) {
+    const slower = bench.cli.flatMap((row, i) => {
+        const s = speedup(row);
+        if (s >= 1) return [];
+        const { typescript: ts, rust } = row.results;
+        return [`cli[${i}] (${row.name}): quickertype is ${times(1 / s)} slower (${formatMs(rust.median_ms)} against quicktype's ${formatMs(ts.median_ms)})`];
+    });
+    const exits = Object.entries(bench.corpus.results)
+        .filter(([, c]) => c.unexpected_exits > 0 && c.unexpected_exits_note === undefined)
+        .map(([id, c]) => `corpus.results.${id}: ${c.unexpected_exits} unexpected exits, and no unexpected_exits_note saying why`);
+    return [...slower, ...exits].map((message) => `${shortName(file)}: ${message}`);
 }
 
 /** site/data/big-inputs.json, checked. */
@@ -151,16 +216,17 @@ export function checkBigInputs(data, file = bigInputsFile) {
     return data;
 }
 
-/** Both files, read and checked. */
+/** Both files, read and checked, and what the build should point out in them (`warnings`). */
 export function readBenchmarks() {
     const read = (file) => {
         try {
             return JSON.parse(fs.readFileSync(file, "utf8"));
         } catch (e) {
-            throw new Problem(`${path.relative(path.join(siteRoot, ".."), file)}: ${e.message}`);
+            throw new Problem(`${shortName(file)}: ${e.message}`);
         }
     };
-    return { bench: checkBenchmarks(read(benchmarksFile)), big: checkBigInputs(read(bigInputsFile)) };
+    const bench = checkBenchmarks(read(benchmarksFile));
+    return { bench, big: checkBigInputs(read(bigInputsFile)), warnings: benchmarkWarnings(bench) };
 }
 
 // ---------------------------------------------------------------------------
@@ -174,8 +240,20 @@ const median = (xs) => {
 
 const speedup = (row) => row.results.typescript.median_ms / row.results.rust.median_ms;
 
+/** A ratio's figure as the page writes it: "96", "8.2". */
+const figure = (r) => (r >= 10 ? String(Math.round(r)) : r.toFixed(1));
+
 /** A ratio as the page writes it: "96×", "8.2×". */
-export const times = (r) => `${r >= 10 ? Math.round(r) : r.toFixed(1)}×`;
+export const times = (r) => `${figure(r)}×`;
+
+/** quickertype's speed-up `s` in words: "96× faster", or below 1, "1.3× slower". */
+export const fasterOrSlower = (s) => (s >= 1 ? `${times(s)} faster` : `${times(1 / s)} slower`);
+
+/** A benchmark's speed-up as its bar and the table show it: "96×", or below 1, "1.3× slower". */
+export const speedupText = (s) => (s >= 1 ? times(s) : `${times(1 / s)} slower`);
+
+/** "10 runs", "1 run"; with `kind`, "10 timed runs". */
+const runs = (n, kind) => `${n} ${kind === undefined ? "" : `${kind} `}run${n === 1 ? "" : "s"}`;
 
 /** A round figure to say "about" with: 41.1 → 40, 13.6 → 15, 8.2 → 8. */
 export function roundFigure(x) {
@@ -186,8 +264,11 @@ export function roundFigure(x) {
 
 /**
  * What the headline and the comparison note say: `upTo` (the largest CLI
- * speed-up, rounded), `typical` (about how much faster on typical files: a
- * round figure near the median speed-up over them), and what they come from.
+ * speed-up, as the page writes it, without the ×; `topSpeedup` unrounded,
+ * from `upToRow`), `typical` (about how much faster on typical files: a
+ * round figure near the median speed-up over them), the lowest speed-up,
+ * the benchmarks where quickertype is slower (`slower`, of `count`), and the
+ * corpus's speed-up.
  */
 export function speedFacts(bench) {
     const rows = bench.cli.map((row) => ({ row, speedup: speedup(row) }));
@@ -196,12 +277,15 @@ export function speedFacts(bench) {
     const typicalMedian = median(typicalRows.map((r) => r.speedup));
     const corpus = bench.corpus.results;
     return {
-        upTo: Math.round(top.speedup),
-        upToName: top.row.name,
+        upTo: figure(top.speedup),
+        topSpeedup: top.speedup,
+        upToRow: top.row,
         typical: roundFigure(typicalMedian),
         typicalMedian,
         typicalCount: typicalRows.length,
         lowest: Math.min(...rows.map((r) => r.speedup)),
+        slower: rows.filter((r) => r.speedup < 1).map((r) => r.row),
+        count: rows.length,
         corpus: corpus.typescript.wall_s / corpus.rust.wall_s,
     };
 }
@@ -305,10 +389,20 @@ const legend = (theirs = "quicktype", ours = "quickertype") =>
  */
 const roomFor = (label) => Math.min(0.5, (label.length * 7.4 + 10) / 328);
 
-/** CLI speed-ups, one bar per benchmark, grouped; quicktype's and quickertype's times beside each. */
+/** A group's heading in the CLI chart ("Eight languages" says how many of its benchmarks there are). */
+function groupHeading(group, rows) {
+    if (group === "languages") return `${rows.filter((r) => r.group === group).length} languages`;
+    return groupNames[group] ?? group;
+}
+
+/**
+ * CLI speed-ups, one bar per benchmark, grouped; quicktype's and
+ * quickertype's times beside each. A benchmark where quickertype is slower
+ * says so, at its bar and in the table.
+ */
 function cliChart(bench) {
     const rows = bench.cli.map((row) => ({ row, s: speedup(row) }));
-    const room = Math.max(...rows.map(({ s }) => roomFor(times(s))));
+    const room = Math.max(...rows.map(({ s }) => roomFor(speedupText(s))));
     const top = Math.max(...rows.map(({ s }) => s)) / (1 - room);
     let group;
     let html = "";
@@ -316,24 +410,24 @@ function cliChart(bench) {
         if (row.group !== group) {
             if (group !== undefined) html += "</ol>";
             group = row.group;
-            html += `<h4 class="bars-group">${e(groupNames[group] ?? group)}</h4><ol class="bars">`;
+            html += `<h4 class="bars-group">${e(groupHeading(group, bench.cli))}</h4><ol class="bars">`;
         }
 
         const ts = row.results.typescript.median_ms;
         const rust = row.results.rust.median_ms;
-        const label = `${row.name}: quickertype ${times(s)} faster, ${formatMs(rust)} against quicktype's ${formatMs(ts)}`;
-        html += `<li class="bar-row"><span class="bar-name">${e(row.name)}</span><span class="bar-value">${formatMs(ts)} → <b>${formatMs(rust)}</b></span>${rowSvg(
+        const label = `${row.name}: quickertype ${fasterOrSlower(s)}, ${formatMs(rust)} against quicktype's ${formatMs(ts)}`;
+        html += `<li class="bar-row${s < 1 ? " slower" : ""}"><span class="bar-name">${e(row.name)}</span><span class="bar-value">${formatMs(ts)} → <b>${formatMs(rust)}</b></span>${rowSvg(
             label,
             16,
-            bar({ fraction: s / top, kind: "ours" }) + tip(s / top, 12.5, times(s)),
+            bar({ fraction: s / top, kind: "ours" }) + tip(s / top, 12.5, speedupText(s)),
         )}</li>`;
     }
 
     html += "</ol>";
     const table = tableView(
-        "CLI wall time per run, median of 10 runs after one warm-up",
+        `CLI wall time per run, median of ${runs(bench.iterations)} after one warm-up`,
         ["Benchmark", "quicktype", "quickertype", "Faster"],
-        rows.map(({ row, s }) => [row.name, formatMs(row.results.typescript.median_ms), formatMs(row.results.rust.median_ms), times(s)]),
+        rows.map(({ row, s }) => [row.name, formatMs(row.results.typescript.median_ms), formatMs(row.results.rust.median_ms), speedupText(s)]),
     );
     return { html, table };
 }
@@ -428,6 +522,82 @@ function startupChart(bench) {
 // ---------------------------------------------------------------------------
 // The page
 
+/** What a benchmark of each group measures, in a few words. */
+const groupMeasures = {
+    startup: "mostly start-up",
+    json: "a JSON input",
+    languages: "JSON to one of several languages",
+    schema: "a JSON Schema input",
+    graphql: "a GraphQL schema and query",
+    "multi-file": "several output files",
+};
+
+/** What `row` measures, for the tile that names it: start-up alone for `--version`, else what its group measures. */
+function measures(row) {
+    if (row.name === named.startup) return "start-up alone";
+    return groupMeasures[row.group] ?? groupNames[row.group] ?? row.group;
+}
+
+/** The CLI section's heading: the range of speed-ups, and which benchmarks are slower, if any. */
+function cliHeading(facts) {
+    if (facts.slower.length === 0) return `Every CLI run, ${facts.upTo}× to ${times(facts.lowest)} faster`;
+    const slowest = times(1 / facts.lowest);
+    return facts.slower.length === 1
+        ? `Every CLI run: up to ${facts.upTo}× faster, but one of ${facts.count} is ${slowest} slower`
+        : `Every CLI run: up to ${facts.upTo}× faster, but ${facts.slower.length} of ${facts.count} are slower, by up to ${slowest}`;
+}
+
+/** The machine, as recorded: its CPU, then its cores, memory and OS, saying which of those were not recorded. */
+function machineText(machine) {
+    const facts = [machine.cpu, machine.cores && `${machine.cores} cores`, machine.memory, machine.os].filter(Boolean);
+    const missing = [
+        ["cores", "the cores"],
+        ["memory", "the memory"],
+        ["os", "the OS"],
+    ]
+        .filter(([key]) => machine[key] === undefined)
+        .map(([, what]) => what);
+    const unrecorded = missing.length === 0 ? "" : ` (${new Intl.ListFormat("en-US").format(missing)} not recorded)`;
+    return facts.join(", ") + unrecorded;
+}
+
+/** quickertype's commit, linked, or why it is not known (as HTML). */
+function quickertypeCommit(commits) {
+    if (commits.quickertype === null) return `not known: ${e(commits.quickertype_source)}`;
+    const changes =
+        commits.quickertype_modified === true ? " (with local changes)" : commits.quickertype_modified === null ? " (whether it had local changes is not known)" : "";
+    return `<a href="${links.commit(commits.quickertype)}"><code>${commits.quickertype.slice(0, 7)}</code></a>${changes}`;
+}
+
+/**
+ * The corpus runs that exited unexpectedly, per CLI (as HTML): with the
+ * note the snapshot gives for them, or else as a warning.
+ */
+function unexpectedExits(corpus) {
+    return [
+        ["typescript", "quicktype"],
+        ["rust", "quickertype"],
+    ]
+        .filter(([id]) => corpus[id].unexpected_exits > 0)
+        .map(([id, name]) => {
+            const c = corpus[id];
+            const said = `${c.unexpected_exits.toLocaleString("en-US")} of ${name}'s ${c.steps.toLocaleString("en-US")} runs exited unexpectedly.`;
+            return c.unexpected_exits_note === undefined
+                ? `<p class="fineprint warn">Warning: ${said}</p>`
+                : `<p class="fineprint">${said} ${e(c.unexpected_exits_note)}</p>`;
+        })
+        .join("\n");
+}
+
+/** The sizes in the names of `rows` ("pokedex (82 KB) → TypeScript"), in KB: "82 to 606 KB", or undefined. */
+function sizeRange(rows) {
+    const sizes = rows.map((r) => /\((\d+(?:\.\d+)?) KB\)/.exec(r.name)?.[1]);
+    if (sizes.length === 0 || sizes.includes(undefined)) return undefined;
+    const kb = sizes.map(Number);
+    const [low, high] = [Math.min(...kb), Math.max(...kb)];
+    return low === high ? `${low} KB` : `${low} to ${high} KB`;
+}
+
 /** The benchmarks page's content (inside <main>), from the checked data. */
 export function benchmarksPageHtml({ bench, big }) {
     clipIds = 0;
@@ -449,7 +619,7 @@ export function benchmarksPageHtml({ bench, big }) {
     const pokedexMemory = pokedex.results.typescript.peak_rss_mib / pokedex.results.rust.peak_rss_mib;
 
     const tiles = [
-        [`${facts.upTo}×`, `faster per CLI run at most (<code>${e(facts.upToName)}</code>, start-up alone); about ${facts.typical}× on typical files`],
+        [`${facts.upTo}×`, `faster per CLI run at most (<code>${e(facts.upToRow.name)}</code>, ${e(measures(facts.upToRow))}); about ${facts.typical}× on typical files`],
         [`${times(facts.corpus)}`, `faster on quicktype's whole test corpus, ${corpus.typescript.steps.toLocaleString("en-US")} CLI runs`],
         [`${times(pokedexMemory)}`, `less memory on pokedex.json: ${formatMiB(pokedex.results.rust.peak_rss_mib)} against ${formatMiB(pokedex.results.typescript.peak_rss_mib)}`],
         ...(report === undefined
@@ -458,20 +628,23 @@ export function benchmarksPageHtml({ bench, big }) {
     ];
 
     const typicalList = bench.cli.filter(isTypical);
+    const typicalSizes = sizeRange(typicalList);
+    const languageCount = bench.cli.filter((r) => r.group === "languages").length;
+    const orSlower = facts.slower.length > 0 ? " (or slower)" : "";
     const sections = [];
 
     sections.push(`<section class="intro" aria-labelledby="title">
 <h1 id="title">Benchmarks</h1>
 <p class="lead">quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${facts.upTo}× faster (about ${facts.typical}× on typical files) and uses a fraction of the memory.</p>
 <dl class="tiles">${tiles.map(([value, what]) => `<div class="tile"><dt>${what}</dt><dd>${value}</dd></div>`).join("")}</dl>
-<p class="measured-on">Measured on an ${e(machine.cpu)} on ${e(date)}, against quicktype at <a href="${links.quicktypeCommit(bench.commits.quicktype)}"><code>${bench.commits.quicktype.slice(0, 7)}</code></a>. <a href="#method">How</a> · <a href="#get-the-cli">Get the CLI</a></p>
+<p class="measured-on">Measured on ${e(machine.cpu)} on ${e(date)}, against quicktype at <a href="${links.quicktypeCommit(bench.commits.quicktype)}"><code>${bench.commits.quicktype.slice(0, 7)}</code></a>. <a href="#method">How</a> · <a href="#get-the-cli">Get the CLI</a></p>
 </section>`);
 
     sections.push(`<section id="cli" aria-labelledby="cli-title">
-<h2 id="cli-title">Every CLI run, ${facts.upTo}× to ${times(facts.lowest)} faster</h2>
-<p>One run of the CLI per benchmark: how many times faster quickertype's is, and both times (quicktype → quickertype; medians of ${bench.iterations} runs). On small inputs most of quicktype's time is starting Node.js and loading quicktype (<code>--version</code> alone takes ${formatMs(version.results.typescript.median_ms)}); on large ones it is the work itself, which quickertype does several times faster. "Typical files" are the ${typicalList.length} real-world JSON samples here (82 to 606 KB, to TypeScript and to 8 languages): quickertype is ${times(facts.typicalMedian)} faster on the median one.</p>
+<h2 id="cli-title">${cliHeading(facts)}</h2>
+<p>One run of the CLI per benchmark: how many times faster${orSlower} quickertype's is, and both times (quicktype → quickertype; medians of ${runs(bench.iterations)}). On small inputs most of quicktype's time is starting Node.js and loading quicktype (<code>--version</code> alone takes ${formatMs(version.results.typescript.median_ms)}); on large ones it is the work itself, which quickertype does ${fasterOrSlower(speedup(large))} on the 40 MB input. "Typical files" are the ${typicalList.length} real-world JSON samples here (${typicalSizes === undefined ? "" : `${typicalSizes}, `}to TypeScript and to ${languageCount} languages): quickertype is ${times(facts.typicalMedian)} faster on the median one.</p>
 <figure class="chart" aria-labelledby="cli-chart-title">
-<figcaption id="cli-chart-title">quickertype's CLI, how many times faster than quicktype's</figcaption>
+<figcaption id="cli-chart-title">quickertype's CLI, how many times faster${orSlower} than quicktype's</figcaption>
 ${cliCharts.html}
 ${cliCharts.table}
 </figure>
@@ -492,7 +665,6 @@ ${memory.table}
 </figure>
 </section>`);
 
-    const exits = corpus.rust.unexpected_exits;
     sections.push(`<section id="corpus" aria-labelledby="corpus-title">
 <h2 id="corpus-title">The whole test corpus, ${times(facts.corpus)} faster</h2>
 <p>Every step of every case in quicktype's test corpus as this repository records it (<code>tests/golden</code>): ${corpus.typescript.steps.toLocaleString("en-US")} CLI runs in every output language, from JSON, JSON Schema, GraphQL and TypeScript, ${bench.corpus.jobs} at a time.</p>
@@ -504,10 +676,10 @@ ${pairChart({
 })}
 ${tableView("The golden corpus, every step once", ["Engine", "Wall time", "CLI time, summed", "Unexpected exits"], [
     ["quicktype", `${corpus.typescript.wall_s} s (${minutes(corpus.typescript.wall_s)})`, `${corpus.typescript.cli_time_s} s`, String(corpus.typescript.unexpected_exits)],
-    ["quickertype", `${corpus.rust.wall_s} s`, `${corpus.rust.cli_time_s} s`, String(exits)],
+    ["quickertype", `${corpus.rust.wall_s} s`, `${corpus.rust.cli_time_s} s`, String(corpus.rust.unexpected_exits)],
 ])}
 </figure>
-${exits > 0 ? `<p class="fineprint">${exits.toLocaleString("en-US")} of quickertype's runs exited early: the cases outside its parity baseline when this was measured (C with cJSON, which was being ported).</p>` : ""}
+${unexpectedExits(corpus)}
 </section>`);
 
     const reportChart =
@@ -539,7 +711,7 @@ ${reportChart}
     const engineSpeedup = inProcess.typescript.total_ms / inProcess.rust.total_ms;
     sections.push(`<section id="browser" aria-labelledby="browser-title">
 <h2 id="browser-title">In the browser</h2>
-<p>The playground runs both engines inside the page, so the gap there is smaller. Neither starts a process, and starting Node.js and loading quicktype is most of what a quicktype CLI run on a small file costs (below). What is left is the engine itself, and quickertype's WebAssembly build is still being optimized: natively its engine is ${times(engineSpeedup)} faster than quicktype's in a warm Node.js process (${formatMs(inProcess.rust.total_ms)} against ${formatMs(inProcess.typescript.total_ms)} for ${bench.in_process.runs} runs), and the WebAssembly build does not get all of that yet.</p>
+<p>The playground runs both engines inside the page, so the gap there is smaller. Neither starts a process, and starting Node.js and loading quicktype is most of what a quicktype CLI run on a small file costs (below). What is left is the engine itself, and quickertype's WebAssembly build is still being optimized: natively its engine is ${times(engineSpeedup)} faster than quicktype's in a warm Node.js process (${formatMs(inProcess.rust.total_ms)} against ${formatMs(inProcess.typescript.total_ms)} for ${runs(bench.in_process.runs)}), and the WebAssembly build does not get all of that yet.</p>
 <figure class="chart" aria-labelledby="startup-title">
 <figcaption id="startup-title">One CLI run on pokedex.json (82 KB) → TypeScript</figcaption>
 ${startup.html}
@@ -548,13 +720,13 @@ ${startup.html}
 </section>`);
 
     const facts2 = [
-        ["Machine", [machine.cpu, machine.cores && `${machine.cores} cores`, machine.memory, machine.os].filter(Boolean).join(", ")],
-        ["Toolchain", [machine.rustc, machine.node && `Node.js ${machine.node}`].filter(Boolean).join(", ")],
+        ["Machine", machineText(machine)],
+        ["Toolchain", [machine.rustc, machine.node && `Node.js ${machine.node}`].filter(Boolean).join(", ") || "not recorded"],
         ["Date", date],
         ["quicktype", `<a href="${links.quicktypeCommit(bench.commits.quicktype)}"><code>${bench.commits.quicktype.slice(0, 7)}</code></a>, the commit whose output quickertype matches (<code>tests/golden/REFERENCE</code>)`],
-        ["quickertype", `<a href="${links.commit(bench.commits.quickertype)}"><code>${bench.commits.quickertype.slice(0, 7)}</code></a>${bench.commits.quickertype_modified ? " (with local changes)" : ""}`],
+        ["quickertype", quickertypeCommit(bench.commits)],
         ["Command", `<code>${e(bench.command)}</code>`],
-        ["Runs", `${bench.iterations} timed runs of each CLI per benchmark after one warm-up run (which also checks that both write the same files); medians of wall time. Peak memory is one more run under <code>/usr/bin/time</code>.`],
+        ["Runs", `${runs(bench.iterations, "timed")} of each CLI per benchmark after one warm-up run (which also checks that both write the same files); medians of wall time. Peak memory is one more run under <code>/usr/bin/time</code>.`],
         ...(machine.load_average ? [["Load", `load average ${e(machine.load_average)} when the run started`]] : []),
     ];
     sections.push(`<section id="method" aria-labelledby="method-title">

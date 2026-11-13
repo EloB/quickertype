@@ -49,8 +49,14 @@
 // output pane, name the file and its CLI command, and leave nothing running.
 //
 // The speed story: the build refuses benchmark data that is incomplete or
-// inconsistent; the playground's headline, the note under its comparison and
-// the benchmarks page (benchmarks.html) say what site/data/benchmarks.json
+// inconsistent, or that would make a summary claim false; test data derived
+// from the real file is shown truthfully (a benchmark below 1× as slower, in
+// the heading, its bar and the table, and pointed out by the build; the
+// largest speed-up's benchmark for what it is; the number of runs; unexpected
+// exits with their note, or as a warning; a Linux machine without its
+// memory; a commit bench could not tell); the playground's headline, the
+// note under its comparison and the benchmarks page (benchmarks.html) say
+// what site/data/benchmarks.json
 // and big-inputs.json hold; every chart and bar there has an accessible
 // label and a table; the charts take their colours from the theme; every
 // link resolves (pages and data here, anchors, files in this repository,
@@ -71,15 +77,19 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+    benchmarkWarnings,
     benchmarksFile,
+    benchmarksPageHtml,
     bigInputsFile,
     checkBenchmarks,
     formatMiB,
     formatMs as formatBenchMs,
+    isTypical,
     links as benchLinks,
     named as benchNamed,
     readBenchmarks,
     speedFacts,
+    speedupText,
     times as speedup,
 } from "../benchmarks.mjs";
 import { quicktypeReference } from "../reference.mjs";
@@ -317,10 +327,15 @@ async function launch(browser) {
 const benchmarkData = readBenchmarks();
 const speedNow = speedFacts(benchmarkData.bench);
 {
-    const broken = (what, change) => {
+    /** `change` makes the data something the build must refuse (with a message matching `why`, if given). */
+    const broken = (what, change, why = /./) => {
         const data = structuredClone(benchmarkData.bench);
         change(data);
-        assert.throws(() => checkBenchmarks(data), (e) => e.message.startsWith("site/data/benchmarks.json: "), `the build accepted ${what}`);
+        assert.throws(
+            () => checkBenchmarks(data),
+            (e) => e.message.startsWith("site/data/benchmarks.json: ") && why.test(e.message),
+            `the build accepted ${what}`,
+        );
     };
     broken("CLIs that wrote different files", (d) => (d.cli[0].identical = false));
     broken("a row without quicktype's time", (d) => delete d.cli[1].results.typescript);
@@ -328,7 +343,113 @@ const speedNow = speedFacts(benchmarkData.bench);
     broken("no corpus run", (d) => (d.corpus = null));
     broken("a short commit", (d) => (d.commits.quicktype = "c39af7d"));
     broken("a benchmark the page names, missing", (d) => (d.cli = d.cli.filter((r) => r.name !== benchNamed.pokedex)));
-    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data is refused`);
+    broken("no CPU (the page names it)", (d) => delete d.machine.cpu, /machine\.cpu/);
+    broken(
+        "an unknown quickertype commit without a reason",
+        (d) => {
+            d.commits.quickertype = null;
+            delete d.commits.quickertype_source;
+        },
+        /commits\.quickertype must be a commit .*, or null with quickertype_source/,
+    );
+    broken("an unexpected_exits_note that is not a sentence", (d) => (d.corpus.results.rust.unexpected_exits_note = ""), /unexpected_exits_note/);
+    // A summary claim made false: the headline (typical files, memory), the corpus, the native engine.
+    const slowerBy = (row, factor) => {
+        row.results.rust.median_ms = row.results.typescript.median_ms * factor;
+        row.results.rust.min_ms = row.results.rust.median_ms;
+    };
+    broken("quickertype slower on typical files", (d) => d.cli.filter(isTypical).forEach((r) => slowerBy(r, 1.2)), /slower on the median typical file/);
+    broken(
+        "quickertype using more memory",
+        (d) => {
+            const r = d.cli.find((row) => row.name === benchNamed.pokedex).results;
+            r.rust.peak_rss_mib = r.typescript.peak_rss_mib * 2;
+        },
+        /uses a fraction/,
+    );
+    broken("quickertype slower on the corpus", (d) => (d.corpus.results.rust.wall_s = d.corpus.results.typescript.wall_s * 1.1), /whole corpus/);
+    broken("quickertype's engine slower natively", (d) => (d.in_process.results.rust.total_ms = d.in_process.results.typescript.total_ms * 1.1), /natively/);
+    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused`);
+
+    // Test data the page must show truthfully, derived from the real file:
+    // the page's text for it (rendered as the build does), and what the
+    // build points out.
+    const pageFor = (change) => {
+        const data = structuredClone(benchmarkData.bench);
+        change(data);
+        const html = benchmarksPageHtml({ bench: checkBenchmarks(data), big: benchmarkData.big });
+        const plain = (s) => s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        const all = (re) => [...html.matchAll(re)].map((m) => plain(m[1]));
+        const facts = Object.fromEntries([...html.matchAll(/<div><dt>(.*?)<\/dt><dd>(.*?)<\/dd><\/div>/g)].map((m) => [m[1], plain(m[2])]));
+        return {
+            html,
+            data,
+            warnings: benchmarkWarnings(data),
+            h2: all(/<h2[^>]*>(.*?)<\/h2>/g)[0],
+            tile: all(/<div class="tile"><dt>(.*?)<\/dt>/g)[0],
+            cli: all(/<section id="cli"[^>]*>\s*<h2[^>]*>.*?<\/h2>\s*<p>(.*?)<\/p>/gs)[0],
+            caption: all(/<caption>(.*?)<\/caption>/g)[0],
+            slower: [...html.matchAll(/<li class="bar-row slower"><span class="bar-name">(.*?)<\/span>.*?aria-label="([^"]*)".*?class="tip">([^<]*)</g)].map((m) => m.slice(1)),
+            table: Object.fromEntries([...html.matchAll(/<tr><th scope="row">(.*?)<\/th>(?:<td class="num">[^<]*<\/td>){2}<td class="num">([^<]*)<\/td><\/tr>/g)].map((m) => [m[1], m[2]])),
+            exits: all(/<p class="fineprint[^"]*">((?:Warning: )?[\d,]+ of [^<]*)<\/p>/g),
+            warn: all(/<p class="fineprint warn">(.*?)<\/p>/g),
+            machine: facts.Machine,
+            quickertype: facts.quickertype,
+        };
+    };
+    const real = pageFor(() => {});
+    assert.equal(real.h2, `Every CLI run, ${speedNow.upTo}× to ${speedup(speedNow.lowest)} faster`);
+    assert.deepEqual([real.slower, real.warnings], [[], []], "the real data: slower benchmarks, warnings");
+    assert.match(real.tile, /^faster per CLI run at most \(--version, start-up alone\); about \d+× on typical files$/);
+    assert.equal(real.caption, `CLI wall time per run, median of ${benchmarkData.bench.iterations} runs after one warm-up`);
+    const rustCorpus = benchmarkData.bench.corpus.results.rust;
+    assert.deepEqual(real.exits, [`${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. ${rustCorpus.unexpected_exits_note}`]);
+    assert.deepEqual(real.warn, []);
+
+    // A benchmark below 1×: shown as slower (heading, bar, label, table), and pointed out.
+    const senators = "us-senators (155 KB) → TypeScript";
+    const oneSlower = pageFor((d) => slowerBy(d.cli.find((r) => r.name === senators), 1.3));
+    assert.equal(oneSlower.h2, `Every CLI run: up to ${speedNow.upTo}× faster, but one of ${benchmarkData.bench.cli.length} is 1.3× slower`);
+    assert.equal(oneSlower.slower.length, 1);
+    const [slowName, slowLabel, slowTip] = oneSlower.slower[0];
+    assert.deepEqual([slowName, slowTip, oneSlower.table[senators]], [senators, "1.3× slower", "1.3× slower"]);
+    assert.match(slowLabel, /^us-senators \(155 KB\) → TypeScript: quickertype 1\.3× slower, /);
+    assert.match(oneSlower.cli, /^One run of the CLI per benchmark: how many times faster \(or slower\) quickertype's is/);
+    assert.doesNotMatch(oneSlower.html, /\b0\.\d+×|1\.0× faster|times faster than quicktype's</, "a speed-up below 1 said as faster");
+    assert.equal(oneSlower.warnings.length, 1);
+    assert.match(oneSlower.warnings[0], /^site\/data\/benchmarks\.json: cli\[\d+\] \(us-senators \(155 KB\) → TypeScript\): quickertype is 1\.3× slower \(/);
+    const twoSlower = pageFor((d) => {
+        slowerBy(d.cli.find((r) => r.name === senators), 1.3);
+        slowerBy(d.cli.find((r) => r.name.startsWith("github-events (82 KB) → go")), 1.1);
+    });
+    assert.equal(twoSlower.h2, `Every CLI run: up to ${speedNow.upTo}× faster, but 2 of ${benchmarkData.bench.cli.length} are slower, by up to 1.3×`);
+    assert.equal(twoSlower.warnings.length, 2);
+    console.log(`ok: test data with a benchmark below 1×: "${oneSlower.h2}"; its bar, label and table say "1.3× slower"; the build points it out`);
+
+    // The largest speed-up on a benchmark that is not start-up: the tile says what that one measures.
+    const big40 = pageFor((d) => {
+        const r = d.cli.find((row) => row.name === "generated (40 MB) → TypeScript").results;
+        r.rust.median_ms = r.rust.min_ms = r.typescript.median_ms / 500;
+    });
+    assert.match(big40.tile, /^faster per CLI run at most \(generated \(40 MB\) → TypeScript, a JSON input\); /);
+    // Another number of runs: the caption and the text say it.
+    const sevenRuns = pageFor((d) => (d.iterations = 7));
+    assert.equal(sevenRuns.caption, "CLI wall time per run, median of 7 runs after one warm-up");
+    assert.match(sevenRuns.cli, /medians of 7 runs\)/);
+    // Unexpected exits without a note: the number, plainly, as a warning; none: nothing.
+    const unexplained = pageFor((d) => delete d.corpus.results.rust.unexpected_exits_note);
+    assert.deepEqual(unexplained.warn, [`Warning: ${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly.`]);
+    assert.deepEqual(unexplained.warnings, [`site/data/benchmarks.json: corpus.results.rust: ${rustCorpus.unexpected_exits} unexpected exits, and no unexpected_exits_note saying why`]);
+    assert.deepEqual(pageFor((d) => (d.corpus.results.rust.unexpected_exits = 0)).exits, []);
+    // A Linux machine as `cargo xtask bench --json` describes one, without its memory.
+    const linux = pageFor((d) => (d.machine = { cpu: "aarch64, CPU part 0xd0c", cores: "64", os: "Linux 6.1.0-18-arm64" }));
+    assert.equal(linux.machine, "aarch64, CPU part 0xd0c, 64 cores, Linux 6.1.0-18-arm64 (the memory not recorded)");
+    // A CLI whose commit bench could not tell: said, not linked.
+    const why = "--bin runs /usr/local/bin/quicktype, which is not in the target directory of a git work tree";
+    const unknownCommit = pageFor((d) => Object.assign(d.commits, { quickertype: null, quickertype_modified: null, quickertype_source: why }));
+    assert.equal(unknownCommit.quickertype, `not known: ${why}`);
+    assert.ok(!unknownCommit.html.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
+    console.log("ok: the page says what the data holds: the tile's benchmark, the number of runs, unexpected exits (with the note, or as a warning), a machine as far as it was recorded, an unknown commit");
 }
 
 const browser = findBrowser();
@@ -1635,7 +1756,7 @@ try {
             data.cli.map((r) => [
                 r.name,
                 `${formatBenchMs(r.results.typescript.median_ms)} → ${formatBenchMs(r.results.rust.median_ms)}`,
-                speedup(r.results.typescript.median_ms / r.results.rust.median_ms),
+                speedupText(r.results.typescript.median_ms / r.results.rust.median_ms),
             ]),
             "the CLI chart",
         );

@@ -30,7 +30,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
-import { benchmarksFile, benchmarksPageHtml, bigInputsFile, headlineHtml, readBenchmarks, speedFacts } from "./benchmarks.mjs";
+import { benchmarksFile, benchmarksPageHtml, bigInputsFile, headlineHtml, readBenchmarks, speedFacts, times } from "./benchmarks.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { hashKeys } from "./src/hash.js";
 
@@ -253,8 +253,11 @@ async function bundle(entry, define) {
 const languageList = languages();
 const general = generalOptions();
 checkNames(languageList, general);
-// The benchmark numbers: checked before anything is written.
+// The benchmark numbers: checked before anything is written; what they
+// show but someone should look at (a benchmark where quickertype is slower)
+// is said here.
 const benchmarks = readBenchmarks();
+for (const warning of benchmarks.warnings) console.warn(`warning: ${warning}`);
 const speed = speedFacts(benchmarks.bench);
 
 fs.rmSync(dist, { recursive: true, force: true });
@@ -314,7 +317,7 @@ const benchmarksHtml = fs
     .replace("%STYLE%", `./${benchmarksStyleFile}`)
     .replace(
         "%DESCRIPTION%",
-        `quickertype, quicktype rewritten in Rust: the CLI is up to ${speed.upTo}× faster than quicktype's (about ${speed.typical}× on typical files), ${Math.round(speed.corpus)}× on its whole test corpus, with the same output.`,
+        `quickertype, quicktype rewritten in Rust: the CLI is up to ${speed.upTo}× faster than quicktype's (about ${speed.typical}× on typical files), ${times(speed.corpus)} on its whole test corpus, with the same output.`,
     )
     .replace("%CONTENT%", () => benchmarksPageHtml(benchmarks));
 if (/%[A-Z_]+%/.test(benchmarksHtml.replace(/data:image\/svg\+xml,[^"]*/, ""))) {

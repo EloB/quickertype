@@ -388,6 +388,7 @@
         "cli_time_s": 133.7,
         "steps": 11178,
         "unexpected_exits": 381,
+        "unexpected_exits_note": "They are the cases outside its parity baseline when this was measured: C with cJSON, which was being ported (it has been since).",
         "wall_s": 12.5
       },
       "typescript": {
@@ -436,7 +437,7 @@
     "os": "macOS 26.6.2",
     "rustc": "rustc 1.99.1"
   },
-  "note": "Converted by hand from docs/BENCHMARKS.md (Phase 7, after; measured with --baseline, which this file leaves out), not written by --json. The machine was shared with other work while the numbers were taken (load average around 10); the CLI numbers agree with quieter earlier runs within a few percent. The in-process numbers are medians of three interleaved rounds of 10 iterations. The 381 unexpected exits of the Rust CLI in the corpus are the cases outside the parity baseline then (C with cJSON, ported since).",
+  "note": "Converted by hand from docs/BENCHMARKS.md (Phase 7, after; measured with --baseline, which this file leaves out), not written by --json. The machine was shared with other work while the numbers were taken (load average around 10); the CLI numbers agree with quieter earlier runs within a few percent. The in-process numbers are medians of three interleaved rounds of 10 iterations.",
   "tools": {
     "rust": {
       "label": "Rust"

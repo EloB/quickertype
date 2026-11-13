@@ -259,6 +259,11 @@ rect.more {
     font-variant-numeric: tabular-nums;
 }
 
+/* A benchmark where quickertype is slower: its value says so, in the error colour. */
+.slower .tip {
+    fill: var(--bad);
+}
+
 /* ---- Tables -------------------------------------------------------------- */
 
 .table-view {
@@ -323,6 +328,10 @@ tbody th {
     margin-top: 10px;
     color: var(--muted);
     font-size: 12.5px;
+}
+
+.fineprint.warn {
+    color: var(--bad);
 }
 
 /* ---- Method --------------------------------------------------------------- */
