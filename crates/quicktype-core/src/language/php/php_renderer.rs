@@ -14,7 +14,7 @@ use crate::attributes::constraints::{
 };
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
-use crate::messages::QuickTypeError;
+use crate::messages::{JsErrorName, QuickTypeError};
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::comments::CommentOptions;
@@ -28,15 +28,9 @@ use crate::ty::type_utils::{
 use super::language::{ACRONYM_STYLE, FAST_GET, WITH_CLOSING, WITH_GET, WITH_SET};
 use super::utils::{PHP_FORBIDDEN_CLASS_NAMES, php_name_style, string_escape};
 
-/// A JavaScript `Error` thrown by the TypeScript (`throw new Error(...)`):
-/// the CLI prints its message as is.
-// TODO(js-exception): use messages.rs' variant for runtime exceptions once
-// it lands, instead of an internal error with a replaced user message.
+/// A JavaScript `Error` thrown by the TypeScript (`throw new Error(...)`).
 fn js_error<T>(message: impl Into<String>) -> Result<T> {
-    let message = message.into();
-    let mut error = QuickTypeError::internal(message.clone());
-    error.set_user_message(message);
-    Err(error)
+    Err(QuickTypeError::js_exception(JsErrorName::Error, message))
 }
 
 /// The option values of the PHP renderer (TS
@@ -294,14 +288,16 @@ impl<'a> PhpRenderer<'a> {
         let graph = self.type_graph();
         // The TypeScript key is the index in the order (a number); two
         // digits compare the same way as strings.
-        let key = |t: TypeRef| {
-            let index = graph
-                .kind(t)
-                .ok()
-                .and_then(|kind| UNION_MEMBER_ORDER.iter().position(|&k| k == kind))
+        let mut keys: IndexMap<TypeRef, String> = IndexMap::new();
+        for &member in graph.type_at(u)?.members()? {
+            let kind = graph.kind(member)?;
+            let index = UNION_MEMBER_ORDER
+                .iter()
+                .position(|&k| k == kind)
                 .unwrap_or(UNION_MEMBER_ORDER.len());
-            format!("{index:02}")
-        };
+            keys.insert(member, format!("{index:02}"));
+        }
+        let key = |t: TypeRef| keys.get(&t).cloned().unwrap_or_default();
         let (null_type, non_nulls) = remove_null_from_union(graph, u, NullRemovalSort::By(&key))?;
         Ok((non_nulls.into_iter().collect(), null_type))
     }
