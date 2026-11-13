@@ -1101,7 +1101,13 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
             else odd[name] = extraRng.weighted([[6, value], [1, String(value).toUpperCase()], [1, 3], [1, [value]]]);
         }
 
-        if (extraRng.chance(0.3)) odd[extraRng.pick(["bogus-option", "justTypes", "toString", "__proto__"])] = true;
+        if (extraRng.chance(0.3)) {
+            // An own, enumerable property, also for `__proto__` (assigning
+            // to it would set the prototype, here not at all); JSON keeps
+            // it as one, so the case replays with it.
+            const name = extraRng.pick(["bogus-option", "justTypes", "toString", "__proto__"]);
+            Object.defineProperty(odd, name, { value: true, enumerable: true, writable: true, configurable: true });
+        }
         kase.api.rendererOptions = odd;
     }
 
