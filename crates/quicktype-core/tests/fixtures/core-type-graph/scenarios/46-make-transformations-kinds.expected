@@ -1,0 +1,124 @@
+(forwarding intersections: false)
+
+# make-transformations
+reconstituting 6
+reconstituted 6 as 0
+reconstituting 5
+reconstituted 5 as 1
+replacing set 0 as 2
+transformation for 4:
+string -> decode
+  string -> parse-string
+-> date-time
+reverse:
+date-time -> stringify
+  string -> encode
+-> string
+replaced set 0 as 2
+replacing set 3 as 5
+transformation for 6:
+string -> decode
+  string -> parse-string
+-> bool
+reverse:
+bool -> stringify
+  string -> encode
+-> string
+replaced set 3 as 5
+replacing set 2 as 7
+transformation for 8:
+string -> decode
+  string -> parse-string
+-> integer
+reverse:
+integer -> stringify
+  string -> encode
+-> string
+replaced set 2 as 7
+reconstituting 4
+reconstituted 4 as 3
+replacing set 1 as 9
+transformation for 10:
+string -> decode
+  string -> parse-string
+-> uuid
+reverse:
+uuid -> stringify
+  string -> encode
+-> string
+replaced set 1 as 9
+0: class C | children 1,5,7,3,9,2 | 6 | given C ()
+1: array | children 2 | 5
+2: string | children 3,4 | transformation | unrestricted
+3: string | unrestricted | 4
+4: date-time When | 0 | given When ()
+5: string | children 3,6 | transformation | unrestricted
+6: bool | 3
+7: string | children 3,8 | transformation | unrestricted
+8: integer | 2
+9: string | children 3,10 | transformation | unrestricted
+10: uuid | 1
+
+# fixed-point
+reconstituting 0
+reconstituted 0 as 0
+reconstituting 1
+reconstituted 1 as 1
+reconstituting 2
+  reconstituting 4
+  reconstituted 4 as 2
+  reconstituting 3
+  reconstituted 3 as 3
+reconstituted 2 as 4
+reconstituting 5
+  reconstituting 6
+  reconstituted 6 as 5
+reconstituted 5 as 6
+reconstituting 7
+  reconstituting 8
+  reconstituted 8 as 7
+reconstituted 7 as 8
+reconstituting 9
+  reconstituting 10
+  reconstituted 10 as 9
+reconstituted 9 as 10
+0: class C | children 1,6,8,3,10,4 | 6 | given C ()
+1: array | children 4 | 5
+2: date-time When | 0 | given When ()
+3: string | unrestricted | 4
+4: string | children 3,2 | transformation | unrestricted
+5: bool | 3
+6: string | children 3,5 | transformation | unrestricted
+7: integer | 2
+8: string | children 3,7 | transformation | unrestricted
+9: uuid | 1
+10: string | children 3,9 | transformation | unrestricted
+(fixedpoint: unchanged)
+
+# GC
+0: class C | children 1,5,7,4,9,2 | 6 | given C ()
+1: array | children 2 | 5
+2: string | children 4,3 | transformation | unrestricted
+3: date-time When | 0 | given When ()
+4: string | unrestricted | 4
+5: string | children 4,6 | transformation | unrestricted
+6: bool | 3
+7: string | children 4,8 | transformation | unrestricted
+8: integer | 2
+9: string | children 4,10 | transformation | unrestricted
+10: uuid | 1
+0: class C | children 1,5,7,4,9,2 | 6 | given C ()
+1: array | children 2 | 5
+2: string | children 4,3 | transformation | unrestricted
+3: date-time When | 0 | given When ()
+4: string | unrestricted | 4
+5: string | children 4,6 | transformation | unrestricted
+6: bool | 3
+7: string | children 4,8 | transformation | unrestricted
+8: integer | 2
+9: string | children 4,10 | transformation | unrestricted
+10: uuid | 1
+xf 1: none
+xf 3: none
+(forwarding intersections: false)
+error: Internal error: Cannot make transformation for type class

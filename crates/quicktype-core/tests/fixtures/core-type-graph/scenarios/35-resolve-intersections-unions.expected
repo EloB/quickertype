@@ -1,0 +1,69 @@
+(forwarding intersections: false)
+canonical 6: true
+reconstituting 13
+reconstituted 13 as 0
+reconstituting 12
+reconstituted 12 as 1
+replacing set 8 as 2
+  reconstituting 0
+  reconstituted 0 as 4
+  reconstituting 2
+  reconstituted 2 as 5
+replaced set 8 as 2
+reconstituting 11
+reconstituted 11 as 7
+reconstituting 10
+reconstituted 10 as 8
+reconstituting 9
+reconstituted 9 as 9
+reconstituting 1
+reconstituted 1 as 10
+(resolve done: false)
+0: class Top | children 1,2,7 | given Top ()
+1: array | children 2
+2: union X | children 3,6 | given X ()
+3: null
+4: integer
+5: string | unrestricted
+6: object o1 | children 4,5 | given O1,O2 ()
+7: intersection Y | children 5,8 | given Y ()
+8: union NonCanonical | children 5,9 | given NonCanonical ()
+9: union NC | children 10,4 | given NC ()
+10: double
+(flatten done: true)
+0: class Top | children 1,2,7 | given Top ()
+1: array | children 2
+2: union X | children 3,4 | given X ()
+3: null
+4: object o1 | children 5,6 | given O1,O2 ()
+5: integer
+6: string | unrestricted
+7: intersection Y | children 6,8 | given Y ()
+8: union NonCanonical | children 9,5,6 | given NonCanonical ()
+9: double
+(resolve done: true)
+0: class Top | children 1,2,6 | given Top ()
+1: array | children 2
+2: union X | children 3,4 | given X ()
+3: null
+4: object o1 | children 5,6 | given O1,O2 ()
+5: integer
+6: string Y | unrestricted | given Y ()
+(flatten: unchanged)
+(flatten done: true)
+0: class Top | children 1,2,6 | given Top ()
+1: array | children 2
+2: union X | children 3,4 | given X ()
+3: null
+4: object o1 | children 5,6 | given O1,O2 ()
+5: integer
+6: string Y | unrestricted | given Y ()
+0: class Top | children 1,2,6 | given Top ()
+1: array | children 2
+2: union X | children 3,4 | given X ()
+3: null
+4: object o1 | children 5,6 | given O1,O2 ()
+5: integer
+6: string Y | unrestricted | given Y ()
+(forwarding intersections: false)
+error: Internal error: We should never see class types in intersections

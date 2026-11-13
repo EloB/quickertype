@@ -1,0 +1,33 @@
+# Empty, `any`, `none` and single members.
+builder
+prim any any
+prim i integer
+prim none none
+uinter empty n=Empty
+members empty any
+inter withany any,i n=WithAny
+inter withnone none,i n=WithNone
+inter nested withany,i n=Nested
+cls top e:empty,a:withany,n:withnone,x:nested n=Top
+top Top top
+finish
+resolve debug
+print
+
+# An intersection of a single type with attributes keeps them; nested
+# intersections are flattened into one group, and constraints intersect.
+builder prov
+prim i integer mm=1:5
+prim d double mm=0:10
+str s unrestricted ml=2:
+str s2 unrestricted ml=:8
+inter one i n=One desc=only
+inter n1 i,d n=N1
+inter n2 n1,d n=N2
+inter strs s,s2 n=Strings
+cls top o:one,n:n2,s:strs n=Top
+top Top top
+finish
+query recmembers 6 intersect
+resolve debug
+print

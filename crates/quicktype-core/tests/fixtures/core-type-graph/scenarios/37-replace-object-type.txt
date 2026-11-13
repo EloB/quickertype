@@ -1,0 +1,33 @@
+# ReplaceObjectType: no additional properties make a fixed class, no
+# properties a map, `any` additional properties a class (losing them), and
+# both a map of the union of all property types.
+builder prov
+prim i integer
+str s unrestricted
+prim any any
+prim b bool
+obj closed a:i,b?:s - n=Closed
+obj open {} s n=Open
+obj loose a:i any n=Loose
+obj full a:i,b:s b n=Full
+obj full2 a:i,b:s b n=Full2
+arr arr full
+cls top c:closed,o:open,l:loose,f:full,f2:full2,arr:arr n=Top
+top Top top
+finish printonrewrite
+replaceobj debug
+gc
+print
+
+# Languages with full object types keep objects with both.
+builder prov
+prim i integer
+str s unrestricted
+obj closed a:i - n=Closed
+obj full a:i s n=Full
+cls top c:closed,f:full n=Top
+top Top top
+finish
+replaceobj full debug
+print
+replaceobj full

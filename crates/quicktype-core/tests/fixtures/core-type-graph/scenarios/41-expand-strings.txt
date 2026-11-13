@@ -1,0 +1,62 @@
+# ExpandStrings with enum inference: a case set is its own enum with at
+# least 10 values and fewer cases than sqrt(values); own enums overlapping by
+# 3/4 merge; smaller sets with at least 5 values join a superset; numbers and
+# the empty string never make enums.
+builder prov
+str own1 cases=red:5,green:4,blue:3 n=Own1
+str own2 cases=red:4,green:4,blue:4,pink:4 n=Own2
+str few cases=red:2,green:2,blue:1 n=Few
+str sub cases=red:3,green:2 n=Sub
+str tiny cases=red:1,green:1 n=Tiny
+str many cases=a:1,b:1,c:1,d:1,e:1,f:1,g:1,h:1,i:1,j:1,k:1 n=Many
+str numeric cases=1:10,2:10,-3.5:10 n=Numeric
+str empty cases=:20 n=Empty
+str other cases=x:20,y:20 n=Other
+cls top a:own1,b:own2,c:few,d:sub,e:tiny,f:many,g:numeric,h:empty,i:other n=Top
+top Top top
+finish printonrewrite
+expand infer debug
+gc
+print
+query cases 2
+query cases 5
+
+# Transformed string kinds: one kind becomes that primitive (keeping the
+# attributes), several a union, and with cases an enum plus the kinds. The
+# string type mapping can turn kinds back into plain strings.
+builder stm=date-time,uuid,date:date-time
+str dt cases=/date-time n=DateTime desc=when
+str two cases=/date-time,uuid n=Two
+str d cases=/date n=Date
+str it cases=/integer-string n=IntString
+str withcases cases=x:10,y:10/uuid n=WithCases
+cls top a:dt,b:two,c:d,i:it,w:withcases n=Top
+top Top top
+finish
+expand infer debug
+print
+query cases 6
+
+# "all" (schema input): every case set is an enum, matched exactly, even
+# numbers and the empty string.
+builder
+str days cases=Monday:1,Tuesday:1,Friday:1,Sunday:1 n=Days
+str nums cases=1:1,2:1 n=Nums
+str empty cases=:1 n=Empty
+cls top d:days,n:nums,e:empty n=Top
+top Top top
+finish
+expand all debug
+print
+query cases 2
+query cases 5
+
+# "none": no enums at all.
+builder
+str own cases=red:5,green:4,blue:3 n=Own
+str dt cases=a:1/date-time n=DT
+cls top a:own,d:dt n=Top
+top Top top
+finish
+expand none
+print
