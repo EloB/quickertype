@@ -80,23 +80,33 @@ fn json_parse_samples_overflow_while_read() {
     }
 }
 
-/// With `$ref`s handled (`--no-ignore-json-refs`), a reference to an array's
-/// items from inside them makes a union that contains itself; TypeScript's
-/// `UnionBuilder` recurses into it until V8's stack overflows, as the port
-/// does under its guard (it used to overflow the native stack, also the
-/// CLI's). On the test thread's own small stack.
+/// With `$ref`s handled (`--no-ignore-json-refs`), references from inside
+/// the values they point to make types that contain themselves without a
+/// class in between: a union among its own members (also across two
+/// samples), an array that is its own items. TypeScript recurses through
+/// them (`UnionBuilder`, `typeNameForUnionMember`) until V8's stack
+/// overflows, as the port does under its guards (it used to overflow the
+/// native stack, also the CLI's, or run for minutes). On the test thread's
+/// own small stack.
 #[test]
-fn unions_that_contain_themselves_overflow_like_node() {
-    let lang = get_target_language("go").unwrap();
-    for json in [
-        r##"{"": [{"$ref": "#//0"}, null]}"##,
-        r##"{"a": [null, {"$ref": "#/a"}]}"##,
-    ] {
+fn self_referencing_json_overflows_like_node() {
+    let cases: &[(&str, &[&str])] = &[
+        ("go", &[r##"{"": [{"$ref": "#//0"}, null]}"##]),
+        ("go", &[r##"{"a": [null, {"$ref": "#/a"}]}"##]),
+        ("go", &[r##"{"0": true, "1": [[{"$ref": "#/1/0"}]]}"##]),
+        ("java", &[r#"{"a":"x"}"#, r##"{"a":{"$ref":"#/a"}}"##]),
+        ("typescript", &[r#"{"a":1}"#, r##"{"a":{"$ref":"#/a"}}"##]),
+    ];
+    for (lang, samples) in cases {
+        let lang = get_target_language(lang).unwrap();
         let mut input = json_input_for_target_language(lang, true, &Default::default());
         input
             .add_source_sync(JsonSourceData {
                 name: "Cycle".to_owned(),
-                samples: vec![JsonSample::Stream(json.as_bytes().to_vec())],
+                samples: samples
+                    .iter()
+                    .map(|s| JsonSample::Stream(s.as_bytes().to_vec()))
+                    .collect(),
                 description: None,
             })
             .unwrap();
@@ -106,6 +116,6 @@ fn unions_that_contain_themselves_overflow_like_node() {
         flags.ignore_json_refs = false;
         let options = Options::new(lang, input_data).with_inference_flags(flags);
         let e = quicktype_multi_file_sync(options).unwrap_err();
-        assert_eq!(e.user_message(), OVERFLOW, "{json}");
+        assert_eq!(e.user_message(), OVERFLOW, "{samples:?}");
     }
 }

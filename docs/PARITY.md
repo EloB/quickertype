@@ -306,7 +306,10 @@ the others name the fix they need.
   walk through nested unions (`attributesForTypes`) is guarded as well:
   with `$ref`s handled, JSON can make a union that contains itself
   (`{"": [{"$ref": "#//0"}, null]}` with `--no-ignore-json-refs`), on
-  which TypeScript recurses until V8's stack overflows.
+  which TypeScript recurses until V8's stack overflows. So is the
+  `ConvenienceRenderer`'s `typeNameForUnionMember`, which recurses through
+  arrays and maps: `{"0": true, "1": [[{"$ref": "#/1/0"}]]}` makes an
+  array that is its own items.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports

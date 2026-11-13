@@ -404,27 +404,43 @@ fn inputs_too_deep_for_node_fail_like_node() {
 }
 
 #[test]
-fn unions_that_contain_themselves_fail_like_node() {
-    // With `$ref`s handled, a reference to an array's items from inside
-    // them makes a union that contains itself; quicktype overflows its
-    // stack on it, and so did the port, natively (an abort).
+fn self_referencing_json_fails_like_node() {
+    // With `$ref`s handled, references from inside the values they point
+    // to make types that contain themselves without a class in between: a
+    // union in its own members (also across two samples), an array that is
+    // its own items. quicktype recurses through them until its stack
+    // overflows; the port overflowed the native stack (an abort) or, with
+    // the second pair of samples, ran for minutes.
     let dir = work_dir("ref-cycle");
-    fs::write(
-        dir.join("cycle.json"),
-        r##"{"": [{"$ref": "#//0"}, null]}"##,
-    )
-    .unwrap();
-    let output = quicktype_in(
-        &dir,
-        &["--lang", "go", "--no-ignore-json-refs", "cycle.json"],
-        None,
-    );
-    assert_eq!(output.status.code(), Some(1));
-    assert_eq!(stdout(&output), "");
-    assert_eq!(
-        stderr(&output),
-        "Error: Maximum call stack size exceeded.\n"
-    );
+    for (name, json) in [
+        ("cycle.json", r##"{"": [{"$ref": "#//0"}, null]}"##),
+        ("items.json", r##"{"0": true, "1": [[{"$ref": "#/1/0"}]]}"##),
+        ("string.json", r#"{"a":"x"}"#),
+        ("number.json", r#"{"a":1}"#),
+        ("ref.json", r##"{"a":{"$ref":"#/a"}}"##),
+    ] {
+        fs::write(dir.join(name), json).unwrap();
+    }
+    let runs: &[&[&str]] = &[
+        &["--lang", "go", "cycle.json"],
+        &["--lang", "go", "items.json"],
+        &["--lang", "rust", "items.json"],
+        &["-t", "X", "string.json", "ref.json", "-l", "java"],
+        &["-t", "X", "number.json", "ref.json", "-l", "java"],
+        &["-t", "X", "number.json", "ref.json", "-l", "ts"],
+    ];
+    for args in runs {
+        let mut args = args.to_vec();
+        args.push("--no-ignore-json-refs");
+        let output = quicktype_in(&dir, &args, None);
+        assert_eq!(output.status.code(), Some(1), "{args:?}");
+        assert_eq!(stdout(&output), "", "{args:?}");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n",
+            "{args:?}"
+        );
+    }
 }
 
 #[test]
