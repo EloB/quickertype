@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/kotlin-klaxon-empty-object-map.test.ts
+# (issue #2881); the assertions are in tests/render_java_kotlin.rs.
+# Maps nested inside maps of empty objects are annotated.
+input json TopLevel {"outer":{"1":{"2":{},"3":{}},"4":{"5":{}}}}
+pipeline {"lang": "kotlin"}
+
+render kotlin {"rendererOptions": {"framework": "klaxon"}}
