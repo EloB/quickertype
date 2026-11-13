@@ -80,6 +80,7 @@ pub enum Value {
 
 /// One JSON sample, and which reader reads it (TS: the type `T` of
 /// `JSONInput<T>` and the matching `CompressedJSON<T>` subclass).
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum JsonSample {
     /// JSON text read with `JSON.parse` semantics, as quicktype-core's

@@ -50,36 +50,6 @@ pub fn pad_end(s: &str, width: usize) -> String {
     out
 }
 
-/// JS `haystack.replace(pattern, replacement)` for a string `pattern`: only
-/// the first occurrence is replaced, and `$$`, `$&`, `` $` `` and `$'` in
-/// `replacement` are expanded (there are no capture groups).
-pub fn replace_first(haystack: &str, pattern: &str, replacement: &str) -> String {
-    let Some(start) = haystack.find(pattern) else {
-        return haystack.to_owned();
-    };
-    let end = start + pattern.len();
-    let mut expanded = String::with_capacity(replacement.len());
-    let mut chars = replacement.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c != '$' {
-            expanded.push(c);
-            continue;
-        }
-        match chars.peek() {
-            Some('$') => expanded.push('$'),
-            Some('&') => expanded.push_str(pattern),
-            Some('`') => expanded.push_str(&haystack[..start]),
-            Some('\'') => expanded.push_str(&haystack[end..]),
-            _ => {
-                expanded.push('$');
-                continue;
-            }
-        }
-        chars.next();
-    }
-    format!("{}{expanded}{}", &haystack[..start], &haystack[end..])
-}
-
 /// Node's POSIX `path.basename(path)`.
 pub fn basename(path: &str) -> &str {
     let bytes = path.as_bytes();
@@ -144,6 +114,138 @@ pub fn extname(path: &str) -> &str {
     }
 }
 
+/// Node's POSIX `path.dirname(path)`.
+pub fn dirname(path: &str) -> &str {
+    let bytes = path.as_bytes();
+    if bytes.is_empty() {
+        return ".";
+    }
+    let has_root = bytes[0] == b'/';
+    let mut end = None;
+    let mut matched_slash = true;
+    for i in (1..bytes.len()).rev() {
+        if bytes[i] == b'/' {
+            if !matched_slash {
+                end = Some(i);
+                break;
+            }
+        } else {
+            matched_slash = false;
+        }
+    }
+    match end {
+        None if has_root => "/",
+        None => ".",
+        Some(1) if has_root => "//",
+        Some(end) => &path[..end],
+    }
+}
+
+/// Node's `normalizeString(path, allowAboveRoot)` for POSIX separators:
+/// resolves `.` and `..` segments and collapses repeated slashes.
+fn normalize_string(path: &str, allow_above_root: bool) -> String {
+    let bytes = path.as_bytes();
+    let mut res = String::new();
+    let mut last_segment_length = 0;
+    let mut last_slash: isize = -1;
+    let mut dots = 0;
+    let mut code = 0u8;
+    for i in 0..=bytes.len() {
+        if i < bytes.len() {
+            code = bytes[i];
+        } else if code == b'/' {
+            break;
+        } else {
+            code = b'/';
+        }
+        let i = i as isize;
+        if code == b'/' {
+            if last_slash == i - 1 || dots == 1 {
+                // Nothing to do.
+            } else if dots == 2 {
+                if res.len() < 2 || last_segment_length != 2 || !res.ends_with("..") {
+                    if res.len() > 2 {
+                        match res.rfind('/') {
+                            None => {
+                                res.clear();
+                                last_segment_length = 0;
+                            }
+                            Some(index) => {
+                                res.truncate(index);
+                                // `res.length - 1 - res.lastIndexOf("/")`
+                                last_segment_length = match res.rfind('/') {
+                                    Some(j) => res.len() - 1 - j,
+                                    None => res.len(),
+                                };
+                            }
+                        }
+                        last_slash = i;
+                        dots = 0;
+                        continue;
+                    } else if !res.is_empty() {
+                        res.clear();
+                        last_segment_length = 0;
+                        last_slash = i;
+                        dots = 0;
+                        continue;
+                    }
+                }
+                if allow_above_root {
+                    res.push_str(if res.is_empty() { ".." } else { "/.." });
+                    last_segment_length = 2;
+                }
+            } else {
+                let segment = &path[(last_slash + 1) as usize..i as usize];
+                if !res.is_empty() {
+                    res.push('/');
+                }
+                res.push_str(segment);
+                last_segment_length = (i - last_slash - 1) as usize;
+            }
+            last_slash = i;
+            dots = 0;
+        } else if code == b'.' && dots != -1 {
+            dots += 1;
+        } else {
+            dots = -1;
+        }
+    }
+    res
+}
+
+/// Node's POSIX `path.normalize(path)`.
+pub fn normalize(path: &str) -> String {
+    if path.is_empty() {
+        return ".".to_owned();
+    }
+    let is_absolute = path.starts_with('/');
+    let trailing_separator = path.ends_with('/');
+    let mut normalized = normalize_string(path, !is_absolute);
+    if normalized.is_empty() {
+        if is_absolute {
+            return "/".to_owned();
+        }
+        return if trailing_separator { "./" } else { "." }.to_owned();
+    }
+    if trailing_separator {
+        normalized.push('/');
+    }
+    if is_absolute {
+        format!("/{normalized}")
+    } else {
+        normalized
+    }
+}
+
+/// Node's POSIX `path.join(...paths)`.
+pub fn path_join(paths: &[&str]) -> String {
+    let joined: Vec<&str> = paths.iter().copied().filter(|p| !p.is_empty()).collect();
+    if joined.is_empty() {
+        return ".".to_owned();
+    }
+    normalize(&joined.join("/"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -154,16 +256,6 @@ mod tests {
         assert!(!is_whitespace('\u{85}'));
         assert_eq!(len("a😀"), 3);
         assert_eq!(pad_end("😀", 4), "😀  ");
-    }
-
-    #[test]
-    fn replace_first_expands_dollar_patterns() {
-        assert_eq!(replace_first("a ${x} b", "${x}", "y"), "a y b");
-        assert_eq!(replace_first("a ${x} b", "${x}", "$&"), "a ${x} b");
-        assert_eq!(replace_first("a ${x} b", "${x}", "$$"), "a $ b");
-        assert_eq!(replace_first("a ${x} b", "${x}", "$`|$'"), "a a | b b");
-        assert_eq!(replace_first("a ${x} b", "${x}", "$1$"), "a $1$ b");
-        assert_eq!(replace_first("${x}${x}", "${x}", "1"), "1${x}");
     }
 
     #[test]
@@ -179,5 +271,21 @@ mod tests {
         assert_eq!(extname("..."), ".");
         assert_eq!(extname(".."), "");
         assert_eq!(extname("dir.x/foo"), "");
+        assert_eq!(dirname("a/b/c.ts"), "a/b");
+        assert_eq!(dirname("c.ts"), ".");
+        assert_eq!(dirname("/c.ts"), "/");
+        assert_eq!(dirname("//c"), "//");
+        assert_eq!(dirname("a/b/"), "a");
+        assert_eq!(path_join(&["dir", "x.json"]), "dir/x.json");
+        assert_eq!(path_join(&["dir/", "x.json"]), "dir/x.json");
+        assert_eq!(path_join(&["./dir//sub/", "../x"]), "dir/x");
+        assert_eq!(path_join(&[".", "x.ts"]), "x.ts");
+        assert_eq!(path_join(&["/a/b", "../../../c"]), "/c");
+        assert_eq!(path_join(&["..", "a"]), "../a");
+        assert_eq!(path_join(&["a/b/..", "..", ".."]), "..");
+        assert_eq!(path_join(&["", ""]), ".");
+        assert_eq!(path_join(&["a", "b/"]), "a/b/");
+        assert_eq!(normalize("./"), "./");
+        assert_eq!(normalize("abc/../../x"), "../x");
     }
 }

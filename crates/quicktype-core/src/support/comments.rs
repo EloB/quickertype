@@ -23,6 +23,7 @@ pub struct CommentOptions {
 }
 
 /// `Comment`: a string, or one of the `CommentConfig` shapes.
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum Comment {
     /// A plain string: one comment line.

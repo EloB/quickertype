@@ -20,7 +20,7 @@
 
 use std::fmt;
 
-use quicktype_core::renderer_options::{OptionDefinition, OptionType, OptionValue};
+use quicktype_core::{OptionDefinition, OptionType, OptionValue};
 
 use crate::js;
 
@@ -259,6 +259,7 @@ impl OutputOption {
                     OptionValue::Null => ArgValue::Null,
                     OptionValue::Bool(b) => ArgValue::Bool(*b),
                     OptionValue::String(s) => ArgValue::String(s.clone()),
+                    other => ArgValue::String(other.to_js_string().into_owned()),
                 };
                 // `arrayify(defaultValue).slice()` keeps the raw value.
                 if multiple {
@@ -460,7 +461,7 @@ pub fn parse(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quicktype_core::renderer_options::OptionKind;
+    use quicktype_core::OptionKind;
 
     fn defs() -> Vec<OptionDefinition> {
         vec![

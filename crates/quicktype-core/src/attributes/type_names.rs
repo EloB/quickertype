@@ -6,12 +6,18 @@
 //! closest ones win.
 //!
 //! A type with 1000 or more names gets a random name instead
-//! (`TooManyTypeNames`), drawn from the global seeded [`Chance`] generator.
-//! Like the TypeScript module, that generator and the set of used random
-//! names are global (per thread here) and reset by [`init_type_names`].
+//! (`TooManyTypeNames`), drawn from a seeded [`Chance`] generator. In
+//! TypeScript that generator and the set of used random names are module
+//! state, reset by `initTypeNames` at the start of every run, so two runs
+//! awaiting at the same time share it. Here each run owns a
+//! [`TypeNameGenerator`] and installs it for the code it executes
+//! ([`with_type_name_generator`]), so interleaved runs on one thread draw
+//! from their own generators. Code outside any run draws from a per-thread
+//! default generator, which [`init_type_names`] resets.
 
 use std::cell::RefCell;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use indexmap::IndexSet;
 
@@ -34,29 +40,22 @@ struct RandomNames {
     used: HashSet<String>,
 }
 
-impl RandomNames {
-    fn new() -> Self {
-        RandomNames {
+/// The random type names of one run: the generator `initTypeNames` seeds
+/// (`Chance(31415)`) and the names drawn so far.
+pub struct TypeNameGenerator(RefCell<RandomNames>);
+
+impl TypeNameGenerator {
+    /// A freshly seeded generator, as `initTypeNames()` leaves it.
+    pub fn new() -> Self {
+        TypeNameGenerator(RefCell::new(RandomNames {
             chance: Chance::new(31415),
             used: HashSet::new(),
-        }
+        }))
     }
-}
 
-thread_local! {
-    static RANDOM_NAMES: RefCell<RandomNames> = RefCell::new(RandomNames::new());
-}
-
-/// `initTypeNames()`: reseeds the random name generator and forgets the
-/// random names used so far. `Run` calls it before every conversion.
-pub fn init_type_names() {
-    RANDOM_NAMES.with(|r| *r.borrow_mut() = RandomNames::new());
-}
-
-/// `makeRandomName()`: `"${city} ${animal}"`, retried until unused.
-fn make_random_name() -> String {
-    RANDOM_NAMES.with(|r| {
-        let mut r = r.borrow_mut();
+    /// `makeRandomName()`: `"${city} ${animal}"`, retried until unused.
+    fn make_random_name(&self) -> String {
+        let mut r = self.0.borrow_mut();
         loop {
             let name = format!("{} {}", r.chance.city(), r.chance.animal());
             if r.used.contains(&name) {
@@ -65,7 +64,59 @@ fn make_random_name() -> String {
             r.used.insert(name.clone());
             return name;
         }
-    })
+    }
+}
+
+impl Default for TypeNameGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Debug for TypeNameGenerator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypeNameGenerator")
+            .field("used", &self.0.borrow().used.len())
+            .finish_non_exhaustive()
+    }
+}
+
+thread_local! {
+    /// The generator of the run whose code is executing on this thread.
+    static CURRENT: RefCell<Option<Rc<TypeNameGenerator>>> = const { RefCell::new(None) };
+    /// The generator for code that runs outside of any run.
+    static DEFAULT: RefCell<Rc<TypeNameGenerator>> = RefCell::new(Rc::new(TypeNameGenerator::new()));
+}
+
+/// Runs `f` with `generator` as the source of random type names, then
+/// restores the previous one. A run calls this around everything it
+/// executes, including each poll of its future.
+pub fn with_type_name_generator<R>(generator: &Rc<TypeNameGenerator>, f: impl FnOnce() -> R) -> R {
+    struct Restore(Option<Rc<TypeNameGenerator>>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            let previous = self.0.take();
+            CURRENT.with(|current| *current.borrow_mut() = previous);
+        }
+    }
+    let previous = CURRENT.with(|current| current.replace(Some(Rc::clone(generator))));
+    let _restore = Restore(previous);
+    f()
+}
+
+/// `initTypeNames()` for code outside of any run: reseeds this thread's
+/// default generator and forgets the names it drew. Runs start with a
+/// fresh generator of their own.
+pub fn init_type_names() {
+    DEFAULT.with(|d| *d.borrow_mut() = Rc::new(TypeNameGenerator::new()));
+}
+
+/// `makeRandomName()`, from the current run's generator.
+fn make_random_name() -> String {
+    let generator = CURRENT
+        .with(|current| current.borrow().clone())
+        .unwrap_or_else(|| DEFAULT.with(|d| Rc::clone(&d.borrow())));
+    generator.make_random_name()
 }
 
 /// `singularizeName(name)`: `pluralize.singular`, except that a name ending
@@ -151,7 +202,7 @@ pub struct TooManyTypeNames {
 
 impl TooManyTypeNames {
     /// `new TooManyTypeNames(distance, name)`; without a name, draws a random
-    /// one from the global generator.
+    /// one from the current run's generator.
     pub fn new(distance: u32, name: Option<String>) -> Self {
         let name = name.unwrap_or_else(make_random_name);
         TooManyTypeNames {

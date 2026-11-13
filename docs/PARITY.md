@@ -121,7 +121,11 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     `String.replace` `$`-pattern quirks), and the Node/V8 messages that leak
     through (ENOENT text, `JSON.parse` errors, `fetch failed`), must match.
     Return `Result` everywhere; never panic on user input (release builds
-    abort on panic).
+    abort on panic). Where the TypeScript throws before its own
+    `messageError` is reached, the thrown error wins: `getTargetLanguage`
+    of an unknown name is `languageNamed`'s plain `Error: Unknown language
+    name: x`, not `DriverUnknownOutputLanguage` as research 05 first
+    specified.
 16. **No hidden nondeterminism:** no time or randomness in output paths.
     quicktype's own seeded random-name generator (`support/Chance.ts`) is
     deterministic and must be ported exactly, including when it is consumed.
@@ -178,9 +182,9 @@ the others name the fix they need.
   inference recurses once per nesting level, as in TypeScript. There the
   JavaScript stack runs out somewhere between 500 and 1,000 levels
   (`Maximum call stack size exceeded`, depending on Node's stack size); the
-  port goes much deeper but eventually overflows the native stack and
-  aborts. Fix: an explicit depth limit reporting the `RangeError`, or
-  iterative inference.
+  port goes much deeper (the CLI generates on a thread with a 256 MB
+  stack) but eventually overflows the native stack and aborts. Fix: an
+  explicit depth limit reporting the `RangeError`, or iterative inference.
 - **Endless recursion over the type graph.** On a graph that cycles
   through a nullable union (`T = T[] | null`), TypeScript's
   type-to-source functions (and C#'s `needTransformerForType`) recurse until
@@ -206,6 +210,13 @@ the others name the fix they need.
   full, but the replay is not the checker; `docs/research/07` §10 lists the
   cases that can still differ. Without a TypeScript 7.0.2 compiler the
   input fails with an install hint, which the reference cannot do.
+- **Sources that fail while being read.** The CLI opens its sources
+  (`lstat`, `fetch`) when it collects them and reads them when the input
+  parses them. A read that fails after a successful open (`EACCES`,
+  `EISDIR` for a symbolic link to a directory) makes Node emit an `error`
+  event on the file stream that nothing handles: a runtime stack trace on
+  stderr and exit code 1. The Rust CLI prints `Error: <Node's message>.`
+  and exits 1.
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or
   stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
   trace on stderr and exit code 1. The Rust CLI prints

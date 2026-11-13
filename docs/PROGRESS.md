@@ -4,6 +4,17 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- **Parity 7,331 / 11,177 (65.6%), 0 regressions.** Merged
+  `feat/run-and-cli` (Phase 3: Run, the public Rust API, the CLI generation
+  path); every ported language now passes its golden cases end to end.
+  Rough speed: ~18 ms per run vs ~750 ms for the TypeScript CLI.
+- Language wave 1 merged (each reviewed, 100% of recorded render cases):
+  JavaScript, TypeScript, Flow, Zod, Effect Schema, PropTypes, Elm; Java,
+  Kotlin; C#, Pike; Haskell, Scala 3, Smithy4s, PHP. Merged
+  `feat/core-json-schema-input` (190/190 schema cases).
+- Started wave 2: C (cJSON); Crystal, C++; Ruby, Elixir, Python; Swift,
+  Objective-C, Dart; Go, JSON Schema output; and GraphQL input (Phase 5).
+
 - Merged `feat/core-rendering` (rendering framework + the Rust renderer:
   364/364 Rust golden cases render byte-identically from the reference's
   pre-naming graph) and `feat/core-json-input` (both JSON readers match the
