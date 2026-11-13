@@ -861,8 +861,7 @@ impl<'a> ElixirRenderer<'a> {
                         union_types_non_null.push(u);
                     }
                 }
-                if union_types_non_null.len() == 1 {
-                    let only = union_types_non_null[0];
+                if let [only] = union_types_non_null[..] {
                     let mut suffix = "";
                     let mut item_types: Vec<TypeRef> = Vec::new();
                     match graph.kind(only)? {
@@ -877,8 +876,10 @@ impl<'a> ElixirRenderer<'a> {
                         _ => {}
                     }
 
-                    if item_types.len() == 1 && graph.kind(item_types[0])? == TypeKind::Union {
-                        item_types = graph.children(item_types[0])?.into_iter().collect();
+                    if let [single] = item_types[..] {
+                        if graph.kind(single)? == TypeKind::Union {
+                            item_types = graph.children(single)?.into_iter().collect();
+                        }
                     }
 
                     let parent_name = self.name_for_named_type_with_namespace(c)?;
