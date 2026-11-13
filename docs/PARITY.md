@@ -188,10 +188,6 @@ the others name the fix they need.
   measured on the reference CLI (Node 24.16): more than 3,731 nested
   folders, or arrays nested more than 2,830 deep. Inside nested folders
   Node's array limit is lower (less stack is left); that is not modelled.
-- **Postman collections that are not JSON** (temporary). `parseJSON` falls
-  back to YAML, which the JSON Schema input ports; until then
-  `sources_from_postman_collection` reports `JSON.parse`'s error for them
-  (`TODO(parse-json)` in `input/postman_collection.rs`).
 - **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
   native compiler where the reference runs TypeScript 5.9 and
   typescript-json-schema, and emulates TS 5.9's union member order by
@@ -237,9 +233,7 @@ the others name the fix they need.
   port, fails in some Node runs. TypeScript recurses into `$ref` targets,
   `additionalProperties` and later array or property siblings after an
   `await`, on a fresh stack, so such chains never overflow there; the port
-  stops them at 10,000 nested levels. JSON nested deeper than 100,000
-  levels, which V8 parses, is not parsed (the schema "could not be
-  fetched" instead of overflowing in `addIDs`). YAML values nested deeper
+  stops them at 10,000 nested levels. YAML values nested deeper
   than 1,000 levels, also through aliases, cannot be read, where `yaml`
   itself overflows somewhere between about 750 and 1,200 levels. The
   generation stages (rewrites, rendering) will need the same care once

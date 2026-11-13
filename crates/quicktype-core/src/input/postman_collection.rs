@@ -15,7 +15,8 @@ use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::{number, whitespace};
 
 use super::inputs::JsonSourceData;
-use crate::messages::{ErrorKind, JsErrorName, QuickTypeError, Result};
+use crate::messages::{JsErrorName, QuickTypeError, Result};
+use crate::support::parse_json::parse_json;
 
 /// The result of [`sources_from_postman_collection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -36,7 +37,7 @@ pub fn sources_from_postman_collection(
     let collection = parse_json(
         collection_json,
         "Postman collection",
-        collection_json_address.unwrap_or("<unknown>"),
+        collection_json_address,
     )?;
     let mut sources = Vec::new();
     let mut descriptions = Vec::new();
@@ -47,25 +48,6 @@ pub fn sources_from_postman_collection(
     Ok(PostmanSources {
         sources,
         description: (!joined.is_empty()).then(|| joined.to_owned()),
-    })
-}
-
-/// `parseJSON(text, description, address)` without its YAML fallback.
-// TODO(parse-json): call `support::parse_json::parse_json` once it is
-// ported (by the JSON Schema input). Until then, a collection that is not
-// JSON fails with `JSON.parse`'s message, where TypeScript tries YAML
-// first (and so accepts YAML collections, or reports YAML's error).
-fn parse_json(text: &str, description: &str, address: &str) -> Result<JsonValue> {
-    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
-    json::parse(text).map_err(|e| {
-        QuickTypeError::new(
-            ErrorKind::MiscJSONParseError,
-            vec![
-                ("description", description.into()),
-                ("address", address.into()),
-                ("message", e.message().into()),
-            ],
-        )
     })
 }
 
@@ -359,9 +341,14 @@ mod tests {
             ),
             "Cannot use 'in' operator to search for 'raw' in null"
         );
-        assert_eq!(
-            message("{"),
-            "Syntax error in Postman collection JSON c.json: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+        // Not JSON: `parseJSON` falls back to YAML, whose error is reported
+        // (its wording is `saphyr-parser`'s; see "Known gaps").
+        assert!(
+            message("{").starts_with(
+                "Syntax error in Postman collection JSON c.json: Unknown exception YAMLParseError: "
+            ),
+            "{}",
+            message("{")
         );
     }
 }

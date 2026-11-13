@@ -396,6 +396,7 @@ dependencies = [
  "quicktype-js-compat",
  "serde",
  "serde_json",
+ "stacker",
 ]
 
 [[package]]
