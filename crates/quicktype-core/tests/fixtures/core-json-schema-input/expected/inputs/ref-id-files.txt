@@ -1,0 +1,37 @@
+resolving # relative to tests/inputs/schema/ref-id-files.schema# (tests/inputs/schema/ref-id-files.schema#)
+trying to fetch tests/inputs/schema/ref-id-files.schema
+successully fetched tests/inputs/schema/ref-id-files.schema
+adding mapping test.json# (tests/inputs/schema/ref-id-files.schema#)
+resolved to # (tests/inputs/schema/ref-id-files.schema#)
+resolving # relative to tests/inputs/schema/ref-id-files.schema# (tests/inputs/schema/ref-id-files.schema#)
+resolved to # (tests/inputs/schema/ref-id-files.schema#)
+resolving a/test2.json# relative to test.json# (tests/inputs/schema/ref-id-files.schema#)
+trying to fetch a/test2.json
+couldn't fetch a/test2.json
+trying to fetch tests/inputs/schema/a/test2.json
+successully fetched tests/inputs/schema/a/test2.json
+adding mapping a/test2.json# (tests/inputs/schema/a/test2.json#)
+resolved to # (tests/inputs/schema/a/test2.json#)
+resolving ../b/test3.json#/foo relative to a/test2.json# (tests/inputs/schema/a/test2.json#)
+trying to fetch b/test3.json
+couldn't fetch b/test3.json
+trying to fetch tests/inputs/schema/b/test3.json
+successully fetched tests/inputs/schema/b/test3.json
+adding mapping b/test3.json# (tests/inputs/schema/b/test3.json#)
+adding mapping b/test3.json#/definitions (tests/inputs/schema/b/test3.json#definitions)
+adding mapping b/test3.json#/foo (tests/inputs/schema/b/test3.json#definitions/foo)
+adding mapping b/test3.json#/foo/properties (tests/inputs/schema/b/test3.json#definitions/foo/properties)
+adding mapping b/test3.json#/foo/properties/foo (tests/inputs/schema/b/test3.json#definitions/foo/properties/foo)
+resolved to b/test3.json#/definitions/foo (tests/inputs/schema/b/test3.json#definitions/foo)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 2 | 1 | given TopLevel ()
+2: intersection TopLevel | children 8 | 2 | given TopLevel ()
+3: intersection foo | children 5 | 3 | distance 2 foo ()
+4: integer | 4
+5: union foo | children 4 | 5 | distance 3 foo ()
+6: any | 6
+7: object TopLevel | children 3,6 | 7 | distance 1 TopLevel ()
+8: union TopLevel | children 7 | 8 | distance 1 TopLevel ()
+# attributes

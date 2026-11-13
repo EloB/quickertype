@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema#)
+error: Trying to make an empty union - do you have an impossible type in your schema?

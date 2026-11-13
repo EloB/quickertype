@@ -1,0 +1,27 @@
+resolving # relative to tests/inputs/schema/optional-date-time.schema# (tests/inputs/schema/optional-date-time.schema#)
+trying to fetch tests/inputs/schema/optional-date-time.schema
+successully fetched tests/inputs/schema/optional-date-time.schema
+resolved to # (tests/inputs/schema/optional-date-time.schema#)
+resolving # relative to tests/inputs/schema/optional-date-time.schema# (tests/inputs/schema/optional-date-time.schema#)
+resolved to # (tests/inputs/schema/optional-date-time.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 17 | 0 | given TopLevel ()
+1: intersection optional-date | children 3 | 1 | distance 2 optional-date ()
+2: date _date | 2 | distance 3 optional-date,required-date ()
+3: union optional-date | children 2 | 3 | distance 3 optional-date ()
+4: intersection optional-date-time | children 6 | 4 | distance 2 optional-date-time ()
+5: date-time _date_time | 5 | distance 3 optional-date-time,required-date-time ()
+6: union optional-date-time | children 5 | 6 | distance 3 optional-date-time ()
+7: intersection optional-time | children 9 | 7 | distance 2 optional-time ()
+8: time _time | 8 | distance 3 optional-time,required-time ()
+9: union optional-time | children 8 | 9 | distance 3 optional-time ()
+10: intersection required-date | children 11 | 10 | distance 2 required-date ()
+11: union required-date | children 2 | 11 | distance 3 required-date ()
+12: intersection required-date-time | children 13 | 12 | distance 2 required-date-time ()
+13: union required-date-time | children 5 | 13 | distance 3 required-date-time ()
+14: intersection required-time | children 15 | 14 | distance 2 required-time ()
+15: union required-time | children 8 | 15 | distance 3 required-time ()
+16: object TopLevel | children 1,4,7,10,12,14 | 16 | distance 1 TopLevel ()
+17: union TopLevel | children 16 | 17 | distance 1 TopLevel ()
+# attributes

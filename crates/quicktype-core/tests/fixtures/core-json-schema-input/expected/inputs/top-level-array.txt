@@ -1,0 +1,22 @@
+resolving # relative to tests/inputs/schema/top-level-array.schema# (tests/inputs/schema/top-level-array.schema#)
+trying to fetch tests/inputs/schema/top-level-array.schema
+successully fetched tests/inputs/schema/top-level-array.schema
+resolved to # (tests/inputs/schema/top-level-array.schema#)
+resolving # relative to tests/inputs/schema/top-level-array.schema# (tests/inputs/schema/top-level-array.schema#)
+resolved to # (tests/inputs/schema/top-level-array.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 12 | 0 | given TopLevel ()
+1: intersection TextClassificationOutputElement | children 10 | 1 | given TextClassificationOutputElement ()
+2: intersection label | children 4 | 2 | distance 2 label ()
+3: string label | 3 | distance 3 label () | unrestricted
+4: union label | children 3 | 4 | distance 3 label ()
+5: intersection score | children 7 | 5 | distance 2 score ()
+6: double | 6
+7: union score | children 6 | 7 | distance 3 score ()
+8: any | 8
+9: object TextClassificationOutputElement | children 2,5,8 | 9 | distance 1 TextClassificationOutputElement ()
+10: union TextClassificationOutputElement | children 9 | 10 | distance 1 TextClassificationOutputElement ()
+11: array | children 1 | 11
+12: union TopLevel | children 11 | 12 | distance 1 TopLevel ()
+# attributes

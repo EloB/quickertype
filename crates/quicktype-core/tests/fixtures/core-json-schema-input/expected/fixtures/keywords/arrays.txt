@@ -1,0 +1,59 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 49 | 0 | given TopLevel ()
+1: intersection boolItems | children 4 | 1 | distance 2 boolItems ()
+2: none boolItem | 2 | distance 4 boolItem ()
+3: array | children 2 | 3
+4: union boolItems | children 3 | 4 | distance 3 boolItems ()
+5: intersection minMax | children 10 | 5 | distance 2 minMax ()
+6: intersection minMax | children 8 | 6 | distance 4 minMax ()
+7: string x | 7 | distance 3 x () | unrestricted
+8: union minMax | children 7 | 8 | distance 6 minMax ()
+9: array | children 6 | 9 | 1-3
+10: union minMax | children 9 | 10 | distance 3 minMax ()
+11: intersection noItems | children 14 | 11 | distance 2 noItems ()
+12: any | 12
+13: array | children 12 | 13
+14: union noItems | children 13 | 14 | distance 3 noItems ()
+15: intersection objectItems | children 22 | 15 | distance 2 objectItems ()
+16: intersection objectItem | children 20 | 16 | distance 4 objectItem ()
+17: intersection x | children 18 | 17 | distance 2 x ()
+18: union x | children 7 | 18 | distance 3 x ()
+19: object objectItem | children 17,12 | 19 | distance 6 objectItem ()
+20: union objectItem | children 19 | 20 | distance 6 objectItem ()
+21: array | children 16 | 21
+22: union objectItems | children 21 | 22 | distance 3 objectItems ()
+23: intersection prefix | children 31 | 23 | distance 2 prefix ()
+24: intersection prefix | children 25 | 24 | distance 5 prefix ()
+25: union prefix | children 7 | 25 | distance 6 prefix ()
+26: intersection prefix | children 28 | 26 | distance 5 prefix ()
+27: bool | 27
+28: union prefix | children 27 | 28 | distance 6 prefix ()
+29: union prefix | children 24,26 | 29 | distance 4 prefix ()
+30: array | children 29 | 30
+31: union prefix | children 30 | 31 | distance 3 prefix ()
+32: intersection prefixClosed | children 38 | 32 | distance 2 prefixClosed ()
+33: intersection prefixClosed | children 35 | 33 | distance 5 prefixClosed ()
+34: double | 34
+35: union prefixClosed | children 34 | 35 | distance 6 prefixClosed ()
+36: union prefixClosed | children 33 | 36 | distance 4 prefixClosed ()
+37: array | children 36 | 37
+38: union prefixClosed | children 37 | 38 | distance 3 prefixClosed ()
+39: intersection tuple | children 47 | 39 | distance 2 tuple ()
+40: intersection tuple | children 41 | 40 | distance 5 tuple ()
+41: union tuple | children 7 | 41 | distance 6 tuple ()
+42: intersection tuple | children 44 | 42 | distance 5 tuple ()
+43: integer | 43
+44: union tuple | children 43 | 44 | distance 6 tuple ()
+45: union tuple | children 40,42 | 45 | distance 4 tuple ()
+46: array | children 45 | 46
+47: union tuple | children 46 | 47 | distance 3 tuple ()
+48: object TopLevel | children 1,5,11,15,23,32,39,12 | 48 | distance 1 TopLevel ()
+49: union TopLevel | children 48 | 49 | distance 1 TopLevel ()
+# attributes

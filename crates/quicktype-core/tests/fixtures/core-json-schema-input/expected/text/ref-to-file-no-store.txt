@@ -1,0 +1,12 @@
+resolving # relative to Text# (Text#)
+trying to fetch Text
+successully fetched Text
+resolved to # (Text#)
+resolving # relative to Text# (Text#)
+resolved to # (Text#)
+resolving crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B relative to #/properties/b (Text#/properties/b)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+error: Could not fetch schema crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B, referred to from Text#/properties/b

@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema#)
+error: oneOf cases must be an array, but is [object Object], at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema#/oneOf

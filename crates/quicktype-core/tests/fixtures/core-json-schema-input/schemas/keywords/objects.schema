@@ -1,0 +1,103 @@
+{
+  "title": "Thing",
+  "description": "A thing.",
+  "type": "object",
+  "properties": {
+    "draft3": {
+      "type": "string",
+      "required": true
+    },
+    "patternMap": {
+      "type": "object",
+      "patternProperties": {
+        ".*": {
+          "type": "integer"
+        }
+      }
+    },
+    "unevaluated": {
+      "type": "object",
+      "unevaluatedProperties": {
+        "type": "boolean"
+      }
+    },
+    "additional": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "required": [
+        "undeclared",
+        "other"
+      ]
+    },
+    "closed": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "z": {
+          "type": "null"
+        }
+      }
+    },
+    "anyValue": true,
+    "noValue": false,
+    "described": {
+      "type": "string",
+      "description": "a property description"
+    },
+    "describedObject": {
+      "type": "object",
+      "description": "object description",
+      "properties": {
+        "inner": {
+          "type": "string",
+          "description": "inner description"
+        }
+      }
+    },
+    "multiType": {
+      "type": [
+        "string",
+        "integer"
+      ],
+      "description": "multi description"
+    },
+    "titled": {
+      "type": "object",
+      "title": "TitledThing",
+      "properties": {
+        "t": {
+          "type": "string"
+        }
+      }
+    },
+    "accessors": {
+      "type": "object",
+      "qt-accessors": {
+        "a": "renamedA",
+        "b": {
+          "go": "BGo",
+          "*": "BStar"
+        }
+      },
+      "properties": {
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "draft3",
+    "missing"
+  ],
+  "definitions": {
+    "Unused": {
+      "type": "string"
+    }
+  }
+}

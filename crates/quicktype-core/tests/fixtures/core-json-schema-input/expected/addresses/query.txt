@@ -1,0 +1,6 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1
+error: Could not fetch schema #, referred to from crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1#

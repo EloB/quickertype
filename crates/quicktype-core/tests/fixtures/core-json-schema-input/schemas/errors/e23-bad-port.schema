@@ -1,0 +1,7 @@
+{
+  "properties": {
+    "x": {
+      "$ref": "http://x:99999/a.json"
+    }
+  }
+}

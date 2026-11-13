@@ -1,0 +1,326 @@
+resolving # relative to tests/inputs/schema/renaming-bug.schema# (tests/inputs/schema/renaming-bug.schema#)
+trying to fetch tests/inputs/schema/renaming-bug.schema
+successully fetched tests/inputs/schema/renaming-bug.schema
+resolved to # (tests/inputs/schema/renaming-bug.schema#)
+resolving # relative to tests/inputs/schema/renaming-bug.schema# (tests/inputs/schema/renaming-bug.schema#)
+resolved to # (tests/inputs/schema/renaming-bug.schema#)
+resolving #/definitions/box relative to #/oneOf/0 (tests/inputs/schema/renaming-bug.schema#/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/box (tests/inputs/schema/renaming-bug.schema#/definitions/box)
+resolving #/definitions/fruit relative to #/definitions/box/properties/fruits/items (tests/inputs/schema/renaming-bug.schema#/definitions/box/properties/fruits/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/fruit (tests/inputs/schema/renaming-bug.schema#/definitions/fruit)
+resolving #/definitions/berry relative to #/definitions/fruit/properties/berries/items (tests/inputs/schema/renaming-bug.schema#/definitions/fruit/properties/berries/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/berry (tests/inputs/schema/renaming-bug.schema#/definitions/berry)
+resolving #/definitions/color relative to #/definitions/berry/properties/color (tests/inputs/schema/renaming-bug.schema#/definitions/berry/properties/color)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/color (tests/inputs/schema/renaming-bug.schema#/definitions/color)
+resolving #/definitions/rgb relative to #/definitions/color/properties/rgb (tests/inputs/schema/renaming-bug.schema#/definitions/color/properties/rgb)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/rgb (tests/inputs/schema/renaming-bug.schema#/definitions/rgb)
+resolving #/definitions/shape relative to #/definitions/berry/properties/shapes/items (tests/inputs/schema/renaming-bug.schema#/definitions/berry/properties/shapes/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/shape (tests/inputs/schema/renaming-bug.schema#/definitions/shape)
+resolving #/definitions/geometry relative to #/definitions/shape/properties/geometry (tests/inputs/schema/renaming-bug.schema#/definitions/shape/properties/geometry)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/geometry (tests/inputs/schema/renaming-bug.schema#/definitions/geometry)
+resolving #/definitions/rectangle relative to #/definitions/geometry/anyOf/0 (tests/inputs/schema/renaming-bug.schema#/definitions/geometry/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/rectangle (tests/inputs/schema/renaming-bug.schema#/definitions/rectangle)
+resolving #/definitions/part relative to #/definitions/rectangle/properties/rectShape/properties/parts/items (tests/inputs/schema/renaming-bug.schema#/definitions/rectangle/properties/rectShape/properties/parts/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/part (tests/inputs/schema/renaming-bug.schema#/definitions/part)
+resolving #/definitions/circular relative to #/definitions/geometry/anyOf/1 (tests/inputs/schema/renaming-bug.schema#/definitions/geometry/anyOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/circular (tests/inputs/schema/renaming-bug.schema#/definitions/circular)
+resolving #/definitions/history relative to #/definitions/shape/properties/history (tests/inputs/schema/renaming-bug.schema#/definitions/shape/properties/history)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/history (tests/inputs/schema/renaming-bug.schema#/definitions/history)
+resolving #/definitions/vehicle relative to #/definitions/box/properties/vehicles/items (tests/inputs/schema/renaming-bug.schema#/definitions/box/properties/vehicles/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle)
+resolving #/definitions/vehicle/definitions/limit relative to #/definitions/vehicle/properties/speed/properties/velocity (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/properties/speed/properties/velocity)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/limit (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/limit)
+resolving #/definitions/vehicle/definitions/vehicleType relative to #/definitions/vehicle/properties/type (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/properties/type)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/vehicleType (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType)
+resolving #/definitions/vehicle/definitions/truck relative to #/definitions/vehicle/definitions/vehicleType/anyOf/0 (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/truck (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/truck)
+resolving #/definitions/vehicle/definitions/axis relative to #/definitions/vehicle/definitions/truck/properties/width (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/truck/properties/width)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/axis (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/axis)
+resolving #/definitions/vehicle/definitions/bus relative to #/definitions/vehicle/definitions/vehicleType/anyOf/1 (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType/anyOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/bus (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/bus)
+resolving #/definitions/vehicle/definitions/axis relative to #/definitions/vehicle/definitions/bus/properties/length (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/bus/properties/length)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/axis (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/axis)
+resolving #/definitions/vehicle/definitions/car relative to #/definitions/vehicle/definitions/vehicleType/anyOf/2 (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType/anyOf/2)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/car (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/car)
+resolving #/definitions/vehicle/definitions/van relative to #/definitions/vehicle/definitions/vehicleType/anyOf/3 (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType/anyOf/3)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/van (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/van)
+resolving #/definitions/vehicle/definitions/train relative to #/definitions/vehicle/definitions/vehicleType/anyOf/4 (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/vehicleType/anyOf/4)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/vehicle/definitions/train (tests/inputs/schema/renaming-bug.schema#/definitions/vehicle/definitions/train)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 6,231 | 0 | given TopLevel ()
+1: intersection version | children 3 | 1 | distance 2 version ()
+2: string version | 2 | distance 3 version () | unrestricted
+3: union version | children 2 | 3 | distance 3 version ()
+4: any | 4
+5: object TopLevel | children 1,4 | 5 | distance 1 TopLevel ()
+6: union TopLevel | children 5 | 6 | distance 1 TopLevel ()
+7: intersection TopLevel | children 8 | 7 | distance 2 TopLevel ()
+8: intersection box | children 230 | 8 | given box ()
+9: intersection fruits | children 89 | 9 | distance 2 fruits ()
+10: intersection fruit | children 11 | 10 | distance 4 fruit ()
+11: intersection fruit | children 87 | 11 | given fruit ()
+12: intersection apple | children 14 | 12 | distance 2 apple ()
+13: bool | 13
+14: union apple | children 13 | 14 | distance 3 apple ()
+15: intersection berries | children 83 | 15 | distance 2 berries ()
+16: intersection berry | children 17 | 16 | distance 4 berry ()
+17: intersection berry | children 81 | 17 | given berry ()
+18: intersection color | children 19 | 18 | distance 2 color ()
+19: intersection color | children 25 | 19 | given color ()
+20: intersection rgb | children 21 | 20 | distance 2 rgb ()
+21: intersection rgb | children 23 | 21 | given rgb ()
+22: double | 22
+23: union rgb | children 22 | 23 | distance 1 rgb ()
+24: object color | children 20,4 | 24 | distance 1 color ()
+25: union color | children 24 | 25 | distance 1 color ()
+26: intersection name | children 28 | 26 | distance 2 name ()
+27: string name | 27 | distance 3 name,id () | 1-undefined | unrestricted
+28: union name | children 27 | 28 | distance 3 name ()
+29: intersection shapes | children 79 | 29 | distance 2 shapes ()
+30: intersection shape | children 31 | 30 | distance 4 shape ()
+31: intersection shape | children 77 | 31 | given shape ()
+32: intersection geometry | children 33 | 32 | distance 2 geometry ()
+33: intersection geometry | children 35,69 | 33 | given geometry ()
+34: object geometry | children 4 | 34 | distance 1 geometry ()
+35: union geometry | children 34 | 35 | distance 1 geometry ()
+36: intersection geometry | children 37 | 36 | distance 2 geometry ()
+37: intersection rectangle | children 56 | 37 | given rectangle ()
+38: intersection rectShape | children 54 | 38 | distance 2 rectShape ()
+39: intersection parts | children 52 | 39 | distance 2 parts ()
+40: intersection part | children 41 | 40 | distance 4 part ()
+41: intersection part | children 50 | 41 | given part ()
+42: intersection depth | children 44 | 42 | distance 2 depth ()
+43: string truck | 43 | distance 1 truck,bus,car,van,train () | unrestricted
+44: union depth | children 43 | 44 | distance 3 depth ()
+45: intersection length | children 46 | 45 | distance 2 length ()
+46: union length | children 43 | 46 | distance 3 length ()
+47: intersection width | children 48 | 47 | distance 2 width ()
+48: union width | children 43 | 48 | distance 3 width ()
+49: object part | children 42,45,47,4 | 49 | distance 1 part ()
+50: union part | children 49 | 50 | distance 1 part ()
+51: array | children 40 | 51
+52: union parts | children 51 | 52 | distance 3 parts ()
+53: object rectShape | children 39,4 | 53 | distance 3 rectShape ()
+54: union rectShape | children 53 | 54 | distance 3 rectShape ()
+55: object rectangle | children 38,4 | 55 | distance 1 rectangle ()
+56: union rectangle | children 55 | 56 | distance 1 rectangle ()
+57: intersection geometry | children 58 | 57 | distance 2 geometry ()
+58: intersection circular | children 68 | 58 | given circular ()
+59: intersection circularShape | children 66 | 59 | distance 2 circularShape ()
+60: intersection circularShape | children 64 | 60 | distance 4 circularShape ()
+61: intersection shapeName | children 62 | 61 | distance 2 shapeName ()
+62: union shapeName | children 43 | 62 | distance 3 shapeName ()
+63: object circularShape | children 61,4 | 63 | distance 6 circularShape ()
+64: union circularShape | children 63 | 64 | distance 6 circularShape ()
+65: array | children 60 | 65
+66: union circularShape | children 65 | 66 | distance 3 circularShape ()
+67: object circular | children 59,4 | 67 | distance 1 circular ()
+68: union circular | children 67 | 68 | distance 1 circular ()
+69: union geometry | children 36,57 | 69 | distance 1 geometry ()
+70: intersection history | children 71 | 70 | distance 2 history ()
+71: intersection history | children 75 | 71 | given history ()
+72: intersection class | children 73 | 72 | distance 2 class ()
+73: union class | children 43 | 73 | distance 3 class ()
+74: object history | children 72,4 | 74 | distance 1 history ()
+75: union history | children 74 | 75 | distance 1 history ()
+76: object shape | children 32,70,4 | 76 | distance 1 shape ()
+77: union shape | children 76 | 77 | distance 1 shape ()
+78: array | children 30 | 78
+79: union shapes | children 78 | 79 | distance 3 shapes ()
+80: object berry | children 18,26,29,4 | 80 | distance 1 berry ()
+81: union berry | children 80 | 81 | distance 1 berry ()
+82: array | children 16 | 82
+83: union berries | children 82 | 83 | distance 3 berries ()
+84: intersection orange | children 85 | 84 | distance 2 orange ()
+85: union orange | children 13 | 85 | distance 3 orange ()
+86: object fruit | children 12,15,84,4 | 86 | distance 1 fruit ()
+87: union fruit | children 86 | 87 | distance 1 fruit ()
+88: array | children 10 | 88
+89: union fruits | children 88 | 89 | distance 3 fruits ()
+90: intersection vehicles | children 228 | 90 | distance 2 vehicles ()
+91: intersection vehicle | children 92 | 91 | distance 4 vehicle ()
+92: intersection vehicle | children 226 | 92 | given vehicle ()
+93: intersection brand | children 94 | 93 | distance 2 brand ()
+94: union brand | children 43 | 94 | distance 3 brand ()
+95: intersection id | children 96 | 95 | distance 2 id ()
+96: union id | children 27 | 96 | distance 3 id ()
+97: intersection speed | children 107 | 97 | distance 2 speed ()
+98: intersection velocity | children 99 | 98 | distance 2 velocity ()
+99: intersection limit | children 105 | 99 | given limit ()
+100: intersection maximum | children 101 | 100 | distance 2 maximum ()
+101: union maximum | children 22 | 101 | distance 3 maximum ()
+102: intersection minimum | children 103 | 102 | distance 2 minimum ()
+103: union minimum | children 22 | 103 | distance 3 minimum ()
+104: object limit | children 100,102,4 | 104 | distance 1 limit ()
+105: union limit | children 104 | 105 | distance 1 limit ()
+106: object speed | children 98,4 | 106 | distance 3 speed ()
+107: union speed | children 106 | 107 | distance 3 speed ()
+108: intersection subModule | children 109 | 108 | distance 2 subModule ()
+109: union subModule | children 13 | 109 | distance 3 subModule ()
+110: intersection type | children 111 | 110 | distance 2 type ()
+111: intersection vehicleType | children 113,222 | 111 | given vehicleType ()
+112: object vehicleType | children 4 | 112 | distance 1 vehicleType ()
+113: union vehicleType | children 112 | 113 | distance 1 vehicleType ()
+114: intersection vehicleType | children 115 | 114 | distance 2 vehicleType ()
+115: intersection truck | children 127 | 115 | given truck ()
+116: null | 116
+117: integer | 117
+118: array | children 4 | 118
+119: intersection name | children 121 | 119 | distance 2 name ()
+120: string name | 120 | distance 3 name () | 1 enums: truck (1), ...
+121: union name | children 120 | 121 | distance 3 name ()
+122: intersection width | children 123 | 122 | distance 2 width ()
+123: intersection axis | children 125 | 123 | given axis ()
+124: string axis | 124 | distance 1 axis () | 3 enums: X (1), ...
+125: union axis | children 124 | 125 | distance 1 axis ()
+126: object truck | children 119,122,4 | 126 | distance 1 truck ()
+127: union truck | children 118,13,22,117,116,126,43 | 127 | distance 1 truck ()
+128: intersection vehicleType | children 129 | 128 | distance 2 vehicleType ()
+129: intersection bus | children 135 | 129 | given bus ()
+130: intersection length | children 123 | 130 | distance 2 length ()
+131: intersection name | children 133 | 131 | distance 2 name ()
+132: string name | 132 | distance 3 name () | 1 enums: bus (1), ...
+133: union name | children 132 | 133 | distance 3 name ()
+134: object bus | children 130,131,4 | 134 | distance 1 bus ()
+135: union bus | children 118,13,22,117,116,134,43 | 135 | distance 1 bus ()
+136: intersection vehicleType | children 137 | 136 | distance 2 vehicleType ()
+137: intersection car | children 142,170 | 137 | given car ()
+138: intersection name | children 140 | 138 | distance 2 name ()
+139: string name | 139 | distance 3 name () | 1 enums: car (1), ...
+140: union name | children 139 | 140 | distance 3 name ()
+141: object car | children 138,4 | 141 | distance 1 car ()
+142: union car | children 118,13,22,117,116,141,43 | 142 | distance 1 car ()
+143: intersection car | children 151 | 143 | distance 2 car ()
+144: intersection length | children 146 | 144 | distance 2 length ()
+145: string length | 145 | distance 3 length () | 1 enums: X (1), ...
+146: union length | children 145 | 146 | distance 3 length ()
+147: intersection width | children 149 | 147 | distance 2 width ()
+148: string width | 148 | distance 3 width () | 1 enums: X (1), ...
+149: union width | children 148 | 149 | distance 3 width ()
+150: object car | children 144,147,4 | 150 | distance 3 car ()
+151: union car | children 118,13,22,117,116,150,43 | 151 | distance 3 car ()
+152: intersection car | children 160 | 152 | distance 2 car ()
+153: intersection length | children 155 | 153 | distance 2 length ()
+154: string length | 154 | distance 3 length () | 1 enums: Y (1), ...
+155: union length | children 154 | 155 | distance 3 length ()
+156: intersection width | children 158 | 156 | distance 2 width ()
+157: string width | 157 | distance 3 width () | 1 enums: Y (1), ...
+158: union width | children 157 | 158 | distance 3 width ()
+159: object car | children 153,156,4 | 159 | distance 3 car ()
+160: union car | children 118,13,22,117,116,159,43 | 160 | distance 3 car ()
+161: intersection car | children 169 | 161 | distance 2 car ()
+162: intersection length | children 164 | 162 | distance 2 length ()
+163: string length | 163 | distance 3 length () | 1 enums: Z (1), ...
+164: union length | children 163 | 164 | distance 3 length ()
+165: intersection width | children 167 | 165 | distance 2 width ()
+166: string width | 166 | distance 3 width () | 1 enums: Z (1), ...
+167: union width | children 166 | 167 | distance 3 width ()
+168: object car | children 162,165,4 | 168 | distance 3 car ()
+169: union car | children 118,13,22,117,116,168,43 | 169 | distance 3 car ()
+170: union car | children 143,152,161 | 170 | distance 1 car ()
+171: intersection vehicleType | children 172 | 171 | distance 2 vehicleType ()
+172: intersection van | children 180 | 172 | given van ()
+173: intersection name | children 175 | 173 | distance 2 name ()
+174: string name | 174 | distance 3 name () | 1 enums: van (1), ...
+175: union name | children 174 | 175 | distance 3 name ()
+176: intersection width | children 178 | 176 | distance 2 width ()
+177: string width | 177 | distance 3 width () | 3 enums: XY (1), ...
+178: union width | children 177 | 178 | distance 3 width ()
+179: object van | children 173,176,4 | 179 | distance 1 van ()
+180: union van | children 118,13,22,117,116,179,43 | 180 | distance 1 van ()
+181: intersection vehicleType | children 182 | 181 | distance 2 vehicleType ()
+182: intersection train | children 187,215 | 182 | given train ()
+183: intersection name | children 185 | 183 | distance 2 name ()
+184: string name | 184 | distance 3 name () | 1 enums: train (1), ...
+185: union name | children 184 | 185 | distance 3 name ()
+186: object train | children 183,4 | 186 | distance 1 train ()
+187: union train | children 118,13,22,117,116,186,43 | 187 | distance 1 train ()
+188: intersection train | children 196 | 188 | distance 2 train ()
+189: intersection length | children 191 | 189 | distance 2 length ()
+190: string length | 190 | distance 3 length () | 1 enums: YZ (1), ...
+191: union length | children 190 | 191 | distance 3 length ()
+192: intersection width | children 194 | 192 | distance 2 width ()
+193: string width | 193 | distance 3 width () | 1 enums: X (1), ...
+194: union width | children 193 | 194 | distance 3 width ()
+195: object train | children 189,192,4 | 195 | distance 3 train ()
+196: union train | children 118,13,22,117,116,195,43 | 196 | distance 3 train ()
+197: intersection train | children 205 | 197 | distance 2 train ()
+198: intersection length | children 200 | 198 | distance 2 length ()
+199: string length | 199 | distance 3 length () | 1 enums: ZX (1), ...
+200: union length | children 199 | 200 | distance 3 length ()
+201: intersection width | children 203 | 201 | distance 2 width ()
+202: string width | 202 | distance 3 width () | 1 enums: Y (1), ...
+203: union width | children 202 | 203 | distance 3 width ()
+204: object train | children 198,201,4 | 204 | distance 3 train ()
+205: union train | children 118,13,22,117,116,204,43 | 205 | distance 3 train ()
+206: intersection train | children 214 | 206 | distance 2 train ()
+207: intersection length | children 209 | 207 | distance 2 length ()
+208: string length | 208 | distance 3 length () | 1 enums: XY (1), ...
+209: union length | children 208 | 209 | distance 3 length ()
+210: intersection width | children 212 | 210 | distance 2 width ()
+211: string width | 211 | distance 3 width () | 1 enums: Z (1), ...
+212: union width | children 211 | 212 | distance 3 width ()
+213: object train | children 207,210,4 | 213 | distance 3 train ()
+214: union train | children 118,13,22,117,116,213,43 | 214 | distance 3 train ()
+215: union train | children 188,197,206 | 215 | distance 1 train ()
+216: intersection vehicleType | children 221 | 216 | distance 2 vehicleType ()
+217: intersection name | children 219 | 217 | distance 2 name ()
+218: string name | 218 | distance 3 name () | 4 enums: Bike (1), ...
+219: union name | children 218 | 219 | distance 3 name ()
+220: object vehicleType | children 217,4 | 220 | distance 3 vehicleType ()
+221: union vehicleType | children 118,13,22,117,116,220,43 | 221 | distance 3 vehicleType ()
+222: union vehicleType | children 114,128,136,171,181,216 | 222 | distance 1 vehicleType ()
+223: intersection year | children 224 | 223 | distance 2 year ()
+224: union year | children 43 | 224 | distance 3 year ()
+225: object vehicle | children 93,95,97,108,110,223,4 | 225 | distance 1 vehicle ()
+226: union vehicle | children 225 | 226 | distance 1 vehicle ()
+227: array | children 91 | 227
+228: union vehicles | children 227 | 228 | distance 3 vehicles ()
+229: object box | children 9,90,4 | 229 | distance 1 box ()
+230: union box | children 229 | 230 | distance 1 box ()
+231: union TopLevel | children 7 | 231 | distance 1 TopLevel ()
+# attributes
+2 pattern "^\\d{1,5}.{1}\\d{1,5}.{1}\\d{1,5}$"

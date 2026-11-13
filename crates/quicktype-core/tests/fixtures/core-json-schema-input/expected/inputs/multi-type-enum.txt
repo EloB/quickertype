@@ -1,0 +1,19 @@
+resolving # relative to tests/inputs/schema/multi-type-enum.schema# (tests/inputs/schema/multi-type-enum.schema#)
+trying to fetch tests/inputs/schema/multi-type-enum.schema
+successully fetched tests/inputs/schema/multi-type-enum.schema
+resolved to # (tests/inputs/schema/multi-type-enum.schema#)
+resolving # relative to tests/inputs/schema/multi-type-enum.schema# (tests/inputs/schema/multi-type-enum.schema#)
+resolved to # (tests/inputs/schema/multi-type-enum.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 9 | 0 | given TopLevel ()
+1: intersection foo | children 6 | 1 | distance 2 foo ()
+2: double | 2
+3: integer | 3
+4: bool | 4
+5: string foo | 5 | distance 3 foo () | 3 enums: a (1), ...
+6: union foo | children 4,2,3,5 | 6 | distance 3 foo ()
+7: any | 7
+8: object TopLevel | children 1,7 | 8 | distance 1 TopLevel ()
+9: union TopLevel | children 8 | 9 | distance 1 TopLevel ()
+# attributes

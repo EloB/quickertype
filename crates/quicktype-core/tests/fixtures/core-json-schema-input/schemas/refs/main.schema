@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "a": {
+      "$ref": "sub/a.schema#/definitions/A"
+    },
+    "aRoot": {
+      "$ref": "sub/a.schema"
+    },
+    "local": {
+      "$ref": "#/definitions/Local"
+    },
+    "slash": {
+      "$ref": "#/definitions/a~1b"
+    },
+    "space": {
+      "$ref": "#/definitions/with%20space"
+    },
+    "dotted": {
+      "$ref": "./sub/../sub/b.schema#/definitions/B"
+    },
+    "item0": {
+      "$ref": "#/definitions/list/0"
+    },
+    "self": {
+      "$ref": "#"
+    }
+  },
+  "required": [
+    "a",
+    "local"
+  ],
+  "definitions": {
+    "Local": {
+      "type": "string",
+      "description": "a local definition"
+    },
+    "a~1b": {
+      "type": "integer"
+    },
+    "with%20space": {
+      "type": "boolean"
+    },
+    "list": [
+      {
+        "type": "number"
+      }
+    ]
+  }
+}

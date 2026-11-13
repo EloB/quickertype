@@ -4,6 +4,17 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- Merged `feat/core-rendering` (rendering framework + the Rust renderer:
+  364/364 Rust golden cases render byte-identically from the reference's
+  pre-naming graph) and `feat/core-json-input` (both JSON readers match the
+  reference 100%; V8-exact `JSON.parse`, 5,017/5,017 vectors). Each
+  reviewed; findings fixed (incl. 2 crash bugs in JSON input).
+- Started Phase 3 (`feat/run-and-cli`: Run + CLI generation path, aiming
+  for the first end-to-end golden passes) and language wave 1 in parallel:
+  `feat/lang-js-family`, `feat/lang-java-kotlin`, `feat/lang-csharp-pike`,
+  `feat/lang-haskell-scala-php`. `feat/core-json-schema-input` is in
+  review fixes.
+
 - Merged `feat/typescript-input`: TypeScript input without Node, via the
   TypeScript 7 native compiler's `tsc --api` protocol. 474/474 recorded
   cases produce the reference JSON Schema byte for byte (~10x faster per

@@ -1,0 +1,39 @@
+resolving # relative to tests/inputs/schema/pattern.schema# (tests/inputs/schema/pattern.schema#)
+trying to fetch tests/inputs/schema/pattern.schema
+successully fetched tests/inputs/schema/pattern.schema
+resolved to # (tests/inputs/schema/pattern.schema#)
+resolving # relative to tests/inputs/schema/pattern.schema# (tests/inputs/schema/pattern.schema#)
+resolved to # (tests/inputs/schema/pattern.schema#)
+resolving #/properties/pattern2 relative to #/properties/union/oneOf/0 (tests/inputs/schema/pattern.schema#/properties/union/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/pattern2 (tests/inputs/schema/pattern.schema#/properties/pattern2)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 21 | 0 | given TopLevel ()
+1: intersection pattern1 | children 3 | 1 | distance 2 pattern1 ()
+2: string pattern1 | 2 | distance 3 pattern1 () | unrestricted
+3: union pattern1 | children 2 | 3 | distance 3 pattern1 ()
+4: intersection pattern2 | children 6 | 4 | distance 2 pattern2 ()
+5: string pattern2 | 5 | distance 3 pattern2 () | unrestricted
+6: union pattern2 | children 5 | 6 | distance 3 pattern2 ()
+7: intersection RegExp | children 12 | 7 | given RegExp ()
+8: intersection pattern3 | children 10 | 8 | distance 2 pattern3 ()
+9: string pattern3 | 9 | distance 3 pattern3 () | unrestricted
+10: union pattern3 | children 9 | 10 | distance 3 pattern3 ()
+11: object RegExp | children 8 | 11 | distance 1 RegExp ()
+12: union RegExp | children 11 | 12 | distance 1 RegExp ()
+13: intersection union | children 18 | 13 | distance 2 union ()
+14: intersection union | children 4 | 14 | distance 4 union ()
+15: intersection union | children 17 | 15 | distance 4 union ()
+16: string union | 16 | distance 5 union () | unrestricted
+17: union union | children 16 | 17 | distance 5 union ()
+18: union union | children 14,15 | 18 | distance 3 union ()
+19: any | 19
+20: object TopLevel | children 7,1,4,13,19 | 20 | distance 1 TopLevel ()
+21: union TopLevel | children 20 | 21 | distance 1 TopLevel ()
+# attributes
+2 pattern "a[.]*"
+5 pattern "b[.]*"
+9 pattern "d[.]*"
+16 pattern "c[.]*"

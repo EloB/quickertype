@@ -1,0 +1,17 @@
+{
+  "definitions": {
+    "Foo": {
+      "type": "object",
+      "properties": {
+        "f": {
+          "type": "string"
+        }
+      }
+    },
+    "Bar": {
+      "type": "integer"
+    },
+    "Baz": true
+  },
+  "title": "IgnoredTitle"
+}

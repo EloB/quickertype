@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema#)
+error: Cannot read properties of null (reading 'required')

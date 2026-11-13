@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#)
+resolving #/n relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: null is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema#

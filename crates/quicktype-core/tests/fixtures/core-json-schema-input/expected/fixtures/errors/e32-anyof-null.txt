@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema#)
+error: anyOf cases must be an array, but is null, at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema#/anyOf

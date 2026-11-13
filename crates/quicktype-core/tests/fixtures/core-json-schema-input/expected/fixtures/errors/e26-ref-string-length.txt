@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#)
+resolving #/s/length relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: Value of type string is not valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema#length

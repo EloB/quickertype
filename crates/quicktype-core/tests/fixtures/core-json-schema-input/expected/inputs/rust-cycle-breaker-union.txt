@@ -1,0 +1,44 @@
+resolving # relative to tests/inputs/schema/rust-cycle-breaker-union.schema# (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+trying to fetch tests/inputs/schema/rust-cycle-breaker-union.schema
+successully fetched tests/inputs/schema/rust-cycle-breaker-union.schema
+resolved to # (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+resolving # relative to tests/inputs/schema/rust-cycle-breaker-union.schema# (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+resolved to # (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+resolving # relative to #/properties/next/anyOf/0 (tests/inputs/schema/rust-cycle-breaker-union.schema#/properties/next/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to # (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+resolving # relative to #properties/next/anyOf/0 (tests/inputs/schema/rust-cycle-breaker-union.schema#properties/next/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to # (tests/inputs/schema/rust-cycle-breaker-union.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 26 | 0 | given TopLevel ()
+1: intersection next | children 22 | 1 | distance 2 next ()
+2: intersection next | children 3 | 2 | distance 4 next ()
+3: intersection Node | children 17 | 3 | given Node ()
+4: intersection next | children 12 | 4 | distance 2 next ()
+5: intersection next | children 3 | 5 | distance 4 next ()
+6: intersection next | children 8 | 6 | distance 4 next ()
+7: string value | 7 | distance 3 value () | unrestricted
+8: union next | children 7 | 8 | distance 5 next ()
+9: intersection next | children 11 | 9 | distance 4 next ()
+10: null | 10
+11: union next | children 10 | 11 | distance 5 next ()
+12: union next | children 5,6,9 | 12 | distance 3 next ()
+13: intersection value | children 14 | 13 | distance 2 value ()
+14: union value | children 7 | 14 | distance 3 value ()
+15: any | 15
+16: object Node | children 4,13,15 | 16 | distance 1 Node ()
+17: union Node | children 16 | 17 | distance 1 Node ()
+18: intersection next | children 19 | 18 | distance 4 next ()
+19: union next | children 7 | 19 | distance 5 next ()
+20: intersection next | children 21 | 20 | distance 4 next ()
+21: union next | children 10 | 21 | distance 5 next ()
+22: union next | children 2,18,20 | 22 | distance 3 next ()
+23: intersection value | children 24 | 23 | distance 2 value ()
+24: union value | children 7 | 24 | distance 3 value ()
+25: object TopLevel | children 1,23,15 | 25 | distance 1 TopLevel ()
+26: union TopLevel | children 25 | 26 | distance 1 TopLevel ()
+# attributes

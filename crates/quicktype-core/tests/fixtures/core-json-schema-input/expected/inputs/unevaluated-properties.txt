@@ -1,0 +1,70 @@
+resolving # relative to tests/inputs/schema/unevaluated-properties.schema# (tests/inputs/schema/unevaluated-properties.schema#)
+trying to fetch tests/inputs/schema/unevaluated-properties.schema
+successully fetched tests/inputs/schema/unevaluated-properties.schema
+adding mapping unevaluated-properties.schema# (tests/inputs/schema/unevaluated-properties.schema#)
+adding mapping unevaluated-properties.schema#/properties (tests/inputs/schema/unevaluated-properties.schema#properties)
+adding mapping unevaluated-properties.schema#/properties/config (tests/inputs/schema/unevaluated-properties.schema#properties/config)
+adding mapping unevaluated-properties.schema#/$defs (tests/inputs/schema/unevaluated-properties.schema#$defs)
+adding mapping unevaluated-properties.schema#/$defs/Config (tests/inputs/schema/unevaluated-properties.schema#$defs/Config)
+adding mapping unevaluated-properties.schema#/$defs/Config/properties (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties)
+adding mapping unevaluated-properties.schema#/$defs/Config/properties/closed (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties/closed)
+adding mapping unevaluated-properties.schema#/$defs/Config/properties/name (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties/name)
+adding mapping unevaluated-properties.schema#/$defs/Config/properties/settings (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties/settings)
+adding mapping unevaluated-properties.schema#/$defs/Closed (tests/inputs/schema/unevaluated-properties.schema#$defs/Closed)
+adding mapping unevaluated-properties.schema#/$defs/Settings (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings)
+adding mapping unevaluated-properties.schema#/$defs/Settings/properties (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings/properties)
+adding mapping unevaluated-properties.schema#/$defs/Settings/unevaluatedProperties (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings/unevaluatedProperties)
+adding mapping unevaluated-properties.schema#/$defs/Settings/unevaluatedProperties/items (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings/unevaluatedProperties/items)
+adding mapping unevaluated-properties.schema#/$defs/Item (tests/inputs/schema/unevaluated-properties.schema#$defs/Item)
+adding mapping unevaluated-properties.schema#/$defs/Item/properties (tests/inputs/schema/unevaluated-properties.schema#$defs/Item/properties)
+adding mapping unevaluated-properties.schema#/$defs/Item/properties/key (tests/inputs/schema/unevaluated-properties.schema#$defs/Item/properties/key)
+adding mapping unevaluated-properties.schema#/$defs/Item/properties/value (tests/inputs/schema/unevaluated-properties.schema#$defs/Item/properties/value)
+resolved to # (tests/inputs/schema/unevaluated-properties.schema#)
+resolving # relative to tests/inputs/schema/unevaluated-properties.schema# (tests/inputs/schema/unevaluated-properties.schema#)
+resolved to # (tests/inputs/schema/unevaluated-properties.schema#)
+resolving #/$defs/Config relative to unevaluated-properties.schema#/properties/config (tests/inputs/schema/unevaluated-properties.schema#/properties/config)
+resolved to unevaluated-properties.schema#/$defs/Config (tests/inputs/schema/unevaluated-properties.schema#$defs/Config)
+resolving #/$defs/Closed relative to unevaluated-properties.schema#/$defs/Config/properties/closed (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties/closed)
+resolved to unevaluated-properties.schema#/$defs/Closed (tests/inputs/schema/unevaluated-properties.schema#$defs/Closed)
+resolving #/$defs/Settings relative to unevaluated-properties.schema#/$defs/Config/properties/settings (tests/inputs/schema/unevaluated-properties.schema#$defs/Config/properties/settings)
+resolved to unevaluated-properties.schema#/$defs/Settings (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings)
+resolving #/$defs/Item relative to unevaluated-properties.schema#/$defs/Settings/additionalProperties/items (tests/inputs/schema/unevaluated-properties.schema#$defs/Settings/additionalProperties/items)
+resolved to unevaluated-properties.schema#/$defs/Item (tests/inputs/schema/unevaluated-properties.schema#$defs/Item)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 34 | 0 | given TopLevel ()
+1: intersection config | children 2 | 1 | distance 2 config ()
+2: intersection Config | children 32 | 2 | given Config ()
+3: intersection closed | children 4 | 3 | distance 2 closed ()
+4: intersection Closed | children 13 | 4 | given Closed ()
+5: null | 5
+6: double | 6
+7: integer | 7
+8: bool | 8
+9: string Closed | 9 | distance 1 Closed () | unrestricted
+10: any | 10
+11: array | children 10 | 11
+12: object Closed | 12 | distance 1 Closed ()
+13: union Closed | children 11,8,6,7,5,12,9 | 13 | distance 1 Closed ()
+14: intersection name | children 15 | 14 | distance 2 name ()
+15: union name | children 9 | 15 | distance 3 name ()
+16: intersection settings | children 17 | 16 | distance 2 settings ()
+17: intersection Settings | children 30 | 17 | given Settings ()
+18: intersection Setting | children 28 | 18 | distance 3 Setting ()
+19: intersection Setting | children 20 | 19 | distance 5 Setting ()
+20: intersection Item | children 26 | 20 | given Item ()
+21: intersection key | children 22 | 21 | distance 2 key ()
+22: union key | children 9 | 22 | distance 3 key ()
+23: intersection value | children 24 | 23 | distance 2 value ()
+24: union value | children 9 | 24 | distance 3 value ()
+25: object Item | children 21,23,10 | 25 | distance 1 Item ()
+26: union Item | children 25 | 26 | distance 1 Item ()
+27: array | children 19 | 27
+28: union Setting | children 27 | 28 | distance 4 Setting ()
+29: object Settings | children 18 | 29 | distance 1 Settings ()
+30: union Settings | children 29 | 30 | distance 1 Settings ()
+31: object Config | children 3,14,16,10 | 31 | distance 1 Config ()
+32: union Config | children 31 | 32 | distance 1 Config ()
+33: object TopLevel | children 1,10 | 33 | distance 1 TopLevel ()
+34: union TopLevel | children 33 | 34 | distance 1 TopLevel ()
+# attributes

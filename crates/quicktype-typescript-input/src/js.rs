@@ -17,8 +17,8 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::rc::Rc;
 
-use quicktype_js_compat::json::is_array_index;
 pub use quicktype_js_compat::json::quote;
+use quicktype_js_compat::json::{JsonValue, is_array_index};
 pub use quicktype_js_compat::number::to_string as number_to_string;
 pub use quicktype_js_compat::sort::compare_utf16;
 pub use quicktype_js_compat::whitespace::{is_whitespace as is_js_whitespace, trim};
@@ -378,165 +378,30 @@ pub fn parse_float(s: &str) -> f64 {
 
 /// `JSON.parse(text)`, or `None` where it would throw.
 pub fn parse_json(text: &str) -> Option<Value> {
-    let mut p = JsonParser {
-        s: text.as_bytes(),
-        i: 0,
-        text,
-    };
-    p.ws();
-    let v = p.value()?;
-    p.ws();
-    (p.i == p.s.len()).then_some(v)
+    quicktype_js_compat::json::parse(text)
+        .ok()
+        .map(|value| from_json(&value))
 }
 
-struct JsonParser<'a> {
-    s: &'a [u8],
-    i: usize,
-    text: &'a str,
-}
-
-impl JsonParser<'_> {
-    fn ws(&mut self) {
-        while self.i < self.s.len() && matches!(self.s[self.i], b' ' | b'\t' | b'\n' | b'\r') {
-            self.i += 1;
-        }
-    }
-
-    fn eat(&mut self, lit: &str) -> bool {
-        if self.text[self.i..].starts_with(lit) {
-            self.i += lit.len();
-            true
-        } else {
-            false
-        }
-    }
-
-    fn value(&mut self) -> Option<Value> {
-        match *self.s.get(self.i)? {
-            b'{' => {
-                self.i += 1;
-                let obj = Value::object();
-                self.ws();
-                if self.eat("}") {
-                    return Some(Value::Object(obj));
-                }
-                loop {
-                    self.ws();
-                    let key = self.string()?;
-                    self.ws();
-                    if !self.eat(":") {
-                        return None;
-                    }
-                    self.ws();
-                    let v = self.value()?;
-                    obj.borrow_mut().define(&key, v);
-                    self.ws();
-                    if self.eat(",") {
-                        continue;
-                    }
-                    return self.eat("}").then_some(Value::Object(obj));
-                }
+/// The JavaScript value of a parsed JSON value. Object properties are
+/// defined in the parsed order (`JSON.parse` defines, it does not assign,
+/// so `"__proto__"` is an ordinary key).
+fn from_json(value: &JsonValue) -> Value {
+    // One level per call, on a stack that grows as needed.
+    stacker::maybe_grow(256 * 1024, 4 * 1024 * 1024, || match value {
+        JsonValue::Null => Value::Null,
+        JsonValue::Bool(b) => Value::Bool(*b),
+        JsonValue::Number(n) => Value::Number(*n),
+        JsonValue::String(s) => Value::String(s.clone()),
+        JsonValue::Array(items) => Value::array(items.iter().map(from_json).collect()),
+        JsonValue::Object(map) => {
+            let obj = Value::object();
+            for (key, v) in map {
+                obj.borrow_mut().define(key, from_json(v));
             }
-            b'[' => {
-                self.i += 1;
-                let mut items = Vec::new();
-                self.ws();
-                if self.eat("]") {
-                    return Some(Value::array(items));
-                }
-                loop {
-                    self.ws();
-                    items.push(self.value()?);
-                    self.ws();
-                    if self.eat(",") {
-                        continue;
-                    }
-                    return self.eat("]").then_some(Value::array(items));
-                }
-            }
-            b'"' => self.string().map(Value::String),
-            b't' => self.eat("true").then_some(Value::Bool(true)),
-            b'f' => self.eat("false").then_some(Value::Bool(false)),
-            b'n' => self.eat("null").then_some(Value::Null),
-            _ => self.number(),
+            Value::Object(obj)
         }
-    }
-
-    fn number(&mut self) -> Option<Value> {
-        let start = self.i;
-        let s = self.s;
-        let digits = |i: &mut usize| {
-            let st = *i;
-            while *i < s.len() && s[*i].is_ascii_digit() {
-                *i += 1;
-            }
-            *i > st
-        };
-        if self.s.get(self.i) == Some(&b'-') {
-            self.i += 1;
-        }
-        if self.s.get(self.i) == Some(&b'0') {
-            self.i += 1;
-        } else if !digits(&mut self.i) {
-            return None;
-        }
-        if self.s.get(self.i) == Some(&b'.') {
-            self.i += 1;
-            if !digits(&mut self.i) {
-                return None;
-            }
-        }
-        if matches!(self.s.get(self.i), Some(b'e' | b'E')) {
-            self.i += 1;
-            if matches!(self.s.get(self.i), Some(b'+' | b'-')) {
-                self.i += 1;
-            }
-            if !digits(&mut self.i) {
-                return None;
-            }
-        }
-        self.text[start..self.i].parse().ok().map(Value::Number)
-    }
-
-    fn string(&mut self) -> Option<String> {
-        if !self.eat("\"") {
-            return None;
-        }
-        let mut units: Vec<u16> = Vec::new();
-        loop {
-            let c = self.text[self.i..].chars().next()?;
-            self.i += c.len_utf8();
-            match c {
-                '"' => return Some(String::from_utf16_lossy(&units)),
-                '\\' => {
-                    let e = *self.s.get(self.i)?;
-                    self.i += 1;
-                    let unit = match e {
-                        b'"' => '"' as u16,
-                        b'\\' => '\\' as u16,
-                        b'/' => '/' as u16,
-                        b'b' => 8,
-                        b'f' => 12,
-                        b'n' => 10,
-                        b'r' => 13,
-                        b't' => 9,
-                        b'u' => {
-                            let hex = self.text.get(self.i..self.i + 4)?;
-                            self.i += 4;
-                            u16::from_str_radix(hex, 16).ok()?
-                        }
-                        _ => return None,
-                    };
-                    units.push(unit);
-                }
-                c if (c as u32) < 0x20 => return None,
-                c => {
-                    let mut buf = [0u16; 2];
-                    units.extend_from_slice(c.encode_utf16(&mut buf));
-                }
-            }
-        }
-    }
+    })
 }
 
 #[cfg(test)]

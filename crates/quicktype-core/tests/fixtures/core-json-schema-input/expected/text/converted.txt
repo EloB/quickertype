@@ -1,0 +1,12 @@
+resolving # relative to Conv# (Conv#)
+trying to fetch Conv
+successully fetched Conv
+resolved to # (Conv#)
+resolving # relative to Conv# (Conv#)
+resolved to # (Conv#)
+# needIR false; single string source "{\"type\":\"string\"}"
+# graph
+0: intersection Conv | children 2 | 0 | given Conv ()
+1: string Conv | 1 | distance 1 Conv () | unrestricted
+2: union Conv | children 1 | 2 | distance 1 Conv ()
+# attributes

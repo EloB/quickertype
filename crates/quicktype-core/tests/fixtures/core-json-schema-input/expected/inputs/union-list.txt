@@ -1,0 +1,35 @@
+resolving # relative to tests/inputs/schema/union-list.schema# (tests/inputs/schema/union-list.schema#)
+trying to fetch tests/inputs/schema/union-list.schema
+successully fetched tests/inputs/schema/union-list.schema
+resolved to # (tests/inputs/schema/union-list.schema#)
+resolving # relative to tests/inputs/schema/union-list.schema# (tests/inputs/schema/union-list.schema#)
+resolved to # (tests/inputs/schema/union-list.schema#)
+resolving #/definitions/TopLevel relative to # (tests/inputs/schema/union-list.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/TopLevel (tests/inputs/schema/union-list.schema#/definitions/TopLevel)
+resolving #/definitions/UnionList relative to #/definitions/TopLevel/properties/list (tests/inputs/schema/union-list.schema#/definitions/TopLevel/properties/list)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/UnionList (tests/inputs/schema/union-list.schema#/definitions/UnionList)
+resolving #/definitions/UnionList relative to #/definitions/UnionList/oneOf/0/properties/next (tests/inputs/schema/union-list.schema#/definitions/UnionList/oneOf/0/properties/next)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/UnionList (tests/inputs/schema/union-list.schema#/definitions/UnionList)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 13 | 1 | given TopLevel ()
+2: intersection list | children 3 | 2 | distance 2 list ()
+3: intersection UnionList | children 11 | 3 | given UnionList ()
+4: intersection UnionList | children 7 | 4 | distance 2 UnionList ()
+5: intersection next | children 3 | 5 | distance 2 next ()
+6: object UnionList | children 5 | 6 | distance 3 UnionList ()
+7: union UnionList | children 6 | 7 | distance 3 UnionList ()
+8: intersection UnionList | children 10 | 8 | distance 2 UnionList ()
+9: double | 9
+10: union UnionList | children 9 | 10 | distance 3 UnionList ()
+11: union UnionList | children 4,8 | 11 | distance 1 UnionList ()
+12: object TopLevel | children 2 | 12 | distance 1 TopLevel ()
+13: union TopLevel | children 12 | 13 | distance 1 TopLevel ()
+# attributes

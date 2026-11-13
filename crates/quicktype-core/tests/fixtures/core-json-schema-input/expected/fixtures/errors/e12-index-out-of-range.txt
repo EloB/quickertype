@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#)
+resolving #/arr/3 relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: Index 3 out of range of schema array at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema#3

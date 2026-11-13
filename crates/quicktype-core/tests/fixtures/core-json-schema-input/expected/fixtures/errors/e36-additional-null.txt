@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema#)
+error: null is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema#/additionalProperties
