@@ -428,7 +428,7 @@ pub trait KotlinRenderer<'a>: ConvenienceRenderer<'a> {
         self.emit_class_annotations(c, class_name)?;
         self.emit_line(sl!["data class ", class_name, " ("]);
         self.indent(|r| {
-            let mut count = property_count;
+            let mut count = property_count as i64;
             let mut first = true;
             r.for_each_class_property(c, BlankLinePosition::None, |r, name, json_name, p, _| {
                 let graph = r.type_graph();
@@ -547,7 +547,7 @@ pub trait KotlinRenderer<'a>: ConvenienceRenderer<'a> {
 
     /// The `NAME("value"),` lines of `emitEnumDefinition`.
     fn emit_enum_cases(&mut self, e: TypeRef) -> Result<()> {
-        let mut count = self.type_graph().type_at(e)?.cases()?.len();
+        let mut count = self.type_graph().type_at(e)?.cases()?.len() as i64;
         self.for_each_enum_case(e, BlankLinePosition::None, |r, name, json, _| {
             count -= 1;
             r.emit_line(sl![

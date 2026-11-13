@@ -249,7 +249,7 @@ impl<'a> KotlinRenderer<'a> for KotlinXRenderer<'a> {
         self.emit_block(
             sl!["enum class ", enum_name, "(val value: String)"],
             |r| {
-                let mut count = r.type_graph().type_at(e)?.cases()?.len();
+                let mut count = r.type_graph().type_at(e)?.cases()?.len() as i64;
                 r.for_each_enum_case(e, BlankLinePosition::None, |r, name, json, _| {
                     let json_enum = string_escape(json);
                     count -= 1;
