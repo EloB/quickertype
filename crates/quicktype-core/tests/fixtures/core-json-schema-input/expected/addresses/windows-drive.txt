@@ -1,0 +1,6 @@
+resolving # relative to file:///C:/Users/quicktype/top.schema.json# (file:///C:/Users/quicktype/top.schema.json#)
+trying to fetch file:///C:/Users/quicktype/top.schema.json
+couldn't fetch file:///C:/Users/quicktype/top.schema.json
+trying to fetch file:///C:/Users/quicktype/top.schema.json
+couldn't fetch file:///C:/Users/quicktype/top.schema.json
+error: Could not fetch schema #, referred to from file:///C:/Users/quicktype/top.schema.json#

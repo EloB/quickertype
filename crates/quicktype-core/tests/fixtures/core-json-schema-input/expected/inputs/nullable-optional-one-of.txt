@@ -1,0 +1,48 @@
+resolving # relative to tests/inputs/schema/nullable-optional-one-of.schema# (tests/inputs/schema/nullable-optional-one-of.schema#)
+trying to fetch tests/inputs/schema/nullable-optional-one-of.schema
+successully fetched tests/inputs/schema/nullable-optional-one-of.schema
+resolved to # (tests/inputs/schema/nullable-optional-one-of.schema#)
+resolving # relative to tests/inputs/schema/nullable-optional-one-of.schema# (tests/inputs/schema/nullable-optional-one-of.schema#)
+resolved to # (tests/inputs/schema/nullable-optional-one-of.schema#)
+resolving #/definitions/one relative to #/oneOf/0 (tests/inputs/schema/nullable-optional-one-of.schema#/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/one (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/one)
+resolving #/definitions/bar relative to #/definitions/one/properties/b (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/one/properties/b)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/bar (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/bar)
+resolving #/definitions/two relative to #/oneOf/1 (tests/inputs/schema/nullable-optional-one-of.schema#/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/two (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/two)
+resolving #/definitions/bar relative to #/definitions/two/properties/b (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/two/properties/b)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/bar (tests/inputs/schema/nullable-optional-one-of.schema#/definitions/bar)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 22 | 0 | given TopLevel ()
+1: intersection TopLevel | children 2 | 1 | distance 2 TopLevel ()
+2: intersection one | children 13 | 2 | given one ()
+3: intersection b | children 4 | 3 | distance 2 b ()
+4: intersection bar | children 7 | 4 | given bar ()
+5: null | 5
+6: string bar | 6 | distance 1 bar () | unrestricted
+7: union bar | children 5,6 | 7 | distance 1 bar ()
+8: intersection kind | children 10 | 8 | distance 2 kind ()
+9: string kind | 9 | distance 3 kind () | 1 enums: one (1), ...
+10: union kind | children 9 | 10 | distance 3 kind ()
+11: any | 11
+12: object one | children 3,8,11 | 12 | distance 1 one ()
+13: union one | children 12 | 13 | distance 1 one ()
+14: intersection TopLevel | children 15 | 14 | distance 2 TopLevel ()
+15: intersection two | children 21 | 15 | given two ()
+16: intersection b | children 4 | 16 | distance 2 b ()
+17: intersection kind | children 19 | 17 | distance 2 kind ()
+18: string kind | 18 | distance 3 kind () | 1 enums: two (1), ...
+19: union kind | children 18 | 19 | distance 3 kind ()
+20: object two | children 16,17,11 | 20 | distance 1 two ()
+21: union two | children 20 | 21 | distance 1 two ()
+22: union TopLevel | children 1,14 | 22 | distance 1 TopLevel ()
+# attributes

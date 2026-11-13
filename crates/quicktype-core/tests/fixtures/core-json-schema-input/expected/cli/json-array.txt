@@ -1,0 +1,4 @@
+resolving # relative to tests/inputs/json/misc/00c36.json# (tests/inputs/json/misc/00c36.json#)
+trying to fetch tests/inputs/json/misc/00c36.json
+successully fetched tests/inputs/json/misc/00c36.json
+error: An array is not a valid JSON Schema at tests/inputs/json/misc/00c36.json#

@@ -1,0 +1,64 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 52 | 0 | given TopLevel ()
+1: intersection boolDefault | children 3 | 1 | distance 2 boolDefault ()
+2: bool | 2 | false
+3: union boolDefault | children 2 | 3 | distance 3 boolDefault ()
+4: intersection boolString | children 6 | 4 | distance 2 boolString ()
+5: bool-string boolString | 5 | distance 3 boolString ()
+6: union boolString | children 5 | 6 | distance 3 boolString ()
+7: intersection bounded | children 9 | 7 | distance 2 bounded ()
+8: string bounded | 8 | distance 3 bounded () | 2-10 | unrestricted
+9: union bounded | children 8 | 9 | distance 3 bounded ()
+10: intersection date | children 12 | 10 | distance 2 date ()
+11: date date | 11 | distance 3 date ()
+12: union date | children 11 | 12 | distance 3 date ()
+13: intersection dateTime | children 15 | 13 | distance 2 dateTime ()
+14: date-time dateTime | 14 | distance 3 dateTime ()
+15: union dateTime | children 14 | 15 | distance 3 dateTime ()
+16: intersection email | children 18 | 16 | distance 2 email ()
+17: string email | 17 | distance 3 email,nullDefault,numericFormat,wrongDefault () | unrestricted
+18: union email | children 17 | 18 | distance 3 email ()
+19: intersection integer | children 21 | 19 | distance 2 integer ()
+20: integer | 20 | 2 | -3-undefined
+21: union integer | children 20 | 21 | distance 3 integer ()
+22: intersection intString | children 24 | 22 | distance 2 intString ()
+23: integer-string intString | 23 | distance 3 intString ()
+24: union intString | children 23 | 24 | distance 3 intString ()
+25: intersection nullDefault | children 27 | 25 | distance 2 nullDefault ()
+26: null | 26 | null
+27: union nullDefault | children 26,17 | 27 | distance 3 nullDefault ()
+28: intersection number | children 30 | 28 | distance 2 number ()
+29: double | 29 | 1.5 | 0.5-1e+21
+30: union number | children 29 | 30 | distance 3 number ()
+31: intersection numericFormat | children 32 | 31 | distance 2 numericFormat ()
+32: union numericFormat | children 17 | 32 | distance 3 numericFormat ()
+33: intersection objectDefault | children 36 | 33 | distance 2 objectDefault ()
+34: any | 34
+35: object objectDefault | children 34 | 35 | distance 3 objectDefault ()
+36: union objectDefault | children 35 | 36 | distance 3 objectDefault ()
+37: intersection stringDefault | children 39 | 37 | distance 2 stringDefault ()
+38: string stringDefault | 38 | distance 3 stringDefault () | "x" | unrestricted
+39: union stringDefault | children 38 | 39 | distance 3 stringDefault ()
+40: intersection time | children 42 | 40 | distance 2 time ()
+41: time time | 41 | distance 3 time ()
+42: union time | children 41 | 42 | distance 3 time ()
+43: intersection uri | children 45 | 43 | distance 2 uri ()
+44: uri uri | 44 | distance 3 uri ()
+45: union uri | children 44 | 45 | distance 3 uri ()
+46: intersection uuid | children 48 | 46 | distance 2 uuid ()
+47: uuid uuid | 47 | distance 3 uuid ()
+48: union uuid | children 47 | 48 | distance 3 uuid ()
+49: intersection wrongDefault | children 50 | 49 | distance 2 wrongDefault ()
+50: union wrongDefault | children 17 | 50 | distance 3 wrongDefault ()
+51: object TopLevel | children 1,4,7,10,13,16,22,19,25,28,31,33,37,40,43,46,49,34 | 51 | distance 1 TopLevel ()
+52: union TopLevel | children 51 | 52 | distance 1 TopLevel ()
+# attributes
+8 pattern "^[a-z]+$"
+44 uriAttributes [["https","http"],[".png"]]

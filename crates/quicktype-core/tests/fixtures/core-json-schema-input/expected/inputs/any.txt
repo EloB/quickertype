@@ -1,0 +1,17 @@
+resolving # relative to tests/inputs/schema/any.schema# (tests/inputs/schema/any.schema#)
+trying to fetch tests/inputs/schema/any.schema
+successully fetched tests/inputs/schema/any.schema
+resolved to # (tests/inputs/schema/any.schema#)
+resolving # relative to tests/inputs/schema/any.schema# (tests/inputs/schema/any.schema#)
+resolved to # (tests/inputs/schema/any.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 7 | 0 | given TopLevel ()
+1: intersection foo | 1 | distance 2 foo ()
+2: intersection values | children 5 | 2 | distance 2 values ()
+3: any | 3
+4: object values | children 3 | 4 | distance 3 values ()
+5: union values | children 4 | 5 | distance 3 values ()
+6: object TopLevel | children 1,2,3 | 6 | distance 1 TopLevel ()
+7: union TopLevel | children 6 | 7 | distance 1 TopLevel ()
+# attributes

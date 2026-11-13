@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema#)
+error: Internal error: Value must be an object, but is 5

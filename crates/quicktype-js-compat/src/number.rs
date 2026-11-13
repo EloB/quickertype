@@ -142,6 +142,120 @@ fn platform_pow(x: f64, y: f64) -> f64 {
     std::hint::black_box(x).powf(std::hint::black_box(y))
 }
 
+/// JavaScript `Number(s)` for a string (ECMAScript `StringToNumber`).
+///
+/// Surrounding JavaScript whitespace is ignored and the empty string is 0.
+/// Accepted are decimal literals with optional sign, fraction and exponent
+/// (`"1.5"`, `".5"`, `"5."`, `"-1e3"`), `Infinity` with optional sign, and
+/// unsigned `0x`/`0o`/`0b` integers; anything else is `NaN`. Unlike Rust's
+/// `str::parse::<f64>`, `"inf"`, `"NaN"` and `"1_000"` are `NaN`.
+pub fn string_to_number(s: &str) -> f64 {
+    let s = crate::whitespace::trim(s);
+    if s.is_empty() {
+        return 0.0;
+    }
+    for (prefix, radix) in [
+        ("0x", 16),
+        ("0X", 16),
+        ("0o", 8),
+        ("0O", 8),
+        ("0b", 2),
+        ("0B", 2),
+    ] {
+        if let Some(digits) = s.strip_prefix(prefix) {
+            return radix_integer(digits, radix);
+        }
+    }
+    let unsigned = s.strip_prefix(['+', '-']).unwrap_or(s);
+    if unsigned == "Infinity" {
+        return if s.starts_with('-') {
+            f64::NEG_INFINITY
+        } else {
+            f64::INFINITY
+        };
+    }
+    if !is_decimal_literal(unsigned) {
+        return f64::NAN;
+    }
+    // A validated decimal literal: Rust's parser is correctly rounded, like V8.
+    s.parse().unwrap_or(f64::NAN)
+}
+
+/// Whether `s` is an ECMAScript `StrUnsignedDecimalLiteral` other than
+/// `Infinity`: `digits [. digits?] | . digits`, then an optional exponent.
+fn is_decimal_literal(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let digits_from = |mut i: usize| {
+        while i < bytes.len() && bytes[i].is_ascii_digit() {
+            i += 1;
+        }
+        i
+    };
+    let int_end = digits_from(0);
+    let mut i = int_end;
+    let mut have_digits = int_end > 0;
+    if i < bytes.len() && bytes[i] == b'.' {
+        let frac_end = digits_from(i + 1);
+        have_digits |= frac_end > i + 1;
+        i = frac_end;
+    }
+    if !have_digits {
+        return false;
+    }
+    if i < bytes.len() && (bytes[i] == b'e' || bytes[i] == b'E') {
+        i += 1;
+        if i < bytes.len() && (bytes[i] == b'+' || bytes[i] == b'-') {
+            i += 1;
+        }
+        let exp_end = digits_from(i);
+        if exp_end == i {
+            return false;
+        }
+        i = exp_end;
+    }
+    i == bytes.len()
+}
+
+/// The value of a non-empty run of `radix` digits, correctly rounded; `NaN`
+/// if there is a non-digit (or no digit).
+fn radix_integer(digits: &str, radix: u32) -> f64 {
+    if digits.is_empty() || !digits.chars().all(|c| c.is_digit(radix)) {
+        return f64::NAN;
+    }
+    let digits = digits.trim_start_matches('0');
+    if let Ok(n) = u64::from_str_radix(digits, radix) {
+        return n as f64;
+    }
+    // More than 64 significant bits: keep the top 64 bits plus a sticky bit
+    // for the rest, which rounds to nearest-even exactly like V8.
+    let bits_per_digit = radix.trailing_zeros();
+    let mut mantissa: u64 = 0;
+    let mut exponent: i32 = 0;
+    let mut sticky = false;
+    for c in digits.chars() {
+        let d = u64::from(c.to_digit(radix).unwrap_or(0));
+        if mantissa.leading_zeros() >= bits_per_digit {
+            mantissa = (mantissa << bits_per_digit) | d;
+        } else {
+            sticky |= d != 0;
+            exponent += bits_per_digit as i32;
+        }
+    }
+    // Round the 64-bit mantissa to 53 bits by hand (ties to even, with the
+    // dropped digits as sticky bits).
+    let shift = 64 - mantissa.leading_zeros() as i32 - 53;
+    if shift <= 0 {
+        return mantissa as f64 * 2f64.powi(exponent);
+    }
+    let shift = shift as u32;
+    let kept = mantissa >> shift;
+    let dropped = mantissa & ((1u64 << shift) - 1);
+    let half = 1u64 << (shift - 1);
+    let round_up = dropped > half || (dropped == half && (sticky || kept & 1 == 1));
+    let rounded = if round_up { kept + 1 } else { kept };
+    rounded as f64 * 2f64.powi(exponent + shift as i32)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

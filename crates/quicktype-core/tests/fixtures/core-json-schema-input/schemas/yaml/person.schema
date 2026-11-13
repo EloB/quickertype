@@ -1,0 +1,14 @@
+# A schema in YAML
+title: Person
+type: object
+properties:
+  name: {type: string}
+  age:
+    type: integer
+    minimum: 0
+  tags:
+    type: array
+    items: {type: string}
+  2: {type: boolean}
+  1: {type: number}
+required: [name]

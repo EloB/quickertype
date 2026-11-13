@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema#)
+error: Value of type number is not valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema#/allOf/1

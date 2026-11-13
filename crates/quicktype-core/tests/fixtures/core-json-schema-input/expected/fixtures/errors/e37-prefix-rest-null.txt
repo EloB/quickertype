@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema#)
+error: null is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema#/items

@@ -8,11 +8,24 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = ["fs"]
+# `StdIo`: reading schemas and inputs from the file system and stdin.
+fs = []
+# HTTP(S) URLs for `StdIo` (ureq with rustls), as the native CLI needs.
+http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
+
 [dependencies]
 indexmap.workspace = true
 quicktype-js-compat.workspace = true
+stacker.workspace = true
+ureq = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true }
+brotli-decompressor = { workspace = true, optional = true }
 
 [dev-dependencies]
+flate2.workspace = true
 serde_json.workspace = true
 
 [lints]

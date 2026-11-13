@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema#)
+error: Can't have non-specified required properties but forbidden additionalTypes at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema#

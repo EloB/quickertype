@@ -1,0 +1,30 @@
+resolving # relative to tests/inputs/schema/description.schema# (tests/inputs/schema/description.schema#)
+trying to fetch tests/inputs/schema/description.schema
+successully fetched tests/inputs/schema/description.schema
+resolved to # (tests/inputs/schema/description.schema#)
+resolving # relative to tests/inputs/schema/description.schema# (tests/inputs/schema/description.schema#)
+resolved to # (tests/inputs/schema/description.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 20 | 0 | given TopLevel () | The t...
+1: intersection bar | children 3 | 1 | distance 2 bar ()
+2: bool | 2
+3: union bar | children 2 | 3 | distance 3 bar ()
+4: intersection enum | children 6 | 4 | distance 2 enum () | An en...
+5: string enum | 5 | distance 3 enum () | 2 enums: foo (1), ...
+6: union enum | children 5 | 6 | distance 3 enum ()
+7: intersection foo | children 9 | 7 | distance 2 foo ()
+8: double | 8
+9: union foo | children 8 | 9 | distance 3 foo ()
+10: intersection object-or-string | children 16 | 10 | distance 2 object-or-string ()
+11: string object_or_string | 11 | distance 3 object-or-string,union () | unrestricted
+12: intersection prop | children 13 | 12 | distance 2 prop ()
+13: union prop | children 8 | 13 | distance 3 prop ()
+14: any | 14
+15: object object-or-string | children 12,14 | 15 | distance 3 object-or-string () | prop descs: 1
+16: union object-or-string | children 15,11 | 16 | distance 3 object-or-string ()
+17: intersection union | children 18 | 17 | distance 2 union () | Eithe...
+18: union union | children 8,11 | 18 | distance 3 union ()
+19: object TopLevel | children 1,4,7,10,17 | 19 | distance 1 TopLevel () | prop descs: 3
+20: union TopLevel | children 19 | 20 | distance 1 TopLevel ()
+# attributes

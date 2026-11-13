@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "x": {
+      "$ref": "#/arr/x"
+    }
+  },
+  "arr": [
+    {
+      "type": "string"
+    }
+  ]
+}

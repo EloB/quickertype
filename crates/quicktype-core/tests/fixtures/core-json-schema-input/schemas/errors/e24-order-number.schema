@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "quicktypePropertyOrder": 5,
+  "properties": {
+    "a": {
+      "type": "string"
+    },
+    "b": {
+      "type": "string"
+    }
+  }
+}

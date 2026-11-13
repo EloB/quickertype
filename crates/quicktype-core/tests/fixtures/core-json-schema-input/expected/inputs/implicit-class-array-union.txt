@@ -1,0 +1,26 @@
+resolving # relative to tests/inputs/schema/implicit-class-array-union.schema# (tests/inputs/schema/implicit-class-array-union.schema#)
+trying to fetch tests/inputs/schema/implicit-class-array-union.schema
+successully fetched tests/inputs/schema/implicit-class-array-union.schema
+resolved to # (tests/inputs/schema/implicit-class-array-union.schema#)
+resolving # relative to tests/inputs/schema/implicit-class-array-union.schema# (tests/inputs/schema/implicit-class-array-union.schema#)
+resolved to # (tests/inputs/schema/implicit-class-array-union.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 16 | 0 | given TopLevel ()
+1: intersection foo | children 14 | 1 | distance 2 foo ()
+2: null | 2
+3: double | 3
+4: integer | 4
+5: bool | 5
+6: string foo | 6 | distance 3 foo () | unrestricted
+7: intersection foo | children 8 | 7 | distance 4 foo ()
+8: union foo | children 4 | 8 | distance 6 foo ()
+9: array | children 7 | 9
+10: intersection bar | children 11 | 10 | distance 2 bar ()
+11: union bar | children 4 | 11 | distance 3 bar ()
+12: any | 12
+13: object foo | children 10,12 | 13 | distance 3 foo ()
+14: union foo | children 9,5,3,4,2,13,6 | 14 | distance 3 foo ()
+15: object TopLevel | children 1,12 | 15 | distance 1 TopLevel ()
+16: union TopLevel | children 15 | 16 | distance 1 TopLevel ()
+# attributes

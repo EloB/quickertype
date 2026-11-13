@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema#)
+error: Cannot convert undefined or null to object

@@ -1,0 +1,54 @@
+resolving # relative to tests/inputs/schema/optional-const-ref.schema# (tests/inputs/schema/optional-const-ref.schema#)
+trying to fetch tests/inputs/schema/optional-const-ref.schema
+successully fetched tests/inputs/schema/optional-const-ref.schema
+resolved to # (tests/inputs/schema/optional-const-ref.schema#)
+resolving # relative to tests/inputs/schema/optional-const-ref.schema# (tests/inputs/schema/optional-const-ref.schema#)
+resolved to # (tests/inputs/schema/optional-const-ref.schema#)
+resolving #/definitions/TopLevel relative to # (tests/inputs/schema/optional-const-ref.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/TopLevel (tests/inputs/schema/optional-const-ref.schema#/definitions/TopLevel)
+resolving #/definitions/Coordinate relative to #/definitions/TopLevel/properties/coordinates/items (tests/inputs/schema/optional-const-ref.schema#/definitions/TopLevel/properties/coordinates/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Coordinate (tests/inputs/schema/optional-const-ref.schema#/definitions/Coordinate)
+resolving #/definitions/Coordinate relative to #/definitions/TopLevel/properties/requiredCoordinates/items (tests/inputs/schema/optional-const-ref.schema#/definitions/TopLevel/properties/requiredCoordinates/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Coordinate (tests/inputs/schema/optional-const-ref.schema#/definitions/Coordinate)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 32 | 1 | given TopLevel ()
+2: intersection coordinates | children 13 | 2 | distance 2 coordinates ()
+3: intersection coordinate | children 4 | 3 | distance 4 coordinate ()
+4: intersection Coordinate | children 11 | 4 | given Coordinate ()
+5: intersection latitude | children 7 | 5 | distance 2 latitude ()
+6: double | 6
+7: union latitude | children 6 | 7 | distance 3 latitude ()
+8: intersection longitude | children 9 | 8 | distance 2 longitude ()
+9: union longitude | children 6 | 9 | distance 3 longitude ()
+10: object Coordinate | children 5,8 | 10 | distance 1 Coordinate ()
+11: union Coordinate | children 10 | 11 | distance 1 Coordinate ()
+12: array | children 3 | 12
+13: union coordinates | children 12 | 13 | distance 3 coordinates ()
+14: intersection count | children 16 | 14 | distance 2 count ()
+15: integer | 15 | 1-100
+16: union count | children 15 | 16 | distance 3 count ()
+17: intersection label | children 19 | 17 | distance 2 label ()
+18: string label | 18 | distance 3 label,requiredLabel () | 2-16 | unrestricted
+19: union label | children 18 | 19 | distance 3 label ()
+20: intersection requiredCoordinates | children 23 | 20 | distance 2 requiredCoordinates ()
+21: intersection requiredCoordinate | children 4 | 21 | distance 4 requiredCoordinate ()
+22: array | children 21 | 22
+23: union requiredCoordinates | children 22 | 23 | distance 3 requiredCoordinates ()
+24: intersection requiredCount | children 25 | 24 | distance 2 requiredCount ()
+25: union requiredCount | children 15 | 25 | distance 3 requiredCount ()
+26: intersection requiredLabel | children 27 | 26 | distance 2 requiredLabel ()
+27: union requiredLabel | children 18 | 27 | distance 3 requiredLabel ()
+28: intersection weight | children 30 | 28 | distance 2 weight ()
+29: double | 29 | 0.5-99.5
+30: union weight | children 29 | 30 | distance 3 weight ()
+31: object TopLevel | children 2,14,17,20,24,26,28 | 31 | distance 1 TopLevel ()
+32: union TopLevel | children 31 | 32 | distance 1 TopLevel ()
+# attributes

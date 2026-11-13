@@ -261,18 +261,115 @@ impl<T: Into<MessageValue>> From<Option<T>> for MessageValue {
     }
 }
 
-/// quicktype's error: a message kind, its properties and the filled-in user
-/// message. The JS facade rebuilds a `QuickTypeError` from
-/// [`kind`](Self::kind), [`error_message`](Self::error_message),
-/// [`user_message`](Self::user_message) and [`properties`](Self::properties).
+/// The constructor of a JavaScript exception ([`JsException::name`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum JsErrorName {
+    /// `Error`
+    Error,
+    /// `TypeError`, e.g. `Cannot read properties of null (reading 'x')`.
+    TypeError,
+    /// `SyntaxError`, e.g. from `JSON.parse`.
+    SyntaxError,
+    /// `RangeError`
+    RangeError,
+    /// `ReferenceError`
+    ReferenceError,
+    /// `URIError`, e.g. `URI malformed` from `decodeURIComponent`.
+    URIError,
+}
+
+impl JsErrorName {
+    /// The constructor's name, as `e.name` gives it.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            JsErrorName::Error => "Error",
+            JsErrorName::TypeError => "TypeError",
+            JsErrorName::SyntaxError => "SyntaxError",
+            JsErrorName::RangeError => "RangeError",
+            JsErrorName::ReferenceError => "ReferenceError",
+            JsErrorName::URIError => "URIError",
+        }
+    }
+
+    /// The constructor with this name, if it is one of these.
+    pub fn from_name(name: &str) -> Option<JsErrorName> {
+        [
+            JsErrorName::Error,
+            JsErrorName::TypeError,
+            JsErrorName::SyntaxError,
+            JsErrorName::RangeError,
+            JsErrorName::ReferenceError,
+            JsErrorName::URIError,
+        ]
+        .into_iter()
+        .find(|n| n.as_str() == name)
+    }
+}
+
+/// An exception thrown by the JavaScript runtime or a library (urijs,
+/// `JSON.parse`, a property read of `null`, ...) rather than by quicktype's
+/// `messageError`. It has no quicktype message name, kind or properties:
+/// just the constructor's name and the exact message.
+///
+/// The JavaScript facade rethrows it as `new globalThis[name](message)`, so
+/// API users see the same exception class and message as with the
+/// TypeScript implementation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JsException {
+    name: JsErrorName,
+    message: String,
+}
+
+impl JsException {
+    /// The exception `new <name>(message)`.
+    pub fn new(name: JsErrorName, message: impl Into<String>) -> Self {
+        JsException {
+            name,
+            message: message.into(),
+        }
+    }
+
+    /// The constructor (`e.name`).
+    pub fn name(&self) -> JsErrorName {
+        self.name
+    }
+
+    /// The message (`e.message`).
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+/// quicktype's error, the error of every fallible engine function. It is
+/// one of two things:
+///
+/// - **A quicktype message** (TypeScript's `QuickTypeError`, from
+///   `messageError`, `panic`, `assert`, ...): a message kind, its
+///   properties and the filled-in user message. The JS facade rebuilds a
+///   `QuickTypeError` from [`kind`](Self::kind),
+///   [`error_message`](Self::error_message),
+///   [`user_message`](Self::user_message) and
+///   [`properties`](Self::properties).
+/// - **A JavaScript exception** ([`JsException`], from
+///   [`QuickTypeError::js_exception`]): what the runtime or a library throws
+///   where the TypeScript code does not catch it. It has no kind; the facade
+///   rethrows it as `new globalThis[name](message)`.
+///
+/// [`Display`](fmt::Display) gives the error's `message` (the user message,
+/// or the exception's message). The reference CLI prints every error as
+/// `Error: ${e.message}.` (`src/index.ts`), so both kinds print the same way
+/// there: a urijs `URIError` as `Error: URI malformed.`.
 #[derive(Clone, PartialEq)]
 pub struct QuickTypeError(Box<Inner>);
 
 #[derive(Clone, Debug, PartialEq)]
-struct Inner {
-    kind: ErrorKind,
-    user_message: String,
-    properties: Vec<(String, MessageValue)>,
+enum Inner {
+    Message {
+        kind: ErrorKind,
+        user_message: String,
+        properties: Vec<(String, MessageValue)>,
+    },
+    JsException(JsException),
 }
 
 impl QuickTypeError {
@@ -286,7 +383,7 @@ impl QuickTypeError {
             let pattern = format!("${{{name}}}");
             user_message = replace_first(&user_message, &pattern, &value.message_string());
         }
-        QuickTypeError(Box::new(Inner {
+        QuickTypeError(Box::new(Inner::Message {
             kind,
             user_message,
             properties,
@@ -301,50 +398,103 @@ impl QuickTypeError {
         )
     }
 
-    /// The message kind.
-    pub fn kind(&self) -> ErrorKind {
-        self.0.kind
+    /// A JavaScript exception `new <name>(message)` (see [`JsException`]).
+    pub fn js_exception(name: JsErrorName, message: impl Into<String>) -> Self {
+        QuickTypeError(Box::new(Inner::JsException(JsException::new(
+            name, message,
+        ))))
     }
 
-    /// The kind's name (`messageName` in TypeScript).
-    pub fn message_name(&self) -> &'static str {
-        self.0.kind.name()
+    /// The message kind; `None` for a JavaScript exception.
+    pub fn kind(&self) -> Option<ErrorKind> {
+        match &*self.0 {
+            Inner::Message { kind, .. } => Some(*kind),
+            Inner::JsException(_) => None,
+        }
     }
 
-    /// The unfilled template (`errorMessage` in TypeScript).
-    pub fn error_message(&self) -> &'static str {
-        self.0.kind.template()
+    /// The kind's name (`messageName` in TypeScript); `None` for a
+    /// JavaScript exception.
+    pub fn message_name(&self) -> Option<&'static str> {
+        self.kind().map(ErrorKind::name)
     }
 
-    /// The filled-in message shown to the user.
+    /// The unfilled template (`errorMessage` in TypeScript); `None` for a
+    /// JavaScript exception.
+    pub fn error_message(&self) -> Option<&'static str> {
+        self.kind().map(ErrorKind::template)
+    }
+
+    /// The JavaScript exception, if this is one.
+    pub fn as_js_exception(&self) -> Option<&JsException> {
+        match &*self.0 {
+            Inner::Message { .. } => None,
+            Inner::JsException(e) => Some(e),
+        }
+    }
+
+    /// The message shown to the user (`e.message`): the filled-in user
+    /// message, or the exception's message.
     pub fn user_message(&self) -> &str {
-        &self.0.user_message
+        match &*self.0 {
+            Inner::Message { user_message, .. } => user_message,
+            Inner::JsException(e) => &e.message,
+        }
     }
 
     /// Replaces the user message (`userMessage` is mutable in TypeScript).
     pub fn set_user_message(&mut self, message: String) {
-        self.0.user_message = message;
+        match &mut *self.0 {
+            Inner::Message { user_message, .. } => *user_message = message,
+            Inner::JsException(e) => e.message = message,
+        }
     }
 
-    /// The properties, in call-site order.
+    /// The properties, in call-site order; none for a JavaScript exception.
     pub fn properties(&self) -> &[(String, MessageValue)] {
-        &self.0.properties
+        match &*self.0 {
+            Inner::Message { properties, .. } => properties,
+            Inner::JsException(_) => &[],
+        }
+    }
+
+    /// JavaScript's `e.toString()` (`exceptionToString(e)`, which quicktype
+    /// puts into some messages): `Error: <message>` for a quicktype message
+    /// (`QuickTypeError` does not set its own `name`), `<name>: <message>`
+    /// for an exception.
+    pub fn to_js_string(&self) -> String {
+        match &*self.0 {
+            Inner::Message { user_message, .. } => format!("Error: {user_message}"),
+            Inner::JsException(e) => format!("{}: {}", e.name.as_str(), e.message),
+        }
     }
 }
 
 impl fmt::Debug for QuickTypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("QuickTypeError")
-            .field("kind", &self.0.kind)
-            .field("user_message", &self.0.user_message)
-            .field("properties", &self.0.properties)
-            .finish()
+        match &*self.0 {
+            Inner::Message {
+                kind,
+                user_message,
+                properties,
+            } => f
+                .debug_struct("QuickTypeError")
+                .field("kind", kind)
+                .field("user_message", user_message)
+                .field("properties", properties)
+                .finish(),
+            Inner::JsException(e) => f
+                .debug_struct("QuickTypeError")
+                .field("js_exception", e)
+                .finish(),
+        }
     }
 }
 
+/// The error's `message` (see [`QuickTypeError`]).
 impl fmt::Display for QuickTypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0.user_message)
+        f.write_str(self.user_message())
     }
 }
 
@@ -425,10 +575,10 @@ mod tests {
             vec![("min", 3.0.into()), ("max", 1.5.into())],
         );
         assert_eq!(e.user_message(), "Invalid min-max constraint: 3-1.5");
-        assert_eq!(e.message_name(), "MiscInvalidMinMaxConstraint");
+        assert_eq!(e.message_name(), Some("MiscInvalidMinMaxConstraint"));
         assert_eq!(
             e.error_message(),
-            "Invalid min-max constraint: ${min}-${max}"
+            Some("Invalid min-max constraint: ${min}-${max}")
         );
         assert_eq!(e.to_string(), e.user_message());
     }
@@ -521,6 +671,62 @@ mod tests {
             vec![("key", "${ref}".into()), ("ref", "R".into())],
         );
         assert_eq!(e.user_message(), "Key R not in schema object at ${ref}");
+    }
+
+    /// What the reference CLI prints for an uncaught error:
+    /// `Error: ${e.message}.` (`src/index.ts`).
+    fn cli_line(e: &QuickTypeError) -> String {
+        format!("Error: {e}.")
+    }
+
+    #[test]
+    fn javascript_exceptions_print_like_the_cli() {
+        for (name, message) in [
+            (JsErrorName::URIError, "URI malformed"),
+            (JsErrorName::TypeError, "Port \"99999\" is not a valid port"),
+            (
+                JsErrorName::TypeError,
+                "Cannot read properties of null (reading 'required')",
+            ),
+            (
+                JsErrorName::TypeError,
+                "Cannot convert undefined or null to object",
+            ),
+            (JsErrorName::TypeError, "order.indexOf is not a function"),
+            (
+                JsErrorName::Error,
+                "URNs do not have any generally defined hierarchical components",
+            ),
+            (
+                JsErrorName::RangeError,
+                "Overflow: input needs wider integers to process",
+            ),
+            (JsErrorName::SyntaxError, "Unexpected end of JSON input"),
+            (JsErrorName::ReferenceError, "x is not defined"),
+        ] {
+            let e = QuickTypeError::js_exception(name, message);
+            assert_eq!(e.to_string(), message);
+            assert_eq!(cli_line(&e), format!("Error: {message}."));
+            assert_eq!(e.to_js_string(), format!("{}: {message}", name.as_str()));
+            assert_eq!(e.kind(), None);
+            assert_eq!(e.message_name(), None);
+            assert_eq!(e.error_message(), None);
+            assert!(e.properties().is_empty());
+            let js = e.as_js_exception().unwrap();
+            assert_eq!(js.name(), name);
+            assert_eq!(js.message(), message);
+            assert_eq!(JsErrorName::from_name(name.as_str()), Some(name));
+        }
+        assert_eq!(
+            cli_line(&QuickTypeError::js_exception(
+                JsErrorName::URIError,
+                "URI malformed"
+            )),
+            "Error: URI malformed."
+        );
+        let internal = QuickTypeError::internal("x");
+        assert_eq!(internal.as_js_exception(), None);
+        assert_eq!(internal.to_js_string(), "Error: Internal error: x");
     }
 
     #[test]

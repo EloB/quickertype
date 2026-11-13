@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema#)
+error: $ref must be a string, but is an number at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema#

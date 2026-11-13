@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema#)
+error: Cannot convert undefined or null to object

@@ -1,0 +1,30 @@
+resolving # relative to Dup# (Dup#)
+trying to fetch Dup
+successully fetched Dup
+resolved to # (Dup#)
+resolving # relative to Dup-1# (Dup-1#)
+trying to fetch Dup-1
+successully fetched Dup-1
+resolved to # (Dup-1#)
+resolving # relative to Dup-2# (Dup-2#)
+trying to fetch Dup-2
+successully fetched Dup-2
+resolved to # (Dup-2#)
+resolving # relative to Dup# (Dup#)
+resolved to # (Dup#)
+resolving # relative to Dup-1# (Dup-1#)
+resolved to # (Dup-1#)
+resolving # relative to Dup-2# (Dup-2#)
+resolved to # (Dup-2#)
+# needIR true; single string source null
+# graph
+0: intersection Dup | children 2 | 0 | given Dup ()
+1: string Dup | 1 | distance 1 Dup () | unrestricted
+2: union Dup | children 1 | 2 | distance 1 Dup ()
+3: intersection Dup-1 | children 5 | 3 | given Dup-1 ()
+4: integer | 4
+5: union Dup-1 | children 4 | 5 | distance 1 Dup-1 ()
+6: intersection Dup-2 | children 8 | 6 | given Dup-2 ()
+7: bool | 7
+8: union Dup-2 | children 7 | 8 | distance 1 Dup-2 ()
+# attributes

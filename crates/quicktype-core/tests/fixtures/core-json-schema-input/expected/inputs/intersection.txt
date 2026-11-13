@@ -1,0 +1,26 @@
+resolving # relative to tests/inputs/schema/intersection.schema# (tests/inputs/schema/intersection.schema#)
+trying to fetch tests/inputs/schema/intersection.schema
+successully fetched tests/inputs/schema/intersection.schema
+resolved to # (tests/inputs/schema/intersection.schema#)
+resolving # relative to tests/inputs/schema/intersection.schema# (tests/inputs/schema/intersection.schema#)
+resolved to # (tests/inputs/schema/intersection.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 16 | 0 | given TopLevel ()
+1: intersection intersection | children 2,9 | 1 | distance 2 intersection ()
+2: intersection intersection | children 8 | 2 | distance 4 intersection ()
+3: intersection foo | children 5 | 3 | distance 2 foo ()
+4: double | 4
+5: union foo | children 4 | 5 | distance 3 foo ()
+6: any | 6
+7: object intersection | children 3,6 | 7 | distance 5 intersection ()
+8: union intersection | children 7 | 8 | distance 5 intersection ()
+9: intersection intersection | children 14 | 9 | distance 4 intersection ()
+10: intersection bar | children 12 | 10 | distance 2 bar ()
+11: string bar | 11 | distance 3 bar () | unrestricted
+12: union bar | children 11 | 12 | distance 3 bar ()
+13: object intersection | children 10,6 | 13 | distance 5 intersection ()
+14: union intersection | children 13 | 14 | distance 5 intersection ()
+15: object TopLevel | children 1 | 15 | distance 1 TopLevel ()
+16: union TopLevel | children 15 | 16 | distance 1 TopLevel ()
+# attributes

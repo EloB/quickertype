@@ -1,0 +1,19 @@
+resolving # relative to tests/inputs/schema/enum-large.schema# (tests/inputs/schema/enum-large.schema#)
+trying to fetch tests/inputs/schema/enum-large.schema
+successully fetched tests/inputs/schema/enum-large.schema
+resolved to # (tests/inputs/schema/enum-large.schema#)
+resolving # relative to tests/inputs/schema/enum-large.schema# (tests/inputs/schema/enum-large.schema#)
+resolved to # (tests/inputs/schema/enum-large.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 9 | 0 | given TopLevel ()
+1: intersection callsign | children 3 | 1 | distance 2 callsign ()
+2: string callsign | 2 | distance 3 callsign () | 20 enums: alpha (1), ...
+3: union callsign | children 2 | 3 | distance 3 callsign ()
+4: intersection priority | children 6 | 4 | distance 2 priority ()
+5: string priority | 5 | distance 3 priority () | 3 enums: low (1), ...
+6: union priority | children 5 | 6 | distance 3 priority ()
+7: any | 7
+8: object TopLevel | children 1,4,7 | 8 | distance 1 TopLevel ()
+9: union TopLevel | children 8 | 9 | distance 1 TopLevel ()
+# attributes

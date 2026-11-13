@@ -1,0 +1,6 @@
+resolving # relative to tests/inputs/graphql/github1.graphql# (tests/inputs/graphql/github1.graphql#)
+trying to fetch tests/inputs/graphql/github1.graphql
+couldn't fetch tests/inputs/graphql/github1.graphql
+trying to fetch tests/inputs/graphql/github1.graphql
+couldn't fetch tests/inputs/graphql/github1.graphql
+error: Could not fetch schema #, referred to from tests/inputs/graphql/github1.graphql#

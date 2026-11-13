@@ -1,0 +1,42 @@
+resolving # relative to tests/inputs/schema/implicit-one-of.schema# (tests/inputs/schema/implicit-one-of.schema#)
+trying to fetch tests/inputs/schema/implicit-one-of.schema
+successully fetched tests/inputs/schema/implicit-one-of.schema
+resolved to # (tests/inputs/schema/implicit-one-of.schema#)
+resolving # relative to tests/inputs/schema/implicit-one-of.schema# (tests/inputs/schema/implicit-one-of.schema#)
+resolved to # (tests/inputs/schema/implicit-one-of.schema#)
+resolving #/definitions/base1 relative to #/oneOf/0 (tests/inputs/schema/implicit-one-of.schema#/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/base1 (tests/inputs/schema/implicit-one-of.schema#/definitions/base1)
+resolving #/definitions/base2 relative to #/oneOf/1 (tests/inputs/schema/implicit-one-of.schema#/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/base2 (tests/inputs/schema/implicit-one-of.schema#/definitions/base2)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 11,24 | 0 | given TopLevel ()
+1: null | 1
+2: double | 2
+3: integer | 3
+4: bool | 4
+5: string TopLevel | 5 | distance 1 TopLevel () | unrestricted
+6: any | 6
+7: array | children 6 | 7
+8: intersection foo | children 9 | 8 | distance 2 foo ()
+9: union foo | children 3 | 9 | distance 3 foo ()
+10: object TopLevel | children 8,6 | 10 | distance 1 TopLevel ()
+11: union TopLevel | children 7,4,2,3,1,10,5 | 11 | distance 1 TopLevel ()
+12: intersection TopLevel | children 13 | 12 | distance 2 TopLevel ()
+13: intersection base1 | children 17 | 13 | given base1 ()
+14: intersection bar | children 15 | 14 | distance 2 bar ()
+15: union bar | children 4 | 15 | distance 3 bar ()
+16: object base1 | children 14,6 | 16 | distance 1 base1 ()
+17: union base1 | children 16 | 17 | distance 1 base1 ()
+18: intersection TopLevel | children 19 | 18 | distance 2 TopLevel ()
+19: intersection base2 | children 23 | 19 | given base2 ()
+20: intersection quux | children 21 | 20 | distance 2 quux ()
+21: union quux | children 5 | 21 | distance 3 quux ()
+22: object base2 | children 20,6 | 22 | distance 1 base2 ()
+23: union base2 | children 22 | 23 | distance 1 base2 ()
+24: union TopLevel | children 12,18 | 24 | distance 1 TopLevel ()
+# attributes

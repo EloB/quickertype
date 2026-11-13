@@ -41,7 +41,7 @@ use quicktype_js_compat::utf16;
 
 use crate::attributes::string_types::infer_transformed_string_type_kind_for_string;
 use crate::date_time::DateTimeRecognizer;
-use crate::messages::{QuickTypeError, Result};
+use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::support::{assert, defined, panic};
@@ -467,16 +467,21 @@ impl CompressedJson {
     /// ```
     /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
     /// use quicktype_core::input::compressed_json::{CompressedJson, ParseError, Value};
+    /// use quicktype_core::messages::{JsErrorName, JsException};
     ///
     /// let mut cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
     /// assert_eq!(cjson.parse_string("1.0"), Ok(Value::Integer));
     /// assert_eq!(
     ///     cjson.parse_string("[1,"),
-    ///     Err(ParseError::Syntax("Unexpected end of JSON input".to_owned()))
+    ///     Err(ParseError::Js(JsException::new(
+    ///         JsErrorName::SyntaxError,
+    ///         "Unexpected end of JSON input"
+    ///     )))
     /// );
     /// ```
     pub fn parse_string(&mut self, text: &str) -> Result<Value, ParseError> {
-        let json = json::parse(text).map_err(|e| ParseError::Syntax(e.message().to_owned()))?;
+        let json = json::parse(text)
+            .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
         let result = self.process(&json).and_then(|()| self.finish());
         if result.is_err() {
             self.reset_partial_sample();
@@ -721,14 +726,11 @@ fn encode_value(v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
 /// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
 /// `MiscJSONParseError`.
-// TODO(js-exception): `Syntax` is a JavaScript exception (`JSON.parse`'s
-// `SyntaxError`, stream-json's `Error`); switch it to messages.rs' variant
-// for runtime exceptions once that lands.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
-    /// A JavaScript `Error` thrown by the JSON parser (`JSON.parse`'s
-    /// `SyntaxError`, stream-json's `Error`), by its `message`.
-    Syntax(String),
+    /// A JavaScript exception thrown by the JSON parser: `JSON.parse`'s
+    /// `SyntaxError`, stream-json's `Error`.
+    Js(JsException),
     /// A quicktype error raised while building the compressed form.
     Quicktype(QuickTypeError),
 }
@@ -737,7 +739,7 @@ impl ParseError {
     /// The error's `message`.
     pub fn message(&self) -> &str {
         match self {
-            ParseError::Syntax(message) => message,
+            ParseError::Js(e) => e.message(),
             ParseError::Quicktype(e) => e.user_message(),
         }
     }
