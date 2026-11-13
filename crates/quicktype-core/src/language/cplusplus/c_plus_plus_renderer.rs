@@ -84,17 +84,11 @@ impl CPlusPlusOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         // The boolean-valued options are TS truthiness: an
         // `Object.prototype` member acts as `true`.
-        let type_source_style = TYPE_SOURCE_STYLE
-            .get_enum_value(values)?
-            .flag("single-source");
-        let include_location = INCLUDE_LOCATION
-            .get_enum_value(values)?
-            .flag("local-include");
-        let code_format = CODE_FORMAT
-            .get_enum_value(values)?
-            .flag("with-getter-setter");
-        let wstring = WSTRING.get_enum_value(values)?.flag("use-wstring");
-        let west_const = WEST_CONST.get_enum_value(values)?.flag("west-const");
+        let type_source_style = TYPE_SOURCE_STYLE.get_flag(values, "single-source")?;
+        let include_location = INCLUDE_LOCATION.get_flag(values, "local-include")?;
+        let code_format = CODE_FORMAT.get_flag(values, "with-getter-setter")?;
+        let wstring = WSTRING.get_flag(values, "use-wstring")?;
+        let west_const = WEST_CONST.get_flag(values, "west-const")?;
         let just_types = JUST_TYPES.get_value(values);
         let namespace = NAMESPACE.get_value(values).into_owned();
         let enum_type = ENUM_TYPE.get_value(values).into_owned();

@@ -16,7 +16,6 @@ use quicktype_js_compat::number;
 
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::EnumValue;
 use crate::support::strings::{camel_case, utf16_string_escape};
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
@@ -27,8 +26,8 @@ use crate::transformers::{
 use crate::ty::type_utils::{is_nullable, nullable_from_union};
 
 use super::c_sharp_renderer::{
-    CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings, intercalate_and,
-    transformation_of,
+    BaseClass, CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings,
+    intercalate_and, transformation_of,
 };
 use super::utils::{
     AccessModifier, DENSE_JSON_PROPERTY_NAME, DENSE_NULL_VALUE_HANDLING_ENUM_NAME,
@@ -1079,7 +1078,7 @@ mod newtonsoft_hooks {
     use crate::attributes::type_attributes::TransformationAttribute;
     use crate::convenience_renderer::prelude::*;
     use crate::convenience_renderer::{ForbiddenWordsInfo, INFERRED_NAME_ORDER};
-    use crate::language::csharp::c_sharp_renderer::c_sharp_hooks;
+    use crate::language::csharp::c_sharp_renderer::{BaseClass, c_sharp_hooks};
     use crate::support::support::defined;
     use crate::transformers::{TransformerData, downcast_transformation};
     use std::rc::Rc;
@@ -1108,8 +1107,7 @@ mod newtonsoft_hooks {
             forbidden.extend(["J", "R", "N"].map(str::to_owned));
         }
 
-        // A prototype member (a function or object) never equals a name.
-        if let Some(baseclass) = r.cs.options.baseclass.and_then(|b| b.declared()) {
+        if let Some(baseclass) = r.cs.options.baseclass.and_then(BaseClass::forbidden_name) {
             forbidden.push(baseclass.to_owned());
         }
 
@@ -1234,17 +1232,14 @@ impl<'a> CSharpRenderer<'a> for NewtonsoftCSharpRenderer<'a> {
             ]);
         }
 
-        if self.options().baseclass.is_some_and(|b| b.is("EntityData")) {
+        if self.options().baseclass == Some(BaseClass::EntityData) {
             self.emit_using("Microsoft.Azure.Mobile.Server");
         }
         Ok(())
     }
 
     fn baseclass_for_type(&self, _t: TypeRef) -> Option<Source> {
-        self.options().baseclass.map(|baseclass| match baseclass {
-            EnumValue::Declared(baseclass) => Source::from(baseclass),
-            EnumValue::Prototype(member) => Source::from(member),
-        })
+        self.options().baseclass.map(Source::from)
     }
 
     fn emit_default_following_comments(&mut self) -> Result<()> {

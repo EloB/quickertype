@@ -13,7 +13,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::unicode_maps::is_es3_identifier_start;
 use crate::language::javascript::utils::legalize_name;
-use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
@@ -47,13 +47,9 @@ impl JavaScriptPropTypesOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let acronym_style =
             AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?);
-        // An `Object.prototype` member is not `AllObjects`, and truthy as
-        // `moduleSystem`.
-        let converters = match CONVERTERS.get_enum_value(values)? {
-            EnumValue::Declared("all-objects") => ConvertersOptions::AllObjects,
-            _ => ConvertersOptions::TopLevel,
-        };
-        let module_system = MODULE_SYSTEM.get_enum_value(values)?.flag("es6");
+        let converters = ConvertersOptions::from_enum_value(CONVERTERS.get_enum_value(values)?);
+        // TS truthiness: an `Object.prototype` member acts as `es6`.
+        let module_system = MODULE_SYSTEM.get_flag(values, "es6")?;
         Ok(JavaScriptPropTypesOptions {
             acronym_style,
             converters,
@@ -64,13 +60,14 @@ impl JavaScriptPropTypesOptions {
 
 /// `nameStyle(original, upper)`: the TypeScript duplicates the JavaScript
 /// renderer's `nameStyle` here instead of sharing it, and so does the port,
-/// down to recording calls of an `undefined` `acronyms` in `calls`.
+/// down to the `TypeError` of calling an `undefined` `acronyms` (see
+/// [`AcronymStyleCalls`]).
 fn name_style(
     acronym_style_option: Option<AcronymStyleOptions>,
-    calls: &AcronymStyleCalls,
     original: &str,
     upper: bool,
-) -> String {
+) -> Result<String> {
+    let calls = AcronymStyleCalls::default();
     let acronyms = |s: &str| calls.call(acronym_style_option, "style", s);
     let words = split_into_words(original);
     let first_acronym = |s: &str| capitalize(&calls.call(acronym_style_option, "acronyms", s));
@@ -84,7 +81,7 @@ fn name_style(
     } else {
         &all_lower_word_style
     };
-    combine_words(
+    let name = combine_words(
         &words,
         &legalize_name,
         first_word_style,
@@ -93,7 +90,8 @@ fn name_style(
         &acronyms,
         "",
         &is_es3_identifier_start,
-    )
+    );
+    calls.result(name)
 }
 
 /// The own property names of `Object.prototype` (`jsonName in
@@ -119,8 +117,6 @@ pub struct JavaScriptPropTypesRenderer<'a> {
     options: JavaScriptPropTypesOptions,
     /// The module's `identityNamingFunction` (a singleton in TypeScript).
     identity_naming_function: Namer,
-    /// The calls of an `undefined` acronym style in the namers.
-    acronym_style_calls: AcronymStyleCalls,
 }
 
 impl std::fmt::Debug for JavaScriptPropTypesRenderer<'_> {
@@ -143,7 +139,6 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
             identity_naming_function: fun_prefix_namer("properties", str::to_owned),
-            acronym_style_calls: AcronymStyleCalls::default(),
         }
     }
 
@@ -535,8 +530,10 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
 
     fn make_named_type_namer(&mut self) -> Namer {
         let acronym_style = self.options.acronym_style;
-        let calls = self.acronym_style_calls.clone();
-        fun_prefix_namer("types", move |s| name_style(acronym_style, &calls, s, true))
+        let errors = self.core().name_style_errors().clone();
+        fun_prefix_namer("types", move |s| {
+            errors.name_or(name_style(acronym_style, s, true), s)
+        })
     }
 
     /// `namerForObjectProperty()`: the module's `identityNamingFunction`.
@@ -554,9 +551,9 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
 
     fn make_enum_case_namer(&mut self) -> Option<Namer> {
         let acronym_style = self.options.acronym_style;
-        let calls = self.acronym_style_calls.clone();
+        let errors = self.core().name_style_errors().clone();
         Some(fun_prefix_namer("enum-cases", move |s| {
-            name_style(acronym_style, &calls, s, false)
+            errors.name_or(name_style(acronym_style, s, false), s)
         }))
     }
 
@@ -582,9 +579,6 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
     }
 
     fn emit_source_structure(&mut self, _given_output_filename: &str) -> Result<()> {
-        // What naming would have thrown.
-        self.acronym_style_calls.check()?;
-
         match self.leading_comments() {
             Some(leading_comments) => self.emit_comments(leading_comments)?,
             None => self.emit_usage_comments()?,

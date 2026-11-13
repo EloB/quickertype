@@ -419,19 +419,14 @@ impl EnumValue {
         }
     }
 
-    /// Whether this is the declared value `name`. A prototype member is none
-    /// of the declared values (TS `===` and `switch` fall through).
-    pub fn is(self, name: &str) -> bool {
-        self.declared() == Some(name)
-    }
-
-    /// The TS truthiness of an option whose declared values are booleans,
-    /// `true_name` being the one mapped to `true`: a prototype member (a
-    /// function, or `Object.prototype`) is truthy too.
-    pub fn flag(self, true_name: &str) -> bool {
+    /// The declared value's name, for a value that goes through a `switch`
+    /// over the declared values ending in `assertNever` (like
+    /// `makeNameStyle`'s): a prototype member fails there with
+    /// `Unexpected object <String(value)>`.
+    pub fn declared_or_assert_never(self) -> crate::messages::Result<&'static str> {
         match self {
-            Self::Declared(name) => name == true_name,
-            Self::Prototype(_) => true,
+            Self::Declared(name) => Ok(name),
+            Self::Prototype(member) => crate::support::support::assert_never(member),
         }
     }
 }
@@ -488,6 +483,27 @@ impl EnumOption {
             type_label: Some(Cow::Owned(self.type_label())),
             ..OptionDefinition::new(self.name, OptionType::Enum, self.description, self.kind)
         }
+    }
+
+    /// The TS truthiness of the selected value of an option whose declared
+    /// values are booleans (`if (options.x)`), `true_name` being the one
+    /// mapped to `true`: a prototype member (a function, or
+    /// `Object.prototype`) is truthy too. `true_name` must be one of the
+    /// declared values, which debug builds check.
+    pub fn get_flag(
+        &self,
+        values: &RendererOptions,
+        true_name: &str,
+    ) -> Result<bool, UnknownOptionValue> {
+        debug_assert!(
+            self.values.contains(&true_name),
+            "{true_name} is not a value of option {}",
+            self.name
+        );
+        Ok(match self.get_enum_value(values)? {
+            EnumValue::Declared(name) => name == true_name,
+            EnumValue::Prototype(_) => true,
+        })
     }
 
     /// The selected value (TS `getEnumValue(getValue(values))`): the default
@@ -749,8 +765,18 @@ mod tests {
             assert_eq!(value, Ok(EnumValue::Prototype(member)));
             let value = value.unwrap();
             assert_eq!(value.declared(), None);
-            assert!(!value.is("a") && !value.is("b"));
-            assert!(value.flag("a"));
+            let err = value.declared_or_assert_never().unwrap_err();
+            assert_eq!(
+                err.user_message(),
+                format!(
+                    "Internal error: Unexpected object {}",
+                    member.to_js_string()
+                )
+            );
+            assert_eq!(
+                STYLE.get_flag(&opts(&[("style", member.name().into())]), "a"),
+                Ok(true)
+            );
         }
         // `String(value)`, as Node prints it.
         assert_eq!(
@@ -766,8 +792,16 @@ mod tests {
             "function Object() { [native code] }"
         );
         assert_eq!(PrototypeMember::Proto.to_js_string(), "[object Object]");
-        let a = EnumValue::Declared("a");
-        assert!(a.is("a") && !a.is("b") && a.flag("a") && !a.flag("b"));
+        assert_eq!(EnumValue::Declared("a").declared_or_assert_never(), Ok("a"));
+        let a = opts(&[("style", "a".into())]);
+        assert_eq!(STYLE.get_flag(&a, "a"), Ok(true));
+        assert_eq!(STYLE.get_flag(&a, "b"), Ok(false));
+        assert_eq!(STYLE.get_flag(&RendererOptions::new(), "b"), Ok(true));
+        assert!(
+            STYLE
+                .get_flag(&opts(&[("style", "c".into())]), "a")
+                .is_err()
+        );
     }
 
     #[test]

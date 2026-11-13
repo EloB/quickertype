@@ -86,7 +86,7 @@ impl SwiftOptions {
         // The boolean-valued options are TS truthiness (an `Object.prototype`
         // member acts as `true`), the record-valued `protocol` has none of
         // the record's fields then.
-        let use_classes = USE_CLASSES.get_enum_value(values)?.flag("class");
+        let use_classes = USE_CLASSES.get_flag(values, "class")?;
         let final_classes = FINAL_CLASSES.get_value(values);
         let mutable_properties = MUTABLE_PROPERTIES.get_value(values);
         // An `Object.prototype` member selects no style (`undefined`), so
@@ -95,7 +95,7 @@ impl SwiftOptions {
         let acronym_style =
             AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?)
                 .unwrap_or(AcronymStyleOptions::Pascal);
-        let dense = DENSE.get_enum_value(values)?.flag("dense");
+        let dense = DENSE.get_flag(values, "dense")?;
         let linux = LINUX.get_value(values);
         let objc_support = OBJC_SUPPORT.get_value(values);
         let optional_enums = OPTIONAL_ENUMS.get_value(values);

@@ -30,7 +30,7 @@ use quicktype_js_compat::utf16;
 use crate::annotation::AnnotationData;
 use crate::messages::Result;
 use crate::naming::{Name, Names};
-use crate::renderer_options::PrototypeMember;
+use crate::renderer_options::{EnumValue, PrototypeMember};
 use crate::support::support::{assert, assert_never, defined, panic};
 
 /// A function applied to the serialized text of a [`Source::Modified`].
@@ -120,6 +120,18 @@ impl From<&Name> for Source {
 impl From<PrototypeMember> for Source {
     fn from(m: PrototypeMember) -> Self {
         Source::Unexpected(m)
+    }
+}
+
+impl From<EnumValue> for Source {
+    /// The value of an enum option whose values are their own names (cJSON
+    /// `integer-size`, C# `any-type`), emitted as it is: the name, or the
+    /// `Object.prototype` member, which fails to serialize.
+    fn from(v: EnumValue) -> Self {
+        match v {
+            EnumValue::Declared(name) => Source::Text(name.to_owned()),
+            EnumValue::Prototype(member) => Source::Unexpected(member),
+        }
     }
 }
 

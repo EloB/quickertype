@@ -7,7 +7,7 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, EnumValue, OptionKind, RendererOption, StringOption,
 };
 use crate::support::strings::NamingStyle;
-use crate::support::support::{assert_never, panic};
+use crate::support::support::panic;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
@@ -18,10 +18,7 @@ use crate::ty::type_builder_utils::StringTypeMapping;
 /// error; an `Object.prototype` member falls through `makeNameStyle`'s
 /// `switch` to `assertNever`.
 pub fn naming_style_for_option(value: EnumValue) -> Result<NamingStyle> {
-    let value = match value {
-        EnumValue::Declared(value) => value,
-        EnumValue::Prototype(member) => return assert_never(member),
-    };
+    let value = value.declared_or_assert_never()?;
     Ok(match value {
         "pascal-case" => NamingStyle::Pascal,
         "original-case" => NamingStyle::Original,

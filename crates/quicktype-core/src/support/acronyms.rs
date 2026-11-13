@@ -5,7 +5,6 @@
 //! here as constants.
 
 use std::cell::Cell;
-use std::rc::Rc;
 
 use super::strings::{
     all_lower_word_style, all_upper_word_style, first_upper_word_style, original_word,
@@ -86,19 +85,19 @@ pub fn acronym_style(style: AcronymStyleOptions) -> fn(&str) -> String {
     }
 }
 
-/// Calls of an `acronymStyle(style)` result that is `undefined`, in the
-/// renderers that call it without a fallback (the JavaScript family).
+/// The calls of an `acronymStyle(style)` result while one name is styled,
+/// in the renderers that call it without a fallback (the JavaScript family).
 ///
 /// For an `Object.prototype` member as `acronym-style`,
 /// [`AcronymStyleOptions::from_enum_value`] is `None` (TS `undefined`), and
 /// the first acronym word styled with it throws `TypeError: <variable> is
-/// not a function`, `<variable>` being the name it is called through. That
-/// happens in namers, which cannot fail here, so the renderer's namers share
-/// one of these (a cheap clone): it records the first failing call and the
-/// renderer reports it with [`check`](Self::check) before emitting anything,
-/// where TS throws from `assignNames`.
-#[derive(Clone, Debug, Default)]
-pub struct AcronymStyleCalls(Rc<Cell<Option<&'static str>>>);
+/// not a function`, `<variable>` being the name it is called through. The
+/// word styles cannot fail, so they record that first call here, and
+/// [`result`](Self::result) turns it into the error once the name is done
+/// (its namer then records it in the renderer's
+/// [`NameStyleErrors`](crate::convenience_renderer::NameStyleErrors)).
+#[derive(Debug, Default)]
+pub struct AcronymStyleCalls(Cell<Option<&'static str>>);
 
 impl AcronymStyleCalls {
     /// `variable(word)`, `variable` holding `acronymStyle(style)`: the
@@ -121,10 +120,10 @@ impl AcronymStyleCalls {
         }
     }
 
-    /// The `TypeError` of the first call of `undefined`, if there was one.
-    pub fn check(&self) -> Result<()> {
+    /// `value`, or the `TypeError` of the first call of `undefined`.
+    pub fn result<T>(self, value: T) -> Result<T> {
         match self.0.get() {
-            None => Ok(()),
+            None => Ok(value),
             Some(variable) => Err(QuickTypeError::js_exception(
                 JsErrorName::TypeError,
                 format!("{variable} is not a function"),
@@ -153,11 +152,11 @@ mod tests {
             calls.call(Some(AcronymStyleOptions::Pascal), "acronyms", "id"),
             "ID"
         );
-        assert!(calls.check().is_ok());
-        let shared = calls.clone();
-        assert_eq!(shared.call(None, "style", "id"), "id");
+        assert_eq!(calls.result("ok").unwrap(), "ok");
+        let calls = AcronymStyleCalls::default();
+        assert_eq!(calls.call(None, "style", "id"), "id");
         assert_eq!(calls.call(None, "acronyms", "url"), "url");
-        let err = calls.check().unwrap_err();
+        let err = calls.result(()).unwrap_err();
         assert_eq!(err.to_string(), "style is not a function");
     }
 

@@ -29,7 +29,7 @@ use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_fr
 
 use super::date_time_provider::JavaDateTimeProvider;
 use super::language::{
-    ACRONYM_STYLE, DATE_TIME_PROVIDER, DateTimeProviderKind, JUST_TYPES, LOMBOK,
+    ACRONYM_STYLE, DATE_TIME_PROVIDER, DateTimeProviderOption, JUST_TYPES, LOMBOK,
     LOMBOK_COPY_ANNOTATIONS, PACKAGE_NAME, USE_LIST,
 };
 use super::utils::{java_name_style, string_escape};
@@ -42,11 +42,8 @@ pub struct JavaOptions {
     pub use_list: bool,
     /// `justTypes`.
     pub just_types: bool,
-    /// `dateTimeProvider` (each value is its own name). The constructor's
-    /// `switch` picks the legacy provider for `legacy` and the Java 8 one
-    /// otherwise, an `Object.prototype` member included, which however is
-    /// not `=== "java8"` where the Jackson renderer asks.
-    pub date_time_provider: EnumValue,
+    /// `dateTimeProvider`.
+    pub date_time_provider: DateTimeProviderOption,
     /// `acronymStyle`.
     pub acronym_style: AcronymStyleOptions,
     /// `packageName`.
@@ -62,9 +59,13 @@ impl JavaOptions {
     /// order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         // TS truthiness: an `Object.prototype` member acts as `list`.
-        let use_list = USE_LIST.get_enum_value(values)?.flag("list");
+        let use_list = USE_LIST.get_flag(values, "list")?;
         let just_types = JUST_TYPES.get_value(values);
-        let date_time_provider = DATE_TIME_PROVIDER.get_enum_value(values)?;
+        let date_time_provider = match DATE_TIME_PROVIDER.get_enum_value(values)? {
+            EnumValue::Declared("legacy") => DateTimeProviderOption::Legacy,
+            EnumValue::Declared(_) => DateTimeProviderOption::Java8,
+            EnumValue::Prototype(member) => DateTimeProviderOption::Other(member),
+        };
         // An `Object.prototype` member selects no style (`undefined`), so
         // `javaNameStyle`'s default parameter, `allUpperWordStyle` (the
         // Pascal style), takes its place.
@@ -107,11 +108,7 @@ impl JavaState {
         let converter_classname = "Converter";
         JavaState {
             date_time_provider: JavaDateTimeProvider::new(
-                if options.date_time_provider.is("legacy") {
-                    DateTimeProviderKind::Legacy
-                } else {
-                    DateTimeProviderKind::Java8
-                },
+                options.date_time_provider.provider_kind(),
                 converter_classname,
             ),
             options,

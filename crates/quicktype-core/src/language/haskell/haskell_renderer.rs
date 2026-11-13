@@ -73,7 +73,7 @@ impl HaskellOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
         // TS truthiness: an `Object.prototype` member acts as `list`.
-        let use_list = USE_LIST.get_enum_value(values)?.flag("list");
+        let use_list = USE_LIST.get_flag(values, "list")?;
         let module_name = MODULE_NAME.get_value(values).into_owned();
         Ok(HaskellOptions {
             just_types,

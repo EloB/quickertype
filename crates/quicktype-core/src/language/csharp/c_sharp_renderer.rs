@@ -38,6 +38,38 @@ pub enum Framework {
     Other(PrototypeMember),
 }
 
+/// The value of TS `cSharpOptions.baseclass` other than `Object`, whose
+/// value is `undefined` (no base class).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BaseClass {
+    /// `"EntityData"`.
+    EntityData,
+    /// An `Object.prototype` member: it is not `"EntityData"`, forbids no
+    /// name (a function or object equals no name), and is emitted as the
+    /// base class itself, which fails to serialize.
+    Other(PrototypeMember),
+}
+
+impl BaseClass {
+    /// The name it forbids in the global namespace.
+    pub fn forbidden_name(self) -> Option<&'static str> {
+        match self {
+            BaseClass::EntityData => Some("EntityData"),
+            BaseClass::Other(_) => None,
+        }
+    }
+}
+
+impl From<BaseClass> for Source {
+    /// `baseclassForType(t)`'s value as emitted after `" : "`.
+    fn from(b: BaseClass) -> Self {
+        match b {
+            BaseClass::EntityData => "EntityData".into(),
+            BaseClass::Other(member) => member.into(),
+        }
+    }
+}
+
 /// TS `OutputFeatures` (plus `namespaces`): what `--features` turns on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OutputFeatures {
@@ -78,11 +110,8 @@ pub struct CSharpOptions {
     pub features: OutputFeatures,
     /// `justTypes`.
     pub just_types: bool,
-    /// `baseclass`: `Some(Declared("EntityData"))`, `None` for `"Object"`
-    /// (whose value is `undefined`), or an `Object.prototype` member, which
-    /// is emitted as the base class (failing at serialization, see
-    /// [`Source::Unexpected`]) and forbids no name.
-    pub baseclass: Option<EnumValue>,
+    /// `baseclass`: `None` for `"Object"`, whose value is `undefined`.
+    pub baseclass: Option<BaseClass>,
     /// `checkRequired`.
     pub check_required: bool,
     /// `keepPropertyName`.
@@ -102,8 +131,8 @@ impl CSharpOptions {
             EnumValue::Declared(_) => Framework::SystemTextJson,
             EnumValue::Prototype(member) => Framework::Other(member),
         };
-        let use_list = USE_LIST.get_enum_value(values)?.flag("list");
-        let dense = DENSE.get_enum_value(values)?.flag("dense");
+        let use_list = USE_LIST.get_flag(values, "list")?;
+        let dense = DENSE.get_flag(values, "dense")?;
         let namespace = NAMESPACE.get_value(values).into_owned();
         let version = match VERSION.get_enum_value(values)? {
             EnumValue::Declared("5") => Some(5),
@@ -114,7 +143,7 @@ impl CSharpOptions {
         let virtual_ = VIRTUAL.get_value(values);
         let use_records = USE_RECORDS.get_value(values);
         let type_for_any = TYPE_FOR_ANY.get_enum_value(values)?;
-        let use_decimal = USE_DECIMAL.get_enum_value(values)?.flag("decimal");
+        let use_decimal = USE_DECIMAL.get_flag(values, "decimal")?;
         let features = match FEATURES.get_enum_value(values)? {
             EnumValue::Declared("attributes-only") => OutputFeatures {
                 namespaces: true,
@@ -134,8 +163,9 @@ impl CSharpOptions {
         };
         let just_types = JUST_TYPES.get_value(values);
         let baseclass = match BASECLASS.get_enum_value(values)? {
-            EnumValue::Declared("Object") => None,
-            value => Some(value),
+            EnumValue::Declared("EntityData") => Some(BaseClass::EntityData),
+            EnumValue::Declared(_) => None,
+            EnumValue::Prototype(member) => Some(BaseClass::Other(member)),
         };
         Ok(CSharpOptions {
             framework,
@@ -326,10 +356,7 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
                 Follow::None => t,
             };
             let ty = graph.type_at(actual_type)?;
-            let type_for_any = match self.cs().options.type_for_any {
-                EnumValue::Declared(type_for_any) => Source::from(type_for_any),
-                EnumValue::Prototype(member) => Source::from(member),
-            };
+            let type_for_any = Source::from(self.cs().options.type_for_any);
             Ok(match ty.kind() {
                 TypeKind::Any => {
                     maybe_annotated(with_issues, any_type_issue_annotation(), type_for_any)
