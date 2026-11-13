@@ -3,11 +3,17 @@
 //! and arrays in the same order, the same string table, and the same
 //! errors; and both against the tables TypeScript builds.
 
+use std::cell::Cell;
 use std::fmt::Write as _;
 
 use super::*;
 use crate::date_time::DefaultDateTimeRecognizer;
 use crate::support::integer_range::{INT32_RANGE, INT64_RANGE, IntegerRange};
+
+thread_local! {
+    /// How many members [`Recorder::member_keys`] walked past.
+    pub(super) static KEYS_WALKED: Cell<usize> = const { Cell::new(0) };
+}
 
 fn reader(range: Option<IntegerRange>, handle_refs: bool) -> CompressedJson {
     CompressedJson::new(Box::new(DefaultDateTimeRecognizer), handle_refs, range)
@@ -625,6 +631,36 @@ fn deep_and_wide() {
         .collect::<Vec<_>>()
         .join(",");
     same(&[&format!("{{{wide}}}")], None, false);
+}
+
+/// Wide objects whose keys reappear in the objects nested in them are
+/// read in linear time: each object walks its members to find a
+/// duplicate at most once (it used to walk them for every such key).
+#[test]
+fn keys_reused_by_nested_objects() {
+    let n = 10_000;
+    let members = |n: usize| -> Vec<String> {
+        (0..n)
+            .map(|i| format!(r#""k{i}": {{"k{}": 0, "k{}": 1}}"#, i + 1, i + 2))
+            .collect()
+    };
+    let wide = |n: usize| format!("{{{}}}", members(n).join(", "));
+    // With a duplicate at the end.
+    let duplicated = format!(r#"{{{}, "k5": 2}}"#, members(n).join(", "));
+    let walked = |text: &str| {
+        KEYS_WALKED.with(|w| w.set(0));
+        reader(None, false).parse_string(text).unwrap();
+        KEYS_WALKED.with(Cell::get)
+    };
+    assert!(walked(&wide(n)) <= 2, "{}", walked(&wide(n)));
+    assert!(walked(&duplicated) <= 2);
+    // As many walked for ten times the members.
+    assert_eq!(walked(&wide(10 * n)), walked(&wide(n)));
+    same(&[&wide(n), &duplicated, &wide(100)], None, false);
+    let records: Vec<String> = (0..n)
+        .map(|i| format!(r#"{{"a": {{"b": {i}}}, "b": [{{"a": 1, "a": 2}}], "c": {i}}}"#))
+        .collect();
+    same(&[&format!("[{}]", records.join(","))], None, false);
 }
 
 /// `process` overflows Node's stack at its 4,579th nested value: the

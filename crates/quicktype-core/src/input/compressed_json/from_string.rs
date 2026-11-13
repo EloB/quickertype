@@ -48,9 +48,12 @@
 //! object's own serial is a duplicate; one with a smaller stamp is new to
 //! the object (an object that started earlier and is still open cannot
 //! add keys while this one is open); one with a larger stamp was used by a
-//! nested object in between, and only then are the object's earlier keys
-//! compared. `"__proto__"`, which TypeScript interns anew every time, is
-//! not in the key table ([`PROTO`]) and is tracked per object.
+//! nested object in between. Only then does the object get a set of its
+//! keys, made once from its members so far and kept up to date from then
+//! on, so that an object whose keys keep reappearing in its values
+//! (`{"k0": {"k1": 0}, "k1": {"k2": 0}, …}`) is still read in linear
+//! time. `"__proto__"`, which TypeScript interns anew every time, is not
+//! in the key table ([`PROTO`]) and is tracked per object.
 //!
 //! After a sample, the tape and the key table are kept for the next one
 //! only while they are small ([`KEEP_NODES`], [`KEEP_KEYS`]); a large
@@ -66,7 +69,7 @@ use super::{
     parse_string_value_into, syntax_error,
 };
 use crate::messages::{QuickTypeError, Result};
-use crate::support::fast_hash::{BuildHasher, HashMap};
+use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
 use crate::support::recursion::stack_overflow;
 
 /// Limits on what [`CompressedJson::read_string_sample`] reads; a sample
@@ -354,6 +357,9 @@ struct OpenObject {
     reordered: bool,
     /// How many members it has so far.
     members: usize,
+    /// Its keys, once a key with a stamp larger than its serial came up
+    /// (see the module documentation); every key after that is added.
+    keys: Option<HashSet<u32>>,
 }
 
 enum Open {
@@ -500,6 +506,7 @@ impl<'t> Recorder<'t> {
                             has_name: false,
                             reordered: false,
                             members: 0,
+                            keys: None,
                         };
                         self.member_key(sink, &mut object)?;
                         stack.push(Open::Object(object));
@@ -628,8 +635,21 @@ impl<'t> Recorder<'t> {
             object.has_proto = true;
         } else {
             let stamp = reader.stamp(index, object.serial);
-            object.reordered = stamp == object.serial
-                || (stamp > object.serial && self.has_key(object.node, index));
+            object.reordered = match &mut object.keys {
+                Some(keys) => !keys.insert(index),
+                // Used by a nested object since this one opened.
+                None if stamp > object.serial => {
+                    let mut keys = self.member_keys(object.node);
+                    let repeated = !keys.insert(index);
+                    object.keys = Some(keys);
+                    repeated
+                }
+                None => stamp == object.serial,
+            };
+        }
+        if object.reordered {
+            // Duplicates no longer matter.
+            object.keys = None;
         }
         if !object.reordered {
             match key.as_bytes().first() {
@@ -647,13 +667,16 @@ impl<'t> Recorder<'t> {
         index
     }
 
-    /// Whether the object at `node`, still being recorded, has the key
-    /// `index` already.
-    fn has_key(&self, node: usize, index: u32) -> bool {
+    /// The keys (but `"__proto__"`) of the object at `node`, still being
+    /// recorded, so far.
+    fn member_keys(&self, node: usize) -> HashSet<u32> {
+        let mut keys = HashSet::default();
         let mut i = node + 1;
         while i < self.nodes.len() {
-            if self.nodes[i].a == index {
-                return true;
+            #[cfg(test)]
+            tests::KEYS_WALKED.with(|n| n.set(n.get() + 1));
+            if self.nodes[i].a != PROTO {
+                keys.insert(self.nodes[i].a);
             }
             // Past the key and its value.
             i = match self.nodes.get(i + 1) {
@@ -665,7 +688,7 @@ impl<'t> Recorder<'t> {
                 _ => i + 2,
             };
         }
-        false
+        keys
     }
 
     /// `ScanJsonString()`: the cursor is just past the opening quote. A
