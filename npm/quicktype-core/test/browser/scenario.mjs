@@ -52,5 +52,7 @@ export async function smoke(qt, stats) {
             schemaRun: [...schemaRun].map(([name, r]) => [name, r.lines]),
         },
         engines,
+        // JSON samples the engine read as they were added.
+        samplesRead: stats.samplesRead,
     };
 }
