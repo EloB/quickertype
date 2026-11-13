@@ -5,12 +5,12 @@
 //
 // usage: node xtask/js-compat/gen-vectors.mjs [path/to/quicktype]
 //
-// The default reference checkout is $QUICKTYPE_DIR, else ../quicktype next to
-// this repository; it must be built (packages/quicktype-core/dist) with its
-// node_modules installed. The npm packages are loaded exactly as
-// quicktype-core resolves them. Inputs are curated edge cases, property names
-// from tests/inputs, and pseudo-random data from fixed seeds, so re-running
-// the script reproduces the same files.
+// The default reference checkout is $QUICKTYPE_REFERENCE, else ../quicktype
+// next to this repository (xtask/reference.mjs); it must be built
+// (packages/quicktype-core/dist) with its node_modules installed. The npm
+// packages are loaded exactly as quicktype-core resolves them. Inputs are
+// curated edge cases, property names from tests/inputs, and pseudo-random
+// data from fixed seeds, so re-running the script reproduces the same files.
 //
 // Output: crates/quicktype-js-compat/tests/vectors/*.json and
 // crates/quicktype-core/tests/vectors/*.json. Strings in vectors are always
@@ -23,10 +23,10 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktypeDir = resolve(
-    process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"),
-);
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const coreDist = join(quicktypeDir, "packages/quicktype-core/dist");
 const coreRequire = createRequire(join(coreDist, "index.js"));
 

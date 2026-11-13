@@ -1,4 +1,4 @@
-//! Port of `quicktype/src/TypeSource.ts`: the sources the CLI collects
+//! Port of `src/TypeSource.ts`: the sources the CLI collects
 //! before it builds the engine's input.
 
 use quicktype_core::{JsonSchemaSourceData, Readable};

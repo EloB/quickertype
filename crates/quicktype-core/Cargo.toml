@@ -1,12 +1,25 @@
 [package]
-name = "quicktype-core"
+name = "quickertype-core"
 description = "The quicktype engine: infer types from JSON, JSON Schema and GraphQL and render them in 25+ languages"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
 authors.workspace = true
+keywords = ["quicktype", "json", "json-schema", "codegen", "types"]
+categories = ["development-tools", "encoding", "compilers"]
+include = ["/src/", "/build.rs", "/LICENSE", "/NOTICE"]
+
+[package.metadata.dist]
+# dist builds installers for the `quickertype` CLI only; this crate is
+# published to crates.io by .github/workflows/publish-crates.yml.
+dist = false
+
+[lib]
+name = "quicktype_core"
 
 [features]
 default = ["fs"]
@@ -19,7 +32,7 @@ http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
 foldhash.workspace = true
 hashbrown.workspace = true
 indexmap.workspace = true
-quicktype-js-compat.workspace = true
+quickertype-js-compat.workspace = true
 regex.workspace = true
 stacker.workspace = true
 ureq = { workspace = true, optional = true }

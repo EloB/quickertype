@@ -166,8 +166,9 @@ export const uriInputs = [
     "ftp://user:pass@host:21/file.txt", "http://a/b\u2028c.d", "http://a/b.c\u2028",
 ];
 
-// Postman collections for sourcesFromPostmanCollection. Only JSON texts:
-// the YAML fallback of parseJSON is not ported yet (TODO(parse-json)).
+// Postman collections for sourcesFromPostmanCollection, as JSON texts.
+// (`parseJSON`'s YAML fallback has its own tests, next to it in
+// crates/quicktype-core/src/support/parse_json.rs.)
 const request = (name, extra = {}) => ({ name, response: [{ body: '{"a":1}' }], ...extra });
 export const postmanInputs = [
     "null", "1", '"x"', "[]", "[1, {}]", "{}", '{"item": 1}', '{"item": []}', '{"item": [null]}',

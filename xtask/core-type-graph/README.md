@@ -17,7 +17,7 @@ and never need Node.
 
 ```sh
 node xtask/core-type-graph/run-scenarios.mjs ../quicktype
-cargo test -p quicktype-core --test type_graph_scenarios
+cargo test -p quickertype-core --test type_graph_scenarios
 ```
 
 ## Scenarios

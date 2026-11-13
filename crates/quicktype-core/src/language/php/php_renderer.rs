@@ -7,6 +7,7 @@
 //! `phpDocConvertType` is never called in TypeScript and is not ported.
 
 use indexmap::{IndexMap, IndexSet};
+use quicktype_js_compat::number;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::attributes::constraints::{
@@ -145,11 +146,6 @@ fn lodash_pad2(s: &str) -> String {
     let left = padding / 2;
     let right = padding - left;
     format!("{}{s}{}", "0".repeat(left), "0".repeat(right))
-}
-
-/// `${n}` for a JavaScript number.
-fn js_number(n: f64) -> String {
-    quicktype_js_compat::number::to_string(n)
 }
 
 /// Callbacks of [`PhpRenderer::emit_union_dispatch`].
@@ -880,7 +876,10 @@ impl<'a> PhpRenderer<'a> {
                     let value = f64::from(idx);
                     self.emit_parts(&[
                         lhs,
-                        &[js_number(value + value / 1000.0).into(), suffix.into()],
+                        &[
+                            number::to_string(value + value / 1000.0).into(),
+                            suffix.into(),
+                        ],
                         &trailer(" /*"),
                     ]);
                 }
@@ -1012,13 +1011,13 @@ impl<'a> PhpRenderer<'a> {
                 if let Some(min) = min {
                     r.emit_line(format!(
                         "if ({scope_attr_name} < {}) throw new Exception(\"Attribute Error\");",
-                        js_number(min)
+                        number::to_string(min)
                     ));
                 }
                 if let Some(max) = max {
                     r.emit_line(format!(
                         "if ({scope_attr_name} > {}) throw new Exception(\"Attribute Error\");",
-                        js_number(max)
+                        number::to_string(max)
                     ));
                 }
                 Ok(())
@@ -1083,7 +1082,7 @@ impl<'a> PhpRenderer<'a> {
                             self.emit_block(
                                 format!(
                                     "if (preg_match_all('/./us', {scope_attr_name}) {operator} {})",
-                                    js_number(bound)
+                                    number::to_string(bound)
                                 ),
                                 invalid,
                             )?;
@@ -1108,13 +1107,13 @@ impl<'a> PhpRenderer<'a> {
                     if let Some(min) = min {
                         self.emit_line(format!(
                         "if (count({scope_attr_name}) < {}) throw new Exception(\"Attribute Error\");",
-                        js_number(min)
+                        number::to_string(min)
                     ));
                     }
                     if let Some(max) = max {
                         self.emit_line(format!(
                         "if (count({scope_attr_name}) > {}) throw new Exception(\"Attribute Error\");",
-                        js_number(max)
+                        number::to_string(max)
                     ));
                     }
                     self.emit_line(sl![

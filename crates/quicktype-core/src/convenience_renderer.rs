@@ -2383,7 +2383,7 @@ pub mod prelude {
     pub use super::{
         ConvenienceRenderer, ConvenienceRendererCore, ConvenienceRendererExt, ForbiddenWord,
         ForbiddenWordsInfo, NameStyleErrors, constant_proposer, defaults, match_type_unsupported,
-        render_with, type_not_supported,
+        render_with,
     };
     pub use crate::forward_convenience_renderer_hooks;
     pub use crate::messages::Result;

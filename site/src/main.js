@@ -14,25 +14,36 @@
 // without `v` is older than the presets, and is read with quicktype's
 // defaults. The input text is kept in localStorage when the browser allows
 // it.
+//
+// A file larger than the editor shows (LARGE) is never read here: the page
+// posts the File itself to the workers, which read it (see worker.js), so
+// that its text never passes through the main thread.
 
-/* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
+/* global __LANGUAGES__, __SAMPLES__, __GENERAL__, __SPEED__ */
 
 import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
+import { formatBytes, tooLarge, unreadable } from "./input-file.js";
 
 const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
 /** quicktype's general options: { name (the CLI flag), label, option (of `quicktype()`), value (when on) }. */
 const general = __GENERAL__;
+/** From the benchmarks (site/data/benchmarks.json): `upTo`, the largest CLI speed-up. */
+const speed = __SPEED__;
 
 const storageKey = "quickertype.input";
-/** Inputs longer than this (in characters) are not put in the editor or saved. */
+/** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
 const LARGE = 1_000_000;
+/** Inputs larger than this are not put in the editor even when asked: a text box that large freezes the page. */
+const EDITOR_MAX = 50_000_000;
 const defaultLanguage = "typescript";
 const defaultSample = "pokedex";
 const defaultEngine = "wasm";
+/** Timed runs per engine when warm runs are measured, after one warm-up run. */
+const measureRuns = 5;
 
 /** The engines by the names the page gives them (and the hash, as `e`). */
 const engineNames = { wasm: "quickertype", ts: "quicktype" };
@@ -55,6 +66,8 @@ const els = {
     large: $("large"),
     largeName: $("large-name"),
     largeSize: $("large-size"),
+    largeStatus: $("large-status"),
+    largeNote: $("large-note"),
     largeEdit: $("large-edit"),
     inputInfo: $("input-info"),
     tabs: $("tabs"),
@@ -63,6 +76,7 @@ const els = {
     meter: $("meter"),
     notes: $("notes"),
     output: $("output"),
+    codeWrap: $("code-wrap"),
     code: $("code"),
     error: $("error"),
     cli: $("cli"),
@@ -88,12 +102,6 @@ function nameFromFile(fileName) {
     return /^[0-9]/.test(name) ? `T${name}` : name;
 }
 
-function formatBytes(n) {
-    if (n < 1000) return `${n} bytes`;
-    if (n < 1_000_000) return `${(n / 1000).toFixed(1)} kB`;
-    return `${(n / 1_000_000).toFixed(1)} MB`;
-}
-
 function formatMs(x) {
     if (x >= 10_000) return `${(x / 1000).toFixed(1)} s`;
     if (x >= 1000) return `${(x / 1000).toFixed(2)} s`;
@@ -116,8 +124,11 @@ function median(xs) {
 
 const state = {
     kind: "json",
+    /** The input's text; "" for a file too large for the editor, until it is shown there. */
     text: "",
-    /** { type: "sample", id } | { type: "file", fileName, size } | { type: "typed" } */
+    /** The file a large input is (a File), which the workers read; undefined for any other input. */
+    file: undefined,
+    /** { type: "sample", id } | { type: "file", fileName, size, lastModified } | { type: "typed" } */
     source: { type: "typed" },
     /** The name from the sample or file name; used unless the user typed one. */
     autoName: "TopLevel",
@@ -207,7 +218,7 @@ function writeHash() {
 
 function saveInput() {
     try {
-        if (state.text.length > LARGE) {
+        if (state.file !== undefined || state.text.length > LARGE) {
             localStorage.removeItem(storageKey);
         } else {
             const { kind, text, source, autoName } = state;
@@ -380,17 +391,64 @@ function renderCli() {
 }
 
 function showInput() {
-    const large = state.text.length > LARGE && !state.largeInEditor;
+    const large = (state.file !== undefined || state.text.length > LARGE) && !state.largeInEditor;
     els.input.hidden = large;
     els.large.hidden = !large;
     if (large) {
         els.largeName.textContent = inputFileName();
         els.largeSize.textContent = formatBytes(state.source.size ?? utf8Length(state.text));
+        renderLargeEdit();
     } else if (els.input.value !== state.text) {
         els.input.value = state.text;
     }
 
     showInputInfo();
+    renderInputStatus();
+}
+
+/** The large input's size, as far as fitting it in the editor goes (a file's bytes, or the text's characters). */
+const editorSize = () => (state.file !== undefined ? state.file.size : state.text.length);
+
+/**
+ * Under a large input: why the editor does not show it, and "Show in the
+ * editor" ("Reading…", and disabled, while the file is read for it); for
+ * an input over EDITOR_MAX, which the editor cannot show without freezing
+ * the page, only why.
+ */
+function renderLargeEdit() {
+    const fits = editorSize() <= EDITOR_MAX;
+    els.largeNote.textContent = fits
+        ? "Not shown in the editor, which would slow the page down; it runs all the same."
+        : `Too large to show in the editor (over ${formatBytes(EDITOR_MAX)}), which would freeze the page; it runs all the same.`;
+    els.largeEdit.hidden = !fits;
+    const reading = editorReading !== undefined;
+    els.largeEdit.textContent = reading ? "Reading…" : "Show in the editor";
+    // aria-disabled rather than disabled, so that the button keeps the keyboard focus.
+    if (reading) els.largeEdit.setAttribute("aria-disabled", "true");
+    else els.largeEdit.removeAttribute("aria-disabled");
+}
+
+/**
+ * What happens to a large input, under its name (the editor does not show
+ * it): reading it, running it (with the time so far), how long its run took,
+ * or that it failed; nothing while another input that could not be loaded
+ * is what the output pane shows.
+ */
+function renderInputStatus() {
+    if (els.large.hidden) return;
+    const { status, shown } = view;
+    const name = engineNames[state.engine];
+    let text = "";
+    if (view.reading !== undefined) text = "Reading…";
+    else if (status === "running") text = `Running on ${name}… ${formatMs(performance.now() - view.runningSince)}`;
+    // Not after another input failed to load (no request): the output is about that one.
+    else if (shown.gen === generation && shown.result !== undefined && view.request !== undefined) {
+        const result = shown.result;
+        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${engineNames[shown.engine]} stopped with an error: see the output.`;
+        else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
+    }
+
+    if (els.largeStatus.textContent !== text) els.largeStatus.textContent = text;
 }
 
 function showInputInfo() {
@@ -432,6 +490,8 @@ const view = {
      * undefined; `failure` says why it stopped, if a worker failed.
      */
     bench: undefined,
+    /** A file being opened, { fileName, size }, until it is the input (or failed). */
+    reading: undefined,
     files: [],
     tab: 0,
     runningSince: 0,
@@ -442,6 +502,10 @@ const view = {
 };
 
 let generation = 0;
+/** Counts the inputs given: a file whose reading finishes after another input was given is not the input. */
+let opening = 0;
+/** The File being read to show it in the editor, until it is (or another input is given); another click waits for it. */
+let editorReading;
 let runTimer;
 let ticker;
 /** The runs under way; a measurement waits for them, so that it measures what they show. */
@@ -466,12 +530,13 @@ function runOptions() {
     return options;
 }
 
+/** The input and options as a worker takes them: a large file as the File, which the worker reads. */
 function request() {
     return {
         kind: state.kind,
         lang: state.lang.names[0],
         name: topLevelName(),
-        text: state.text,
+        ...(state.file !== undefined ? { file: state.file } : { text: state.text }),
         rendererOptions: rendererOptions(),
         options: runOptions(),
     };
@@ -499,7 +564,7 @@ function run({ compare = false } = {}) {
     // Whatever still waits for a worker is for an older request.
     engines.wasm.drop();
     engines.ts.drop();
-    if (!/\S/.test(req.text)) {
+    if (req.file === undefined ? !/\S/.test(req.text) : req.file.size === 0) {
         setRunning(false);
         view.status = "empty";
         view.shown = { gen, engine: state.engine, result: undefined, lang: languageNamed(req.lang), name: req.name };
@@ -605,15 +670,16 @@ async function measure() {
     if (view.status !== "done" || view.settled !== bench.gen || !view.shown.result?.ok) return giveUp();
 
     const req = view.request;
-    const repeat = { warmup: 1, repeat: 5 };
+    const repeat = { warmup: 1, repeat: measureRuns };
     for (const engine of ["wasm", "ts"]) {
         bench[engine] = "running";
         render();
         const result = await engines[engine].run({ ...req, ...repeat });
         if (!current()) return;
         if (result === undefined) return giveUp();
-        if (result.workerFailure) {
-            // Said under the result shown, which stays; measuring again starts a new worker.
+        if (result.workerFailure || !timed(result)) {
+            // Said under the result shown, which stays; measuring again starts a new worker
+            // (or, for an input that could not be read, tries to read it again).
             bench[engine] = undefined;
             bench.failure = result.error.message;
             render();
@@ -636,6 +702,8 @@ function setRunning(running) {
         ticker = setInterval(() => {
             view.status = "running";
             renderMeter();
+            renderInputStatus();
+            renderStale();
         }, 150);
     }
 }
@@ -685,8 +753,10 @@ function renderCode() {
         els.error.innerHTML = `<p>Paste JSON or a JSON Schema on the left, load a sample, or drop a file there.</p>`;
     } else if (showError) {
         els.error.className = "error";
+        const { title, message, link } = result.error;
         const name = result.error.messageName ?? result.error.name;
-        els.error.innerHTML = `<p class="error-title">quicktype stopped with an error</p><pre class="error-message">${escapeHtml(result.error.message)}</pre>${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
+        const help = link === undefined ? "" : `<p class="error-help">Get <a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a>.</p>`;
+        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? "quicktype stopped with an error")}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
     }
 
     // Drawn again only for another result (a new files array) or another tab.
@@ -742,14 +812,30 @@ function verdict(a, b) {
     return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error` };
 }
 
-/** quickertype's time against quicktype's, in words. */
-function relative(wasmMs, tsMs) {
-    const ratio = tsMs / wasmMs;
+/**
+ * Which engine was faster, the faster one named as the subject: "quicktype
+ * was 1.1× faster (152 ms vs 172 ms)", the subject's time first; within 5%,
+ * "quickertype and quicktype were about as fast (172 ms and 168 ms)".
+ * `ms` is each engine's time, { wasm, ts }; `qualifier` goes inside the
+ * parentheses ("start-up included"). As HTML, and `key`, which is the same
+ * for the same verdict (who, and how many times faster).
+ */
+function pace(ms, qualifier) {
+    const ratio = ms.ts / ms.wasm;
     if (!Number.isFinite(ratio) || ratio <= 0) return undefined;
-    const times = (r) => (r >= 10 ? Math.round(r) : r.toFixed(1));
-    if (ratio >= 1.05) return `${times(ratio)}× faster`;
-    if (ratio > 1 / 1.05) return "about as fast";
-    return `${times(1 / ratio)}× slower`;
+    const name = (engine) => `<b class="engine-name ${engine}">${engineNames[engine]}</b>`;
+    const extra = qualifier === undefined ? "" : `, ${escapeHtml(qualifier)}`;
+    if (ratio < 1.05 && ratio > 1 / 1.05) {
+        return { key: "same", html: `${name("wasm")} and ${name("ts")} were about as fast (${formatMs(ms.wasm)} and ${formatMs(ms.ts)}${extra})` };
+    }
+
+    const faster = ratio >= 1.05 ? "wasm" : "ts";
+    const r = faster === "wasm" ? ratio : 1 / ratio;
+    const times = r >= 10 ? String(Math.round(r)) : r.toFixed(1);
+    return {
+        key: `${faster} ${times}`,
+        html: `${name(faster)} was ${times}× faster (${formatMs(ms[faster])} vs ${formatMs(ms[otherEngine(faster)])}${extra})`,
+    };
 }
 
 /** A result's time, split into reading the input and generating; medians for a measurement. */
@@ -796,23 +882,25 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
     }${tag ? `<span class="lane-note warn">${escapeHtml(tag)}</span>` : ""}</div>`;
 }
 
-/** "quickertype: 2.90 ms · quicktype: 4.20 ms · 1.4× faster · identical output ✓", from both engines' results. */
+/**
+ * "quickertype was 1.4× faster (3.00 ms vs 4.20 ms) · identical output ✓",
+ * from both engines' results ("Warm medians: …" once measured; first runs
+ * are said to include start-up). If either stopped with an error, both
+ * times: "quickertype: 2.90 ms · quicktype: 4.20 ms · different errors ≠".
+ */
 function summary({ wasm, ts }, timeOf, phases, measured) {
     const v = verdict(wasm, ts);
-    const parts = [
-        `<span class="who wasm">${engineNames.wasm}: <b>${formatMs(timeOf(wasm))}</b></span>`,
-        `<span class="who ts">${engineNames.ts}: <b>${formatMs(timeOf(ts))}</b></span>`,
-    ];
-    if (wasm.ok && ts.ok) {
-        const pace = relative(phases(wasm).total, phases(ts).total);
-        if (pace !== undefined) {
-            const cold = measured ? [] : ["wasm", "ts"].filter((engine) => ({ wasm, ts })[engine].first);
-            const startUp =
-                cold.length === 2 ? ", start-up included" : cold.length === 1 ? `, ${engineNames[cold[0]]}'s start-up included` : "";
-            parts.push(`<span>${escapeHtml(pace + startUp)}</span>`);
-        }
-    }
-
+    const cold = measured ? [] : ["wasm", "ts"].filter((engine) => ({ wasm, ts })[engine].first);
+    const startUp =
+        cold.length === 2 ? "start-up included" : cold.length === 1 ? `${engineNames[cold[0]]}'s start-up included` : undefined;
+    const faster = wasm.ok && ts.ok ? pace({ wasm: phases(wasm).total, ts: phases(ts).total }, startUp) : undefined;
+    const parts =
+        faster !== undefined
+            ? [`<span class="pace">${faster.html}</span>`]
+            : [
+                  `<span class="who wasm">${engineNames.wasm}: <b>${formatMs(timeOf(wasm))}</b></span>`,
+                  `<span class="who ts">${engineNames.ts}: <b>${formatMs(timeOf(ts))}</b></span>`,
+              ];
     parts.push(
         `<span class="verdict ${v.same ? "same" : "differ"}">${escapeHtml(v.text)} <span class="verdict-mark" aria-hidden="true">${v.same ? "✓" : "≠"}</span></span>`,
     );
@@ -820,6 +908,7 @@ function summary({ wasm, ts }, timeOf, phases, measured) {
     return {
         same: v.same,
         detail: v.detail,
+        faster,
         html: `<p class="summary" role="status">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
     };
 }
@@ -851,6 +940,14 @@ function renderMeter() {
     if (status === "empty") {
         els.meter.innerHTML = "";
         body.status = "empty";
+        body.compare = "off";
+        return;
+    }
+
+    if (view.reading !== undefined) {
+        const { fileName, size } = view.reading;
+        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot ${state.engine}"></span>Reading ${escapeHtml(fileName)} <span class="time muted">${formatBytes(size)}</span></div>`;
+        body.status = "running";
         body.compare = "off";
         return;
     }
@@ -907,40 +1004,44 @@ function renderMeter() {
 
     html += "</div>";
 
+    /** The fine print, as HTML. */
     const fine = [];
+    const say = (text) => fine.push(escapeHtml(text));
     let compare = "off";
     if (isResult(sides.wasm) && isResult(sides.ts)) {
         const line = summary(sides, timeOf, phases, measured);
         compare = line.same ? "identical" : "different";
         html += line.html;
-        if (line.detail !== undefined) fine.push(line.detail);
-        fine.push(
+        html += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
+        if (line.detail !== undefined) say(line.detail);
+        say(
             "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
         );
         if (sides.wasm.ok && sides.ts.ok) {
-            const overall = relative(phases(sides.wasm).total, phases(sides.ts).total);
-            const generating = relative(phases(sides.wasm).generate, phases(sides.ts).generate);
-            if (generating !== undefined && generating !== overall) {
-                fine.push(`At generating the code alone, quickertype was ${generating}.`);
+            const generating = pace({ wasm: phases(sides.wasm).generate, ts: phases(sides.ts).generate });
+            if (generating !== undefined && generating.key !== line.faster?.key) {
+                fine.push(`At generating the code alone, ${generating.html}.`);
             }
         }
     } else if (!solo) {
         compare = "running";
     } else {
-        fine.push(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
+        say(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
     }
 
     body.compare = compare;
     // Said when the times are compared (one engine's first run is marked as such on its bar).
     if (!solo && !measured && lanes.some((engine) => isResult(sides[engine]) && sides[engine].first)) {
-        fine.push(
+        say(
             "A worker's first run includes start-up: instantiating the WebAssembly engine, or compiling cold JavaScript. Measure warm runs to compare speed.",
         );
     }
 
-    if (measured) fine.push(`Each engine ran ${bench.wasm.times.length + 1} times on this input; the first run is not counted.`);
+    if (measured) {
+        say(`Each engine ran once to warm up, then ${bench.wasm.times.length} timed runs on this input, one engine at a time, never both together.`);
+    }
     const boot = bootNote(lanes);
-    if (boot) fine.push(boot);
+    if (boot) say(boot);
 
     if (bench?.failure !== undefined) {
         html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
@@ -948,7 +1049,7 @@ function renderMeter() {
 
     const measuring = bench !== undefined && bench.failure === undefined && !(isResult(bench.wasm) && isResult(bench.ts));
     const label = !measuring
-        ? "Measure warm runs (5×)"
+        ? `Measure warm runs (${measureRuns}×)`
         : bench.wasm === "running"
           ? `Measuring ${engineNames.wasm}…`
           : bench.ts === "running"
@@ -957,17 +1058,28 @@ function renderMeter() {
     // aria-disabled rather than disabled, so that the button keeps the keyboard focus while it measures.
     const off = measuring || !result.ok;
     const focused = document.activeElement?.id === "measure";
-    html += `<div class="fine"><p>${escapeHtml(fine.join(" "))}</p><button type="button" id="measure" class="measure" title="Runs both engines 6 times on this input, and compares the medians of the last 5"${
+    // The measurement: one warm-up run, then `measureRuns` timed runs, on
+    // quickertype and then on quicktype (measure(): one request per engine,
+    // in turn; the workers share one lane, so no two requests ever overlap).
+    html += `<div class="fine"><p>${fine.join(" ")}</p><div class="measure-box"><button type="button" id="measure" class="measure" aria-describedby="measure-how"${
         off ? ' aria-disabled="true"' : ""
-    }>${label}</button></div>`;
+    }>${label}</button><small id="measure-how">1 warm-up, then ${measureRuns} timed runs per engine; one engine at a time, never both together</small></div></div>`;
     els.meter.innerHTML = html;
     if (focused) document.getElementById("measure").focus();
+}
+
+/** While a newer request runs, the output shown is an older one's: dimmed, as stale. */
+function renderStale() {
+    const stale = view.reading !== undefined || (view.status === "running" && view.shown.gen !== generation);
+    els.codeWrap.classList.toggle("stale", stale);
 }
 
 function render() {
     renderMeter();
     renderTabs();
     renderCode();
+    renderStale();
+    renderInputStatus();
 }
 
 // ---------------------------------------------------------------------------
@@ -1005,9 +1117,17 @@ function download() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Replaces the input; a new sample or file also brings its own top-level name, unless `keepName`. */
-function setInput(text, source, kind, autoName, keepName = false) {
+/**
+ * Replaces the input (`file`: the File a large input is, which the workers
+ * read); a new sample or file also brings its own top-level name, unless
+ * `keepName`. A file still being opened is not the input any more.
+ */
+function setInput(text, source, kind, autoName, keepName = false, file = undefined) {
+    opening++;
+    view.reading = undefined;
+    editorReading = undefined;
     state.text = text;
+    state.file = file;
     state.source = source;
     state.largeInEditor = false;
     state.kind = kind;
@@ -1019,35 +1139,109 @@ function setInput(text, source, kind, autoName, keepName = false) {
     saveInput();
 }
 
+/**
+ * An input that could not be loaded (a sample, a file): `error` ({ title,
+ * message, link? }) is shown in the output pane. The input before stays
+ * the input: the input pane shows it, and it stays saved. There is no
+ * current request then: what runs or waits is dropped, and switching
+ * engine runs nothing until the next change (of the input or the options)
+ * runs one.
+ */
+function inputFailed(error) {
+    clearTimeout(runTimer);
+    opening++;
+    const gen = ++generation;
+    view.request = undefined;
+    view.bench = undefined;
+    view.reading = undefined;
+    engines.wasm.drop();
+    engines.ts.drop();
+    setRunning(false);
+    view.status = "done";
+    view.shown = { gen, engine: state.engine, result: { ok: false, error, times: [] }, lang: state.lang, name: topLevelName() };
+    showInput();
+    render();
+}
+
 /** Loads a sample and runs it (`compare`: on both engines, for a link from compare mode). */
 async function loadSample(sample, keepName = false, compare = false) {
     try {
         setInput(await fetchSample(sample), { type: "sample", id: sample.id }, sample.kind, sample.name, keepName);
     } catch (e) {
-        // No current input: what runs or waits is for the input before, and
-        // switching engine runs nothing until there is one.
-        clearTimeout(runTimer);
-        const gen = ++generation;
-        view.request = undefined;
-        view.bench = undefined;
-        engines.wasm.drop();
-        engines.ts.drop();
-        setRunning(false);
-        view.status = "done";
-        const failure = { ok: false, error: { message: `Could not load the sample ${sample.path}: ${e.message}` }, times: [] };
-        view.shown = { gen, engine: state.engine, result: failure, lang: state.lang, name: topLevelName() };
-        render();
+        inputFailed({ title: "Could not load the sample", message: `Could not load the sample ${sample.path}: ${e.message}` });
         return;
     }
 
     void run({ compare });
 }
 
+/**
+ * Opens a file (from the file picker or a drop) and runs it. A file small
+ * enough for the editor is read here; a larger one is posted to the workers
+ * as it is, after a look at its first kilobyte (a JSON Schema?). A file too
+ * large to read as text, or one that cannot be read, is an error in the
+ * output pane (see inputFailed): the input before stays the input, in the
+ * editor and saved.
+ */
 async function loadFile(file) {
-    const text = await file.text();
-    const schema = /\.schema(\.json)?$/i.test(file.name) || /"\$schema"\s*:/.test(text.slice(0, 1000));
-    setInput(text, { type: "file", fileName: file.name, size: file.size }, schema ? "schema" : "json", nameFromFile(file.name));
+    const { name, size, lastModified } = file;
+    const source = { type: "file", fileName: name, size, lastModified };
+    const schemaName = /\.schema(\.json)?$/i.test(name);
+    const large = tooLarge(name, size);
+    if (large !== undefined) return inputFailed(large);
+
+    const ticket = ++opening;
+    view.reading = { fileName: name, size };
+    render();
+    let text;
+    let head;
+    try {
+        if (size > LARGE) head = await file.slice(0, 1000).text();
+        else text = await file.text();
+    } catch (e) {
+        if (ticket === opening) inputFailed(unreadable(name, e));
+        return;
+    }
+
+    // Another input came first.
+    if (ticket !== opening) return;
+    if (text === "" && size > 0) return inputFailed(unreadable(name, new Error("the browser returned no text")));
+    const schema = schemaName || /"\$schema"\s*:/.test((head ?? text).slice(0, 1000));
+    setInput(text ?? "", source, schema ? "schema" : "json", nameFromFile(name), false, text === undefined ? file : undefined);
     void run();
+}
+
+/**
+ * Puts a large input in the editor, as asked: a file is read here then,
+ * once however often it is asked ("Reading…" until it is in the editor).
+ * Not an input over EDITOR_MAX: the page offers no button for it, and
+ * says why.
+ */
+async function showLargeInEditor() {
+    if (editorReading !== undefined || editorSize() > EDITOR_MAX) return;
+    if (state.file !== undefined && state.text === "") {
+        const ticket = opening;
+        const file = state.file;
+        editorReading = file;
+        renderLargeEdit();
+        try {
+            const text = await file.text();
+            if (ticket !== opening || state.file !== file) return;
+            state.text = text;
+        } catch (e) {
+            if (ticket === opening) inputFailed(unreadable(file.name, e));
+            return;
+        } finally {
+            if (editorReading === file) {
+                editorReading = undefined;
+                renderLargeEdit();
+            }
+        }
+    }
+
+    state.largeInEditor = true;
+    showInput();
+    els.input.focus();
 }
 
 let infoTimer;
@@ -1117,7 +1311,11 @@ function bind() {
     });
 
     els.input.addEventListener("input", () => {
+        // Typed text is the input now, not a file being opened, nor the file shown.
+        opening++;
+        view.reading = undefined;
         state.text = els.input.value;
+        state.file = undefined;
         if (state.source.type !== "typed") {
             state.source = { type: "typed" };
             els.sample.value = "";
@@ -1133,11 +1331,7 @@ function bind() {
         schedule(typingDelay());
     });
 
-    els.largeEdit.addEventListener("click", () => {
-        state.largeInEditor = true;
-        showInput();
-        els.input.focus();
-    });
+    els.largeEdit.addEventListener("click", () => void showLargeInEditor());
 
     els.open.addEventListener("click", () => els.file.click());
     els.file.addEventListener("change", () => {

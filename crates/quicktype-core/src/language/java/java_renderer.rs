@@ -22,7 +22,7 @@ use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::capitalize;
-use crate::support::support::{assert, defined, panic};
+use crate::support::support::{assert, defined};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -451,8 +451,7 @@ pub trait JavaRenderer<'a>: ConvenienceRenderer<'a> {
                         _ => "String".into(),
                     }
                 }
-                TypeKind::Intersection => return panic("Unknown type intersection"),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -502,8 +501,7 @@ pub trait JavaRenderer<'a>: ConvenienceRenderer<'a> {
                         _ => Vec::new(),
                     }
                 }
-                TypeKind::Intersection => return panic("Unknown type intersection"),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

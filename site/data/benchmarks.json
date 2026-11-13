@@ -1,0 +1,449 @@
+{
+  "cli": [
+    {
+      "group": "startup",
+      "identical": true,
+      "name": "--version",
+      "results": {
+        "rust": {
+          "median_ms": 2.26,
+          "min_ms": 2.16,
+          "peak_rss_mib": 3.4
+        },
+        "typescript": {
+          "median_ms": 217,
+          "min_ms": 214,
+          "peak_rss_mib": 151.4
+        }
+      }
+    },
+    {
+      "group": "startup",
+      "identical": true,
+      "name": "tiny JSON (77 B) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 2.83,
+          "min_ms": 2.53,
+          "peak_rss_mib": 5.5
+        },
+        "typescript": {
+          "median_ms": 241,
+          "min_ms": 231,
+          "peak_rss_mib": 150.3
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "pokedex (82 KB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 4.78,
+          "min_ms": 4.58,
+          "peak_rss_mib": 8.1
+        },
+        "typescript": {
+          "median_ms": 257,
+          "min_ms": 253,
+          "peak_rss_mib": 157.7
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "us-senators (155 KB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 5.42,
+          "min_ms": 5.19,
+          "peak_rss_mib": 8.2
+        },
+        "typescript": {
+          "median_ms": 263,
+          "min_ms": 259,
+          "peak_rss_mib": 163.0
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "misc/1b409 (606 KB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 7.94,
+          "min_ms": 7.75,
+          "peak_rss_mib": 9.9
+        },
+        "typescript": {
+          "median_ms": 292,
+          "min_ms": 289,
+          "peak_rss_mib": 172.0
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "all 13 samples as one top-level (multi-source) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 14.5,
+          "min_ms": 14.1,
+          "peak_rss_mib": 10.8
+        },
+        "typescript": {
+          "median_ms": 341,
+          "min_ms": 334,
+          "peak_rss_mib": 181.6
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "generated (4 MB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 36.5,
+          "min_ms": 35.3,
+          "peak_rss_mib": 27.8
+        },
+        "typescript": {
+          "median_ms": 507,
+          "min_ms": 500,
+          "peak_rss_mib": 237.8
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "generated (40 MB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 319,
+          "min_ms": 314,
+          "peak_rss_mib": 177.5
+        },
+        "typescript": {
+          "median_ms": 2621,
+          "min_ms": 2588,
+          "peak_rss_mib": 624.7
+        }
+      }
+    },
+    {
+      "group": "json",
+      "identical": true,
+      "name": "generated (40 MB) → Rust",
+      "results": {
+        "rust": {
+          "median_ms": 321,
+          "min_ms": 319,
+          "peak_rss_mib": 177.4
+        },
+        "typescript": {
+          "median_ms": 2600,
+          "min_ms": 2551,
+          "peak_rss_mib": 681.8
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → ts",
+      "results": {
+        "rust": {
+          "median_ms": 6.42,
+          "min_ms": 6.35,
+          "peak_rss_mib": 8.4
+        },
+        "typescript": {
+          "median_ms": 271,
+          "min_ms": 268,
+          "peak_rss_mib": 172.0
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → rust",
+      "results": {
+        "rust": {
+          "median_ms": 6.64,
+          "min_ms": 6.51,
+          "peak_rss_mib": 8.2
+        },
+        "typescript": {
+          "median_ms": 273,
+          "min_ms": 271,
+          "peak_rss_mib": 172.8
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → go",
+      "results": {
+        "rust": {
+          "median_ms": 6.35,
+          "min_ms": 6.17,
+          "peak_rss_mib": 8.2
+        },
+        "typescript": {
+          "median_ms": 273,
+          "min_ms": 269,
+          "peak_rss_mib": 172.4
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → cs",
+      "results": {
+        "rust": {
+          "median_ms": 6.52,
+          "min_ms": 6.33,
+          "peak_rss_mib": 8.5
+        },
+        "typescript": {
+          "median_ms": 277,
+          "min_ms": 274,
+          "peak_rss_mib": 174.3
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → java",
+      "results": {
+        "rust": {
+          "median_ms": 9.02,
+          "min_ms": 8.85,
+          "peak_rss_mib": 9.6
+        },
+        "typescript": {
+          "median_ms": 289,
+          "min_ms": 284,
+          "peak_rss_mib": 174.3
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → py",
+      "results": {
+        "rust": {
+          "median_ms": 7.13,
+          "min_ms": 6.97,
+          "peak_rss_mib": 9.1
+        },
+        "typescript": {
+          "median_ms": 279,
+          "min_ms": 276,
+          "peak_rss_mib": 173.1
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → swift",
+      "results": {
+        "rust": {
+          "median_ms": 7.06,
+          "min_ms": 6.94,
+          "peak_rss_mib": 9.1
+        },
+        "typescript": {
+          "median_ms": 277,
+          "min_ms": 272,
+          "peak_rss_mib": 172.3
+        }
+      }
+    },
+    {
+      "group": "languages",
+      "identical": true,
+      "name": "github-events (82 KB) → c++",
+      "results": {
+        "rust": {
+          "median_ms": 9.03,
+          "min_ms": 8.82,
+          "peak_rss_mib": 9.8
+        },
+        "typescript": {
+          "median_ms": 289,
+          "min_ms": 284,
+          "peak_rss_mib": 173.9
+        }
+      }
+    },
+    {
+      "group": "schema",
+      "identical": true,
+      "name": "vega-lite.schema (306 KB) → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 37.4,
+          "min_ms": 36.9,
+          "peak_rss_mib": 17.0
+        },
+        "typescript": {
+          "median_ms": 418,
+          "min_ms": 414,
+          "peak_rss_mib": 224.2
+        }
+      }
+    },
+    {
+      "group": "schema",
+      "identical": true,
+      "name": "vega-lite.schema (306 KB) → C#",
+      "results": {
+        "rust": {
+          "median_ms": 41.2,
+          "min_ms": 39.9,
+          "peak_rss_mib": 19.0
+        },
+        "typescript": {
+          "median_ms": 431,
+          "min_ms": 421,
+          "peak_rss_mib": 226.3
+        }
+      }
+    },
+    {
+      "group": "graphql",
+      "identical": true,
+      "name": "github.gqlschema (1.2 MB) + query → TypeScript",
+      "results": {
+        "rust": {
+          "median_ms": 9.28,
+          "min_ms": 9.12,
+          "peak_rss_mib": 13.4
+        },
+        "typescript": {
+          "median_ms": 245,
+          "min_ms": 242,
+          "peak_rss_mib": 153.2
+        }
+      }
+    },
+    {
+      "group": "multi-file",
+      "identical": true,
+      "name": "vega-lite.schema → Java (one file per class)",
+      "results": {
+        "rust": {
+          "median_ms": 54.5,
+          "min_ms": 52.6,
+          "peak_rss_mib": 21.8
+        },
+        "typescript": {
+          "median_ms": 489,
+          "min_ms": 479,
+          "peak_rss_mib": 236.3
+        }
+      }
+    },
+    {
+      "group": "multi-file",
+      "identical": true,
+      "name": "pokedex → C++ (multi-source)",
+      "results": {
+        "rust": {
+          "median_ms": 5.3,
+          "min_ms": 5.05,
+          "peak_rss_mib": 8.3
+        },
+        "typescript": {
+          "median_ms": 264,
+          "min_ms": 258,
+          "peak_rss_mib": 160.4
+        }
+      }
+    }
+  ],
+  "command": "cargo xtask bench --corpus --in-process",
+  "commits": {
+    "quickertype": "54611ae413d7f754d0ccc7605a416c265d146fb9",
+    "quickertype_modified": false,
+    "quicktype": "c39af7d303b025280e2668a1b2d29913093593c9"
+  },
+  "corpus": {
+    "jobs": 12,
+    "results": {
+      "rust": {
+        "cli_time_s": 133.7,
+        "steps": 11178,
+        "unexpected_exits": 381,
+        "unexpected_exits_note": "They are the cases outside its parity baseline when this was measured: C with cJSON, which was being ported (it has been since).",
+        "wall_s": 12.5
+      },
+      "typescript": {
+        "cli_time_s": 6846.5,
+        "steps": 11178,
+        "unexpected_exits": 0,
+        "wall_s": 571.7
+      }
+    }
+  },
+  "date": "2026-11-13",
+  "format": 1,
+  "in_process": {
+    "iterations": 10,
+    "results": {
+      "rust": {
+        "engine_ms": 102,
+        "label": "Rust (native, mimalloc)",
+        "parse_ms": 51.4,
+        "total_min_ms": 145,
+        "total_ms": 153
+      },
+      "rust-system-allocator": {
+        "engine_ms": 138,
+        "label": "Rust (native, system allocator)",
+        "parse_ms": 60.1,
+        "total_min_ms": 190,
+        "total_ms": 199
+      },
+      "typescript": {
+        "engine_ms": 298,
+        "label": "TypeScript (warm Node)",
+        "parse_ms": 72.5,
+        "total_min_ms": 340,
+        "total_ms": 369
+      }
+    },
+    "runs": 112
+  },
+  "iterations": 10,
+  "machine": {
+    "cores": "12",
+    "cpu": "Apple M2 Max",
+    "memory": "64 GiB",
+    "node": "v24.16.0",
+    "os": "macOS 26.6.2",
+    "rustc": "rustc 1.99.1"
+  },
+  "note": "Converted by hand from docs/BENCHMARKS.md (Phase 7, after; measured with --baseline, which this file leaves out), not written by --json. The machine was shared with other work while the numbers were taken (load average around 10); the CLI numbers agree with quieter earlier runs within a few percent. The in-process numbers are medians of three interleaved rounds of 10 iterations.",
+  "tools": {
+    "rust": {
+      "label": "Rust"
+    },
+    "typescript": {
+      "label": "TypeScript"
+    }
+  }
+}

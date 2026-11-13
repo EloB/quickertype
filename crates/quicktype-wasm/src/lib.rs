@@ -271,7 +271,11 @@ pub fn supports_language(name: &str) -> bool {
     supported
 }
 
-/// The engine's version (the workspace version, which is quicktype's).
+/// The engine's version: this port's own version (the workspace version),
+/// not quicktype's. The facade calls it only to check that a module it
+/// instantiated is this engine (`src/native/engine.ts`); it does not compare
+/// the value. `npm/quicktype-core/package.json` has the same version
+/// (publish-npm-core.yml checks that).
 #[wasm_bindgen(js_name = engineVersion)]
 pub fn engine_version() -> String {
     env!("CARGO_PKG_VERSION").to_owned()

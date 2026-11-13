@@ -5,12 +5,14 @@
 //! `java.time` types. It is the default Kotlin renderer.
 
 use indexmap::IndexSet;
+use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::support::collection_utils::array_intercalate;
 use crate::support::strings::camel_case;
 use crate::support::support::must_not_happen;
 use crate::target_language::TargetLanguage;
@@ -19,7 +21,7 @@ use crate::ty::type_utils::{is_nullable, nullable_from_union};
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{array_intercalate, js_number, string_escape, union_member_match_priority};
+use super::utils::{string_escape, union_member_match_priority};
 
 /// TS `KotlinJacksonRenderer`.
 pub struct KotlinJacksonRenderer<'a> {
@@ -75,10 +77,7 @@ impl<'a> KotlinJacksonRenderer<'a> {
             TypeKind::Enum => "is TextNode".into(),
             TypeKind::Union => return must_not_happen(),
             kind if kind.is_transformed_string_type_kind() => "is TextNode".into(),
-            TypeKind::Intersection => {
-                return crate::support::support::panic("Unknown type intersection");
-            }
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -112,12 +111,12 @@ impl<'a> KotlinJacksonRenderer<'a> {
         if !property_opts.is_empty() {
             properties.push(sl![
                 "@get:JsonProperty(",
-                array_intercalate(", ", property_opts.clone()),
+                array_intercalate(", ".into(), property_opts.clone()),
                 ")"
             ]);
             properties.push(sl![
                 "@field:JsonProperty(",
-                array_intercalate(", ", property_opts),
+                array_intercalate(", ".into(), property_opts),
                 ")"
             ]);
         }
@@ -431,10 +430,10 @@ import com.fasterxml.jackson.module.kotlin.*",
                     };
                     let after = if p.is_optional { ") }" } else { ")" };
                     if let Some(min) = min {
-                        checks.push(format!("{before} >= {}{after}", js_number(min)));
+                        checks.push(format!("{before} >= {}{after}", number::to_string(min)));
                     }
                     if let Some(max) = max {
-                        checks.push(format!("{before} <= {}{after}", js_number(max)));
+                        checks.push(format!("{before} <= {}{after}", number::to_string(max)));
                     }
                     let (number_min, number_max) = match min_max_value_for_type(graph, t)? {
                         Some(m) => (m.0, m.1),
@@ -446,10 +445,16 @@ import com.fasterxml.jackson.module.kotlin.*",
                         format!("require({n}")
                     };
                     if let Some(min) = number_min {
-                        checks.push(format!("{number_before} >= {}{after}", js_number(min)));
+                        checks.push(format!(
+                            "{number_before} >= {}{after}",
+                            number::to_string(min)
+                        ));
                     }
                     if let Some(max) = number_max {
-                        checks.push(format!("{number_before} <= {}{after}", js_number(max)));
+                        checks.push(format!(
+                            "{number_before} <= {}{after}",
+                            number::to_string(max)
+                        ));
                     }
                     let (length_min, length_max) = match min_max_length_for_type(graph, t)? {
                         Some(m) => (m.0, m.1),
@@ -461,10 +466,16 @@ import com.fasterxml.jackson.module.kotlin.*",
                         format!("require({n}.codePointCount(0, {n}.length)")
                     };
                     if let Some(min) = length_min {
-                        checks.push(format!("{length_before} >= {}{after}", js_number(min)));
+                        checks.push(format!(
+                            "{length_before} >= {}{after}",
+                            number::to_string(min)
+                        ));
                     }
                     if let Some(max) = length_max {
-                        checks.push(format!("{length_before} <= {}{after}", js_number(max)));
+                        checks.push(format!(
+                            "{length_before} <= {}{after}",
+                            number::to_string(max)
+                        ));
                     }
                     if let Some(pattern) = pattern_for_type(graph, t)? {
                         let regex =

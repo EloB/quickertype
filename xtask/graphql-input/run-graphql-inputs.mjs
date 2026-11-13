@@ -46,8 +46,10 @@ import { createRequire } from "node:module";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktypeDir = resolve(process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"));
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const coreDist = join(quicktypeDir, "packages/quicktype-core/dist");
 const require = createRequire(join(coreDist, "index.js"));
 const load = (p) => require(join(coreDist, p));

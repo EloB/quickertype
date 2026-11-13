@@ -253,10 +253,10 @@ rm target/bench/huge.json
 ## Profiling
 
 ```sh
-cargo build --profile profiling -p quicktype-cli    # release + symbols
+cargo build --profile profiling -p quickertype    # release + symbols
 samply record target/profiling/quicktype big.json -l ts -o out.ts
 target/release/quicktype big.json -l ts -o out.ts --debug print-times
-cargo build --profile profiling -p quicktype-cli --bench in_process
+cargo build --profile profiling -p quickertype --bench in_process
 samply record target/profiling/deps/in_process-<hash> -n 50 --filter github-events --lang c++
 ```
 
@@ -448,17 +448,19 @@ even for 490 KB of Java.
 
 ```sh
 # The TypeScript CLI: a built quicktype checkout beside the workspace
-# (or set QUICKTYPE_REF), as for `cargo xtask diff`.
+# (or set QUICKTYPE_REFERENCE), as for `cargo xtask diff`.
 cargo xtask bench                     # CLI benchmarks, 10 runs each
 cargo xtask bench --corpus            # + the whole golden corpus
 cargo xtask bench --in-process        # + the engine in process vs warm TypeScript
 cargo xtask bench --filter json -n 20 # a subset, more runs
 cargo xtask bench --no-ref            # without the TypeScript CLI
 cargo xtask bench --out report.md     # also write the Markdown table
+cargo xtask bench --corpus --in-process --json site/data/benchmarks.json
+                                      # the playground's numbers, as JSON
 
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
-(cd ../qt-before && cargo build --release -p quicktype-cli)
+(cd ../qt-before && cargo build --release --bin quicktype)
 cargo xtask bench --baseline ../qt-before/target/release/quicktype --corpus
 
 # WebAssembly against TypeScript (npm/quicktype-core, after npm run build).
@@ -468,8 +470,8 @@ node npm/quicktype-core/test/bench/compare.mjs --browser --cold 5      # first r
 node npm/quicktype-core/test/bench/compare.mjs --variant main=../main-pkg --variant new=npm/quicktype-core
 
 # The in-process benchmark alone.
-cargo bench -p quicktype-cli --bench in_process -- --per-input
-cargo bench -p quicktype-cli --bench in_process --no-default-features   # system allocator
+cargo bench -p quickertype --bench in_process -- --per-input
+cargo bench -p quickertype --bench in_process --no-default-features   # system allocator
 node xtask/bench/in-process.mjs ../quicktype                            # warm TypeScript
 ```
 
@@ -491,3 +493,11 @@ Notes:
 - The corpus run replays every step of every case in `tests/golden` with
   as many jobs as cores and does not check outputs (`cargo xtask parity`
   does). TypeScript's wall time there is CPU-bound on 12 cores.
+- `--json` writes what the playground's benchmarks page shows
+  (`site/data/benchmarks.json`), which `site/build.mjs` checks first. The
+  commit of a `--bin` or `--baseline` CLI is the HEAD of the work tree
+  whose `target` directory holds it, if it was built after that commit,
+  and null otherwise; `commits.<id>_source` says which. Why a CLI's corpus
+  runs exited unexpectedly is added by hand when the snapshot is made, as
+  `corpus.results.<id>.unexpected_exits_note` (a sentence); without one,
+  the page shows the number as a warning.

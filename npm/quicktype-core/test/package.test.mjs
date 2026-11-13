@@ -52,14 +52,15 @@ test("does not use node:-prefixed imports in browser-compatible source", () => {
 });
 
 test("require() and import resolve to the CommonJS and ES module builds", () => {
-    const resolved = execFileSync(process.execPath, ["-p", "require.resolve('quicktype-core')"], {
+    // A package resolves its own name through "exports".
+    const resolved = execFileSync(process.execPath, ["-p", "require.resolve('quickertype-core')"], {
         cwd: packageRoot,
         encoding: "utf8",
     }).trim();
     assert.equal(resolved, path.join(dist, "index.js"));
     const imported = execFileSync(
         process.execPath,
-        ["--input-type=module", "-e", "console.log(import.meta.resolve('quicktype-core'))"],
+        ["--input-type=module", "-e", "console.log(import.meta.resolve('quickertype-core'))"],
         { cwd: packageRoot, encoding: "utf8" },
     ).trim();
     assert.equal(imported, pathToFileURL(path.join(dist, "esm", "index.js")).href);
@@ -83,7 +84,7 @@ test("the ES module build loads as real ESM and generates code on WebAssembly", 
     assert.equal(stdout.trim(), "ok");
 });
 
-test("npm pack includes both builds, the ESM marker and the engine", () => {
+test("npm pack includes both builds, the ESM marker, the engine and the licence files", () => {
     const [{ files, size, unpackedSize }] = JSON.parse(execSync("npm pack --dry-run --json", { cwd: packageRoot, encoding: "utf8" }));
     const paths = new Set(files.map((f) => f.path));
     for (const required of [
@@ -95,6 +96,9 @@ test("npm pack includes both builds, the ESM marker and the engine", () => {
         "dist/native/wasm/glue.js",
         "dist/esm/native/wasm/glue.js",
         "dist/native/wasm/quicktype_wasm_bg.wasm",
+        "README.md",
+        "LICENSE",
+        "NOTICE",
     ]) {
         assert.ok(paths.has(required), `tarball must contain ${required}`);
     }

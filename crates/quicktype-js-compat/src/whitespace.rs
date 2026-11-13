@@ -1,4 +1,5 @@
-//! JavaScript whitespace: the regex class `\s` and `String.prototype.trim`.
+//! JavaScript whitespace: the regex class `\s` and `String.prototype.trim`,
+//! and the line terminators among it ([`is_line_terminator`]).
 //!
 //! ECMAScript defines both as *WhiteSpace* ∪ *LineTerminator*: TAB, VT, FF,
 //! SP, U+00A0, U+FEFF, the `Zs` characters (U+1680, U+2000–U+200A, U+202F,
@@ -26,6 +27,12 @@ pub fn is_whitespace(c: char) -> bool {
             c,
             '\u{2028}' | '\u{2029}' | '\u{202F}' | '\u{205F}' | '\u{3000}' | '\u{FEFF}'
         )
+}
+
+/// Whether `c` is a JavaScript *LineTerminator* (LF, CR, U+2028, U+2029):
+/// the characters a regular expression's `.` does not match.
+pub fn is_line_terminator(c: char) -> bool {
+    matches!(c, '\n' | '\r' | '\u{2028}' | '\u{2029}')
 }
 
 /// `String.prototype.trim()`.

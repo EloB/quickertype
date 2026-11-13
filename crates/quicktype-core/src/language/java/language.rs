@@ -3,8 +3,9 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption, acronym_option,
+    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
+use crate::support::acronyms::acronym_option;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;

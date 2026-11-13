@@ -1,7 +1,7 @@
 {
-    "name": "quicktype-core",
-    "version": "24.0.0",
-    "description": "The quicktype engine as a library",
+    "name": "quickertype-core",
+    "version": "0.1.0",
+    "description": "quicktype's quicktype-core API with a WebAssembly engine compiled from its Rust port: a drop-in replacement for quicktype-core",
     "license": "Apache-2.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,7 +19,24 @@
         "./dist/*": "./dist/*",
         "./package.json": "./package.json"
     },
-    "repository": "https://github.com/glideapps/quicktype",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/EloB/quickertype.git",
+        "directory": "npm/quicktype-core"
+    },
+    "homepage": "https://elob.github.io/quickertype/",
+    "bugs": "https://github.com/EloB/quickertype/issues",
+    "keywords": [
+        "quicktype",
+        "quicktype-core",
+        "json",
+        "json-schema",
+        "typescript",
+        "codegen",
+        "types",
+        "webassembly",
+        "wasm"
+    ],
     "engines": {
         "node": ">=20.0.0"
     },
@@ -60,7 +77,8 @@
         "typescript": "~7.0.2"
     },
     "files": [
-        "dist"
+        "dist",
+        "NOTICE"
     ],
     "browser": {
         "fs": false,

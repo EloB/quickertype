@@ -1,12 +1,25 @@
-# quicktype-core (WebAssembly)
+# quickertype-core
 
-A drop-in replacement for the npm package
-[`quicktype-core`](https://www.npmjs.com/package/quicktype-core) whose runs
-execute on the Rust port of quicktype, compiled to WebAssembly. The API, the
-`.d.ts` files and the results are quicktype's own:
+[quicktype](https://github.com/glideapps/quicktype)'s
+[`quicktype-core`](https://www.npmjs.com/package/quicktype-core) API with its
+engine compiled to WebAssembly from the Rust port
+[quickertype](https://github.com/EloB/quickertype). The API, the `.d.ts`
+files and the generated code are quicktype's own.
+
+## Install
+
+```sh
+npm install quickertype-core
+```
+
+Node.js 20 or later, or a browser.
+
+## Use
+
+It is a drop-in replacement for `quicktype-core`: change the import.
 
 ```ts
-import { quicktype, InputData, jsonInputForTargetLanguage } from "quicktype-core";
+import { quicktype, InputData, jsonInputForTargetLanguage } from "quickertype-core";
 
 const input = jsonInputForTargetLanguage("typescript");
 await input.addSource({ name: "Person", samples: ['{"name": "Ann", "age": 7}'] });
@@ -14,6 +27,17 @@ const inputData = new InputData();
 inputData.addInput(input);
 const { lines } = await quicktype({ inputData, lang: "typescript" });
 ```
+
+`require("quickertype-core")` works too. The package matches `quicktype-core`
+24.0.0 at quicktype commit
+[`c39af7d3`](https://github.com/glideapps/quicktype/tree/c39af7d303b025280e2668a1b2d29913093593c9)
+(`src/native/UPSTREAM.json`); its own version (0.1.0) is quickertype's, not
+quicktype's. In a browser the engine is a separate `.wasm` file that your
+bundler has to serve, or that you hand over yourself: see
+[Loading](#loading). Try it in the
+[playground](https://elob.github.io/quickertype/).
+
+The rest of this file is about how the package works and how to build it.
 
 ## How it works
 
@@ -44,10 +68,12 @@ same results by construction:
 - `JSONSchemaInput`s with extra attribute producers;
 - option values outside what quicktype's options read (a number for a string
   option, `"toString"` for an enum option, a `Name` in `leadingComments`, …);
-- GraphQL input (`quicktype-graphql-input`, not ported yet);
-- languages whose renderer the engine does not have yet: the engine says
-  so (`supportsLanguage`, and an `{ unsupported }` outcome should a run
-  hit a missing feature midway), never with an error;
+- GraphQL input (`quicktype-graphql-input`: the Rust port of it is not
+  part of the engine yet);
+- a language whose renderer the engine does not have (every built-in
+  language has one): the engine says so (`supportsLanguage`, and an
+  `{ unsupported }` outcome should a run hit a missing feature midway),
+  never with an error;
 - strings that are not well-formed UTF-16 (lone surrogates, which
   `JSON.parse` accepts), anywhere in the run, and store documents with
   them, circular ones or ones too large to flatten.

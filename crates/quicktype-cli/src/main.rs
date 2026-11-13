@@ -1,4 +1,4 @@
-//! The `quicktype` CLI. Port of `quicktype/src/index.ts`.
+//! The `quicktype` CLI. Port of `src/index.ts`.
 //!
 //! Contract: for any argv, stdin and input files, this binary must produce
 //! byte-identical stdout, stderr, exit code and output files to the
@@ -51,8 +51,12 @@ use crate::type_source::{JsonTypeSource, TypeSource};
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-/// `packageJSON.version`.
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// `packageJSON.version`: the version of the TypeScript quicktype this CLI
+/// reproduces (`package.json` at the commit in `tests/golden/REFERENCE`),
+/// which `--version` prints as part of byte-for-byte parity. It is not this
+/// port's own version (`CARGO_PKG_VERSION`, see docs/RELEASING.md); update
+/// it when the corpus is re-recorded against a new quicktype release.
+const QUICKTYPE_VERSION: &str = "24.0.0";
 
 /// The stack of the thread that runs quicktype. Type inference and the
 /// rewrites recurse once per nesting level of the input, as in TypeScript;
@@ -406,7 +410,7 @@ async fn make_quicktype_options(
         return Ok(None);
     }
     if options.version {
-        console.log(&format!("quicktype version {VERSION}"));
+        console.log(&format!("quicktype version {QUICKTYPE_VERSION}"));
         console.log("Visit quicktype.io for more info.");
         return Ok(None);
     }

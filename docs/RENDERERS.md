@@ -90,7 +90,7 @@ framework-labelled commit and tell the core owner.
 | an enum option's value (`getEnumValue`) | `X.get_enum_value(values)?` (an `EnumValue`, see `renderer_options`) mapped to a typed value with an `Other(PrototypeMember)` variant where the TS code compares, switches on or interpolates it; boolean-valued options with `X.get_flag(values, "true-name")?` |
 | `this.typeGraph`, `this.targetLanguage`, `this.leadingComments` | `self.type_graph()`, `self.target_language()`, `self.leading_comments()` |
 | `t.kind`, `t.getCombinedName()`, `c.getProperties()` | `graph.kind(t)?`, `graph.combined_name(t)?`, `graph.type_at(c)?.properties()?` |
-| `matchType(t, any => ..., ...)` | `match graph.kind(t)? { TypeKind::Any => ..., ..., kind => return type_not_supported(kind) }` |
+| `matchType(t, any => ..., ...)` | `match graph.kind(t)? { TypeKind::Any => ..., ..., kind => return match_type_unsupported(kind) }` (`Unknown type intersection` for an intersection, as `matchType` reports it, else `Unsupported type <kind> in non-exhaustive match`) |
 | `nullableFromUnion(u)`, `removeNullFromUnion(u)` | `ty::type_utils::nullable_from_union(graph, u)?`, `remove_null_from_union(graph, u, NullRemovalSort::None)?` |
 | `this.emitLine("a ", name, " {")` | `self.emit_line(sl!["a ", name, " {"])` (keep the parts; see [Item identity](#item-identity-emitlineonce-emititemonce)) |
 | `this.emitLine(x)` (one part) | `self.emit_line(x)` |
@@ -114,6 +114,7 @@ framework-labelled commit and tell the core owner.
 | `get commentLineStart() { return "# "; }` | `fn comment_line_start(&self) -> &'static str { "# " }` |
 | `assert(...)`, `defined(x)`, `panic("...")` | `support::support::{assert, defined, panic}`, all return `Result` |
 | `${someNumber}` | `quicktype_js_compat::number::to_string(n)` |
+| `arrayIntercalate(sep, items)` | `support::collection_utils::array_intercalate(sep.into(), items)`, a `Vec<Source>` that `sl![...]` takes as one part |
 
 ### Callbacks and the borrow checker
 
@@ -296,7 +297,7 @@ needed only to record fixtures.
 
    ```sh
    node xtask/core-rendering/record-render-cases.mjs ../quicktype go
-   RENDER_CASES_FILTER=golang cargo test -p quicktype-core --test render_cases
+   RENDER_CASES_FILTER=golang cargo test -p quickertype-core --test render_cases
    ```
 
    `render_cases.rs` rebuilds each graph, runs `gather_names` and your
@@ -308,7 +309,7 @@ needed only to record fixtures.
    `.txt` to `crates/quicktype-core/tests/fixtures/core-rendering/scenarios/`
    with `input json|schema NAME <json>` lines and `render <lang> {"rendererOptions": {...}}`
    lines, then `node xtask/core-rendering/run-render-scenarios.mjs ../quicktype`
-   and `cargo test -p quicktype-core --test render_scenarios`.
+   and `cargo test -p quickertype-core --test render_scenarios`.
 3. `cargo xtask parity` once the CLI generates code (Phase 3).
 
 ## Worked example: `RustRenderer`

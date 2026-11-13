@@ -1,0 +1,114 @@
+# Publishes npm/quicktype-core to npm as `quickertype-core`, quicktype's
+# JavaScript API on the WebAssembly engine (docs/RELEASING.md).
+#
+# - Release: release.yml calls it (dist's custom publish job
+#   "./publish-npm-core" in dist-workspace.toml) after the GitHub Release is
+#   created, on the release tag's commit. It builds the package, runs its
+#   tests and publishes with provenance as `latest`; a version already on
+#   npm is skipped, so re-running is safe. Authentication: the NPM_TOKEN
+#   secret. Prereleases never get here: release.yml skips every publish
+#   job for them (dist's `publish-prereleases` is off), as it does for the
+#   `quickertype` npm installer.
+# - Pull requests that change the package or the engine it is built from:
+#   everything up to `npm publish --dry-run`.
+name: Publish quickertype-core
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+  pull_request:
+    paths:
+      - npm/quicktype-core/**
+      # The WebAssembly engine and the version the package must have.
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .cargo/**
+      - crates/**
+      - .github/workflows/publish-npm-core.yml
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  PACKAGE: quickertype-core
+
+jobs:
+  publish-npm-core:
+    name: ${{ github.event_name == 'pull_request' && 'quickertype-core (dry run)' || 'publish quickertype-core' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: npm/quicktype-core
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@0.2.114
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+      - name: The package's version is the workspace version (and the tag's)
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          name=$(jq -r .name package.json)
+          version=$(jq -r .version package.json)
+          workspace=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[] | select(.name == "quickertype")][0].version')
+          echo "$name $version (workspace $workspace)"
+          if [ "$name" != "$PACKAGE" ]; then
+            echo "::error::package.json names $name, not $PACKAGE."
+            exit 1
+          fi
+          if [ "$version" != "$workspace" ]; then
+            echo "::error::npm/quicktype-core/package.json is at $version, not the workspace version $workspace."
+            exit 1
+          fi
+          # `npm version X.Y.Z --no-git-tag-version` sets both of these too.
+          lock=$(jq -r '[.name, .version, .packages[""].name, .packages[""].version] | join(" ")' package-lock.json)
+          if [ "$lock" != "$PACKAGE $version $PACKAGE $version" ]; then
+            echo "::error::npm/quicktype-core/package-lock.json has (name version, root package's name version) $lock, not $PACKAGE $version: run npm install."
+            exit 1
+          fi
+          if [ -n "$PLAN" ]; then
+            tag=$(jq -r .announcement_tag <<<"$PLAN")
+            if [ "$tag" != "v$version" ]; then
+              echo "::error::The release tag is $tag but the package is at $version."
+              exit 1
+            fi
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Package contents (npm pack --dry-run)
+        run: npm pack --dry-run
+      - name: Dry run (npm publish --dry-run)
+        if: github.event_name == 'pull_request'
+        run: npm publish --dry-run --access public
+      - name: Publish
+        if: github.event_name != 'pull_request'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "$(npm view "$PACKAGE@$VERSION" version 2> /dev/null)" = "$VERSION" ]; then
+            echo "$PACKAGE $VERSION is already on npm; skipping."
+            exit 0
+          fi
+          npm publish --access public --provenance

@@ -5,8 +5,9 @@
 //
 // usage: node xtask/core-json-input/gen-fixtures.mjs [path/to/quicktype]
 //
-// The reference checkout (default $QUICKTYPE_DIR, else ../quicktype next to
-// this repository) must be built (`npm run build`), with node_modules.
+// The reference checkout (default $QUICKTYPE_REFERENCE, else ../quicktype
+// next to this repository: xtask/reference.mjs) must be built
+// (`npm run build`), with node_modules.
 //
 // For every JSON file in tests/inputs/json and every edge case in
 // cases.mjs, each configuration in CONFIGS runs an InputData with one
@@ -41,9 +42,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { edgeCases, postmanInputs, recognizerInputs, uriInputs } from "./cases.mjs";
+import { referenceCheckout } from "../reference.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktype = resolve(process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"));
+const quicktype = referenceCheckout(process.argv[2]);
 const require = createRequire(join(quicktype, "package.json"));
 const core = (p) => require(join(quicktype, "packages/quicktype-core/dist", p));
 
