@@ -363,11 +363,15 @@ await shrinkOptions();
 
 // Readable text at the end, if the divergence survives pretty-printing.
 await attempt((c) => {
-    if (c.src === "json") {
+    if (c.src === "json" || c.src === "mixed") {
         for (const tl of c.topLevels) tl.samples = tl.samples.map((s) => (parse(s) === undefined ? s : toText(parse(s), "  ")));
     } else if (c.src === "graphql") {
         if (parse(c.graphql.schema) !== undefined) c.graphql.schema = toText(parse(c.graphql.schema), "  ");
-    } else {
+    } else if (c.src === "postman") {
+        if (parse(c.postman) !== undefined) c.postman = toText(parse(c.postman), "  ");
+    }
+
+    if (c.src === "schema" || c.src === "mixed") {
         for (const s of c.schemas) if (parse(s.text) !== undefined) s.text = toText(parse(s.text), "  ");
     }
 
