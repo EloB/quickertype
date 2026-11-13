@@ -16,6 +16,7 @@ use quicktype_js_compat::number;
 
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::support::collection_utils::array_intercalate;
 use crate::support::strings::{camel_case, utf16_string_escape};
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
@@ -27,7 +28,7 @@ use crate::ty::type_utils::{is_nullable, nullable_from_union};
 
 use super::c_sharp_renderer::{
     BaseClass, CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings,
-    intercalate_and, transformation_of,
+    transformation_of,
 };
 use super::utils::{
     AccessModifier, DENSE_JSON_PROPERTY_NAME, DENSE_NULL_VALUE_HANDLING_ENUM_NAME,
@@ -895,7 +896,11 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
                     conditions.push(sl![length, " <= ", number::to_string(*max)]);
                 }
 
-                self.emit_line_parts(vec!["if (".into(), intercalate_and(conditions), ")".into()]);
+                self.emit_line_parts(vec![
+                    "if (".into(),
+                    array_intercalate(" && ".into(), conditions).into(),
+                    ")".into(),
+                ]);
                 self.emit_block(
                     |r| {
                         r.emit_consume(variable, consumer.as_ref(), target_type, emit_finish)?;
@@ -929,7 +934,11 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
                     ]);
                 }
 
-                self.emit_line_parts(vec!["if (".into(), intercalate_and(conditions), ")".into()]);
+                self.emit_line_parts(vec![
+                    "if (".into(),
+                    array_intercalate(" && ".into(), conditions).into(),
+                    ")".into(),
+                ]);
                 self.emit_block(
                     |r| {
                         r.emit_consume(variable, consumer.as_ref(), target_type, emit_finish)?;

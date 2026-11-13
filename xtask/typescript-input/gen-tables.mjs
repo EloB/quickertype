@@ -11,8 +11,10 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const here = path.dirname(new URL(import.meta.url).pathname);
-const checkout = path.resolve(process.argv[2] ?? path.join(here, "../../../quicktype"));
+const checkout = referenceCheckout(process.argv[2]);
 const ts = path.join(checkout, "node_modules", "typescript");
 const pkg = JSON.parse(fs.readFileSync(path.join(ts, "package.json"), "utf8"));
 const load = (p) => import(pathToFileURL(path.join(ts, "dist", p)).href);

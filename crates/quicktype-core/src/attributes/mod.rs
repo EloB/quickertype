@@ -1,4 +1,5 @@
-//! Port of `packages/quicktype-core/src/attributes/index.ts`.
+//! The modules of `packages/quicktype-core/src/attributes/`, one per TypeScript
+//! file (the directory has no `index.ts`).
 
 pub mod accessor_names;
 pub mod constraints;

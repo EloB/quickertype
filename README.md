@@ -77,6 +77,11 @@ cargo xtask bench
 cargo xtask bench --corpus --in-process
 ```
 
+The tools that need the reference (`diff`, `bench`, `golden`, the recorders
+in `xtask/*/` and the npm differential tests) find the built quicktype
+checkout through `$QUICKTYPE_REFERENCE`, else as `../quicktype` or
+`../../quicktype` (from a worktree) next to this repository.
+
 Validate the corpus itself against the TypeScript implementation (every case
 must pass):
 

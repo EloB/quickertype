@@ -1,4 +1,4 @@
-//! The `quicktype` CLI. Port of `quicktype/src/index.ts`.
+//! The `quicktype` CLI. Port of `src/index.ts`.
 //!
 //! Contract: for any argv, stdin and input files, this binary must produce
 //! byte-identical stdout, stderr, exit code and output files to the

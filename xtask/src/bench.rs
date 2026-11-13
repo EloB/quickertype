@@ -988,8 +988,8 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         let cmd = match &o.reference {
             Some(cmd) => cmd.clone(),
             None => {
-                let script = find_reference(root).ok_or(
-                    "TypeScript CLI not found: set QUICKTYPE_REF, pass --ref, or use --no-ref",
+                let script = find_reference(root)?.ok_or(
+                    "TypeScript CLI not found: set QUICKTYPE_REFERENCE, pass --ref, or use --no-ref",
                 )?;
                 vec!["node".into(), script.to_string_lossy().into_owned()]
             }
@@ -1526,7 +1526,7 @@ fn reference_checkout(root: &Path, o: &Options) -> Result<PathBuf, String> {
             .find(|p| p.ends_with("dist/index.js"))
             .and_then(|p| p.parent()?.parent().map(Path::to_path_buf)),
         (None, None) => {
-            find_reference(root).and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
+            find_reference(root)?.and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
         }
     };
     let checkout = checkout.ok_or(

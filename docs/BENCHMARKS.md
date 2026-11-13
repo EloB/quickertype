@@ -329,7 +329,7 @@ the facade were on `feat/wasm-js-api` when this branch started):
 
 ```sh
 # The TypeScript CLI: a built quicktype checkout beside the workspace
-# (or set QUICKTYPE_REF), as for `cargo xtask diff`.
+# (or set QUICKTYPE_REFERENCE), as for `cargo xtask diff`.
 cargo xtask bench                     # CLI benchmarks, 10 runs each
 cargo xtask bench --corpus            # + the whole golden corpus
 cargo xtask bench --in-process        # + the engine in process vs warm TypeScript

@@ -14,6 +14,7 @@
 //! Paths in the cases are relative to the repository root.
 
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use quicktype_core::internal::capture_console;
 use quicktype_core::ty::type_builder::TypeBuilder;
@@ -266,13 +267,9 @@ fn deep_queries_and_schemas_do_not_overflow() {
     assert!(builder.len() > 2 * depth);
 }
 
-/// A chain of 40,000 fragments, each spreading the next, is expanded in
-/// linear time (cycle detection once looked through every enclosing
-/// expansion at each spread). The reference takes about 0.5 s; the bound
-/// is generous for debug builds.
-#[test]
-fn long_fragment_chains_are_linear() {
-    let length = 40_000;
+/// A chain of `length` fragments, each spreading the next, as a GraphQL
+/// input on `schema`.
+fn fragment_chain(schema: &JsonValue, length: usize) -> GraphQlInput {
     let mut query = String::from("{ viewer { ...F0 } }\n");
     for i in 0..length {
         let next = if i + 1 < length {
@@ -282,21 +279,64 @@ fn long_fragment_chains_are_linear() {
         };
         query.push_str(&format!("fragment F{i} on User {{ age {next} }}\n"));
     }
-    let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
-        .expect("the basic schema");
     let mut input = GraphQlInput::new();
     input.add_source_sync(GraphQlSourceData {
         name: "Chain".to_owned(),
-        schema: parse_json(&schema_text, "GraphQL schema", None).unwrap(),
+        schema: schema.clone(),
         query,
     });
+    input
+}
+
+/// The time `add_types` takes on `input`.
+fn add_types_time(input: &GraphQlInput) -> Duration {
     let mut builder =
         TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    let start = std::time::Instant::now();
+    let start = Instant::now();
     input.add_types_sync(&mut builder).unwrap();
-    let elapsed = start.elapsed();
+    start.elapsed()
+}
+
+/// A chain of fragments, each spreading the next, is expanded in linear
+/// time (cycle detection once looked through every enclosing expansion at
+/// each spread, which is quadratic).
+///
+/// The main check compares chains of 2,500 and 10,000 fragments: linear
+/// work takes about 4 times as long for the longer one, quadratic cycle
+/// detection 10 to 16 times (the linear work still counts at these
+/// lengths), so the limit is 8. After a warm-up, each chain is timed once;
+/// other processes can slow down any run, so a ratio over the limit is
+/// measured again, up to twice, keeping each chain's fastest time.
+///
+/// The absolute bound only catches a large constant-factor regression:
+/// 10,000 fragments take about 0.2 s in a debug build and up to 2 s at a
+/// load average of 450 on 12 cores.
+#[test]
+fn long_fragment_chains_are_linear() {
+    const LIMIT: f64 = 8.0;
+    let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
+        .expect("the basic schema");
+    let schema = parse_json(&schema_text, "GraphQL schema", None).unwrap();
+    let short_chain = fragment_chain(&schema, 2_500);
+    let long_chain = fragment_chain(&schema, 10_000);
+    add_types_time(&short_chain);
+    add_types_time(&long_chain);
+    let (mut short, mut long) = (Duration::MAX, Duration::MAX);
+    let mut ratio = f64::INFINITY;
+    for _ in 0..3 {
+        short = short.min(add_types_time(&short_chain));
+        long = long.min(add_types_time(&long_chain));
+        ratio = long.as_secs_f64() / short.as_secs_f64();
+        if ratio < LIMIT {
+            break;
+        }
+    }
     assert!(
-        elapsed < std::time::Duration::from_secs(5),
-        "expanding the chain took {elapsed:?}"
+        ratio < LIMIT,
+        "4 times the fragments took {ratio:.1} times as long ({short:?}, then {long:?})"
+    );
+    assert!(
+        long < Duration::from_secs(10),
+        "expanding 10,000 chained fragments took {long:?}"
     );
 }

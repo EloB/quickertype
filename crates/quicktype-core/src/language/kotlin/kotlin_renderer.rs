@@ -21,7 +21,6 @@ use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::AcronymStyleOptions;
 use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
-use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
@@ -190,8 +189,7 @@ pub fn base_kotlin_type<'a, R: KotlinRenderer<'a>>(
             TypeKind::Date => "LocalDate".into(),
             TypeKind::Time => "OffsetTime".into(),
             kind if kind.is_transformed_string_type_kind() => "String".into(),
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     })
 }

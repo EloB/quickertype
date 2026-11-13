@@ -20,8 +20,10 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktypeDir = resolve(process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"));
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const coreRequire = createRequire(join(quicktypeDir, "packages/quicktype-core/dist/index.js"));
 const YAML = coreRequire("yaml");
 const yamlVersion = JSON.parse(readFileSync(coreRequire.resolve("yaml/package.json"), "utf8")).version;
