@@ -236,9 +236,6 @@ fn global_options(target_languages: &[&'static dyn TargetLanguage]) -> Vec<Globa
 /// consumes. Renderer options keep every value the parser produced,
 /// including the defaults of all of the language's options (both `x` and
 /// `no-x` for booleans), in definition order, exactly like the TS object.
-// TODO(engine): most fields are read only once makeQuicktypeOptions can
-// build the engine's options from them.
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CliOptions {
     /// Input files, URLs or directories (`--src` and bare arguments).
@@ -276,6 +273,8 @@ pub struct CliOptions {
     /// `--graphql-introspect`.
     pub graphql_introspect: Option<String>,
     /// `--http-method`.
+    // TODO(graphql): read by `--graphql-introspect` (Phase 5).
+    #[allow(dead_code)]
     pub http_method: Option<String>,
     /// `--http-header`.
     pub http_header: Option<Vec<String>>,
