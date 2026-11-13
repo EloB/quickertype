@@ -1090,7 +1090,7 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
             "日本.ts", "ünïcode.h", "😀.rs", "class.py", "1abc.c", ".hidden", "no_extension", "a-b.c-d.e", "UPPER.H", "x.d.ts", "stdout"]);
     }
     kase.debug = [];
-    if (extraRng.chance(0.06)) {
+    if (extraRng.chance(0.12)) {
         const components = ["print-graph", "print-reconstitution", "print-gather-names", "print-transformations", "provenance"];
         if (kind === "schema") components.push("print-schema-resolving");
         kase.debug = extraRng.sample(components, extraRng.range(1, 2));
