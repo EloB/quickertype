@@ -219,6 +219,41 @@ fn add_produced(combined: &mut Option<TypeAttributes>, attributes: &TypeAttribut
 /// (with and without enum inference): see [`StringTally::combined_with`].
 type Combined = (Option<TypeAttributes>, Option<TypeAttributes>);
 
+/// Whether combining `b` into `a` gives `a` again, so that the combination
+/// can be skipped, as reading skips it (see [`add_unrestricted`],
+/// [`add_transformation`] and [`add_produced`]): `b` holds nothing but string
+/// types and URI attributes, and `a`'s absorb them. `combineTypeAttributes`
+/// combines kind by kind, keeping `a`'s order; string types that are
+/// unrestricted stay as they are, restricted ones without cases add no
+/// transformation `a` lacks, and URI attributes add no protocol or
+/// extension `a` lacks.
+fn absorbs(a: &TypeAttributes, b: &TypeAttributes) -> bool {
+    let string_types = StringTypesTypeAttributeKind.try_get_in_attributes(b);
+    let uri = UriTypeAttributeKind.try_get_in_attributes(b);
+    if b.iter().count() != usize::from(string_types.is_some()) + usize::from(uri.is_some()) {
+        return false;
+    }
+    let string_types_absorbed = string_types.is_none_or(|b| {
+        StringTypesTypeAttributeKind
+            .try_get_in_attributes(a)
+            .is_some_and(|a| {
+                !a.is_restricted()
+                    || (b.cases.as_ref().is_some_and(IndexMap::is_empty)
+                        && b.transformations
+                            .iter()
+                            .all(|t| a.transformations.contains(t)))
+            })
+    });
+    let uri_absorbed = uri.is_none_or(|(protocols, extensions)| {
+        UriTypeAttributeKind
+            .try_get_in_attributes(a)
+            .is_some_and(|(p, e)| {
+                protocols.iter().all(|x| p.contains(x)) && extensions.iter().all(|x| e.contains(x))
+            })
+    });
+    string_types_absorbed && uri_absorbed
+}
+
 /// `a` with `b` combined into it, as [`combine_into`] does, if that takes
 /// a combination; `None` if `b` adds nothing or `a` is empty, where the
 /// result is `a` or `b` as they are.
@@ -227,11 +262,9 @@ fn combined(
     b: &Option<TypeAttributes>,
 ) -> Result<Option<TypeAttributes>> {
     match (a, b) {
-        (Some(a), Some(b)) if !b.is_empty() => Ok(Some(combine_type_attributes2(
-            CombinationKind::Union,
-            a,
-            b,
-        )?)),
+        (Some(a), Some(b)) if !b.is_empty() && !absorbs(a, b) => Ok(Some(
+            combine_type_attributes2(CombinationKind::Union, a, b)?,
+        )),
         _ => Ok(None),
     }
 }
@@ -261,13 +294,18 @@ impl StringTally {
     }
 
     /// Appends `other`'s strings after these, with the attributes
-    /// [`combined_with`](Self::combined_with) computed for them.
-    fn append(&mut self, other: StringTally, (with_enums, without_enums): Combined) {
-        for (id, count) in other.cases {
+    /// [`combined_with`](Self::combined_with) computed for them, and
+    /// empties `other`.
+    fn append(&mut self, other: &mut StringTally, (with_enums, without_enums): Combined) {
+        for (id, count) in other.cases.drain(..) {
             *self.cases.entry(id).or_insert(0) += count;
         }
-        take_combined(&mut self.with_enums, other.with_enums, with_enums);
-        take_combined(&mut self.without_enums, other.without_enums, without_enums);
+        take_combined(&mut self.with_enums, other.with_enums.take(), with_enums);
+        take_combined(
+            &mut self.without_enums,
+            other.without_enums.take(),
+            without_enums,
+        );
         self.not_interned |= other.not_interned;
     }
 }
@@ -346,13 +384,14 @@ impl ObjectTally {
         property_names(&self.proto_runs, self.keys.len())
     }
 
-    /// Appends `other`'s objects after these. The values of a key both
-    /// have are joined by a merge step of their own; `other`'s last
-    /// `__proto__` value replaces this one's, which goes to `replaced`.
-    fn append(&mut self, other: ObjectTally, replaced: &mut Vec<NodeId>) {
+    /// Appends `other`'s objects after these, and empties `other`. The
+    /// values of a key both have are joined by a merge step of their own;
+    /// `other`'s last `__proto__` value replaces this one's, which goes to
+    /// `replaced`.
+    fn append(&mut self, other: &mut ObjectTally, replaced: &mut Vec<NodeId>) {
         self.count += other.count;
-        let mut runs = other.proto_runs.into_iter().peekable();
-        for (i, (id, tally)) in other.keys.into_iter().enumerate() {
+        let mut runs = other.proto_runs.drain(..).peekable();
+        for (i, (id, tally)) in other.keys.drain(..).enumerate() {
             while let Some(&(position, count)) = runs.peek()
                 && position as usize <= i
             {
@@ -369,12 +408,56 @@ impl ObjectTally {
         for (_, count) in runs {
             self.add_proto_occurrences(count);
         }
-        if let Some(proto) = other.proto
+        if let Some(proto) = other.proto.take()
             && let Some(old) = self.proto.replace(proto)
         {
             replaced.push(old);
         }
     }
+}
+
+/// How many emptied string and object tallies [`Tallies`] keeps for the
+/// places of the next samples (of each kind), and the most cases or keys
+/// one may have room for: at most a few hundred kilobytes.
+const SPARE_TALLIES: usize = 256;
+const SPARE_CAPACITY: usize = 64;
+
+/// Keeps `tally` for reuse, emptied, unless there are enough or it is
+/// large.
+fn keep_spare<T: Default>(
+    spares: &mut Vec<Box<T>>,
+    mut tally: Box<T>,
+    empty: impl FnOnce(&mut T) -> usize,
+) {
+    let capacity = empty(&mut tally);
+    if spares.len() < SPARE_TALLIES && capacity <= SPARE_CAPACITY {
+        spares.push(tally);
+    }
+}
+
+/// Empties a string tally (keeping the room for its cases); returns that room.
+fn empty_strings(tally: &mut StringTally) -> usize {
+    let mut cases = std::mem::take(&mut tally.cases);
+    cases.clear();
+    *tally = StringTally {
+        cases,
+        ..StringTally::default()
+    };
+    tally.cases.capacity()
+}
+
+/// Empties an object tally (keeping the room for its keys); returns that room.
+fn empty_object(tally: &mut ObjectTally) -> usize {
+    let mut keys = std::mem::take(&mut tally.keys);
+    keys.clear();
+    let mut proto_runs = std::mem::take(&mut tally.proto_runs);
+    proto_runs.clear();
+    *tally = ObjectTally {
+        keys,
+        proto_runs,
+        ..ObjectTally::default()
+    };
+    tally.keys.capacity()
 }
 
 /// All values at one place.
@@ -397,6 +480,13 @@ pub(crate) struct Tallies {
     /// Nodes no tree uses any more, for reuse.
     free: Vec<NodeId>,
     strings: Strings,
+    /// Emptied string and object tallies, for reuse: each sample is read
+    /// into a tree of its own, which merging empties. Boxed as the nodes
+    /// hold them, so that reusing one moves a pointer.
+    #[allow(clippy::vec_box)]
+    spare_strings: Vec<Box<StringTally>>,
+    #[allow(clippy::vec_box)]
+    spare_objects: Vec<Box<ObjectTally>>,
     /// Makes the next [`merge`](Self::merge) fail after planning this many
     /// steps (for tests).
     #[cfg(test)]
@@ -439,6 +529,8 @@ impl Tallies {
             nodes: Vec::new(),
             free: Vec::new(),
             strings: Strings::new(),
+            spare_strings: Vec::new(),
+            spare_objects: Vec::new(),
             #[cfg(test)]
             fail_merge_at: Cell::new(None),
         }
@@ -515,6 +607,10 @@ impl Tallies {
             if let Some(object) = node.object {
                 stack.extend(object.keys.values().map(|k| k.node));
                 stack.extend(object.proto);
+                keep_spare(&mut self.spare_objects, object, empty_object);
+            }
+            if let Some(strings) = node.strings {
+                keep_spare(&mut self.spare_strings, strings, empty_strings);
             }
             self.free.push(id);
         }
@@ -594,12 +690,18 @@ impl Tallies {
                 x.items = y.items;
             }
             match (&mut x.strings, y.strings) {
-                (Some(xs), Some(ys)) => xs.append(*ys, step.strings.unwrap_or_default()),
+                (Some(xs), Some(mut ys)) => {
+                    xs.append(&mut ys, step.strings.unwrap_or_default());
+                    keep_spare(&mut self.spare_strings, ys, empty_strings);
+                }
                 (None, ys) => x.strings = ys,
                 (Some(_), None) => {}
             }
             match (&mut x.object, y.object) {
-                (Some(xo), Some(yo)) => xo.append(*yo, &mut replaced),
+                (Some(xo), Some(mut yo)) => {
+                    xo.append(&mut yo, &mut replaced);
+                    keep_spare(&mut self.spare_objects, yo, empty_object);
+                }
                 (None, yo) => x.object = yo,
                 (Some(_), None) => {}
             }
@@ -704,7 +806,14 @@ impl<'a> TallyBuilder<'a> {
     }
 
     fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
-        Ok(self.node_mut(node)?.strings.get_or_insert_default())
+        let Tallies {
+            nodes,
+            spare_strings,
+            ..
+        } = &mut *self.tallies;
+        let n = defined(nodes.get_mut(node as usize))?;
+        Ok(n.strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
     }
 
     /// An interned string (`Tag.InternedString`).
@@ -804,9 +913,16 @@ impl JsonSink for TallyBuilder<'_> {
 
     fn push_object_context(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let n = self.node_mut(node)?;
+        let Tallies {
+            nodes,
+            spare_objects,
+            ..
+        } = &mut *self.tallies;
+        let n = defined(nodes.get_mut(node as usize))?;
         n.kinds.add(TypeKind::Object);
-        n.object.get_or_insert_default().count += 1;
+        n.object
+            .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
+            .count += 1;
         self.frames.push(Frame::Object {
             node,
             value: None,
