@@ -72,6 +72,9 @@ fn parse_json(text: &str, description: &str, address: &str) -> Result<JsonValue>
 
 /// A JavaScript `TypeError` that escapes the TypeScript: the CLI prints its
 /// message as is (`Error: <message>.`).
+// TODO(js-exception): use messages.rs' variant for runtime exceptions
+// (constructor `TypeError`) once it lands, instead of an internal error
+// with a replaced user message.
 fn type_error(message: String) -> QuickTypeError {
     let mut error = QuickTypeError::internal(message.clone());
     error.set_user_message(message);

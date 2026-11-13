@@ -418,6 +418,9 @@ fn intern(strings: &mut Vec<String>, indexes: &mut HashMap<String, u32>, s: &str
     index
 }
 
+// TODO(js-exception): `Syntax` is a JavaScript exception (`JSON.parse`'s
+// `SyntaxError`, stream-json's `Error`); switch it to messages.rs' variant
+// for runtime exceptions once that lands.
 /// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
 /// `MiscJSONParseError`.
