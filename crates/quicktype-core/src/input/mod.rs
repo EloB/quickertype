@@ -1,6 +1,9 @@
 //! Port of `packages/quicktype-core/src/input/index.ts`.
 
 pub mod compressed_json;
+/// Not in quicktype-core's `input/` but in the CLI (`src/`); here because the
+/// Rust API offers both JSON reading semantics.
+pub mod compressed_json_from_stream;
 pub mod fetching_json_schema_store;
 pub mod inference;
 pub mod inputs;
