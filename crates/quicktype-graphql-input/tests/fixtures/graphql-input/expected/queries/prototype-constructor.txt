@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Required field name in type Object which doesn't have fields.

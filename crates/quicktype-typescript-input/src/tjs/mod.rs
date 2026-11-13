@@ -1407,9 +1407,11 @@ impl<'s> Generator<'s> {
 
 /// The `TypeError` JavaScript throws when reading `property` of `undefined`.
 fn read_error(property: &str) -> Error {
-    Error::Generator(format!(
-        "Cannot read properties of undefined (reading '{property}')"
-    ))
+    Error::Generator(
+        quicktype_js_compat::json::PropertyReadError::of_undefined(property)
+            .message()
+            .to_owned(),
+    )
 }
 
 /// `addSimpleType`.

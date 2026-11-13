@@ -210,7 +210,7 @@ impl JsonSchema {
         match self {
             JsonSchema::Null => false,
             JsonSchema::Bool(b) => *b,
-            JsonSchema::Number(n) => *n != 0.0 && !n.is_nan(),
+            JsonSchema::Number(n) => quicktype_js_compat::json::is_truthy_number(*n),
             JsonSchema::String(s) => !s.is_empty(),
             JsonSchema::Array(_) | JsonSchema::Object(_) => true,
         }

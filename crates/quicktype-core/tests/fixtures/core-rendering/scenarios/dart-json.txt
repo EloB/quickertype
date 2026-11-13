@@ -1,0 +1,11 @@
+# The Dart renderer on inferred JSON: dates, date-times and UUIDs that the
+# Dart string type mapping keeps, nullable and optional values, an untyped
+# union, an enum-like map and a top-level array.
+input json TopLevel {"id": "6c8a2e5e-6c1a-4f7c-9a2b-1f3f2a0b9c11", "when": "2018-08-14T02:45:50Z", "day": "2018-08-14", "nothing": null, "empty": [], "values": [1, 2.5, "three", true, null, {"x": 1}], "items": [{"name": "a", "count": 1, "at": "2018-08-14"}, {"name": "b", "count": null, "extra": [1, 2]}], "toString": 1, "runtimeType": "x"}
+input json Readings [{"sensor": "temp", "data": [1, 2, 3]}, {"sensor": "hum", "data": [4.5]}]
+pipeline {"lang": "dart"}
+
+render dart {}
+render dart {"rendererOptions": {"required-props": true}}
+render dart {"rendererOptions": {"coders-in-class": true, "copy-with": true}}
+render dart {"rendererOptions": {"use-freezed": true}}

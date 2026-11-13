@@ -1,0 +1,218 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "object",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "kind",
+       [
+        "A kind."
+       ]
+      ],
+      [
+       "either",
+       [
+        "Either."
+       ]
+      ],
+      [
+       "count",
+       [
+        "How many."
+       ]
+      ],
+      [
+       "name",
+       [
+        "A name."
+       ]
+      ]
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "count",
+      1,
+      true
+     ],
+     [
+      "either",
+      2,
+      true
+     ],
+     [
+      "kind",
+      5,
+      false
+     ],
+     [
+      "name",
+      6,
+      true
+     ]
+    ],
+    "add": 7
+   },
+   {
+    "k": "integer",
+    "a": {
+     "defaultValue": 3,
+     "minMax": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "count"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "description": [
+      "Either."
+     ]
+    },
+    "members": [
+     3,
+     4
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "defaultValue": "a",
+     "description": [
+      "A kind."
+     ]
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "defaultValue": "none",
+     "minMaxLength": [
+      null,
+      9
+     ],
+     "pattern": "^[a-z]+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n    \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n    \"$ref\": \"#/definitions/TopLevel\",\n    \"definitions\": {\n        \"TopLevel\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {},\n            \"properties\": {\n                \"count\": {\n                    \"type\": \"integer\",\n                    \"default\": 3,\n                    \"minimum\": 1,\n                    \"description\": \"How many.\"\n                },\n                \"either\": {\n                    \"$ref\": \"#/definitions/Either\",\n                    \"description\": \"Either.\"\n                },\n                \"kind\": {\n                    \"$ref\": \"#/definitions/Kind\",\n                    \"description\": \"A kind.\"\n                },\n                \"name\": {\n                    \"type\": \"string\",\n                    \"default\": \"none\",\n                    \"maxLength\": 9,\n                    \"pattern\": \"^[a-z]+$\",\n                    \"description\": \"A name.\"\n                }\n            },\n            \"required\": [\n                \"kind\"\n            ],\n            \"title\": \"TopLevel\"\n        },\n        \"Either\": {\n            \"anyOf\": [\n                {\n                    \"type\": \"integer\"\n                },\n                {\n                    \"type\": \"string\"\n                }\n            ],\n            \"title\": \"Either\",\n            \"description\": \"Either.\"\n        },\n        \"Kind\": {\n            \"type\": \"string\",\n            \"enum\": [\n                \"a\",\n                \"b\"\n            ],\n            \"title\": \"Kind\",\n            \"default\": \"a\",\n            \"description\": \"A kind.\"\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "json-schema-attribute-order"
+}

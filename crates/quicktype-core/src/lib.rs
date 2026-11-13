@@ -169,7 +169,7 @@ pub use crate::input::postman_collection::{PostmanSources, sources_from_postman_
 #[cfg(feature = "fs")]
 pub use crate::input::io::node_io::StdIo;
 pub use crate::input::io::node_io::{
-    HttpResponse, Io, IoError, IoErrorKind, Readable, is_url, read_from_file_or_url,
+    HttpResponse, Io, IoError, IoErrorKind, Readable, RequestInit, is_url, read_from_file_or_url,
     readable_from_file_or_url,
 };
 
@@ -203,5 +203,7 @@ pub mod internal {
     pub use crate::input::inputs::CompressedTopLevel;
     pub use crate::input::io::{LocalBoxFuture, block_on};
     pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
-    pub use crate::support::support::capture_console;
+    pub use crate::source::Source;
+    pub use crate::support::support::{capture_console, set_console_error_sink};
+    pub use crate::target_language::has_renderer;
 }

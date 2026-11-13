@@ -1,0 +1,9 @@
+# Port of quicktype's test/unit/golang-enum-type-name-suffix.test.ts (first
+# test): a top-level enum rendered with the default options and with
+# enum-type-name-suffix. tests/vitest_golang_json_schema.rs checks the
+# constants.
+input schema DogNoise {"type": "string", "enum": ["BARK", "GROWL", "HOWL"]}
+pipeline {"lang": "go"}
+
+render golang {}
+render golang {"rendererOptions": {"enum-type-name-suffix": true}}

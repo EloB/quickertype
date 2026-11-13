@@ -1,0 +1,20 @@
+# Endless recursion over the type graph at a top-level: the top-level is a
+# nullable union whose member is an array of the union itself, so
+# directlyReachableTypes (the default namedTypeToNameForTopLevel) recurses
+# until V8's stack overflows, a RangeError, before any renderer code runs
+# (support::recursion::guard in Rust). A separate scenario from
+# recursion-overflow.txt, whose graph has the cycle below a class.
+input schema TopLevel {"type": ["array", "null"], "items": {"$ref": "#"}}
+
+render dart {}
+render java {}
+render php {}
+render javascript {}
+render swift {}
+render objc {}
+render rust {}
+render typescript-zod {}
+render typescript-effect-schema {}
+render typescript {}
+render kotlin {}
+render elm {}

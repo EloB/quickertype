@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Unexpected character: U+00E9.

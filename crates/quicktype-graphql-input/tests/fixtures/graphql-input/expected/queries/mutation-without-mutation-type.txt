@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: This GraphQL endpoint has no mutations.

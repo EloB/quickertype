@@ -1,0 +1,2 @@
+error: GraphQLError Syntax Error: Expected "{", found String "x
+y".

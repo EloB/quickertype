@@ -1,0 +1,13 @@
+# quicktype's LeadingCommentsGoFixture (schema-golang-leading-comments),
+# which drives the library API and so has no CLI recording: date-time.schema
+# as TopLevel, rendered with `leadingComments: []` to one file and with
+# multi-file-output. Then non-empty leading comments in both modes, which
+# replace the generated header (in multi-file mode, in every top-level's
+# file).
+input schema TopLevel {"type":"object","additionalProperties":false,"properties":{"date":{"type":"string","format":"date"},"time":{"type":"string","format":"time"},"date-time":{"type":"string","format":"date-time"},"local-date-class":{"type":"object","additionalProperties":false,"title":"LocalDate"},"offset-date-time-class":{"type":"object","additionalProperties":false,"title":"OffsetDateTime"},"offset-time-class":{"type":"object","additionalProperties":false,"title":"OffsetTime"},"union-array":{"type":"array","items":{"oneOf":[{"type":"string","format":"date"},{"type":"string","format":"time"},{"type":"string","format":"date-time"}]}},"complex-union-array":{"type":"array","items":{"oneOf":[{"type":"string","format":"date-time"},{"type":"integer"},{"enum":["foo","bar"]}]}}},"required":["date","date-time","time","union-array","complex-union-array"]}
+pipeline {"lang": "golang"}
+
+render golang {"leadingComments": []}
+render golang {"leadingComments": [], "rendererOptions": {"multi-file-output": true}}
+render golang {"leadingComments": ["Generated.", {"lines": ["line one", "line two"]}]}
+render golang {"leadingComments": ["Generated."], "rendererOptions": {"multi-file-output": true}}

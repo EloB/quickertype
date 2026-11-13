@@ -1,0 +1,438 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      4,
+      false
+     ],
+     [
+      "when",
+      19,
+      false
+     ],
+     [
+      "day",
+      1,
+      false
+     ],
+     [
+      "nothing",
+      8,
+      false
+     ],
+     [
+      "empty",
+      2,
+      false
+     ],
+     [
+      "values",
+      14,
+      false
+     ],
+     [
+      "items",
+      5,
+      false
+     ],
+     [
+      "toString",
+      10,
+      false
+     ],
+     [
+      "runtimeType",
+      13,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "date",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 3
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "uuid",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 6
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      13,
+      false
+     ],
+     [
+      "count",
+      9,
+      false
+     ],
+     [
+      "at",
+      7,
+      true
+     ],
+     [
+      "extra",
+      11,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "at"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     1,
+     8
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     10,
+     8
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "extra"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     12,
+     8
+    ]
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 10
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 15
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     18,
+     16,
+     8,
+     17,
+     13
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "date-time",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Readings"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 21
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "sensor",
+      13,
+      false
+     ],
+     [
+      "data",
+      22,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 18
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Readings",
+    20
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this JSON data, do\n//\n//     final topLevel = topLevelFromJson(jsonString);\n//     final readings = readingsFromJson(jsonString);\n\nimport 'dart:convert';\n\nTopLevel topLevelFromJson(String str) => TopLevel.fromJson(json.decode(str));\n\nString topLevelToJson(TopLevel data) => json.encode(data.toJson());\n\nList<Readings> readingsFromJson(String str) => List<Readings>.from(json.decode(str).map((x) => Readings.fromJson(x)));\n\nString readingsToJson(List<Readings> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));\n\nclass TopLevel {\n    final String id;\n    final DateTime when;\n    final DateTime day;\n    final dynamic nothing;\n    final List<dynamic> empty;\n    final List<dynamic> values;\n    final List<Item> items;\n    final int topLevelToString;\n    final String topLevelRuntimeType;\n\n    TopLevel({\n        required this.id,\n        required this.when,\n        required this.day,\n        required this.nothing,\n        required this.empty,\n        required this.values,\n        required this.items,\n        required this.topLevelToString,\n        required this.topLevelRuntimeType,\n    });\n\n    factory TopLevel.fromJson(Map<String, dynamic> json) => TopLevel(\n        id: ((String x) => RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$').hasMatch(x) ? x : throw FormatException('Invalid UUID'))(json[\"id\"]),\n        when: DateTime.parse(json[\"when\"]),\n        day: DateTime.parse(json[\"day\"]),\n        nothing: (json.containsKey(\"nothing\") ? json[\"nothing\"] : throw FormatException('Missing required property')),\n        empty: List<dynamic>.from(json[\"empty\"].map((x) => x)),\n        values: List<dynamic>.from(json[\"values\"].map((x) => x)),\n        items: List<Item>.from(json[\"items\"].map((x) => Item.fromJson(x))),\n        topLevelToString: json[\"toString\"],\n        topLevelRuntimeType: json[\"runtimeType\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"id\": id,\n        \"when\": when.toIso8601String(),\n        \"day\": \"${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}\",\n        \"nothing\": nothing,\n        \"empty\": List<dynamic>.from(empty.map((x) => x)),\n        \"values\": List<dynamic>.from(values.map((x) => x)),\n        \"items\": List<dynamic>.from(items.map((x) => x.toJson())),\n        \"toString\": topLevelToString,\n        \"runtimeType\": topLevelRuntimeType,\n    };\n}\n\nclass Item {\n    final String name;\n    final int? count;\n    final DateTime? at;\n    final List<int>? extra;\n\n    Item({\n        required this.name,\n        required this.count,\n        this.at,\n        this.extra,\n    });\n\n    factory Item.fromJson(Map<String, dynamic> json) => Item(\n        name: json[\"name\"],\n        count: (json.containsKey(\"count\") ? json[\"count\"] : throw FormatException('Missing required property')),\n        at: json[\"at\"] == null ? null : DateTime.parse(json[\"at\"]),\n        extra: json[\"extra\"] == null ? null : List<int>.from(json[\"extra\"]!.map((x) => x)),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"name\": name,\n        \"count\": count,\n        \"at\": at == null ? null : \"${at!.year.toString().padLeft(4, '0')}-${at!.month.toString().padLeft(2, '0')}-${at!.day.toString().padLeft(2, '0')}\",\n        \"extra\": extra == null ? null : List<dynamic>.from(extra!.map((x) => x)),\n    };\n}\n\nclass ValueClass {\n    final int x;\n\n    ValueClass({\n        required this.x,\n    });\n\n    factory ValueClass.fromJson(Map<String, dynamic> json) => ValueClass(\n        x: json[\"x\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"x\": x,\n    };\n}\n\nclass Readings {\n    final String sensor;\n    final List<double> data;\n\n    Readings({\n        required this.sensor,\n        required this.data,\n    });\n\n    factory Readings.fromJson(Map<String, dynamic> json) => Readings(\n        sensor: json[\"sensor\"],\n        data: List<double>.from(json[\"data\"].map((x) => x?.toDouble())),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"sensor\": sensor,\n        \"data\": List<dynamic>.from(data.map((x) => x)),\n    };\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       19,
+       10,
+       19,
+       17
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       20,
+       15,
+       20,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "required-props": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this JSON data, do\n//\n//     final topLevel = topLevelFromJson(jsonString);\n//     final readings = readingsFromJson(jsonString);\n\nimport 'dart:convert';\n\nTopLevel topLevelFromJson(String str) => TopLevel.fromJson(json.decode(str));\n\nString topLevelToJson(TopLevel data) => json.encode(data.toJson());\n\nList<Readings> readingsFromJson(String str) => List<Readings>.from(json.decode(str).map((x) => Readings.fromJson(x)));\n\nString readingsToJson(List<Readings> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));\n\nclass TopLevel {\n    final String id;\n    final DateTime when;\n    final DateTime day;\n    final dynamic nothing;\n    final List<dynamic> empty;\n    final List<dynamic> values;\n    final List<Item> items;\n    final int topLevelToString;\n    final String topLevelRuntimeType;\n\n    TopLevel({\n        required this.id,\n        required this.when,\n        required this.day,\n        required this.nothing,\n        required this.empty,\n        required this.values,\n        required this.items,\n        required this.topLevelToString,\n        required this.topLevelRuntimeType,\n    });\n\n    factory TopLevel.fromJson(Map<String, dynamic> json) => TopLevel(\n        id: ((String x) => RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$').hasMatch(x) ? x : throw FormatException('Invalid UUID'))(json[\"id\"]),\n        when: DateTime.parse(json[\"when\"]),\n        day: DateTime.parse(json[\"day\"]),\n        nothing: (json.containsKey(\"nothing\") ? json[\"nothing\"] : throw FormatException('Missing required property')),\n        empty: List<dynamic>.from(json[\"empty\"].map((x) => x)),\n        values: List<dynamic>.from(json[\"values\"].map((x) => x)),\n        items: List<Item>.from(json[\"items\"].map((x) => Item.fromJson(x))),\n        topLevelToString: json[\"toString\"],\n        topLevelRuntimeType: json[\"runtimeType\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"id\": id,\n        \"when\": when.toIso8601String(),\n        \"day\": \"${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}\",\n        \"nothing\": nothing,\n        \"empty\": List<dynamic>.from(empty.map((x) => x)),\n        \"values\": List<dynamic>.from(values.map((x) => x)),\n        \"items\": List<dynamic>.from(items.map((x) => x.toJson())),\n        \"toString\": topLevelToString,\n        \"runtimeType\": topLevelRuntimeType,\n    };\n}\n\nclass Item {\n    final String name;\n    final int count;\n    final DateTime at;\n    final List<int> extra;\n\n    Item({\n        required this.name,\n        required this.count,\n        required this.at,\n        required this.extra,\n    });\n\n    factory Item.fromJson(Map<String, dynamic> json) => Item(\n        name: json[\"name\"],\n        count: (json.containsKey(\"count\") ? json[\"count\"] : throw FormatException('Missing required property')),\n        at: DateTime.parse(json[\"at\"]),\n        extra: List<int>.from(json[\"extra\"].map((x) => x)),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"name\": name,\n        \"count\": count,\n        \"at\": \"${at.year.toString().padLeft(4, '0')}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')}\",\n        \"extra\": List<dynamic>.from(extra.map((x) => x)),\n    };\n}\n\nclass ValueClass {\n    final int x;\n\n    ValueClass({\n        required this.x,\n    });\n\n    factory ValueClass.fromJson(Map<String, dynamic> json) => ValueClass(\n        x: json[\"x\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"x\": x,\n    };\n}\n\nclass Readings {\n    final String sensor;\n    final List<double> data;\n\n    Readings({\n        required this.sensor,\n        required this.data,\n    });\n\n    factory Readings.fromJson(Map<String, dynamic> json) => Readings(\n        sensor: json[\"sensor\"],\n        data: List<double>.from(json[\"data\"].map((x) => x?.toDouble())),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"sensor\": sensor,\n        \"data\": List<dynamic>.from(data.map((x) => x)),\n    };\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       19,
+       10,
+       19,
+       17
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       20,
+       15,
+       20,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "coders-in-class": true,
+    "copy-with": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import 'dart:convert';\n\nclass TopLevel {\n    final String id;\n    final DateTime when;\n    final DateTime day;\n    final dynamic nothing;\n    final List<dynamic> empty;\n    final List<dynamic> values;\n    final List<Item> items;\n    final int topLevelToString;\n    final String topLevelRuntimeType;\n\n    TopLevel({\n        required this.id,\n        required this.when,\n        required this.day,\n        required this.nothing,\n        required this.empty,\n        required this.values,\n        required this.items,\n        required this.topLevelToString,\n        required this.topLevelRuntimeType,\n    });\n\n    TopLevel copyWith({\n        String? id,\n        DateTime? when,\n        DateTime? day,\n        dynamic nothing,\n        List<dynamic>? empty,\n        List<dynamic>? values,\n        List<Item>? items,\n        int? topLevelToString,\n        String? topLevelRuntimeType,\n    }) => \n        TopLevel(\n            id: id ?? this.id,\n            when: when ?? this.when,\n            day: day ?? this.day,\n            nothing: nothing ?? this.nothing,\n            empty: empty ?? this.empty,\n            values: values ?? this.values,\n            items: items ?? this.items,\n            topLevelToString: topLevelToString ?? this.topLevelToString,\n            topLevelRuntimeType: topLevelRuntimeType ?? this.topLevelRuntimeType,\n        );\n\n    factory TopLevel.fromRawJson(String str) => TopLevel.fromJson(json.decode(str));\n\n    String toRawJson() => json.encode(toJson());\n\n    factory TopLevel.fromJson(Map<String, dynamic> json) => TopLevel(\n        id: ((String x) => RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$').hasMatch(x) ? x : throw FormatException('Invalid UUID'))(json[\"id\"]),\n        when: DateTime.parse(json[\"when\"]),\n        day: DateTime.parse(json[\"day\"]),\n        nothing: (json.containsKey(\"nothing\") ? json[\"nothing\"] : throw FormatException('Missing required property')),\n        empty: List<dynamic>.from(json[\"empty\"].map((x) => x)),\n        values: List<dynamic>.from(json[\"values\"].map((x) => x)),\n        items: List<Item>.from(json[\"items\"].map((x) => Item.fromJson(x))),\n        topLevelToString: json[\"toString\"],\n        topLevelRuntimeType: json[\"runtimeType\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"id\": id,\n        \"when\": when.toIso8601String(),\n        \"day\": \"${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}\",\n        \"nothing\": nothing,\n        \"empty\": List<dynamic>.from(empty.map((x) => x)),\n        \"values\": List<dynamic>.from(values.map((x) => x)),\n        \"items\": List<dynamic>.from(items.map((x) => x.toJson())),\n        \"toString\": topLevelToString,\n        \"runtimeType\": topLevelRuntimeType,\n    };\n}\n\nclass Item {\n    final String name;\n    final int? count;\n    final DateTime? at;\n    final List<int>? extra;\n\n    Item({\n        required this.name,\n        required this.count,\n        this.at,\n        this.extra,\n    });\n\n    Item copyWith({\n        String? name,\n        int? count,\n        DateTime? at,\n        List<int>? extra,\n    }) => \n        Item(\n            name: name ?? this.name,\n            count: count ?? this.count,\n            at: at ?? this.at,\n            extra: extra ?? this.extra,\n        );\n\n    factory Item.fromRawJson(String str) => Item.fromJson(json.decode(str));\n\n    String toRawJson() => json.encode(toJson());\n\n    factory Item.fromJson(Map<String, dynamic> json) => Item(\n        name: json[\"name\"],\n        count: (json.containsKey(\"count\") ? json[\"count\"] : throw FormatException('Missing required property')),\n        at: json[\"at\"] == null ? null : DateTime.parse(json[\"at\"]),\n        extra: json[\"extra\"] == null ? null : List<int>.from(json[\"extra\"]!.map((x) => x)),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"name\": name,\n        \"count\": count,\n        \"at\": at == null ? null : \"${at!.year.toString().padLeft(4, '0')}-${at!.month.toString().padLeft(2, '0')}-${at!.day.toString().padLeft(2, '0')}\",\n        \"extra\": extra == null ? null : List<dynamic>.from(extra!.map((x) => x)),\n    };\n}\n\nclass ValueClass {\n    final int x;\n\n    ValueClass({\n        required this.x,\n    });\n\n    ValueClass copyWith({\n        int? x,\n    }) => \n        ValueClass(\n            x: x ?? this.x,\n        );\n\n    factory ValueClass.fromRawJson(String str) => ValueClass.fromJson(json.decode(str));\n\n    String toRawJson() => json.encode(toJson());\n\n    factory ValueClass.fromJson(Map<String, dynamic> json) => ValueClass(\n        x: json[\"x\"],\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"x\": x,\n    };\n}\n\nclass Readings {\n    final String sensor;\n    final List<double> data;\n\n    Readings({\n        required this.sensor,\n        required this.data,\n    });\n\n    Readings copyWith({\n        String? sensor,\n        List<double>? data,\n    }) => \n        Readings(\n            sensor: sensor ?? this.sensor,\n            data: data ?? this.data,\n        );\n\n    factory Readings.fromRawJson(String str) => Readings.fromJson(json.decode(str));\n\n    String toRawJson() => json.encode(toJson());\n\n    factory Readings.fromJson(Map<String, dynamic> json) => Readings(\n        sensor: json[\"sensor\"],\n        data: List<double>.from(json[\"data\"].map((x) => x?.toDouble())),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"sensor\": sensor,\n        \"data\": List<dynamic>.from(data.map((x) => x)),\n    };\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       6,
+       10,
+       6,
+       17
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       7,
+       15,
+       7,
+       22
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       29,
+       0,
+       29,
+       15
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       30,
+       13,
+       30,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "use-freezed": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this JSON data, do\n//\n//     final topLevel = topLevelFromJson(jsonString);\n//     final readings = readingsFromJson(jsonString);\n\nimport 'package:freezed_annotation/freezed_annotation.dart';\nimport 'dart:convert';\n\npart 'top_level.freezed.dart';\npart 'top_level.g.dart';\n\nTopLevel topLevelFromJson(String str) => TopLevel.fromJson(json.decode(str));\n\nString topLevelToJson(TopLevel data) => json.encode(data.toJson());\n\nList<Readings> readingsFromJson(String str) => List<Readings>.from(json.decode(str).map((x) => Readings.fromJson(x)));\n\nString readingsToJson(List<Readings> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));\n\n@freezed\nabstract class TopLevel with _$TopLevel {\n    const factory TopLevel({\n        @JsonKey(name: \"id\")\n        required String id,\n        @JsonKey(name: \"when\")\n        required DateTime when,\n        @JsonKey(name: \"day\")\n        required DateTime day,\n        @JsonKey(name: \"nothing\")\n        required dynamic nothing,\n        @JsonKey(name: \"empty\")\n        required List<dynamic> empty,\n        @JsonKey(name: \"values\")\n        required List<dynamic> values,\n        @JsonKey(name: \"items\")\n        required List<Item> items,\n        @JsonKey(name: \"toString\")\n        required int topLevelToString,\n        @JsonKey(name: \"runtimeType\")\n        required String topLevelRuntimeType,\n    }) = _TopLevel;\n\n    factory TopLevel.fromJson(Map<String, dynamic> json) => _$TopLevelFromJson(json);\n}\n\n@freezed\nabstract class Item with _$Item {\n    const factory Item({\n        @JsonKey(name: \"name\")\n        required String name,\n        @JsonKey(name: \"count\")\n        required int? count,\n        @JsonKey(name: \"at\")\n        DateTime? at,\n        @JsonKey(name: \"extra\")\n        List<int>? extra,\n    }) = _Item;\n\n    factory Item.fromJson(Map<String, dynamic> json) => _$ItemFromJson(json);\n}\n\n@freezed\nabstract class ValueClass with _$ValueClass {\n    const factory ValueClass({\n        @JsonKey(name: \"x\")\n        required int x,\n    }) = _ValueClass;\n\n    factory ValueClass.fromJson(Map<String, dynamic> json) => _$ValueClassFromJson(json);\n}\n\n@freezed\nabstract class Readings with _$Readings {\n    const factory Readings({\n        @JsonKey(name: \"sensor\")\n        required String sensor,\n        @JsonKey(name: \"data\")\n        required List<double> data,\n    }) = _Readings;\n\n    factory Readings.fromJson(Map<String, dynamic> json) => _$ReadingsFromJson(json);\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       29,
+       17,
+       29,
+       24
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       31,
+       22,
+       31,
+       29
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "dart-json"
+}

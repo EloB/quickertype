@@ -1,0 +1,6 @@
+# JSON Schema output from JSON input: inferred URI protocols and
+# extensions, date and time strings, a single top-level map.
+input json TopLevel {"links": ["https://example.com/a.png", "ftp://example.com/b.jpg", "http://example.com/"], "when": "2020-01-01T00:00:00Z", "day": "2020-01-01", "id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6", "n": "12", "flag": "true", "m": {"x": 1, "y": 2}}
+pipeline {"lang": "schema"}
+
+render schema {}

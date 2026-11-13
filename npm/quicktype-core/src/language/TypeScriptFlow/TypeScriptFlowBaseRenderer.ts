@@ -1,0 +1,378 @@
+import { type Name, type Namer, funPrefixNamer } from "../../Naming.js";
+import type { RenderContext } from "../../Renderer.js";
+import type { OptionValues } from "../../RendererOptions/index.js";
+import {
+    type MultiWord,
+    type Sourcelike,
+    modifySource,
+    multiWord,
+    parenIfNeeded,
+    singleWord,
+} from "../../Source.js";
+import { camelCase, utf16StringEscape } from "../../support/Strings.js";
+import { panic } from "../../support/Support.js";
+import type { TargetLanguage } from "../../TargetLanguage.js";
+import {
+    ArrayType,
+    type ClassType,
+    EnumType,
+    ObjectType,
+    type Type,
+    UnionType,
+} from "../../Type/index.js";
+import { matchType, nullableFromUnion } from "../../Type/TypeUtils.js";
+import {
+    JavaScriptRenderer,
+    type JavaScriptTypeAnnotations,
+} from "../JavaScript/index.js";
+
+import type { tsFlowOptions } from "./language.js";
+import { quotePropertyName } from "./utils.js";
+
+export abstract class TypeScriptFlowBaseRenderer extends JavaScriptRenderer {
+    public constructor(
+        targetLanguage: TargetLanguage,
+        renderContext: RenderContext,
+        protected readonly _tsFlowOptions: OptionValues<typeof tsFlowOptions>,
+    ) {
+        super(targetLanguage, renderContext, _tsFlowOptions);
+    }
+
+    protected namerForObjectProperty(): Namer {
+        if (this._tsFlowOptions.nicePropertyNames) {
+            return funPrefixNamer("properties", (s) =>
+                this.nameStyle(s, false),
+            );
+        }
+
+        return super.namerForObjectProperty();
+    }
+
+    protected get emptyObjectType(): string | undefined {
+        return undefined;
+    }
+
+    protected emptyObjectTypeFor(t: Type): string | undefined {
+        if (
+            t instanceof ObjectType &&
+            t.getProperties().size === 0 &&
+            t.getAdditionalProperties() === undefined
+        ) {
+            return this.emptyObjectType;
+        }
+
+        return undefined;
+    }
+
+    protected typeMapTypeFor(t: Type): Sourcelike {
+        if (this.emptyObjectTypeFor(t) !== undefined) {
+            return 'm("any")';
+        }
+
+        return super.typeMapTypeFor(t);
+    }
+
+    protected shouldEmitTypeMapEntry(t: ObjectType): boolean {
+        return (
+            this.emptyObjectTypeFor(t) === undefined &&
+            super.shouldEmitTypeMapEntry(t)
+        );
+    }
+
+    // Flow (pinned at flow-bin 0.66 in CI) has no tuple-rest syntax, so
+    // the base implementation always renders plain array types; the
+    // TypeScript renderer overrides this to spell out `minItems`
+    // guarantees as a tuple.
+    protected sourceForArrayType(arrayType: ArrayType): MultiWord {
+        const itemType = this.sourceFor(arrayType.items);
+        if (
+            (arrayType.items instanceof UnionType &&
+                !this._tsFlowOptions.declareUnions) ||
+            arrayType.items instanceof ArrayType
+        ) {
+            return singleWord(["Array<", itemType.source, ">"]);
+        }
+
+        return singleWord([parenIfNeeded(itemType), "[]"]);
+    }
+
+    /** Whether a union is spelled out as `a | b` instead of by name. */
+    private inlinesUnion(u: UnionType): boolean {
+        return (
+            !this._tsFlowOptions.declareUnions || nullableFromUnion(u) !== null
+        );
+    }
+
+    protected sourceFor(t: Type): MultiWord {
+        const emptyObjectType = this.emptyObjectTypeFor(t);
+        if (emptyObjectType !== undefined) {
+            return singleWord(emptyObjectType);
+        }
+
+        if (
+            this._tsFlowOptions.preferConstValues &&
+            t.kind === "enum" &&
+            t instanceof EnumType &&
+            t.cases.size === 1
+        ) {
+            const item = t.cases.values().next().value ?? "";
+            return singleWord(`"${utf16StringEscape(item)}"`);
+        }
+
+        if (["class", "object", "enum"].includes(t.kind)) {
+            return singleWord(this.nameForNamedType(t));
+        }
+
+        return matchType<MultiWord>(
+            t,
+            (_anyType) => singleWord(this.anyType()),
+            (_nullType) => singleWord("null"),
+            (_boolType) => singleWord("boolean"),
+            (_integerType) => singleWord("number"),
+            (_doubleType) => singleWord("number"),
+            (_stringType) => singleWord("string"),
+            (arrayType) => this.sourceForArrayType(arrayType),
+            (_classType) => panic("We handled this above"),
+            (mapType) =>
+                singleWord([
+                    "{ ",
+                    this._tsFlowOptions.readonly
+                        ? this.targetLanguage.name === "flow"
+                            ? "+"
+                            : "readonly "
+                        : "",
+                    "[key: string]: ",
+                    this.sourceFor(mapType.values).source,
+                    " }",
+                ]),
+            (_enumType) => panic("We handled this above"),
+            (unionType) => {
+                if (this.inlinesUnion(unionType)) {
+                    const children = Array.from(unionType.getChildren()).map(
+                        (c) => parenIfNeeded(this.sourceFor(c)),
+                    );
+                    return multiWord(" | ", ...children);
+                }
+
+                return singleWord(this.nameForNamedType(unionType));
+            },
+            (transformedStringType) => {
+                if (transformedStringType.kind === "date-time") {
+                    return singleWord("Date");
+                }
+
+                return singleWord("string");
+            },
+        );
+    }
+
+    /** The type emitted for `any`-typed values in type declarations
+     * and converter signatures: the language's type-safe top type
+     * (`unknown` for TypeScript, `mixed` for Flow) with the
+     * `prefer-unknown` option, plain `any` without it. */
+    protected abstract anyType(): string;
+
+    /** The type spelling for a missing optional property. */
+    protected get undefinedType(): string {
+        return "undefined";
+    }
+
+    protected abstract emitEnum(e: EnumType, enumName: Name): void;
+
+    protected abstract emitClassBlock(c: ClassType, className: Name): void;
+
+    protected emitClassBlockBody(c: ClassType): void {
+        this.emitPropertyTable(c, (name, _jsonName, p) => {
+            const t = p.type;
+
+            let propertyName: Sourcelike = name;
+            propertyName = modifySource(quotePropertyName, name);
+
+            if (this._tsFlowOptions.readonly) {
+                propertyName = modifySource(
+                    (_propertyName) =>
+                        `${this.targetLanguage.name === "flow" ? "+" : "readonly "}${_propertyName}`,
+                    propertyName,
+                );
+            }
+
+            return [
+                [propertyName, p.isOptional ? "?" : "", ": "],
+                [this.sourceFor(t).source, ";"],
+            ];
+        });
+
+        const additionalProperties = c.getAdditionalProperties();
+        if (additionalProperties) {
+            const properties = Array.from(c.getProperties().values());
+            let indexTypes: Sourcelike[];
+            if (additionalProperties.kind === "any") {
+                indexTypes = [this.anyType()];
+            } else {
+                // Inlined unions render as their members, so collect
+                // those members to avoid repeating them.
+                const types = new Set<Type>();
+                const addType = (t: Type): void => {
+                    if (t instanceof UnionType && this.inlinesUnion(t)) {
+                        for (const child of t.getChildren()) {
+                            addType(child);
+                        }
+                    } else {
+                        types.add(t);
+                    }
+                };
+
+                addType(additionalProperties);
+                for (const p of properties) {
+                    addType(p.type);
+                }
+
+                indexTypes = Array.from(types, (t) => this.sourceFor(t).source);
+                if (properties.some((p) => p.isOptional)) {
+                    indexTypes.push(this.undefinedType);
+                }
+            }
+
+            this.emitTable([
+                [
+                    this._tsFlowOptions.readonly
+                        ? `${this.targetLanguage.name === "flow" ? "+" : "readonly "}[property: string]`
+                        : "[property: string]",
+                    ": ",
+                    multiWord(" | ", ...indexTypes).source,
+                    ";",
+                ],
+            ]);
+        }
+    }
+
+    private emitClass(c: ClassType, className: Name): void {
+        const emptyObjectType = this.emptyObjectTypeFor(c);
+        if (emptyObjectType !== undefined) {
+            if (Array.from(this.topLevels.values()).includes(c)) {
+                this.emitDescription(this.descriptionForType(c));
+                this.emitLine(
+                    "export type ",
+                    className,
+                    " = ",
+                    emptyObjectType,
+                    ";",
+                );
+            }
+
+            return;
+        }
+
+        this.emitDescription(this.descriptionForType(c));
+        this.emitClassBlock(c, className);
+    }
+
+    protected emitUnion(u: UnionType, unionName: Name): void {
+        if (!this._tsFlowOptions.declareUnions) {
+            return;
+        }
+
+        this.emitDescription(this.descriptionForType(u));
+
+        const children = multiWord(
+            " | ",
+            ...Array.from(u.getChildren()).map((c) =>
+                parenIfNeeded(this.sourceFor(c)),
+            ),
+        );
+        this.emitLine("export type ", unionName, " = ", children.source, ";");
+    }
+
+    protected emitTypes(): void {
+        this.forEachTopLevel("none", (t, name) => {
+            if (this.namedTypeToNameForTopLevel(t) !== undefined) {
+                return;
+            }
+
+            this.ensureBlankLine();
+            this.emitDescription(this.descriptionForType(t));
+            this.emitLine(
+                t.isPrimitive() ? "type " : "export type ",
+                name,
+                " = ",
+                this.sourceFor(t).source,
+                ";",
+            );
+        });
+
+        this.forEachNamedType(
+            "leading-and-interposing",
+            (c: ClassType, n: Name) => this.emitClass(c, n),
+            (e, n) => this.emitEnum(e, n),
+            (u, n) => this.emitUnion(u, n),
+        );
+    }
+
+    protected emitUsageComments(givenOutputFilename: string): void {
+        if (this._tsFlowOptions.justTypes) return;
+        super.emitUsageComments(givenOutputFilename);
+    }
+
+    protected deserializerFunctionLine(t: Type, name: Name): Sourcelike {
+        const jsonType =
+            this._tsFlowOptions.rawType === "json" ? "string" : this.anyType();
+        return [
+            "function to",
+            name,
+            "(json: ",
+            jsonType,
+            "): ",
+            this.sourceFor(t).source,
+        ];
+    }
+
+    protected serializerFunctionLine(t: Type, name: Name): Sourcelike {
+        const camelCaseName = modifySource(camelCase, name);
+        const returnType =
+            this._tsFlowOptions.rawType === "json" ? "string" : this.anyType();
+        return [
+            "function ",
+            camelCaseName,
+            "ToJson(value: ",
+            this.sourceFor(t).source,
+            "): ",
+            returnType,
+        ];
+    }
+
+    protected get moduleLine(): string | undefined {
+        return undefined;
+    }
+
+    // The runtime typecheck helpers are deliberately dynamic, so they
+    // stay on `any` even with `prefer-unknown`.  Only the public API
+    // surface (type declarations and converter signatures) uses
+    // `anyType()`.
+    protected get castFunctionLines(): [string, string] {
+        return [
+            "function cast<T>(val: any, typ: any): T",
+            "function uncast<T>(val: T, typ: any): any",
+        ];
+    }
+
+    protected get typeAnnotations(): JavaScriptTypeAnnotations {
+        throw new Error("not implemented");
+    }
+
+    protected emitConvertModule(): void {
+        if (this._tsFlowOptions.justTypes) return;
+        super.emitConvertModule();
+    }
+
+    protected emitConvertModuleHelpers(): void {
+        if (this._tsFlowOptions.justTypes) return;
+        super.emitConvertModuleHelpers();
+    }
+
+    protected emitModuleExports(): void {
+        if (this._tsFlowOptions.justTypes) {
+        } else {
+            super.emitModuleExports();
+        }
+    }
+}

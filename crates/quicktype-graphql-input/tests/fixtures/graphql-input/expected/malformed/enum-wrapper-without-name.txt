@@ -1,0 +1,18 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: enum a | 0 | given a (data_a)
+1: null | 1
+2: union a | children 0,1 | 2 | given a (data_a)
+3: class data | children 2 | 3 | given data (TopLevel_data)
+4: union | children 3,1 | 4
+5: string | 5 | unrestricted
+6: class error | children 5 | 6 | given error (graphQLError)
+7: array errors | children 6 | 7 | given errors (graphQLErrors)
+8: class TopLevel | children 4,7 | 8 | given TopLevel ()
+# properties
+0 cases ["X"]
+3 properties [["a",2,false]]
+6 properties [["message",5,false]]
+8 properties [["data",4,false],["errors",7,true]]
+# top-levels
+"TopLevel": 8

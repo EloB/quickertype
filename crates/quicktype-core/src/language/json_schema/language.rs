@@ -18,9 +18,6 @@ pub const JSON_SCHEMA_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct JsonSchemaTargetLanguage;
 
-// TODO(renderer): port the hooks JSONSchemaTargetLanguage overrides:
-// - makeRenderer
-// - supportsFullObjectType: true
 impl TargetLanguage for JsonSchemaTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JSON_SCHEMA_LANGUAGE_CONFIG
@@ -50,5 +47,27 @@ impl TargetLanguage for JsonSchemaTargetLanguage {
         true
     }
 
+    /// TS `supportsFullObjectType`.
+    fn supports_full_object_type(&self) -> bool {
+        true
+    }
+
     // End of inference hooks.
+
+    /// TS `makeRenderer`: a `JSONSchemaRenderer`, which takes no options
+    /// (the option values are not even read).
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        _renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let renderer = super::json_schema_renderer::JsonSchemaRenderer::new(self, render_context);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

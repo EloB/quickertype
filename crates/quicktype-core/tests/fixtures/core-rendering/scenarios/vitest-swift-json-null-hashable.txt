@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/swift-json-null-hashable.test.ts: JSONNull
+# implements hash(into:), not hashValue (checked in
+# tests/vitest_swift_dart.rs).
+input schema TopLevel {"type": "object", "properties": {"value": {}}, "required": ["value"]}
+pipeline {"lang": "swift"}
+
+render swift {}

@@ -1,0 +1,29 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union login | children 1,0 | 2 | given login,name (User_login,Repository_name)
+3: integer | 3
+4: union totalCount | children 3,1 | 4 | given totalCount (RepositoryConnection_totalCount)
+5: class Repository | children 0 | 5 | given Repository (nodes,RepositoryConnection_Repository,RepositoryConnection_nodes)
+6: union nodes | children 5,1 | 6 | given nodes (RepositoryConnection_nodes)
+7: array | children 6 | 7
+8: union nodes | children 7,1 | 8 | given nodes (RepositoryConnection_nodes)
+9: class RepositoryConnection | children 8,3 | 9 | given RepositoryConnection (repositories,User_RepositoryConnection,User_repositories)
+10: union repositories | children 9,1 | 10 | given repositories (User_repositories)
+11: class User | children 0,9 | 11 | given User (viewer,data_User,data_viewer)
+12: union viewer | children 11,1 | 12 | given viewer (data_viewer)
+13: class data | children 11 | 13 | given data (TopLevel_data)
+14: union | children 13,1 | 14
+15: class error | children 0 | 15 | given error (graphQLError)
+16: array errors | children 15 | 16 | given errors (graphQLErrors)
+17: class TopLevel | children 14,16 | 17 | given TopLevel ()
+# properties
+5 properties [["name",0,false]]
+9 properties [["totalCount",3,false],["nodes",8,false]]
+11 properties [["login",0,false],["repositories",9,false]]
+13 properties [["viewer",11,false]]
+15 properties [["message",0,false]]
+17 properties [["data",14,false],["errors",16,true]]
+# top-levels
+"TopLevel": 17

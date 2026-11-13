@@ -1,0 +1,10 @@
+# Port of quicktype's test/unit/swift-acronym-names.test.ts: the struct
+# name of FaqCoordinate follows --acronym-style for a leading acronym
+# (checked in tests/vitest_swift_dart.rs).
+input json FaqCoordinate {"x":1,"y":2}
+pipeline {"lang": "swift"}
+
+render swift {"rendererOptions": {"acronym-style": "original"}}
+render swift {"rendererOptions": {"acronym-style": "pascal"}}
+render swift {"rendererOptions": {"acronym-style": "camel"}}
+render swift {"rendererOptions": {"acronym-style": "lowerCase"}}

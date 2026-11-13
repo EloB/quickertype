@@ -1,0 +1,9 @@
+# Port of quicktype's test/unit/swift-final-classes.test.ts (the recursive
+# schema): the cycle-breaking class and the JSONNull, JSONCodingKey and
+# JSONAny helpers are final with --final-classes, open without (checked in
+# tests/vitest_swift_dart.rs).
+input schema TopLevel {"$ref": "#/definitions/Node", "definitions": {"Node": {"type": "object", "properties": {"next": {"$ref": "#/definitions/Node"}, "value": {}}, "required": ["value"]}}}
+pipeline {"lang": "swift"}
+
+render swift {}
+render swift {"rendererOptions": {"final-classes": "true"}}

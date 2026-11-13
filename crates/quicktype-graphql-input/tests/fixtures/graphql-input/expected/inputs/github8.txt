@@ -1,0 +1,27 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union name_with_owner | children 1,0 | 2 | given nameWithOwner,title (Repository_nameWithOwner,IssueOrPullRequest_title)
+3: enum IssueState | 3 | given IssueState (state,IssueOrPullRequest_IssueState,IssueOrPullRequest_state)
+4: union state | children 3,1 | 4 | given state (IssueOrPullRequest_state)
+5: bool | 5
+6: union merged | children 5,1 | 6 | given merged (IssueOrPullRequest_merged)
+7: class IssueOrPullRequest | children 5,3,0 | 7 | given IssueOrPullRequest (issueOrPullRequest,Repository_IssueOrPullRequest,Repository_issueOrPullRequest)
+8: union issueOrPullRequest | children 7,1 | 8 | given issueOrPullRequest (Repository_issueOrPullRequest)
+9: class Repository | children 8,0 | 9 | given Repository (repository,data_Repository,data_repository)
+10: union repository | children 9,1 | 10 | given repository (data_repository)
+11: class data | children 10 | 11 | given data (TopLevel_data)
+12: union | children 11,1 | 12
+13: class error | children 0 | 13 | given error (graphQLError)
+14: array errors | children 13 | 14 | given errors (graphQLErrors)
+15: class TopLevel | children 12,14 | 15 | given TopLevel ()
+# properties
+3 cases ["OPEN","CLOSED"]
+7 properties [["title",0,true],["state",3,true],["merged",5,true]]
+9 properties [["nameWithOwner",0,false],["n303",8,false],["n307",8,false]]
+11 properties [["repository",10,false]]
+13 properties [["message",0,false]]
+15 properties [["data",12,false],["errors",14,true]]
+# top-levels
+"TopLevel": 15

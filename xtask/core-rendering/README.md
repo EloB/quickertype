@@ -27,8 +27,12 @@ recorded and whose result must equal the golden files (or stdout) before the
 fixture is written. The Rust test rebuilds the graph at the same type
 indexes, runs `gather_names` and the language's `render_graph_and_serialize`,
 and compares every file and, for cases without `--quiet`, the issue
-annotations the CLI prints to stderr. A few cases from quicktype's unit tests
-(API calls) carry their expected output inline.
+annotations the CLI prints to stderr. Lines the render prints with
+`console.log` (`finishFile`'s `[WARNING] Tried to emit file ... more than
+once`, e.g. Go's `--multi-file-output`) are recorded as `console`; the test
+captures `console_log`, compares the lines and puts them ahead of the files
+when it checks stdout. A few cases from quicktype's unit tests (API calls)
+carry their expected output inline.
 
 A `transformation` attribute (C# and Python make transformations) is dumped
 as `{ target, xfer }`: the index of the target type and the transformer tree.

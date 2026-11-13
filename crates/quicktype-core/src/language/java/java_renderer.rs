@@ -21,6 +21,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::recursion::guard;
 use crate::support::strings::capitalize;
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
@@ -399,121 +400,134 @@ pub trait JavaRenderer<'a>: ConvenienceRenderer<'a> {
 
     /// `javaType(reference, t, withIssues)`: boxed types with `reference`.
     fn java_type(&self, reference: bool, t: TypeRef, with_issues: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => maybe_annotated(with_issues, any_type_issue_annotation(), "Object"),
-            TypeKind::Null => maybe_annotated(with_issues, null_type_issue_annotation(), "Object"),
-            TypeKind::Bool => (if reference { "Boolean" } else { "boolean" }).into(),
-            TypeKind::Integer => (if reference { "Long" } else { "long" }).into(),
-            TypeKind::Double => (if reference { "Double" } else { "double" }).into(),
-            TypeKind::String => "String".into(),
-            TypeKind::Array => {
-                if self.java().options.use_list {
-                    sl![
-                        "List<",
-                        self.java_type(true, ty.items()?, with_issues)?,
-                        ">"
-                    ]
-                } else {
-                    sl![self.java_type(false, ty.items()?, with_issues)?, "[]"]
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => {
+                    maybe_annotated(with_issues, any_type_issue_annotation(), "Object")
                 }
-            }
-            TypeKind::Class | TypeKind::Enum => self.name_for_named_type(t)?.into(),
-            TypeKind::Map => sl![
-                "Map<String, ",
-                self.java_type(true, ty.map_values()?, with_issues)?,
-                ">"
-            ],
-            TypeKind::Union => match nullable_from_union(graph, t)? {
-                Some(nullable) => self.java_type(true, nullable, with_issues)?,
-                None => self.name_for_named_type(t)?.into(),
-            },
-            kind if kind.is_transformed_string_type_kind() => {
-                let provider = &self.java().date_time_provider;
-                match kind {
-                    TypeKind::Time => provider.time_type().into(),
-                    TypeKind::Date => provider.date_type().into(),
-                    TypeKind::DateTime => provider.date_time_type().into(),
-                    TypeKind::Uuid => "UUID".into(),
-                    _ => "String".into(),
+                TypeKind::Null => {
+                    maybe_annotated(with_issues, null_type_issue_annotation(), "Object")
                 }
-            }
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+                TypeKind::Bool => (if reference { "Boolean" } else { "boolean" }).into(),
+                TypeKind::Integer => (if reference { "Long" } else { "long" }).into(),
+                TypeKind::Double => (if reference { "Double" } else { "double" }).into(),
+                TypeKind::String => "String".into(),
+                TypeKind::Array => {
+                    if self.java().options.use_list {
+                        sl![
+                            "List<",
+                            self.java_type(true, ty.items()?, with_issues)?,
+                            ">"
+                        ]
+                    } else {
+                        sl![self.java_type(false, ty.items()?, with_issues)?, "[]"]
+                    }
+                }
+                TypeKind::Class | TypeKind::Enum => self.name_for_named_type(t)?.into(),
+                TypeKind::Map => sl![
+                    "Map<String, ",
+                    self.java_type(true, ty.map_values()?, with_issues)?,
+                    ">"
+                ],
+                TypeKind::Union => match nullable_from_union(graph, t)? {
+                    Some(nullable) => self.java_type(true, nullable, with_issues)?,
+                    None => self.name_for_named_type(t)?.into(),
+                },
+                kind if kind.is_transformed_string_type_kind() => {
+                    let provider = &self.java().date_time_provider;
+                    match kind {
+                        TypeKind::Time => provider.time_type().into(),
+                        TypeKind::Date => provider.date_type().into(),
+                        TypeKind::DateTime => provider.date_time_type().into(),
+                        TypeKind::Uuid => "UUID".into(),
+                        _ => "String".into(),
+                    }
+                }
+                TypeKind::Intersection => return panic("Unknown type intersection"),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
     /// `javaImport(t)`: the imports `t` needs, in order, with duplicates.
     fn java_import(&self, t: TypeRef) -> Result<Vec<String>> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let owned = |imports: &[&str]| imports.iter().map(|&i| i.to_owned()).collect();
-        Ok(match ty.kind() {
-            TypeKind::Any
-            | TypeKind::Null
-            | TypeKind::Bool
-            | TypeKind::Integer
-            | TypeKind::Double
-            | TypeKind::String
-            | TypeKind::Class
-            | TypeKind::Enum => Vec::new(),
-            TypeKind::Array => {
-                let mut imports = self.java_import(ty.items()?)?;
-                if self.java().options.use_list {
-                    imports.push("java.util.List".to_owned());
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let owned = |imports: &[&str]| imports.iter().map(|&i| i.to_owned()).collect();
+            Ok(match ty.kind() {
+                TypeKind::Any
+                | TypeKind::Null
+                | TypeKind::Bool
+                | TypeKind::Integer
+                | TypeKind::Double
+                | TypeKind::String
+                | TypeKind::Class
+                | TypeKind::Enum => Vec::new(),
+                TypeKind::Array => {
+                    let mut imports = self.java_import(ty.items()?)?;
+                    if self.java().options.use_list {
+                        imports.push("java.util.List".to_owned());
+                    }
+                    imports
                 }
-                imports
-            }
-            TypeKind::Map => {
-                let mut imports = self.java_import(ty.map_values()?)?;
-                imports.push("java.util.Map".to_owned());
-                imports
-            }
-            TypeKind::Union => {
-                let mut imports = Vec::new();
-                for &member in ty.members()? {
-                    imports.extend(self.java_import(member)?);
+                TypeKind::Map => {
+                    let mut imports = self.java_import(ty.map_values()?)?;
+                    imports.push("java.util.Map".to_owned());
+                    imports
                 }
-                imports
-            }
-            kind if kind.is_transformed_string_type_kind() => {
-                let provider = &self.java().date_time_provider;
-                match kind {
-                    TypeKind::Time => owned(provider.time_imports()),
-                    TypeKind::Date => owned(provider.date_imports()),
-                    TypeKind::DateTime => owned(provider.date_time_imports()),
-                    TypeKind::Uuid => vec!["java.util.UUID".to_owned()],
-                    _ => Vec::new(),
+                TypeKind::Union => {
+                    let mut imports = Vec::new();
+                    for &member in ty.members()? {
+                        imports.extend(self.java_import(member)?);
+                    }
+                    imports
                 }
-            }
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+                kind if kind.is_transformed_string_type_kind() => {
+                    let provider = &self.java().date_time_provider;
+                    match kind {
+                        TypeKind::Time => owned(provider.time_imports()),
+                        TypeKind::Date => owned(provider.date_imports()),
+                        TypeKind::DateTime => owned(provider.date_time_imports()),
+                        TypeKind::Uuid => vec!["java.util.UUID".to_owned()],
+                        _ => Vec::new(),
+                    }
+                }
+                TypeKind::Intersection => return panic("Unknown type intersection"),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
     /// `javaTypeWithoutGenerics(reference, t)`: the raw type for
     /// `.class` and `TypeReference`s.
     fn java_type_without_generics(&self, reference: bool, t: TypeRef) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        match ty.kind() {
-            TypeKind::Array => {
-                if self.java().options.use_list {
-                    return Ok(sl!["List"]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            match ty.kind() {
+                TypeKind::Array => {
+                    if self.java().options.use_list {
+                        return Ok(sl!["List"]);
+                    }
+                    Ok(sl![
+                        self.java_type_without_generics(false, ty.items()?)?,
+                        "[]"
+                    ])
                 }
-                Ok(sl![
-                    self.java_type_without_generics(false, ty.items()?)?,
-                    "[]"
-                ])
+                TypeKind::Map => Ok("Map".into()),
+                TypeKind::Union => match nullable_from_union(graph, t)? {
+                    Some(nullable) => self.java_type_without_generics(true, nullable),
+                    None => Ok(self.name_for_named_type(t)?.into()),
+                },
+                _ => self.java_type(reference, t, false),
             }
-            TypeKind::Map => Ok("Map".into()),
-            TypeKind::Union => match nullable_from_union(graph, t)? {
-                Some(nullable) => self.java_type_without_generics(true, nullable),
-                None => Ok(self.name_for_named_type(t)?.into()),
-            },
-            _ => self.java_type(reference, t, false),
-        }
+        })
     }
 
     /// `importsForClass(c)`: the property types' imports, sorted and

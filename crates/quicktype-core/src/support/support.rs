@@ -92,19 +92,31 @@ thread_local! {
 
 /// Gives `line` to the sink installed in `sink`, or writes it and a newline
 /// to `write` (ignoring write errors).
+///
+/// The sink is taken out of its slot while it runs, so no borrow is held
+/// while it calls out: a sink that ends up running quicktype again (the
+/// WebAssembly bindings call JavaScript, which can) does not find the slot
+/// borrowed; lines logged meanwhile go to `write`.
 fn console_line(
     sink: &'static std::thread::LocalKey<RefCell<Option<ConsoleSink>>>,
     line: &str,
     write: impl FnOnce(&[u8]),
 ) {
-    let handled = sink.with(|sink| {
-        if let Some(sink) = sink.borrow_mut().as_mut() {
-            sink(line);
+    let taken = sink.with(|slot| slot.borrow_mut().take());
+    let handled = match taken {
+        Some(mut f) => {
+            f(line);
+            sink.with(|slot| {
+                let mut slot = slot.borrow_mut();
+                // Unless the sink replaced itself meanwhile.
+                if slot.is_none() {
+                    *slot = Some(f);
+                }
+            });
             true
-        } else {
-            false
         }
-    });
+        None => false,
+    };
     if !handled {
         let mut bytes = Vec::with_capacity(line.len() + 1);
         bytes.extend_from_slice(line.as_bytes());
@@ -209,6 +221,22 @@ mod tests {
         );
         assert_eq!(indentation_string(3), "      ");
         assert_eq!(repeated(2, 'a'), vec!['a', 'a']);
+    }
+
+    #[test]
+    fn a_sink_can_log_again() {
+        let ((), lines) = capture_console(|| {
+            set_console_sink(Some(Box::new(|line| {
+                if line == "outer" {
+                    // Re-entrant: must not find the sink borrowed.
+                    console_log("inner");
+                }
+            })));
+            console_log("outer");
+            console_log("after");
+            set_console_sink(None);
+        });
+        assert!(lines.is_empty());
     }
 
     #[test]

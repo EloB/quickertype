@@ -17,6 +17,7 @@ use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, annotated, multi_word, paren_if_needed, single_word};
 use crate::support::comments::{Comment, CommentOptions};
+use crate::support::recursion::guard;
 use crate::support::strings::decapitalize;
 use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
@@ -132,46 +133,52 @@ impl<'a> ElmRenderer<'a> {
 
     /// `elmType(t, noOptional)`.
     fn elm_type(&self, t: TypeRef, no_optional: bool) -> Result<MultiWord> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => {
-                single_word(vec![annotated(any_type_issue_annotation(), "Jdec.Value")])
-            }
-            TypeKind::Null => single_word(vec![annotated(null_type_issue_annotation(), "()")]),
-            TypeKind::Bool => single_word(vec!["Bool".into()]),
-            TypeKind::Integer => single_word(vec!["Int".into()]),
-            TypeKind::Double => single_word(vec!["Float".into()]),
-            TypeKind::String => single_word(vec!["String".into()]),
-            TypeKind::Array => multi_word(
-                " ",
-                vec![
-                    self.array_type().into(),
-                    paren_if_needed(self.elm_type(ty.items()?, false)?),
-                ],
-            )?,
-            TypeKind::Class | TypeKind::Enum => {
-                single_word(vec![self.name_for_named_type(t)?.into()])
-            }
-            TypeKind::Map => multi_word(
-                " ",
-                vec![
-                    "Dict String".into(),
-                    paren_if_needed(self.elm_type(ty.map_values()?, false)?),
-                ],
-            )?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    let nullable_type = self.elm_type(nullable, false)?;
-                    if no_optional {
-                        return Ok(nullable_type);
-                    }
-                    return multi_word(" ", vec!["Maybe".into(), paren_if_needed(nullable_type)]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => {
+                    single_word(vec![annotated(any_type_issue_annotation(), "Jdec.Value")])
                 }
+                TypeKind::Null => single_word(vec![annotated(null_type_issue_annotation(), "()")]),
+                TypeKind::Bool => single_word(vec!["Bool".into()]),
+                TypeKind::Integer => single_word(vec!["Int".into()]),
+                TypeKind::Double => single_word(vec!["Float".into()]),
+                TypeKind::String => single_word(vec!["String".into()]),
+                TypeKind::Array => multi_word(
+                    " ",
+                    vec![
+                        self.array_type().into(),
+                        paren_if_needed(self.elm_type(ty.items()?, false)?),
+                    ],
+                )?,
+                TypeKind::Class | TypeKind::Enum => {
+                    single_word(vec![self.name_for_named_type(t)?.into()])
+                }
+                TypeKind::Map => multi_word(
+                    " ",
+                    vec![
+                        "Dict String".into(),
+                        paren_if_needed(self.elm_type(ty.map_values()?, false)?),
+                    ],
+                )?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        let nullable_type = self.elm_type(nullable, false)?;
+                        if no_optional {
+                            return Ok(nullable_type);
+                        }
+                        return multi_word(
+                            " ",
+                            vec!["Maybe".into(), paren_if_needed(nullable_type)],
+                        );
+                    }
 
-                single_word(vec![self.name_for_named_type(t)?.into()])
-            }
-            kind => return type_not_supported(kind),
+                    single_word(vec![self.name_for_named_type(t)?.into()])
+                }
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
@@ -273,48 +280,51 @@ impl<'a> ElmRenderer<'a> {
 
     /// `decoderNameForType(t, noOptional)`.
     fn decoder_name_for_type(&self, t: TypeRef, no_optional: bool) -> Result<MultiWord> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => single_word(vec!["Jdec.value".into()]),
-            TypeKind::Null => multi_word(" ", vec!["Jdec.null".into(), "()".into()])?,
-            TypeKind::Bool => single_word(vec!["Jdec.bool".into()]),
-            TypeKind::Integer => self.decoder_for_number(t, "Jdec.int")?,
-            TypeKind::Double => self.decoder_for_number(t, "Jdec.float")?,
-            TypeKind::String => self.decoder_for_string(t)?,
-            TypeKind::Array => multi_word(
-                " ",
-                vec![
-                    sl!["Jdec.", decapitalize(self.array_type())],
-                    paren_if_needed(self.decoder_name_for_type(ty.items()?, false)?),
-                    self.array_constraint(t)?.into(),
-                ],
-            )?,
-            TypeKind::Class | TypeKind::Enum => {
-                single_word(vec![self.decoder_name_for_named_type(t)?.into()])
-            }
-            TypeKind::Map => multi_word(
-                " ",
-                vec![
-                    "Jdec.dict".into(),
-                    paren_if_needed(self.decoder_name_for_type(ty.map_values()?, false)?),
-                ],
-            )?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    let nullable_decoder = self.decoder_name_for_type(nullable, false)?;
-                    if no_optional {
-                        return Ok(nullable_decoder);
-                    }
-                    return multi_word(
-                        " ",
-                        vec!["Jdec.nullable".into(), paren_if_needed(nullable_decoder)],
-                    );
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => single_word(vec!["Jdec.value".into()]),
+                TypeKind::Null => multi_word(" ", vec!["Jdec.null".into(), "()".into()])?,
+                TypeKind::Bool => single_word(vec!["Jdec.bool".into()]),
+                TypeKind::Integer => self.decoder_for_number(t, "Jdec.int")?,
+                TypeKind::Double => self.decoder_for_number(t, "Jdec.float")?,
+                TypeKind::String => self.decoder_for_string(t)?,
+                TypeKind::Array => multi_word(
+                    " ",
+                    vec![
+                        sl!["Jdec.", decapitalize(self.array_type())],
+                        paren_if_needed(self.decoder_name_for_type(ty.items()?, false)?),
+                        self.array_constraint(t)?.into(),
+                    ],
+                )?,
+                TypeKind::Class | TypeKind::Enum => {
+                    single_word(vec![self.decoder_name_for_named_type(t)?.into()])
                 }
+                TypeKind::Map => multi_word(
+                    " ",
+                    vec![
+                        "Jdec.dict".into(),
+                        paren_if_needed(self.decoder_name_for_type(ty.map_values()?, false)?),
+                    ],
+                )?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        let nullable_decoder = self.decoder_name_for_type(nullable, false)?;
+                        if no_optional {
+                            return Ok(nullable_decoder);
+                        }
+                        return multi_word(
+                            " ",
+                            vec!["Jdec.nullable".into(), paren_if_needed(nullable_decoder)],
+                        );
+                    }
 
-                single_word(vec![self.decoder_name_for_named_type(t)?.into()])
-            }
-            kind => return type_not_supported(kind),
+                    single_word(vec![self.decoder_name_for_named_type(t)?.into()])
+                }
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
@@ -346,51 +356,54 @@ impl<'a> ElmRenderer<'a> {
 
     /// `encoderNameForType(t, noOptional)`.
     fn encoder_name_for_type(&self, t: TypeRef, no_optional: bool) -> Result<MultiWord> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => single_word(vec!["identity".into()]),
-            TypeKind::Null => multi_word(" ", vec!["always".into(), "Jenc.null".into()])?,
-            TypeKind::Bool => single_word(vec!["Jenc.bool".into()]),
-            TypeKind::Integer => single_word(vec!["Jenc.int".into()]),
-            TypeKind::Double => single_word(vec!["Jenc.float".into()]),
-            TypeKind::String => single_word(vec!["Jenc.string".into()]),
-            TypeKind::Array => multi_word(
-                " ",
-                vec![
-                    sl!["Jenc.", decapitalize(self.array_type())],
-                    paren_if_needed(self.encoder_name_for_type(ty.items()?, false)?),
-                ],
-            )?,
-            TypeKind::Class | TypeKind::Enum => {
-                single_word(vec![self.encoder_name_for_named_type(t)?.into()])
-            }
-            TypeKind::Map => multi_word(
-                " ",
-                vec![
-                    "Jenc.dict".into(),
-                    "identity".into(),
-                    paren_if_needed(self.encoder_name_for_type(ty.map_values()?, false)?),
-                ],
-            )?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    let nullable_encoder = self.encoder_name_for_type(nullable, false)?;
-                    if no_optional {
-                        return Ok(nullable_encoder);
-                    }
-                    return multi_word(
-                        " ",
-                        vec![
-                            "makeNullableEncoder".into(),
-                            paren_if_needed(nullable_encoder),
-                        ],
-                    );
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => single_word(vec!["identity".into()]),
+                TypeKind::Null => multi_word(" ", vec!["always".into(), "Jenc.null".into()])?,
+                TypeKind::Bool => single_word(vec!["Jenc.bool".into()]),
+                TypeKind::Integer => single_word(vec!["Jenc.int".into()]),
+                TypeKind::Double => single_word(vec!["Jenc.float".into()]),
+                TypeKind::String => single_word(vec!["Jenc.string".into()]),
+                TypeKind::Array => multi_word(
+                    " ",
+                    vec![
+                        sl!["Jenc.", decapitalize(self.array_type())],
+                        paren_if_needed(self.encoder_name_for_type(ty.items()?, false)?),
+                    ],
+                )?,
+                TypeKind::Class | TypeKind::Enum => {
+                    single_word(vec![self.encoder_name_for_named_type(t)?.into()])
                 }
+                TypeKind::Map => multi_word(
+                    " ",
+                    vec![
+                        "Jenc.dict".into(),
+                        "identity".into(),
+                        paren_if_needed(self.encoder_name_for_type(ty.map_values()?, false)?),
+                    ],
+                )?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        let nullable_encoder = self.encoder_name_for_type(nullable, false)?;
+                        if no_optional {
+                            return Ok(nullable_encoder);
+                        }
+                        return multi_word(
+                            " ",
+                            vec![
+                                "makeNullableEncoder".into(),
+                                paren_if_needed(nullable_encoder),
+                            ],
+                        );
+                    }
 
-                single_word(vec![self.encoder_name_for_named_type(t)?.into()])
-            }
-            kind => return type_not_supported(kind),
+                    single_word(vec![self.encoder_name_for_named_type(t)?.into()])
+                }
+                kind => return type_not_supported(kind),
+            })
         })
     }
 

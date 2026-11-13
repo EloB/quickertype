@@ -19,6 +19,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::converters::ConvertersOptions;
+use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, camel_case, capitalize, combine_words, first_upper_word_style,
     split_into_words, utf16_string_escape,
@@ -299,52 +300,55 @@ pub mod javascript_methods {
 
     /// `typeMapTypeFor(t)`.
     pub fn type_map_type_for<'a, R: JavaScriptRenderer<'a>>(r: &R, t: TypeRef) -> Result<Source> {
-        let graph = r.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            return Ok(sl!["r(\"", r.name_for_named_type(t)?, "\")"]);
-        }
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = r.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                return Ok(sl!["r(\"", r.name_for_named_type(t)?, "\")"]);
+            }
 
-        Ok(match kind {
-            TypeKind::Any => "\"any\"".into(),
-            TypeKind::Null => "null".into(),
-            TypeKind::Bool => "true".into(),
-            TypeKind::Integer => type_map_number(r, t, "i(0)")?,
-            TypeKind::Double => type_map_number(r, t, "3.14")?,
-            TypeKind::String => type_map_string(r, t)?,
-            TypeKind::Array => {
-                let (min, max) = match min_max_items_for_type(graph, t)? {
-                    Some(m) => (m.0, m.1),
-                    None => (None, None),
-                };
-                let suffix = if min.is_none() && max.is_none() {
-                    ")".to_owned()
-                } else {
-                    format!(
-                        ", {}, {})",
-                        bound_or_undefined(min),
-                        bound_or_undefined(max)
-                    )
-                };
-                sl!["a(", r.type_map_type_for(ty.items()?)?, suffix]
-            }
-            TypeKind::Map => sl!["m(", r.type_map_type_for(ty.map_values()?)?, ")"],
-            TypeKind::Union => {
-                let mut parts: Vec<Source> = vec!["u(".into()];
-                for (i, &member) in graph.children(t)?.iter().enumerate() {
-                    if i > 0 {
-                        parts.push(", ".into());
-                    }
-                    parts.push(r.type_map_type_for(member)?);
+            Ok(match kind {
+                TypeKind::Any => "\"any\"".into(),
+                TypeKind::Null => "null".into(),
+                TypeKind::Bool => "true".into(),
+                TypeKind::Integer => type_map_number(r, t, "i(0)")?,
+                TypeKind::Double => type_map_number(r, t, "3.14")?,
+                TypeKind::String => type_map_string(r, t)?,
+                TypeKind::Array => {
+                    let (min, max) = match min_max_items_for_type(graph, t)? {
+                        Some(m) => (m.0, m.1),
+                        None => (None, None),
+                    };
+                    let suffix = if min.is_none() && max.is_none() {
+                        ")".to_owned()
+                    } else {
+                        format!(
+                            ", {}, {})",
+                            bound_or_undefined(min),
+                            bound_or_undefined(max)
+                        )
+                    };
+                    sl!["a(", r.type_map_type_for(ty.items()?)?, suffix]
                 }
-                parts.push(")".into());
-                Source::Sequence(parts)
-            }
-            TypeKind::DateTime => "Date".into(),
-            TypeKind::Uuid => "{ uuid: \"\" }".into(),
-            k if k.is_transformed_string_type_kind() => "\"\"".into(),
-            kind => return type_not_supported(kind),
+                TypeKind::Map => sl!["m(", r.type_map_type_for(ty.map_values()?)?, ")"],
+                TypeKind::Union => {
+                    let mut parts: Vec<Source> = vec!["u(".into()];
+                    for (i, &member) in graph.children(t)?.iter().enumerate() {
+                        if i > 0 {
+                            parts.push(", ".into());
+                        }
+                        parts.push(r.type_map_type_for(member)?);
+                    }
+                    parts.push(")".into());
+                    Source::Sequence(parts)
+                }
+                TypeKind::DateTime => "Date".into(),
+                TypeKind::Uuid => "{ uuid: \"\" }".into(),
+                k if k.is_transformed_string_type_kind() => "\"\"".into(),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 

@@ -1,0 +1,187 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     3,
+     1
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "at",
+      2,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "at"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "one",
+     "two"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "Either",
+    0
+   ],
+   [
+    "Choice",
+    4
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    either, err := UnmarshalEither(bytes)\n//    bytes, err = either.Marshal()\n//\n//    choice, err := UnmarshalChoice(bytes)\n//    bytes, err = choice.Marshal()\n\npackage main\n\nimport \"bytes\"\nimport \"errors\"\nimport \"time\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalEither(data []byte) (Either, error) {\n\tvar r Either\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Either) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\nfunc UnmarshalChoice(data []byte) (Choice, error) {\n\tvar r Choice\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Choice) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype EitherClass struct {\n\tAt *time.Time `json:\"at,omitempty\"`\n}\n\ntype Choice string\n\nconst (\n\tOne Choice = \"one\"\n\tTwo Choice = \"two\"\n)\n\ntype invalidChoice string\nfunc (x invalidChoice) Error() string { return \"invalid Choice: \" + string(x) }\n\nfunc (x *Choice) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Choice(value) {\n\tcase One, Two: *x = Choice(value); return nil\n\t}\n\treturn invalidChoice(value)\n}\n\ntype Either struct {\n\tEitherClass *EitherClass\n\tInteger     *int64\n}\n\nfunc (x *Either) UnmarshalJSON(data []byte) error {\n\tx.EitherClass = nil\n\tvar c EitherClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, true, &c, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.EitherClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *Either) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, x.EitherClass != nil, x.EitherClass, false, nil, false, nil, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "Either.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    either, err := UnmarshalEither(bytes)\n//    bytes, err = either.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalEither(data []byte) (Either, error) {\n\tvar r Either\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Either) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype Either struct {\n\tEitherClass *EitherClass\n\tInteger     *int64\n}\n\nfunc (x *Either) UnmarshalJSON(data []byte) error {\n\tx.EitherClass = nil\n\tvar c EitherClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, true, &c, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.EitherClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *Either) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, x.EitherClass != nil, x.EitherClass, false, nil, false, nil, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Choice.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    choice, err := UnmarshalChoice(bytes)\n//    bytes, err = choice.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalChoice(data []byte) (Choice, error) {\n\tvar r Choice\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Choice) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype Choice string\n\nconst (\n\tOne Choice = \"one\"\n\tTwo Choice = \"two\"\n)\n\ntype invalidChoice string\nfunc (x invalidChoice) Error() string { return \"invalid Choice: \" + string(x) }\n\nfunc (x *Choice) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Choice(value) {\n\tcase One, Two: *x = Choice(value); return nil\n\t}\n\treturn invalidChoice(value)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "EitherClass.go",
+     "text": "package main\n\nimport \"time\"\n\ntype EitherClass struct {\n\tAt *time.Time `json:\"at,omitempty\"`\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.go",
+     "text": "package main\n\nimport \"bytes\"\nimport \"encoding/json\"\nimport \"errors\"\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file Choice.go more than once. If performing multi-file output this warning can be safely ignored.",
+    "[WARNING] Tried to emit file Either.go more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import \"time\"\n\ntype EitherClass struct {\n\tAt *time.Time `json:\"at,omitempty\"`\n}\n\ntype Choice string\n\nconst (\n\tOne Choice = \"one\"\n\tTwo Choice = \"two\"\n)\n\ntype invalidChoice string\nfunc (x invalidChoice) Error() string { return \"invalid Choice: \" + string(x) }\n\nfunc (x *Choice) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Choice(value) {\n\tcase One, Two: *x = Choice(value); return nil\n\t}\n\treturn invalidChoice(value)\n}\n\ntype Either struct {\n\tEitherClass *EitherClass\n\tInteger     *int64\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "golang-top-level-union"
+}

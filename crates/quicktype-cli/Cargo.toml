@@ -19,5 +19,8 @@ quicktype-graphql-input.workspace = true
 quicktype-js-compat.workspace = true
 quicktype-typescript-input.workspace = true
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true

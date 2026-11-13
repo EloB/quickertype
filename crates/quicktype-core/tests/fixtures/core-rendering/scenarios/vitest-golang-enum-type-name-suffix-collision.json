@@ -1,0 +1,125 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "collision",
+      1,
+      true
+     ],
+     [
+      "noise",
+      3,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "BarkDogNoise"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "value",
+      2,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "DogNoise"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "BARK",
+     "GROWL",
+     "HOWL"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "enum-type-name-suffix": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TopLevel struct {\n\tCollision *BarkDogNoise `json:\"collision,omitempty\"`\n\tNoise     *DogNoise     `json:\"noise,omitempty\"`\n}\n\ntype BarkDogNoise struct {\n\tValue *string `json:\"value,omitempty\"`\n}\n\ntype DogNoise string\n\nconst (\n\tPurpleBarkDogNoise DogNoise = \"BARK\"\n\tGrowlDogNoise      DogNoise = \"GROWL\"\n\tHowlDogNoise       DogNoise = \"HOWL\"\n)\n\ntype invalidDogNoise string\nfunc (x invalidDogNoise) Error() string { return \"invalid DogNoise: \" + string(x) }\n\nfunc (x *DogNoise) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch DogNoise(value) {\n\tcase PurpleBarkDogNoise, GrowlDogNoise, HowlDogNoise: *x = DogNoise(value); return nil\n\t}\n\treturn invalidDogNoise(value)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-golang-enum-type-name-suffix-collision"
+}

@@ -59,3 +59,41 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --package quicktype-wasm --target wasm32-unknown-unknown --release
+
+  # npm/quicktype-core: the WebAssembly engine behind quicktype's own
+  # TypeScript API. Without a quicktype checkout, the differential suite
+  # compares the engine with the package's own (vendored, unmodified)
+  # TypeScript engine.
+  npm:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: npm/quicktype-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@0.2.114
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: npm/quicktype-core/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:differential -- --report differential-report.json
+        env:
+          QUICKTYPE_REFERENCE: self
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: differential-report
+          path: npm/quicktype-core/differential-report.json
+

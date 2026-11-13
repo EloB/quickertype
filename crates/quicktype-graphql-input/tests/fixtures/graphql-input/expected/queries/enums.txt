@@ -1,0 +1,26 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: enum Color | 0 | given Color (color,User_Color,User_color,colors,User_colors,data_Color,data_color)
+1: null | 1
+2: union color | children 0,1 | 2 | given color,colors (User_color,User_colors,data_color)
+3: array | children 0 | 3
+4: union colors | children 3,1 | 4 | given colors (User_colors)
+5: enum Size | 5 | given Size (size,User_Size,User_size)
+6: union size | children 5,1 | 6 | given size (User_size)
+7: class User | children 2,3,5 | 7 | given User (viewer,data_User,data_viewer)
+8: union viewer | children 7,1 | 8 | given viewer (data_viewer)
+9: class data | children 2,7 | 9 | given data (TopLevel_data)
+10: union | children 9,1 | 10
+11: string | 11 | unrestricted
+12: class error | children 11 | 12 | given error (graphQLError)
+13: array errors | children 12 | 13 | given errors (graphQLErrors)
+14: class TopLevel | children 10,13 | 14 | given TopLevel ()
+# properties
+0 cases ["RED","GREEN","BLUE"]
+5 cases ["SMALL","LARGE"]
+7 properties [["color",2,false],["colors",3,false],["size",5,false]]
+9 properties [["viewer",7,false],["color",2,false]]
+12 properties [["message",11,false]]
+14 properties [["data",10,false],["errors",13,true]]
+# top-levels
+"TopLevel": 14

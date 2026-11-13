@@ -1,0 +1,26 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union id | children 1,0 | 2 | given id,name (Node_id,Node_name,Named_name)
+3: bool | 3
+4: union barks | children 3,1 | 4 | given barks (Node_barks)
+5: class Node | children 3,0,2 | 5 | given Node (node,data_Node,data_node)
+6: union node | children 5,1 | 6 | given node (data_node)
+7: integer | 7
+8: union lives | children 7,1 | 8 | given lives (Named_lives)
+9: class Named | children 8,2 | 9 | given Named (named,data_Named,data_named)
+10: union named | children 9,1 | 10 | given named (data_named)
+11: class data | children 10,6 | 11 | given data (TopLevel_data)
+12: union | children 11,1 | 12
+13: class error | children 0 | 13 | given error (graphQLError)
+14: array errors | children 13 | 14 | given errors (graphQLErrors)
+15: class TopLevel | children 12,14 | 15 | given TopLevel ()
+# properties
+5 properties [["id",0,false],["name",2,true],["barks",3,true]]
+9 properties [["name",2,false],["lives",8,true]]
+11 properties [["node",6,false],["named",10,false]]
+13 properties [["message",0,false]]
+15 properties [["data",12,false],["errors",14,true]]
+# top-levels
+"TopLevel": 15

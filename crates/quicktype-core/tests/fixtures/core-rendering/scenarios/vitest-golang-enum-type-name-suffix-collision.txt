@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/golang-enum-type-name-suffix.test.ts
+# (second test): the qualified constant BarkDogNoise collides with the
+# struct BarkDogNoise and is renamed as a whole.
+input schema TopLevel {"type": "object", "properties": {"noise": {"$ref": "#/$defs/DogNoise"}, "collision": {"$ref": "#/$defs/BarkDogNoise"}}, "$defs": {"DogNoise": {"type": "string", "enum": ["BARK", "GROWL", "HOWL"]}, "BarkDogNoise": {"type": "object", "properties": {"value": {"type": "string"}}}}}
+pipeline {"lang": "go"}
+
+render golang {"rendererOptions": {"enum-type-name-suffix": true}}

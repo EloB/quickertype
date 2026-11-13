@@ -1,0 +1,65 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Name"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "defaultValue": "none",
+     "minMaxLength": [
+      1,
+      null
+     ],
+     "pattern": "^[a-z]+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     },
+     "description": [
+      "A name."
+     ]
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Name",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n    \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n    \"type\": \"string\",\n    \"default\": \"none\",\n    \"minLength\": 1,\n    \"pattern\": \"^[a-z]+$\",\n    \"description\": \"A name.\",\n    \"definitions\": {}\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "json-schema-attribute-order-top-level"
+}

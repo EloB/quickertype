@@ -6,7 +6,10 @@
 
 use indexmap::{IndexMap, IndexSet};
 
+use quicktype_js_compat::json::JsonValue;
 use quicktype_js_compat::utf16;
+
+use crate::attributes::type_attributes::{SchemaObject, set_schema_property};
 
 /// `descriptionTypeAttributeKind`: a type's descriptions.
 #[derive(Clone, Copy, Debug, Default)]
@@ -153,6 +156,22 @@ pub fn description_attribute_producer(
         for_object: Some(property_description),
         ..JsonSchemaAttributes::default()
     }))
+}
+
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addDescriptionToSchema`, `addToSchema`
+
+/// `addDescriptionToSchema(schema, description)`: `description`, the lines
+/// joined by newlines, unless there is no description.
+pub fn add_description_to_schema<'a>(
+    schema: &mut SchemaObject,
+    description: Option<impl IntoIterator<Item = &'a String>>,
+) {
+    let Some(description) = description else {
+        return;
+    };
+    let description = description_for_schema(description);
+    set_schema_property(schema, "description", Some(JsonValue::String(description)));
 }
 
 #[cfg(test)]

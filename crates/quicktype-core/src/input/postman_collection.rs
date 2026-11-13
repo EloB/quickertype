@@ -77,24 +77,12 @@ fn stack_overflow() -> QuickTypeError {
 /// "object"`): `None` for `undefined`. Reading a property of `null`
 /// throws.
 fn get<'a>(obj: &'a JsonValue, key: &str) -> Result<Option<&'a JsonValue>> {
-    match obj {
-        JsonValue::Null => Err(type_error(format!(
-            "Cannot read properties of null (reading '{key}')"
-        ))),
-        JsonValue::Object(map) => Ok(map.get(key)),
-        _ => Ok(None),
-    }
+    json::get_property(Some(obj), key).map_err(|e| type_error(e.message().to_owned()))
 }
 
 /// JavaScript truthiness.
 fn truthy(v: &JsonValue) -> bool {
-    match v {
-        JsonValue::Null => false,
-        JsonValue::Bool(b) => *b,
-        JsonValue::Number(n) => *n != 0.0 && !n.is_nan(),
-        JsonValue::String(s) => !s.is_empty(),
-        JsonValue::Array(_) | JsonValue::Object(_) => true,
-    }
+    json::is_truthy(v)
 }
 
 /// `typeof v === "object"`: objects, arrays and `null`.

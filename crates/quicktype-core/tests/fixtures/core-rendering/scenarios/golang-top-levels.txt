@@ -1,0 +1,8 @@
+# Go top-levels that are not classes: a nullable union (its member names
+# are never made, so collecting its imports fails in TypeScript), and a
+# top-level union and enum in multi-file output.
+input schema Maybe {"type": ["string", "null"]}
+pipeline {"lang": "golang"}
+
+render golang {}
+render golang {"rendererOptions": {"multi-file-output": true}}

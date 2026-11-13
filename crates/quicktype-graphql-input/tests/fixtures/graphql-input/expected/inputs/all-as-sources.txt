@@ -1,0 +1,148 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union login | children 1,0 | 2 | given login,name,url,nameWithOwner,title,clientMutationId (User_login,User_name,Repository_name,UniformResourceLocatable_url,UniformResourceLocatable_login,Repository_nameWithOwner,IssueOrPullRequest_title,AddReactionPayload_clientMutationId)
+3: class User | children 0,2 | 3 | given User (viewer,data_User,data_viewer)
+4: union viewer | children 3,1 | 4 | given viewer (data_viewer)
+5: class data | children 3 | 5 | given data (github1_data)
+6: union | children 5,1 | 6
+7: class error | children 0 | 7 | given error (graphQLError)
+8: array errors | children 7 | 8 | given errors (graphQLErrors)
+9: class github1 | children 6,8 | 9 | given github1 ()
+10: integer | 10
+11: union totalCount | children 10,1 | 11 | given totalCount (RepositoryConnection_totalCount,StarredRepositoryConnection_totalCount,StargazerConnection_totalCount,UserConnection_totalCount,IssueConnection_totalCount)
+12: class Repository | children 0 | 12 | given Repository (nodes,RepositoryConnection_Repository,RepositoryConnection_nodes)
+13: union nodes | children 12,1 | 13 | given nodes (RepositoryConnection_nodes)
+14: array | children 13 | 14
+15: union nodes | children 14,1 | 15 | given nodes (RepositoryConnection_nodes)
+16: class RepositoryConnection | children 15,10 | 16 | given RepositoryConnection (repositories,User_RepositoryConnection,User_repositories)
+17: union repositories | children 16,1 | 17 | given repositories (User_repositories)
+18: class User | children 0,16 | 18 | given User (viewer,data_User,data_viewer)
+19: union viewer | children 18,1 | 19 | given viewer (data_viewer)
+20: class data | children 18 | 20 | given data (github2_data)
+21: union | children 20,1 | 21
+22: class github2 | children 21,8 | 22 | given github2 ()
+23: enum PullRequestState | 23 | given PullRequestState (state,PullRequest_PullRequestState,PullRequest_state)
+24: union state | children 23,1 | 24 | given state (PullRequest_state)
+25: class PullRequest | children 23 | 25 | given PullRequest (nodes,PullRequestConnection_PullRequest,PullRequestConnection_nodes)
+26: union nodes | children 25,1 | 26 | given nodes (PullRequestConnection_nodes)
+27: array | children 26 | 27
+28: union nodes | children 27,1 | 28 | given nodes (PullRequestConnection_nodes)
+29: class PullRequestConnection | children 28 | 29 | given PullRequestConnection (pullRequests,Repository_PullRequestConnection,Repository_pullRequests)
+30: union pullRequests | children 29,1 | 30 | given pullRequests (Repository_pullRequests)
+31: class Repository | children 29 | 31 | given Repository (repository,User_Repository,User_repository)
+32: union repository | children 31,1 | 32 | given repository (User_repository)
+33: class User | children 0,32 | 33 | given User (viewer,data_User,data_viewer)
+34: union viewer | children 33,1 | 34 | given viewer (data_viewer)
+35: class data | children 33 | 35 | given data (github3_data)
+36: union | children 35,1 | 36
+37: class github3 | children 36,8 | 37 | given github3 ()
+38: class User | children 0,2,32 | 38 | given User (viewer,data_User,data_viewer)
+39: union viewer | children 38,1 | 39 | given viewer (data_viewer)
+40: class data | children 38 | 40 | given data (github4_data)
+41: union | children 40,1 | 41
+42: class github4 | children 41,8 | 42 | given github4 ()
+43: class User | children 0,2 | 43 | given User (viewer,data_User,data_viewer)
+44: union viewer | children 43,1 | 44 | given viewer (data_viewer)
+45: class data | children 43 | 45 | given data (test_data)
+46: union | children 45,1 | 46
+47: class test | children 46,8 | 47 | given test ()
+48: class UniformResourceLocatable | children 0 | 48 | given UniformResourceLocatable (resource,data_UniformResourceLocatable,data_resource)
+49: union resource | children 48,1 | 49 | given resource (data_resource)
+50: class data | children 49 | 50 | given data (github6_data)
+51: union | children 50,1 | 51
+52: class github6 | children 51,8 | 52 | given github6 ()
+53: class _connection | children 10 | 53 | given StarredRepositoryConnection,StargazerConnection,RepositoryConnection,UserConnection,IssueConnection (starredRepositories,User_StarredRepositoryConnection,User_starredRepositories,stargazers,Repository_StargazerConnection,Repository_stargazers,forks,Repository_RepositoryConnection,Repository_forks,watchers,Repository_UserConnection,Repository_watchers,issues,Repository_IssueConnection,Repository_issues)
+54: union starred_repositories | children 53,1 | 54 | given starredRepositories,stargazers,forks,watchers,issues (User_starredRepositories,Repository_stargazers,Repository_forks,Repository_watchers,Repository_issues)
+55: class Repository | children 53,0 | 55 | given Repository (node,RepositoryEdge_Repository,RepositoryEdge_node)
+56: union node | children 55,1 | 56 | given node (RepositoryEdge_node)
+57: class RepositoryEdge | children 56 | 57 | given RepositoryEdge (edges,RepositoryConnection_RepositoryEdge,RepositoryConnection_edges)
+58: union edges | children 57,1 | 58 | given edges (RepositoryConnection_edges)
+59: array | children 58 | 59
+60: union edges | children 59,1 | 60 | given edges (RepositoryConnection_edges)
+61: class RepositoryConnection | children 60 | 61 | given RepositoryConnection (repositories,User_RepositoryConnection,User_repositories)
+62: union repositories | children 61,1 | 62 | given repositories (User_repositories)
+63: class User | children 0,61,53 | 63 | given User (viewer,data_User,data_viewer)
+64: union viewer | children 63,1 | 64 | given viewer (data_viewer)
+65: class data | children 63 | 65 | given data (github7_data)
+66: union | children 65,1 | 66
+67: class github7 | children 66,8 | 67 | given github7 ()
+68: enum IssueState | 68 | given IssueState (state,IssueOrPullRequest_IssueState,IssueOrPullRequest_state)
+69: union state | children 68,1 | 69 | given state (IssueOrPullRequest_state)
+70: bool | 70
+71: union merged | children 70,1 | 71 | given merged,viewerCanReact (IssueOrPullRequest_merged,Reactable_viewerCanReact)
+72: class IssueOrPullRequest | children 70,68,0 | 72 | given IssueOrPullRequest (issueOrPullRequest,Repository_IssueOrPullRequest,Repository_issueOrPullRequest)
+73: union issueOrPullRequest | children 72,1 | 73 | given issueOrPullRequest (Repository_issueOrPullRequest)
+74: class Repository | children 73,0 | 74 | given Repository (repository,data_Repository,data_repository)
+75: union repository | children 74,1 | 75 | given repository (data_repository)
+76: class data | children 75 | 76 | given data (github8_data)
+77: union | children 76,1 | 77
+78: class github8 | children 77,8 | 78 | given github8 ()
+79: enum ReactionContent | 79 | given ReactionContent (content,Reaction_ReactionContent,Reaction_content,ReactionGroup_ReactionContent,ReactionGroup_content)
+80: union content | children 79,1 | 80 | given content (Reaction_content,ReactionGroup_content)
+81: class reaction | children 79 | 81 | given Reaction,ReactionGroup (reaction,AddReactionPayload_Reaction,AddReactionPayload_reaction,reactionGroups,Reactable_ReactionGroup,Reactable_reactionGroups)
+82: union reaction | children 81,1 | 82 | given reaction,reactionGroups (AddReactionPayload_reaction,Reactable_reactionGroups)
+83: array | children 81 | 83
+84: union reactionGroups | children 83,1 | 84 | given reactionGroups (Reactable_reactionGroups)
+85: class Reactable | children 84,70 | 85 | given Reactable (subject,AddReactionPayload_Reactable,AddReactionPayload_subject)
+86: union subject | children 85,1 | 86 | given subject (AddReactionPayload_subject)
+87: class AddReactionPayload | children 2,81,85 | 87 | given AddReactionPayload (addReaction,data_AddReactionPayload,data_addReaction)
+88: union addReaction | children 87,1 | 88 | given addReaction (data_addReaction)
+89: class data | children 88 | 89 | given data (AddReaction_data)
+90: union | children 89,1 | 90
+91: class AddReaction | children 90,8 | 91 | given AddReaction ()
+# properties
+3 properties [["login",0,false],["realName",2,false]]
+5 properties [["viewer",3,false]]
+7 properties [["message",0,false]]
+9 properties [["data",6,false],["errors",8,true]]
+12 properties [["name",0,false]]
+16 properties [["totalCount",10,false],["nodes",15,false]]
+18 properties [["login",0,false],["repositories",16,false]]
+20 properties [["viewer",18,false]]
+22 properties [["data",21,false],["errors",8,true]]
+23 cases ["OPEN","CLOSED","MERGED"]
+25 properties [["state",23,false]]
+29 properties [["nodes",28,false]]
+31 properties [["pullRequests",29,false]]
+33 properties [["login",0,false],["repository",32,false]]
+35 properties [["viewer",33,false]]
+37 properties [["data",36,false],["errors",8,true]]
+38 properties [["login",0,false],["name",2,false],["repository",32,false]]
+40 properties [["viewer",38,false]]
+42 properties [["data",41,false],["errors",8,true]]
+43 properties [["login",0,false],["name",2,true]]
+45 properties [["viewer",43,false]]
+47 properties [["data",46,false],["errors",8,true]]
+48 properties [["url",0,false],["login",0,true]]
+50 properties [["resource",49,false]]
+52 properties [["data",51,false],["errors",8,true]]
+53 properties [["totalCount",10,false]]
+55 properties [["name",0,false],["stargazers",53,false],["forks",53,false],["watchers",53,false],["issues",53,false]]
+57 properties [["node",56,false]]
+61 properties [["edges",60,false]]
+63 properties [["login",0,false],["starredRepositories",53,false],["repositories",61,false]]
+65 properties [["viewer",63,false]]
+67 properties [["data",66,false],["errors",8,true]]
+68 cases ["OPEN","CLOSED"]
+72 properties [["title",0,true],["state",68,true],["merged",70,true]]
+74 properties [["nameWithOwner",0,false],["n303",73,false],["n307",73,false]]
+76 properties [["repository",75,false]]
+78 properties [["data",77,false],["errors",8,true]]
+79 cases ["THUMBS_UP","THUMBS_DOWN","LAUGH","HOORAY","CONFUSED","HEART"]
+81 properties [["content",79,false]]
+85 properties [["viewerCanReact",70,false],["reactionGroups",84,false]]
+87 properties [["clientMutationId",2,false],["reaction",81,false],["subject",85,false]]
+89 properties [["addReaction",88,false]]
+91 properties [["data",90,false],["errors",8,true]]
+# top-levels
+"github1": 9
+"github2": 22
+"github3": 37
+"github4": 42
+"test": 47
+"github6": 52
+"github7": 67
+"github8": 78
+"AddReaction": 91

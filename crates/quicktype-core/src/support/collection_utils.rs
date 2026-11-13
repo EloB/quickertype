@@ -389,6 +389,19 @@ pub fn map_merge_with_into<K: Hash + Eq + Clone, V: Clone>(
     }
 }
 
+/// `arrayIntercalate(separator, items)`: the items with `separator`
+/// between each two of them.
+pub fn array_intercalate<T: Clone>(separator: T, items: impl IntoIterator<Item = T>) -> Vec<T> {
+    let mut acc = Vec::new();
+    for x in items {
+        if !acc.is_empty() {
+            acc.push(separator.clone());
+        }
+        acc.push(x);
+    }
+    acc
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -599,6 +612,13 @@ mod renderer_helper_tests {
         assert_eq!(sorted, ["a", "b1", "b2", "😀", "\u{ff61}"]);
         let failed = sort_by_cached_string_key(vec![1, 2], |_| Err::<String, _>("no key"));
         assert_eq!(failed, Err("no key"));
+    }
+
+    #[test]
+    fn intercalates_a_separator() {
+        assert_eq!(array_intercalate(0, Vec::<i32>::new()), Vec::<i32>::new());
+        assert_eq!(array_intercalate(0, [1]), [1]);
+        assert_eq!(array_intercalate(0, [1, 2, 3]), [1, 0, 2, 0, 3]);
     }
 
     #[test]

@@ -28,6 +28,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { format } from "node:util";
 
 import { dumpTransformation } from "./dump-transformation.mjs";
 
@@ -196,13 +197,14 @@ TargetLanguage.prototype.renderGraphAndSerialize = function (
     rendererOptions,
     indentation,
 ) {
-    // console.log lines the render prints (Renderer.finishFile's
-    // "[WARNING] Tried to emit file ... more than once"), still printed.
+    // Lines the render prints with console.log (Renderer.finishFile's
+    // "[WARNING] Tried to emit file ... more than once"): they still go to
+    // stdout, ahead of the files the CLI prints, and are recorded.
     const consoleLines = [];
     const originalLog = console.log;
     console.log = (...args) => {
-        consoleLines.push(args.join(" "));
-        originalLog.apply(console, args);
+        consoleLines.push(format(...args));
+        originalLog(...args);
     };
     let result;
     try {
@@ -219,7 +221,7 @@ TargetLanguage.prototype.renderGraphAndSerialize = function (
         console.log = originalLog;
     }
     if (captured !== undefined) {
-        if (consoleLines.length > 0) captured.console = consoleLines;
+        captured.console = consoleLines;
         if (leadingComments !== undefined) throw new Error("leading comments are not recorded");
         captured.render = {
             lang: this.name,
@@ -298,6 +300,11 @@ function joinStdout(files, quiet) {
     return out;
 }
 
+// What the render printed with console.log, as it appears on stdout.
+function consoleText(rec) {
+    return rec.console.map((line) => `${line}\n`).join("");
+}
+
 async function recordGolden(id) {
     const c = JSON.parse(readFileSync(join(goldenDir, id, "case.json"), "utf8"));
     if (c.steps.length !== 1) return "skip: several steps";
@@ -334,26 +341,24 @@ async function recordGolden(id) {
         if (step.files.length !== rec.files.length) return "mismatch: file count differs";
     }
     const quiet = step.args.includes("--quiet");
-    // The render's console.log lines come first on stdout.
-    const consolePrefix = (rec.console ?? []).map((line) => `${line}\n`).join("");
     if (step.files.length === 0) {
         const golden = readFileSync(join(goldenDir, id, "step0.stdout"), "utf8");
-        if (rec.files.length === 0 || golden !== stdout || stdout !== consolePrefix + joinStdout(rec.files, quiet)) {
+        if (rec.files.length === 0 || golden !== stdout || stdout !== consoleText(rec) + joinStdout(rec.files, quiet)) {
             return "mismatch: stdout differs from golden";
         }
     }
     // Several files (or console lines) printed to stdout: the fixture names
     // the stdout golden once (`stdout`) and the test joins the console lines
     // and the rendered files like the CLI.
-    const multiFileStdout = step.files.length === 0 && (rec.files.length > 1 || rec.console !== undefined);
+    const multiFileStdout = step.files.length === 0 && (rec.files.length > 1 || rec.console.length > 0);
     const fixture = {
         id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
-        console: rec.console,
         stdout: multiFileStdout ? `${id}/step0.stdout` : undefined,
         quiet: multiFileStdout && quiet ? true : undefined,
+        console: rec.console.length > 0 ? rec.console : undefined,
         files: rec.files.map((f) => ({
             name: f.name,
             golden: multiFileStdout
@@ -406,6 +411,7 @@ async function recordApiCase(id, lang, rendererOptions, addInputs) {
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
+        console: rec.console.length > 0 ? rec.console : undefined,
         files: rec.files.map((f) => ({ name: f.name, text: f.text, annotations: f.annotations })),
     };
     writeFileSync(join(outDir, caseFileName(id)), `${JSON.stringify(fixture)}\n`);
@@ -552,16 +558,17 @@ async function recordCli(spec) {
     captured = undefined;
     if (rec.graph === undefined || rec.render === undefined) return "skip: did not render";
     const quiet = spec.args.includes("--quiet");
-    const consolePrefix = (rec.console ?? []).map((line) => `${line}\n`).join("");
-    if (stdout !== consolePrefix + joinStdout(rec.files, quiet)) return "mismatch: stdout differs from the rendered files";
+    if (stdout !== consoleText(rec) + joinStdout(rec.files, quiet)) {
+        return "mismatch: stdout differs from the rendered files";
+    }
     const fixture = {
         id: spec.id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
-        console: rec.console,
         stdoutText: stdout,
         quiet: quiet ? true : undefined,
+        console: rec.console.length > 0 ? rec.console : undefined,
         files: rec.files.map((f) => ({ name: f.name, annotations: quiet ? undefined : f.annotations })),
     };
     writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
