@@ -1,0 +1,126 @@
+(forwarding intersections: false)
+
+# expand strings
+reconstituting 9
+reconstituted 9 as 0
+replacing set 0 as 1
+replaced set 0 as 1
+replacing set 1 as 3
+replaced set 1 as 3
+replacing set 2 as 4
+replaced set 2 as 4
+replacing set 3 as 5
+replaced set 3 as 5
+replacing set 4 as 6
+replaced set 4 as 6
+replacing set 5 as 7
+replaced set 5 as 7
+replacing set 6 as 8
+replaced set 6 as 8
+replacing set 7 as 9
+replaced set 7 as 9
+replacing set 8 as 10
+replaced set 8 as 10
+0: class Top | children 1,3,4,5,6,7,8,9,10 | 9 | given Top ()
+1: union Own1 | children 2 | 0 | given Own1 ()
+2: enum
+3: intersection Own2 | children 1 | 1 | given Own2 ()
+4: intersection Few | children 1 | 2 | given Few ()
+5: intersection Sub | children 1 | 3 | given Sub ()
+6: intersection Tiny | children 1 | 4 | given Tiny ()
+7: string Many | 5 | given Many () | unrestricted
+8: intersection Numeric | children 7 | 6 | given Numeric ()
+9: intersection Empty | children 7 | 7 | given Empty ()
+10: union Other | children 11 | 8 | given Other ()
+11: enum
+
+# remove indirection intersections
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 1 as 1
+reconstituted 1 as 1
+reconstituting 2 as 2
+reconstituted 2 as 2
+reconstituting 7 as 3
+reconstituted 7 as 3
+reconstituting 10 as 4
+reconstituted 10 as 4
+reconstituting 11 as 5
+reconstituted 11 as 5
+0: class Top | children 1,3,4 | 9 | given Top ()
+1: union own1 | children 2 | 0,1,2,3,4 | given Own1,Own2,Few,Sub,Tiny ()
+2: enum
+3: string many | 5,6,7 | given Many,Numeric,Empty () | unrestricted
+4: union Other | children 5 | 8 | given Other ()
+5: enum
+
+# GC
+0: class Top | children 1,3,4 | 9 | given Top ()
+1: union own1 | children 2 | 0,1,2,3,4 | given Own1,Own2,Few,Sub,Tiny ()
+2: enum
+3: string many | 5,6,7 | given Many,Numeric,Empty () | unrestricted
+4: union Other | children 5 | 8 | given Other ()
+5: enum
+0: class Top | children 1,3,4 | 9 | given Top ()
+1: union own1 | children 2 | 0,1,2,3,4 | given Own1,Own2,Few,Sub,Tiny ()
+2: enum
+3: string many | 5,6,7 | given Many,Numeric,Empty () | unrestricted
+4: union Other | children 5 | 8 | given Other ()
+5: enum
+cases 2: red,green,blue,pink
+cases 5: x,y
+(forwarding intersections: false)
+reconstituting 5
+reconstituted 5 as 0
+replacing set 0 as 1
+replaced set 0 as 1
+replacing set 1 as 2
+replaced set 1 as 2
+replacing set 2 as 4
+replaced set 2 as 4
+replacing set 3 as 5
+replaced set 3 as 5
+replacing set 4 as 6
+replaced set 4 as 6
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 1 as 1
+reconstituted 1 as 1
+reconstituting 2 as 2
+reconstituted 2 as 2
+reconstituting 3 as 3
+reconstituted 3 as 3
+reconstituting 5 as 4
+reconstituted 5 as 4
+reconstituting 6 as 5
+reconstituted 6 as 5
+reconstituting 7 as 6
+reconstituted 7 as 6
+0: class Top | children 1,2,4,5 | given Top ()
+1: date-time date | given DateTime,Date () | when
+2: union Two | children 1,3 | given Two ()
+3: uuid
+4: string IntString | given IntString () | unrestricted
+5: union WithCases | children 6,3 | given WithCases ()
+6: enum
+cases 6: x,y
+(forwarding intersections: false)
+reconstituting 3
+reconstituted 3 as 0
+replacing set 0 as 1
+replaced set 0 as 1
+replacing set 2 as 3
+replaced set 2 as 3
+replacing set 1 as 4
+replaced set 1 as 4
+0: class Top | children 1,3,4 | given Top ()
+1: union Days | children 2 | given Days ()
+2: enum
+3: string Empty | given Empty () | unrestricted
+4: union Nums | children 5 | given Nums ()
+5: enum
+cases 2: Monday,Tuesday,Friday,Sunday
+cases 5: 1,2
+(forwarding intersections: false)
+0: class Top | children 1 | given Top ()
+1: string own | given Own,DT () | unrestricted
