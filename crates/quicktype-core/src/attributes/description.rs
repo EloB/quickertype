@@ -95,7 +95,7 @@ pub fn description_attribute_producer(
     _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
 ) -> crate::messages::Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
     use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
-    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType, js_exception};
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType, type_error};
     use crate::input::json_schema_store::JsonSchema;
 
     if schema.type_of() != "object" {
@@ -132,7 +132,7 @@ pub fn description_attribute_producer(
                 .enumerate()
                 .map(|(i, v)| (i.to_string(), v))
                 .collect(),
-            _ => return Err(js_exception("Cannot convert undefined or null to object")),
+            _ => return Err(type_error("Cannot convert undefined or null to object")),
         };
         let mut property_descriptions: IndexMap<String, IndexSet<String>> = IndexMap::new();
         for (name, prop_schema) in entries {

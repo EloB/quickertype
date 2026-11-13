@@ -249,7 +249,7 @@ fn is_accessor_entry(x: &crate::input::json_schema_store::JsonSchema) -> bool {
 /// (`mapFromObject`). Values that are not strings (which TypeScript would
 /// pass on as they are) are converted with `String(value)`.
 fn make_accessor_entry(ae: &crate::input::json_schema_store::JsonSchema) -> Result<AccessorEntry> {
-    use crate::input::json_schema_input::js_exception;
+    use crate::input::json_schema_input::type_error;
     use crate::input::json_schema_store::JsonSchema;
     Ok(match ae {
         JsonSchema::String(s) => AccessorEntry::Name(s.clone()),
@@ -267,7 +267,7 @@ fn make_accessor_entry(ae: &crate::input::json_schema_store::JsonSchema) -> Resu
             names.insert("length".to_owned(), items.len().to_string());
             AccessorEntry::ByLanguage(names)
         }
-        JsonSchema::Null => return Err(js_exception("Cannot convert undefined or null to object")),
+        JsonSchema::Null => return Err(type_error("Cannot convert undefined or null to object")),
         JsonSchema::Bool(_) | JsonSchema::Number(_) => AccessorEntry::ByLanguage(IndexMap::new()),
     })
 }

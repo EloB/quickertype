@@ -22,7 +22,7 @@ use quicktype_js_compat::json::insert_js_property;
 use quicktype_js_compat::whitespace;
 
 use crate::input::io::LocalBoxFuture;
-use crate::messages::{ErrorKind, QuickTypeError, Result, message_error};
+use crate::messages::{ErrorKind, Result, message_error};
 use crate::support::windows_paths::file_path_from_file_uri;
 
 /// An HTTP response, as much of it as NodeIO looks at.
@@ -143,11 +143,6 @@ fn parse_headers(http_headers: &[String]) -> Result<Vec<(String, String)>> {
     Ok(result.into_iter().collect())
 }
 
-/// `exceptionToString(e)` of a `QuickTypeError`: `Error: <message>`.
-fn quicktype_error_to_string(e: &QuickTypeError) -> String {
-    format!("Error: {}", e.user_message())
-}
-
 fn misc_read_error<T>(file_or_url: &str, message: String) -> Result<T> {
     message_error(
         ErrorKind::MiscReadError,
@@ -250,7 +245,7 @@ async fn readable_from_file_or_url(
         if file_or_url.starts_with("file://") {
             file_or_url = file_path_from_file_uri(&file_or_url);
         } else if is_url(&file_or_url) {
-            let headers = parse_headers(http_headers).map_err(|e| quicktype_error_to_string(&e))?;
+            let headers = parse_headers(http_headers).map_err(|e| e.to_js_string())?;
             let response = io.fetch(&file_or_url, &headers).await?;
             if !(200..=299).contains(&response.status) {
                 return Err(format!(

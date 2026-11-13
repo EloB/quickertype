@@ -24,10 +24,10 @@
 //! [`JsonSchemaInput::add_types`], which takes the parts of TypeScript's
 //! `RunContext` it uses as parameters.
 //!
-//! A JavaScript exception that is not a `QuickTypeError` (a urijs
-//! `URIError` or `TypeError`, a `TypeError` from reading a property of
-//! `null`) is reported as an `InternalError` whose user message is the
-//! exception's message: that is what the CLI prints (`Error: <message>.`).
+//! JavaScript exceptions that TypeScript lets escape (a urijs `URIError` or
+//! `TypeError`, a `TypeError` from reading a property of `null`) are
+//! [`JsException`](crate::messages::JsException)s with the same name and
+//! message.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -60,7 +60,9 @@ use crate::attributes::uri_attributes::uri_schema_attributes_producer;
 use crate::input::io::LocalBoxFuture;
 use crate::input::json_schema_store::{JsonSchema, JsonSchemaStore, SchemaCache};
 use crate::input::path_element::PathElement;
-use crate::messages::{ErrorKind, MessageValue, QuickTypeError, Result, message_error};
+use crate::messages::{
+    ErrorKind, JsErrorName, MessageValue, QuickTypeError, Result, message_error,
+};
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
 use crate::support::parse_json::parse_json;
 use crate::support::support::{assert, console_log, defined, panic};
@@ -72,18 +74,16 @@ use crate::ty::type_ref::TypeRef;
 // ---------------------------------------------------------------------------
 // JavaScript exceptions
 
-/// A JavaScript exception that is not a `QuickTypeError`, with its
-/// `message` as the user message.
-pub(crate) fn js_exception(message: impl Into<String>) -> QuickTypeError {
-    let message = message.into();
-    let mut e = QuickTypeError::internal(message.clone());
-    e.set_user_message(message);
-    e
+/// A JavaScript `TypeError` (reading a property of `null`, calling a
+/// non-function), which TypeScript lets escape.
+pub(crate) fn type_error(message: impl Into<String>) -> QuickTypeError {
+    QuickTypeError::js_exception(JsErrorName::TypeError, message)
 }
 
-/// A urijs (or `decodeURIComponent`) exception.
+/// A urijs (or `decodeURIComponent`) exception, with its own name.
 fn uri_error(e: UriError) -> QuickTypeError {
-    js_exception(e.message())
+    let name = JsErrorName::from_name(e.name()).unwrap_or(JsErrorName::Error);
+    QuickTypeError::js_exception(name, e.message())
 }
 
 /// `withRef(ref, props)`: the `ref` property first, then the others.
@@ -961,7 +961,7 @@ fn index_of_in_order(order: &JsonSchema, name: &str) -> Result<Option<f64>> {
             .position(|item| item.as_str() == Some(name))
             .map(|i| i as f64)),
         JsonSchema::String(s) => Ok(s.find(name).map(|i| utf16::len(&s[..i]) as f64)),
-        _ => Err(js_exception("order.indexOf is not a function")),
+        _ => Err(type_error("order.indexOf is not a function")),
     }
 }
 
@@ -1473,7 +1473,7 @@ impl<'g> TypeAdder<'_, 'g> {
         // In Schema Draft 3, `required` is `true` on a property that's required.
         for (p, prop_schema) in properties.iter() {
             if let JsonSchema::Null = prop_schema {
-                return Err(js_exception(
+                return Err(type_error(
                     "Cannot read properties of null (reading 'required')",
                 ));
             }
@@ -2129,6 +2129,30 @@ mod tests {
             b.resolve_against(Some(&a)).unwrap().to_string(),
             "b/test3.json#/foo"
         );
+    }
+
+    #[test]
+    fn javascript_exceptions_keep_their_names() {
+        let malformed = Ref::parse("100%.schema").unwrap_err();
+        let js = malformed.as_js_exception().unwrap();
+        assert_eq!(
+            (js.name(), js.message()),
+            (JsErrorName::URIError, "URI malformed")
+        );
+        assert_eq!(format!("Error: {malformed}."), "Error: URI malformed.");
+        let port = Ref::parse("http://x:99999/a.json").unwrap_err();
+        let js = port.as_js_exception().unwrap();
+        assert_eq!(js.name(), JsErrorName::TypeError);
+        assert_eq!(
+            format!("Error: {port}."),
+            "Error: Port \"99999\" is not a valid port."
+        );
+        let order = index_of_in_order(&JsonSchema::Number(5.0), "a").unwrap_err();
+        assert_eq!(
+            order.as_js_exception().unwrap().name(),
+            JsErrorName::TypeError
+        );
+        assert_eq!(order.message_name(), None);
     }
 
     #[test]
