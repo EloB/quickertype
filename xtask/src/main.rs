@@ -23,7 +23,8 @@ tasks:
                      run the TypeScript CLI and ours side by side and compare (--help)
   bench [options]    time ours against the TypeScript CLI, Markdown report (--help)
   golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
-                     (default ref-dir: $QUICKTYPE_REFERENCE, else ../quicktype)
+                     (default ref-dir: $QUICKTYPE_REFERENCE, else ../quicktype
+                     or ../../quicktype)
 ";
 
 fn workspace_root() -> PathBuf {

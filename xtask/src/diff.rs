@@ -21,8 +21,8 @@ Runs the reference (TypeScript) quicktype and ours with the same arguments,
 each in its own temp dir, and compares exit code, stdout, stderr and files.
 
   --ref \"<cmd ...>\"   reference command (default: node <checkout>/dist/index.js, where
-                      <checkout> is $QUICKTYPE_REFERENCE or the nearest quicktype/
-                      beside the workspace or one of its parents)
+                      <checkout> is $QUICKTYPE_REFERENCE, else the first built
+                      ../quicktype or ../../quicktype beside the workspace)
   --bin \"<cmd ...>\"   our command (default: builds target/release/quicktype)
   --each <path>       run once per input file under <path> (file or directory,
                       recursive), appending the file to the quicktype args
@@ -258,32 +258,50 @@ fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
 }
 
 /// The reference checkout named by the environment: `$QUICKTYPE_REFERENCE`,
-/// or `$QUICKTYPE_REF`, its deprecated name (with a note on stderr, once).
-fn reference_from_env() -> Option<PathBuf> {
+/// else `$QUICKTYPE_REF` or `$QUICKTYPE_DIR`, its deprecated names (with a
+/// one-line warning on stderr, once), as `xtask/reference.mjs` and
+/// `xtask/golden/record.sh` read them. `QUICKTYPE_REFERENCE=self` (the npm
+/// differential suite's comparison with its own TypeScript engine) is an
+/// error.
+fn reference_from_env() -> Result<Option<PathBuf>, String> {
     let set = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty());
     if let Some(dir) = set("QUICKTYPE_REFERENCE") {
-        return Some(dir.into());
+        if dir == "self" {
+            return Err(
+                "QUICKTYPE_REFERENCE=self only applies to the npm differential suite; \
+                 set it to a quicktype checkout"
+                    .into(),
+            );
+        }
+        return Ok(Some(dir.into()));
     }
-    let dir = set("QUICKTYPE_REF")?;
-    static NOTE: Once = Once::new();
-    NOTE.call_once(|| {
-        eprintln!("warning: QUICKTYPE_REF is deprecated; set QUICKTYPE_REFERENCE instead");
-    });
-    Some(dir.into())
+    for name in ["QUICKTYPE_REF", "QUICKTYPE_DIR"] {
+        if let Some(dir) = set(name) {
+            static WARNING: Once = Once::new();
+            WARNING.call_once(|| {
+                eprintln!("warning: {name} is deprecated; set QUICKTYPE_REFERENCE instead");
+            });
+            return Ok(Some(dir.into()));
+        }
+    }
+    Ok(None)
 }
 
 /// Locates the built TypeScript CLI: `dist/index.js` of
-/// [`reference_from_env`], else the nearest `quicktype/dist/index.js` beside
-/// the workspace or one of its ancestors (so it works from git worktrees
-/// too).
-pub(crate) fn find_reference(root: &Path) -> Option<PathBuf> {
-    if let Some(dir) = reference_from_env() {
+/// [`reference_from_env`]'s checkout, else of the first of `../quicktype`
+/// and `../../quicktype` beside the workspace that has one (the second
+/// finds it from a git worktree). `None` if there is none.
+pub(crate) fn find_reference(root: &Path) -> Result<Option<PathBuf>, String> {
+    if let Some(dir) = reference_from_env()? {
         let script = dir.join("dist/index.js");
-        return script.is_file().then_some(script);
+        return Ok(script.is_file().then_some(script));
     }
-    root.ancestors()
+    Ok(root
+        .ancestors()
+        .skip(1)
+        .take(2)
         .map(|a| a.join("quicktype/dist/index.js"))
-        .find(|p| p.is_file())
+        .find(|p| p.is_file()))
 }
 
 /// Collects the inputs for `--each`: a single file is always used as is; a
@@ -320,7 +338,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let reference = match &o.reference {
         Some(cmd) if !cmd.is_empty() => cmd.clone(),
         _ => {
-            let script = find_reference(root).ok_or(
+            let script = find_reference(root)?.ok_or(
                 "reference quicktype not found: set QUICKTYPE_REFERENCE to a built checkout \
                  or pass --ref \"<cmd>\"",
             )?;
