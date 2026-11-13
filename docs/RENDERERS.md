@@ -90,11 +90,13 @@ framework-labelled commit and tell the core owner.
 | `t.kind`, `t.getCombinedName()`, `c.getProperties()` | `graph.kind(t)?`, `graph.combined_name(t)?`, `graph.type_at(c)?.properties()?` |
 | `matchType(t, any => ..., ...)` | `match graph.kind(t)? { TypeKind::Any => ..., ..., kind => return type_not_supported(kind) }` |
 | `nullableFromUnion(u)`, `removeNullFromUnion(u)` | `ty::type_utils::nullable_from_union(graph, u)?`, `remove_null_from_union(graph, u, NullRemovalSort::None)?` |
-| `this.emitLine("a ", name, " {")` | `self.emit_line(sl!["a ", name, " {"])` |
+| `this.emitLine("a ", name, " {")` | `self.emit_line(sl!["a ", name, " {"])` (keep the parts; see [Item identity](#item-identity-emitlineonce-emititemonce)) |
 | `this.emitLine(x)` (one part) | `self.emit_line(x)` |
+| `this.emitLine(["x"])` (one array part) | `self.emit_line(sl!["x"])` |
 | `this.emitLine()` | `self.emit_line_parts(vec![])` |
 | `this.emitLineOnce(...parts)` | `self.emit_line_once(vec![...])` |
-| Sourcelike value `["Vec<", t, ">"]` | `sl!["Vec<", t, ">"]` (a `Source`) |
+| Sourcelike value `["Vec<", t, ">"]` | `sl!["Vec<", t, ">"]` (a `Source::Sequence`, even with one part) |
+| `this.forEachUniqueUnion(cfg, u => key, f)` | `self.for_each_unique_union(cfg, \|r, u\| Ok(key), f)?`; the key type implements `SameValueZeroKey` (see below) |
 | `this.indent(() => { ... })` | `self.indent(\|r\| { ...; Ok(()) })?` |
 | `this.forEachClassProperty(c, "none", (name, json, p) => ...)` | `self.for_each_class_property(c, BlankLinePosition::None, \|r, name, json, p, _pos\| { ...; Ok(()) })?` |
 | `"leading-and-interposing"`, `["interposing", 2]` | `BlankLinePosition::LeadingAndInterposing`, `(BlankLinePosition::Interposing, 2)` |
@@ -122,6 +124,38 @@ framework-labelled commit and tell the core owner.
 - Iteration helpers collect their items first, so the callback may emit
   freely.
 
+### Item identity (`emitLineOnce`, `emitItemOnce`)
+
+`emitLineOnce`/`emitItemOnce` skip an item that is already in the file,
+comparing with JavaScript `===`, and the port reproduces that exactly:
+
+- a **string** item (`emit_line("x")`, `emit_line(format!(...))`,
+  `emit_line_once(vec!["x".into()])`) equals an earlier string item with the
+  same text;
+- a **`Name`** item equals the same name;
+- an **array** (`sl![...]`, with any number of parts, or several parts to
+  `emit_line_parts`/`emit_line_once`) and every other source object equals
+  nothing, so it is always emitted.
+
+So port the *shape* of each TS argument, not just its text. TS
+`emitLine(["import \"fmt\""])` is `emit_line(sl!["import \"fmt\""])`, not
+`emit_line("import \"fmt\"")`: a later `emitLineOnce("import \"fmt\"")`
+emits again after the array but not after the string. Likewise, don't
+collapse a multi-part TS `emitLine("a", b, "c")` into
+`emit_line(format!("a{b}c"))` in a file that uses `emitLineOnce` or
+`emitItemOnce`: the array becomes a string that a later once-call would
+match. (`sl!` also keeps `Name`s as names, which `format!` cannot.)
+
+### JavaScript `Map` keys (`forEachUniqueUnion`)
+
+`forEachUniqueUnion` deduplicates unions by a computed value with
+JavaScript `Map` semantics (SameValueZero): the value's type implements
+`SameValueZeroKey`. `String`, `&str`, numbers and `bool` compare by value,
+a `Name` by identity, and a value that stands for a fresh TS array or
+object must be wrapped in `JsObject(...)`, which equals nothing (each union
+is then its own key). Use `support::collection_utils::first_by_same_value_zero`
+for other `if (!map.has(k)) map.set(k, v)` patterns.
+
 ### Union member names (`proposeUnionMemberName`)
 
 TS proposers are closures over the renderer. In Rust,
@@ -141,20 +175,59 @@ fn propose_union_member_name(&mut self, u: TypeRef, union_name: Name, t: TypeRef
 
 Families (JavaScript → TypeScriptFlowBase → TypeScript/Flow, CSharp →
 Newtonsoft/SystemTextJson, Java → Jackson, Kotlin → Klaxon/Jackson/KotlinX,
-Scala3 → Circe/Upickle, Python → JSONPython) use the same pattern one level
-down:
+Scala3 → Circe/Upickle, Python → JSONPython) forward **every**
+`ConvenienceRenderer` hook mechanically, so no level can forget one:
 
-- the base class's fields become a state struct (`JavaScriptState`) that
-  every leaf owns next to its `ConvenienceRendererCore`;
-- the base class's own methods *and* the `ConvenienceRenderer` hooks it
-  overrides become a family trait with defaults in a family `defaults`
-  module (`trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> { fn js(&self) -> &JavaScriptState; fn emit_types(&mut self) -> Result<()> { js_defaults::emit_types(self) } ... }`);
-- each leaf implements `ConvenienceRenderer` by forwarding those hooks to the
-  family trait (a small `macro_rules!` in the family module keeps this to
-  one line per leaf), and overrides family methods in its family-trait impl.
+- **State.** The base class's fields become a state struct
+  (`JavaScriptState`) that every leaf owns next to its
+  `ConvenienceRendererCore`.
+- **Family methods.** The base class's own methods (not hooks) become a
+  family trait with default bodies:
+  `trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> { fn js(&self) -> &JavaScriptState; fn emit_types(&mut self) -> Result<()> { ... } }`.
+  Leaves override them in their `impl JavaScriptRenderer`.
+- **Hooks.** Each level has a *hooks module* with one function per hook,
+  named like the hook, taking the renderer first. It glob-imports the level
+  above and defines only what this level overrides; an explicit item
+  shadows the glob, so the module always has every hook:
 
-A leaf method that calls `super.x()` calls the family default
-(`js_defaults::x(self)`), and one level up, `defaults::x(self)`.
+  ```rust
+  // language/javascript/java_script_renderer.rs
+  pub mod javascript_hooks {
+      pub use crate::convenience_renderer::defaults::*;   // everything else
+      pub fn make_name_for_property<'a, R: JavaScriptRenderer<'a>>(r: &mut R, o: TypeRef,
+          class_name: Name, p: &ClassProperty, json_name: &str, _assigned: Option<&str>)
+          -> Result<Option<Name>> {
+          // JS ignores assigned names: `super.makeNameForProperty(o, className, p, jsonName, undefined)`
+          crate::convenience_renderer::defaults::make_name_for_property(r, o, class_name, p, json_name, None)
+      }
+      pub fn emit_source_structure<'a, R: JavaScriptRenderer<'a>>(r: &mut R, f: &str) -> Result<()> { ... }
+      // ... the abstract hooks (namers) and the other overrides
+  }
+
+  // language/typescript_flow/typescript_renderer.rs
+  mod typescript_hooks {
+      pub use crate::language::typescript_flow::typescript_flow_base_hooks::*;
+      // TypeScriptRenderer's own hook overrides, e.g. calling `super`:
+      // crate::language::typescript_flow::typescript_flow_base_hooks::x(r, ...)
+  }
+
+  impl<'a> ConvenienceRenderer<'a> for TypeScriptRenderer<'a> {
+      fn core(&self) -> &ConvenienceRendererCore<'a> { &self.core }
+      fn core_mut(&mut self) -> &mut ConvenienceRendererCore<'a> { &mut self.core }
+      forward_convenience_renderer_hooks!(typescript_hooks);
+  }
+  ```
+
+`forward_convenience_renderer_hooks!(module)` implements every hook of the
+trait as a call to `module::<hook>(self, ...)`; it is generated from the same
+hook list as the trait itself, so it cannot miss one. `module` must be a
+single identifier in scope (`use ... as hooks;` if needed). A required
+(abstract) hook that no level defines is a compile error, as is overriding a
+hook in the `impl` next to the macro: in a family, every hook override is a
+function in the leaf's hooks module. `super.x()` is a call to the level
+above by path (`<family>_hooks::x(r, ...)`, or `defaults::x(r, ...)` at the
+top). The test `convenience_renderer::family_tests` is a complete two-level
+example.
 
 ## Testing a port
 
@@ -282,8 +355,8 @@ step ends in `?`.
   alphabetically by assigned name with `--alphabetize-properties`.
 - A renderer never stores names in the graph (TypeScript does, in the
   attribute store), so a graph can be rendered more than once.
-- `emit_line_once` only deduplicates single-part lines: strings by value,
-  names by identity.
+- `emit_line_once`/`emit_item_once` only deduplicate string items (by
+  value) and names (by identity); see [Item identity](#item-identity-emitlineonce-emititemonce).
 - Blank lines requested at the end of a file never appear; `emit_line("")`
   inside an indent produces an indentation-only line.
 - `finish_file` twice with the same name prints the `[WARNING] ...` line on
