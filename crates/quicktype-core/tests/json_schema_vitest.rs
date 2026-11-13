@@ -4,10 +4,10 @@
 //! `url-input.test.ts`; `windows-schema-paths.test.ts` is in its own test
 //! binary because it changes the working directory).
 //!
-//! The originals render TypeScript and look for names in the output.
-//! Rendering is not part of this crate yet, so these assert the same facts
-//! one step earlier, on the type graph the input builds: which named types
-//! and properties exist.
+//! The originals render TypeScript and look for names in the output; these
+//! assert the same facts one step earlier, on the type graph the input
+//! builds (which named types and properties exist), so they test the input
+//! on its own.
 
 use quicktype_core::input::fetching_json_schema_store::FetchingJsonSchemaStore;
 use quicktype_core::input::io::block_on;

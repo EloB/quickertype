@@ -1,4 +1,4 @@
-//! Port of `quicktype/src/URLGrammar.ts`: `--src-urls` grammars.
+//! Port of `src/URLGrammar.ts`: `--src-urls` grammars.
 //!
 //! A grammar maps each top-level name to an expression of URLs: a string
 //! is one URL, an array concatenates the expansions of its elements (their

@@ -1,0 +1,43 @@
+{
+  "format": 1,
+  "measured": {
+    "date": "2026-11-13",
+    "machine": "Apple M2 Max, 12 cores, 64 GiB, macOS 26.6.2",
+    "commit": "3be1feb2e3a9114eba192e4898c96084563a845d",
+    "how": "target/release/quicktype <input> -l ts -o out.ts under /usr/bin/time -l; the inputs are built from the benchmark's generated input (docs/BENCHMARKS.md, \"Memory on large inputs\").",
+    "inputs": [
+      {
+        "name": "generated (40 MB)",
+        "description": "the benchmark's generated records",
+        "size": "40 MB",
+        "seconds": 0.35,
+        "peak_rss_mib": 154.2
+      },
+      {
+        "name": "records (2.6 GB)",
+        "description": "60 copies of the 40 MB input in one array",
+        "size": "2.6 GB",
+        "seconds": 18.8,
+        "peak_rss_mib": 5898.24
+      },
+      {
+        "name": "text-heavy (2.6 GB)",
+        "description": "10.5 million objects with ~200-character strings",
+        "size": "2.6 GB",
+        "seconds": 6.0,
+        "peak_rss_mib": 3952.64
+      }
+    ]
+  },
+  "reports": [
+    {
+      "input": "a 3 GB JSON file",
+      "size": "3 GB",
+      "quicktype": "more than 5 hours",
+      "quicktype_seconds_at_least": 18000,
+      "quickertype": "about 25 s",
+      "quickertype_seconds": 25,
+      "source": "Reported by a user, on their own machine; not measured with cargo xtask bench."
+    }
+  ]
+}

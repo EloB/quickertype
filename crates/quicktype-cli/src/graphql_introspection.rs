@@ -1,4 +1,4 @@
-//! Port of `quicktype/src/GraphQLIntrospection.ts`.
+//! Port of `src/GraphQLIntrospection.ts`.
 //!
 //! `--graphql-introspect URL` sends graphql-js's introspection query to a
 //! GraphQL server with `fetch` (method `--http-method`, default `POST`,

@@ -267,7 +267,7 @@ pub mod typescript_flow_base_methods {
                 }
                 TypeKind::DateTime => single_word(vec!["Date".into()]),
                 k if k.is_transformed_string_type_kind() => single_word(vec!["string".into()]),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

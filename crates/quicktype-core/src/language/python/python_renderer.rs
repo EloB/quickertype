@@ -21,6 +21,7 @@ use indexmap::{IndexMap, IndexSet};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::recursion::guard;
 use crate::support::strings::string_escape;
@@ -253,14 +254,6 @@ pub trait PythonRenderer<'a>: ConvenienceRenderer<'a> {
     python_renderer_methods!([declare python_methods]);
 }
 
-/// `arrayIntercalate(separator, items)` as a source sequence.
-pub(crate) fn intercalate(separator: &str, items: Vec<Source>) -> Source {
-    Source::Sequence(crate::support::collection_utils::array_intercalate(
-        Source::from(separator),
-        items,
-    ))
-}
-
 /// The bodies of TS `PythonRenderer`'s methods: the defaults of
 /// [`PythonRenderer`] and what the subclass's `super.x(...)` calls. Calls
 /// to overridable methods go through the trait, as `this.x(...)` does.
@@ -381,7 +374,10 @@ pub mod python_methods {
             member_types.push(r.python_type(m, false, true)?);
         }
 
-        let mut union: Vec<Source> = vec![quote.into(), intercalate(" | ", member_types)];
+        let mut union: Vec<Source> = vec![
+            quote.into(),
+            array_intercalate(" | ".into(), member_types).into(),
+        ];
         if has_null.is_some() {
             union.push(" | None".into());
         }
@@ -504,7 +500,7 @@ pub mod python_methods {
                             let mut parts = vec![
                                 r.with_typing("Optional"),
                                 "[Union[".into(),
-                                intercalate(", ", member_types),
+                                array_intercalate(", ".into(), member_types).into(),
                                 "]]".into(),
                             ];
                             parts.extend(rest);
@@ -521,7 +517,7 @@ pub mod python_methods {
                     sl![
                         r.with_typing("Union"),
                         "[",
-                        intercalate(", ", member_types),
+                        array_intercalate(", ".into(), member_types),
                         "]"
                     ]
                 }
@@ -593,7 +589,7 @@ pub mod python_methods {
         r.emit_block(
             sl![
                 "def __init__(self, ",
-                intercalate(", ", args),
+                array_intercalate(", ".into(), args),
                 ")",
                 returns,
                 ":"

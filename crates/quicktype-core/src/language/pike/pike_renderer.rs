@@ -41,11 +41,6 @@ impl std::fmt::Debug for PikeRenderer<'_> {
     }
 }
 
-/// `${n}` of a JavaScript number.
-fn js_number(n: f64) -> String {
-    number::to_string(n)
-}
-
 /// `Array.from(u.members).some((t) => t.kind === kind)`, stopping at the
 /// first match. (`instanceof ArrayType` is the kind `array`.)
 fn any_member_of_kind(graph: &TypeGraph, u: TypeRef, kind: TypeKind) -> Result<bool> {
@@ -112,10 +107,7 @@ impl<'a> PikeRenderer<'a> {
                     }
                     single_word(vec![self.name_for_named_type(t)?.into()])
                 }
-                TypeKind::Intersection => {
-                    return crate::support::support::panic("Unknown type intersection");
-                }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -392,39 +384,39 @@ impl<'a> PikeRenderer<'a> {
         if let Some(min) = min {
             self.emit_line(format!(
                 "if ({optional_guard}{json_value} < {}) error(\"Value below minimum\");",
-                js_number(min)
+                number::to_string(min)
             ));
         }
         if let Some(max) = max {
             self.emit_line(format!(
                 "if ({optional_guard}{json_value} > {}) error(\"Value above maximum\");",
-                js_number(max)
+                number::to_string(max)
             ));
         }
         let (min_length, max_length) = bounds(min_max_length_for_type(graph, t)?);
         if let Some(min_length) = min_length {
             self.emit_line(format!(
                 "if ({optional_guard}sizeof({json_value}) < {}) error(\"String too short\");",
-                js_number(min_length)
+                number::to_string(min_length)
             ));
         }
         if let Some(max_length) = max_length {
             self.emit_line(format!(
                 "if ({optional_guard}sizeof({json_value}) > {}) error(\"String too long\");",
-                js_number(max_length)
+                number::to_string(max_length)
             ));
         }
         let (min_items, max_items) = bounds(min_max_items_for_type(graph, t)?);
         if let Some(min_items) = min_items {
             self.emit_line(format!(
                 "if ({optional_guard}sizeof({json_value}) < {}) error(\"Array too short\");",
-                js_number(min_items)
+                number::to_string(min_items)
             ));
         }
         if let Some(max_items) = max_items {
             self.emit_line(format!(
                 "if ({optional_guard}sizeof({json_value}) > {}) error(\"Array too long\");",
-                js_number(max_items)
+                number::to_string(max_items)
             ));
         }
         if let Some(pattern) = pattern_for_type(graph, t)? {

@@ -1,152 +1,27 @@
-/* quickertype playground. System fonts; light and dark from
-   prefers-color-scheme. The two engines have a colour each: violet for
-   quickertype (WebAssembly), blue for quicktype (TypeScript), used for the
-   engine switch, the timing bars and the mark. */
+/* The playground: settings, the input and output panes, the timing bars.
+   The colours and what both pages share are in base.css. */
 
-:root {
-    --paper: #f3f4f7;
-    --panel: #ffffff;
-    --sunk: #f8f8fb;
-    --ink: #1b1c24;
-    --muted: #5f6271;
-    --rule: #dcdee6;
-    --track: #e7e8ef;
-    --wasm: #5b3fd6;
-    --ts: #2a69ad;
-    --ok: #17734a;
-    --bad: #b3261e;
-    --bad-bg: #fbeeed;
-    --focus: #5b3fd6;
-    --code-comment: #737786;
-    --code-string: #22733f;
-    --code-number: #9a5200;
-    --code-keyword: #6a37c4;
-    --code-type: #0c6b7a;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    color-scheme: light;
-}
+@import "./base.css";
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --paper: #131419;
-        --panel: #1a1c23;
-        --sunk: #16171d;
-        --ink: #e5e6ec;
-        --muted: #9a9dab;
-        --rule: #2d303a;
-        --track: #2a2c36;
-        --wasm: #a08cff;
-        --ts: #6ea8ea;
-        --ok: #4cc38a;
-        --bad: #ff8a80;
-        --bad-bg: #2c1c1e;
-        --focus: #a08cff;
-        --code-comment: #7f8494;
-        --code-string: #95d38a;
-        --code-number: #f0b46a;
-        --code-keyword: #b9a6ff;
-        --code-type: #6fcfd9;
-        color-scheme: dark;
-    }
-}
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    background: var(--paper);
-}
-
+/* The playground fills the window: masthead, settings, panes, footer. */
 body {
-    margin: 0;
-    min-height: 100dvh;
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
-    background: var(--paper);
-    color: var(--ink);
-    font: 14px/1.45 var(--sans);
-    -webkit-text-size-adjust: 100%;
 }
 
-a {
-    color: inherit;
-    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
-    text-underline-offset: 2px;
+/* The speed headline, under the masthead's first line: one sentence and two links. */
+.speed {
+    flex-basis: 100%;
+    font-size: 13.5px;
 }
 
-a:hover {
-    text-decoration-color: currentColor;
+.speed a {
+    color: var(--wasm);
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-:focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
-}
-
-input,
-select,
-button,
-textarea {
-    font: inherit;
-    color: inherit;
-}
-
-input[type="checkbox"],
-input[type="radio"] {
-    accent-color: var(--wasm);
-}
-
-h1,
-h2,
-p {
-    margin: 0;
-}
-
-/* ---- Masthead ---------------------------------------------------------- */
-
-.masthead {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 14px;
-    padding: 14px 16px 10px;
-}
-
-.brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    align-self: center;
-    text-decoration: none;
-}
-
-.mark {
-    width: 22px;
-    height: 22px;
-}
-
-.mark-wasm {
-    fill: var(--wasm);
-}
-
-.mark-ts {
-    fill: var(--ts);
-}
-
-.wordmark {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-}
-
-.tagline {
-    color: var(--muted);
-}
-
-.source {
-    margin-left: auto;
+.speed .sep {
     color: var(--muted);
 }
 
@@ -529,6 +404,16 @@ textarea:focus-visible {
     color: var(--ink);
 }
 
+/* Reading, running, or how long the run took: the input is not in the editor to show it. */
+.large-status {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.large-status:empty {
+    display: none;
+}
+
 .drop {
     display: none;
     position: absolute;
@@ -763,9 +648,17 @@ textarea:focus-visible {
     margin-top: 9px;
 }
 
-/* It wraps between its parts. */
-.summary > span:not(.sep) {
+/* It wraps between its parts; the sentence saying which engine was faster wraps between words. */
+.summary > span:not(.sep, .pace) {
     white-space: nowrap;
+}
+
+.engine-name.wasm {
+    color: var(--wasm);
+}
+
+.engine-name.ts {
+    color: var(--ts);
 }
 
 .summary .sep {
@@ -832,6 +725,34 @@ button.measure {
     font-weight: 600;
 }
 
+/* The measure button, with what it does under it: beside the fine print when there is room. */
+.measure-box {
+    display: flex;
+    flex: 0 1 230px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    margin-left: auto;
+}
+
+#measure-how {
+    font-size: 11.5px;
+    line-height: 1.35;
+    text-align: right;
+}
+
+/* Where the CLI's numbers are, under the comparison. */
+.cli-note {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.cli-note a {
+    color: var(--wasm);
+    font-weight: 600;
+}
+
 .notes {
     padding: 8px 12px;
     border-bottom: 1px solid var(--rule);
@@ -851,6 +772,12 @@ button.measure {
     min-height: 0;
     display: flex;
     flex-direction: column;
+}
+
+/* The output of an older input, while a newer one runs. */
+.code.stale pre#output {
+    opacity: 0.45;
+    transition: opacity 0.2s;
 }
 
 pre#output {
@@ -918,6 +845,11 @@ pre#output:focus-visible {
     color: var(--muted);
 }
 
+.error-help a {
+    color: var(--wasm);
+    font-weight: 600;
+}
+
 .empty {
     flex: 1;
     padding: 24px 16px;
@@ -948,28 +880,6 @@ pre#output:focus-visible {
     overflow-wrap: anywhere;
 }
 
-.credits {
-    padding: 12px 16px 16px;
-    font-size: 12px;
-    color: var(--muted);
-}
-
-.credits p {
-    max-width: 80ch;
-}
-
-.credits p + p {
-    margin-top: 4px;
-}
-
-.credits code {
-    font: 11.5px var(--mono);
-    white-space: nowrap;
-}
-
-[hidden] {
-    display: none !important;
-}
 
 /* ---- Wide screens: the panes fill the window ---------------------------- */
 
@@ -1007,14 +917,6 @@ pre#output:focus-visible {
 }
 
 @media (max-width: 520px) {
-    .masthead {
-        padding-top: 12px;
-    }
-
-    .source {
-        margin-left: 0;
-        width: 100%;
-    }
 
     .settings-row .field {
         flex: 1 1 140px;
@@ -1059,6 +961,10 @@ pre#output:focus-visible {
     }
 
     .more summary::before {
+        transition: none;
+    }
+
+    .code.stale pre#output {
         transition: none;
     }
 }

@@ -3,10 +3,8 @@
 //!
 //! Includes ports of quicktype's Vitest tests that drive the API end to
 //! end: `pipeline-timing.test.ts`, `typescript-output-filename.test.ts`
-//! and `just-types-option.test.ts`. Those that need a renderer other
-//! languages' work packages are still porting skip themselves (printing
-//! why) until it lands. Expected values not taken from the Vitest tests
-//! were checked against quicktype-core's JavaScript API.
+//! and `just-types-option.test.ts`. Expected values not taken from the
+//! Vitest tests were checked against quicktype-core's JavaScript API.
 
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -68,9 +66,8 @@ fn renderer_options(options: &[(&str, OptionValue)]) -> RendererOptions {
 }
 
 /// `quicktype({inputData, lang, rendererOptions, outputFilename})` on the
-/// "Person" sample of `just-types-option.test.ts`, joined; `None` (with a
-/// note) while the language's renderer is not ported yet.
-fn lines_for(lang: &str, options: &[(&str, OptionValue)]) -> Option<Result<String>> {
+/// "Person" sample of `just-types-option.test.ts`, joined.
+fn lines_for(lang: &str, options: &[(&str, OptionValue)]) -> Result<String> {
     generate(
         lang,
         "Person",
@@ -86,20 +83,14 @@ fn generate(
     sample: &str,
     options: &[(&str, OptionValue)],
     output_filename: Option<&str>,
-) -> Option<Result<String>> {
+) -> Result<String> {
     let target = get_target_language(lang).unwrap();
     let mut quicktype_options = Options::new(target, json_input_data(lang, name, &[sample]))
         .with_renderer_options(renderer_options(options));
     if let Some(output_filename) = output_filename {
         quicktype_options = quicktype_options.with_output_filename(output_filename);
     }
-    match block_on(quicktype(quicktype_options)) {
-        Err(e) if e.user_message().ends_with("renderer is not ported yet") => {
-            eprintln!("skipped: {e}");
-            None
-        }
-        result => Some(result.map(|r| r.lines.join("\n"))),
-    }
+    block_on(quicktype(quicktype_options)).map(|r| r.lines.join("\n"))
 }
 
 fn flag(on: bool) -> OptionValue {
@@ -172,9 +163,7 @@ fn leading_comments_start_the_output() {
 
 #[test]
 fn unknown_option_values_are_reported() {
-    let error = lines_for("rust", &[("density", text("sparse"))])
-        .unwrap()
-        .unwrap_err();
+    let error = lines_for("rust", &[("density", text("sparse"))]).unwrap_err();
     assert_eq!(
         error.user_message(),
         "Unknown value sparse for option density"
@@ -368,7 +357,7 @@ fn reports_json_schema_parsing_separately() {
 
 // ---- typescript-output-filename.test.ts ----------------------------------
 
-fn experiment_counts(lang: &str, output_filename: Option<&str>) -> Option<String> {
+fn experiment_counts(lang: &str, output_filename: Option<&str>) -> String {
     generate(
         lang,
         "ExperimentCounts",
@@ -376,104 +365,92 @@ fn experiment_counts(lang: &str, output_filename: Option<&str>) -> Option<String
         &[],
         output_filename,
     )
-    .map(Result::unwrap)
+    .unwrap()
 }
 
 #[test]
 fn uses_output_filename_in_typescript_usage_imports() {
-    if let Some(output) = experiment_counts("typescript", Some("src/cli/ExperimentCounts.ts")) {
-        assert!(
-            output.contains(
-                r#"//   import { Convert, ExperimentCounts } from "./ExperimentCounts";"#
-            )
-        );
-        assert!(!output.contains(r#"from "./file""#));
-    }
+    let output = experiment_counts("typescript", Some("src/cli/ExperimentCounts.ts"));
+    assert!(
+        output.contains(r#"//   import { Convert, ExperimentCounts } from "./ExperimentCounts";"#)
+    );
+    assert!(!output.contains(r#"from "./file""#));
 }
 
 #[test]
 fn uses_output_filename_in_javascript_usage_require() {
-    if let Some(output) = experiment_counts("javascript", Some("src/cli/ExperimentCounts.js")) {
-        assert!(output.contains(r#"//   const Convert = require("./ExperimentCounts");"#));
-        assert!(!output.contains(r#"require("./file")"#));
-    }
+    let output = experiment_counts("javascript", Some("src/cli/ExperimentCounts.js"));
+    assert!(output.contains(r#"//   const Convert = require("./ExperimentCounts");"#));
+    assert!(!output.contains(r#"require("./file")"#));
 }
 
 #[test]
 fn uses_output_filename_in_flow_usage_require() {
-    if let Some(output) = experiment_counts("flow", Some("ExperimentCounts.js")) {
-        assert!(output.contains(r#"//   const Convert = require("./ExperimentCounts");"#));
-        assert!(!output.contains(r#"require("./file")"#));
-    }
+    let output = experiment_counts("flow", Some("ExperimentCounts.js"));
+    assert!(output.contains(r#"//   const Convert = require("./ExperimentCounts");"#));
+    assert!(!output.contains(r#"require("./file")"#));
 }
 
 #[test]
 fn falls_back_to_file_when_writing_to_stdout() {
-    if let Some(output) = experiment_counts("typescript", None) {
-        assert!(output.contains(r#" } from "./file";"#));
-    }
-    if let Some(output) = experiment_counts("javascript", None) {
-        assert!(output.contains(r#"//   const Convert = require("./file");"#));
-    }
+    let output = experiment_counts("typescript", None);
+    assert!(output.contains(r#" } from "./file";"#));
+    let output = experiment_counts("javascript", None);
+    assert!(output.contains(r#"//   const Convert = require("./file");"#));
 }
 
 // ---- just-types-option.test.ts -------------------------------------------
 // ("Kotlin: enum cases retain their TypeScript string values" needs the
 // TypeScript input, so it is in the CLI's tests.)
 
-fn ok(lang: &str, options: &[(&str, OptionValue)]) -> Option<String> {
-    lines_for(lang, options).map(Result::unwrap)
+fn ok(lang: &str, options: &[(&str, OptionValue)]) -> String {
+    lines_for(lang, options).unwrap()
 }
 
-fn rejected(lang: &str, options: &[(&str, OptionValue)]) -> Option<QuickTypeError> {
-    lines_for(lang, options).map(Result::unwrap_err)
+fn rejected(lang: &str, options: &[(&str, OptionValue)]) -> QuickTypeError {
+    lines_for(lang, options).unwrap_err()
 }
 
 #[test]
 fn csharp_just_types_has_no_attributes_or_helpers_but_a_namespace() {
-    if let Some(output) = ok("csharp", &[("just-types", flag(true))]) {
-        assert!(output.contains("namespace QuickType"));
-        assert!(output.contains("public partial class Person"));
-        assert!(!output.contains("JsonConverter"));
-        assert!(!output.contains("JsonProperty"));
-    }
+    let output = ok("csharp", &[("just-types", flag(true))]);
+    assert!(output.contains("namespace QuickType"));
+    assert!(output.contains("public partial class Person"));
+    assert!(!output.contains("JsonConverter"));
+    assert!(!output.contains("JsonProperty"));
 }
 
 #[test]
 fn csharp_just_types_with_use_records_emits_records_without_helpers() {
-    if let Some(output) = ok(
+    let output = ok(
         "csharp",
         &[("just-types", flag(true)), ("use-records", flag(true))],
-    ) {
-        assert!(output.contains("namespace QuickType"));
-        assert!(output.contains("public partial record Person"));
-        assert!(!output.contains("JsonConverter"));
-        assert!(!output.contains("FromJson"));
-    }
+    );
+    assert!(output.contains("namespace QuickType"));
+    assert!(output.contains("public partial record Person"));
+    assert!(!output.contains("JsonConverter"));
+    assert!(!output.contains("FromJson"));
 }
 
 #[test]
 fn kotlin_just_types_has_plain_data_classes() {
-    if let Some(output) = ok("kotlin", &[("just-types", flag(true))]) {
-        assert!(output.contains("data class Person"));
-        assert!(!output.contains("Klaxon"));
-    }
+    let output = ok("kotlin", &[("just-types", flag(true))]);
+    assert!(output.contains("data class Person"));
+    assert!(!output.contains("Klaxon"));
 }
 
 #[test]
 fn scala3_just_types_has_plain_case_classes() {
-    if let Some(output) = ok("scala3", &[("just-types", flag(true))]) {
-        assert!(output.contains("case class Person"));
-        assert!(!output.contains("circe"));
-    }
+    let output = ok("scala3", &[("just-types", flag(true))]);
+    assert!(output.contains("case class Person"));
+    assert!(!output.contains("circe"));
 }
 
 #[test]
 fn smithy_accepts_just_types() {
-    if let Some(via_boolean) = ok("smithy4a", &[("just-types", flag(true))]) {
-        assert!(via_boolean.contains("structure Person"));
-        assert_eq!(Some(via_boolean), ok("smithy4a", &[]));
-    }
+    let via_boolean = ok("smithy4a", &[("just-types", flag(true))]);
+    assert!(via_boolean.contains("structure Person"));
+    assert_eq!(via_boolean, ok("smithy4a", &[]));
 }
 
 #[test]
@@ -487,12 +464,11 @@ fn csharp_generated_file_marker() {
         vec![("just-types", flag(true))],
         vec![("features", text("complete"))],
     ] {
-        if let Some(output) = ok("csharp", &options) {
-            assert!(
-                output.starts_with("// <auto-generated />\n//\n"),
-                "{options:?}"
-            );
-        }
+        let output = ok("csharp", &options);
+        assert!(
+            output.starts_with("// <auto-generated />\n//\n"),
+            "{options:?}"
+        );
     }
 }
 
@@ -505,12 +481,11 @@ fn the_removed_enum_spellings_are_errors() {
         ("scala3", "framework", "just-types"),
     ];
     for (lang, option, value) in cases {
-        if let Some(error) = rejected(lang, &[(option, text(value))]) {
-            assert_eq!(
-                error.user_message(),
-                format!("Unknown value {value} for option {option}")
-            );
-        }
+        let error = rejected(lang, &[(option, text(value))]);
+        assert_eq!(
+            error.user_message(),
+            format!("Unknown value {value} for option {option}")
+        );
     }
 }
 
@@ -522,24 +497,18 @@ fn just_types_wins_over_a_conflicting_enum_option() {
         ("scala3", "framework", "upickle", "upickle"),
     ];
     for (lang, option, value, absent) in cases {
-        if let Some(output) = ok(lang, &[("just-types", flag(true)), (option, text(value))]) {
-            assert_eq!(
-                Some(output.clone()),
-                ok(lang, &[("just-types", flag(true))])
-            );
-            assert!(!output.contains(absent), "{lang}");
-        }
+        let output = ok(lang, &[("just-types", flag(true)), (option, text(value))]);
+        assert_eq!(output, ok(lang, &[("just-types", flag(true))]));
+        assert!(!output.contains(absent), "{lang}");
     }
 }
 
 #[test]
 fn framework_defaults() {
-    if let Some(output) = ok("scala3", &[]) {
-        assert!(output.contains("io.circe"));
-    }
-    if let Some(output) = ok("kotlin", &[]) {
-        assert!(output.contains("com.fasterxml.jackson"));
-    }
+    let output = ok("scala3", &[]);
+    assert!(output.contains("io.circe"));
+    let output = ok("kotlin", &[]);
+    assert!(output.contains("com.fasterxml.jackson"));
 }
 
 // ---- Random type names are per run ---------------------------------------

@@ -17,6 +17,7 @@ use crate::attributes::constraints::{
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, TOP_LEVEL_NAME_ORDER};
 use crate::source::{MultiWord, multi_word, paren_if_needed, single_word};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::recursion::guard;
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
@@ -25,7 +26,7 @@ use crate::transformers::{
 };
 
 use super::python_renderer::{
-    PythonOptions, PythonRenderer, PythonState, intercalate, python_hooks, python_methods,
+    PythonOptions, PythonRenderer, PythonState, python_hooks, python_methods,
     python_renderer_methods,
 };
 use super::utils::snake_name_style;
@@ -728,7 +729,14 @@ impl<'a> JsonPythonRenderer<'a> {
                     }
                     compose_with(input, |v| {
                         let conv = self.conv(ConverterFunction::Union);
-                        Ok(sl![conv, "([", intercalate(", ", lambdas), "], ", v, ")"])
+                        Ok(sl![
+                            conv,
+                            "([",
+                            array_intercalate(", ".into(), lambdas),
+                            "], ",
+                            v,
+                            ")"
+                        ])
                     })
                 }
                 TransformerData::Decoding { consumer } => {
@@ -912,7 +920,7 @@ impl<'a> JsonPythonRenderer<'a> {
                         Ok(sl![
                             conv,
                             "([",
-                            intercalate(", ", deserializers),
+                            array_intercalate(", ".into(), deserializers),
                             "], ",
                             v,
                             ")"
@@ -989,7 +997,7 @@ impl<'a> JsonPythonRenderer<'a> {
                         Ok(sl![
                             conv,
                             "([",
-                            intercalate(", ", serializers),
+                            array_intercalate(", ".into(), serializers),
                             "], ",
                             v,
                             ")"
@@ -1104,7 +1112,7 @@ pub mod json_python_methods {
                 "return ".into(),
                 class_name.into(),
                 "(".into(),
-                intercalate(", ", args),
+                array_intercalate(", ".into(), args).into(),
                 ")".into(),
             ]);
             Ok(())
