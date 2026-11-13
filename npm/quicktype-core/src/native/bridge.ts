@@ -11,6 +11,7 @@ import {
 } from "../Annotation.js";
 import type { InputData } from "../input/Inputs.js";
 import { JSONSchemaInput, Ref } from "../input/JSONSchemaInput.js";
+import { type PathElement, PathElementKind } from "../input/PathElement.js";
 import type { JSONSchemaStore } from "../input/JSONSchemaStore.js";
 import { messageError } from "../Messages.js";
 import type { RunContext } from "../Run.js";
@@ -126,6 +127,39 @@ function prepareSchemaInput(input: any, ctx: RunContext): JSONSchemaStore {
     return maybeSchemaStore;
 }
 
+/**
+ * The `Ref` whose `toString()` is `text`, if there is one. `Ref.parse`
+ * finds it unless URI parsing drops characters of the path (line breaks
+ * and tabs in a property name); then the address and the path elements
+ * are rebuilt separately, as `Ref.parseURI` would split them.
+ */
+function refFromDisplay(text: string): Ref | undefined {
+    try {
+        const ref = Ref.parse(text);
+        if (ref.toString() === text) return ref;
+        const hash = text.indexOf("#");
+        if (hash < 0) return undefined;
+        const address = text.slice(0, hash);
+        let fragment = text.slice(hash + 1);
+        const path: PathElement[] = [];
+        if (fragment.startsWith("/")) {
+            path.push({ kind: PathElementKind.Root });
+            fragment = fragment.slice(1);
+        }
+
+        if (fragment !== "") {
+            for (const key of fragment.split("/")) path.push({ kind: PathElementKind.KeyOrIndex, key });
+        }
+
+        const rebuilt = new Ref(address === "" ? undefined : Ref.parse(address).addressURI, path);
+        if (rebuilt.toString() === text) return rebuilt;
+    } catch {
+        // Not a ref.
+    }
+
+    return undefined;
+}
+
 /** Turns the engine's `Ref` placeholders back into `Ref`s. */
 function rehydrateProperty(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(rehydrateProperty);
@@ -133,14 +167,7 @@ function rehydrateProperty(value: unknown): unknown {
     const display = (value as any).__qtDisplay;
     if (display !== undefined) {
         const text: string = display.display;
-        try {
-            const ref = Ref.parse(text);
-            if (ref.toString() === text) return ref;
-        } catch {
-            // Not a ref.
-        }
-
-        return { toString: () => text };
+        return refFromDisplay(text) ?? { toString: () => text };
     }
 
     const result: Record<string, unknown> = {};

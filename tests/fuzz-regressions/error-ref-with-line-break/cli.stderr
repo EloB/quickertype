@@ -1,0 +1,2 @@
+Error: Can't have non-specified required properties but forbidden additionalTypes at in/schema.json#/definitions/series/properties/Cod/properties/new
+line.
