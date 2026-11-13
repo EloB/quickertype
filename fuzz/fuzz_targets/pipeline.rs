@@ -31,8 +31,9 @@ fuzz_target!(|data: &[u8]| {
 
 fn run(config: &RunConfig, body: &[u8]) {
     let flag = |bit: u8| config.flags & (1 << bit) != 0;
-    let samples: Vec<JsonSample> = split(body, 0)
-        .into_iter()
+    let pieces = split(body, 0);
+    let samples: Vec<JsonSample> = pieces
+        .iter()
         .map(|sample| {
             if flag(2) {
                 JsonSample::String(text(sample))
@@ -43,7 +44,6 @@ fn run(config: &RunConfig, body: &[u8]) {
         .collect();
     let names = if flag(5) { ODD_NAMES } else { NAMES };
 
-    let pieces = split(body, 0);
     let files: Vec<(String, Vec<u8>)> = pieces
         .iter()
         .enumerate()
