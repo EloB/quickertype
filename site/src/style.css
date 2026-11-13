@@ -292,9 +292,12 @@ input[type="text"] {
     background: var(--wasm);
 }
 
-/* An option with a hint under its label takes two columns, to keep it short. */
-.option-grid .check.hinted {
+/* An option with a hint under it takes two columns, to keep the hint short. */
+.option-grid .hinted {
     grid-column: span 2;
+}
+
+.option-grid .check.hinted {
     align-items: flex-start;
     padding-top: 4px;
 }

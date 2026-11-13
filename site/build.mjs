@@ -25,6 +25,9 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
+import { quicktypeReference } from "./reference.mjs";
+import { hashKeys } from "./src/hash.js";
+
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.join(siteRoot, "..");
 const packageRoot = path.join(repositoryRoot, "npm", "quicktype-core");
@@ -55,11 +58,12 @@ const samples = [
 ];
 
 /**
- * The page's defaults where they differ from quicktype's, by language and
- * option (CLI names). They mirror app.quicktype.io's presets: the app starts
- * each language from quicktype's own option defaults and overrides exactly
- * these. Every other option, `just-types` included, keeps quicktype's
- * default. The command under the output shows them as flags.
+ * The page's defaults where they differ from quicktype's, by language (any
+ * of its names) and option (CLI names). They mirror app.quicktype.io's
+ * presets: the app starts each language from quicktype's own option
+ * defaults and overrides exactly these. Every other option, `just-types`
+ * included, keeps quicktype's default. The command under the output shows
+ * them as flags.
  */
 const presets = {
     objc: { "extra-comments": true },
@@ -68,55 +72,90 @@ const presets = {
 };
 
 /**
- * The quicktype commit whose output this repository matches is
- * `quicktype_commit` in tests/golden/REFERENCE; its date is here. A new
- * commit there needs its date here (the build says so).
+ * A line under an option, by language and option: what leaving
+ * `just-types` off adds, which is quicktype's default, for people who
+ * expect types only (checked against the CLI on pokedex.json). Smithy4s
+ * has none: its renderer does not read the option.
  */
-const upstreamCommitDates = {
-    c39af7d303b025280e2668a1b2d29913093593c9: "2026-09-08",
+const justTypesOff = (what) => ({ "just-types": `Off: ${what} (quicktype's default)` });
+const hints = {
+    typescript: justTypesOff("types plus runtime conversion code"),
+    flow: justTypesOff("types plus runtime conversion code"),
+    python: justTypesOff("classes plus from_dict/to_dict conversion code"),
+    ruby: justTypesOff("types plus validating from_json!/to_json methods"),
+    elixir: justTypesOff("types plus JSON decoding and encoding functions"),
+    elm: justTypesOff("types plus JSON decoders and encoders"),
+    dart: justTypesOff("classes plus fromJson/toJson methods"),
+    go: justTypesOff("types plus a package clause and Unmarshal/Marshal functions"),
+    haskell: justTypesOff("types plus a module header and aeson instances"),
+    java: justTypesOff("classes plus Jackson annotations and a Converter class"),
+    cplusplus: justTypesOff("classes plus nlohmann/json from_json/to_json functions"),
+    objc: justTypesOff("classes plus JSON conversion methods"),
+    swift: justTypesOff("types plus Codable conformance"),
+    cs: justTypesOff("classes plus serialization code for the chosen framework"),
+    kotlin: justTypesOff("classes plus serialization code for the chosen framework"),
+    scala3: justTypesOff("types plus codecs for the chosen framework"),
 };
 
 const qt = require(path.join(packageRoot, "dist", "index.js"));
 
-/** Every target language with its renderer options (and the page's presets), from quicktype-core's API. */
-function languages() {
-    const result = qt.defaultTargetLanguages.map((language) => ({
-        displayName: language.displayName,
-        names: [...language.names],
-        extension: language.extension,
-        options: language.optionDefinitions.map((d) => ({
-            name: d.name,
-            description: d.description,
-            // "primary" options are shown, the others under "More options".
-            kind: d.kind === "primary" ? "primary" : "secondary",
-            type: d.optionType,
-            defaultValue: d.defaultValue,
-            ...(d.optionType === "enum" ? { values: Object.keys(d.values) } : {}),
-            ...(d.optionType === "string" ? { typeLabel: d.typeLabel } : {}),
-            ...(presets[language.names[0]]?.[d.name] !== undefined ? { preset: presets[language.names[0]][d.name] } : {}),
-        })),
-    }));
-
-    // Every preset names an option the language has, with a value it takes
-    // that is not already quicktype's default.
-    for (const [lang, options] of Object.entries(presets)) {
-        const language = result.find((l) => l.names[0] === lang);
-        if (language === undefined) throw new Error(`preset for an unknown language ${lang}`);
-        for (const [name, value] of Object.entries(options)) {
-            const definition = language.options.find((o) => o.name === name);
-            const valid =
-                definition !== undefined &&
-                (definition.type === "boolean"
-                    ? typeof value === "boolean"
-                    : definition.type === "enum"
-                      ? definition.values.includes(value)
-                      : typeof value === "string");
-            if (!valid) throw new Error(`invalid preset ${lang}: ${name} = ${JSON.stringify(value)}`);
-            if (value === definition.defaultValue) throw new Error(`preset ${lang}: ${name} is quicktype's default already`);
-        }
+/** `table` (`{ language: { option: value } }`) by language, each named by one of its names. */
+function byLanguage(table, what) {
+    const result = new Map();
+    for (const [name, options] of Object.entries(table)) {
+        const language = qt.defaultTargetLanguages.find((l) => l.names.includes(name));
+        if (language === undefined) throw new Error(`${what}: no language is named "${name}"`);
+        if (result.has(language)) throw new Error(`${what}: ${language.displayName} is in it twice`);
+        result.set(language, new Map(Object.entries(options)));
     }
 
     return result;
+}
+
+/** A preset `value` for `option`, if the option takes it and it is not quicktype's default. */
+function checkedPreset(language, option, value) {
+    const valid =
+        option.type === "boolean"
+            ? typeof value === "boolean"
+            : option.type === "enum"
+              ? option.values.includes(value)
+              : typeof value === "string";
+    const where = `presets: ${language.displayName} --${option.name}`;
+    if (!valid) throw new Error(`${where} cannot be ${JSON.stringify(value)}`);
+    if (value === option.defaultValue) throw new Error(`${where} is ${JSON.stringify(value)} by default already`);
+    return value;
+}
+
+/** Every target language with its renderer options, from quicktype-core's API, and the page's presets and hints. */
+function languages() {
+    const presetsOf = byLanguage(presets, "presets");
+    const hintsOf = byLanguage(hints, "hints");
+    return qt.defaultTargetLanguages.map((language) => {
+        const preset = presetsOf.get(language) ?? new Map();
+        const hint = hintsOf.get(language) ?? new Map();
+        const options = language.optionDefinitions.map((d) => {
+            const option = {
+                name: d.name,
+                description: d.description,
+                // "primary" options are shown, the others under "More options".
+                kind: d.kind === "primary" ? "primary" : "secondary",
+                type: d.optionType,
+                defaultValue: d.defaultValue,
+                ...(d.optionType === "enum" ? { values: Object.keys(d.values) } : {}),
+                ...(d.optionType === "string" ? { typeLabel: d.typeLabel } : {}),
+            };
+            if (preset.has(d.name)) option.preset = checkedPreset(language, option, preset.get(d.name));
+            if (hint.has(d.name)) option.hint = String(hint.get(d.name));
+            preset.delete(d.name);
+            hint.delete(d.name);
+            return option;
+        });
+        for (const [what, left] of [["presets", preset], ["hints", hint]]) {
+            if (left.size > 0) throw new Error(`${what}: ${language.displayName} has no option ${[...left.keys()].join(", ")}`);
+        }
+
+        return { displayName: language.displayName, names: [...language.names], extension: language.extension, options };
+    });
 }
 
 /**
@@ -128,7 +167,7 @@ function languages() {
  */
 function generalOptions() {
     const dashed = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
-    const general = [
+    return [
         { name: "all-properties-optional", label: "Make all class properties optional", option: "allPropertiesOptional", value: true },
         { name: "alphabetize-properties", label: "Alphabetize order of class properties", option: "alphabetizeProperties", value: true },
         ...qt.inferenceFlagNames.map((flag) => ({
@@ -138,35 +177,40 @@ function generalOptions() {
             value: !qt.defaultInferenceFlags[flag],
         })),
     ];
-
-    // Their names share the URL hash and the command line with the renderer options.
-    for (const language of qt.defaultTargetLanguages) {
-        for (const d of language.optionDefinitions) {
-            const clash = general.find((g) => g.name === d.name || g.name === `no-${d.name}`);
-            if (clash !== undefined) throw new Error(`${language.displayName}: --${d.name} clashes with --${clash.name}`);
-        }
-    }
-
-    return general;
 }
 
-/** The quicktype commit the output matches, from tests/golden/REFERENCE, with its date. */
-function upstream() {
-    const reference = fs.readFileSync(path.join(repositoryRoot, "tests", "golden", "REFERENCE"), "utf8");
-    const commit = /^quicktype_commit=([0-9a-f]{40})$/m.exec(reference)?.[1];
-    if (commit === undefined) throw new Error("tests/golden/REFERENCE has no quicktype_commit");
-    const date = upstreamCommitDates[commit];
-    if (date === undefined) {
-        throw new Error(`the date of quicktype commit ${commit} (tests/golden/REFERENCE) is not in upstreamCommitDates in site/build.mjs`);
+/**
+ * Fails if two things would share a name: the URL hash's own keys, the
+ * general options and a language's renderer options share the hash, and
+ * the last two the command line, where a boolean `x` is also `--no-x`.
+ */
+function checkNames(languageList, general) {
+    const taken = new Map(Object.values(hashKeys).map((key) => [key, `the URL hash's own "${key}"`]));
+    const claim = (names, name, what) => {
+        if (names.has(name)) throw new Error(`${what} has the name of ${names.get(name)}`);
+        names.set(name, what);
+    };
+    for (const g of general) claim(taken, g.name, `the general option --${g.name}`);
+    for (const language of languageList) {
+        const names = new Map(taken);
+        for (const o of language.options) {
+            for (const name of o.type === "boolean" ? [o.name, `no-${o.name}`] : [o.name]) {
+                claim(names, name, `${language.displayName}'s --${name}`);
+            }
+        }
     }
+}
 
-    const long = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+/** The quicktype commit the output matches (tests/golden/REFERENCE), with its date in words. */
+function upstream() {
+    const reference = quicktypeReference();
+    const long = new Date(`${reference.date}T00:00:00Z`).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
         timeZone: "UTC",
     });
-    return { commit, short: commit.slice(0, 7), date, long };
+    return { ...reference, long };
 }
 
 function hash(content) {
@@ -200,6 +244,10 @@ async function bundle(entry, define) {
     return result.outputFiles[0].contents;
 }
 
+const languageList = languages();
+const general = generalOptions();
+checkNames(languageList, general);
+
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(path.join(dist, "samples"), { recursive: true });
 
@@ -214,8 +262,8 @@ const mainFile = writeHashed(
     "js",
     await bundle("main.js", {
         __WORKER_FILE__: JSON.stringify(`./${workerFile}`),
-        __LANGUAGES__: JSON.stringify(languages()),
-        __GENERAL__: JSON.stringify(generalOptions()),
+        __LANGUAGES__: JSON.stringify(languageList),
+        __GENERAL__: JSON.stringify(general),
         __SAMPLES__: JSON.stringify(
             samples.map(({ file, ...sample }) => ({ ...sample, path: `samples/${path.basename(file)}` })),
         ),

@@ -16,7 +16,8 @@
 // with integers beyond 32 bits, renderer options given in the URL hash,
 // and an uploaded file too large for the editor; that the URL hash brings all
 // of those back, while a link from before the presets (no `v`) gets
-// quicktype's defaults; that the general options are labelled as in the
+// quicktype's defaults; that the just-types hints are there, and not where
+// the option does nothing; that the general options are labelled as in the
 // CLI's --help, and that a section the user closed stays closed; that the
 // footer links the quicktype commit in tests/golden/REFERENCE; that compare mode reports identical output with each engine in its own
 // worker; that invalid JSON shows quicktype's error; that the input survives
@@ -37,6 +38,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
 
 const siteRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -422,6 +424,15 @@ try {
     })`);
     assert.deepEqual(zod, { hash: "#v=2&l=typescript-zod&s=pokedex", justTypes: false, hints: 0, presets: 0 });
     console.log("ok: TypeScript Zod (no just-types option) keeps quicktype's defaults");
+    await select("lang", "go");
+    const goHint = await page.evaluate("document.getElementById('opt-just-types').closest('label').querySelector('.hint')?.textContent");
+    assert.equal(goHint, "Off: types plus a package clause and Unmarshal/Marshal functions (quicktype's default)");
+    await select("lang", "smithy4a");
+    const smithy = await page.evaluate(
+        "({ option: document.getElementById('opt-just-types') !== null, hints: document.querySelectorAll('#options .hint').length })",
+    );
+    assert.deepEqual(smithy, { option: true, hints: 0 }, "Smithy4s: its renderer ignores just-types; no hint");
+    console.log(`ok: just-types hints per language (Go: "${goHint}"), none for Smithy4s`);
 
     // The presets the page shares with app.quicktype.io, as flags in the
     // command; moving one back to quicktype's default is explicit in the
@@ -586,8 +597,7 @@ try {
     assert.match(forceI32, /pub time: f64,/);
 
     // The footer: the quicktype commit the output matches, linked.
-    const reference = fs.readFileSync(path.join(repositoryRoot, "tests", "golden", "REFERENCE"), "utf8");
-    const commit = /^quicktype_commit=([0-9a-f]{40})$/m.exec(reference)[1];
+    const { commit } = quicktypeReference();
     const version = await page.evaluate(`({
         href: document.querySelector("#version a").href,
         text: document.getElementById("version").textContent,

@@ -255,9 +255,6 @@ function renderSamples() {
 /** Whether "More options" is open; it is re-rendered with the language's options. */
 let moreOpen = false;
 
-/** What leaving `just-types` off gives, next to it: quicktype's default is more than types. */
-const justTypesHint = "Off: types plus runtime conversion code (quicktype's default)";
-
 /** A small mark on an option whose page default is a preset, saying so and what quicktype's default is. */
 function presetMark(definition) {
     if (definition.preset === undefined) return "";
@@ -272,21 +269,19 @@ function optionControl(definition) {
     const value = optionValue(definition);
     const flag = `--${definition.name}`;
     const label = escapeHtml(definition.description) + presetMark(definition);
+    const hint = definition.hint === undefined ? "" : `<small class="hint">${escapeHtml(definition.hint)}</small>`;
     if (definition.type === "boolean") {
-        const hint = definition.name === "just-types" ? justTypesHint : undefined;
-        return `<label class="check${hint ? " hinted" : ""}" title="${flag}"><input type="checkbox" id="${id}" data-option="${definition.name}"${value ? " checked" : ""}><span>${label}${
-            hint ? `<small class="hint">${escapeHtml(hint)}</small>` : ""
-        }</span></label>`;
+        return `<label class="check${hint ? " hinted" : ""}" title="${flag}"><input type="checkbox" id="${id}" data-option="${definition.name}"${value ? " checked" : ""}><span>${label}${hint}</span></label>`;
     }
 
     if (definition.type === "enum") {
         const choices = definition.values
             .map((v) => `<option${v === value ? " selected" : ""}>${escapeHtml(v)}</option>`)
             .join("");
-        return `<label class="field" title="${flag}"><span class="field-label">${label}</span><select id="${id}" data-option="${definition.name}">${choices}</select></label>`;
+        return `<label class="field${hint ? " hinted" : ""}" title="${flag}"><span class="field-label">${label}</span><select id="${id}" data-option="${definition.name}">${choices}</select>${hint}</label>`;
     }
 
-    return `<label class="field" title="${flag}"><span class="field-label">${label}</span><input type="text" id="${id}" data-option="${definition.name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(definition.typeLabel ?? "")}" spellcheck="false" autocomplete="off"></label>`;
+    return `<label class="field${hint ? " hinted" : ""}" title="${flag}"><span class="field-label">${label}</span><input type="text" id="${id}" data-option="${definition.name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(definition.typeLabel ?? "")}" spellcheck="false" autocomplete="off">${hint}</label>`;
 }
 
 /** How many general options there are, or how many are on. */

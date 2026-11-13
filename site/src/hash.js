@@ -1,5 +1,6 @@
 // The URL hash's own keys. Everything else in the hash is an option, by its
-// name on quicktype's command line.
+// name on quicktype's command line; site/build.mjs fails if an option takes
+// one of these names.
 
 /**
  * The hash format, written as `v` by every link. Links without it are older
