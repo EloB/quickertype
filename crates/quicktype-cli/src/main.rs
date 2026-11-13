@@ -47,6 +47,10 @@ use crate::cli_options::{CliOptions, parse_cli_options};
 use crate::messages::{CliError, message_error};
 use crate::type_source::{JsonTypeSource, TypeSource};
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// `packageJSON.version`.
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 

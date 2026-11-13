@@ -19,6 +19,7 @@ quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
 quicktype-js-compat = { path = "crates/quicktype-js-compat" }
 quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
 indexmap = "2"
+mimalloc = { version = "0.1", default-features = false }
 regex = "1"
 # The engine under `regex`, used directly for multi-pattern searches.
 regex-automata = { version = "0.4", default-features = false, features = ["std", "meta", "syntax"] }

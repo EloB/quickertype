@@ -12,8 +12,16 @@ authors.workspace = true
 name = "quicktype"
 path = "src/main.rs"
 
+[features]
+default = ["mimalloc"]
+# Use mimalloc as the global allocator: quicktype allocates many small,
+# short-lived objects, and mimalloc is markedly faster at that than the
+# system allocators (see docs/BENCHMARKS.md). Output does not depend on it.
+mimalloc = ["dep:mimalloc"]
+
 [dependencies]
 indexmap.workspace = true
+mimalloc = { workspace = true, optional = true }
 quicktype-core = { workspace = true, features = ["http"] }
 quicktype-graphql-input.workspace = true
 quicktype-js-compat.workspace = true
