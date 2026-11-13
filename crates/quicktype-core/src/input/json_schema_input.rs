@@ -32,6 +32,7 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::future::Future;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
@@ -57,12 +58,14 @@ use crate::attributes::type_names::{
     singularize_type_names,
 };
 use crate::attributes::uri_attributes::uri_schema_attributes_producer;
+use crate::input::inputs::Input;
 use crate::input::io::{GrowStack, LocalBoxFuture, grow_stack};
 use crate::input::json_schema_store::{JsonSchema, JsonSchemaStore, SchemaCache};
 use crate::input::path_element::PathElement;
 use crate::messages::{
     ErrorKind, JsErrorName, MessageValue, QuickTypeError, Result, message_error,
 };
+use crate::run::RunContext;
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
 use crate::support::parse_json::parse_json;
 use crate::support::support::{assert, console_log, defined, panic};
@@ -1962,9 +1965,7 @@ async fn refs_in_schema_for_uri(resolver: &mut Resolver<'_>, uri: &Uri) -> Resul
 // ---------------------------------------------------------------------------
 // Inline schema store
 
-/// `ctx.time(name, f)` of TypeScript's `RunContext`: runs `f` (once),
-/// reporting how long it took if timings are wanted.
-pub type Timer = Rc<dyn Fn(&str, &mut dyn FnMut())>;
+pub use crate::run::Timer;
 
 /// `InputJSONSchemaStore`: serves the schemas given as text to
 /// `addSource`, and delegates other addresses to the user's store's
@@ -2255,6 +2256,68 @@ impl JsonSchemaInput {
         } else {
             None
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The `Input` glue
+
+impl Input for JsonSchemaInput {
+    type Source = JsonSchemaSourceData;
+
+    fn kind(&self) -> &str {
+        JsonSchemaInput::kind(self)
+    }
+
+    fn need_ir(&self) -> bool {
+        JsonSchemaInput::need_ir(self)
+    }
+
+    fn need_schema_processing(&self) -> bool {
+        JsonSchemaInput::need_schema_processing(self)
+    }
+
+    fn add_source(&mut self, source: Self::Source) -> impl Future<Output = Result<()>> {
+        JsonSchemaInput::add_source(self, source)
+    }
+
+    fn add_source_sync(&mut self, source: Self::Source) -> Result<()> {
+        JsonSchemaInput::add_source_sync(self, source)
+    }
+
+    /// `addTypes(ctx, typeBuilder)`: takes `debugPrintSchemaResolving` and
+    /// the timer from `ctx`; the inference flags only concern JSON input.
+    fn add_types(
+        &mut self,
+        ctx: &RunContext,
+        type_builder: &mut TypeBuilder<'_>,
+        _infer_maps: bool,
+        _infer_enums: bool,
+        _fixed_top_levels: bool,
+    ) -> impl Future<Output = Result<()>> {
+        let debug_print_schema_resolving = ctx.debug_print_schema_resolving;
+        let timer = ctx.timer();
+        Box::pin(JsonSchemaInput::add_types(
+            self,
+            type_builder,
+            debug_print_schema_resolving,
+            Some(timer),
+        ))
+    }
+
+    fn add_types_sync(
+        &mut self,
+        _ctx: &RunContext,
+        _type_builder: &mut TypeBuilder<'_>,
+        _infer_maps: bool,
+        _infer_enums: bool,
+        _fixed_top_levels: bool,
+    ) -> Result<()> {
+        JsonSchemaInput::add_types_sync(self)
+    }
+
+    fn single_string_schema_source(&self) -> Option<String> {
+        JsonSchemaInput::single_string_schema_source(self)
     }
 }
 

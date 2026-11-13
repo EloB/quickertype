@@ -7,7 +7,7 @@
 //! exact layout. All widths count UTF-16 code units with ANSI escape codes
 //! removed, as in JS.
 
-use quicktype_core::renderer_options::{OptionDefinition, OptionType};
+use quicktype_core::{OptionDefinition, OptionType};
 
 use crate::chalk::{Chalk, TemplateError, chalk_format};
 use crate::js;
@@ -664,7 +664,7 @@ mod tests {
                 "x",
                 OptionType::Boolean,
                 description,
-                quicktype_core::renderer_options::OptionKind::Cli,
+                quicktype_core::OptionKind::Cli,
             )],
             hide: vec![],
             table_options: None,

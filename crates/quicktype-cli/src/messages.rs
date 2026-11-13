@@ -1,96 +1,30 @@
-//! The quicktype errors the CLI front end raises: the `Driver*` kinds of
-//! `packages/quicktype-core/src/Messages.ts`, with `messageError`'s message
-//! substitution.
-// TODO(messages): use quicktype_core::messages once it is ported; these are
-// local copies of the few kinds the front end needs.
+//! Why a CLI run fails, and how the failure is reported.
+//!
+//! TypeScript's `main(argv).catch` prints every rejection as
+//! `Error: <message>.` and exits with code 1. The rejections are
+//! quicktype's own errors (`messageError`, here [`QuickTypeError`] from
+//! quicktype-core) and plain JavaScript `Error`s thrown by Node or a
+//! library (`ENOENT: …` from `fs`, chalk-template's errors).
 
 use std::fmt;
 
+use quicktype_core::{ErrorKind, IoError, MessageValue, QuickTypeError};
+
 use crate::chalk::TemplateError;
-use crate::js;
 
-/// A `QuickTypeError` raised by the CLI front end.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DriverError {
-    /// `DriverUnknownSourceLanguage`.
-    UnknownSourceLanguage {
-        /// The `--src-lang` value.
-        lang: String,
-    },
-    /// `DriverUnknownOutputLanguage`.
-    UnknownOutputLanguage {
-        /// The `--lang` value or `--out` extension.
-        lang: String,
-    },
-    /// `DriverSourceLangMustBeGraphQL`.
-    SourceLangMustBeGraphQL,
-    /// `DriverGraphQLSchemaNeeded`.
-    GraphQLSchemaNeeded,
-    /// `DriverNoLanguageOrExtension`.
-    NoLanguageOrExtension,
-    /// `DriverCLIOptionParsingFailed`.
-    CliOptionParsingFailed {
-        /// What went wrong.
-        message: String,
-    },
+/// `messageError(kind, properties)` as a value.
+pub fn message_error(kind: ErrorKind, properties: Vec<(&str, MessageValue)>) -> CliError {
+    CliError::Quicktype(QuickTypeError::new(kind, properties))
 }
-
-impl DriverError {
-    /// The message template (TS `errorMessage`).
-    pub fn error_message(&self) -> &'static str {
-        match self {
-            Self::UnknownSourceLanguage { .. } => "Unknown source language ${lang}",
-            Self::UnknownOutputLanguage { .. } => "Unknown output language ${lang}",
-            Self::SourceLangMustBeGraphQL => {
-                "If a GraphQL schema is specified, the source language must be GraphQL"
-            }
-            Self::GraphQLSchemaNeeded => {
-                "Please specify a GraphQL schema with --graphql-schema or --graphql-introspect"
-            }
-            Self::NoLanguageOrExtension => {
-                "Please specify a language (--lang) or an output file extension"
-            }
-            Self::CliOptionParsingFailed { .. } => "Option parsing failed: ${message}",
-        }
-    }
-
-    fn properties(&self) -> Vec<(&'static str, &str)> {
-        match self {
-            Self::UnknownSourceLanguage { lang } | Self::UnknownOutputLanguage { lang } => {
-                vec![("lang", lang)]
-            }
-            Self::CliOptionParsingFailed { message } => vec![("message", message)],
-            Self::SourceLangMustBeGraphQL
-            | Self::GraphQLSchemaNeeded
-            | Self::NoLanguageOrExtension => vec![],
-        }
-    }
-
-    /// The substituted message (TS `userMessage`): each `${name}` is
-    /// replaced like JS `String.prototype.replace` does, so only the first
-    /// occurrence, with `$&`-style patterns in the value expanded.
-    pub fn user_message(&self) -> String {
-        let mut message = self.error_message().to_owned();
-        for (name, value) in self.properties() {
-            message = js::replace_first(&message, &format!("${{{name}}}"), value);
-        }
-        message
-    }
-}
-
-impl fmt::Display for DriverError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.user_message())
-    }
-}
-
-impl std::error::Error for DriverError {}
 
 /// Why a CLI run failed.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CliError {
     /// A quicktype error, printed as `Error: <message>.` with exit code 1.
-    Driver(DriverError),
+    Quicktype(QuickTypeError),
+    /// An exception from Node's `fs` (`ENOENT: …, open 'x'`), printed as
+    /// `Error: <message>.` with exit code 1.
+    Io(IoError),
     /// A plain JS `Error` thrown by a library (e.g. chalk-template),
     /// printed as `Error: <message>.` with exit code 1.
     Thrown(String),
@@ -103,7 +37,7 @@ impl CliError {
     /// The process exit code for this error.
     pub fn exit_code(&self) -> u8 {
         match self {
-            Self::Driver(_) | Self::Thrown(_) => 1,
+            Self::Quicktype(_) | Self::Io(_) | Self::Thrown(_) => 1,
             Self::NotImplemented(_) => 2,
         }
     }
@@ -112,7 +46,8 @@ impl CliError {
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Driver(e) => e.fmt(f),
+            Self::Quicktype(e) => f.write_str(e.user_message()),
+            Self::Io(e) => e.fmt(f),
             Self::Thrown(message) => f.write_str(message),
             Self::NotImplemented(what) => {
                 write!(
@@ -126,9 +61,9 @@ impl fmt::Display for CliError {
 
 impl std::error::Error for CliError {}
 
-impl From<DriverError> for CliError {
-    fn from(e: DriverError) -> Self {
-        Self::Driver(e)
+impl From<QuickTypeError> for CliError {
+    fn from(e: QuickTypeError) -> Self {
+        Self::Quicktype(e)
     }
 }
 
@@ -146,15 +81,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn substitution_follows_js_replace() {
-        let e = DriverError::UnknownOutputLanguage { lang: "$&".into() };
-        assert_eq!(e.user_message(), "Unknown output language ${lang}");
-        let e = DriverError::CliOptionParsingFailed {
-            message: "UNKNOWN_OPTION: Unknown option: --foo".into(),
-        };
+    fn messages_follow_message_error() {
+        let e = message_error(
+            ErrorKind::DriverUnknownOutputLanguage,
+            vec![("lang", "$&".into())],
+        );
+        assert_eq!(e.to_string(), "Unknown output language ${lang}");
+        assert_eq!(e.exit_code(), 1);
+        let e = message_error(
+            ErrorKind::DriverCLIOptionParsingFailed,
+            vec![("message", "UNKNOWN_OPTION: Unknown option: --foo".into())],
+        );
         assert_eq!(
             e.to_string(),
             "Option parsing failed: UNKNOWN_OPTION: Unknown option: --foo"
         );
+        assert_eq!(CliError::NotImplemented("x".into()).exit_code(), 2);
     }
 }

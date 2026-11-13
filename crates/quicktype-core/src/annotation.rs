@@ -5,6 +5,7 @@
 //! `--quiet` is given.
 
 /// `AnnotationData` and its only subclass, `IssueAnnotationData`.
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AnnotationData {
     /// `IssueAnnotationData(message)`: a problem with the input, e.g. a type

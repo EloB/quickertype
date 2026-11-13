@@ -14,6 +14,7 @@ fn default_json(value: Option<&OptionValue>) -> Value {
         Some(OptionValue::Null) => Value::Null,
         Some(OptionValue::Bool(b)) => json!(b),
         Some(OptionValue::String(s)) => json!(s),
+        Some(other) => panic!("unexpected default value {other:?}"),
     }
 }
 
