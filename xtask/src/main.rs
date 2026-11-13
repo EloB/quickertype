@@ -2,9 +2,11 @@
 //!
 //! ```text
 //! cargo xtask parity [options]     replay the golden corpus (see `parity --help`)
+//! cargo xtask diff [opts] -- <args> run the TypeScript CLI and ours side by side and compare
 //! cargo xtask golden [ref-dir]     re-record tests/golden from the TypeScript reference
 //! ```
 
+mod diff;
 mod parity;
 
 use std::path::{Path, PathBuf};
@@ -15,6 +17,8 @@ usage: cargo xtask <task> [args]
 
 tasks:
   parity [options]   replay tests/golden against a quicktype binary (--help for options)
+  diff [options] -- <quicktype args>
+                     run the TypeScript CLI and ours side by side and compare (--help)
   golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
                      (default ref-dir: ../quicktype)
 ";
@@ -37,6 +41,18 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             parity::run(&root, rest)
+        }
+        Some("diff") => {
+            let rest: Vec<String> = args.collect();
+            let before_separator = rest.iter().take_while(|a| *a != "--");
+            if before_separator
+                .into_iter()
+                .any(|a| a == "-h" || a == "--help")
+            {
+                print!("{}", diff::USAGE);
+                return ExitCode::SUCCESS;
+            }
+            diff::run(&root, rest)
         }
         Some("golden") => Command::new(root.join("xtask/golden/record.sh"))
             .args(args)
