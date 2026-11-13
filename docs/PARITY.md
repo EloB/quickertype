@@ -181,6 +181,17 @@ the others name the fix they need.
   port goes much deeper but eventually overflows the native stack and
   aborts. Fix: an explicit depth limit reporting the `RangeError`, or
   iterative inference.
+- **Endless recursion over the type graph.** On a graph that cycles
+  through a nullable union (`T = T[] | null`), TypeScript's
+  type-to-source functions (and C#'s `needTransformerForType`) recurse until
+  V8 throws `RangeError: Maximum call stack size exceeded`. The port's
+  recursive functions run under `support::recursion::guard`, which reports
+  the same `RangeError` after 1,000 nested guarded calls instead of Node's
+  stack size: Node 24 gets 971 levels deep in Pike's `sourceFor` and 8,903
+  in `needTransformerForType`. Endless recursions fail identically. A
+  finite graph nested deeper than either limit could differ, but in
+  TypeScript graph rewriting already overflows at about 335 nested arrays,
+  so no such graph reaches a TypeScript renderer.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports

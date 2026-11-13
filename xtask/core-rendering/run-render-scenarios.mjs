@@ -71,6 +71,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { dumpTransformation } from "./dump-transformation.mjs";
+
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
 const require = createRequire(join(quicktype, "package.json"));
 const dist = join(quicktype, "packages/quicktype-core/dist");
@@ -92,6 +94,7 @@ const { directlyReachableSingleNamedType } = load("Type/TypeUtils.js");
 const { modifySource, annotated } = load("Source.js");
 const { FetchingJSONSchemaStore } = load("input/FetchingJSONSchemaStore.js");
 const { languageNamed } = load("language/All.js");
+const { typeRefIndex } = load("Type/TypeRef.js");
 
 // ---- Graph dump (same format as record-render-cases.mjs) -------------------
 
@@ -167,6 +170,9 @@ function dumpAttributes(attributes) {
                 break;
             case "uriAttributes":
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
+                break;
+            case "transformation":
+                result.transformation = dumpTransformation(value, typeRefIndex);
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);

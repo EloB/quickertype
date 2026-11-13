@@ -1,0 +1,826 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "child",
+      1,
+      false
+     ],
+     [
+      "choice",
+      3,
+      false
+     ],
+     [
+      "counts",
+      6,
+      false
+     ],
+     [
+      "flag",
+      7,
+      false
+     ],
+     [
+      "kind",
+      8,
+      false
+     ],
+     [
+      "maybeInt",
+      9,
+      false
+     ],
+     [
+      "maybeKind",
+      11,
+      false
+     ],
+     [
+      "mixedMap",
+      13,
+      false
+     ],
+     [
+      "name",
+      15,
+      false
+     ],
+     [
+      "optSmall",
+      16,
+      true
+     ],
+     [
+      "ratio",
+      18,
+      false
+     ],
+     [
+      "self",
+      19,
+      true
+     ],
+     [
+      "small",
+      22,
+      false
+     ],
+     [
+      "tags",
+      23,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "child"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x",
+       "Double"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "choice"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     4,
+     5
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Number",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "counts"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flag",
+       "z"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "one-two",
+     "three \"four\""
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeInt"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     4,
+     10
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     10,
+     12
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "mixedMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 14
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "mixedMap"
+      ],
+      "alts": [],
+      "d": 6
+     }
+    },
+    "members": [
+     4,
+     7
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      1,
+      3
+     ],
+     "pattern": "^[a-z\"]+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "minMax": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "optSmall"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     17,
+     10
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "optSmall"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0.5,
+      1e+21
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "self",
+       "TopLeve"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "description": [
+      "The top level."
+     ]
+    },
+    "members": [
+     20,
+     10
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "self",
+       "TopLeve"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "child",
+      21,
+      false
+     ],
+     [
+      "choice",
+      3,
+      false
+     ],
+     [
+      "counts",
+      6,
+      false
+     ],
+     [
+      "flag",
+      7,
+      false
+     ],
+     [
+      "kind",
+      8,
+      false
+     ],
+     [
+      "maybeInt",
+      9,
+      false
+     ],
+     [
+      "maybeKind",
+      11,
+      false
+     ],
+     [
+      "mixedMap",
+      13,
+      false
+     ],
+     [
+      "name",
+      15,
+      false
+     ],
+     [
+      "optSmall",
+      16,
+      true
+     ],
+     [
+      "ratio",
+      18,
+      false
+     ],
+     [
+      "self",
+      19,
+      true
+     ],
+     [
+      "small",
+      22,
+      false
+     ],
+     [
+      "tags",
+      23,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "child"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      -5,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "small"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      4
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 5
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Numbers"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 4
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Doubles"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 2
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Children"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 27
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Child"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "y",
+      28,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     5,
+     10
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 2
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "People"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 31
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Person"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "z",
+      32,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flag",
+       "z"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     7,
+     10
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     4,
+     10,
+     5
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Numbers",
+    24
+   ],
+   [
+    "Doubles",
+    25
+   ],
+   [
+    "Children",
+    26
+   ],
+   [
+    "Scores",
+    29
+   ],
+   [
+    "People",
+    30
+   ],
+   [
+    "Alias",
+    5
+   ],
+   [
+    "Choice",
+    33
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "pike",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This source has been automatically generated by quicktype.\n// ( https://github.com/quicktype/quicktype )\n//\n// To use this code, simply import it into your project as a Pike module.\n// To JSON-encode your object, you can pass it to `Standards.JSON.encode`\n// or call `encode_json` on it.\n//\n// To decode a JSON string, first pass it to `Standards.JSON.decode`,\n// and then pass the result to `<YourClass>_from_JSON`.\n// It will return an instance of <YourClass>.\n// Bear in mind that these functions have unexpected behavior,\n// and will likely throw an error, if the JSON string does not\n// match the expected interface, even if the JSON itself is valid.\n\ntypedef array(int) Numbers;\n\nNumbers Numbers_from_JSON(mixed json) {\n    return map(json, lambda(mixed value) {\n        if (!intp(value)) error(\"Expected integer\");\n        return (int)value;\n    });\n}\n\ntypedef array(float) Doubles;\n\nDoubles Doubles_from_JSON(mixed json) {\n    return json;\n}\n\ntypedef array(Child) Children;\n\nChildren Children_from_JSON(mixed json) {\n    return map(json, Child_from_JSON);\n}\n\ntypedef mapping(string:float) Scores;\n\nScores Scores_from_JSON(mixed json) {\n    mapping(string:float) retval = ([]);\n    foreach (json; string k; mixed v) {\n        retval[k] = (float) v;\n    }\n    return retval;\n}\n\ntypedef mapping(string:Person) People;\n\nPeople People_from_JSON(mixed json) {\n    mapping(string:Person) retval = ([]);\n    foreach (json; string k; mixed v) {\n        retval[k] = Person_from_JSON(v);\n    }\n    return retval;\n}\n\ntypedef string Alias;\n\nAlias Alias_from_JSON(mixed json) {\n    return json;\n}\n\n// The top level.\nclass TopLevel {\n    TopLevelChild            child;      // json: \"child\"\n    ChoiceUnion              choice;     // json: \"choice\"\n    mapping(string:int)      counts;     // json: \"counts\"\n    bool                     flag;       // json: \"flag\"\n    Kind                     kind;       // json: \"kind\"\n    int|mixed                maybe_int;  // json: \"maybeInt\"\n    MaybeKind|mixed          maybe_kind; // json: \"maybeKind\"\n    mapping(string:MixedMap) mixed_map;  // json: \"mixedMap\"\n    string                   name;       // json: \"name\"\n    int|mixed                opt_small;  // json: \"optSmall\"\n    float                    ratio;      // json: \"ratio\"\n    Self|mixed               self;       // json: \"self\"\n    int                      small;      // json: \"small\"\n    array(string)            tags;       // json: \"tags\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"child\" : child,\n            \"choice\" : choice,\n            \"counts\" : counts,\n            \"flag\" : flag,\n            \"kind\" : kind,\n            \"maybeInt\" : maybe_int,\n            \"maybeKind\" : maybe_kind,\n            \"mixedMap\" : mixed_map,\n            \"name\" : name,\n            \"optSmall\" : opt_small,\n            \"ratio\" : ratio,\n            \"self\" : self,\n            \"small\" : small,\n            \"tags\" : tags,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nTopLevel TopLevel_from_JSON(mixed json) {\n    TopLevel retval = TopLevel();\n\n    if (!mappingp(json[\"child\"])) error(\"Expected object\");\n    retval.child = json[\"child\"];\n    if (arrayp(json[\"choice\"])) error(\"Unexpected array\");\n    retval.choice = json[\"choice\"];\n    foreach (json[\"counts\"]; mixed _; mixed value) if (!intp(value)) error(\"Expected integer\");\n    retval.counts = json[\"counts\"];\n    if (json[\"flag\"] != Standards.JSON.true && json[\"flag\"] != Standards.JSON.false) error(\"Expected bool\");\n    retval.flag = json[\"flag\"];\n    retval.kind = Kind_from_JSON(json[\"kind\"]);\n    if (!intp(json[\"maybeInt\"])) error(\"Expected integer\");\n    if (!has_index(json, \"maybeInt\")) error(\"Missing required property\");\n    retval.maybe_int = json[\"maybeInt\"];\n    if (!has_index(json, \"maybeKind\")) error(\"Missing required property\");\n    retval.maybe_kind = json[\"maybeKind\"] == Standards.JSON.null ? json[\"maybeKind\"] : MaybeKind_from_JSON(json[\"maybeKind\"]);\n    foreach (json[\"mixedMap\"]; mixed _; mixed value) if (stringp(value)) error(\"Unexpected string\");\n    retval.mixed_map = json[\"mixedMap\"];\n    if (sizeof(json[\"name\"]) < 1) error(\"String too short\");\n    if (sizeof(json[\"name\"]) > 3) error(\"String too long\");\n    if (!Regexp(string_to_utf8(\"^[a-z\\\"]+$\"))->match(string_to_utf8(json[\"name\"]))) error(\"String does not match pattern\");\n    retval.name = json[\"name\"];\n    if (has_index(json, \"optSmall\") && json[\"optSmall\"] < 1) error(\"Value below minimum\");\n    retval.opt_small = json[\"optSmall\"];\n    if (json[\"ratio\"] < 0.5) error(\"Value below minimum\");\n    if (json[\"ratio\"] > 1e+21) error(\"Value above maximum\");\n    retval.ratio = (float)json[\"ratio\"];\n    retval.self = json[\"self\"];\n    if (json[\"small\"] < -5) error(\"Value below minimum\");\n    if (json[\"small\"] > 100) error(\"Value above maximum\");\n    if (!intp(json[\"small\"])) error(\"Expected integer\");\n    retval.small = json[\"small\"];\n    if (sizeof(json[\"tags\"]) < 1) error(\"Array too short\");\n    if (sizeof(json[\"tags\"]) > 4) error(\"Array too long\");\n    retval.tags = json[\"tags\"];\n\n    return retval;\n}\n\nclass TopLevelChild {\n    float x; // json: \"x\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"x\" : x,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nTopLevelChild TopLevelChild_from_JSON(mixed json) {\n    TopLevelChild retval = TopLevelChild();\n\n    retval.x = (float)json[\"x\"];\n\n    return retval;\n}\n\ntypedef int|string ChoiceUnion;\n\nChoiceUnion ChoiceUnion_from_JSON(mixed json) {\n    return json;\n}\n\nenum Kind {\n    ONE_TWO = \"one-two\",           // json: \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\", // json: \"three \\\"four\\\"\"\n}\n\nKind Kind_from_JSON(mixed json) {\n    if(!zero_type(json)&&json != \"one-two\"&&json != \"three \\\"four\\\"\")error(\"enum\");return json;\n}\n\nenum MaybeKind {\n    A = \"a\", // json: \"a\"\n    B = \"b\", // json: \"b\"\n}\n\nMaybeKind MaybeKind_from_JSON(mixed json) {\n    if(!zero_type(json)&&json != \"a\"&&json != \"b\")error(\"enum\");return json;\n}\n\ntypedef bool|int MixedMap;\n\nMixedMap MixedMap_from_JSON(mixed json) {\n    return json;\n}\n\n// The top level.\nclass Self {\n    SelfChild                child;      // json: \"child\"\n    ChoiceUnion              choice;     // json: \"choice\"\n    mapping(string:int)      counts;     // json: \"counts\"\n    bool                     flag;       // json: \"flag\"\n    Kind                     kind;       // json: \"kind\"\n    int|mixed                maybe_int;  // json: \"maybeInt\"\n    MaybeKind|mixed          maybe_kind; // json: \"maybeKind\"\n    mapping(string:MixedMap) mixed_map;  // json: \"mixedMap\"\n    string                   name;       // json: \"name\"\n    int|mixed                opt_small;  // json: \"optSmall\"\n    float                    ratio;      // json: \"ratio\"\n    Self|mixed               self;       // json: \"self\"\n    int                      small;      // json: \"small\"\n    array(string)            tags;       // json: \"tags\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"child\" : child,\n            \"choice\" : choice,\n            \"counts\" : counts,\n            \"flag\" : flag,\n            \"kind\" : kind,\n            \"maybeInt\" : maybe_int,\n            \"maybeKind\" : maybe_kind,\n            \"mixedMap\" : mixed_map,\n            \"name\" : name,\n            \"optSmall\" : opt_small,\n            \"ratio\" : ratio,\n            \"self\" : self,\n            \"small\" : small,\n            \"tags\" : tags,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nSelf Self_from_JSON(mixed json) {\n    Self retval = Self();\n\n    if (!mappingp(json[\"child\"])) error(\"Expected object\");\n    retval.child = json[\"child\"];\n    if (arrayp(json[\"choice\"])) error(\"Unexpected array\");\n    retval.choice = json[\"choice\"];\n    foreach (json[\"counts\"]; mixed _; mixed value) if (!intp(value)) error(\"Expected integer\");\n    retval.counts = json[\"counts\"];\n    if (json[\"flag\"] != Standards.JSON.true && json[\"flag\"] != Standards.JSON.false) error(\"Expected bool\");\n    retval.flag = json[\"flag\"];\n    retval.kind = Kind_from_JSON(json[\"kind\"]);\n    if (!intp(json[\"maybeInt\"])) error(\"Expected integer\");\n    if (!has_index(json, \"maybeInt\")) error(\"Missing required property\");\n    retval.maybe_int = json[\"maybeInt\"];\n    if (!has_index(json, \"maybeKind\")) error(\"Missing required property\");\n    retval.maybe_kind = json[\"maybeKind\"] == Standards.JSON.null ? json[\"maybeKind\"] : MaybeKind_from_JSON(json[\"maybeKind\"]);\n    foreach (json[\"mixedMap\"]; mixed _; mixed value) if (stringp(value)) error(\"Unexpected string\");\n    retval.mixed_map = json[\"mixedMap\"];\n    if (sizeof(json[\"name\"]) < 1) error(\"String too short\");\n    if (sizeof(json[\"name\"]) > 3) error(\"String too long\");\n    if (!Regexp(string_to_utf8(\"^[a-z\\\"]+$\"))->match(string_to_utf8(json[\"name\"]))) error(\"String does not match pattern\");\n    retval.name = json[\"name\"];\n    if (has_index(json, \"optSmall\") && json[\"optSmall\"] < 1) error(\"Value below minimum\");\n    retval.opt_small = json[\"optSmall\"];\n    if (json[\"ratio\"] < 0.5) error(\"Value below minimum\");\n    if (json[\"ratio\"] > 1e+21) error(\"Value above maximum\");\n    retval.ratio = (float)json[\"ratio\"];\n    retval.self = json[\"self\"];\n    if (json[\"small\"] < -5) error(\"Value below minimum\");\n    if (json[\"small\"] > 100) error(\"Value above maximum\");\n    if (!intp(json[\"small\"])) error(\"Expected integer\");\n    retval.small = json[\"small\"];\n    if (sizeof(json[\"tags\"]) < 1) error(\"Array too short\");\n    if (sizeof(json[\"tags\"]) > 4) error(\"Array too long\");\n    retval.tags = json[\"tags\"];\n\n    return retval;\n}\n\nclass SelfChild {\n    float x; // json: \"x\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"x\" : x,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nSelfChild SelfChild_from_JSON(mixed json) {\n    SelfChild retval = SelfChild();\n\n    retval.x = (float)json[\"x\"];\n\n    return retval;\n}\n\nclass Child {\n    mixed|string y; // json: \"y\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"y\" : y,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nChild Child_from_JSON(mixed json) {\n    Child retval = Child();\n\n    retval.y = json[\"y\"];\n\n    return retval;\n}\n\nclass Person {\n    bool|mixed z; // json: \"z\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"z\" : z,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nPerson Person_from_JSON(mixed json) {\n    Person retval = Person();\n\n    retval.z = json[\"z\"];\n\n    return retval;\n}\n\ntypedef int|string Choice;\n\nChoice Choice_from_JSON(mixed json) {\n    return json;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "pike",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This source has been automatically generated by quicktype.\n// ( https://github.com/quicktype/quicktype )\n//\n// To use this code, simply import it into your project as a Pike module.\n// To JSON-encode your object, you can pass it to `Standards.JSON.encode`\n// or call `encode_json` on it.\n//\n// To decode a JSON string, first pass it to `Standards.JSON.decode`,\n// and then pass the result to `<YourClass>_from_JSON`.\n// It will return an instance of <YourClass>.\n// Bear in mind that these functions have unexpected behavior,\n// and will likely throw an error, if the JSON string does not\n// match the expected interface, even if the JSON itself is valid.\n\ntypedef array(int) Numbers;\n\nNumbers Numbers_from_JSON(mixed json) {\n    return map(json, lambda(mixed value) {\n        if (!intp(value)) error(\"Expected integer\");\n        return (int)value;\n    });\n}\n\ntypedef array(float) Doubles;\n\nDoubles Doubles_from_JSON(mixed json) {\n    return json;\n}\n\ntypedef array(Child) Children;\n\nChildren Children_from_JSON(mixed json) {\n    return map(json, Child_from_JSON);\n}\n\ntypedef mapping(string:float) Scores;\n\nScores Scores_from_JSON(mixed json) {\n    mapping(string:float) retval = ([]);\n    foreach (json; string k; mixed v) {\n        retval[k] = (float) v;\n    }\n    return retval;\n}\n\ntypedef mapping(string:Person) People;\n\nPeople People_from_JSON(mixed json) {\n    mapping(string:Person) retval = ([]);\n    foreach (json; string k; mixed v) {\n        retval[k] = Person_from_JSON(v);\n    }\n    return retval;\n}\n\ntypedef string Alias;\n\nAlias Alias_from_JSON(mixed json) {\n    return json;\n}\n\n// The top level.\nclass TopLevel {\n    TopLevelChild            child;      // json: \"child\"\n    ChoiceUnion              choice;     // json: \"choice\"\n    mapping(string:int)      counts;     // json: \"counts\"\n    bool                     flag;       // json: \"flag\"\n    Kind                     kind;       // json: \"kind\"\n    int|mixed                maybe_int;  // json: \"maybeInt\"\n    MaybeKind|mixed          maybe_kind; // json: \"maybeKind\"\n    mapping(string:MixedMap) mixed_map;  // json: \"mixedMap\"\n    string                   name;       // json: \"name\"\n    int|mixed                opt_small;  // json: \"optSmall\"\n    float                    ratio;      // json: \"ratio\"\n    Self|mixed               self;       // json: \"self\"\n    int                      small;      // json: \"small\"\n    array(string)            tags;       // json: \"tags\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"child\" : child,\n            \"choice\" : choice,\n            \"counts\" : counts,\n            \"flag\" : flag,\n            \"kind\" : kind,\n            \"maybeInt\" : maybe_int,\n            \"maybeKind\" : maybe_kind,\n            \"mixedMap\" : mixed_map,\n            \"name\" : name,\n            \"optSmall\" : opt_small,\n            \"ratio\" : ratio,\n            \"self\" : self,\n            \"small\" : small,\n            \"tags\" : tags,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nTopLevel TopLevel_from_JSON(mixed json) {\n    TopLevel retval = TopLevel();\n\n    if (!mappingp(json[\"child\"])) error(\"Expected object\");\n    retval.child = json[\"child\"];\n    if (arrayp(json[\"choice\"])) error(\"Unexpected array\");\n    retval.choice = json[\"choice\"];\n    foreach (json[\"counts\"]; mixed _; mixed value) if (!intp(value)) error(\"Expected integer\");\n    retval.counts = json[\"counts\"];\n    if (json[\"flag\"] != Standards.JSON.true && json[\"flag\"] != Standards.JSON.false) error(\"Expected bool\");\n    retval.flag = json[\"flag\"];\n    retval.kind = Kind_from_JSON(json[\"kind\"]);\n    if (!intp(json[\"maybeInt\"])) error(\"Expected integer\");\n    if (!has_index(json, \"maybeInt\")) error(\"Missing required property\");\n    retval.maybe_int = json[\"maybeInt\"];\n    if (!has_index(json, \"maybeKind\")) error(\"Missing required property\");\n    retval.maybe_kind = json[\"maybeKind\"] == Standards.JSON.null ? json[\"maybeKind\"] : MaybeKind_from_JSON(json[\"maybeKind\"]);\n    foreach (json[\"mixedMap\"]; mixed _; mixed value) if (stringp(value)) error(\"Unexpected string\");\n    retval.mixed_map = json[\"mixedMap\"];\n    if (sizeof(json[\"name\"]) < 1) error(\"String too short\");\n    if (sizeof(json[\"name\"]) > 3) error(\"String too long\");\n    if (!Regexp(string_to_utf8(\"^[a-z\\\"]+$\"))->match(string_to_utf8(json[\"name\"]))) error(\"String does not match pattern\");\n    retval.name = json[\"name\"];\n    if (has_index(json, \"optSmall\") && json[\"optSmall\"] < 1) error(\"Value below minimum\");\n    retval.opt_small = json[\"optSmall\"];\n    if (json[\"ratio\"] < 0.5) error(\"Value below minimum\");\n    if (json[\"ratio\"] > 1e+21) error(\"Value above maximum\");\n    retval.ratio = (float)json[\"ratio\"];\n    retval.self = json[\"self\"];\n    if (json[\"small\"] < -5) error(\"Value below minimum\");\n    if (json[\"small\"] > 100) error(\"Value above maximum\");\n    if (!intp(json[\"small\"])) error(\"Expected integer\");\n    retval.small = json[\"small\"];\n    if (sizeof(json[\"tags\"]) < 1) error(\"Array too short\");\n    if (sizeof(json[\"tags\"]) > 4) error(\"Array too long\");\n    retval.tags = json[\"tags\"];\n\n    return retval;\n}\n\nclass TopLevelChild {\n    float x; // json: \"x\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"x\" : x,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nTopLevelChild TopLevelChild_from_JSON(mixed json) {\n    TopLevelChild retval = TopLevelChild();\n\n    retval.x = (float)json[\"x\"];\n\n    return retval;\n}\n\ntypedef int|string ChoiceUnion;\n\nChoiceUnion ChoiceUnion_from_JSON(mixed json) {\n    return json;\n}\n\nenum Kind {\n    ONE_TWO = \"one-two\",           // json: \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\", // json: \"three \\\"four\\\"\"\n}\n\nKind Kind_from_JSON(mixed json) {\n    if(!zero_type(json)&&json != \"one-two\"&&json != \"three \\\"four\\\"\")error(\"enum\");return json;\n}\n\nenum MaybeKind {\n    A = \"a\", // json: \"a\"\n    B = \"b\", // json: \"b\"\n}\n\nMaybeKind MaybeKind_from_JSON(mixed json) {\n    if(!zero_type(json)&&json != \"a\"&&json != \"b\")error(\"enum\");return json;\n}\n\ntypedef bool|int MixedMap;\n\nMixedMap MixedMap_from_JSON(mixed json) {\n    return json;\n}\n\n// The top level.\nclass Self {\n    SelfChild                child;      // json: \"child\"\n    ChoiceUnion              choice;     // json: \"choice\"\n    mapping(string:int)      counts;     // json: \"counts\"\n    bool                     flag;       // json: \"flag\"\n    Kind                     kind;       // json: \"kind\"\n    int|mixed                maybe_int;  // json: \"maybeInt\"\n    MaybeKind|mixed          maybe_kind; // json: \"maybeKind\"\n    mapping(string:MixedMap) mixed_map;  // json: \"mixedMap\"\n    string                   name;       // json: \"name\"\n    int|mixed                opt_small;  // json: \"optSmall\"\n    float                    ratio;      // json: \"ratio\"\n    Self|mixed               self;       // json: \"self\"\n    int                      small;      // json: \"small\"\n    array(string)            tags;       // json: \"tags\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"child\" : child,\n            \"choice\" : choice,\n            \"counts\" : counts,\n            \"flag\" : flag,\n            \"kind\" : kind,\n            \"maybeInt\" : maybe_int,\n            \"maybeKind\" : maybe_kind,\n            \"mixedMap\" : mixed_map,\n            \"name\" : name,\n            \"optSmall\" : opt_small,\n            \"ratio\" : ratio,\n            \"self\" : self,\n            \"small\" : small,\n            \"tags\" : tags,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nSelf Self_from_JSON(mixed json) {\n    Self retval = Self();\n\n    if (!mappingp(json[\"child\"])) error(\"Expected object\");\n    retval.child = json[\"child\"];\n    if (arrayp(json[\"choice\"])) error(\"Unexpected array\");\n    retval.choice = json[\"choice\"];\n    foreach (json[\"counts\"]; mixed _; mixed value) if (!intp(value)) error(\"Expected integer\");\n    retval.counts = json[\"counts\"];\n    if (json[\"flag\"] != Standards.JSON.true && json[\"flag\"] != Standards.JSON.false) error(\"Expected bool\");\n    retval.flag = json[\"flag\"];\n    retval.kind = Kind_from_JSON(json[\"kind\"]);\n    if (!intp(json[\"maybeInt\"])) error(\"Expected integer\");\n    if (!has_index(json, \"maybeInt\")) error(\"Missing required property\");\n    retval.maybe_int = json[\"maybeInt\"];\n    if (!has_index(json, \"maybeKind\")) error(\"Missing required property\");\n    retval.maybe_kind = json[\"maybeKind\"] == Standards.JSON.null ? json[\"maybeKind\"] : MaybeKind_from_JSON(json[\"maybeKind\"]);\n    foreach (json[\"mixedMap\"]; mixed _; mixed value) if (stringp(value)) error(\"Unexpected string\");\n    retval.mixed_map = json[\"mixedMap\"];\n    if (sizeof(json[\"name\"]) < 1) error(\"String too short\");\n    if (sizeof(json[\"name\"]) > 3) error(\"String too long\");\n    if (!Regexp(string_to_utf8(\"^[a-z\\\"]+$\"))->match(string_to_utf8(json[\"name\"]))) error(\"String does not match pattern\");\n    retval.name = json[\"name\"];\n    if (has_index(json, \"optSmall\") && json[\"optSmall\"] < 1) error(\"Value below minimum\");\n    retval.opt_small = json[\"optSmall\"];\n    if (json[\"ratio\"] < 0.5) error(\"Value below minimum\");\n    if (json[\"ratio\"] > 1e+21) error(\"Value above maximum\");\n    retval.ratio = (float)json[\"ratio\"];\n    retval.self = json[\"self\"];\n    if (json[\"small\"] < -5) error(\"Value below minimum\");\n    if (json[\"small\"] > 100) error(\"Value above maximum\");\n    if (!intp(json[\"small\"])) error(\"Expected integer\");\n    retval.small = json[\"small\"];\n    if (sizeof(json[\"tags\"]) < 1) error(\"Array too short\");\n    if (sizeof(json[\"tags\"]) > 4) error(\"Array too long\");\n    retval.tags = json[\"tags\"];\n\n    return retval;\n}\n\nclass SelfChild {\n    float x; // json: \"x\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"x\" : x,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nSelfChild SelfChild_from_JSON(mixed json) {\n    SelfChild retval = SelfChild();\n\n    retval.x = (float)json[\"x\"];\n\n    return retval;\n}\n\nclass Child {\n    mixed|string y; // json: \"y\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"y\" : y,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nChild Child_from_JSON(mixed json) {\n    Child retval = Child();\n\n    retval.y = json[\"y\"];\n\n    return retval;\n}\n\nclass Person {\n    bool|mixed z; // json: \"z\"\n\n    string encode_json() {\n        mapping(string:mixed) json = ([\n            \"z\" : z,\n        ]);\n\n        return Standards.JSON.encode(json);\n    }\n}\n\nPerson Person_from_JSON(mixed json) {\n    Person retval = Person();\n\n    retval.z = json[\"z\"];\n\n    return retval;\n}\n\ntypedef int|string Choice;\n\nChoice Choice_from_JSON(mixed json) {\n    return json;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "pike-schema"
+}

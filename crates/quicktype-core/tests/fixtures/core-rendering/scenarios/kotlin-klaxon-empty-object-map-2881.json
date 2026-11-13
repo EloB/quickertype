@@ -1,0 +1,117 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "mission_specs",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": 2
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "objectives",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "rewards",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": 6
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\n// Klaxon cannot deserialize map values typed as JsonObject, so fields\n// holding such maps are converted at the field level instead.\n@Target(AnnotationTarget.FIELD)\nprivate annotation class KlaxonJsonObjectMap\n\nprivate val jsonObjectMapConverter: Converter = object : Converter {\n    override fun canConvert(cls: Class<*>) = true\n    override fun fromJson(jv: JsonValue)   = jv.obj!!\n    override fun toJson(value: Any)        = klaxon.toJsonString(value)\n}\n\nprivate val klaxon = Klaxon()\n    .convert(JsonObject::class, { it.obj!! }, { it.toJsonString() })\n    .fieldConverter(KlaxonJsonObjectMap::class, jsonObjectMapConverter)\n\ndata class TopLevel (\n    @Json(name = \"mission_specs\")\n    val missionSpecs: Map<String, MissionSpec>\n) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\ndata class MissionSpec (\n    val objectives: Map<String, Objective>\n)\n\ndata class Objective (\n    @KlaxonJsonObjectMap\n    val rewards: Map<String, Reward>\n)\n\ntypealias Reward = JsonObject\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlin-klaxon-empty-object-map-2881"
+}

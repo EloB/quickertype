@@ -1,9 +1,107 @@
 //! Port of `packages/quicktype-core/src/language/Kotlin/utils.ts`.
 //!
-//! So far only [`KotlinDateTimeRecognizer`], which JSON inference needs; the
-//! renderer helpers follow with the Kotlin renderer.
+//! Kotlin identifier styling and string escaping, the
+//! [`KotlinDateTimeRecognizer`] that JSON inference uses, and the order in
+//! which unions try their members.
 
 use crate::date_time::{Cursor, DateTimeRecognizer, default_is_date, parse_date};
+use crate::source::Source;
+use crate::support::strings::{
+    all_lower_word_style, all_upper_word_style, combine_words, escape_non_printable_mapper,
+    first_upper_word_style, int_to_hex, is_digit, is_letter_or_underscore, is_numeric,
+    is_printable, legalize_characters, split_into_words, utf16_concat_map,
+};
+use crate::ty::transformed_string_type::TypeKind;
+
+/// `isPartCharacter(codePoint)`: a letter, `_` or a numeric character.
+fn is_part_character(code_point: u32) -> bool {
+    is_letter_or_underscore(code_point) || is_numeric(code_point)
+}
+
+/// `isStartCharacter(codePoint)`: a part character other than a digit.
+fn is_start_character(code_point: u32) -> bool {
+    is_part_character(code_point) && !is_digit(code_point)
+}
+
+/// `legalizeName`: keeps the code points that are part characters.
+fn legalize_name(s: &str) -> String {
+    legalize_characters(s, is_part_character)
+}
+
+/// `kotlinNameStyle(isUpper, original, acronymsStyle)`: `PascalCase` or
+/// `camelCase`, with `acronyms_style` for acronyms after the first word
+/// (TypeScript's default is `allUpperWordStyle`).
+pub fn kotlin_name_style(
+    is_upper: bool,
+    original: &str,
+    acronyms_style: fn(&str) -> String,
+) -> String {
+    let words = split_into_words(original);
+    let first_word_style: fn(&str) -> String = if is_upper {
+        first_upper_word_style
+    } else {
+        all_lower_word_style
+    };
+    let first_word_acronym_style: fn(&str) -> String = if is_upper {
+        all_upper_word_style
+    } else {
+        all_lower_word_style
+    };
+    combine_words(
+        &words,
+        &legalize_name,
+        &first_word_style,
+        &first_upper_word_style,
+        &first_word_acronym_style,
+        &acronyms_style,
+        "",
+        &is_start_character,
+    )
+}
+
+/// `unicodeEscape(codePoint)`: `\uXXXX`.
+fn unicode_escape(code_point: u32) -> String {
+    format!("\\u{}", int_to_hex(code_point, 4))
+}
+
+/// `stringEscape(s)`: escapes per UTF-16 code unit, and escapes `$`
+/// because `"$this"` is a template string in Kotlin.
+pub fn string_escape(s: &str) -> String {
+    utf16_concat_map(s, escape_non_printable_mapper(is_printable, unicode_escape))
+        .replace('$', "\\$")
+}
+
+/// `arrayIntercalate(separator, items)` (collection-utils): the items with
+/// `separator` between them.
+pub fn array_intercalate(separator: &str, items: Vec<Source>) -> Source {
+    let mut result = Vec::with_capacity(items.len() * 2);
+    for (i, item) in items.into_iter().enumerate() {
+        if i > 0 {
+            result.push(separator.into());
+        }
+        result.push(item);
+    }
+    Source::Sequence(result)
+}
+
+/// `${n}`: a constraint bound as JavaScript prints it.
+pub fn js_number(n: f64) -> String {
+    quicktype_js_compat::number::to_string(n)
+}
+
+/// `unionMemberMatchPriority(t)`: when several union members are guarded
+/// by the same JSON node/value type (e.g. date, time and enum values are
+/// all strings), parse attempts must be ordered strictest first:
+/// transformed string types (strict ISO parsers), then enums (known values
+/// only), then plain strings (accept anything).
+pub fn union_member_match_priority(kind: TypeKind) -> u32 {
+    match kind {
+        TypeKind::DateTime | TypeKind::Date | TypeKind::Time => 0,
+        TypeKind::Enum => 1,
+        TypeKind::String => 2,
+        _ => 3,
+    }
+}
 
 /// `isLeapYear(year)`.
 fn is_leap_year(year: u32) -> bool {
@@ -143,6 +241,18 @@ mod tests {
         assert!(!K.is_date("2015-02-29"));
         assert!(!K.is_date("1900-02-29"));
         assert!(!K.is_date_time("2015-02-29T00:00:00Z"));
+    }
+
+    #[test]
+    fn name_styles_and_escapes() {
+        let pascal = crate::support::acronyms::acronym_style(
+            crate::support::acronyms::AcronymStyleOptions::Pascal,
+        );
+        assert_eq!(kotlin_name_style(true, "top_level", pascal), "TopLevel");
+        assert_eq!(kotlin_name_style(false, "user_id", pascal), "userID");
+        assert_eq!(kotlin_name_style(false, "1st", pascal), "the1St");
+        assert_eq!(string_escape("$x \"é😀"), "\\$x \\\"é\\ud83d\\ude00");
+        assert_eq!(string_escape("\u{7}"), "\\u0007");
     }
 
     #[test]
