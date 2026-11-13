@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/TextClassificationOutputElement\"}},\"TextClassificationOutputElement\":{\"title\":\"TextClassificationOutputElement\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"label\":{\"type\":\"string\",\"title\":\"label\"},\"score\":{\"type\":\"number\",\"title\":\"score\"}},\"propertyOrder\":[\"label\",\"score\"],\"required\":[\"label\",\"score\"],\"quicktypePropertyOrder\":[\"label\",\"score\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

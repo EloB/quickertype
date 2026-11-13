@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"dates\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"date-time\"},\"title\":\"dates\"},\"m\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"string\",\"format\":\"date-time\"},\"title\":\"m\"},\"om\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"title\":\"om\"}},\"additionalProperties\":false,\"propertyOrder\":[\"dates\",\"m\",\"om\"],\"required\":[\"dates\",\"m\"],\"quicktypePropertyOrder\":[\"dates\",\"m\",\"om\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

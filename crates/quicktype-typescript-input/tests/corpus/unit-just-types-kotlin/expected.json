@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Person\":{\"title\":\"Person\",\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"name\"},\"age\":{\"type\":\"number\",\"title\":\"age\"}},\"additionalProperties\":false,\"propertyOrder\":[\"name\",\"age\"],\"required\":[\"age\",\"name\"],\"quicktypePropertyOrder\":[\"name\",\"age\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

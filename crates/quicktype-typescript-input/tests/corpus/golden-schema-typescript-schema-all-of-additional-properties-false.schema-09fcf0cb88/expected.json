@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"amount\":{\"type\":\"number\",\"title\":\"amount\"},\"frequency\":{\"$ref\":\"#/definitions/Frequency\",\"title\":\"frequency\"},\"description\":{\"type\":\"string\",\"title\":\"description\"},\"type\":{\"$ref\":\"#/definitions/Type\",\"title\":\"type\"}},\"additionalProperties\":false,\"propertyOrder\":[\"amount\",\"frequency\",\"description\",\"type\"],\"required\":[\"amount\",\"frequency\",\"type\"],\"quicktypePropertyOrder\":[\"amount\",\"frequency\",\"description\",\"type\"]},\"Frequency\":{\"title\":\"Frequency\",\"enum\":[\"Annually\",\"Monthly\",\"Weekly\"],\"type\":\"string\"},\"Type\":{\"title\":\"Type\",\"enum\":[\"GrossSalaryAmount\",\"Overtime\"],\"type\":\"string\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

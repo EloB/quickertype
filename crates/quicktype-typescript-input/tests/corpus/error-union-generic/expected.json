@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Box\":{\"$ref\":\"#/definitions/Box%3CT%3E\"},\"T\":{\"title\":\"T\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]},\"Box<T>\":{\"title\":\"Box<T>\",\"type\":\"object\",\"properties\":{\"v\":{\"$ref\":\"#/definitions/T\",\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"v\"],\"required\":[\"v\"],\"quicktypePropertyOrder\":[\"v\"]},\"T_1\":{\"title\":\"T_1\",\"type\":\"object\",\"properties\":{\"a\":{\"$ref\":\"#/definitions/Box%3Cstring%7Cnumber%3E\",\"title\":\"a\"},\"b\":{\"$ref\":\"#/definitions/Box%3Cstring%7Cnumber%3E\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]},\"Box<string|number>\":{\"title\":\"Box<string|number>\",\"type\":\"object\",\"properties\":{\"v\":{\"type\":[\"string\",\"number\"],\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"v\"],\"required\":[\"v\"],\"quicktypePropertyOrder\":[\"v\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

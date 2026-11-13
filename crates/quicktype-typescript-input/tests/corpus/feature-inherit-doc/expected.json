@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"shared\":{\"type\":\"string\",\"title\":\"shared\"},\"a\":{\"type\":\"number\",\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"shared\",\"a\"],\"required\":[\"a\",\"shared\"],\"quicktypePropertyOrder\":[\"shared\",\"a\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"shared\":{\"type\":\"string\",\"title\":\"shared\"},\"b\":{\"type\":\"boolean\",\"title\":\"b\"},\"a\":{\"type\":\"number\",\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"shared\",\"b\",\"a\"],\"required\":[\"a\",\"b\",\"shared\"],\"quicktypePropertyOrder\":[\"shared\",\"b\",\"a\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

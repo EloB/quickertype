@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"optional-date\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"optional-date\"},\"optional-date-time\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"optional-date-time\"},\"optional-time\":{\"type\":\"string\",\"title\":\"optional-time\"},\"required-date\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"required-date\"},\"required-date-time\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"required-date-time\"},\"required-time\":{\"type\":\"string\",\"title\":\"required-time\"}},\"additionalProperties\":false,\"propertyOrder\":[\"optional-date\",\"optional-date-time\",\"optional-time\",\"required-date\",\"required-date-time\",\"required-time\"],\"required\":[\"required-date\",\"required-date-time\",\"required-time\"],\"quicktypePropertyOrder\":[\"optional-date\",\"optional-date-time\",\"optional-time\",\"required-date\",\"required-date-time\",\"required-time\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

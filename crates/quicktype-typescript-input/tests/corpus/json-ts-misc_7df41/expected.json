@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"pc\":{\"$ref\":\"#/definitions/PC\",\"title\":\"pc\"},\"ps3\":{\"$ref\":\"#/definitions/PC\",\"title\":\"ps3\"},\"ps4\":{\"$ref\":\"#/definitions/PC\",\"title\":\"ps4\"},\"xbox\":{\"$ref\":\"#/definitions/PC\",\"title\":\"xbox\"},\"xone\":{\"$ref\":\"#/definitions/PC\",\"title\":\"xone\"}},\"additionalProperties\":false,\"propertyOrder\":[\"pc\",\"ps3\",\"ps4\",\"xbox\",\"xone\"],\"required\":[\"pc\",\"ps3\",\"ps4\",\"xbox\",\"xone\"],\"quicktypePropertyOrder\":[\"pc\",\"ps3\",\"ps4\",\"xbox\",\"xone\"]},\"PC\":{\"title\":\"PC\",\"type\":\"object\",\"properties\":{\"count\":{\"type\":\"number\",\"title\":\"count\"},\"label\":{\"type\":\"string\",\"title\":\"label\"},\"peak24\":{\"type\":\"number\",\"title\":\"peak24\"}},\"additionalProperties\":false,\"propertyOrder\":[\"count\",\"label\",\"peak24\"],\"required\":[\"count\",\"label\",\"peak24\"],\"quicktypePropertyOrder\":[\"count\",\"label\",\"peak24\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

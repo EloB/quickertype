@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"mixed\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/MixedElement\"},\"title\":\"mixed\"}},\"additionalProperties\":false,\"propertyOrder\":[\"mixed\"],\"required\":[\"mixed\"],\"quicktypePropertyOrder\":[\"mixed\"]},\"MixedElement\":{\"title\":\"MixedElement\",\"anyOf\":[{\"$ref\":\"#/definitions/MixedClass\"},{\"type\":[\"null\",\"string\",\"number\",\"boolean\"]}]},\"MixedClass\":{\"title\":\"MixedClass\",\"type\":\"object\",\"properties\":{\"nested\":{\"type\":\"string\",\"title\":\"nested\"}},\"additionalProperties\":false,\"propertyOrder\":[\"nested\"],\"required\":[\"nested\"],\"quicktypePropertyOrder\":[\"nested\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

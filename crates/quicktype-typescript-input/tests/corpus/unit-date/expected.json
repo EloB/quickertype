@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"User\":{\"title\":\"User\",\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"number\",\"title\":\"id\"},\"createdAt\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"createdAt\"}},\"additionalProperties\":false,\"propertyOrder\":[\"id\",\"createdAt\"],\"required\":[\"createdAt\",\"id\"],\"quicktypePropertyOrder\":[\"id\",\"createdAt\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

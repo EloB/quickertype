@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Map\":{\"title\":\"Map\",\"type\":\"object\",\"properties\":{\"width\":{\"type\":\"number\",\"title\":\"width\"}},\"additionalProperties\":false,\"propertyOrder\":[\"width\"],\"required\":[\"width\"],\"quicktypePropertyOrder\":[\"width\"]},\"Atlas\":{\"title\":\"Atlas\",\"type\":\"object\",\"properties\":{\"map\":{\"$ref\":\"#/definitions/Map\",\"title\":\"map\"}},\"additionalProperties\":false,\"propertyOrder\":[\"map\"],\"required\":[\"map\"],\"quicktypePropertyOrder\":[\"map\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

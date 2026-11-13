@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"intersection\":{\"type\":\"string\",\"title\":\"intersection\"},\"inUnion\":{\"$ref\":\"#/definitions/InUnion\",\"title\":\"inUnion\"},\"maxlength\":{\"type\":\"string\",\"title\":\"maxlength\"},\"minlength\":{\"type\":\"string\",\"title\":\"minlength\"},\"minMaxIntersection\":{\"type\":\"string\",\"title\":\"minMaxIntersection\"},\"minmaxlength\":{\"type\":\"string\",\"title\":\"minmaxlength\"},\"minMaxUnion\":{\"type\":\"string\",\"title\":\"minMaxUnion\"},\"union\":{\"type\":\"string\",\"title\":\"union\"}},\"propertyOrder\":[\"intersection\",\"inUnion\",\"maxlength\",\"minlength\",\"minMaxIntersection\",\"minmaxlength\",\"minMaxUnion\",\"union\"],\"required\":[\"inUnion\",\"intersection\",\"maxlength\",\"minMaxIntersection\",\"minMaxUnion\",\"minlength\",\"minmaxlength\",\"union\"],\"quicktypePropertyOrder\":[\"intersection\",\"inUnion\",\"maxlength\",\"minlength\",\"minMaxIntersection\",\"minmaxlength\",\"minMaxUnion\",\"union\"]},\"InUnion\":{\"title\":\"InUnion\",\"type\":[\"string\",\"number\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

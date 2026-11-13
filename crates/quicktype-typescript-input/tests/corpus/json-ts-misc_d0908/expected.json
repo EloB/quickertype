@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"total_population\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/TotalPopulation\"},\"title\":\"total_population\"}},\"additionalProperties\":false,\"propertyOrder\":[\"total_population\"],\"required\":[\"total_population\"],\"quicktypePropertyOrder\":[\"total_population\"]},\"TotalPopulation\":{\"title\":\"TotalPopulation\",\"type\":\"object\",\"properties\":{\"date\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"date\"},\"population\":{\"type\":\"number\",\"title\":\"population\"}},\"additionalProperties\":false,\"propertyOrder\":[\"date\",\"population\"],\"required\":[\"date\",\"population\"],\"quicktypePropertyOrder\":[\"date\",\"population\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

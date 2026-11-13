@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"item\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Item\"},\"title\":\"item\"}},\"additionalProperties\":false,\"propertyOrder\":[\"item\"],\"required\":[\"item\"],\"quicktypePropertyOrder\":[\"item\"]},\"Item\":{\"title\":\"Item\",\"type\":\"object\",\"properties\":{\"address\":{\"$ref\":\"#/definitions/Address\",\"title\":\"address\"},\"created_at\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"created_at\"},\"name\":{\"type\":\"string\",\"title\":\"name\"},\"sex\":{\"type\":[\"null\",\"number\"],\"title\":\"sex\"}},\"additionalProperties\":false,\"propertyOrder\":[\"address\",\"created_at\",\"name\",\"sex\"],\"required\":[\"name\",\"sex\"],\"quicktypePropertyOrder\":[\"address\",\"created_at\",\"name\",\"sex\"]},\"Address\":{\"title\":\"Address\",\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"title\":\"city\"},\"country\":{\"type\":\"string\",\"title\":\"country\"},\"street\":{\"type\":\"string\",\"title\":\"street\"}},\"additionalProperties\":false,\"propertyOrder\":[\"city\",\"country\",\"street\"],\"required\":[\"city\",\"country\",\"street\"],\"quicktypePropertyOrder\":[\"city\",\"country\",\"street\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

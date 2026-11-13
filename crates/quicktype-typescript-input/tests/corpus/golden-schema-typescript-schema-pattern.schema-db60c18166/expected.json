@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"pattern1\":{\"type\":\"string\",\"title\":\"pattern1\"},\"pattern2\":{\"type\":\"string\",\"title\":\"pattern2\"},\"RegExp\":{\"$ref\":\"#/definitions/RegExp\",\"title\":\"RegExp\"},\"union\":{\"type\":\"string\",\"title\":\"union\"}},\"propertyOrder\":[\"pattern1\",\"pattern2\",\"RegExp\",\"union\"],\"required\":[\"pattern1\",\"pattern2\",\"union\"],\"quicktypePropertyOrder\":[\"pattern1\",\"pattern2\",\"RegExp\",\"union\"]},\"RegExp\":{\"title\":\"RegExp\",\"type\":\"object\",\"properties\":{\"pattern3\":{\"type\":\"string\",\"title\":\"pattern3\"}},\"additionalProperties\":false,\"propertyOrder\":[\"pattern3\"],\"required\":[\"pattern3\"],\"quicktypePropertyOrder\":[\"pattern3\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

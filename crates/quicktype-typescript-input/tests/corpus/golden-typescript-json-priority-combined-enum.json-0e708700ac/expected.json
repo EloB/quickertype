@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"bar\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Bar\"},\"title\":\"bar\"},\"foo\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Bar\"},\"title\":\"foo\"}},\"additionalProperties\":false,\"propertyOrder\":[\"bar\",\"foo\"],\"required\":[\"bar\",\"foo\"],\"quicktypePropertyOrder\":[\"bar\",\"foo\"]},\"Bar\":{\"title\":\"Bar\",\"type\":\"object\",\"properties\":{\"x\":{\"$ref\":\"#/definitions/X\",\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\"]},\"X\":{\"title\":\"X\",\"enum\":[\"one\",\"three\",\"two\"],\"type\":\"string\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
