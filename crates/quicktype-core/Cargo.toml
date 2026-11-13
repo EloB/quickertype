@@ -35,9 +35,3 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 
 [lints]
 workspace = true
-
-# `cargo bench -p quicktype-core --bench in_process`: in-process throughput
-# (see docs/BENCHMARKS.md).
-[[bench]]
-name = "in_process"
-harness = false

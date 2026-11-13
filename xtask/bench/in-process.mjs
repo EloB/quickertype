@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The TypeScript side of the in-process benchmark: the same workload as
-// crates/quicktype-core/benches/in_process.rs (every JSON file in
+// crates/quicktype-cli/benches/in_process.rs (every JSON file in
 // tests/inputs/json/samples plus json/misc/1b409.json, through eight
 // languages), on the reference quicktype-core in one warm Node process.
 //

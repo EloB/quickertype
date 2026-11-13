@@ -2,8 +2,13 @@
 //! (`JSON.parse` semantics, no process start, no file I/O), natively.
 //!
 //! ```text
-//! cargo bench -p quicktype-core --bench in_process [-- [--iterations N] [--json]]
+//! cargo bench -p quicktype-cli --bench in_process [-- [--iterations N] [--json]]
+//! cargo bench -p quicktype-cli --bench in_process --no-default-features   # system allocator
 //! ```
+//!
+//! It lives in the CLI crate to run with the CLI's global allocator
+//! (mimalloc, the `mimalloc` feature); the engine is quicktype-core's public
+//! API.
 //!
 //! One iteration runs every JSON file in `tests/inputs/json/samples` (and
 //! `json/misc/1b409.json`, the largest misc file) through eight target
@@ -14,12 +19,23 @@
 //! reference TypeScript for the same workload comes from
 //! `xtask/bench/in-process.mjs`; `cargo xtask bench --in-process` runs both.
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use quicktype_core::{
     InputData, JsonSourceData, Options, RendererOptions, get_target_language,
     json_input_for_target_language, quicktype_multi_file_sync,
+};
+
+/// The global allocator.
+const ALLOCATOR: &str = if cfg!(feature = "mimalloc") {
+    "mimalloc"
+} else {
+    "system"
 };
 
 /// The languages, by CLI name.
@@ -134,11 +150,11 @@ fn main() {
     let (engine, _) = summarize(&mut engine_totals);
     if json {
         println!(
-            "{{\"runs\":{runs},\"iterations\":{iterations},\"total_ms\":{total},\"total_min_ms\":{total_min},\"parse_ms\":{parse},\"engine_ms\":{engine},\"output_bytes\":{output_bytes}}}"
+            "{{\"allocator\":\"{ALLOCATOR}\",\"runs\":{runs},\"iterations\":{iterations},\"total_ms\":{total},\"total_min_ms\":{total_min},\"parse_ms\":{parse},\"engine_ms\":{engine},\"output_bytes\":{output_bytes}}}"
         );
     } else {
         println!(
-            "in-process: {} inputs × {} languages = {runs} runs per iteration, {iterations} iterations",
+            "in-process: {} inputs × {} languages = {runs} runs per iteration, {iterations} iterations, {ALLOCATOR} allocator",
             inputs.len(),
             LANGUAGES.len()
         );

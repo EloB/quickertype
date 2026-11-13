@@ -38,7 +38,8 @@ report (median and min wall time, peak RSS, speedup).
   --filter <substr>      only benchmarks whose name contains <substr> (repeatable)
   --corpus               also replay the whole golden corpus once per command
   --in-process           also run the in-process benchmark: the engine as a
-                         library (crates/quicktype-core/benches/in_process.rs)
+                         library (crates/quicktype-cli/benches/in_process.rs,
+                         with mimalloc and with the system allocator)
                          against the reference quicktype-core in a warm Node
                          process (xtask/bench/in-process.mjs)
   -j <n>                 parallel jobs for --corpus (default: number of cores)
@@ -1157,26 +1158,27 @@ fn run_in_process(
         }
         results.push(parse_in_process("TypeScript (warm Node)", &out.stdout)?);
     }
-    eprintln!("bench: in process, Rust");
-    let out = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
-        .args([
-            "bench",
-            "-p",
-            "quicktype-core",
-            "--bench",
-            "in_process",
-            "--",
-            "--json",
-            "-n",
-            &n,
-        ])
-        .current_dir(root)
-        .stderr(Stdio::inherit())
-        .output()
-        .map_err(|e| format!("cannot run cargo bench: {e}"))?;
-    if !out.status.success() {
-        return Err("cargo bench --bench in_process failed".into());
+    for (label, features) in [
+        (
+            "Rust (native, system allocator)",
+            Some("--no-default-features"),
+        ),
+        ("Rust (native, mimalloc)", None),
+    ] {
+        eprintln!("bench: in process, {label}");
+        let mut command = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
+        command.args(["bench", "-p", "quicktype-cli", "--bench", "in_process"]);
+        command.args(features);
+        let out = command
+            .args(["--", "--json", "-n", &n])
+            .current_dir(root)
+            .stderr(Stdio::inherit())
+            .output()
+            .map_err(|e| format!("cannot run cargo bench: {e}"))?;
+        if !out.status.success() {
+            return Err("cargo bench --bench in_process failed".into());
+        }
+        results.push(parse_in_process(label, &out.stdout)?);
     }
-    results.push(parse_in_process("Rust (native)", &out.stdout)?);
     Ok(results)
 }

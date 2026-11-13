@@ -30,5 +30,12 @@ quicktype-typescript-input.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 
+# `cargo bench -p quicktype-cli --bench in_process`: the engine's in-process
+# throughput, with the CLI's allocator (`--no-default-features` for the
+# system allocator). See docs/BENCHMARKS.md.
+[[bench]]
+name = "in_process"
+harness = false
+
 [lints]
 workspace = true
