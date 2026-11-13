@@ -34,12 +34,13 @@ use std::process::ExitCode;
 use std::rc::Rc;
 use std::thread;
 
+use quicktype_core::internal::{block_on, train_markov_chain};
 use quicktype_core::{
-    Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, InferenceFlags, InputData,
-    JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData, MultiFileRenderResult,
-    Options, QuickTypeError, Readable, RendererOptions, TargetLanguage, block_on,
+    Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, INFERENCE_FLAGS, InferenceFlags,
+    InputData, JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData,
+    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, TargetLanguage,
     default_target_languages, json_input_for_target_language, parse_json, quicktype_multi_file,
-    set_console_sink, sources_from_postman_collection, train_markov_chain,
+    set_console_sink, sources_from_postman_collection,
 };
 use quicktype_js_compat::wordwrap::WordWrap;
 
@@ -209,13 +210,10 @@ fn parse_debug_options(debug: Option<&str>) -> Result<(DebugOptions, bool), CliE
     let components: Vec<&str> = debug.split(',').collect();
     // `components.includes("all")` looks at the untrimmed components.
     let all = components.contains(&"all");
-    let mut options = DebugOptions {
-        print_graph: all,
-        print_reconstitution: all,
-        print_gather_names: all,
-        print_transformations: all,
-        print_schema_resolving: all,
-        print_times: all,
+    let mut options = if all {
+        DebugOptions::all()
+    } else {
+        DebugOptions::default()
     };
     let mut check_provenance = all;
     for component in components {
@@ -411,26 +409,12 @@ async fn make_quicktype_options(
 
     let (debug, check_provenance) = parse_debug_options(options.debug.as_deref())?;
 
-    let [
-        no_maps,
-        no_enums,
-        no_uuids,
-        no_date_times,
-        no_integer_strings,
-        no_boolean_strings,
-        no_combine_classes,
-        no_ignore_json_refs,
-    ] = options.negated_inference_flags;
-    let inference_flags = InferenceFlags {
-        infer_maps: !no_maps,
-        infer_enums: !no_enums,
-        infer_uuids: !no_uuids,
-        infer_date_times: !no_date_times,
-        infer_integer_strings: !no_integer_strings,
-        infer_boolean_strings: !no_boolean_strings,
-        combine_classes: !no_combine_classes,
-        ignore_json_refs: !no_ignore_json_refs,
-    };
+    // `quicktypeOptions[flagName] = !cliOptions[noFlagName]`, in
+    // `inferenceFlagNames` order.
+    let mut inference_flags = InferenceFlags::default();
+    for (flag, negated) in INFERENCE_FLAGS.iter().zip(options.negated_inference_flags) {
+        inference_flags.set(flag.name, !negated);
+    }
 
     let lang = options.lang;
     let input_data = make_input_data(

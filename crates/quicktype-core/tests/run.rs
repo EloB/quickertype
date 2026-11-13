@@ -16,15 +16,15 @@ use std::rc::Rc;
 use std::task::{Context, Poll, Waker};
 
 use quicktype_core::attributes::type_names::TypeNames;
+use quicktype_core::internal::{block_on, capture_console};
 use quicktype_core::ty::type_builder::TypeBuilder;
 
 use quicktype_core::{
     Annotation, AnnotationData, Comment, DebugOptions, Input, InputData, JsErrorName,
     JsonSchemaInput, JsonSchemaSourceData, JsonSourceData, Location, MultiFileRenderResult,
     OptionValue, Options, QuickTypeError, RendererOptions, Result, RunContext,
-    SerializedRenderResult, Span, block_on, capture_console, combine_render_results,
-    get_target_language, json_input_for_target_language, quicktype, quicktype_multi_file,
-    quicktype_multi_file_sync,
+    SerializedRenderResult, Span, combine_render_results, get_target_language,
+    json_input_for_target_language, quicktype, quicktype_multi_file, quicktype_multi_file_sync,
 };
 
 /// A JSON input for `lang` with one top-level, `name`, and its samples.
@@ -88,12 +88,10 @@ fn generate(
     output_filename: Option<&str>,
 ) -> Option<Result<String>> {
     let target = get_target_language(lang).unwrap();
-    let mut quicktype_options = Options {
-        renderer_options: renderer_options(options),
-        ..Options::new(target, json_input_data(lang, name, &[sample]))
-    };
+    let mut quicktype_options = Options::new(target, json_input_data(lang, name, &[sample]))
+        .with_renderer_options(renderer_options(options));
     if let Some(output_filename) = output_filename {
-        quicktype_options.output_filename = output_filename.to_owned();
+        quicktype_options = quicktype_options.with_output_filename(output_filename);
     }
     match block_on(quicktype(quicktype_options)) {
         Err(e) if e.user_message().ends_with("renderer is not ported yet") => {
@@ -142,27 +140,23 @@ fn quicktype_squashes_what_quicktype_multi_file_returns() {
 #[test]
 fn no_render_returns_done_under_the_output_filename() {
     let kotlin = get_target_language("kotlin").unwrap();
-    let files = quicktype_multi_file_sync(Options {
-        no_render: true,
-        output_filename: "Out.kt".to_owned(),
-        ..Options::new(kotlin, json_input_data("kotlin", "A", &["[1, 2]"]))
-    })
-    .unwrap();
+    let options = Options::new(kotlin, json_input_data("kotlin", "A", &["[1, 2]"]))
+        .with_no_render(true)
+        .with_output_filename("Out.kt");
+    let files = quicktype_multi_file_sync(options).unwrap();
     assert_eq!(files["Out.kt"].lines, ["Done.", ""]);
 }
 
 #[test]
 fn leading_comments_start_the_output() {
     let rust = get_target_language("rust").unwrap();
-    let result = block_on(quicktype(Options {
-        leading_comments: Some(vec![Comment::from("Hello"), Comment::from("World")]),
-        renderer_options: renderer_options(&[("density", text("dense"))]),
-        ..Options::new(
-            rust,
-            json_input_data("rust", "Person", &[r#"{"name": "Ann"}"#]),
-        )
-    }))
-    .unwrap();
+    let options = Options::new(
+        rust,
+        json_input_data("rust", "Person", &[r#"{"name": "Ann"}"#]),
+    )
+    .with_leading_comments(Some(vec![Comment::from("Hello"), Comment::from("World")]))
+    .with_renderer_options(renderer_options(&[("density", text("dense"))]));
+    let result = block_on(quicktype(options)).unwrap();
     assert_eq!(
         result.lines[..6],
         [
@@ -265,14 +259,11 @@ fn the_default_options_are_quicktypes() {
 fn debug_output_goes_to_the_console() {
     let rust = get_target_language("rust").unwrap();
     let (result, lines) = capture_console(|| {
-        quicktype_multi_file_sync(Options {
-            debug: DebugOptions {
-                print_graph: true,
-                ..DebugOptions::default()
-            },
-            check_provenance: true,
-            ..Options::new(rust, json_input_data("rust", "A", &[r#"{"x": 1}"#]))
-        })
+        quicktype_multi_file_sync(
+            Options::new(rust, json_input_data("rust", "A", &[r#"{"x": 1}"#]))
+                .with_debug(DebugOptions::default().with_print_graph(true))
+                .with_check_provenance(true),
+        )
     });
     result.unwrap();
     assert_eq!(
@@ -344,14 +335,11 @@ fn timed_names(input_data: InputData) -> Vec<String> {
     let names = Rc::new(RefCell::new(Vec::new()));
     let sink = Rc::clone(&names);
     let rust = get_target_language("rust").unwrap();
-    block_on(quicktype(Options {
-        on_timing: Some(Rc::new(move |timing| {
-            assert!(timing.milliseconds >= 0.0);
-            sink.borrow_mut().push(timing.name.clone());
-        })),
-        ..Options::new(rust, input_data)
-    }))
-    .unwrap();
+    let options = Options::new(rust, input_data).with_on_timing(Some(Rc::new(move |timing| {
+        assert!(timing.milliseconds >= 0.0);
+        sink.borrow_mut().push(timing.name.clone());
+    })));
+    block_on(quicktype(options)).unwrap();
     names.take()
 }
 

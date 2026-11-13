@@ -25,6 +25,7 @@ macro_rules! error_kinds {
     ($($(#[$doc:meta])* $kind:ident => $template:expr,)*) => {
         /// The kind (the `messageName`) of a [`QuickTypeError`].
         #[allow(clippy::upper_case_acronyms)]
+        #[non_exhaustive]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         pub enum ErrorKind {
             $(
@@ -262,6 +263,7 @@ impl<T: Into<MessageValue>> From<Option<T>> for MessageValue {
 }
 
 /// The constructor of a JavaScript exception ([`JsException::name`]).
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum JsErrorName {
     /// `Error`

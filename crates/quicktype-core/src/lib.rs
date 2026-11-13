@@ -28,8 +28,8 @@
 //!   trait, with Node's semantics and error texts
 //!   ([`read_from_file_or_url`], [`readable_from_file_or_url`]); [`StdIo`]
 //!   implements it on `std` (cargo feature `fs`, on by default; `http` adds
-//!   URLs). Inputs that fetch are asynchronous; [`block_on`] runs them
-//!   natively.
+//!   URLs). Inputs that fetch are asynchronous: [`quicktype`] and
+//!   [`quicktype_multi_file`] are futures, which any executor can run.
 //! - **Languages and their options:** [`TargetLanguage`],
 //!   [`default_target_languages`], [`language_named`],
 //!   [`get_target_language`], and the untyped [`RendererOptions`] the
@@ -61,48 +61,77 @@
 //! let mut input_data = InputData::new();
 //! input_data.add_input(input);
 //!
-//! let files = quicktype_multi_file_sync(Options {
-//!     output_filename: "coordinate.rs".to_owned(),
-//!     ..Options::new(lang, input_data)
-//! })?;
+//! let options = Options::new(lang, input_data).with_output_filename("coordinate.rs");
+//! let files = quicktype_multi_file_sync(options)?;
 //! assert!(files["coordinate.rs"].lines.join("\n").contains("pub lat: f64,"));
 //! # Ok::<(), quicktype_core::QuickTypeError>(())
 //! ```
 //!
-//! # Modules
+//! # Stability
 //!
-//! The modules mirror `packages/quicktype-core/src` file for file
-//! (snake_case, `Type/` as `ty/`), so each has one obvious TypeScript
-//! counterpart. They are public for the renderers, the WebAssembly bindings
-//! and tests; front ends use the root re-exports.
+//! Only the root re-exports are the documented, semver-stable API; enums and
+//! option structs that can grow are `#[non_exhaustive]`. The modules mirror
+//! `packages/quicktype-core/src` file for file (snake_case, `Type/` as
+//! `ty/`), so each has one obvious TypeScript counterpart. They are public
+//! for the renderers, the CLI, the WebAssembly bindings and tests, but
+//! hidden from the documentation and not covered by semver, like the
+//! helpers in `internal`.
 
+#[doc(hidden)]
 pub mod annotation;
+#[doc(hidden)]
 pub mod attributes;
+#[doc(hidden)]
 pub mod convenience_renderer;
+#[doc(hidden)]
 pub mod cycle_breaker;
+#[doc(hidden)]
 pub mod date_time;
+#[doc(hidden)]
 pub mod declaration_ir;
+#[doc(hidden)]
 pub mod gather_names;
+#[doc(hidden)]
 pub mod graph;
+#[doc(hidden)]
 pub mod graph_rewriting;
+#[doc(hidden)]
 pub mod inference;
+#[doc(hidden)]
 pub mod input;
+#[doc(hidden)]
 pub mod language;
+#[doc(hidden)]
 pub mod make_transformations;
+#[doc(hidden)]
 pub mod markov_chain;
+#[doc(hidden)]
 pub mod messages;
+#[doc(hidden)]
 pub mod naming;
+#[doc(hidden)]
 pub mod renderer;
+#[doc(hidden)]
 pub mod renderer_options;
+#[doc(hidden)]
 pub mod rewrites;
+#[doc(hidden)]
 pub mod run;
+#[doc(hidden)]
 pub mod source;
+#[doc(hidden)]
 pub mod support;
+#[doc(hidden)]
 pub mod target_language;
+#[doc(hidden)]
 pub mod transformers;
+#[doc(hidden)]
 pub mod ty;
+#[doc(hidden)]
 pub mod types;
+#[doc(hidden)]
 pub mod unify_classes;
+#[doc(hidden)]
 pub mod union_builder;
 
 // ---- Running (`Run.ts`) -------------------------------------------------
@@ -137,7 +166,6 @@ pub use crate::input::postman_collection::{PostmanSources, sources_from_postman_
 
 // ---- I/O (`input/io/`) ---------------------------------------------------
 
-pub use crate::input::io::block_on;
 #[cfg(feature = "fs")]
 pub use crate::input::io::node_io::StdIo;
 pub use crate::input::io::node_io::{
@@ -163,7 +191,17 @@ pub use crate::messages::{
 
 // ---- Support -------------------------------------------------------------
 
-pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
 pub use crate::support::comments::{Comment, CommentOptions};
 pub use crate::support::parse_json::parse_json;
-pub use crate::support::support::{ConsoleSink, capture_console, console_log, set_console_sink};
+pub use crate::support::support::{ConsoleSink, console_log, set_console_sink};
+
+/// Helpers for quicktype's own front ends (the CLI, the WebAssembly
+/// bindings) and tests: not part of the stable API.
+#[doc(hidden)]
+pub mod internal {
+    pub use crate::input::compressed_json::CompressedJsonTables;
+    pub use crate::input::inputs::CompressedTopLevel;
+    pub use crate::input::io::{LocalBoxFuture, block_on};
+    pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
+    pub use crate::support::support::capture_console;
+}

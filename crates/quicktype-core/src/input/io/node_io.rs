@@ -347,6 +347,7 @@ fn resolve_symbolic_link(io: &dyn Io, file_path: &str) -> std::result::Result<St
 }
 
 /// What `readableFromFileOrURL` opened (TS: a stream not read yet).
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Readable {
     /// A URL's body, fetched when the URL was opened.

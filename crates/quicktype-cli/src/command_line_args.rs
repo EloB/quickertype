@@ -259,6 +259,7 @@ impl OutputOption {
                     OptionValue::Null => ArgValue::Null,
                     OptionValue::Bool(b) => ArgValue::Bool(*b),
                     OptionValue::String(s) => ArgValue::String(s.clone()),
+                    other => ArgValue::String(other.to_js_string().into_owned()),
                 };
                 // `arrayify(defaultValue).slice()` keeps the raw value.
                 if multiple {

@@ -125,14 +125,15 @@ mod tests {
 
     #[test]
     fn missing_files_fail_lstat() {
-        let e = quicktype_core::block_on(readable_from_file_or_url("nonexistent.json", &[]))
-            .unwrap_err();
+        let e =
+            quicktype_core::internal::block_on(readable_from_file_or_url("nonexistent.json", &[]))
+                .unwrap_err();
         assert_eq!(
             e.to_string(),
             "Cannot read from file or URL nonexistent.json: Error: ENOENT: no such file or directory, lstat 'nonexistent.json'"
         );
         assert_eq!(
-            quicktype_core::block_on(readable_from_file_or_url("-", &[])).unwrap(),
+            quicktype_core::internal::block_on(readable_from_file_or_url("-", &[])).unwrap(),
             Readable::Stdin
         );
     }

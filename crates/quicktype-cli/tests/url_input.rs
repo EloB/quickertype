@@ -117,7 +117,7 @@ fn generates_types_from_a_json_url() {
 fn rejects_an_http_error_response() {
     let base = serve();
     let url = format!("{base}/unauthorized.json");
-    let error = quicktype_core::block_on(quicktype_core::read_from_file_or_url(
+    let error = quicktype_core::internal::block_on(quicktype_core::read_from_file_or_url(
         &quicktype_core::StdIo,
         &url,
         &[],

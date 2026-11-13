@@ -55,6 +55,7 @@ use crate::ty::type_graph_utils::{
 
 /// The duration of one pipeline pass (TS `QuicktypeTiming`), reported to
 /// [`RunContext::on_timing`].
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq)]
 pub struct QuicktypeTiming {
     /// The pass, e.g. `"read input"`.
@@ -268,6 +269,7 @@ pub fn get_target_language(name: &str) -> Result<&'static dyn TargetLanguage> {
 /// The `--debug` switches of a run (the `debugPrint*` options of TS
 /// `Options`); all off by default. Everything they print goes to
 /// [`console_log`].
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DebugOptions {
     /// `debugPrintGraph`: print the type graph after every rewrite.
@@ -287,18 +289,19 @@ pub struct DebugOptions {
 /// What to generate, from what, and how (TS `Options`).
 ///
 /// Build it with [`Options::new`] (or [`Default`], which targets
-/// TypeScript like quicktype's `defaultOptions`) and override fields:
+/// TypeScript like quicktype's `defaultOptions`) and the `with_*` methods,
+/// or set the fields:
 ///
 /// ```
 /// use quicktype_core::{InputData, Options, get_target_language};
 ///
-/// let options = Options {
-///     alphabetize_properties: true,
-///     output_filename: "person.rs".to_owned(),
-///     ..Options::new(get_target_language("rust").unwrap(), InputData::new())
-/// };
+/// let options = Options::new(get_target_language("rust").unwrap(), InputData::new())
+///     .with_alphabetize_properties(true)
+///     .with_output_filename("person.rs");
 /// assert_eq!(options.lang.name(), "rust");
+/// assert_eq!(options.output_filename, "person.rs");
 /// ```
+#[non_exhaustive]
 pub struct Options<'a> {
     /// `lang`: the target language.
     pub lang: &'a dyn TargetLanguage,
@@ -362,6 +365,86 @@ impl<'a> Options<'a> {
             on_timing: None,
             clock: None,
         }
+    }
+}
+
+/// `with_<field>(value)`: sets the field and returns the options.
+macro_rules! with_methods {
+    ($($(#[$doc:meta])* $method:ident($field:ident: $ty:ty)),* $(,)?) => {
+        $(
+            $(#[$doc])*
+            #[must_use]
+            pub fn $method(mut self, $field: $ty) -> Self {
+                self.$field = $field;
+                self
+            }
+        )*
+    };
+}
+
+impl<'a> Options<'a> {
+    with_methods! {
+        /// Sets [`inference_flags`](Self::inference_flags).
+        with_inference_flags(inference_flags: InferenceFlags),
+        /// Sets [`alphabetize_properties`](Self::alphabetize_properties).
+        with_alphabetize_properties(alphabetize_properties: bool),
+        /// Sets [`all_properties_optional`](Self::all_properties_optional).
+        with_all_properties_optional(all_properties_optional: bool),
+        /// Sets [`fixed_top_levels`](Self::fixed_top_levels).
+        with_fixed_top_levels(fixed_top_levels: bool),
+        /// Sets [`no_render`](Self::no_render).
+        with_no_render(no_render: bool),
+        /// Sets [`leading_comments`](Self::leading_comments).
+        with_leading_comments(leading_comments: Option<Vec<Comment>>),
+        /// Sets [`renderer_options`](Self::renderer_options).
+        with_renderer_options(renderer_options: RendererOptions),
+        /// Sets [`indentation`](Self::indentation).
+        with_indentation(indentation: Option<String>),
+        /// Sets [`check_provenance`](Self::check_provenance).
+        with_check_provenance(check_provenance: bool),
+        /// Sets [`debug`](Self::debug).
+        with_debug(debug: DebugOptions),
+        /// Sets [`on_timing`](Self::on_timing).
+        with_on_timing(on_timing: Option<TimingCallback>),
+        /// Sets [`clock`](Self::clock).
+        with_clock(clock: Option<Clock>),
+    }
+
+    /// Sets [`output_filename`](Self::output_filename).
+    #[must_use]
+    pub fn with_output_filename(mut self, output_filename: impl Into<String>) -> Self {
+        self.output_filename = output_filename.into();
+        self
+    }
+}
+
+impl DebugOptions {
+    /// Every switch on (`--debug all`, without `provenance`, which is
+    /// [`Options::check_provenance`]).
+    pub fn all() -> Self {
+        DebugOptions {
+            print_graph: true,
+            print_reconstitution: true,
+            print_gather_names: true,
+            print_transformations: true,
+            print_schema_resolving: true,
+            print_times: true,
+        }
+    }
+
+    with_methods! {
+        /// Sets [`print_graph`](Self::print_graph).
+        with_print_graph(print_graph: bool),
+        /// Sets [`print_reconstitution`](Self::print_reconstitution).
+        with_print_reconstitution(print_reconstitution: bool),
+        /// Sets [`print_gather_names`](Self::print_gather_names).
+        with_print_gather_names(print_gather_names: bool),
+        /// Sets [`print_transformations`](Self::print_transformations).
+        with_print_transformations(print_transformations: bool),
+        /// Sets [`print_schema_resolving`](Self::print_schema_resolving).
+        with_print_schema_resolving(print_schema_resolving: bool),
+        /// Sets [`print_times`](Self::print_times).
+        with_print_times(print_times: bool),
     }
 }
 
