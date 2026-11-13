@@ -269,14 +269,28 @@ the stable figures.
 
 Peak memory on the 2.6 GB input drops from 5.0–5.8 GiB to 82 MiB, the
 same as for the 40 MB input it repeats: the tallies grow with what is
-distinct, not with the size. What is left at the peak, for both inputs
-(sizes estimated from the structures):
+distinct, not with the size.
+
+The review of the branch then removed the largest transient part:
+inferring the `preferences` map gathered its 209,519 keys' places into an
+index map with a one-element list per key (~15–20 MiB); the objects of a
+single place now use the place's tally as it is. Measured as above
+(`/usr/bin/time -l`, the branch before and after the review's fixes, same
+build settings, on the shared machine, at a load average between 13 and
+about 40 on 12 cores; output identical):
+
+| Input | Before the fixes: CPU, peak RSS | After: CPU, peak RSS |
+|---|---:|---:|
+| generated (40 MB), 10 interleaved runs each | 0.25 s, 82.4 MiB | 0.24 s, 62.0 MiB |
+| 60 × generated (40 MB), 2.6 GB, one run each | 15.5 s, 82.0 MiB | 14.3 s, 59.7 MiB |
+
+What is left at the peak, for both inputs (sizes estimated from the
+structures):
 
 | Part | Size |
 |---|---:|
 | `preferences`, a map of 209,519 distinct random keys: a node and a key count per key, the key text once | ~20 MiB |
 | String cases of 11 places (141,000 distinct: e-mail addresses, streets, ZIP codes, SKUs, ...) with their counts, the text once | ~10 MiB |
-| Inferring the map: the 209,519 keys' places gathered into one list (transient) | ~15 MiB |
 | The process, the reading window, the type graph, rendering | the rest |
 
 Before, the peak was the `CompressedJSON` tables (2.4 GiB), one
@@ -287,17 +301,27 @@ unchanged, but nothing is stored per value, and inference touches each
 place once instead of each value.
 
 Text samples (`JsonSample::String`, the JavaScript API's `JSON.parse`
-semantics) are still parsed whole and kept in the compressed form, and
-their values are walked into tallies too, so parsing costs more and
-inference less. The in-process benchmark (112 runs per iteration, same
-binary, `QUICKTYPE_INFERENCE=compressed-json` for the reference path;
-built without LTO; median of three interleaved rounds of 10 iterations,
-under the same load):
+semantics) are parsed whole, as `JSON.parse` does, and the parsed value
+is emitted straight into the tallies, so parsing costs more and inference
+less. Before the review's fixes they were also built into the compressed
+form, kept, and walked into the tallies a second time. The in-process
+benchmark (112 runs per iteration, `QUICKTYPE_INFERENCE=compressed-json`
+for the reference path; built without LTO; medians of seven interleaved
+rounds of 10 iterations, wall time per iteration and CPU time of the
+whole process, at a load average of 13–25 on 12 cores, so these are far
+below the first measurements, taken at 130–180):
 
-| Inference from | Total | Parse | Engine |
-|---|---:|---:|---:|
-| Running tallies | 857 ms | 419 ms | 428 ms |
-| `CompressedJSON` (the reference) | 913 ms | 320 ms | 653 ms |
+| Inference from | Total | Parse | Engine | Process CPU |
+|---|---:|---:|---:|---:|
+| Running tallies | 150 ms | 64 ms | 86 ms | 1.64 s |
+| Running tallies, before the review's fixes | 165 ms | 76 ms | 89 ms | 1.82 s |
+| `CompressedJSON` (the reference) | 164 ms | 54 ms | 110 ms | 1.81 s |
+
+The parse phase alone (`--parse-only`, 31 iterations, CPU time of the
+process, median of five): 1.94 s from tallies, 2.30 s before the review's
+fixes, 1.61 s on the reference path. (The first measurements, at a load
+average of 130–180, had the parse phase at 419 ms from tallies and 320 ms
+on the reference path, wall time per iteration.)
 
 To reproduce, as in [Memory on large inputs](#memory-on-large-inputs),
 with `target/before/quicktype` built from `e41fe731d`:
@@ -307,6 +331,8 @@ for bin in target/before/quicktype target/release/quicktype; do
   /usr/bin/time -l $bin target/bench/huge.json -l ts -o /dev/null
 done
 QUICKTYPE_INFERENCE=compressed-json target/release/quicktype ...   # the reference path, same binary
+cargo bench -p quickertype --bench in_process --no-run   # prints the benchmark binary
+/usr/bin/time -l <benchmark binary> --parse-only -n 30   # the parse phase's CPU time
 ```
 
 ## Profiling

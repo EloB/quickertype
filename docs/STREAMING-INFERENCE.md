@@ -200,7 +200,10 @@ For a sequence of object places (objects added by several places to one
 accumulator), `infer_class_type` walks the places in order: the counts
 add up, a key is listed when it first occurs in any of them, and its
 values are the sequence of its nodes in those places, which is
-`propertyValues[key]` of the concatenated objects.
+`propertyValues[key]` of the concatenated objects. (The places of all
+keys go into one list, each key's in a range of it; for the objects of a
+single place, the usual case, the place's own tally is that collection
+already and nothing is gathered.)
 
 ### `__proto__`
 
@@ -259,11 +262,37 @@ of that accumulator are sequences of places, handled as above.
 
 ### Samples, sources and top-levels
 
-`JsonInput::add_source` reads a source's samples into a fresh tree (a
-root node that receives each sample's root value in turn). Only when all
-samples have been read is the tree appended to the top-level's tree with
-`Tallies::merge`; a sample that fails discards the tree, as TypeScript
-discards the source's values (`addSamples` is never reached).
+`TallyBuilder` reads each sample into a tree of its own, whose root
+receives the sample's root value. A sample that fails part way is freed
+whole (`reset_partial_sample`, or when the builder is dropped): the
+tallies are as they were before it, but for the text of its keys and
+strings in the shared string table, which nothing refers to.
+
+`JsonInput::add_source` appends each sample's tree to the source's (the
+first sample's) with `Tallies::merge`, and only when all samples have
+been read appends the source's tree to the top-level's. Adding a source
+is all or nothing, as in TypeScript, which discards the values of a
+source that fails (`addSamples` is never reached): a sample that fails
+frees the source's tree, and so does a merge that fails. `merge` first
+plans, without changing anything, every pair of places it joins: it
+looks every node up and combines the string attributes of the pairs that
+both have strings, the only steps that can fail. Then it carries the plan
+out, which cannot fail. So a failed merge leaves the tree merged into as
+it was, and frees the tree it was given. (Unit tests inject a failure at
+every step of a merge, cut a sample at every byte before a good one, and
+make adding a source fail in each of these places.)
+
+A merge skips combining two places' string attributes when the first
+absorbs the second, by the shortcuts of the previous sections (the
+second holds only string types and URI attributes, and adds no
+transformation, protocol or extension, or the first is unrestricted), and
+the emptied string and object tallies of merged trees are reused for the
+next sample's places. Rolling back costs nothing for a source of one
+sample, which is how the CLI adds every file, and a merge per further
+sample otherwise: about 3.5 µs for a one-record sample, which is most of
+its cost (60,000 one-record samples in one source take 419 ms of CPU
+instead of 217 ms when read into one tree; samples of 10 records 249 ms
+instead of 218, of 100 records 231 instead of 222).
 
 `merge(a, b)` makes `a` the tally of `a`'s samples followed by `b`'s:
 kinds appended in `b`'s first-seen order if new; cases added up,
@@ -273,24 +302,27 @@ above); object counts and key counts added, `b`'s new keys appended in
 `b`'s `propertyNames` (after the keys listed so far); `b`'s last
 `__proto__` value replaces `a`'s if it has one; items and key values
 merged recursively. Each rule is the corresponding operation applied to
-the concatenation, so a merged tree equals the tree of reading on (the
-unit test `merging_trees_is_reading_on` checks every split of a sequence
-of samples).
+the concatenation, so a merged tree equals the tree of reading on: the
+unit test `merging_trees_is_reading_on` checks that the merged trees of a
+sequence of samples, split anywhere, equal the items of one array of
+those samples read in one go.
 
-The CLI adds each file (or standard input) as its own source, so a
-directory of samples is merged into one tree per top-level.
+The CLI adds each file (or standard input) as its own source, with one
+sample, so a directory of samples is merged into one tree per top-level.
 
 ### `JSON.parse` samples
 
 Samples given as text (`JsonSample::String`, `JSON.parse` semantics) are
-read whole by the port of `JSON.parse` either way. They are kept in the
-compressed form, so that `JsonInput::to_compressed` still exports them,
-and their values are walked into the source's tree
-(`TallyBuilder::add_compressed_value`): every value adds what reading it
-adds, its strings already classified by its tag. Stream samples
-(`JsonSample::Stream` and `JsonSample::Reader`, the CLI's) are never kept;
-`to_compressed` exports only the text samples of an input that infers from
-tallies.
+parsed whole by the port of `JSON.parse` either way, and `process` emits
+the parsed value into a `JsonSink` in `Object.getOwnPropertyNames` order:
+the same function fills a `CompressedJson` on the reference path and a
+`TallyBuilder` here, so the tallies receive exactly the events the
+compressed form is built from. Nothing of the sample is kept.
+
+`JsonInput::to_compressed` exports samples in the compressed form, which
+an input that infers from tallies does not have: there it is an error,
+and an input that is to be exported is made with
+`set_tally_inference(false)` before its sources are added.
 
 ## TypeBuilder calls
 
@@ -316,40 +348,40 @@ then. `TallyInference::infer_type` is called exactly where
 arrays; the map case calls neither), so both fail at the same depth: a
 value nested 999 levels below a top-level is inferred, one nested 1,000
 levels fails. Everything else on the tally path is iterative: the
-readers, the `TallyBuilder` (a stack of frames), walking `CompressedJSON`
-values, `Tallies::merge` and freeing trees. So a document nested a
+readers, `process` for `JSON.parse` values, the `TallyBuilder` (a stack of
+frames), `Tallies::merge` and freeing trees. So a document nested a
 million levels deep is read into a million nodes and then fails with the
 `RangeError`, on both paths, and never overflows the native stack.
 
 ## Errors
 
 The readers are the same code for both paths: the stream-json tokenizer
-(`compressed_json_from_stream.rs`) emits into a `JsonSink`, which is either
-`CompressedJson` or `TallyBuilder`, and `JSON.parse` samples are parsed
-before they are walked. So every syntax error is raised at the same point
-with the same message, a failed read is reported as before, and a second
-read of a `SampleReader` gives the same error. The tally builder raises no
-errors of its own on valid structure (its checks mirror `CompressedJSON`'s
-internal assertions).
+(`compressed_json_from_stream.rs`) and `JSON.parse` with `process`
+(`compressed_json.rs`) emit into a `JsonSink`, which is either
+`CompressedJson` or `TallyBuilder`. So every syntax error is raised at the
+same point with the same message, a failed read is reported as before, and
+a second read of a `SampleReader` gives the same error. The tally builder
+raises no errors of its own on valid structure (its checks mirror
+`CompressedJSON`'s internal assertions).
 
 ## What is not tallied
 
-Nothing in inference is left on the old path. Two inputs keep the
-compressed form for other reasons:
-
-- `JsonInput::from_compressed`: the tables come from the TypeScript
-  `CompressedJSON` of the npm facade, so that input infers from them, as
-  before.
-- Text samples (`JSON.parse` semantics) are parsed whole, as `JSON.parse`
-  does, and kept for `to_compressed`; their inference uses tallies.
+Nothing in inference is left on the old path. Only
+`JsonInput::from_compressed` keeps the compressed form: its tables come
+from the TypeScript `CompressedJSON` of the npm facade, so that input
+infers from them, as before. Text samples (`JSON.parse` semantics) are
+parsed whole, as `JSON.parse` does, and then tallied like any other.
 
 ## Choosing the path
 
-`JsonInput::new` (and so `json_input_for_target_language` and the CLI)
-infers from tallies. The hidden `JsonInput::set_tally_inference(false)`
-selects the reference path before any source is added, and the CLI does
-the same when `QUICKTYPE_INFERENCE=compressed-json` is set (for testing
-only; there is no CLI option, and `--help` is unchanged).
+`JsonInput::new` (and so `json_input_for_target_language`, the CLI, the
+benchmarks and every other Rust caller) infers from tallies, unless
+`QUICKTYPE_INFERENCE=compressed-json` is set in the environment, which
+`JsonInput::new` reads (once per process) to select the reference path,
+for testing only: there is no CLI option, and `--help` is unchanged.
+`JsonInput::set_tally_inference(bool)` chooses either path explicitly
+before any source is added; the reference path keeps every sample in
+memory, and is the one `to_compressed` needs.
 
 ## Memory
 
@@ -357,8 +389,10 @@ A tally grows with the number of places, distinct keys per place, and
 distinct interned strings per place; the text of keys and cases is stored
 once for all places. Nodes freed by `__proto__` and by merges are reused.
 What still grows with the input: a single token is held whole while it is
-read (a 1 GB string needs 1 GB), each place keeps every distinct short
-string (enum inference needs all of them with their counts), and a
+read (a 1 GB string needs 1 GB), a text sample is parsed whole (as
+`JSON.parse` does), each place keeps every distinct short string (enum
+inference needs all of them with their counts), the text of the keys and
+strings of a sample that failed stays in the string table, and a
 `__proto__` key costs an entry only when a new key was listed since its
 previous occurrence.
 
@@ -413,6 +447,18 @@ to the TypeScript CLI on all 2,000 dumped documents (20 groups of 100:
 Rust, TypeScript, Go, C#, Python, Java, Swift and Kotlin with the default
 options, each option set above, `--no-ignore-json-refs`, Elm) and on 50
 directories of three documents (one top-level, three samples).
+
+After the review's fixes (atomic sources, each sample in a tree of its
+own, `JSON.parse` samples emitted straight into the tallies, the flat
+collection of class properties, cheaper merges): seeds 0 to 999,999
+again, 0 differences in 2,000,000 graphs and 99,923 whole runs (8,007
+failed identically, 77 skipped for a `$ref` cycle through a union),
+159,647 sources failing identically; our CLI identical to the TypeScript
+CLI on 500 new documents (seeds from 5,000,000) with each of `-l rust`,
+`-l typescript --no-enums`, `-l go --no-maps --alphabetize-properties` and
+`-l kotlin --all-properties-optional --no-date-times`, and on 30 groups
+of three of them as one top-level (`-t Group a.json b.json c.json`, three
+sources merged) and as directories, in Rust and TypeScript.
 
 Two kinds of whole run are left out, both for problems after inference
 that are the same on both paths. A case with a sample nested near the

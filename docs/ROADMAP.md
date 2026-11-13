@@ -222,7 +222,7 @@ fields and strings instead of the file size.
       `cargo xtask streaming-fuzz` compares both paths on generated inputs
       (graphs after inference and whole runs), and generated documents are
       compared with the TypeScript CLI. 2.6 GB input: peak RSS 5.0–5.8 GiB
-      → 82 MiB, as for the 40 MB input it repeats; a quarter to a third
+      → 60 MiB, as for the 40 MB input it repeats; a quarter to a third
       less CPU time (see
       [BENCHMARKS.md](BENCHMARKS.md#streaming-inference-phase-8a)).
 - [ ] 8b — Parallel chunks: tallies of chunks read on several threads (or

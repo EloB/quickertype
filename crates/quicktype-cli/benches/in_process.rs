@@ -2,7 +2,7 @@
 //! (`JSON.parse` semantics, no process start, no file I/O), natively.
 //!
 //! ```text
-//! cargo bench -p quickertype --bench in_process [-- [--iterations N] [--json]]
+//! cargo bench -p quickertype --bench in_process [-- [--iterations N] [--json] [--parse-only]]
 //! cargo bench -p quickertype --bench in_process --no-default-features   # system allocator
 //! QUICKTYPE_INFERENCE=compressed-json cargo bench -p quickertype --bench in_process
 //!     # inference from the compressed form instead of from running tallies
@@ -69,8 +69,9 @@ fn inputs() -> Vec<(String, String)> {
         .collect()
 }
 
-/// One run; returns (parse time, engine time, output bytes).
-fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
+/// One run; returns (parse time, engine time, output bytes). With
+/// `parse_only`, only the input is built (the engine time is zero).
+fn run(lang: &str, text: &str, parse_only: bool) -> (Duration, Duration, usize) {
     let lang = get_target_language(lang).expect("built-in language");
     let start = Instant::now();
     let mut input = json_input_for_target_language(lang, false, &RendererOptions::new());
@@ -84,6 +85,9 @@ fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
     let mut input_data = InputData::new();
     input_data.add_input(input);
     let parsed = Instant::now();
+    if parse_only {
+        return (parsed - start, Duration::ZERO, 0);
+    }
     let files = quicktype_multi_file_sync(Options::new(lang, input_data)).expect("run succeeds");
     let done = Instant::now();
     let bytes = files
@@ -104,6 +108,7 @@ fn main() {
     let mut json = false;
     let mut filters: Vec<String> = Vec::new();
     let mut per_input = false;
+    let mut parse_only = false;
     let mut languages: Vec<&'static str> = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -119,6 +124,9 @@ fn main() {
             "--filter" => filters.extend(args.next()),
             // Also print the median time of each input and language.
             "--per-input" => per_input = true,
+            // Only the parse phase, so that `/usr/bin/time` measures its CPU
+            // time (wall times are unreliable on a busy machine).
+            "--parse-only" => parse_only = true,
             // Only these languages (repeatable).
             "--lang" => {
                 let name = args.next().unwrap_or_default();
@@ -151,7 +159,7 @@ fn main() {
     let mut output_bytes = 0;
     for (_, text) in &inputs {
         for lang in &languages {
-            output_bytes += run(lang, text).2;
+            output_bytes += run(lang, text, parse_only).2;
         }
     }
 
@@ -164,7 +172,7 @@ fn main() {
         let (mut parse, mut engine) = (Duration::ZERO, Duration::ZERO);
         for (i, (_, text)) in inputs.iter().enumerate() {
             for (j, lang) in languages.iter().enumerate() {
-                let (p, e, _) = run(lang, text);
+                let (p, e, _) = run(lang, text, parse_only);
                 parse += p;
                 engine += e;
                 cells[i * languages.len() + j].push((p + e).as_secs_f64() * 1000.0);
