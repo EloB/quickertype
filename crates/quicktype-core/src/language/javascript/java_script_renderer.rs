@@ -1144,3 +1144,44 @@ impl<'a> JavaScriptRenderer<'a> for PlainJavaScriptRenderer<'a> {
         &self.js
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn usage_module_names_strip_directories_and_extension() {
+        assert_eq!(usage_module_name("stdout"), "file");
+        assert_eq!(
+            usage_module_name("src/cli/ExperimentCounts.ts"),
+            "ExperimentCounts"
+        );
+        assert_eq!(usage_module_name("C:\\out\\dir.v2\\Counts"), "Counts");
+        assert_eq!(usage_module_name("dir/file.tar.gz"), "file.tar");
+        assert_eq!(usage_module_name("noext."), "noext.");
+        assert_eq!(usage_module_name(".hidden"), "");
+        assert_eq!(usage_module_name("out/"), "");
+        // `.` in `/^.*[/\\]/` stops at the first line terminator.
+        assert_eq!(usage_module_name("a/b\nc/d.ts"), "b\nc/d");
+    }
+
+    #[test]
+    fn name_styles() {
+        assert_eq!(
+            name_style(AcronymStyleOptions::Pascal, "url value", true),
+            "URLValue"
+        );
+        assert_eq!(
+            name_style(AcronymStyleOptions::Camel, "url value", true),
+            "UrlValue"
+        );
+        assert_eq!(
+            name_style(AcronymStyleOptions::Pascal, "1st", false),
+            "the1St"
+        );
+        assert_eq!(
+            name_style(AcronymStyleOptions::Pascal, "my url", false),
+            "myURL"
+        );
+    }
+}
