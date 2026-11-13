@@ -1,0 +1,664 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      4,
+      false
+     ],
+     [
+      "when",
+      18,
+      false
+     ],
+     [
+      "whenNot",
+      1,
+      false
+     ],
+     [
+      "day",
+      1,
+      false
+     ],
+     [
+      "nothing",
+      9,
+      false
+     ],
+     [
+      "empty",
+      2,
+      false
+     ],
+     [
+      "values",
+      13,
+      false
+     ],
+     [
+      "maps",
+      11,
+      false
+     ],
+     [
+      "items",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 3
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "uuid",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 6
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      1,
+      false
+     ],
+     [
+      "count",
+      7,
+      false
+     ],
+     [
+      "extra",
+      10,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     8,
+     9
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Protocol"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 8
+   },
+   {
+    "k": "map",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": 12
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      8,
+      false
+     ],
+     [
+      "y",
+      8,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 14
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     17,
+     15,
+     9,
+     16,
+     1
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      8,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "date-time",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Data"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "self",
+      8,
+      false
+     ],
+     [
+      "Type",
+      1,
+      false
+     ],
+     [
+      "init",
+      15,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Protocol",
+    10
+   ],
+   [
+    "Data",
+    19
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n//   let purpleProtocol = try PurpleProtocol(json)\n//   let purpleData = try PurpleData(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nstruct TopLevel: Codable {\n    let id: UUID\n    let when: Date\n    let whenNot: String\n    let day: String\n    let nothing: JSONNull?\n    let empty: [JSONAny]\n    let values: [ValueElement]\n    let maps: [String: Map]\n    let items: [Item]\n\n    enum CodingKeys: String, CodingKey {\n        case id = \"id\"\n        case when = \"when\"\n        case whenNot = \"whenNot\"\n        case day = \"day\"\n        case nothing = \"nothing\"\n        case empty = \"empty\"\n        case values = \"values\"\n        case maps = \"maps\"\n        case items = \"items\"\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nextension TopLevel {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(TopLevel.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        id: UUID? = nil,\n        when: Date? = nil,\n        whenNot: String? = nil,\n        day: String? = nil,\n        nothing: JSONNull?? = nil,\n        empty: [JSONAny]? = nil,\n        values: [ValueElement]? = nil,\n        maps: [String: Map]? = nil,\n        items: [Item]? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            id: id ?? self.id,\n            when: when ?? self.when,\n            whenNot: whenNot ?? self.whenNot,\n            day: day ?? self.day,\n            nothing: nothing ?? self.nothing,\n            empty: empty ?? self.empty,\n            values: values ?? self.values,\n            maps: maps ?? self.maps,\n            items: items ?? self.items\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Item\nstruct Item: Codable {\n    let name: String\n    let count: Int?\n    let extra: [Int]?\n\n    enum CodingKeys: String, CodingKey {\n        case name = \"name\"\n        case count = \"count\"\n        case extra = \"extra\"\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\nextension Item {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Item.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        name: String? = nil,\n        count: Int?? = nil,\n        extra: [Int]?? = nil\n    ) -> Item {\n        return Item(\n            name: name ?? self.name,\n            count: count ?? self.count,\n            extra: extra ?? self.extra\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Map\nstruct Map: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: Map convenience initializers and mutators\n\nextension Map {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Map.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> Map {\n        return Map(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\nenum ValueElement: Codable {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n\n    init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if let x = try? container.decode(Bool.self) {\n            self = .bool(x)\n            return\n        }\n        if let x = try? container.decode(Double.self) {\n            self = .double(x)\n            return\n        }\n        if let x = try? container.decode(String.self) {\n            self = .string(x)\n            return\n        }\n        if let x = try? container.decode(ValueClass.self) {\n            self = .valueClass(x)\n            return\n        }\n        if container.decodeNil() {\n            self = .null\n            return\n        }\n        throw DecodingError.typeMismatch(ValueElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for ValueElement\"))\n    }\n\n    func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        switch self {\n        case .bool(let x):\n            try container.encode(x)\n        case .double(let x):\n            try container.encode(x)\n        case .string(let x):\n            try container.encode(x)\n        case .valueClass(let x):\n            try container.encode(x)\n        case .null:\n            try container.encodeNil()\n        }\n    }\n}\n\n// MARK: - ValueClass\nstruct ValueClass: Codable {\n    let x: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n    }\n}\n\n// MARK: ValueClass convenience initializers and mutators\n\nextension ValueClass {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(ValueClass.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil\n    ) -> ValueClass {\n        return ValueClass(\n            x: x ?? self.x\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - PurpleData\nstruct PurpleData: Codable {\n    let dataSelf: Int\n    let type: String\n    let dataInit: Bool\n\n    enum CodingKeys: String, CodingKey {\n        case dataSelf = \"self\"\n        case type = \"Type\"\n        case dataInit = \"init\"\n    }\n}\n\n// MARK: PurpleData convenience initializers and mutators\n\nextension PurpleData {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleData.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        dataSelf: Int? = nil,\n        type: String? = nil,\n        dataInit: Bool? = nil\n    ) -> PurpleData {\n        return PurpleData(\n            dataSelf: dataSelf ?? self.dataSelf,\n            type: type ?? self.type,\n            dataInit: dataInit ?? self.dataInit\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\ntypealias PurpleProtocol = [Int]\n\nextension Array where Element == PurpleProtocol.Element {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleProtocol.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\nclass JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n\nclass JSONCodingKey: CodingKey {\n    let key: String\n\n    required init?(intValue: Int) {\n        return nil\n    }\n\n    required init?(stringValue: String) {\n        key = stringValue\n    }\n\n    var intValue: Int? {\n        return nil\n    }\n\n    var stringValue: String {\n        return key\n    }\n}\n\nclass JSONAny: Codable {\n\n    let value: Any\n\n    static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {\n        let context = DecodingError.Context(codingPath: codingPath, debugDescription: \"Cannot decode JSONAny\")\n        return DecodingError.typeMismatch(JSONAny.self, context)\n    }\n\n    static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {\n        let context = EncodingError.Context(codingPath: codingPath, debugDescription: \"Cannot encode JSONAny\")\n        return EncodingError.invalidValue(value, context)\n    }\n\n    static func decode(from container: SingleValueDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if container.decodeNil() {\n            return JSONNull()\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if let value = try? container.decodeNil() {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer() {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {\n        if let value = try? container.decode(Bool.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Double.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(String.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decodeNil(forKey: key) {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer(forKey: key) {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {\n        var arr: [Any] = []\n        while !container.isAtEnd {\n            let value = try decode(from: &container)\n            arr.append(value)\n        }\n        return arr\n    }\n\n    static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {\n        var dict = [String: Any]()\n        for key in container.allKeys {\n            let value = try decode(from: &container, forKey: key)\n            dict[key.stringValue] = value\n        }\n        return dict\n    }\n\n    static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {\n        for value in array {\n            if let value = value as? Bool {\n                try container.encode(value)\n            } else if let value = value as? Int64 {\n                try container.encode(value)\n            } else if let value = value as? Double {\n                try container.encode(value)\n            } else if let value = value as? String {\n                try container.encode(value)\n            } else if value is JSONNull {\n                try container.encodeNil()\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer()\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {\n        for (key, value) in dictionary {\n            let key = JSONCodingKey(stringValue: key)!\n            if let value = value as? Bool {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Int64 {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Double {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? String {\n                try container.encode(value, forKey: key)\n            } else if value is JSONNull {\n                try container.encodeNil(forKey: key)\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer(forKey: key)\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {\n        if let value = value as? Bool {\n            try container.encode(value)\n        } else if let value = value as? Int64 {\n            try container.encode(value)\n        } else if let value = value as? Double {\n            try container.encode(value)\n        } else if let value = value as? String {\n            try container.encode(value)\n        } else if value is JSONNull {\n            try container.encodeNil()\n        } else {\n            throw encodingError(forValue: value, codingPath: container.codingPath)\n        }\n    }\n\n    public required init(from decoder: Decoder) throws {\n        if var arrayContainer = try? decoder.unkeyedContainer() {\n            self.value = try JSONAny.decodeArray(from: &arrayContainer)\n        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {\n            self.value = try JSONAny.decodeDictionary(from: &container)\n        } else {\n            let container = try decoder.singleValueContainer()\n            self.value = try JSONAny.decode(from: container)\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        if let arr = self.value as? [Any] {\n            var container = encoder.unkeyedContainer()\n            try JSONAny.encode(to: &container, array: arr)\n        } else if let dict = self.value as? [String: Any] {\n            var container = encoder.container(keyedBy: JSONCodingKey.self)\n            try JSONAny.encode(to: &container, dictionary: dict)\n        } else {\n            var container = encoder.singleValueContainer()\n            try JSONAny.encode(to: &container, value: self.value)\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       15,
+       17,
+       15,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       16,
+       16,
+       16,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       57,
+       17,
+       57,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       16,
+       58,
+       23
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n//   let purpleProtocol = try PurpleProtocol(json)\n//   let purpleData = try PurpleData(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nstruct TopLevel {\n    let id: UUID\n    let when: Date\n    let whenNot: String\n    let day: String\n    let nothing: NSNull\n    let empty: [Any?]\n    let values: [ValueElement]\n    let maps: [String: Map]\n    let items: [Item]\n}\n\n// MARK: - Item\nstruct Item {\n    let name: String\n    let count: Int?\n    let extra: [Int]?\n}\n\n// MARK: - Map\nstruct Map {\n    let x: Int\n    let y: Int\n}\n\nenum ValueElement {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n}\n\n// MARK: - ValueClass\nstruct ValueClass {\n    let x: Int\n}\n\n// MARK: - PurpleData\nstruct PurpleData {\n    let dataSelf: Int\n    let type: String\n    let dataInit: Bool\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       15,
+       17,
+       15,
+       23
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       16,
+       16,
+       16,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nstruct TopLevel: Codable {\n    let id: UUID\n    let when: Date\n    let whenNot: String\n    let day: String\n    let nothing: JSONNull?\n    let empty: [JSONAny]\n    let values: [ValueElement]\n    let maps: [String: Map]\n    let items: [Item]\n\n    enum CodingKeys: String, CodingKey {\n        case id = \"id\"\n        case when = \"when\"\n        case whenNot = \"whenNot\"\n        case day = \"day\"\n        case nothing = \"nothing\"\n        case empty = \"empty\"\n        case values = \"values\"\n        case maps = \"maps\"\n        case items = \"items\"\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nextension TopLevel {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(TopLevel.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        id: UUID? = nil,\n        when: Date? = nil,\n        whenNot: String? = nil,\n        day: String? = nil,\n        nothing: JSONNull?? = nil,\n        empty: [JSONAny]? = nil,\n        values: [ValueElement]? = nil,\n        maps: [String: Map]? = nil,\n        items: [Item]? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            id: id ?? self.id,\n            when: when ?? self.when,\n            whenNot: whenNot ?? self.whenNot,\n            day: day ?? self.day,\n            nothing: nothing ?? self.nothing,\n            empty: empty ?? self.empty,\n            values: values ?? self.values,\n            maps: maps ?? self.maps,\n            items: items ?? self.items\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       13,
+       17,
+       13,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       14,
+       16,
+       14,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       55,
+       17,
+       55,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       16,
+       56,
+       23
+      ]
+     ]
+    },
+    {
+     "name": "Item.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let item = try Item(json)\n\nimport Foundation\n\n// MARK: - Item\nstruct Item: Codable {\n    let name: String\n    let count: Int?\n    let extra: [Int]?\n\n    enum CodingKeys: String, CodingKey {\n        case name = \"name\"\n        case count = \"count\"\n        case extra = \"extra\"\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\nextension Item {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Item.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        name: String? = nil,\n        count: Int?? = nil,\n        extra: [Int]?? = nil\n    ) -> Item {\n        return Item(\n            name: name ?? self.name,\n            count: count ?? self.count,\n            extra: extra ?? self.extra\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Map.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let map = try Map(json)\n\nimport Foundation\n\n// MARK: - Map\nstruct Map: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: Map convenience initializers and mutators\n\nextension Map {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Map.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> Map {\n        return Map(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ValueElement.swift",
+     "text": "import Foundation\n\nenum ValueElement: Codable {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n\n    init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if let x = try? container.decode(Bool.self) {\n            self = .bool(x)\n            return\n        }\n        if let x = try? container.decode(Double.self) {\n            self = .double(x)\n            return\n        }\n        if let x = try? container.decode(String.self) {\n            self = .string(x)\n            return\n        }\n        if let x = try? container.decode(ValueClass.self) {\n            self = .valueClass(x)\n            return\n        }\n        if container.decodeNil() {\n            self = .null\n            return\n        }\n        throw DecodingError.typeMismatch(ValueElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for ValueElement\"))\n    }\n\n    func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        switch self {\n        case .bool(let x):\n            try container.encode(x)\n        case .double(let x):\n            try container.encode(x)\n        case .string(let x):\n            try container.encode(x)\n        case .valueClass(let x):\n            try container.encode(x)\n        case .null:\n            try container.encodeNil()\n        }\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ValueClass.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let valueClass = try ValueClass(json)\n\nimport Foundation\n\n// MARK: - ValueClass\nstruct ValueClass: Codable {\n    let x: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n    }\n}\n\n// MARK: ValueClass convenience initializers and mutators\n\nextension ValueClass {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(ValueClass.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil\n    ) -> ValueClass {\n        return ValueClass(\n            x: x ?? self.x\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "PurpleData.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let purpleData = try PurpleData(json)\n\nimport Foundation\n\n// MARK: - PurpleData\nstruct PurpleData: Codable {\n    let dataSelf: Int\n    let type: String\n    let dataInit: Bool\n\n    enum CodingKeys: String, CodingKey {\n        case dataSelf = \"self\"\n        case type = \"Type\"\n        case dataInit = \"init\"\n    }\n}\n\n// MARK: PurpleData convenience initializers and mutators\n\nextension PurpleData {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleData.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        dataSelf: Int? = nil,\n        type: String? = nil,\n        dataInit: Bool? = nil\n    ) -> PurpleData {\n        return PurpleData(\n            dataSelf: dataSelf ?? self.dataSelf,\n            type: type ?? self.type,\n            dataInit: dataInit ?? self.dataInit\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.swift",
+     "text": "import Foundation\n\ntypealias PurpleProtocol = [Int]\n\nextension Array where Element == PurpleProtocol.Element {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleProtocol.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\nclass JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n\nclass JSONCodingKey: CodingKey {\n    let key: String\n\n    required init?(intValue: Int) {\n        return nil\n    }\n\n    required init?(stringValue: String) {\n        key = stringValue\n    }\n\n    var intValue: Int? {\n        return nil\n    }\n\n    var stringValue: String {\n        return key\n    }\n}\n\nclass JSONAny: Codable {\n\n    let value: Any\n\n    static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {\n        let context = DecodingError.Context(codingPath: codingPath, debugDescription: \"Cannot decode JSONAny\")\n        return DecodingError.typeMismatch(JSONAny.self, context)\n    }\n\n    static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {\n        let context = EncodingError.Context(codingPath: codingPath, debugDescription: \"Cannot encode JSONAny\")\n        return EncodingError.invalidValue(value, context)\n    }\n\n    static func decode(from container: SingleValueDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if container.decodeNil() {\n            return JSONNull()\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if let value = try? container.decodeNil() {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer() {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {\n        if let value = try? container.decode(Bool.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Double.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(String.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decodeNil(forKey: key) {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer(forKey: key) {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {\n        var arr: [Any] = []\n        while !container.isAtEnd {\n            let value = try decode(from: &container)\n            arr.append(value)\n        }\n        return arr\n    }\n\n    static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {\n        var dict = [String: Any]()\n        for key in container.allKeys {\n            let value = try decode(from: &container, forKey: key)\n            dict[key.stringValue] = value\n        }\n        return dict\n    }\n\n    static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {\n        for value in array {\n            if let value = value as? Bool {\n                try container.encode(value)\n            } else if let value = value as? Int64 {\n                try container.encode(value)\n            } else if let value = value as? Double {\n                try container.encode(value)\n            } else if let value = value as? String {\n                try container.encode(value)\n            } else if value is JSONNull {\n                try container.encodeNil()\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer()\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {\n        for (key, value) in dictionary {\n            let key = JSONCodingKey(stringValue: key)!\n            if let value = value as? Bool {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Int64 {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Double {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? String {\n                try container.encode(value, forKey: key)\n            } else if value is JSONNull {\n                try container.encodeNil(forKey: key)\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer(forKey: key)\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {\n        if let value = value as? Bool {\n            try container.encode(value)\n        } else if let value = value as? Int64 {\n            try container.encode(value)\n        } else if let value = value as? Double {\n            try container.encode(value)\n        } else if let value = value as? String {\n            try container.encode(value)\n        } else if value is JSONNull {\n            try container.encodeNil()\n        } else {\n            throw encodingError(forValue: value, codingPath: container.codingPath)\n        }\n    }\n\n    public required init(from decoder: Decoder) throws {\n        if var arrayContainer = try? decoder.unkeyedContainer() {\n            self.value = try JSONAny.decodeArray(from: &arrayContainer)\n        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {\n            self.value = try JSONAny.decodeDictionary(from: &container)\n        } else {\n            let container = try decoder.singleValueContainer()\n            self.value = try JSONAny.decode(from: container)\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        if let arr = self.value as? [Any] {\n            var container = encoder.unkeyedContainer()\n            try JSONAny.encode(to: &container, array: arr)\n        } else if let dict = self.value as? [String: Any] {\n            var container = encoder.container(keyedBy: JSONCodingKey.self)\n            try JSONAny.encode(to: &container, dictionary: dict)\n        } else {\n            var container = encoder.singleValueContainer()\n            try JSONAny.encode(to: &container, value: self.value)\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true,
+    "objective-c-support": true,
+    "struct-or-class": "class"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\n@objcMembers class TopLevel: NSObject, Codable {\n    let id: UUID\n    let when: Date\n    let whenNot: String\n    let day: String\n    let nothing: JSONNull?\n    let empty: [JSONAny]\n    let values: [ValueElement]\n    let maps: [String: Map]\n    let items: [Item]\n\n    enum CodingKeys: String, CodingKey {\n        case id = \"id\"\n        case when = \"when\"\n        case whenNot = \"whenNot\"\n        case day = \"day\"\n        case nothing = \"nothing\"\n        case empty = \"empty\"\n        case values = \"values\"\n        case maps = \"maps\"\n        case items = \"items\"\n    }\n\n    init(id: UUID, when: Date, whenNot: String, day: String, nothing: JSONNull?, empty: [JSONAny], values: [ValueElement], maps: [String: Map], items: [Item]) {\n        self.id = id\n        self.when = when\n        self.whenNot = whenNot\n        self.day = day\n        self.nothing = nothing\n        self.empty = empty\n        self.values = values\n        self.maps = maps\n        self.items = items\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nextension TopLevel {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(TopLevel.self, from: data)\n        self.init(id: me.id, when: me.when, whenNot: me.whenNot, day: me.day, nothing: me.nothing, empty: me.empty, values: me.values, maps: me.maps, items: me.items)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        id: UUID? = nil,\n        when: Date? = nil,\n        whenNot: String? = nil,\n        day: String? = nil,\n        nothing: JSONNull?? = nil,\n        empty: [JSONAny]? = nil,\n        values: [ValueElement]? = nil,\n        maps: [String: Map]? = nil,\n        items: [Item]? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            id: id ?? self.id,\n            when: when ?? self.when,\n            whenNot: whenNot ?? self.whenNot,\n            day: day ?? self.day,\n            nothing: nothing ?? self.nothing,\n            empty: empty ?? self.empty,\n            values: values ?? self.values,\n            maps: maps ?? self.maps,\n            items: items ?? self.items\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       13,
+       17,
+       13,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       14,
+       16,
+       14,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       31,
+       70,
+       31,
+       79
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       31,
+       89,
+       31,
+       96
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       68,
+       17,
+       68,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       69,
+       16,
+       69,
+       23
+      ]
+     ]
+    },
+    {
+     "name": "Item.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let item = try Item(json)\n\nimport Foundation\n\n// MARK: - Item\n@objcMembers class Item: NSObject, Codable {\n    let name: String\n    let count: Int?\n    let extra: [Int]?\n\n    enum CodingKeys: String, CodingKey {\n        case name = \"name\"\n        case count = \"count\"\n        case extra = \"extra\"\n    }\n\n    init(name: String, count: Int?, extra: [Int]?) {\n        self.name = name\n        self.count = count\n        self.extra = extra\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\nextension Item {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(Item.self, from: data)\n        self.init(name: me.name, count: me.count, extra: me.extra)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        name: String? = nil,\n        count: Int?? = nil,\n        extra: [Int]?? = nil\n    ) -> Item {\n        return Item(\n            name: name ?? self.name,\n            count: count ?? self.count,\n            extra: extra ?? self.extra\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Map.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let map = try Map(json)\n\nimport Foundation\n\n// MARK: - Map\n@objcMembers class Map: NSObject, Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n\n    init(x: Int, y: Int) {\n        self.x = x\n        self.y = y\n    }\n}\n\n// MARK: Map convenience initializers and mutators\n\nextension Map {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(Map.self, from: data)\n        self.init(x: me.x, y: me.y)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> Map {\n        return Map(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ValueElement.swift",
+     "text": "import Foundation\n\nenum ValueElement: Codable {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n\n    init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if let x = try? container.decode(Bool.self) {\n            self = .bool(x)\n            return\n        }\n        if let x = try? container.decode(Double.self) {\n            self = .double(x)\n            return\n        }\n        if let x = try? container.decode(String.self) {\n            self = .string(x)\n            return\n        }\n        if let x = try? container.decode(ValueClass.self) {\n            self = .valueClass(x)\n            return\n        }\n        if container.decodeNil() {\n            self = .null\n            return\n        }\n        throw DecodingError.typeMismatch(ValueElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for ValueElement\"))\n    }\n\n    func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        switch self {\n        case .bool(let x):\n            try container.encode(x)\n        case .double(let x):\n            try container.encode(x)\n        case .string(let x):\n            try container.encode(x)\n        case .valueClass(let x):\n            try container.encode(x)\n        case .null:\n            try container.encodeNil()\n        }\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ValueClass.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let valueClass = try ValueClass(json)\n\nimport Foundation\n\n// MARK: - ValueClass\n@objcMembers class ValueClass: NSObject, Codable {\n    let x: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n    }\n\n    init(x: Int) {\n        self.x = x\n    }\n}\n\n// MARK: ValueClass convenience initializers and mutators\n\nextension ValueClass {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(ValueClass.self, from: data)\n        self.init(x: me.x)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil\n    ) -> ValueClass {\n        return ValueClass(\n            x: x ?? self.x\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "PurpleData.swift",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let purpleData = try PurpleData(json)\n\nimport Foundation\n\n// MARK: - PurpleData\n@objcMembers class PurpleData: NSObject, Codable {\n    let dataSelf: Int\n    let type: String\n    let dataInit: Bool\n\n    enum CodingKeys: String, CodingKey {\n        case dataSelf = \"self\"\n        case type = \"Type\"\n        case dataInit = \"init\"\n    }\n\n    init(dataSelf: Int, type: String, dataInit: Bool) {\n        self.dataSelf = dataSelf\n        self.type = type\n        self.dataInit = dataInit\n    }\n}\n\n// MARK: PurpleData convenience initializers and mutators\n\nextension PurpleData {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(PurpleData.self, from: data)\n        self.init(dataSelf: me.dataSelf, type: me.type, dataInit: me.dataInit)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        dataSelf: Int? = nil,\n        type: String? = nil,\n        dataInit: Bool? = nil\n    ) -> PurpleData {\n        return PurpleData(\n            dataSelf: dataSelf ?? self.dataSelf,\n            type: type ?? self.type,\n            dataInit: dataInit ?? self.dataInit\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.swift",
+     "text": "import Foundation\n\ntypealias PurpleProtocol = [Int]\n\nextension Array where Element == PurpleProtocol.Element {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleProtocol.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\n@objcMembers class JSONNull: NSObject, Codable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    override public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n\nclass JSONCodingKey: CodingKey {\n    let key: String\n\n    required init?(intValue: Int) {\n        return nil\n    }\n\n    required init?(stringValue: String) {\n        key = stringValue\n    }\n\n    var intValue: Int? {\n        return nil\n    }\n\n    var stringValue: String {\n        return key\n    }\n}\n\n@objcMembers class JSONAny: NSObject, Codable {\n\n    let value: Any\n\n    static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {\n        let context = DecodingError.Context(codingPath: codingPath, debugDescription: \"Cannot decode JSONAny\")\n        return DecodingError.typeMismatch(JSONAny.self, context)\n    }\n\n    static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {\n        let context = EncodingError.Context(codingPath: codingPath, debugDescription: \"Cannot encode JSONAny\")\n        return EncodingError.invalidValue(value, context)\n    }\n\n    static func decode(from container: SingleValueDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if container.decodeNil() {\n            return JSONNull()\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if let value = try? container.decodeNil() {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer() {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {\n        if let value = try? container.decode(Bool.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Double.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(String.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decodeNil(forKey: key) {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer(forKey: key) {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {\n        var arr: [Any] = []\n        while !container.isAtEnd {\n            let value = try decode(from: &container)\n            arr.append(value)\n        }\n        return arr\n    }\n\n    static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {\n        var dict = [String: Any]()\n        for key in container.allKeys {\n            let value = try decode(from: &container, forKey: key)\n            dict[key.stringValue] = value\n        }\n        return dict\n    }\n\n    static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {\n        for value in array {\n            if let value = value as? Bool {\n                try container.encode(value)\n            } else if let value = value as? Int64 {\n                try container.encode(value)\n            } else if let value = value as? Double {\n                try container.encode(value)\n            } else if let value = value as? String {\n                try container.encode(value)\n            } else if value is JSONNull {\n                try container.encodeNil()\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer()\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {\n        for (key, value) in dictionary {\n            let key = JSONCodingKey(stringValue: key)!\n            if let value = value as? Bool {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Int64 {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Double {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? String {\n                try container.encode(value, forKey: key)\n            } else if value is JSONNull {\n                try container.encodeNil(forKey: key)\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer(forKey: key)\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {\n        if let value = value as? Bool {\n            try container.encode(value)\n        } else if let value = value as? Int64 {\n            try container.encode(value)\n        } else if let value = value as? Double {\n            try container.encode(value)\n        } else if let value = value as? String {\n            try container.encode(value)\n        } else if value is JSONNull {\n            try container.encodeNil()\n        } else {\n            throw encodingError(forValue: value, codingPath: container.codingPath)\n        }\n    }\n\n    public required init(from decoder: Decoder) throws {\n        if var arrayContainer = try? decoder.unkeyedContainer() {\n            self.value = try JSONAny.decodeArray(from: &arrayContainer)\n        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {\n            self.value = try JSONAny.decodeDictionary(from: &container)\n        } else {\n            let container = try decoder.singleValueContainer()\n            self.value = try JSONAny.decode(from: container)\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        if let arr = self.value as? [Any] {\n            var container = encoder.unkeyedContainer()\n            try JSONAny.encode(to: &container, array: arr)\n        } else if let dict = self.value as? [String: Any] {\n            var container = encoder.container(keyedBy: JSONCodingKey.self)\n            try JSONAny.encode(to: &container, dictionary: dict)\n        } else {\n            var container = encoder.singleValueContainer()\n            try JSONAny.encode(to: &container, value: self.value)\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "density": "dense",
+    "struct-or-class": "class",
+    "final-classes": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n//   let purpleProtocol = try PurpleProtocol(json)\n//   let purpleData = try PurpleData(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nfinal class TopLevel: Codable {\n    let id: UUID\n    let when: Date\n    let whenNot, day: String\n    let nothing: JSONNull?\n    let empty: [JSONAny]\n    let values: [ValueElement]\n    let maps: [String: Map]\n    let items: [Item]\n\n    init(id: UUID, when: Date, whenNot: String, day: String, nothing: JSONNull?, empty: [JSONAny], values: [ValueElement], maps: [String: Map], items: [Item]) {\n        self.id = id\n        self.when = when\n        self.whenNot = whenNot\n        self.day = day\n        self.nothing = nothing\n        self.empty = empty\n        self.values = values\n        self.maps = maps\n        self.items = items\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nextension TopLevel {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(TopLevel.self, from: data)\n        self.init(id: me.id, when: me.when, whenNot: me.whenNot, day: me.day, nothing: me.nothing, empty: me.empty, values: me.values, maps: me.maps, items: me.items)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        id: UUID? = nil,\n        when: Date? = nil,\n        whenNot: String? = nil,\n        day: String? = nil,\n        nothing: JSONNull?? = nil,\n        empty: [JSONAny]? = nil,\n        values: [ValueElement]? = nil,\n        maps: [String: Map]? = nil,\n        items: [Item]? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            id: id ?? self.id,\n            when: when ?? self.when,\n            whenNot: whenNot ?? self.whenNot,\n            day: day ?? self.day,\n            nothing: nothing ?? self.nothing,\n            empty: empty ?? self.empty,\n            values: values ?? self.values,\n            maps: maps ?? self.maps,\n            items: items ?? self.items\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Item\nfinal class Item: Codable {\n    let name: String\n    let count: Int?\n    let extra: [Int]?\n\n    init(name: String, count: Int?, extra: [Int]?) {\n        self.name = name\n        self.count = count\n        self.extra = extra\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\nextension Item {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(Item.self, from: data)\n        self.init(name: me.name, count: me.count, extra: me.extra)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        name: String? = nil,\n        count: Int?? = nil,\n        extra: [Int]?? = nil\n    ) -> Item {\n        return Item(\n            name: name ?? self.name,\n            count: count ?? self.count,\n            extra: extra ?? self.extra\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Map\nfinal class Map: Codable {\n    let x, y: Int\n\n    init(x: Int, y: Int) {\n        self.x = x\n        self.y = y\n    }\n}\n\n// MARK: Map convenience initializers and mutators\n\nextension Map {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(Map.self, from: data)\n        self.init(x: me.x, y: me.y)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> Map {\n        return Map(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\nenum ValueElement: Codable {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n\n    init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if let x = try? container.decode(Bool.self) {\n            self = .bool(x)\n            return\n        }\n        if let x = try? container.decode(Double.self) {\n            self = .double(x)\n            return\n        }\n        if let x = try? container.decode(String.self) {\n            self = .string(x)\n            return\n        }\n        if let x = try? container.decode(ValueClass.self) {\n            self = .valueClass(x)\n            return\n        }\n        if container.decodeNil() {\n            self = .null\n            return\n        }\n        throw DecodingError.typeMismatch(ValueElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for ValueElement\"))\n    }\n\n    func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        switch self {\n        case .bool(let x):\n            try container.encode(x)\n        case .double(let x):\n            try container.encode(x)\n        case .string(let x):\n            try container.encode(x)\n        case .valueClass(let x):\n            try container.encode(x)\n        case .null:\n            try container.encodeNil()\n        }\n    }\n}\n\n// MARK: - ValueClass\nfinal class ValueClass: Codable {\n    let x: Int\n\n    init(x: Int) {\n        self.x = x\n    }\n}\n\n// MARK: ValueClass convenience initializers and mutators\n\nextension ValueClass {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(ValueClass.self, from: data)\n        self.init(x: me.x)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil\n    ) -> ValueClass {\n        return ValueClass(\n            x: x ?? self.x\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - PurpleData\nfinal class PurpleData: Codable {\n    let dataSelf: Int\n    let type: String\n    let dataInit: Bool\n\n    enum CodingKeys: String, CodingKey {\n        case dataSelf = \"self\"\n        case type = \"Type\"\n        case dataInit = \"init\"\n    }\n\n    init(dataSelf: Int, type: String, dataInit: Bool) {\n        self.dataSelf = dataSelf\n        self.type = type\n        self.dataInit = dataInit\n    }\n}\n\n// MARK: PurpleData convenience initializers and mutators\n\nextension PurpleData {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(PurpleData.self, from: data)\n        self.init(dataSelf: me.dataSelf, type: me.type, dataInit: me.dataInit)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        dataSelf: Int? = nil,\n        type: String? = nil,\n        dataInit: Bool? = nil\n    ) -> PurpleData {\n        return PurpleData(\n            dataSelf: dataSelf ?? self.dataSelf,\n            type: type ?? self.type,\n            dataInit: dataInit ?? self.dataInit\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\ntypealias PurpleProtocol = [Int]\n\nextension Array where Element == PurpleProtocol.Element {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleProtocol.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\nfinal class JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n\nfinal class JSONCodingKey: CodingKey {\n    let key: String\n\n    required init?(intValue: Int) {\n        return nil\n    }\n\n    required init?(stringValue: String) {\n        key = stringValue\n    }\n\n    var intValue: Int? {\n        return nil\n    }\n\n    var stringValue: String {\n        return key\n    }\n}\n\nfinal class JSONAny: Codable {\n\n    let value: Any\n\n    static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {\n        let context = DecodingError.Context(codingPath: codingPath, debugDescription: \"Cannot decode JSONAny\")\n        return DecodingError.typeMismatch(JSONAny.self, context)\n    }\n\n    static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {\n        let context = EncodingError.Context(codingPath: codingPath, debugDescription: \"Cannot encode JSONAny\")\n        return EncodingError.invalidValue(value, context)\n    }\n\n    static func decode(from container: SingleValueDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if container.decodeNil() {\n            return JSONNull()\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if let value = try? container.decodeNil() {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer() {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {\n        if let value = try? container.decode(Bool.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Double.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(String.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decodeNil(forKey: key) {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer(forKey: key) {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {\n        var arr: [Any] = []\n        while !container.isAtEnd {\n            let value = try decode(from: &container)\n            arr.append(value)\n        }\n        return arr\n    }\n\n    static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {\n        var dict = [String: Any]()\n        for key in container.allKeys {\n            let value = try decode(from: &container, forKey: key)\n            dict[key.stringValue] = value\n        }\n        return dict\n    }\n\n    static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {\n        for value in array {\n            if let value = value as? Bool {\n                try container.encode(value)\n            } else if let value = value as? Int64 {\n                try container.encode(value)\n            } else if let value = value as? Double {\n                try container.encode(value)\n            } else if let value = value as? String {\n                try container.encode(value)\n            } else if value is JSONNull {\n                try container.encodeNil()\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer()\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {\n        for (key, value) in dictionary {\n            let key = JSONCodingKey(stringValue: key)!\n            if let value = value as? Bool {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Int64 {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Double {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? String {\n                try container.encode(value, forKey: key)\n            } else if value is JSONNull {\n                try container.encodeNil(forKey: key)\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer(forKey: key)\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {\n        if let value = value as? Bool {\n            try container.encode(value)\n        } else if let value = value as? Int64 {\n            try container.encode(value)\n        } else if let value = value as? Double {\n            try container.encode(value)\n        } else if let value = value as? String {\n            try container.encode(value)\n        } else if value is JSONNull {\n            try container.encodeNil()\n        } else {\n            throw encodingError(forValue: value, codingPath: container.codingPath)\n        }\n    }\n\n    public required init(from decoder: Decoder) throws {\n        if var arrayContainer = try? decoder.unkeyedContainer() {\n            self.value = try JSONAny.decodeArray(from: &arrayContainer)\n        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {\n            self.value = try JSONAny.decodeDictionary(from: &container)\n        } else {\n            let container = try decoder.singleValueContainer()\n            self.value = try JSONAny.decode(from: container)\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        if let arr = self.value as? [Any] {\n            var container = encoder.unkeyedContainer()\n            try JSONAny.encode(to: &container, array: arr)\n        } else if let dict = self.value as? [String: Any] {\n            var container = encoder.container(keyedBy: JSONCodingKey.self)\n            try JSONAny.encode(to: &container, dictionary: dict)\n        } else {\n            var container = encoder.singleValueContainer()\n            try JSONAny.encode(to: &container, value: self.value)\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       14,
+       17,
+       14,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       15,
+       16,
+       15,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       20,
+       70,
+       20,
+       79
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       20,
+       89,
+       20,
+       96
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       57,
+       17,
+       57,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       16,
+       58,
+       23
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "alamofire": true,
+    "access-level": "public"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n//   let purpleProtocol = try PurpleProtocol(json)\n//   let purpleData = try PurpleData(json)\n\n//\n// To parse values from Alamofire responses:\n//\n//   Alamofire.request(url).responseTopLevel { response in\n//     if let topLevel = response.result.value {\n//       ...\n//     }\n//   }\n\nimport Foundation\nimport Alamofire\n\n// MARK: - TopLevel\npublic struct TopLevel: Codable {\n    public let id: UUID\n    public let when: Date\n    public let whenNot: String\n    public let day: String\n    public let nothing: JSONNull?\n    public let empty: [JSONAny]\n    public let values: [ValueElement]\n    public let maps: [String: Map]\n    public let items: [Item]\n\n    public enum CodingKeys: String, CodingKey {\n        case id = \"id\"\n        case when = \"when\"\n        case whenNot = \"whenNot\"\n        case day = \"day\"\n        case nothing = \"nothing\"\n        case empty = \"empty\"\n        case values = \"values\"\n        case maps = \"maps\"\n        case items = \"items\"\n    }\n\n    public init(id: UUID, when: Date, whenNot: String, day: String, nothing: JSONNull?, empty: [JSONAny], values: [ValueElement], maps: [String: Map], items: [Item]) {\n        self.id = id\n        self.when = when\n        self.whenNot = whenNot\n        self.day = day\n        self.nothing = nothing\n        self.empty = empty\n        self.values = values\n        self.maps = maps\n        self.items = items\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\npublic extension TopLevel {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(TopLevel.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        id: UUID? = nil,\n        when: Date? = nil,\n        whenNot: String? = nil,\n        day: String? = nil,\n        nothing: JSONNull?? = nil,\n        empty: [JSONAny]? = nil,\n        values: [ValueElement]? = nil,\n        maps: [String: Map]? = nil,\n        items: [Item]? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            id: id ?? self.id,\n            when: when ?? self.when,\n            whenNot: whenNot ?? self.whenNot,\n            day: day ?? self.day,\n            nothing: nothing ?? self.nothing,\n            empty: empty ?? self.empty,\n            values: values ?? self.values,\n            maps: maps ?? self.maps,\n            items: items ?? self.items\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n//\n// To parse values from Alamofire responses:\n//\n//   Alamofire.request(url).responseItem { response in\n//     if let item = response.result.value {\n//       ...\n//     }\n//   }\n\n// MARK: - Item\npublic struct Item: Codable {\n    public let name: String\n    public let count: Int?\n    public let extra: [Int]?\n\n    public enum CodingKeys: String, CodingKey {\n        case name = \"name\"\n        case count = \"count\"\n        case extra = \"extra\"\n    }\n\n    public init(name: String, count: Int?, extra: [Int]?) {\n        self.name = name\n        self.count = count\n        self.extra = extra\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\npublic extension Item {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Item.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        name: String? = nil,\n        count: Int?? = nil,\n        extra: [Int]?? = nil\n    ) -> Item {\n        return Item(\n            name: name ?? self.name,\n            count: count ?? self.count,\n            extra: extra ?? self.extra\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n//\n// To parse values from Alamofire responses:\n//\n//   Alamofire.request(url).responseMap { response in\n//     if let map = response.result.value {\n//       ...\n//     }\n//   }\n\n// MARK: - Map\npublic struct Map: Codable {\n    public let x: Int\n    public let y: Int\n\n    public enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n\n    public init(x: Int, y: Int) {\n        self.x = x\n        self.y = y\n    }\n}\n\n// MARK: Map convenience initializers and mutators\n\npublic extension Map {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Map.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> Map {\n        return Map(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\npublic enum ValueElement: Codable {\n    case bool(Bool)\n    case double(Double)\n    case string(String)\n    case valueClass(ValueClass)\n    case null\n\n    public init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if let x = try? container.decode(Bool.self) {\n            self = .bool(x)\n            return\n        }\n        if let x = try? container.decode(Double.self) {\n            self = .double(x)\n            return\n        }\n        if let x = try? container.decode(String.self) {\n            self = .string(x)\n            return\n        }\n        if let x = try? container.decode(ValueClass.self) {\n            self = .valueClass(x)\n            return\n        }\n        if container.decodeNil() {\n            self = .null\n            return\n        }\n        throw DecodingError.typeMismatch(ValueElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for ValueElement\"))\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        switch self {\n        case .bool(let x):\n            try container.encode(x)\n        case .double(let x):\n            try container.encode(x)\n        case .string(let x):\n            try container.encode(x)\n        case .valueClass(let x):\n            try container.encode(x)\n        case .null:\n            try container.encodeNil()\n        }\n    }\n}\n\n//\n// To parse values from Alamofire responses:\n//\n//   Alamofire.request(url).responseValueClass { response in\n//     if let valueClass = response.result.value {\n//       ...\n//     }\n//   }\n\n// MARK: - ValueClass\npublic struct ValueClass: Codable {\n    public let x: Int\n\n    public enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n    }\n\n    public init(x: Int) {\n        self.x = x\n    }\n}\n\n// MARK: ValueClass convenience initializers and mutators\n\npublic extension ValueClass {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(ValueClass.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil\n    ) -> ValueClass {\n        return ValueClass(\n            x: x ?? self.x\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n//\n// To parse values from Alamofire responses:\n//\n//   Alamofire.request(url).responsePurpleData { response in\n//     if let purpleData = response.result.value {\n//       ...\n//     }\n//   }\n\n// MARK: - PurpleData\npublic struct PurpleData: Codable {\n    public let dataSelf: Int\n    public let type: String\n    public let dataInit: Bool\n\n    public enum CodingKeys: String, CodingKey {\n        case dataSelf = \"self\"\n        case type = \"Type\"\n        case dataInit = \"init\"\n    }\n\n    public init(dataSelf: Int, type: String, dataInit: Bool) {\n        self.dataSelf = dataSelf\n        self.type = type\n        self.dataInit = dataInit\n    }\n}\n\n// MARK: PurpleData convenience initializers and mutators\n\npublic extension PurpleData {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleData.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        dataSelf: Int? = nil,\n        type: String? = nil,\n        dataInit: Bool? = nil\n    ) -> PurpleData {\n        return PurpleData(\n            dataSelf: dataSelf ?? self.dataSelf,\n            type: type ?? self.type,\n            dataInit: dataInit ?? self.dataInit\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\npublic typealias PurpleProtocol = [Int]\n\npublic extension Array where Element == PurpleProtocol.Element {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(PurpleProtocol.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Alamofire response handlers\n\npublic extension DataRequest {\n    fileprivate func decodableResponseSerializer<T: Decodable>() -> DataResponseSerializer<T> {\n        return DataResponseSerializer { _, response, data, error in\n            guard error == nil else { return .failure(error!) }\n\n            guard let data = data else {\n                return .failure(AFError.responseSerializationFailed(reason: .inputDataNil))\n            }\n\n            return Result { try newJSONDecoder().decode(T.self, from: data) }\n        }\n    }\n\n    @discardableResult\n    fileprivate func responseDecodable<T: Decodable>(queue: DispatchQueue? = nil, completionHandler: @escaping (DataResponse<T>) -> Void) -> Self {\n        return response(queue: queue, responseSerializer: decodableResponseSerializer(), completionHandler: completionHandler)\n    }\n\n    @discardableResult\n    func responseTopLevel(queue: DispatchQueue? = nil, completionHandler: @escaping (DataResponse<TopLevel>) -> Void) -> Self {\n        return responseDecodable(queue: queue, completionHandler: completionHandler)\n    }\n\n    @discardableResult\n    func responsePurpleProtocol(queue: DispatchQueue? = nil, completionHandler: @escaping (DataResponse<PurpleProtocol>) -> Void) -> Self {\n        return responseDecodable(queue: queue, completionHandler: completionHandler)\n    }\n\n    @discardableResult\n    func responsePurpleData(queue: DispatchQueue? = nil, completionHandler: @escaping (DataResponse<PurpleData>) -> Void) -> Self {\n        return responseDecodable(queue: queue, completionHandler: completionHandler)\n    }\n}\n\n// MARK: - Encode/decode helpers\n\npublic class JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n\nclass JSONCodingKey: CodingKey {\n    let key: String\n\n    required init?(intValue: Int) {\n        return nil\n    }\n\n    required init?(stringValue: String) {\n        key = stringValue\n    }\n\n    var intValue: Int? {\n        return nil\n    }\n\n    var stringValue: String {\n        return key\n    }\n}\n\npublic class JSONAny: Codable {\n\n    public let value: Any\n\n    static func decodingError(forCodingPath codingPath: [CodingKey]) -> DecodingError {\n        let context = DecodingError.Context(codingPath: codingPath, debugDescription: \"Cannot decode JSONAny\")\n        return DecodingError.typeMismatch(JSONAny.self, context)\n    }\n\n    static func encodingError(forValue value: Any, codingPath: [CodingKey]) -> EncodingError {\n        let context = EncodingError.Context(codingPath: codingPath, debugDescription: \"Cannot encode JSONAny\")\n        return EncodingError.invalidValue(value, context)\n    }\n\n    static func decode(from container: SingleValueDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if container.decodeNil() {\n            return JSONNull()\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout UnkeyedDecodingContainer) throws -> Any {\n        if let value = try? container.decode(Bool.self) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self) {\n            return value\n        }\n        if let value = try? container.decode(Double.self) {\n            return value\n        }\n        if let value = try? container.decode(String.self) {\n            return value\n        }\n        if let value = try? container.decodeNil() {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer() {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decode(from container: inout KeyedDecodingContainer<JSONCodingKey>, forKey key: JSONCodingKey) throws -> Any {\n        if let value = try? container.decode(Bool.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Int64.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(Double.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decode(String.self, forKey: key) {\n            return value\n        }\n        if let value = try? container.decodeNil(forKey: key) {\n            if value {\n                return JSONNull()\n            }\n        }\n        if var container = try? container.nestedUnkeyedContainer(forKey: key) {\n            return try decodeArray(from: &container)\n        }\n        if var container = try? container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key) {\n            return try decodeDictionary(from: &container)\n        }\n        throw decodingError(forCodingPath: container.codingPath)\n    }\n\n    static func decodeArray(from container: inout UnkeyedDecodingContainer) throws -> [Any] {\n        var arr: [Any] = []\n        while !container.isAtEnd {\n            let value = try decode(from: &container)\n            arr.append(value)\n        }\n        return arr\n    }\n\n    static func decodeDictionary(from container: inout KeyedDecodingContainer<JSONCodingKey>) throws -> [String: Any] {\n        var dict = [String: Any]()\n        for key in container.allKeys {\n            let value = try decode(from: &container, forKey: key)\n            dict[key.stringValue] = value\n        }\n        return dict\n    }\n\n    static func encode(to container: inout UnkeyedEncodingContainer, array: [Any]) throws {\n        for value in array {\n            if let value = value as? Bool {\n                try container.encode(value)\n            } else if let value = value as? Int64 {\n                try container.encode(value)\n            } else if let value = value as? Double {\n                try container.encode(value)\n            } else if let value = value as? String {\n                try container.encode(value)\n            } else if value is JSONNull {\n                try container.encodeNil()\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer()\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout KeyedEncodingContainer<JSONCodingKey>, dictionary: [String: Any]) throws {\n        for (key, value) in dictionary {\n            let key = JSONCodingKey(stringValue: key)!\n            if let value = value as? Bool {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Int64 {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? Double {\n                try container.encode(value, forKey: key)\n            } else if let value = value as? String {\n                try container.encode(value, forKey: key)\n            } else if value is JSONNull {\n                try container.encodeNil(forKey: key)\n            } else if let value = value as? [Any] {\n                var container = container.nestedUnkeyedContainer(forKey: key)\n                try encode(to: &container, array: value)\n            } else if let value = value as? [String: Any] {\n                var container = container.nestedContainer(keyedBy: JSONCodingKey.self, forKey: key)\n                try encode(to: &container, dictionary: value)\n            } else {\n                throw encodingError(forValue: value, codingPath: container.codingPath)\n            }\n        }\n    }\n\n    static func encode(to container: inout SingleValueEncodingContainer, value: Any) throws {\n        if let value = value as? Bool {\n            try container.encode(value)\n        } else if let value = value as? Int64 {\n            try container.encode(value)\n        } else if let value = value as? Double {\n            try container.encode(value)\n        } else if let value = value as? String {\n            try container.encode(value)\n        } else if value is JSONNull {\n            try container.encodeNil()\n        } else {\n            throw encodingError(forValue: value, codingPath: container.codingPath)\n        }\n    }\n\n    public required init(from decoder: Decoder) throws {\n        if var arrayContainer = try? decoder.unkeyedContainer() {\n            self.value = try JSONAny.decodeArray(from: &arrayContainer)\n        } else if var container = try? decoder.container(keyedBy: JSONCodingKey.self) {\n            self.value = try JSONAny.decodeDictionary(from: &container)\n        } else {\n            let container = try decoder.singleValueContainer()\n            self.value = try JSONAny.decode(from: container)\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        if let arr = self.value as? [Any] {\n            var container = encoder.unkeyedContainer()\n            try JSONAny.encode(to: &container, array: arr)\n        } else if let dict = self.value as? [String: Any] {\n            var container = encoder.container(keyedBy: JSONCodingKey.self)\n            try JSONAny.encode(to: &container, dictionary: dict)\n        } else {\n            var container = encoder.singleValueContainer()\n            try JSONAny.encode(to: &container, value: self.value)\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       25,
+       24,
+       25,
+       33
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       26,
+       23,
+       26,
+       30
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       43,
+       77,
+       43,
+       86
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       43,
+       96,
+       43,
+       103
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       79,
+       17,
+       79,
+       26
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       80,
+       16,
+       80,
+       23
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "swift-json"
+}

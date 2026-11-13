@@ -1,0 +1,138 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "FaqCoordinate"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      1,
+      false
+     ],
+     [
+      "y",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "FaqCoordinate",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "original"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let faqCoordinate = try FaqCoordinate(json)\n\nimport Foundation\n\n// MARK: - FaqCoordinate\nstruct FaqCoordinate: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: FaqCoordinate convenience initializers and mutators\n\nextension FaqCoordinate {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(FaqCoordinate.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> FaqCoordinate {\n        return FaqCoordinate(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "pascal"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let fAQCoordinate = try FAQCoordinate(json)\n\nimport Foundation\n\n// MARK: - FAQCoordinate\nstruct FAQCoordinate: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: FAQCoordinate convenience initializers and mutators\n\nextension FAQCoordinate {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(FAQCoordinate.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> FAQCoordinate {\n        return FAQCoordinate(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "camel"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let faqCoordinate = try FaqCoordinate(json)\n\nimport Foundation\n\n// MARK: - FaqCoordinate\nstruct FaqCoordinate: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: FaqCoordinate convenience initializers and mutators\n\nextension FaqCoordinate {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(FaqCoordinate.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> FaqCoordinate {\n        return FaqCoordinate(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "lowerCase"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let faqCoordinate = try faqCoordinate(json)\n\nimport Foundation\n\n// MARK: - faqCoordinate\nstruct faqCoordinate: Codable {\n    let x: Int\n    let y: Int\n\n    enum CodingKeys: String, CodingKey {\n        case x = \"x\"\n        case y = \"y\"\n    }\n}\n\n// MARK: faqCoordinate convenience initializers and mutators\n\nextension faqCoordinate {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(faqCoordinate.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        x: Int? = nil,\n        y: Int? = nil\n    ) -> faqCoordinate {\n        return faqCoordinate(\n            x: x ?? self.x,\n            y: y ?? self.y\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-swift-acronym-names"
+}
