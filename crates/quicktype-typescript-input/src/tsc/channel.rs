@@ -13,6 +13,7 @@ use std::path::Path;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use crate::error::{Error, Result};
 
@@ -218,8 +219,33 @@ impl Channel {
         })
     }
 
+    /// Describes a failed request, quoting how the compiler exited and what
+    /// it wrote to stderr. The channel is unusable afterwards: stdin is
+    /// closed and the process is reaped (killed if it does not exit within
+    /// two seconds), so the exit status and all of stderr are available.
     fn failure(&mut self, method: &str, e: io::Error) -> Error {
-        let status = self.child.try_wait().ok().flatten();
+        self.writer = None;
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut status = None;
+        loop {
+            match self.child.try_wait() {
+                Ok(Some(s)) => {
+                    status = Some(s);
+                    break;
+                }
+                Ok(None) if Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(10))
+                }
+                _ => break,
+            }
+        }
+        if status.is_none() {
+            let _ = self.child.kill();
+            let _ = self.child.wait();
+        }
+        if let Some(t) = self.stderr_thread.take() {
+            let _ = t.join();
+        }
         let stderr = self
             .stderr
             .lock()
@@ -245,5 +271,26 @@ impl Drop for Channel {
         if let Some(t) = self.stderr_thread.take() {
             let _ = t.join();
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn a_crashing_compiler_is_reported_with_its_stderr() {
+        let dir = std::env::temp_dir().join(format!("qt-tsc-crash-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("tsc");
+        std::fs::write(&exe, "#!/bin/sh\necho 'panic: boom' >&2\nexit 3\n").unwrap();
+        std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let mut ch = Channel::spawn(&exe, &dir, Vec::new()).unwrap();
+        let err = ch.request("initialize", b"null").unwrap_err().message();
+        drop(ch);
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert!(err.contains("compiler exited"), "{err}");
+        assert!(err.ends_with("panic: boom"), "{err}");
     }
 }

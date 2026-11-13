@@ -61,19 +61,32 @@ pub fn has_pinned_version(exe: &Path) -> bool {
         })
 }
 
-/// Candidates for a `tsc`/`tsgo` found on `PATH`: the binary itself, and,
-/// when it is npm's JavaScript launcher (`…/typescript/bin/tsc`), the native
-/// binary of that package (nested or hoisted).
-fn path_candidates(found: &Path) -> Vec<PathBuf> {
-    let mut out = vec![found.to_path_buf()];
-    if let Ok(real) = std::fs::canonicalize(found) {
-        if let Some(pkg) = real.parent().and_then(Path::parent) {
-            out.push(platform_package_exe(&pkg.join("node_modules")));
-            if let Some(node_modules) = pkg.parent() {
-                out.push(platform_package_exe(node_modules));
-            }
+/// Whether `path` is a script (`#!…`) rather than a native executable.
+fn is_script(path: &Path) -> bool {
+    use std::io::Read;
+    let mut head = [0u8; 2];
+    std::fs::File::open(path)
+        .and_then(|mut f| f.read_exact(&mut head))
+        .is_ok()
+        && head == *b"#!"
+}
+
+/// Native-binary candidates for a `tsc`/`tsgo` found on `PATH` or named by
+/// `$QUICKTYPE_TSC`. When it is npm's JavaScript launcher
+/// (`…/typescript/bin/tsc`), that would need Node and spawn the compiler as
+/// a grandchild, so the launcher's package is searched for the native
+/// binary (nested, then hoisted) and the launcher itself is not a candidate.
+fn native_candidates(found: &Path) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let real = std::fs::canonicalize(found).unwrap_or_else(|_| found.to_path_buf());
+    if let Some(pkg) = real.parent().and_then(Path::parent) {
+        out.push(platform_package_exe(&pkg.join("node_modules")));
+        if let Some(node_modules) = pkg.parent() {
+            out.push(platform_package_exe(node_modules));
         }
-        out.insert(0, real);
+    }
+    if !is_script(&real) {
+        out.push(real);
     }
     out
 }
@@ -83,8 +96,11 @@ fn path_candidates(found: &Path) -> Vec<PathBuf> {
 pub fn locate(cwd: &Path) -> Result<PathBuf> {
     if let Some(explicit) = std::env::var_os(TSC_ENV) {
         let exe = PathBuf::from(explicit);
-        if has_pinned_version(&exe) {
-            return Ok(exe);
+        if let Some(native) = native_candidates(&exe)
+            .into_iter()
+            .find(|c| c.is_file() && has_pinned_version(c))
+        {
+            return Ok(native);
         }
         return Err(not_found(&format!(
             "{TSC_ENV} is set to {}, which is not the TypeScript {TSC_VERSION} compiler",
@@ -104,7 +120,7 @@ pub fn locate(cwd: &Path) -> Result<PathBuf> {
                 if !found.is_file() {
                     continue;
                 }
-                for exe in path_candidates(&found) {
+                for exe in native_candidates(&found) {
                     if exe.is_file() && has_pinned_version(&exe) {
                         return Ok(exe);
                     }
@@ -142,6 +158,21 @@ mod tests {
             "TypeScript input requires the TypeScript 7.0.2 compiler (tsc), but it was not found. \
              Install it with \"npm install -g typescript@7.0.2\" or set QUICKTYPE_TSC to its path."
         );
+    }
+
+    #[test]
+    fn npm_launcher_resolves_to_the_native_binary() {
+        let root = std::env::temp_dir().join(format!("qt-tsc-locate-{}", std::process::id()));
+        let launcher = root.join("node_modules/typescript/bin/tsc");
+        let nested = platform_package_exe(&root.join("node_modules/typescript/node_modules"));
+        let hoisted = platform_package_exe(&root.join("node_modules"));
+        std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
+        std::fs::write(&launcher, "#!/usr/bin/env node\n").unwrap();
+        let candidates = native_candidates(&launcher);
+        std::fs::remove_dir_all(&root).unwrap();
+        let canonical = |p: &Path| p.to_string_lossy().replace("/private/", "/");
+        let got: Vec<String> = candidates.iter().map(|c| canonical(c)).collect();
+        assert_eq!(got, [canonical(&nested), canonical(&hoisted)]);
     }
 
     #[test]
