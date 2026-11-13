@@ -206,7 +206,7 @@ function engineForSample(length: number): WasmGlue | undefined {
  */
 function start(cjson: any, config: Config, glue: WasmGlue): NativeSamples | undefined {
     if (!isFresh(cjson)) return undefined;
-    let id: number;
+    let id: number | undefined;
     try {
         id = glue.jsonCreate(config.dateTime, !!config.handleRefs, config.range?.min, config.range?.max);
     } catch (e) {
@@ -214,6 +214,8 @@ function start(cjson: any, config: Config, glue: WasmGlue): NativeSamples | unde
         return undefined;
     }
 
+    // As many inputs at once as the engine takes: TypeScript reads this one.
+    if (id === undefined) return undefined;
     const fields: Array<[string, PropertyDescriptor]> = [];
     const state: NativeSamples = { glue, id, config, texts: [], textLength: 0, fields };
     for (const name of tableFields) {

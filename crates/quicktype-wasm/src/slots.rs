@@ -53,6 +53,12 @@ impl<T> Slots<T> {
         self.len == 0
     }
 
+    /// Whether every slot is taken: [`insert`](Self::insert) would give its
+    /// value back.
+    pub fn is_full(&self) -> bool {
+        self.free.is_empty() && self.entries.len() >= MAX_SLOTS
+    }
+
     /// Adds `value`; returns its id, or gives `value` back if all
     /// [`MAX_SLOTS`] slots are taken.
     pub fn insert(&mut self, value: T) -> Result<f64, T> {
@@ -159,5 +165,20 @@ mod tests {
         let b = slots.insert(3).unwrap();
         assert_eq!(split(b), Some((1, 0)));
         assert!(id(MAX_SLOTS - 1, u32::MAX) < 9_007_199_254_740_992.0);
+    }
+
+    #[test]
+    fn a_full_table_gives_the_value_back() {
+        let mut slots = Slots::new();
+        let mut ids = Vec::new();
+        while !slots.is_full() {
+            ids.push(slots.insert(()).unwrap());
+        }
+        assert_eq!(ids.len(), MAX_SLOTS);
+        assert_eq!(slots.insert(()), Err(()));
+        slots.remove(ids[7]);
+        assert!(!slots.is_full());
+        assert!(slots.insert(()).is_ok());
+        assert!(slots.is_full());
     }
 }

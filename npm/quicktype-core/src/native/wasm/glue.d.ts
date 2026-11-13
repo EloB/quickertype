@@ -28,12 +28,14 @@ export interface ExportedTables {
 export interface WasmGlue {
     initSync(options: { module: unknown }): unknown;
     runSync(request: unknown, host: unknown): unknown;
-    start(request: unknown, host: unknown): number;
+    /** `undefined` if the engine has as many runs in flight as it takes. */
+    start(request: unknown, host: unknown): number | undefined;
     poll(id: number): unknown;
     settle(id: number, callId: number, ok: boolean, value: unknown): void;
     cancel(id: number): void;
     supportsLanguage(name: string): boolean;
-    jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number;
+    /** `undefined` if the engine has as many inputs as it takes. */
+    jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
     jsonRead(id: number, text: string): number;
     jsonDrop(id: number): void;
     jsonExport(id: number): ExportedTables | undefined;

@@ -81,7 +81,9 @@ same results by construction:
 If the engine fails (traps, or overflows the stack), every run in flight on
 that instance is redone on the TypeScript engine and the instance is
 replaced. Before a run is redone, its JSON Schema inputs are put back as
-they were.
+they were. An engine that has as many runs in flight, or holds as many
+inputs, as its tables take (2^21 each) has not failed: that run, or that
+input's samples, go to the TypeScript engine, and the instance stays.
 
 `QUICKTYPE_ENGINE=ts` (or `globalThis[Symbol.for("quicktype-core.engine")] =
 "ts"`) runs everything on the TypeScript engine; `wasm` makes a failure to
@@ -141,7 +143,8 @@ fuller stack; such a sample keeps whatever TypeScript does with it), a
 `\u` escape that leaves a surrogate unpaired (a Rust string cannot hold
 it), a configuration (`dateTimeRecognizer`, `handleRefs`,
 `supportedIntegerRange`) that changed since the first sample, a compressed
-form that a run holds, and an engine instance that failed.
+form that a run holds, an engine instance that failed, and an engine that
+holds as many inputs as it takes.
 A sample that is not JSON is not read at all: the engine reports that it
 is not JSON, without changing anything, and `parseSync` goes on to
 `JSON.parse`, which throws.

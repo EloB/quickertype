@@ -375,6 +375,15 @@ class Driver {
         return true;
     }
 
+    /**
+     * The TypeScript engine does the run, which the engine did not start:
+     * it lacks `feature` (as many runs in flight as it takes, say).
+     */
+    public decline(feature: string): void {
+        if (!this.end()) return;
+        this.handOver(declined(feature));
+    }
+
     /** Redo the run on the TypeScript engine (the engine failed). */
     public redo(): void {
         if (!this.end()) return;
@@ -598,11 +607,17 @@ function runOnEngine(
     return new Promise((resolve, reject) => {
         const driver = new Driver(glue, run, restore, resolve, reject);
         const host = makeHost(run, options, encoded, glue, weakRef(driver));
-        let id: number;
+        let id: number | undefined;
         try {
             id = glue.start(encoded.request, host);
         } catch (e) {
             engineFailed(glue, e);
+            return;
+        }
+
+        if (id === undefined) {
+            // A limit, not a failure: the instance stays.
+            driver.decline("more runs at once than the engine takes");
             return;
         }
 

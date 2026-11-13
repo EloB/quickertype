@@ -158,16 +158,22 @@ pub fn run_sync(request: JsValue, host: JsValue) -> JsValue {
 /// `Run.run()` after `preRun()`: registers the run and returns its id. Call
 /// [`poll`] to make progress. The request is read right away, so the run
 /// holds its JSON samples (it takes over their leases) from here on.
+/// Returns `undefined`, before reading the request, if as many runs are in
+/// flight as the run table takes: the facade then does the run on the
+/// TypeScript engine (and lets go of its leases).
 #[wasm_bindgen]
-pub fn start(request: JsValue, host: JsValue) -> std::result::Result<f64, JsValue> {
+pub fn start(request: JsValue, host: JsValue) -> Option<f64> {
+    if RUNS.with(|runs| runs.borrow().is_full()) {
+        return None;
+    }
     install();
     let host = JsHost::new(host);
     let run = PendingRun {
         future: Some(run_future(js::decode_request(&request), Rc::clone(&host))),
         host,
     };
-    RUNS.with(|runs| runs.borrow_mut().insert(run))
-        .map_err(|_| JsValue::from_str("too many runs at once"))
+    // Decoding the request calls no user code: there is still room.
+    RUNS.with(|runs| runs.borrow_mut().insert(run)).ok()
 }
 
 /// Runs run `id` until it finishes or waits for a host call: returns the

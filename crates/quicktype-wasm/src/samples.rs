@@ -27,6 +27,9 @@
 //! out of memory), the other inputs' tables can still be exported from its
 //! memory ([`json_export`]), which is how the facade recovers them; the
 //! input being read is lost with the read.
+//!
+//! When a table is full (2^21 inputs at once), [`json_create`] returns
+//! `undefined`, and the facade reads that input with TypeScript.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -86,16 +89,18 @@ thread_local! {
 }
 
 /// `new CompressedJSONFromString(dateTimeRecognizer, handleRefs,
-/// supportedIntegerRange)` without samples yet: returns its id.
-/// `date_time` names a built-in recognizer (as in the request), and the
-/// range is `null` (arbitrary precision) unless both bounds are given.
+/// supportedIntegerRange)` without samples yet: returns its id, or
+/// `undefined` if there are as many as the table takes (the facade reads
+/// that input with TypeScript). `date_time` names a built-in recognizer (as
+/// in the request), and the range is `null` (arbitrary precision) unless
+/// both bounds are given.
 #[wasm_bindgen(js_name = jsonCreate)]
 pub fn json_create(
     date_time: &str,
     handle_refs: bool,
     min: Option<String>,
     max: Option<String>,
-) -> std::result::Result<f64, JsValue> {
+) -> std::result::Result<Option<f64>, JsValue> {
     let recognizer = DateTimeKind::from_name(date_time)
         .ok_or_else(|| JsValue::from_str("unknown date/time recognizer"))?
         .recognizer()
@@ -109,9 +114,7 @@ pub fn json_create(
         committed: TableCounts::default(),
         closed: false,
     };
-    SAMPLES
-        .with(|all| all.borrow_mut().insert(samples))
-        .map_err(|_| JsValue::from_str("too many JSON inputs"))
+    Ok(SAMPLES.with(|all| all.borrow_mut().insert(samples)).ok())
 }
 
 /// `parseSync(text)` on compressed form `id`: the sample's root value as
@@ -295,7 +298,9 @@ mod tests {
     use super::*;
 
     fn create(date_time: &str, min: Option<&str>, max: Option<&str>) -> f64 {
-        json_create(date_time, false, min.map(Into::into), max.map(Into::into)).unwrap()
+        json_create(date_time, false, min.map(Into::into), max.map(Into::into))
+            .unwrap()
+            .unwrap()
     }
 
     fn form(id: f64) -> Rc<CompressedJson> {
@@ -334,7 +339,7 @@ mod tests {
         let int32 = create("default", Some("-2147483648"), Some("2147483647"));
         assert_eq!(json_read(int32, "2147483648"), 5);
         assert_eq!(json_read(int32, "2147483647"), 4);
-        let unbounded = json_create("swift", true, None, None).unwrap();
+        let unbounded = json_create("swift", true, None, None).unwrap().unwrap();
         assert_eq!(json_read(unbounded, "1e400"), 4);
     }
 

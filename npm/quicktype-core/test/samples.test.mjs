@@ -593,3 +593,42 @@ test("an instance that traps while it reads a sample still gives the other input
         nativeSamples.setKeptTexts(old);
     }
 });
+
+// A full table of inputs or runs (2^21 at once) is a limit, not a failure:
+// that input or run goes to TypeScript, and the instance stays.
+test("an engine that takes no more inputs or runs declines them and stays", async () => {
+    const glue = engine.engineSync();
+    const expected = await inMode("ts", async () => [...(await run(await addAll("rust", plainGroups), "rust"))]);
+    const shared = await addAll("rust", plainGroups);
+    const { jsonCreate, start } = glue;
+    const declinedBy = "more runs at once than the engine takes";
+    const before = { ...engineStats, declinedBy: engineStats.unsupportedBy[declinedBy] ?? 0 };
+    let own;
+    glue.jsonCreate = () => undefined;
+    try {
+        own = await addAll("rust", plainGroups);
+    } finally {
+        glue.jsonCreate = jsonCreate;
+    }
+
+    assert.equal(engineStats.samplesRead, before.samplesRead);
+    glue.start = () => undefined;
+    try {
+        assert.deepEqual([...(await run(own, "rust"))], expected);
+        assert.deepEqual([...(await run(shared, "rust"))], expected);
+    } finally {
+        glue.start = start;
+    }
+
+    assert.equal(engineStats.unsupported, before.unsupported + 2);
+    assert.equal(engineStats.unsupportedBy[declinedBy], before.declinedBy + 2);
+    assert.equal(engineStats.rerun, before.rerun);
+    assert.equal(engine.currentEngine(), glue);
+    assert.ok(!engine.isDiscarded(glue));
+    noLeases();
+    // The run on TypeScript read the tables of the input the engine read.
+    assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
+    // And the engine does the next run.
+    assert.deepEqual([...(await run(shared, "rust"))], expected);
+    assert.equal(engineStats.wasm, before.wasm + 1);
+});
