@@ -367,6 +367,7 @@ dependencies = [
  "flate2",
  "indexmap",
  "quicktype-js-compat",
+ "regex",
  "serde_json",
  "stacker",
  "ureq",

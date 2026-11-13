@@ -1,0 +1,8 @@
+# quicktype's test/unit/typescript-empty-object.test.ts: a top-level empty
+# object keeps a type export (`export type Welcome = object;`).
+input json Welcome {}
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": true}}
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": false}}
+render flow {"filename": "stdout", "rendererOptions": {"just-types": true}}

@@ -47,8 +47,6 @@ pub const HASKELL_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct HaskellTargetLanguage;
 
-// TODO(renderer): port the hooks HaskellTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for HaskellTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &HASKELL_LANGUAGE_CONFIG
@@ -71,4 +69,22 @@ impl TargetLanguage for HaskellTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::haskell_renderer::HaskellOptions::parse(renderer_options)?;
+        let renderer = super::haskell_renderer::HaskellRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

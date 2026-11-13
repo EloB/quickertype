@@ -1,0 +1,1547 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "created",
+       [
+        "When it was made."
+       ]
+      ],
+      [
+       "kind",
+       [
+        "The kind."
+       ]
+      ]
+     ],
+     "description": [
+      "The kitchen sink."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "",
+      1,
+      false
+     ],
+     [
+      "anyMap",
+      2,
+      true
+     ],
+     [
+      "anything",
+      3,
+      true
+     ],
+     [
+      "anythings",
+      4,
+      true
+     ],
+     [
+      "at",
+      5,
+      false
+     ],
+     [
+      "byName",
+      6,
+      true
+     ],
+     [
+      "code",
+      11,
+      false
+     ],
+     [
+      "count",
+      12,
+      false
+     ],
+     [
+      "created",
+      13,
+      false
+     ],
+     [
+      "day",
+      14,
+      false
+     ],
+     [
+      "empty",
+      8,
+      false
+     ],
+     [
+      "emptyMap",
+      15,
+      true
+     ],
+     [
+      "emptyMapMap",
+      17,
+      true
+     ],
+     [
+      "emptyObject",
+      16,
+      true
+     ],
+     [
+      "fooBar",
+      8,
+      true
+     ],
+     [
+      "isActive",
+      20,
+      false
+     ],
+     [
+      "kind",
+      21,
+      false
+     ],
+     [
+      "maybeDay",
+      22,
+      true
+     ],
+     [
+      "nested",
+      23,
+      true
+     ],
+     [
+      "nothing",
+      19,
+      true
+     ],
+     [
+      "numbers",
+      26,
+      true
+     ],
+     [
+      "onlyDouble",
+      27,
+      true
+     ],
+     [
+      "optCode",
+      28,
+      true
+     ],
+     [
+      "optCount",
+      29,
+      true
+     ],
+     [
+      "optTags",
+      30,
+      true
+     ],
+     [
+      "points",
+      31,
+      false
+     ],
+     [
+      "price$",
+      10,
+      true
+     ],
+     [
+      "ratio",
+      32,
+      false
+     ],
+     [
+      "stringish",
+      33,
+      false
+     ],
+     [
+      "tags",
+      34,
+      false
+     ],
+     [
+      "userURL",
+      8,
+      true
+     ],
+     [
+      "withEnum",
+      35,
+      true
+     ],
+     [
+      "withMap",
+      37,
+      true
+     ],
+     [
+      "withObject",
+      39,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       ""
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "anyMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 3
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "anythings"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 3
+   },
+   {
+    "k": "time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "at"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "byName"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 7
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Point"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "description": [
+      "A point."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "label",
+      8,
+      true
+     ],
+     [
+      "x",
+      9,
+      false
+     ],
+     [
+      "y",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "label",
+       "empty",
+       "fooBar",
+       "userURL"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "y",
+       "price$"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "code"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      8
+     ],
+     "pattern": "^[A-Z$]+\\d*$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      0,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "count"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "created"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "date",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "day"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "emptyMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 16
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Empty"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "emptyMapMap"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     18,
+     19
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "emptyMapMap"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 15
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "isActive"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "description": [
+      "The kind."
+     ]
+    },
+    "cases": [
+     "first-kind",
+     "SECOND",
+     "third_kind",
+     "$dollar",
+     "with \"quote\""
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeDay"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     19,
+     14
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nested"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 24
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nested"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    },
+    "items": 25
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nested"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    },
+    "members": [
+     1,
+     8
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "numbers"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     1,
+     10,
+     20,
+     19
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "onlyDouble"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     10,
+     8
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optCode"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      null,
+      3
+     ],
+     "pattern": "^x",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "optCount"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      null,
+      2
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "optTags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "points"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 7
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      -1.5,
+      1e+21
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "stringish"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     1,
+     13,
+     14,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      5
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 8
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withEnum"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     1,
+     19,
+     36,
+     14
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withEnum"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "red",
+     "green"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withMap"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     38,
+     19,
+     8
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withMap"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withObject"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     7,
+     20,
+     40
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withObject"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 41
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "withObject"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    },
+    "items": 8
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(Kind::class,           { Kind.fromValue(it.asText()) },         { ObjectMapper().writeValueAsString(it.value) })\n    convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })\n    convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n}\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @get:JsonProperty(\"\", required=true)@field:JsonProperty(\"\", required=true)\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    val byName: Map<String, Point>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val code: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val created: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n\n    @get:JsonProperty(\"isActive\", required=true)@field:JsonProperty(\"isActive\", required=true)\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val points: List<Point>,\n\n    @get:JsonProperty(\"price\\$\")@field:JsonProperty(\"price\\$\")\n    val price: Double? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val ratio: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val stringish: Stringish,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val tags: List<String>,\n\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n        require(code.codePointCount(0, code.length) <= 8)\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n        require(count >= 0)\n        require(count <= 100)\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n        optCount?.let { require(it >= 1) }\n        optTags?.let { require(it.size <= 2) }\n        require(ratio >= -1.5)\n        require(ratio <= 1e+21)\n        require(tags.size >= 1)\n        require(tags.size <= 5)\n    }\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val y: Double\n)\n\ntypealias Empty = ObjectNode\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Nested = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Numbers = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is IntNode, is LongNode                -> IntegerValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): OnlyDouble = when (jn) {\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Stringish = when (jn) {\n            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithEnumUnion = when (jn) {\n            is TextNode             -> try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithMap = when (jn) {\n            is ObjectNode -> IntegerMapValue(mapper.convertValue(jn))\n            is TextNode   -> StringValue(mapper.convertValue(jn))\n            is NullNode   -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithObject = when (jn) {\n            is BooleanNode -> BoolValue(mapper.convertValue(jn))\n            is ObjectNode  -> PointValue(mapper.convertValue(jn))\n            is ArrayNode   -> StringArrayArrayValue(mapper.convertValue(jn))\n            else           -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       28,
+       56,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       57,
+       18,
+       57,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       24,
+       58,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       99,
+       17,
+       99,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = if (isUnion && jv.inside is JsonArray<*>) (jv.inside as JsonArray<*>).map { fromJson(JsonValue(it, null, null, this@convert)) } else fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\n// Klaxon cannot deserialize map values typed as JsonObject, so fields\n// holding such maps are converted at the field level instead.\n@Target(AnnotationTarget.FIELD)\nprivate annotation class KlaxonJsonObjectMap\n\nprivate val jsonObjectMapConverter: Converter = object : Converter {\n    override fun canConvert(cls: Class<*>) = true\n    override fun fromJson(jv: JsonValue)   = jv.obj!!\n    override fun toJson(value: Any)        = klaxon.toJsonString(value)\n}\n\nprivate val klaxon = Klaxon()\n    .convert(OffsetDateTime::class, { OffsetDateTime.parse(it.string!!) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    .convert(LocalDate::class,      { LocalDate.parse(it.string!!) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    .convert(OffsetTime::class,     { OffsetTime.parse(it.string!!) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    .convert(JsonObject::class,     { it.obj!! },                            { it.toJsonString() })\n    .convert(Kind::class,           { Kind.fromValue(it.string!!) },         { Klaxon().toJsonString(it.value) })\n    .convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.string!!) }, { Klaxon().toJsonString(it.value) })\n    .convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    .convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    .convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    .convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    .convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    .convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    .convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n    .fieldConverter(KlaxonJsonObjectMap::class, jsonObjectMapConverter)\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @Json(name = \"\")\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @Json(name = \"empty\")\n    val topLevelEmpty: String,\n\n    @KlaxonJsonObjectMap\n    val emptyMap: Map<String, Empty>? = null,\n\n    @KlaxonJsonObjectMap\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @Json(name = \"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: Stringish,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n    }\n    init {\n        require(code.codePointCount(0, code.length) <= 8)\n    }\n    init {\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n    }\n    init {\n        require(count >= 0)\n    }\n    init {\n        require(count <= 100)\n    }\n    init {\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n    }\n    init {\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n    }\n    init {\n        optCount?.let { require(it >= 1) }\n    }\n    init {\n        optTags?.let { require(it.size <= 2) }\n    }\n    init {\n        require(ratio >= -1.5)\n    }\n    init {\n        require(ratio <= 1e+21)\n    }\n    init {\n        require(tags.size >= 1)\n    }\n    init {\n        require(tags.size <= 5)\n    }\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\ntypealias Empty = JsonObject\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        public fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Nested = when (jv.inside) {\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Numbers = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is Double       -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): OnlyDouble = when (jv.inside) {\n            is Double, is Int, is Long -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is String                  -> StringValue(jv.string!!)\n            else                       -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Stringish = when (jv.inside) {\n            is String       -> try { DateTimeValue(jv.string?.let { OffsetDateTime.parse(it) }!!) } catch (e: Exception) { try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { TimeValue(jv.string?.let { OffsetTime.parse(it) }!!) } }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithEnumUnion = when (jv.inside) {\n            is String       -> try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { EnumValue(jv.string?.let { WithEnumEnum.fromValue(it) }!!) }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        public fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithMap = when (jv.inside) {\n            is JsonObject -> IntegerMapValue(jv.obj?.let { klaxon.parseFromJsonObject<Map<String, Long>>(it) }!!)\n            is String     -> StringValue(jv.string!!)\n            null          -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithObject = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is JsonObject   -> PointValue(jv.obj?.let { klaxon.parseFromJsonObject<Point>(it) }!!)\n            is JsonArray<*> -> StringArrayArrayValue(jv.array?.let { klaxon.parseFromJsonArray<List<String>>(it) }!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       54,
+       28,
+       54,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       55,
+       18,
+       55,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       24,
+       56,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       89,
+       17,
+       89,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json     = Json { allowStructuredMapKeys = true }\n// val topLevel = json.parse(TopLevel.serializer(), jsonString)\n\n@file:UseSerializers(OffsetDateTimeSerializer::class, LocalDateSerializer::class, OffsetTimeSerializer::class)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n/**\n * The kitchen sink.\n */\n@Serializable\ndata class TopLevel (\n    @SerialName(\"\")\n    val empty: Long,\n\n    val anyMap: JsonObject? = null,\n    val anything: JsonElement? = null,\n    val anythings: JsonArray? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @SerialName(\"empty\")\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<JsonArray>? = null,\n    val nothing: JsonElement? = null,\n    val numbers: JsonElement? = null,\n    val onlyDouble: JsonElement? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @SerialName(\"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: JsonElement,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: JsonElement? = null,\n    val withMap: JsonElement? = null,\n    val withObject: JsonElement? = null\n)\n\n/**\n * A point.\n */\n@Serializable\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\n@Serializable\nclass Empty()\n\n/**\n * The kind.\n */\n@Serializable\nenum class Kind(val value: String) {\n    @SerialName(\"first-kind\") FirstKind(\"first-kind\"),\n    @SerialName(\"SECOND\") Second(\"SECOND\"),\n    @SerialName(\"third_kind\") ThirdKind(\"third_kind\"),\n    @SerialName(\"\\$dollar\") Dollar(\"\\$dollar\"),\n    @SerialName(\"with \\\"quote\\\"\") WithQuote(\"with \\\"quote\\\"\");\n}\n\ntypealias Nested = JsonElement\n\ntypealias Numbers = JsonElement\n\ntypealias OnlyDouble = JsonElement\n\ntypealias Stringish = JsonElement\n\ntypealias WithEnumUnion = JsonElement\n\n@Serializable\nenum class WithEnumEnum(val value: String) {\n    @SerialName(\"red\") Red(\"red\"),\n    @SerialName(\"green\") Green(\"green\");\n}\n\ntypealias WithMap = JsonElement\n\ntypealias WithObject = JsonElement\n\nobject OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetDateTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetDateTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))\n    }\n}\n\nobject LocalDateSerializer : KSerializer<LocalDate> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"LocalDate\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: LocalDate) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(value))\n    }\n}\n\nobject OffsetTimeSerializer : KSerializer<OffsetTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetTime = OffsetTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(value))\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       27,
+       18,
+       27,
+       29
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       57,
+       17,
+       57,
+       28
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    val empty: Long,\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n    val topLevelEmpty: String,\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n    val price: Double? = null,\n    val ratio: Double,\n    val stringish: Stringish,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n)\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\nclass Empty()\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       11,
+       28,
+       11,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       12,
+       18,
+       12,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       13,
+       24,
+       13,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       39,
+       17,
+       39,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true,
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    val empty: Long,\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n    val topLevelEmpty: String,\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n    val price: Double? = null,\n    val ratio: Double,\n    val stringish: Stringish,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n)\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\nclass Empty()\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       11,
+       28,
+       11,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       12,
+       18,
+       12,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       13,
+       24,
+       13,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       39,
+       17,
+       39,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "package": "com.example"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage com.example\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(Kind::class,           { Kind.fromValue(it.asText()) },         { ObjectMapper().writeValueAsString(it.value) })\n    convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })\n    convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n}\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @get:JsonProperty(\"\", required=true)@field:JsonProperty(\"\", required=true)\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    val byName: Map<String, Point>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val code: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val created: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n\n    @get:JsonProperty(\"isActive\", required=true)@field:JsonProperty(\"isActive\", required=true)\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val points: List<Point>,\n\n    @get:JsonProperty(\"price\\$\")@field:JsonProperty(\"price\\$\")\n    val price: Double? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val ratio: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val stringish: Stringish,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val tags: List<String>,\n\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n        require(code.codePointCount(0, code.length) <= 8)\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n        require(count >= 0)\n        require(count <= 100)\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n        optCount?.let { require(it >= 1) }\n        optTags?.let { require(it.size <= 2) }\n        require(ratio >= -1.5)\n        require(ratio <= 1e+21)\n        require(tags.size >= 1)\n        require(tags.size <= 5)\n    }\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val y: Double\n)\n\ntypealias Empty = ObjectNode\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Nested = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Numbers = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is IntNode, is LongNode                -> IntegerValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): OnlyDouble = when (jn) {\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Stringish = when (jn) {\n            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithEnumUnion = when (jn) {\n            is TextNode             -> try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithMap = when (jn) {\n            is ObjectNode -> IntegerMapValue(mapper.convertValue(jn))\n            is TextNode   -> StringValue(mapper.convertValue(jn))\n            is NullNode   -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithObject = when (jn) {\n            is BooleanNode -> BoolValue(mapper.convertValue(jn))\n            is ObjectNode  -> PointValue(mapper.convertValue(jn))\n            is ArrayNode   -> StringArrayArrayValue(mapper.convertValue(jn))\n            else           -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       28,
+       56,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       57,
+       18,
+       57,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       24,
+       58,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       99,
+       17,
+       99,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "camel"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(Kind::class,           { Kind.fromValue(it.asText()) },         { ObjectMapper().writeValueAsString(it.value) })\n    convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })\n    convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n}\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @get:JsonProperty(\"\", required=true)@field:JsonProperty(\"\", required=true)\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    val byName: Map<String, Point>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val code: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val created: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n\n    @get:JsonProperty(\"isActive\", required=true)@field:JsonProperty(\"isActive\", required=true)\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val points: List<Point>,\n\n    @get:JsonProperty(\"price\\$\")@field:JsonProperty(\"price\\$\")\n    val price: Double? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val ratio: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val stringish: Stringish,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val tags: List<String>,\n\n    @get:JsonProperty(\"userURL\")@field:JsonProperty(\"userURL\")\n    val userUrl: String? = null,\n\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n        require(code.codePointCount(0, code.length) <= 8)\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n        require(count >= 0)\n        require(count <= 100)\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n        optCount?.let { require(it >= 1) }\n        optTags?.let { require(it.size <= 2) }\n        require(ratio >= -1.5)\n        require(ratio <= 1e+21)\n        require(tags.size >= 1)\n        require(tags.size <= 5)\n    }\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val y: Double\n)\n\ntypealias Empty = ObjectNode\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Nested = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Numbers = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is IntNode, is LongNode                -> IntegerValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): OnlyDouble = when (jn) {\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Stringish = when (jn) {\n            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithEnumUnion = when (jn) {\n            is TextNode             -> try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithMap = when (jn) {\n            is ObjectNode -> IntegerMapValue(mapper.convertValue(jn))\n            is TextNode   -> StringValue(mapper.convertValue(jn))\n            is NullNode   -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithObject = when (jn) {\n            is BooleanNode -> BoolValue(mapper.convertValue(jn))\n            is ObjectNode  -> PointValue(mapper.convertValue(jn))\n            is ArrayNode   -> StringArrayArrayValue(mapper.convertValue(jn))\n            else           -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       28,
+       56,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       57,
+       18,
+       57,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       24,
+       58,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       99,
+       17,
+       99,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon",
+    "acronym-style": "lowerCase"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = if (isUnion && jv.inside is JsonArray<*>) (jv.inside as JsonArray<*>).map { fromJson(JsonValue(it, null, null, this@convert)) } else fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\n// Klaxon cannot deserialize map values typed as JsonObject, so fields\n// holding such maps are converted at the field level instead.\n@Target(AnnotationTarget.FIELD)\nprivate annotation class KlaxonJsonObjectMap\n\nprivate val jsonObjectMapConverter: Converter = object : Converter {\n    override fun canConvert(cls: Class<*>) = true\n    override fun fromJson(jv: JsonValue)   = jv.obj!!\n    override fun toJson(value: Any)        = klaxon.toJsonString(value)\n}\n\nprivate val klaxon = Klaxon()\n    .convert(OffsetDateTime::class, { OffsetDateTime.parse(it.string!!) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    .convert(LocalDate::class,      { LocalDate.parse(it.string!!) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    .convert(OffsetTime::class,     { OffsetTime.parse(it.string!!) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    .convert(JsonObject::class,     { it.obj!! },                            { it.toJsonString() })\n    .convert(Kind::class,           { Kind.fromValue(it.string!!) },         { Klaxon().toJsonString(it.value) })\n    .convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.string!!) }, { Klaxon().toJsonString(it.value) })\n    .convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    .convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    .convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    .convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    .convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    .convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    .convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n    .fieldConverter(KlaxonJsonObjectMap::class, jsonObjectMapConverter)\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @Json(name = \"\")\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @Json(name = \"empty\")\n    val topLevelEmpty: String,\n\n    @KlaxonJsonObjectMap\n    val emptyMap: Map<String, Empty>? = null,\n\n    @KlaxonJsonObjectMap\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @Json(name = \"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: Stringish,\n    val tags: List<String>,\n\n    @Json(name = \"userURL\")\n    val userurl: String? = null,\n\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n    }\n    init {\n        require(code.codePointCount(0, code.length) <= 8)\n    }\n    init {\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n    }\n    init {\n        require(count >= 0)\n    }\n    init {\n        require(count <= 100)\n    }\n    init {\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n    }\n    init {\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n    }\n    init {\n        optCount?.let { require(it >= 1) }\n    }\n    init {\n        optTags?.let { require(it.size <= 2) }\n    }\n    init {\n        require(ratio >= -1.5)\n    }\n    init {\n        require(ratio <= 1e+21)\n    }\n    init {\n        require(tags.size >= 1)\n    }\n    init {\n        require(tags.size <= 5)\n    }\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\ntypealias Empty = JsonObject\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        public fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Nested = when (jv.inside) {\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Numbers = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is Double       -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): OnlyDouble = when (jv.inside) {\n            is Double, is Int, is Long -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is String                  -> StringValue(jv.string!!)\n            else                       -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Stringish = when (jv.inside) {\n            is String       -> try { DateTimeValue(jv.string?.let { OffsetDateTime.parse(it) }!!) } catch (e: Exception) { try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { TimeValue(jv.string?.let { OffsetTime.parse(it) }!!) } }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithEnumUnion = when (jv.inside) {\n            is String       -> try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { EnumValue(jv.string?.let { WithEnumEnum.fromValue(it) }!!) }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        public fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithMap = when (jv.inside) {\n            is JsonObject -> IntegerMapValue(jv.obj?.let { klaxon.parseFromJsonObject<Map<String, Long>>(it) }!!)\n            is String     -> StringValue(jv.string!!)\n            null          -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithObject = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is JsonObject   -> PointValue(jv.obj?.let { klaxon.parseFromJsonObject<Point>(it) }!!)\n            is JsonArray<*> -> StringArrayArrayValue(jv.array?.let { klaxon.parseFromJsonArray<List<String>>(it) }!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       54,
+       28,
+       54,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       55,
+       18,
+       55,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       56,
+       24,
+       56,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       89,
+       17,
+       89,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx",
+    "acronym-style": "original"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json     = Json { allowStructuredMapKeys = true }\n// val topLevel = json.parse(TopLevel.serializer(), jsonString)\n\n@file:UseSerializers(OffsetDateTimeSerializer::class, LocalDateSerializer::class, OffsetTimeSerializer::class)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n/**\n * The kitchen sink.\n */\n@Serializable\ndata class TopLevel (\n    @SerialName(\"\")\n    val empty: Long,\n\n    val anyMap: JsonObject? = null,\n    val anything: JsonElement? = null,\n    val anythings: JsonArray? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @SerialName(\"empty\")\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<JsonArray>? = null,\n    val nothing: JsonElement? = null,\n    val numbers: JsonElement? = null,\n    val onlyDouble: JsonElement? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @SerialName(\"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: JsonElement,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: JsonElement? = null,\n    val withMap: JsonElement? = null,\n    val withObject: JsonElement? = null\n)\n\n/**\n * A point.\n */\n@Serializable\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\n@Serializable\nclass Empty()\n\n/**\n * The kind.\n */\n@Serializable\nenum class Kind(val value: String) {\n    @SerialName(\"first-kind\") FirstKind(\"first-kind\"),\n    @SerialName(\"SECOND\") Second(\"SECOND\"),\n    @SerialName(\"third_kind\") ThirdKind(\"third_kind\"),\n    @SerialName(\"\\$dollar\") Dollar(\"\\$dollar\"),\n    @SerialName(\"with \\\"quote\\\"\") WithQuote(\"with \\\"quote\\\"\");\n}\n\ntypealias Nested = JsonElement\n\ntypealias Numbers = JsonElement\n\ntypealias OnlyDouble = JsonElement\n\ntypealias Stringish = JsonElement\n\ntypealias WithEnumUnion = JsonElement\n\n@Serializable\nenum class WithEnumEnum(val value: String) {\n    @SerialName(\"red\") Red(\"red\"),\n    @SerialName(\"green\") Green(\"green\");\n}\n\ntypealias WithMap = JsonElement\n\ntypealias WithObject = JsonElement\n\nobject OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetDateTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetDateTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))\n    }\n}\n\nobject LocalDateSerializer : KSerializer<LocalDate> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"LocalDate\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: LocalDate) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(value))\n    }\n}\n\nobject OffsetTimeSerializer : KSerializer<OffsetTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetTime = OffsetTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(value))\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       27,
+       18,
+       27,
+       29
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       57,
+       17,
+       57,
+       28
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(Kind::class,           { Kind.fromValue(it.asText()) },         { ObjectMapper().writeValueAsString(it.value) })\n    convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })\n    convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n}\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    val byName: Map<String, Point>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val code: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val created: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(\"\", required=true)@field:JsonProperty(\"\", required=true)\n    val empty: Long,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n\n    @get:JsonProperty(\"isActive\", required=true)@field:JsonProperty(\"isActive\", required=true)\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val points: List<Point>,\n\n    @get:JsonProperty(\"price\\$\")@field:JsonProperty(\"price\\$\")\n    val price: Double? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val ratio: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val stringish: Stringish,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val tags: List<String>,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val topLevelEmpty: String,\n\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n        require(code.codePointCount(0, code.length) <= 8)\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n        require(count >= 0)\n        require(count <= 100)\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n        optCount?.let { require(it >= 1) }\n        optTags?.let { require(it.size <= 2) }\n        require(ratio >= -1.5)\n        require(ratio <= 1e+21)\n        require(tags.size >= 1)\n        require(tags.size <= 5)\n    }\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val y: Double\n)\n\ntypealias Empty = ObjectNode\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Nested = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Numbers = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is IntNode, is LongNode                -> IntegerValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): OnlyDouble = when (jn) {\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Stringish = when (jn) {\n            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithEnumUnion = when (jn) {\n            is TextNode             -> try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithMap = when (jn) {\n            is ObjectNode -> IntegerMapValue(mapper.convertValue(jn))\n            is TextNode   -> StringValue(mapper.convertValue(jn))\n            is NullNode   -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithObject = when (jn) {\n            is BooleanNode -> BoolValue(mapper.convertValue(jn))\n            is ObjectNode  -> PointValue(mapper.convertValue(jn))\n            is ArrayNode   -> StringArrayArrayValue(mapper.convertValue(jn))\n            else           -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       53,
+       28,
+       53,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       54,
+       18,
+       54,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       55,
+       24,
+       55,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       96,
+       17,
+       96,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = if (isUnion && jv.inside is JsonArray<*>) (jv.inside as JsonArray<*>).map { fromJson(JsonValue(it, null, null, this@convert)) } else fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\n// Klaxon cannot deserialize map values typed as JsonObject, so fields\n// holding such maps are converted at the field level instead.\n@Target(AnnotationTarget.FIELD)\nprivate annotation class KlaxonJsonObjectMap\n\nprivate val jsonObjectMapConverter: Converter = object : Converter {\n    override fun canConvert(cls: Class<*>) = true\n    override fun fromJson(jv: JsonValue)   = jv.obj!!\n    override fun toJson(value: Any)        = klaxon.toJsonString(value)\n}\n\nprivate val klaxon = Klaxon()\n    .convert(OffsetDateTime::class, { OffsetDateTime.parse(it.string!!) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    .convert(LocalDate::class,      { LocalDate.parse(it.string!!) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    .convert(OffsetTime::class,     { OffsetTime.parse(it.string!!) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    .convert(JsonObject::class,     { it.obj!! },                            { it.toJsonString() })\n    .convert(Kind::class,           { Kind.fromValue(it.string!!) },         { Klaxon().toJsonString(it.value) })\n    .convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.string!!) }, { Klaxon().toJsonString(it.value) })\n    .convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    .convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    .convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    .convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    .convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    .convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    .convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n    .fieldConverter(KlaxonJsonObjectMap::class, jsonObjectMapConverter)\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @Json(name = \"\")\n    val empty: Long,\n\n    @KlaxonJsonObjectMap\n    val emptyMap: Map<String, Empty>? = null,\n\n    @KlaxonJsonObjectMap\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @Json(name = \"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: Stringish,\n    val tags: List<String>,\n\n    @Json(name = \"empty\")\n    val topLevelEmpty: String,\n\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n    }\n    init {\n        require(code.codePointCount(0, code.length) <= 8)\n    }\n    init {\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n    }\n    init {\n        require(count >= 0)\n    }\n    init {\n        require(count <= 100)\n    }\n    init {\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n    }\n    init {\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n    }\n    init {\n        optCount?.let { require(it >= 1) }\n    }\n    init {\n        optTags?.let { require(it.size <= 2) }\n    }\n    init {\n        require(ratio >= -1.5)\n    }\n    init {\n        require(ratio <= 1e+21)\n    }\n    init {\n        require(tags.size >= 1)\n    }\n    init {\n        require(tags.size <= 5)\n    }\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\ntypealias Empty = JsonObject\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        public fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Nested = when (jv.inside) {\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Numbers = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is Double       -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): OnlyDouble = when (jv.inside) {\n            is Double, is Int, is Long -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is String                  -> StringValue(jv.string!!)\n            else                       -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Stringish = when (jv.inside) {\n            is String       -> try { DateTimeValue(jv.string?.let { OffsetDateTime.parse(it) }!!) } catch (e: Exception) { try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { TimeValue(jv.string?.let { OffsetTime.parse(it) }!!) } }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithEnumUnion = when (jv.inside) {\n            is String       -> try { DateValue(jv.string?.let { LocalDate.parse(it) }!!) } catch (e: Exception) { EnumValue(jv.string?.let { WithEnumEnum.fromValue(it) }!!) }\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        public fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithMap = when (jv.inside) {\n            is JsonObject -> IntegerMapValue(jv.obj?.let { klaxon.parseFromJsonObject<Map<String, Long>>(it) }!!)\n            is String     -> StringValue(jv.string!!)\n            null          -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): WithObject = when (jv.inside) {\n            is Boolean      -> BoolValue(jv.boolean!!)\n            is JsonObject   -> PointValue(jv.obj?.let { klaxon.parseFromJsonObject<Point>(it) }!!)\n            is JsonArray<*> -> StringArrayArrayValue(jv.array?.let { klaxon.parseFromJsonArray<List<String>>(it) }!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       51,
+       28,
+       51,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       52,
+       18,
+       52,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       53,
+       24,
+       53,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       86,
+       17,
+       86,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "Leading comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Leading comment\n\n// line one\n// line two\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) },   { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },        { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },       { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(Kind::class,           { Kind.fromValue(it.asText()) },         { ObjectMapper().writeValueAsString(it.value) })\n    convert(WithEnumEnum::class,   { WithEnumEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })\n    convert(Nested::class,         { Nested.fromJson(it) },                 { it.toJson() }, true)\n    convert(Numbers::class,        { Numbers.fromJson(it) },                { it.toJson() }, true)\n    convert(OnlyDouble::class,     { OnlyDouble.fromJson(it) },             { it.toJson() }, true)\n    convert(Stringish::class,      { Stringish.fromJson(it) },              { it.toJson() }, true)\n    convert(WithEnumUnion::class,  { WithEnumUnion.fromJson(it) },          { it.toJson() }, true)\n    convert(WithMap::class,        { WithMap.fromJson(it) },                { it.toJson() }, true)\n    convert(WithObject::class,     { WithObject.fromJson(it) },             { it.toJson() }, true)\n}\n\n/**\n * The kitchen sink.\n */\ndata class TopLevel (\n    @get:JsonProperty(\"\", required=true)@field:JsonProperty(\"\", required=true)\n    val empty: Long,\n\n    val anyMap: Map<String, Any?>? = null,\n    val anything: Any? = null,\n    val anythings: List<Any?>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    val byName: Map<String, Point>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val code: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val created: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n\n    @get:JsonProperty(\"isActive\", required=true)@field:JsonProperty(\"isActive\", required=true)\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<List<Nested>>? = null,\n    val nothing: Any? = null,\n    val numbers: Numbers? = null,\n    val onlyDouble: OnlyDouble? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val points: List<Point>,\n\n    @get:JsonProperty(\"price\\$\")@field:JsonProperty(\"price\\$\")\n    val price: Double? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val ratio: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val stringish: Stringish,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val tags: List<String>,\n\n    val userURL: String? = null,\n    val withEnum: WithEnumUnion? = null,\n    val withMap: WithMap? = null,\n    val withObject: WithObject? = null\n) {\n    init {\n        require(code.codePointCount(0, code.length) >= 2)\n        require(code.codePointCount(0, code.length) <= 8)\n        require(Regex(\"^[A-Z\\$]+\\\\d*\\$\").containsMatchIn(code))\n        require(count >= 0)\n        require(count <= 100)\n        optCode?.let { require(it.codePointCount(0, it.length) <= 3) }\n        optCode?.let { require(Regex(\"^x\").containsMatchIn(it)) }\n        optCount?.let { require(it >= 1) }\n        optTags?.let { require(it.size <= 2) }\n        require(ratio >= -1.5)\n        require(ratio <= 1e+21)\n        require(tags.size >= 1)\n        require(tags.size <= 5)\n    }\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\n/**\n * A point.\n */\ndata class Point (\n    val label: String? = null,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val y: Double\n)\n\ntypealias Empty = ObjectNode\n\n/**\n * The kind.\n */\nenum class Kind(val value: String) {\n    FirstKind(\"first-kind\"),\n    Second(\"SECOND\"),\n    ThirdKind(\"third_kind\"),\n    Dollar(\"\\$dollar\"),\n    WithQuote(\"with \\\"quote\\\"\");\n\n    companion object {\n        fun fromValue(value: String): Kind = when (value) {\n            \"first-kind\"     -> FirstKind\n            \"SECOND\"         -> Second\n            \"third_kind\"     -> ThirdKind\n            \"\\$dollar\"       -> Dollar\n            \"with \\\"quote\\\"\" -> WithQuote\n            else             -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Nested {\n    class IntegerValue(val value: Long)  : Nested()\n    class StringValue(val value: String) : Nested()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Nested = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Numbers {\n    class BoolValue(val value: Boolean)  : Numbers()\n    class DoubleValue(val value: Double) : Numbers()\n    class IntegerValue(val value: Long)  : Numbers()\n    class NullValue()                    : Numbers()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue    -> this.value\n        is DoubleValue  -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Numbers = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is IntNode, is LongNode                -> IntegerValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class OnlyDouble {\n    class DoubleValue(val value: Double) : OnlyDouble()\n    class StringValue(val value: String) : OnlyDouble()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleValue -> this.value\n        is StringValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): OnlyDouble = when (jn) {\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Stringish {\n    class DateTimeValue(val value: OffsetDateTime) : Stringish()\n    class DateValue(val value: LocalDate)          : Stringish()\n    class IntegerValue(val value: Long)            : Stringish()\n    class TimeValue(val value: OffsetTime)         : Stringish()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateTimeValue -> this.value\n        is DateValue     -> this.value\n        is IntegerValue  -> this.value\n        is TimeValue     -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Stringish = when (jn) {\n            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithEnumUnion {\n    class DateValue(val value: LocalDate)    : WithEnumUnion()\n    class EnumValue(val value: WithEnumEnum) : WithEnumUnion()\n    class IntegerValue(val value: Long)      : WithEnumUnion()\n    class NullValue()                        : WithEnumUnion()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DateValue    -> this.value\n        is EnumValue    -> this.value\n        is IntegerValue -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithEnumUnion = when (jn) {\n            is TextNode             -> try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nenum class WithEnumEnum(val value: String) {\n    Red(\"red\"),\n    Green(\"green\");\n\n    companion object {\n        fun fromValue(value: String): WithEnumEnum = when (value) {\n            \"red\"   -> Red\n            \"green\" -> Green\n            else    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithMap {\n    class IntegerMapValue(val value: Map<String, Long>) : WithMap()\n    class StringValue(val value: String)                : WithMap()\n    class NullValue()                                   : WithMap()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerMapValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithMap = when (jn) {\n            is ObjectNode -> IntegerMapValue(mapper.convertValue(jn))\n            is TextNode   -> StringValue(mapper.convertValue(jn))\n            is NullNode   -> NullValue()\n            else          -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class WithObject {\n    class BoolValue(val value: Boolean)                        : WithObject()\n    class PointValue(val value: Point)                         : WithObject()\n    class StringArrayArrayValue(val value: List<List<String>>) : WithObject()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue             -> this.value\n        is PointValue            -> this.value\n        is StringArrayArrayValue -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): WithObject = when (jn) {\n            is BooleanNode -> BoolValue(mapper.convertValue(jn))\n            is ObjectNode  -> PointValue(mapper.convertValue(jn))\n            is ArrayNode   -> StringArrayArrayValue(mapper.convertValue(jn))\n            else           -> throw IllegalArgumentException()\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       57,
+       28,
+       57,
+       32
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       58,
+       18,
+       58,
+       21
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       59,
+       24,
+       59,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       100,
+       17,
+       100,
+       20
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": [
+    "Leading comment"
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Leading comment\n\n@file:UseSerializers(OffsetDateTimeSerializer::class, LocalDateSerializer::class, OffsetTimeSerializer::class)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n/**\n * The kitchen sink.\n */\n@Serializable\ndata class TopLevel (\n    @SerialName(\"\")\n    val empty: Long,\n\n    val anyMap: JsonObject? = null,\n    val anything: JsonElement? = null,\n    val anythings: JsonArray? = null,\n    val at: OffsetTime,\n    val byName: Map<String, Point>? = null,\n    val code: String,\n    val count: Long,\n\n    /**\n     * When it was made.\n     */\n    val created: OffsetDateTime,\n\n    val day: LocalDate,\n\n    @SerialName(\"empty\")\n    val topLevelEmpty: String,\n\n    val emptyMap: Map<String, Empty>? = null,\n    val emptyMapMap: Map<String, Map<String, Empty>>? = null,\n    val emptyObject: Empty? = null,\n    val fooBar: String? = null,\n    val isActive: Boolean,\n\n    /**\n     * The kind.\n     */\n    val kind: Kind,\n\n    val maybeDay: LocalDate? = null,\n    val nested: List<JsonArray>? = null,\n    val nothing: JsonElement? = null,\n    val numbers: JsonElement? = null,\n    val onlyDouble: JsonElement? = null,\n    val optCode: String? = null,\n    val optCount: Long? = null,\n    val optTags: List<Long>? = null,\n    val points: List<Point>,\n\n    @SerialName(\"price\\$\")\n    val price: Double? = null,\n\n    val ratio: Double,\n    val stringish: JsonElement,\n    val tags: List<String>,\n    val userURL: String? = null,\n    val withEnum: JsonElement? = null,\n    val withMap: JsonElement? = null,\n    val withObject: JsonElement? = null\n)\n\n/**\n * A point.\n */\n@Serializable\ndata class Point (\n    val label: String? = null,\n    val x: Double,\n    val y: Double\n)\n\n@Serializable\nclass Empty()\n\n/**\n * The kind.\n */\n@Serializable\nenum class Kind(val value: String) {\n    @SerialName(\"first-kind\") FirstKind(\"first-kind\"),\n    @SerialName(\"SECOND\") Second(\"SECOND\"),\n    @SerialName(\"third_kind\") ThirdKind(\"third_kind\"),\n    @SerialName(\"\\$dollar\") Dollar(\"\\$dollar\"),\n    @SerialName(\"with \\\"quote\\\"\") WithQuote(\"with \\\"quote\\\"\");\n}\n\ntypealias Nested = JsonElement\n\ntypealias Numbers = JsonElement\n\ntypealias OnlyDouble = JsonElement\n\ntypealias Stringish = JsonElement\n\ntypealias WithEnumUnion = JsonElement\n\n@Serializable\nenum class WithEnumEnum(val value: String) {\n    @SerialName(\"red\") Red(\"red\"),\n    @SerialName(\"green\") Green(\"green\");\n}\n\ntypealias WithMap = JsonElement\n\ntypealias WithObject = JsonElement\n\nobject OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetDateTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetDateTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))\n    }\n}\n\nobject LocalDateSerializer : KSerializer<LocalDate> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"LocalDate\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: LocalDate) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(value))\n    }\n}\n\nobject OffsetTimeSerializer : KSerializer<OffsetTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetTime = OffsetTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(value))\n    }\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       24,
+       18,
+       24,
+       29
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       54,
+       17,
+       54,
+       28
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "gson"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Unknown value gson for option framework",
+   "console": []
+  }
+ ],
+ "id": "kotlin-options"
+}

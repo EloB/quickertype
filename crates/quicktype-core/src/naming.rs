@@ -506,6 +506,11 @@ impl Naming {
         self.fixed_name_of(name).is_some()
     }
 
+    /// `name instanceof DependencyName`.
+    pub fn is_dependency_name(&self, name: Name) -> bool {
+        matches!(self.data(name).kind, NameKind::Dependency { .. })
+    }
+
     /// `name.order`.
     pub fn order(&self, name: Name) -> u32 {
         self.data(name).order
@@ -905,5 +910,17 @@ mod tests {
         let f = naming.fixed_name("x");
         assert!(naming.propose_unstyled_names(f, &Names::new()).is_err());
         assert!(naming.naming_function(f).is_err());
+    }
+
+    #[test]
+    fn tells_dependency_names_apart() {
+        let namer = identity_namer();
+        let mut naming = Naming::new();
+        let fixed = naming.fixed_name("x");
+        let simple = naming.simple_name(["y"], &namer, 1);
+        let dependency = naming.dependency_name(Some(&namer), 1, move |lookup| lookup(simple));
+        assert!(!naming.is_dependency_name(fixed));
+        assert!(!naming.is_dependency_name(simple));
+        assert!(naming.is_dependency_name(dependency));
     }
 }

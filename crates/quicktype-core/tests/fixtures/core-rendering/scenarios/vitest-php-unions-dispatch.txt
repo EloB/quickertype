@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/php-unions.test.ts, "heterogeneous arrays
+# render with runtime dispatch". tests/language_vitest.rs checks the
+# runtime type checks.
+input jsonsamples TopLevel ["{\"mixed\": [1, \"two\", true, null, {\"nested\": \"object\"}]}"]
+pipeline {"lang": "php"}
+
+render php {}

@@ -55,8 +55,6 @@ pub const KOTLIN_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct KotlinTargetLanguage;
 
-// TODO(renderer): port the hooks KotlinTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for KotlinTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &KOTLIN_LANGUAGE_CONFIG
@@ -95,4 +93,62 @@ impl TargetLanguage for KotlinTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer` + `render`: `--just-types` wins over whatever
+    /// `--framework` says.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        use super::kotlin_renderer::{KotlinOptions, KotlinPlainRenderer};
+        use crate::convenience_renderer::render_with;
+
+        let options = KotlinOptions::parse(renderer_options)?;
+        if options.just_types {
+            let renderer = KotlinPlainRenderer::new(self, render_context, options);
+            return render_with(renderer, given_output_filename, alphabetize_properties);
+        }
+
+        match options.framework {
+            Framework::Jackson => render_with(
+                super::kotlin_jackson_renderer::KotlinJacksonRenderer::new(
+                    self,
+                    render_context,
+                    options,
+                ),
+                given_output_filename,
+                alphabetize_properties,
+            ),
+            Framework::Klaxon => render_with(
+                super::kotlin_klaxon_renderer::KotlinKlaxonRenderer::new(
+                    self,
+                    render_context,
+                    options,
+                ),
+                given_output_filename,
+                alphabetize_properties,
+            ),
+            Framework::KotlinX => render_with(
+                super::kotlin_x_renderer::KotlinXRenderer::new(self, render_context, options),
+                given_output_filename,
+                alphabetize_properties,
+            ),
+        }
+    }
+}
+
+/// TS `kotlinOptions.framework` values: the serialization framework.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Framework {
+    /// `"jackson"` (the default).
+    Jackson,
+    /// `"klaxon"`.
+    Klaxon,
+    /// `"kotlinx"`: kotlinx.serialization.
+    KotlinX,
 }

@@ -35,8 +35,6 @@ pub const SMITHY_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SmithyTargetLanguage;
 
-// TODO(renderer): port the hooks SmithyTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for SmithyTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SMITHY_LANGUAGE_CONFIG
@@ -59,4 +57,23 @@ impl TargetLanguage for SmithyTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::smithy4s_renderer::SmithyOptions::parse(renderer_options)?;
+        let renderer =
+            super::smithy4s_renderer::Smithy4sRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

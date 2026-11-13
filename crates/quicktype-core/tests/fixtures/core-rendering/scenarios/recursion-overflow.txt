@@ -1,0 +1,11 @@
+# Endless recursion over the type graph: a nullable union whose member is an
+# array of the union itself makes the renderers' type-to-source functions
+# (C# csType, Pike sourceFor) recurse until V8's stack overflows, a
+# RangeError (support::recursion::guard in Rust). The graph comes from the
+# default (Rust) pipeline: C#'s own pipeline already overflows in
+# needTransformerForType.
+input schema TopLevel {"type": "object", "properties": {"x": {"$ref": "#/definitions/a"}}, "required": ["x"], "definitions": {"a": {"type": ["array", "null"], "items": {"$ref": "#/definitions/a"}}}}
+
+render csharp {}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "5"}}
+render pike {}

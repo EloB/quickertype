@@ -185,6 +185,17 @@ the others name the fix they need.
   port goes much deeper (the CLI generates on a thread with a 256 MB
   stack) but eventually overflows the native stack and aborts. Fix: an
   explicit depth limit reporting the `RangeError`, or iterative inference.
+- **Endless recursion over the type graph.** On a graph that cycles
+  through a nullable union (`T = T[] | null`), TypeScript's
+  type-to-source functions (and C#'s `needTransformerForType`) recurse until
+  V8 throws `RangeError: Maximum call stack size exceeded`. The port's
+  recursive functions run under `support::recursion::guard`, which reports
+  the same `RangeError` after 1,000 nested guarded calls instead of Node's
+  stack size: Node 24 gets 971 levels deep in Pike's `sourceFor` and 8,903
+  in `needTransformerForType`. Endless recursions fail identically. A
+  finite graph nested deeper than either limit could differ, but in
+  TypeScript graph rewriting already overflows at about 335 nested arrays,
+  so no such graph reaches a TypeScript renderer.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports
@@ -273,3 +284,10 @@ the others name the fix they need.
   exit 2 as not implemented. Style names that are other properties of the
   chalk object (`level`, `toString`, …) fail with JS `TypeError`s in the
   original; the port reports them as `Unknown Chalk style`.
+- **Unicode version of `\p{...}` regexes.** The Scala 3 renderer's
+  `propertyNameNeedsMapping` tests a JSON name with
+  `/^[\p{L}_$][\p{L}\p{M}\p{N}_$]*$/u`, which V8 evaluates with Node's
+  current Unicode data. The port uses the `regex` crate, whose tables follow
+  its own (current) Unicode version; the two can still disagree for
+  characters assigned in a Unicode version only one of them has. Naming
+  (`unicode-properties`, Unicode 12.0) is unaffected.

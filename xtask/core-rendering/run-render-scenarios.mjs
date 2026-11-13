@@ -9,6 +9,8 @@
 // Scenario language (one command per line, `#` starts a comment line):
 //
 //   input json NAME <JSON sample>        add a JSON sample as top-level NAME
+//   input jsonsamples NAME <JSON array>  add several JSON samples (an array
+//                                        of strings) as top-level NAME
 //   input schema NAME <JSON Schema>      add a JSON Schema as top-level NAME
 //   pipeline <JSON object>               extra quicktype options for the
 //                                        inference pipeline (default lang rust)
@@ -71,6 +73,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { dumpTransformation } from "./dump-transformation.mjs";
+
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
 const require = createRequire(join(quicktype, "package.json"));
 const dist = join(quicktype, "packages/quicktype-core/dist");
@@ -92,6 +96,7 @@ const { directlyReachableSingleNamedType } = load("Type/TypeUtils.js");
 const { modifySource, annotated } = load("Source.js");
 const { FetchingJSONSchemaStore } = load("input/FetchingJSONSchemaStore.js");
 const { languageNamed } = load("language/All.js");
+const { typeRefIndex } = load("Type/TypeRef.js");
 
 // ---- Graph dump (same format as record-render-cases.mjs) -------------------
 
@@ -167,6 +172,9 @@ function dumpAttributes(attributes) {
                 break;
             case "uriAttributes":
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
+                break;
+            case "transformation":
+                result.transformation = dumpTransformation(value, typeRefIndex);
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);
@@ -584,7 +592,7 @@ function parseScenario(text) {
         if (line === "" || line.startsWith("#")) continue;
         const [cmd] = line.split(" ", 1);
         if (cmd === "input") {
-            const m = /^input (json|schema) (\S+) (.*)$/s.exec(line);
+            const m = /^input (json|jsonsamples|schema) (\S+) (.*)$/s.exec(line);
             if (m === null) throw new Error(`bad input: ${line}`);
             scenario.inputs.push({ kind: m[1], name: m[2], text: m[3] });
         } else if (cmd === "pipeline") {
@@ -623,9 +631,10 @@ async function makeGraph(scenario) {
     const inputData = new core.InputData();
     const lang = scenario.pipeline.lang ?? "rust";
     for (const input of scenario.inputs) {
-        if (input.kind === "json") {
+        if (input.kind === "json" || input.kind === "jsonsamples") {
             const jsonInput = core.jsonInputForTargetLanguage(lang);
-            await jsonInput.addSource({ name: input.name, samples: [input.text] });
+            const samples = input.kind === "json" ? [input.text] : JSON.parse(input.text);
+            await jsonInput.addSource({ name: input.name, samples });
             inputData.addInput(jsonInput);
         } else {
             const schemaInput = new core.JSONSchemaInput(new FetchingJSONSchemaStore());

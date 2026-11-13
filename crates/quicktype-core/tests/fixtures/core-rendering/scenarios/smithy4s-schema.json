@@ -1,0 +1,795 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "plain",
+       [
+        "A plain property."
+       ]
+      ],
+      [
+       "described",
+       [
+        "Several\nlines."
+       ]
+      ],
+      [
+       "color",
+       [
+        "A colour."
+       ]
+      ],
+      [
+       "union",
+       [
+        "A union."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "3d",
+      1,
+      true
+     ],
+     [
+      "a.b",
+      1,
+      true
+     ],
+     [
+      "anything",
+      2,
+      true
+     ],
+     [
+      "case",
+      3,
+      false
+     ],
+     [
+      "children",
+      4,
+      true
+     ],
+     [
+      "color",
+      6,
+      false
+     ],
+     [
+      "described",
+      7,
+      true
+     ],
+     [
+      "empty",
+      19,
+      true
+     ],
+     [
+      "lookup",
+      9,
+      false
+     ],
+     [
+      "maybe",
+      12,
+      true
+     ],
+     [
+      "maybeList",
+      14,
+      true
+     ],
+     [
+      "nothing",
+      13,
+      false
+     ],
+     [
+      "plain",
+      1,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "union",
+      16,
+      false
+     ],
+     [
+      "val",
+      1,
+      true
+     ],
+     [
+      "when",
+      1,
+      true
+     ],
+     [
+      "x_",
+      11,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "3d",
+       "a.b",
+       "plain",
+       "val",
+       "when",
+       "t"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "case"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 5
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLeve",
+       "self"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "plain",
+       [
+        "A plain property."
+       ]
+      ],
+      [
+       "described",
+       [
+        "Several\nlines."
+       ]
+      ],
+      [
+       "color",
+       [
+        "A colour."
+       ]
+      ],
+      [
+       "union",
+       [
+        "A union."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "3d",
+      1,
+      true
+     ],
+     [
+      "a.b",
+      1,
+      true
+     ],
+     [
+      "anything",
+      2,
+      true
+     ],
+     [
+      "case",
+      3,
+      false
+     ],
+     [
+      "children",
+      4,
+      true
+     ],
+     [
+      "color",
+      6,
+      false
+     ],
+     [
+      "described",
+      7,
+      true
+     ],
+     [
+      "empty",
+      8,
+      true
+     ],
+     [
+      "lookup",
+      9,
+      false
+     ],
+     [
+      "maybe",
+      12,
+      true
+     ],
+     [
+      "maybeList",
+      14,
+      true
+     ],
+     [
+      "nothing",
+      13,
+      false
+     ],
+     [
+      "plain",
+      1,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "union",
+      16,
+      false
+     ],
+     [
+      "val",
+      1,
+      true
+     ],
+     [
+      "when",
+      1,
+      true
+     ],
+     [
+      "x_",
+      11,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "color"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "description": [
+      "A colour."
+     ]
+    },
+    "cases": [
+     "light red",
+     "dark  blue",
+     "green"
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "described",
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "empty"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "lookup"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 10
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entry"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "description": [
+      "An entry."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "value",
+      11,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value",
+       "x_"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybe"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     13,
+     1
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     15,
+     13
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 7
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "description": [
+      "A union."
+     ]
+    },
+    "members": [
+     7,
+     17,
+     18,
+     13,
+     1
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union",
+       "Index"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 7
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "empty"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Index"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 17
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     7,
+     22
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "thing"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "t",
+      1,
+      true
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Index",
+    20
+   ],
+   [
+    "Either",
+    21
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nmap Index { map[ key : String , value : unionList}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLevel {\n    `3d` : String,\n    `a.b` : String,\n    anything : Document,\n    @required `case` : Boolean,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : TopLevelEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    `val` : String,\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLeve {\n    `3d` : String,\n    `a.b` : String,\n    anything : Document,\n    @required `case` : Boolean,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : SelfEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    `val` : String,\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * A colour.\n */\n\nenum Color { \nlightred = \"light red\",\ndark blue = \"dark  blue\",\ngreen = \"green\"\n}\nstructure SelfEmpty{}\n\n/**\n * An entry.\n */\nstructure Entry {\n    @required value : Double\n}\n\n/**\n * A union.\n */\n@untagged union Union { \n    A : unionMap\n    B : Long\n    C : unionList\n    D : String\n    E : NullValue\n}\n\nmap unionMap{ key: String , value: Long}\nlist unionList{ member: String}\n\nstructure TopLevelEmpty{}\n\n@untagged union Either { \n    A : Long\n    B : Thing\n}\n\nstructure Thing {\n    t : String\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       14,
+       15,
+       14,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       33,
+       14,
+       33,
+       22
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       61,
+       15,
+       61,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       80,
+       14,
+       80,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "package": "org.acme",
+    "just-types": "false"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace org.acme\n\ndocument NullValue\n\nmap Index { map[ key : String , value : unionList}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLevel {\n    `3d` : String,\n    `a.b` : String,\n    anything : Document,\n    @required `case` : Boolean,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : TopLevelEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    `val` : String,\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLeve {\n    `3d` : String,\n    `a.b` : String,\n    anything : Document,\n    @required `case` : Boolean,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : SelfEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    `val` : String,\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * A colour.\n */\n\nenum Color { \nlightred = \"light red\",\ndark blue = \"dark  blue\",\ngreen = \"green\"\n}\nstructure SelfEmpty{}\n\n/**\n * An entry.\n */\nstructure Entry {\n    @required value : Double\n}\n\n/**\n * A union.\n */\n@untagged union Union { \n    A : unionMap\n    B : Long\n    C : unionList\n    D : String\n    E : NullValue\n}\n\nmap unionMap{ key: String , value: Long}\nlist unionList{ member: String}\n\nstructure TopLevelEmpty{}\n\n@untagged union Either { \n    A : Long\n    B : Thing\n}\n\nstructure Thing {\n    t : String\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       14,
+       15,
+       14,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       33,
+       14,
+       33,
+       22
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       61,
+       15,
+       61,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       80,
+       14,
+       80,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nmap Index { map[ key : String , value : unionList}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLevel {\n    `a.b` : String,\n    anything : Document,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : TopLevelEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n    `3d` : String,\n    @required `case` : Boolean,\n    `val` : String,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * The top level.\n * Second line.\n */\nstructure TopLeve {\n    `a.b` : String,\n    anything : Document,\n    children : childrenList,\n\n    /**\n     * A colour.\n     */\n    @required color : Color,\n\n    /**\n     * Several\n     * lines.\n     */\n    described : Long,\n\n    empty : SelfEmpty,\n    @required lookup : lookupMap,\n    maybe : String,\n    maybeList : maybeListList,\n    nothing : Document,\n\n    /**\n     * A plain property.\n     */\n    @required plain : String,\n\n    self : TopLeve,\n    `3d` : String,\n    @required `case` : Boolean,\n    `val` : String,\n\n    /**\n     * A union.\n     */\n    @required union : Union,\n\n    when : String,\n    `x_` : Double\n}\nlist childrenList{ member: TopLeve}\nmap lookupMap{ key: String , value: Entry}\n\n/**\n * A colour.\n */\n\nenum Color { \nlightred = \"light red\",\ndark blue = \"dark  blue\",\ngreen = \"green\"\n}\nstructure SelfEmpty{}\n\n/**\n * An entry.\n */\nstructure Entry {\n    @required value : Double\n}\n\n/**\n * A union.\n */\n@untagged union Union { \n    A : unionMap\n    B : Long\n    C : unionList\n    D : String\n    E : NullValue\n}\n\nmap unionMap{ key: String , value: Long}\nlist unionList{ member: String}\n\nstructure TopLevelEmpty{}\n\n@untagged union Either { \n    A : Long\n    B : Thing\n}\n\nstructure Thing {\n    t : String\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       13,
+       15,
+       13,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       31,
+       14,
+       31,
+       22
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       60,
+       15,
+       60,
+       23
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       78,
+       14,
+       78,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "smithy4s-schema"
+}

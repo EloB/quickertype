@@ -1,0 +1,6 @@
+# Port of quicktype's test/unit/php-unions.test.ts, "nullable unions keep
+# the ?-prefixed hint".
+input jsonsamples TopLevel ["{\"a\": \"x\"}", "{\"a\": null}"]
+pipeline {"lang": "php"}
+
+render php {}

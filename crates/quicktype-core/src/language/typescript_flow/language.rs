@@ -3,6 +3,7 @@
 //! Language metadata and renderer option declarations for TypeScript and
 //! Flow, which share one option set.
 
+use super::type_script_flow_base_renderer::TypeScriptFlowOptions;
 use crate::language::javascript::language as javascript;
 use crate::renderer_options::{BooleanOption, OptionKind, RendererOption, RendererOptions};
 use crate::support::integer_range::{IntegerRange, JS_SAFE_INTEGER_RANGE};
@@ -99,9 +100,6 @@ pub const TYPE_SCRIPT_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TypeScriptTargetLanguage;
 
-// TODO(renderer): port the hooks TypeScriptTargetLanguage overrides:
-// - makeRenderer
-// - supportsFullObjectType: true
 impl TargetLanguage for TypeScriptTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &TYPE_SCRIPT_LANGUAGE_CONFIG
@@ -138,6 +136,31 @@ impl TargetLanguage for TypeScriptTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `supportsFullObjectType`.
+    fn supports_full_object_type(&self) -> bool {
+        true
+    }
+
+    /// TS `makeRenderer`: a `TypeScriptRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = TypeScriptFlowOptions::parse(renderer_options)?;
+        let renderer =
+            super::type_script_renderer::TypeScriptRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }
 
 /// TS `flowLanguageConfig`.
@@ -151,9 +174,6 @@ pub const FLOW_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FlowTargetLanguage;
 
-// TODO(renderer): port the hooks FlowTargetLanguage overrides:
-// - makeRenderer
-// - supportsFullObjectType: true
 impl TargetLanguage for FlowTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &FLOW_LANGUAGE_CONFIG
@@ -190,4 +210,28 @@ impl TargetLanguage for FlowTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `supportsFullObjectType`.
+    fn supports_full_object_type(&self) -> bool {
+        true
+    }
+
+    /// TS `makeRenderer`: a `FlowRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = TypeScriptFlowOptions::parse(renderer_options)?;
+        let renderer = super::flow_renderer::FlowRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

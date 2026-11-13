@@ -26,8 +26,6 @@ pub const TYPE_SCRIPT_ZOD_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TypeScriptZodTargetLanguage;
 
-// TODO(renderer): port the hooks TypeScriptZodTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for TypeScriptZodTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &TYPE_SCRIPT_ZOD_LANGUAGE_CONFIG
@@ -65,4 +63,28 @@ impl TargetLanguage for TypeScriptZodTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: a `TypeScriptZodRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options =
+            super::type_script_zod_renderer::TypeScriptZodOptions::parse(renderer_options)?;
+        let renderer = super::type_script_zod_renderer::TypeScriptZodRenderer::new(
+            self,
+            render_context,
+            options,
+        );
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

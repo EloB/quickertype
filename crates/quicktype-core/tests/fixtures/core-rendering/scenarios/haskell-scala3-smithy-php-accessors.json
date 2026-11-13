@@ -1,0 +1,322 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "accessorNames": [
+      [
+       "name",
+       [
+        [
+         "haskell",
+         "theName"
+        ],
+        [
+         "php",
+         "theName"
+        ],
+        [
+         "scala3",
+         "theName"
+        ],
+        [
+         "smithy4a",
+         "theName"
+        ]
+       ]
+      ]
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "color",
+      1,
+      false
+     ],
+     [
+      "name",
+      2,
+      false
+     ],
+     [
+      "value",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "color"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "accessorNames": [
+      [
+       "red",
+       [
+        [
+         "haskell",
+         "Fire"
+        ],
+        [
+         "php",
+         "FIRE"
+        ],
+        [
+         "scala3",
+         "Fire"
+        ],
+        [
+         "smithy4a",
+         "Fire"
+        ]
+       ]
+      ],
+      [
+       "green",
+       "grass"
+      ],
+      [
+       "blue",
+       [
+        [
+         "*",
+         "ocean"
+        ]
+       ]
+      ]
+     ]
+    },
+    "cases": [
+     "red",
+     "green",
+     "blue"
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "unionIdentifier": [
+      0
+     ]
+    },
+    "members": [
+     4,
+     5
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "unionMemberNames": [
+      [
+       0,
+       [
+        [
+         "haskell",
+         "Presence"
+        ],
+        [
+         "scala3",
+         "PresenceValue"
+        ],
+        [
+         "smithy4a",
+         "P"
+        ],
+        [
+         "php",
+         "presence"
+        ]
+       ]
+      ]
+     ]
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "unionMemberNames": [
+      [
+       0,
+       "amount"
+      ]
+     ]
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule QuickType\n    ( TopLevel (..)\n    , Color (..)\n    , ValueUnion (..)\n    , decodeTopLevel\n    ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\n\ndata TopLevel = TopLevel\n    { colorTopLevel :: Color\n    , theNameTopLevel :: Text\n    , valueTopLevel :: ValueUnion\n    } deriving (Show)\n\ndata Color\n    = FireColor\n    | GrassColor\n    | OceanColor\n    deriving (Show)\n\ndata ValueUnion\n    = Amount Double\n    | Presence Bool\n    deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel colorTopLevel theNameTopLevel valueTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"color\" .= colorTopLevel\n        , Just $ \"name\" .= theNameTopLevel\n        , Just $ \"value\" .= valueTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"color\"\n        <*> v .: \"name\"\n        <*> v .: \"value\"\n\ninstance ToJSON Color where\n    toJSON FireColor = \"red\"\n    toJSON GrassColor = \"green\"\n    toJSON OceanColor = \"blue\"\n\ninstance FromJSON Color where\n    parseJSON = withText \"Color\" parseText\n        where\n            parseText \"red\" = return FireColor\n            parseText \"green\" = return GrassColor\n            parseText \"blue\" = return OceanColor\n\ninstance ToJSON ValueUnion where\n    toJSON (Amount x) = toJSON x\n    toJSON (Presence x) = toJSON x\n\ninstance FromJSON ValueUnion where\n    parseJSON xs@(Number _) = (fmap Amount . parseJSON) xs\n    parseJSON xs@(Bool _) = (fmap Presence . parseJSON) xs\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport io.circe.syntax._\nimport io.circe._\nimport cats.syntax.functor._\n\n// If a union has a null in, then we'll need this too... \ntype NullValue = None.type\n\ncase class TopLevel (\n    val color : Color,\n    val name : String,\n    val value : Value\n) derives Encoder.AsObject, Decoder\n\nenum Color : \n    case Fire\n    case Grass\n    case Ocean\n\ngiven Decoder[Color] = Decoder.decodeString.emap {\n    case \"red\" => scala.Right(Color.Fire)\n    case \"green\" => scala.Right(Color.Grass)\n    case \"blue\" => scala.Right(Color.Ocean)\n    case other => scala.Left(\"invalid Color: \" + other)\n}\ngiven Encoder[Color] = Encoder.encodeString.contramap {\n    case Color.Fire => \"red\"\n    case Color.Grass => \"green\"\n    case Color.Ocean => \"blue\"\n}\n\ntype Value = Double | Boolean\ngiven Decoder[Value] = {\n    List[Decoder[Value]](\n        Decoder[Boolean].widen,\n        Decoder[Double].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Value] = Encoder.instance {\n    case enc0 : Boolean => Encoder.encodeBoolean(enc0)\n    case enc1 : Double => Encoder.encodeDouble(enc1)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "upickle"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\n// Custom pickler so that missing keys and JSON nulls both read as None,\n// and None is left out when writing (upickle's default for Option is a\n// JSON array).\nobject OptionPickler extends upickle.AttributeTagged:\n    import upickle.default.Writer\n    import upickle.default.Reader\n    override implicit def OptionWriter[T: Writer]: Writer[Option[T]] =\n        implicitly[Writer[T]].comap[Option[T]] {\n            case None => null.asInstanceOf[T]\n            case Some(x) => x\n        }\n\n    override implicit def OptionReader[T: Reader]: Reader[Option[T]] = {\n        new Reader.Delegate[Any, Option[T]](implicitly[Reader[T]].map(Some(_))){\n        override def visitNull(index: Int) = None\n        }\n    }\nend OptionPickler\n\n// If a union has a null in, then we'll need this too...\ntype NullValue = None.type\ngiven OptionPickler.ReadWriter[NullValue] = OptionPickler.readwriter[ujson.Value].bimap[NullValue](\n    _ => ujson.Null,\n    json => if json.isNull then None else throw new upickle.core.Abort(\"not null\")\n)\ngiven OptionPickler.ReadWriter[java.time.Instant] = OptionPickler.readwriter[ujson.Value].bimap(\n    value => ujson.Str(value.toString),\n    json => json match\n        case ujson.Str(value) => java.time.Instant.parse(value)\n        case other => throw new upickle.core.Abort(\"expected date-time, got \" + other)\n)\ngiven OptionPickler.ReadWriter[java.util.UUID] = OptionPickler.readwriter[String].bimap(\n    _.toString,\n    value =>\n        val uuid = java.util.UUID.fromString(value)\n        if uuid.toString.equalsIgnoreCase(value) then uuid else throw new upickle.core.Abort(\"invalid UUID\")\n)\n\nobject JsonExt:\n    val valueReader = OptionPickler.readwriter[ujson.Value]\n\n    // upickle's built-in primitive readers are lenient -- the numeric and\n    // boolean readers accept strings, and the string reader accepts\n    // numbers and booleans -- so untagged unions need strict readers to\n    // pick the right member.\n    val strictString: OptionPickler.Reader[String] = valueReader.map {\n        case ujson.Str(s) => s\n        case json => throw new upickle.core.Abort(\"expected string, got \" + json)\n    }\n    val strictLong: OptionPickler.Reader[Long] = valueReader.map {\n        case ujson.Num(n) if n.isWhole => n.toLong\n        case json => throw new upickle.core.Abort(\"expected integer, got \" + json)\n    }\n    val strictDouble: OptionPickler.Reader[Double] = valueReader.map {\n        case ujson.Num(n) => n\n        case json => throw new upickle.core.Abort(\"expected number, got \" + json)\n    }\n    val strictBoolean: OptionPickler.Reader[Boolean] = valueReader.map {\n        case ujson.Bool(b) => b\n        case json => throw new upickle.core.Abort(\"expected boolean, got \" + json)\n    }\n\n    def badMerge[T](r1: => OptionPickler.Reader[?], rest: OptionPickler.Reader[?]*): OptionPickler.Reader[T] = valueReader.map { json =>\n        var t: T | Null = null\n        val stack       = Vector.newBuilder[Throwable]\n        (r1 +: rest).foreach { reader =>\n            if t == null then\n            try\n                t = OptionPickler.read[T](json, trace = true)(using reader.asInstanceOf[OptionPickler.Reader[T]])\n            catch\n                case exc => stack += exc\n        }\n        if t != null then t.nn else throw new Exception(json.toString(), stack.result().headOption.getOrElse(null))\n    }\nend JsonExt\ngiven OptionPickler.Reader[Long] = JsonExt.strictLong\n\n\ncase class TopLevel (\n    val color : Color,\n    val name : String,\n    val value : Value\n) derives OptionPickler.ReadWriter\n\nenum Color : \n    case Fire\n    case Grass\n    case Ocean\n\ngiven OptionPickler.ReadWriter[Color] = OptionPickler.readwriter[String].bimap[Color](\n    {\n        case Color.Fire => \"red\"\n        case Color.Grass => \"green\"\n        case Color.Ocean => \"blue\"\n    },\n    {\n        case \"red\" => Color.Fire\n        case \"green\" => Color.Grass\n        case \"blue\" => Color.Ocean\n        case other => throw new upickle.core.Abort(\"invalid Color: \" + other)\n    }\n)\n\ntype Value = Double | Boolean\ngiven unionReaderValue: OptionPickler.Reader[Value] = JsonExt.badMerge[Value](\n    JsonExt.strictBoolean,\n    JsonExt.strictDouble,\n    )\n\ngiven unionWriterValue: OptionPickler.Writer[Value] = OptionPickler.writer[ujson.Value].comap[Value]{ _v =>\n    (_v: @unchecked) match \n        case v: Boolean => OptionPickler.writeJs[Boolean](v)\n        case v: Double => OptionPickler.writeJs[Double](v)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nstructure TopLevel {\n    @required color : Color,\n    @required name : String,\n    @required value : Value\n}\n\nenum Color { \nFire = \"red\",\ngrass = \"green\",\nocean = \"blue\"\n}\n@untagged union Value { \n    A : Double\n    B : Boolean\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "php",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "<?php\ndeclare(strict_types=1);\n\n// This is an autogenerated file:TopLevel\n\nclass TopLevel {\n    private Color $color; // json:color Required\n    private string $theName; // json:name Required\n    private bool|float $value; // json:value Required\n\n    /**\n     * @param Color $color\n     * @param string $theName\n     * @param bool|float $value\n     */\n    public function __construct(Color $color, string $theName, bool|float $value) {\n        $this->color = $color;\n        $this->theName = $theName;\n        $this->value = $value;\n    }\n\n    /**\n     * @param string $value\n     * @throws Exception\n     * @return Color\n     */\n    public static function fromColor(string $value): Color {\n        return Color::from($value); /*enum*/\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function toColor(): string {\n        if (TopLevel::validateColor($this->color))  {\n            return Color::to($this->color); /*enum*/\n        }\n        throw new Exception('never get to this TopLevel::color');\n    }\n\n    /**\n     * @param Color\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateColor(Color $value): bool {\n        Color::to($value);\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return Color\n     */\n    public function getColor(): Color {\n        if (TopLevel::validateColor($this->color))  {\n            return $this->color;\n        }\n        throw new Exception('never get to getColor TopLevel::color');\n    }\n\n    /**\n     * @return Color\n     */\n    public static function sampleColor(): Color {\n        return Color::sample(); /*enum*/\n    }\n\n    /**\n     * @param string $value\n     * @throws Exception\n     * @return string\n     */\n    public static function fromTheName(string $value): string {\n        return $value; /*string*/\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function toTheName(): string {\n        if (TopLevel::validateTheName($this->theName))  {\n            return $this->theName; /*string*/\n        }\n        throw new Exception('never get to this TopLevel::theName');\n    }\n\n    /**\n     * @param string\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateTheName(string $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function getTheName(): string {\n        if (TopLevel::validateTheName($this->theName))  {\n            return $this->theName;\n        }\n        throw new Exception('never get to getTheName TopLevel::theName');\n    }\n\n    /**\n     * @return string\n     */\n    public static function sampleTheName(): string {\n        return 'TopLevel::theName::32'; /*32:theName*/\n    }\n\n    /**\n     * @param bool|float $value\n     * @throws Exception\n     * @return bool|float\n     */\n    public static function fromValue(bool|float $value): bool|float {\n        if (is_bool($value)) {\n            return $value; /*bool*/\n        } elseif (is_float($value) || is_int($value)) {\n            return $value; /*float*/\n        } else {\n            throw new Exception('Cannot deserialize union value in TopLevel');\n        }\n    }\n\n    /**\n     * @throws Exception\n     * @return bool|float\n     */\n    public function toValue(): bool|float {\n        if (TopLevel::validateValue($this->value))  {\n            if (is_bool($this->value)) {\n                return $this->value; /*bool*/\n            } elseif (is_float($this->value) || is_int($this->value)) {\n                return $this->value; /*float*/\n            } else {\n                throw new Exception('Union value has no matching member in TopLevel');\n            }\n        }\n        throw new Exception('never get to this TopLevel::value');\n    }\n\n    /**\n     * @param bool|float\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateValue(bool|float $value): bool {\n        if (is_bool($value)) {\n            if (!is_bool($value)) {\n                throw new Exception(\"Attribute Error:TopLevel::value\");\n            }\n        } elseif (is_float($value) || is_int($value)) {\n            if (!is_float($value) && !is_int($value)) {\n                throw new Exception(\"Attribute Error:TopLevel::value\");\n            }\n        } else {\n            throw new Exception(\"Attribute Error:TopLevel::value\");\n        }\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return bool|float\n     */\n    public function getValue(): bool|float {\n        if (TopLevel::validateValue($this->value))  {\n            return $this->value;\n        }\n        throw new Exception('never get to getValue TopLevel::value');\n    }\n\n    /**\n     * @return bool|float\n     */\n    public static function sampleValue(): bool|float {\n        return true; /*33:value*/\n    }\n\n    /**\n     * @throws Exception\n     * @return bool\n     */\n    public function validate(): bool {\n        return TopLevel::validateColor($this->color)\n        || TopLevel::validateTheName($this->theName)\n        || TopLevel::validateValue($this->value);\n    }\n\n    /**\n     * @return stdClass\n     * @throws Exception\n     */\n    public function to(): stdClass  {\n        $out = new stdClass();\n        $out->{'color'} = $this->toColor();\n        $out->{'name'} = $this->toTheName();\n        $out->{'value'} = $this->toValue();\n        return $out;\n    }\n\n    /**\n     * @param stdClass $obj\n     * @return TopLevel\n     * @throws Exception\n     */\n    public static function from(stdClass $obj): TopLevel {\n        if (!property_exists($obj, 'color')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'name')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'value')) {\n            throw new Exception(\"Missing required property\");\n        }\n        return new TopLevel(\n         TopLevel::fromColor($obj->{'color'})\n        ,TopLevel::fromTheName($obj->{'name'})\n        ,TopLevel::fromValue($obj->{'value'})\n        );\n    }\n\n    /**\n     * @return TopLevel\n     */\n    public static function sample(): TopLevel {\n        return new TopLevel(\n         TopLevel::sampleColor()\n        ,TopLevel::sampleTheName()\n        ,TopLevel::sampleValue()\n        );\n    }\n}\n\n// This is an autogenerated file:Color\n\nclass Color {\n    public static Color $FIRE;\n    public static Color $GRASS;\n    public static Color $OCEAN;\n    public static function init() {\n        Color::$FIRE = new Color('red');\n        Color::$GRASS = new Color('green');\n        Color::$OCEAN = new Color('blue');\n    }\n    private string $enum;\n    public function __construct(string $enum) {\n        $this->enum = $enum;\n    }\n\n    /**\n     * @param Color\n     * @return string\n     * @throws Exception\n     */\n    public static function to(Color $obj): string {\n        switch ($obj->enum) {\n            case Color::$FIRE->enum: return 'red';\n            case Color::$GRASS->enum: return 'green';\n            case Color::$OCEAN->enum: return 'blue';\n        }\n        throw new Exception('the give value is not an enum-value.');\n    }\n\n    /**\n     * @param mixed\n     * @return Color\n     * @throws Exception\n     */\n    public static function from($obj): Color {\n        switch ($obj) {\n            case 'red': return Color::$FIRE;\n            case 'green': return Color::$GRASS;\n            case 'blue': return Color::$OCEAN;\n        }\n        throw new Exception(\"Cannot deserialize Color\");\n    }\n\n    /**\n     * @return Color\n     */\n    public static function sample(): Color {\n        return Color::$FIRE;\n    }\n}\nColor::init();\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "haskell-scala3-smithy-php-accessors"
+}

@@ -1,0 +1,9 @@
+# quicktype's test/unit/typescript-readonly-index.test.ts: `readonly`
+# applies to index signatures and map types (and Flow's `+`).
+input schema TopLevel {"type": "object", "properties": {"fixed": {"type": "string"}, "optional": {"type": "integer"}}, "required": ["fixed"], "additionalProperties": {"type": "string"}}
+input schema Map {"type": "object", "additionalProperties": {"type": "string"}}
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "stdout", "rendererOptions": {"readonly": "true"}}
+render flow {"filename": "stdout", "rendererOptions": {"readonly": "true"}}
+render typescript {"filename": "stdout"}

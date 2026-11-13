@@ -1,0 +1,254 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Count"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Names"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 2
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Name",
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Table"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Table"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     0,
+     6,
+     2
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "When"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Count",
+    0
+   ],
+   [
+    "Names",
+    1
+   ],
+   [
+    "Table",
+    3
+   ],
+   [
+    "Either",
+    5
+   ],
+   [
+    "When",
+    7
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "java",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "Converter.java",
+     "text": "// To use this code, add the following Maven dependency to your project:\n//\n//\n//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0\n//     com.fasterxml.jackson.datatype : jackson-datatype-jsr310   : 2.9.0\n//\n// Import this package:\n//\n//     import io.quicktype.Converter;\n//\n// Then you can deserialize a JSON string with\n//\n//     long data = Converter.CountFromJsonString(jsonString);\n//     List<String> data = Converter.NamesFromJsonString(jsonString);\n//     Map<String, Double> data = Converter.TableFromJsonString(jsonString);\n//     Either data = Converter.EitherFromJsonString(jsonString);\n//     OffsetDateTime data = Converter.WhenFromJsonString(jsonString);\n\npackage io.quicktype;\n\nimport java.io.IOException;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.module.SimpleModule;\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.core.JsonProcessingException;\nimport com.fasterxml.jackson.core.type.TypeReference;\nimport java.util.*;\nimport java.time.LocalDate;\nimport java.time.OffsetDateTime;\nimport java.time.OffsetTime;\nimport java.time.ZoneOffset;\nimport java.time.ZonedDateTime;\nimport java.time.format.DateTimeFormatter;\nimport java.time.format.DateTimeFormatterBuilder;\nimport java.time.temporal.ChronoField;\n\npublic class Converter {\n    // Date-time helpers\n\n    private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()\n            .appendOptional(DateTimeFormatter.ISO_DATE_TIME)\n            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)\n            .appendOptional(DateTimeFormatter.ISO_INSTANT)\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss.SX\"))\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ssX\"))\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))\n            .toFormatter()\n            .withZone(ZoneOffset.UTC);\n\n    public static OffsetDateTime parseDateTimeString(String str) {\n        return ZonedDateTime.from(Converter.DATE_TIME_FORMATTER.parse(str)).toOffsetDateTime();\n    }\n\n    private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()\n            .appendOptional(DateTimeFormatter.ISO_TIME)\n            .appendOptional(DateTimeFormatter.ISO_OFFSET_TIME)\n            .parseDefaulting(ChronoField.YEAR, 2020)\n            .parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)\n            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)\n            .toFormatter()\n            .withZone(ZoneOffset.UTC);\n\n    public static OffsetTime parseTimeString(String str) {\n        return ZonedDateTime.from(Converter.TIME_FORMATTER.parse(str)).toOffsetDateTime().toOffsetTime();\n    }\n    // Serialize/deserialize helpers\n\n    public static long CountFromJsonString(String json) throws IOException {\n        return getCountObjectReader().readValue(json);\n    }\n\n    public static String CountToJsonString(long obj) throws JsonProcessingException {\n        return getCountObjectWriter().writeValueAsString(obj);\n    }\n\n    public static List<String> NamesFromJsonString(String json) throws IOException {\n        return getNamesObjectReader().readValue(json);\n    }\n\n    public static String NamesToJsonString(List<String> obj) throws JsonProcessingException {\n        return getNamesObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Map<String, Double> TableFromJsonString(String json) throws IOException {\n        return getTableObjectReader().readValue(json);\n    }\n\n    public static String TableToJsonString(Map<String, Double> obj) throws JsonProcessingException {\n        return getTableObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Either EitherFromJsonString(String json) throws IOException {\n        return getEitherObjectReader().readValue(json);\n    }\n\n    public static String EitherToJsonString(Either obj) throws JsonProcessingException {\n        return getEitherObjectWriter().writeValueAsString(obj);\n    }\n\n    public static OffsetDateTime WhenFromJsonString(String json) throws IOException {\n        return getWhenObjectReader().readValue(json);\n    }\n\n    public static String WhenToJsonString(OffsetDateTime obj) throws JsonProcessingException {\n        return getWhenObjectWriter().writeValueAsString(obj);\n    }\n\n    private static ObjectReader CountReader;\n    private static ObjectWriter CountWriter;\n\n    private static void instantiateCountMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        CountReader = mapper.readerFor(long.class);\n        CountWriter = mapper.writerFor(long.class);\n    }\n\n    private static ObjectReader getCountObjectReader() {\n        if (CountReader == null) instantiateCountMapper();\n        return CountReader;\n    }\n\n    private static ObjectWriter getCountObjectWriter() {\n        if (CountWriter == null) instantiateCountMapper();\n        return CountWriter;\n    }\n\n    private static ObjectReader NamesReader;\n    private static ObjectWriter NamesWriter;\n\n    private static void instantiateNamesMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        NamesReader = mapper.readerFor(new TypeReference<List<String>>() {});\n        NamesWriter = mapper.writerFor(new TypeReference<List<String>>() {});\n    }\n\n    private static ObjectReader getNamesObjectReader() {\n        if (NamesReader == null) instantiateNamesMapper();\n        return NamesReader;\n    }\n\n    private static ObjectWriter getNamesObjectWriter() {\n        if (NamesWriter == null) instantiateNamesMapper();\n        return NamesWriter;\n    }\n\n    private static ObjectReader TableReader;\n    private static ObjectWriter TableWriter;\n\n    private static void instantiateTableMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        TableReader = mapper.readerFor(Map.class);\n        TableWriter = mapper.writerFor(Map.class);\n    }\n\n    private static ObjectReader getTableObjectReader() {\n        if (TableReader == null) instantiateTableMapper();\n        return TableReader;\n    }\n\n    private static ObjectWriter getTableObjectWriter() {\n        if (TableWriter == null) instantiateTableMapper();\n        return TableWriter;\n    }\n\n    private static ObjectReader EitherReader;\n    private static ObjectWriter EitherWriter;\n\n    private static void instantiateEitherMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        EitherReader = mapper.readerFor(Either.class);\n        EitherWriter = mapper.writerFor(Either.class);\n    }\n\n    private static ObjectReader getEitherObjectReader() {\n        if (EitherReader == null) instantiateEitherMapper();\n        return EitherReader;\n    }\n\n    private static ObjectWriter getEitherObjectWriter() {\n        if (EitherWriter == null) instantiateEitherMapper();\n        return EitherWriter;\n    }\n\n    private static ObjectReader WhenReader;\n    private static ObjectWriter WhenWriter;\n\n    private static void instantiateWhenMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        WhenReader = mapper.readerFor(OffsetDateTime.class);\n        WhenWriter = mapper.writerFor(OffsetDateTime.class);\n    }\n\n    private static ObjectReader getWhenObjectReader() {\n        if (WhenReader == null) instantiateWhenMapper();\n        return WhenReader;\n    }\n\n    private static ObjectWriter getWhenObjectWriter() {\n        if (WhenWriter == null) instantiateWhenMapper();\n        return WhenWriter;\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Either.java",
+     "text": "package io.quicktype;\n\nimport java.io.IOException;\nimport java.io.IOException;\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.*;\nimport com.fasterxml.jackson.core.type.*;\n\n@JsonDeserialize(using = Either.Deserializer.class)\n@JsonSerialize(using = Either.Serializer.class)\npublic class Either {\n    public Long integerValue;\n    public String stringValue;\n\n    static class Deserializer extends JsonDeserializer<Either> {\n        @Override\n        public Either deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n            Either value = new Either();\n            switch (jsonParser.currentToken()) {\n                case VALUE_NULL:\n                    break;\n                case VALUE_NUMBER_INT:\n                    value.integerValue = jsonParser.readValueAs(Long.class);\n                    break;\n                case VALUE_STRING:\n                    String string = jsonParser.readValueAs(String.class);\n                    value.stringValue = string;\n                    break;\n                default: throw new IOException(\"Cannot deserialize Either\");\n            }\n            return value;\n        }\n    }\n\n    static class Serializer extends JsonSerializer<Either> {\n        @Override\n        public void serialize(Either obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {\n            if (obj.integerValue != null) {\n                jsonGenerator.writeObject(obj.integerValue);\n                return;\n            }\n            if (obj.stringValue != null) {\n                jsonGenerator.writeObject(obj.stringValue);\n                return;\n            }\n            jsonGenerator.writeNull();\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "java",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "array-type": "array"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "Converter.java",
+     "text": "// To use this code, add the following Maven dependency to your project:\n//\n//\n//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0\n//     com.fasterxml.jackson.datatype : jackson-datatype-jsr310   : 2.9.0\n//\n// Import this package:\n//\n//     import io.quicktype.Converter;\n//\n// Then you can deserialize a JSON string with\n//\n//     long data = Converter.CountFromJsonString(jsonString);\n//     String[] data = Converter.NamesFromJsonString(jsonString);\n//     Map<String, Double> data = Converter.TableFromJsonString(jsonString);\n//     Either data = Converter.EitherFromJsonString(jsonString);\n//     OffsetDateTime data = Converter.WhenFromJsonString(jsonString);\n\npackage io.quicktype;\n\nimport java.io.IOException;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.module.SimpleModule;\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.core.JsonProcessingException;\nimport com.fasterxml.jackson.core.type.TypeReference;\nimport java.util.*;\nimport java.time.LocalDate;\nimport java.time.OffsetDateTime;\nimport java.time.OffsetTime;\nimport java.time.ZoneOffset;\nimport java.time.ZonedDateTime;\nimport java.time.format.DateTimeFormatter;\nimport java.time.format.DateTimeFormatterBuilder;\nimport java.time.temporal.ChronoField;\n\npublic class Converter {\n    // Date-time helpers\n\n    private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()\n            .appendOptional(DateTimeFormatter.ISO_DATE_TIME)\n            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)\n            .appendOptional(DateTimeFormatter.ISO_INSTANT)\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss.SX\"))\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ssX\"))\n            .appendOptional(DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))\n            .toFormatter()\n            .withZone(ZoneOffset.UTC);\n\n    public static OffsetDateTime parseDateTimeString(String str) {\n        return ZonedDateTime.from(Converter.DATE_TIME_FORMATTER.parse(str)).toOffsetDateTime();\n    }\n\n    private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()\n            .appendOptional(DateTimeFormatter.ISO_TIME)\n            .appendOptional(DateTimeFormatter.ISO_OFFSET_TIME)\n            .parseDefaulting(ChronoField.YEAR, 2020)\n            .parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)\n            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)\n            .toFormatter()\n            .withZone(ZoneOffset.UTC);\n\n    public static OffsetTime parseTimeString(String str) {\n        return ZonedDateTime.from(Converter.TIME_FORMATTER.parse(str)).toOffsetDateTime().toOffsetTime();\n    }\n    // Serialize/deserialize helpers\n\n    public static long CountFromJsonString(String json) throws IOException {\n        return getCountObjectReader().readValue(json);\n    }\n\n    public static String CountToJsonString(long obj) throws JsonProcessingException {\n        return getCountObjectWriter().writeValueAsString(obj);\n    }\n\n    public static String[] NamesFromJsonString(String json) throws IOException {\n        return getNamesObjectReader().readValue(json);\n    }\n\n    public static String NamesToJsonString(String[] obj) throws JsonProcessingException {\n        return getNamesObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Map<String, Double> TableFromJsonString(String json) throws IOException {\n        return getTableObjectReader().readValue(json);\n    }\n\n    public static String TableToJsonString(Map<String, Double> obj) throws JsonProcessingException {\n        return getTableObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Either EitherFromJsonString(String json) throws IOException {\n        return getEitherObjectReader().readValue(json);\n    }\n\n    public static String EitherToJsonString(Either obj) throws JsonProcessingException {\n        return getEitherObjectWriter().writeValueAsString(obj);\n    }\n\n    public static OffsetDateTime WhenFromJsonString(String json) throws IOException {\n        return getWhenObjectReader().readValue(json);\n    }\n\n    public static String WhenToJsonString(OffsetDateTime obj) throws JsonProcessingException {\n        return getWhenObjectWriter().writeValueAsString(obj);\n    }\n\n    private static ObjectReader CountReader;\n    private static ObjectWriter CountWriter;\n\n    private static void instantiateCountMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        CountReader = mapper.readerFor(long.class);\n        CountWriter = mapper.writerFor(long.class);\n    }\n\n    private static ObjectReader getCountObjectReader() {\n        if (CountReader == null) instantiateCountMapper();\n        return CountReader;\n    }\n\n    private static ObjectWriter getCountObjectWriter() {\n        if (CountWriter == null) instantiateCountMapper();\n        return CountWriter;\n    }\n\n    private static ObjectReader NamesReader;\n    private static ObjectWriter NamesWriter;\n\n    private static void instantiateNamesMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        NamesReader = mapper.readerFor(String[].class);\n        NamesWriter = mapper.writerFor(String[].class);\n    }\n\n    private static ObjectReader getNamesObjectReader() {\n        if (NamesReader == null) instantiateNamesMapper();\n        return NamesReader;\n    }\n\n    private static ObjectWriter getNamesObjectWriter() {\n        if (NamesWriter == null) instantiateNamesMapper();\n        return NamesWriter;\n    }\n\n    private static ObjectReader TableReader;\n    private static ObjectWriter TableWriter;\n\n    private static void instantiateTableMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        TableReader = mapper.readerFor(Map.class);\n        TableWriter = mapper.writerFor(Map.class);\n    }\n\n    private static ObjectReader getTableObjectReader() {\n        if (TableReader == null) instantiateTableMapper();\n        return TableReader;\n    }\n\n    private static ObjectWriter getTableObjectWriter() {\n        if (TableWriter == null) instantiateTableMapper();\n        return TableWriter;\n    }\n\n    private static ObjectReader EitherReader;\n    private static ObjectWriter EitherWriter;\n\n    private static void instantiateEitherMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        EitherReader = mapper.readerFor(Either.class);\n        EitherWriter = mapper.writerFor(Either.class);\n    }\n\n    private static ObjectReader getEitherObjectReader() {\n        if (EitherReader == null) instantiateEitherMapper();\n        return EitherReader;\n    }\n\n    private static ObjectWriter getEitherObjectWriter() {\n        if (EitherWriter == null) instantiateEitherMapper();\n        return EitherWriter;\n    }\n\n    private static ObjectReader WhenReader;\n    private static ObjectWriter WhenWriter;\n\n    private static void instantiateWhenMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {\n            @Override\n            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        WhenReader = mapper.readerFor(OffsetDateTime.class);\n        WhenWriter = mapper.writerFor(OffsetDateTime.class);\n    }\n\n    private static ObjectReader getWhenObjectReader() {\n        if (WhenReader == null) instantiateWhenMapper();\n        return WhenReader;\n    }\n\n    private static ObjectWriter getWhenObjectWriter() {\n        if (WhenWriter == null) instantiateWhenMapper();\n        return WhenWriter;\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Either.java",
+     "text": "package io.quicktype;\n\nimport java.io.IOException;\nimport java.io.IOException;\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.*;\n\n@JsonDeserialize(using = Either.Deserializer.class)\n@JsonSerialize(using = Either.Serializer.class)\npublic class Either {\n    public Long integerValue;\n    public String stringValue;\n\n    static class Deserializer extends JsonDeserializer<Either> {\n        @Override\n        public Either deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n            Either value = new Either();\n            switch (jsonParser.currentToken()) {\n                case VALUE_NULL:\n                    break;\n                case VALUE_NUMBER_INT:\n                    value.integerValue = jsonParser.readValueAs(Long.class);\n                    break;\n                case VALUE_STRING:\n                    String string = jsonParser.readValueAs(String.class);\n                    value.stringValue = string;\n                    break;\n                default: throw new IOException(\"Cannot deserialize Either\");\n            }\n            return value;\n        }\n    }\n\n    static class Serializer extends JsonSerializer<Either> {\n        @Override\n        public void serialize(Either obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {\n            if (obj.integerValue != null) {\n                jsonGenerator.writeObject(obj.integerValue);\n                return;\n            }\n            if (obj.stringValue != null) {\n                jsonGenerator.writeObject(obj.stringValue);\n                return;\n            }\n            jsonGenerator.writeNull();\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "java",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "datetime-provider": "legacy"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "Converter.java",
+     "text": "// To use this code, add the following Maven dependency to your project:\n//\n//\n//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0\n//\n//\n// Import this package:\n//\n//     import io.quicktype.Converter;\n//\n// Then you can deserialize a JSON string with\n//\n//     long data = Converter.CountFromJsonString(jsonString);\n//     List<String> data = Converter.NamesFromJsonString(jsonString);\n//     Map<String, Double> data = Converter.TableFromJsonString(jsonString);\n//     Either data = Converter.EitherFromJsonString(jsonString);\n//     Date data = Converter.WhenFromJsonString(jsonString);\n\npackage io.quicktype;\n\nimport java.io.IOException;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.module.SimpleModule;\nimport com.fasterxml.jackson.core.JsonParser;\nimport com.fasterxml.jackson.core.JsonProcessingException;\nimport com.fasterxml.jackson.core.type.TypeReference;\nimport java.util.*;\nimport java.util.Date;\nimport java.text.SimpleDateFormat;\n\npublic class Converter {\n    // Date-time helpers\n\n    private static final String[] DATE_TIME_FORMATS = {\n            \"yyyy-MM-dd'T'HH:mm:ss.SX\",\n            \"yyyy-MM-dd'T'HH:mm:ss.S\",\n            \"yyyy-MM-dd'T'HH:mm:ssX\",\n            \"yyyy-MM-dd'T'HH:mm:ss\",\n            \"yyyy-MM-dd HH:mm:ss.SX\",\n            \"yyyy-MM-dd HH:mm:ss.S\",\n            \"yyyy-MM-dd HH:mm:ssX\",\n            \"yyyy-MM-dd HH:mm:ss\",\n            \"HH:mm:ss.SZ\",\n            \"HH:mm:ss.S\",\n            \"HH:mm:ssZ\",\n            \"HH:mm:ss\",\n            \"yyyy-MM-dd\",\n    };\n\n    public static Date parseAllDateTimeString(String str) {\n        str = str.replaceFirst(\"(\\\\.\\\\d{3})\\\\d+\", \"$1\");\n        for (String format : DATE_TIME_FORMATS) {\n            try {\n                return new SimpleDateFormat(format).parse(str);\n            } catch (Exception ex) {\n                // Ignored\n            }\n        }\n        return null;\n    }\n\n    public static String serializeDateTime(Date datetime) {\n        return new SimpleDateFormat(\"yyyy-MM-dd'T'hh:mm:ssZ\").format(datetime);\n    }\n\n    public static String serializeDate(Date datetime) {\n        return new SimpleDateFormat(\"yyyy-MM-dd\").format(datetime);\n    }\n\n    public static String serializeTime(Date datetime) {\n        return new SimpleDateFormat(\"hh:mm:ssZ\").format(datetime);\n    }\n    // Serialize/deserialize helpers\n\n    public static long CountFromJsonString(String json) throws IOException {\n        return getCountObjectReader().readValue(json);\n    }\n\n    public static String CountToJsonString(long obj) throws JsonProcessingException {\n        return getCountObjectWriter().writeValueAsString(obj);\n    }\n\n    public static List<String> NamesFromJsonString(String json) throws IOException {\n        return getNamesObjectReader().readValue(json);\n    }\n\n    public static String NamesToJsonString(List<String> obj) throws JsonProcessingException {\n        return getNamesObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Map<String, Double> TableFromJsonString(String json) throws IOException {\n        return getTableObjectReader().readValue(json);\n    }\n\n    public static String TableToJsonString(Map<String, Double> obj) throws JsonProcessingException {\n        return getTableObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Either EitherFromJsonString(String json) throws IOException {\n        return getEitherObjectReader().readValue(json);\n    }\n\n    public static String EitherToJsonString(Either obj) throws JsonProcessingException {\n        return getEitherObjectWriter().writeValueAsString(obj);\n    }\n\n    public static Date WhenFromJsonString(String json) throws IOException {\n        return getWhenObjectReader().readValue(json);\n    }\n\n    public static String WhenToJsonString(Date obj) throws JsonProcessingException {\n        return getWhenObjectWriter().writeValueAsString(obj);\n    }\n\n    private static ObjectReader CountReader;\n    private static ObjectWriter CountWriter;\n\n    private static void instantiateCountMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        CountReader = mapper.readerFor(long.class);\n        CountWriter = mapper.writerFor(long.class);\n    }\n\n    private static ObjectReader getCountObjectReader() {\n        if (CountReader == null) instantiateCountMapper();\n        return CountReader;\n    }\n\n    private static ObjectWriter getCountObjectWriter() {\n        if (CountWriter == null) instantiateCountMapper();\n        return CountWriter;\n    }\n\n    private static ObjectReader NamesReader;\n    private static ObjectWriter NamesWriter;\n\n    private static void instantiateNamesMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        NamesReader = mapper.readerFor(new TypeReference<List<String>>() {});\n        NamesWriter = mapper.writerFor(new TypeReference<List<String>>() {});\n    }\n\n    private static ObjectReader getNamesObjectReader() {\n        if (NamesReader == null) instantiateNamesMapper();\n        return NamesReader;\n    }\n\n    private static ObjectWriter getNamesObjectWriter() {\n        if (NamesWriter == null) instantiateNamesMapper();\n        return NamesWriter;\n    }\n\n    private static ObjectReader TableReader;\n    private static ObjectWriter TableWriter;\n\n    private static void instantiateTableMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        TableReader = mapper.readerFor(Map.class);\n        TableWriter = mapper.writerFor(Map.class);\n    }\n\n    private static ObjectReader getTableObjectReader() {\n        if (TableReader == null) instantiateTableMapper();\n        return TableReader;\n    }\n\n    private static ObjectWriter getTableObjectWriter() {\n        if (TableWriter == null) instantiateTableMapper();\n        return TableWriter;\n    }\n\n    private static ObjectReader EitherReader;\n    private static ObjectWriter EitherWriter;\n\n    private static void instantiateEitherMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        EitherReader = mapper.readerFor(Either.class);\n        EitherWriter = mapper.writerFor(Either.class);\n    }\n\n    private static ObjectReader getEitherObjectReader() {\n        if (EitherReader == null) instantiateEitherMapper();\n        return EitherReader;\n    }\n\n    private static ObjectWriter getEitherObjectWriter() {\n        if (EitherWriter == null) instantiateEitherMapper();\n        return EitherWriter;\n    }\n\n    private static ObjectReader WhenReader;\n    private static ObjectWriter WhenWriter;\n\n    private static void instantiateWhenMapper() {\n        ObjectMapper mapper = new ObjectMapper();\n        mapper.findAndRegisterModules();\n        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);\n        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);\n        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);\n        SimpleModule module = new SimpleModule();\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {\n            @Override\n            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n                String value = jsonParser.getText();\n                return Converter.parseAllDateTimeString(value);\n            }\n        });\n        mapper.registerModule(module);\n        WhenReader = mapper.readerFor(Date.class);\n        WhenWriter = mapper.writerFor(Date.class);\n    }\n\n    private static ObjectReader getWhenObjectReader() {\n        if (WhenReader == null) instantiateWhenMapper();\n        return WhenReader;\n    }\n\n    private static ObjectWriter getWhenObjectWriter() {\n        if (WhenWriter == null) instantiateWhenMapper();\n        return WhenWriter;\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Either.java",
+     "text": "package io.quicktype;\n\nimport java.io.IOException;\nimport java.io.IOException;\nimport com.fasterxml.jackson.core.*;\nimport com.fasterxml.jackson.databind.*;\nimport com.fasterxml.jackson.databind.annotation.*;\nimport com.fasterxml.jackson.core.type.*;\n\n@JsonDeserialize(using = Either.Deserializer.class)\n@JsonSerialize(using = Either.Serializer.class)\npublic class Either {\n    public Long integerValue;\n    public String stringValue;\n\n    static class Deserializer extends JsonDeserializer<Either> {\n        @Override\n        public Either deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {\n            Either value = new Either();\n            switch (jsonParser.currentToken()) {\n                case VALUE_NULL:\n                    break;\n                case VALUE_NUMBER_INT:\n                    value.integerValue = jsonParser.readValueAs(Long.class);\n                    break;\n                case VALUE_STRING:\n                    String string = jsonParser.readValueAs(String.class);\n                    value.stringValue = string;\n                    break;\n                default: throw new IOException(\"Cannot deserialize Either\");\n            }\n            return value;\n        }\n    }\n\n    static class Serializer extends JsonSerializer<Either> {\n        @Override\n        public void serialize(Either obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {\n            if (obj.integerValue != null) {\n                jsonGenerator.writeObject(obj.integerValue);\n                return;\n            }\n            if (obj.stringValue != null) {\n                jsonGenerator.writeObject(obj.stringValue);\n                return;\n            }\n            jsonGenerator.writeNull();\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "java",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "Either.java",
+     "text": "package io.quicktype;\n\nimport java.io.IOException;\n\npublic class Either {\n    public Long integerValue;\n    public String stringValue;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "java-top-levels"
+}

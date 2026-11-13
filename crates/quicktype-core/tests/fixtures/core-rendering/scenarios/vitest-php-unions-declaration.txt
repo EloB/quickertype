@@ -1,0 +1,6 @@
+# Port of quicktype's test/unit/php-unions.test.ts, "a union property gets
+# a PHP 8 union type declaration".
+input jsonsamples TopLevel ["{\"v\": 1}", "{\"v\": \"s\"}", "{\"v\": {\"x\": 1}}"]
+pipeline {"lang": "php"}
+
+render php {}
