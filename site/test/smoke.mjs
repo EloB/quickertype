@@ -12,7 +12,8 @@
 // `just-types` turned on, the presets the page shares with app.quicktype.io
 // (Rust, Swift, Objective-C) and one moved back to quicktype's default,
 // quicktype's general options one by one and combined, `--no-ignore-json-refs`
-// on an uploaded file with `$ref`s, renderer options given in the URL hash,
+// on an uploaded file with `$ref`s, Rust's `--integer-type force-i32` on one
+// with integers beyond 32 bits, renderer options given in the URL hash,
 // and an uploaded file too large for the editor; that the URL hash brings all
 // of those back; that the general options are labelled as in the CLI's
 // --help; that compare mode reports identical output with each engine in
@@ -83,6 +84,8 @@ const sampleFiles = {
     "description.schema": "tests/inputs/schema/description.schema",
     // JSON with `$ref`s (uploaded), for --no-ignore-json-refs.
     "2465e.json": "tests/inputs/json/misc/2465e.json",
+    // JSON with integers beyond 32 bits (uploaded), for Rust's --integer-type.
+    "32431.json": "tests/inputs/json/misc/32431.json",
 };
 
 /**
@@ -533,6 +536,18 @@ try {
         "quicktype --lang typescript --top-level T2465e --no-ignore-json-refs 2465e.json",
     );
     assert.notEqual(refsFollowed, refsIgnored, "--no-ignore-json-refs changed nothing");
+
+    // The renderer options set the range of integers read from JSON, as on
+    // the CLI: with Rust's `integer-type: force-i32`, whole numbers beyond
+    // 32 bits are read as doubles.
+    await page.navigate(`${url}#l=rust&integer-type=force-i32`);
+    await page.waitFor(settled, "the run before the upload");
+    await upload(path.join(repositoryRoot, sampleFiles["32431.json"]));
+    const forceI32 = await sameAsCli(
+        "uploaded 32431.json → Rust, --integer-type force-i32",
+        "quicktype --lang rust --top-level T32431 --density dense --integer-type force-i32 32431.json",
+    );
+    assert.match(forceI32, /pub time: f64,/);
 
     await page.navigate(`${url}#l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");

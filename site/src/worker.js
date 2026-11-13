@@ -36,8 +36,9 @@ async function generate({ kind, lang, name, text, rendererOptions, options = {} 
         inputData.addInput(input);
     } else {
         // As the CLI's makeInputData: `$ref`s are references with
-        // --no-ignore-json-refs.
-        const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false);
+        // --no-ignore-json-refs, and the renderer options set the range of
+        // integers (Rust's `integer-type`, cJSON's `integer-size`).
+        const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
         await input.addSource({ name, samples: [text] });
         inputData.addInput(input);
     }
