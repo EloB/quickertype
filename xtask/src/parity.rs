@@ -51,30 +51,30 @@ cargo xtask parity [options]
 ";
 
 #[derive(Deserialize)]
-struct Case {
+pub(crate) struct Case {
     /// Directories that must exist before the first step (quicktype does not
     /// create output directories itself).
     #[serde(default)]
-    dirs: Vec<String>,
+    pub(crate) dirs: Vec<String>,
     /// Extra environment variables for every step.
     #[serde(default)]
-    env: BTreeMap<String, String>,
-    steps: Vec<Step>,
+    pub(crate) env: BTreeMap<String, String>,
+    pub(crate) steps: Vec<Step>,
 }
 
 #[derive(Deserialize)]
-struct Step {
-    args: Vec<String>,
+pub(crate) struct Step {
+    pub(crate) args: Vec<String>,
     files: Vec<String>,
     #[serde(default)]
-    expect_failure: bool,
+    pub(crate) expect_failure: bool,
     /// File (usually below `{INPUTS}`) piped to stdin; stdin is empty otherwise.
     #[serde(default)]
-    stdin: Option<String>,
+    pub(crate) stdin: Option<String>,
     /// Expected exit code. Its presence makes this a CLI-behavior step whose
     /// stdout and stderr are compared as well.
     #[serde(default)]
-    exit: Option<i32>,
+    pub(crate) exit: Option<i32>,
 }
 
 /// Environment variables removed from every step: they would let the
@@ -127,7 +127,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
     Ok(o)
 }
 
-fn find_cases(dir: &Path, out: &mut Vec<PathBuf>) {
+pub(crate) fn find_cases(dir: &Path, out: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
     };

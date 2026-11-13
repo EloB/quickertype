@@ -3,9 +3,11 @@
 //! ```text
 //! cargo xtask parity [options]     replay the golden corpus (see `parity --help`)
 //! cargo xtask diff [opts] -- <args> run the TypeScript CLI and ours side by side and compare
+//! cargo xtask bench [options]      time ours against the TypeScript CLI (see `bench --help`)
 //! cargo xtask golden [ref-dir]     re-record tests/golden from the TypeScript reference
 //! ```
 
+mod bench;
 mod diff;
 mod parity;
 
@@ -19,6 +21,7 @@ tasks:
   parity [options]   replay tests/golden against a quicktype binary (--help for options)
   diff [options] -- <quicktype args>
                      run the TypeScript CLI and ours side by side and compare (--help)
+  bench [options]    time ours against the TypeScript CLI, Markdown report (--help)
   golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
                      (default ref-dir: ../quicktype)
 ";
@@ -53,6 +56,14 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             diff::run(&root, rest)
+        }
+        Some("bench") => {
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help") {
+                print!("{}", bench::USAGE);
+                return ExitCode::SUCCESS;
+            }
+            bench::run(&root, rest)
         }
         Some("golden") => Command::new(root.join("xtask/golden/record.sh"))
             .args(args)

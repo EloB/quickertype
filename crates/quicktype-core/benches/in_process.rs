@@ -1,0 +1,150 @@
+//! In-process throughput of the engine: the JavaScript API's workload
+//! (`JSON.parse` semantics, no process start, no file I/O), natively.
+//!
+//! ```text
+//! cargo bench -p quicktype-core --bench in_process [-- [--iterations N] [--json]]
+//! ```
+//!
+//! One iteration runs every JSON file in `tests/inputs/json/samples` (and
+//! `json/misc/1b409.json`, the largest misc file) through eight target
+//! languages: 14 inputs × 8 languages = 112 runs. Each run builds a
+//! `JsonInput` from the text (the "parse" phase: `JSON.parse` plus
+//! `CompressedJSON`) and calls `quicktype_multi_file_sync` (the "engine"
+//! phase: inference, rewrites, naming, rendering). The timing of the
+//! reference TypeScript for the same workload comes from
+//! `xtask/bench/in-process.mjs`; `cargo xtask bench --in-process` runs both.
+
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
+
+use quicktype_core::{
+    InputData, JsonSourceData, Options, RendererOptions, get_target_language,
+    json_input_for_target_language, quicktype_multi_file_sync,
+};
+
+/// The languages, by CLI name.
+const LANGUAGES: [&str; 8] = ["ts", "rust", "go", "cs", "java", "py", "swift", "c++"];
+
+fn inputs_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/inputs/json")
+}
+
+/// The input files, sorted by name, with their text.
+fn inputs() -> Vec<(String, String)> {
+    let dir = inputs_dir();
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(dir.join("samples"))
+        .expect("tests/inputs/json/samples")
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "json"))
+        .collect();
+    paths.sort();
+    paths.push(dir.join("misc/1b409.json"));
+    paths
+        .into_iter()
+        .map(|p| {
+            let text = std::fs::read_to_string(&p).expect("readable input");
+            let name = p.file_name().unwrap().to_string_lossy().into_owned();
+            (name, text)
+        })
+        .collect()
+}
+
+/// One run; returns (parse time, engine time, output bytes).
+fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
+    let lang = get_target_language(lang).expect("built-in language");
+    let start = Instant::now();
+    let mut input = json_input_for_target_language(lang, false, &RendererOptions::new());
+    input
+        .add_source_sync(JsonSourceData {
+            name: "TopLevel".to_owned(),
+            samples: vec![text.into()],
+            description: None,
+        })
+        .expect("valid sample");
+    let mut input_data = InputData::new();
+    input_data.add_input(input);
+    let parsed = Instant::now();
+    let files = quicktype_multi_file_sync(Options::new(lang, input_data)).expect("run succeeds");
+    let done = Instant::now();
+    let bytes = files
+        .values()
+        .map(|f| f.lines.iter().map(|l| l.len() + 1).sum::<usize>())
+        .sum();
+    (parsed - start, done - parsed, bytes)
+}
+
+fn main() {
+    let mut iterations = 10usize;
+    let mut json = false;
+    let mut args = std::env::args().skip(1);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--iterations" | "-n" => {
+                iterations = args
+                    .next()
+                    .and_then(|n| n.parse().ok())
+                    .expect("--iterations <n>");
+            }
+            "--json" => json = true,
+            // `cargo bench` passes `--bench`.
+            _ => {}
+        }
+    }
+    let inputs = inputs();
+    let runs = inputs.len() * LANGUAGES.len();
+
+    // Warm-up: first-use initialization (the Markov chain, pluralize's
+    // rules) happens once per process, as in a long-lived JS process.
+    let mut output_bytes = 0;
+    for (_, text) in &inputs {
+        for lang in LANGUAGES {
+            output_bytes += run(lang, text).2;
+        }
+    }
+
+    let mut totals = Vec::with_capacity(iterations);
+    let mut parse_totals = Vec::with_capacity(iterations);
+    let mut engine_totals = Vec::with_capacity(iterations);
+    for _ in 0..iterations {
+        let (mut parse, mut engine) = (Duration::ZERO, Duration::ZERO);
+        for (_, text) in &inputs {
+            for lang in LANGUAGES {
+                let (p, e, _) = run(lang, text);
+                parse += p;
+                engine += e;
+            }
+        }
+        totals.push((parse + engine).as_secs_f64() * 1000.0);
+        parse_totals.push(parse.as_secs_f64() * 1000.0);
+        engine_totals.push(engine.as_secs_f64() * 1000.0);
+    }
+    let summarize = |v: &mut Vec<f64>| {
+        v.sort_by(f64::total_cmp);
+        let n = v.len();
+        let median = if n % 2 == 1 {
+            v[n / 2]
+        } else {
+            (v[n / 2 - 1] + v[n / 2]) / 2.0
+        };
+        (median, v[0])
+    };
+    let (total, total_min) = summarize(&mut totals);
+    let (parse, _) = summarize(&mut parse_totals);
+    let (engine, _) = summarize(&mut engine_totals);
+    if json {
+        println!(
+            "{{\"runs\":{runs},\"iterations\":{iterations},\"total_ms\":{total},\"total_min_ms\":{total_min},\"parse_ms\":{parse},\"engine_ms\":{engine},\"output_bytes\":{output_bytes}}}"
+        );
+    } else {
+        println!(
+            "in-process: {} inputs × {} languages = {runs} runs per iteration, {iterations} iterations",
+            inputs.len(),
+            LANGUAGES.len()
+        );
+        println!("  total   median {total:.1} ms  (min {total_min:.1} ms)");
+        println!("  parse   median {parse:.1} ms");
+        println!("  engine  median {engine:.1} ms");
+        println!("  per run {:.3} ms", total / runs as f64);
+    }
+}
