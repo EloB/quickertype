@@ -98,9 +98,12 @@ Each case runs in up to three modes (`--modes`, chosen per seed):
   divergence is saved as that schema case.
 
 A run that our package does not run on WebAssembly is counted ("not on
-wasm"); one where the WebAssembly engine failed (trapped or overflowed the
-stack) and the facade redid it on TypeScript is a divergence even if the
-result matches.
+wasm"). One where the WebAssembly engine failed and the facade redid it on
+TypeScript is a divergence even if the result matches, with the engine's
+panic message, unless the engine overflowed V8's stack (a deep or endless
+recursion, which WebAssembly cannot grow the stack for; a documented
+fallback): that run counts as `rerun-stack` among the "not on wasm" ones,
+and the CLI mode checks the native port on such inputs.
 
 ## Output
 

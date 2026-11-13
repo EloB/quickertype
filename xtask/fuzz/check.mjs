@@ -54,7 +54,13 @@ export async function makeChecker({ reference, bin }) {
                     : wasm > 0 ? (ts > 0 ? "mixed" : "wasm") : ts > 0 ? "ts" : "none";
         const result = compareOutcomes(expected, actual);
         result.engine = engine;
-        if (engine === "rerun" && result.status === "same") {
+        if (engine === "rerun" && result.status === "same" && /^RangeError: Maximum call stack size exceeded/.test(String(stats.lastFailure))) {
+            // The engine overflowed V8's stack (WebAssembly cannot grow it,
+            // so a deep or endless recursion can run out before the port's
+            // own limit) and the facade redid the run on TypeScript, as
+            // documented (PARITY.md, Known gaps). The result matched.
+            result.engine = "rerun-stack";
+        } else if (engine === "rerun" && result.status === "same") {
             result.status = "diff";
             result.detail = `the WebAssembly engine failed (trap or stack overflow); TypeScript redid the run: ${String(stats.lastFailure).slice(0, 2000)}`;
         }
