@@ -11,13 +11,26 @@
 // test: either file has no results, a fixture has no passing test with the
 // TypeScript CLI (a broken toolchain fails them all), or a fixture named
 // with `--fixtures` (exact names, as in the results) has no results in
-// either file. `summary` exits 1 when a file has no results.
+// either file. `summary` exits 1 when a file has no results. Fixtures known
+// to fail every test upstream (`knownBrokenUpstream`) are exempt from the
+// "no test passes with TS" check only.
 
 import { readFileSync } from "node:fs";
 
 // `timeout`: the test hit the harness's time limit, and its worker was
 // replaced. It counts as a failure.
 const statuses = ["pass", "fail", "timeout", "skip"];
+
+// Fixtures whose every test fails with quicktype's own CLI at the
+// reference commit, so "no test passes with TS" says nothing about the
+// toolchain. They are still compared test by test: a test that passes with
+// TS and fails with ours, or ran with one CLI only, still fails `compare`.
+const knownBrokenUpstream = new Map([
+    [
+        "graphql-php",
+        "every GraphQL input fails with quicktype's own PHP output; quicktype's CI (test-pr.yaml) does not run this fixture",
+    ],
+]);
 
 function load(file) {
     const results = new Map();
@@ -118,7 +131,10 @@ function compare(tsFile, oursFile, requested) {
         if (!oursCounts.has(fixture)) untested.push(`${fixture} has no results with ours`);
     }
     for (const [fixture, c] of tsCounts) {
-        if (c.pass === 0) untested.push(`${fixture} has no test that passes with TS`);
+        if (c.pass > 0) continue;
+        const reason = knownBrokenUpstream.get(fixture);
+        if (reason === undefined) untested.push(`${fixture} has no test that passes with TS`);
+        else console.log(`\n${fixture}: no test passes with TS, known broken upstream (${reason})`);
     }
 
     const oursOnly = [];
