@@ -4,6 +4,13 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- Merged `feat/wasm-js-api` (Phase 6): the npm `quicktype-core` package is
+  quicktype's own TypeScript API with a WASM engine underneath (Node and
+  browsers). Differential suite against npm quicktype-core: 18,742
+  scenarios, 0 different. Runs the WASM engine can't do exactly (C until it
+  lands, lone surrogates, circular store documents, custom languages) fall
+  back to the TypeScript engine automatically.
+
 - **Parity 10,796 / 11,177 (96.6%), 0 regressions.** Merged Go + JSON
   Schema output, GraphQL input (hand port of graphql-js 16's parser;
   228 input cases, 2,510 parser vectors, 38 introspection runs identical),

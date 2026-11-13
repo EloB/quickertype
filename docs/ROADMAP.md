@@ -105,7 +105,7 @@ Schema enters the normal pipeline. Parity with the reference (which runs
 cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 (TypeScript as an *output* language is just another renderer.)
 
-## Phase 6 — JavaScript API and distribution — 🚧 JS API done (npm/quicktype-core)
+## Phase 6 — JavaScript API and distribution — ✅ JS API done (npm CLI distribution pending) — 🚧 JS API done (npm/quicktype-core)
 
 - The JS API runs on WebAssembly in both Node.js and browsers, behind
   quicktype's own TypeScript API as a thin facade:
