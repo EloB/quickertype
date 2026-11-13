@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "a": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/properties/b"
+      }
+    },
+    "b": {
+      "type": "object",
+      "properties": {
+        "c": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

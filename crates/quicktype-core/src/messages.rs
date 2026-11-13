@@ -18,6 +18,8 @@ use std::fmt;
 
 use quicktype_js_compat::{json, number};
 
+use crate::input::path_element::PathElement;
+
 /// The result type used throughout the engine.
 pub type Result<T, E = QuickTypeError> = std::result::Result<T, E>;
 
@@ -175,9 +177,23 @@ pub enum MessageValue {
     Array(Vec<MessageValue>),
     /// A plain object; stringifies as `"[object Object]"`.
     Object(Vec<(String, MessageValue)>),
-    /// An object with its own `toString()` (such as a JSON Schema `Ref`),
-    /// carrying the result of that `toString()`.
+    /// An object with its own `toString()`, carrying the result of that
+    /// `toString()`.
     Display(String),
+    /// A JSON Schema `Ref`: an object with its own `toString()`, which a
+    /// JavaScript host rebuilds from its address and path.
+    Ref(Box<RefValue>),
+}
+
+/// A JSON Schema `Ref` as a [`MessageValue`].
+#[derive(Clone, Debug, PartialEq)]
+pub struct RefValue {
+    /// `toString()`.
+    pub display: String,
+    /// `addressURI.toString()`, if the `Ref` has an address.
+    pub address: Option<String>,
+    /// `path`.
+    pub path: Vec<PathElement>,
 }
 
 impl MessageValue {
@@ -185,9 +201,10 @@ impl MessageValue {
     fn message_string(&self) -> String {
         match self {
             // typeof "object" with a toString function
-            MessageValue::Array(_) | MessageValue::Object(_) | MessageValue::Display(_) => {
-                self.to_js_string()
-            }
+            MessageValue::Array(_)
+            | MessageValue::Object(_)
+            | MessageValue::Display(_)
+            | MessageValue::Ref(_) => self.to_js_string(),
             MessageValue::String(s) => s.clone(),
             // `JSON.stringify(undefined)` is `undefined`, which `replace`
             // converts to the string "undefined".
@@ -207,6 +224,7 @@ impl MessageValue {
             MessageValue::Bool(b) => b.to_string(),
             MessageValue::Number(n) => number::to_string(*n),
             MessageValue::String(s) | MessageValue::Display(s) => s.clone(),
+            MessageValue::Ref(r) => r.display.clone(),
             MessageValue::Object(_) => "[object Object]".to_owned(),
             MessageValue::Array(items) => items
                 .iter()

@@ -186,7 +186,7 @@ pub use crate::target_language::{LanguageConfig, TargetLanguage};
 // ---- Errors (`Messages.ts`) ----------------------------------------------
 
 pub use crate::messages::{
-    ErrorKind, JsErrorName, JsException, MessageValue, QuickTypeError, Result,
+    ErrorKind, JsErrorName, JsException, MessageValue, QuickTypeError, RefValue, Result,
 };
 
 // ---- Support -------------------------------------------------------------

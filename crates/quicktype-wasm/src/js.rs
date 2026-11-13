@@ -15,6 +15,7 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 
 use js_sys::{Array, Object, Reflect};
+use quicktype_core::input::path_element::PathElement;
 use quicktype_core::internal::{CompressedJsonTables, CompressedTopLevel};
 use quicktype_core::{
     Clock, CommentOptions, DebugOptions, INFERENCE_FLAGS, JsErrorName, JsonSchema, LocalBoxFuture,
@@ -775,12 +776,35 @@ fn message_value(value: &MessageValue) -> JsValue {
             object.into()
         }
         MessageValue::Display(text) => {
-            // An object with its own `toString()`: a JSON Schema `Ref`,
-            // which the facade parses back.
+            // An object with its own `toString()`.
             let object = Object::new();
             set(&object, "display", &JsValue::from_str(text));
             let wrapper = Object::new();
             set(&wrapper, "__qtDisplay", &object);
+            wrapper.into()
+        }
+        MessageValue::Ref(r) => {
+            // A JSON Schema `Ref`, which the facade rebuilds from its
+            // address and path elements (`{ kind, key }`, `{ kind, index }`
+            // or `{ kind }`, as `PathElement`s are in TypeScript).
+            let path = Array::new();
+            for element in &r.path {
+                let e = Object::new();
+                set(&e, "kind", &JsValue::from_f64(element.kind() as f64));
+                match element {
+                    PathElement::KeyOrIndex(key) => set(&e, "key", &JsValue::from_str(key)),
+                    PathElement::Type(index) => set(&e, "index", &JsValue::from_f64(*index as f64)),
+                    PathElement::Root | PathElement::Object => {}
+                }
+                path.push(&e);
+            }
+            let object = Object::new();
+            if let Some(address) = &r.address {
+                set(&object, "address", &JsValue::from_str(address));
+            }
+            set(&object, "path", &path);
+            let wrapper = Object::new();
+            set(&wrapper, "__qtRef", &object);
             wrapper.into()
         }
     }

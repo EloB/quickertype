@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "lat": {
+      "$ref": "#/definitions/series"
+    }
+  },
+  "definitions": {
+    "series": {
+      "properties": {
+        "Cod": {
+          "properties": {
+            "new\nline": {
+              "required": [
+                "ab"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  }
+}
