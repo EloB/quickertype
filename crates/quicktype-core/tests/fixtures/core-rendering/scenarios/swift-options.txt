@@ -1,0 +1,69 @@
+# The Swift renderer with each of its options and their interactions, on a
+# schema with every kind of property, union (with and without null, with
+# bool and integer members), enum, cycle (a class and an indirect enum that
+# break cycles), empty object, description, top-level arrays, maps, enums and
+# unions, and property names that are forbidden (json, fromURL, retain) or
+# need escaping. The corpus runs most options only alone and with
+# --support-linux.
+input schema TopLevel {"$schema": "http://json-schema.org/draft-07/schema#", "title": "TopLevel", "description": "The kitchen sink.\nSecond line.", "type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "created": {"type": "string", "format": "date-time", "description": "When it was made."}, "maybeCreated": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]}, "day": {"type": "string", "format": "date"}, "": {"type": "integer"}, "isActive": {"type": "boolean"}, "fooBar": {"type": "string"}, "foo_bar": {"type": "number"}, "userURL": {"type": "string"}, "a": {"type": "string"}, "b": {"type": "string"}, "c": {"type": "string"}, "d": {"type": "string"}, "e": {"type": "string"}, "f": {"type": "integer"}, "g": {"type": "integer"}, "json": {"type": "string"}, "fromURL": {"type": "string"}, "retain": {"type": "integer"}, "with \"quote\" and \\": {"type": "string"}, "ünïcødé 😀": {"type": "string"}, "numbers": {"anyOf": [{"type": "integer"}, {"type": "number"}, {"type": "boolean"}, {"type": "null"}]}, "stringish": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "string", "format": "uuid"}, {"type": "integer"}, {"type": "boolean"}]}, "withEnum": {"anyOf": [{"enum": ["red", "green"]}, {"type": "integer"}, {"type": "null"}]}, "withObject": {"anyOf": [{"$ref": "#/definitions/Point"}, {"type": "boolean"}, {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}, {"type": "object", "additionalProperties": {"type": "integer"}}]}, "points": {"type": "array", "items": {"$ref": "#/definitions/Point"}}, "byName": {"type": "object", "additionalProperties": {"$ref": "#/definitions/Point"}}, "empty": {"$ref": "#/definitions/Empty"}, "node": {"$ref": "#/definitions/Node"}, "tree": {"$ref": "#/definitions/Tree"}, "kind": {"enum": ["first-kind", "SECOND", "third_kind", "$dollar", "with \"quote\"", "ü"], "description": "The kind."}, "optionalKind": {"enum": ["x", "y"]}, "anything": {}, "nothing": {"type": "null"}, "anythings": {"type": "array", "items": {}}, "dates": {"type": "array", "items": {"type": "string", "format": "date-time"}}, "uuids": {"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}}}, "required": ["id", "created", "day", "", "isActive", "kind", "points", "stringish", "a", "b", "c", "d", "e", "f", "g", "json", "fromURL", "retain", "anything", "nothing", "anythings", "node", "tree"], "definitions": {"Point": {"type": "object", "description": "A point.", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "label": {"type": "string", "description": "The label."}}, "required": ["x", "y"]}, "Empty": {"type": "object", "properties": {}, "additionalProperties": false}, "Node": {"type": "object", "properties": {"value": {"type": "integer"}, "next": {"$ref": "#/definitions/Node"}}, "required": ["value"]}, "Tree": {"anyOf": [{"type": "object", "properties": {"left": {"$ref": "#/definitions/Tree"}, "right": {"$ref": "#/definitions/Tree"}}, "required": ["left", "right"]}, {"type": "integer"}]}}}
+input schema Labels {"type": "array", "items": {"type": "string"}}
+input schema Counts {"type": "object", "additionalProperties": {"type": "integer"}}
+input schema Status {"enum": ["on", "off"], "description": "On or off."}
+input schema Mixed {"anyOf": [{"type": "string"}, {"type": "integer"}, {"$ref": "#/definitions/P"}], "definitions": {"P": {"type": "object", "properties": {"p": {"type": "string"}}}}}
+input schema Nothing {"type": "object", "properties": {}, "additionalProperties": false}
+pipeline {"lang": "swift"}
+
+render swift {}
+render swift {"rendererOptions": {"just-types": true}}
+render swift {"rendererOptions": {"initializers": false}}
+render swift {"rendererOptions": {"just-types": true, "initializers": false}}
+render swift {"rendererOptions": {"coding-keys": false}}
+render swift {"rendererOptions": {"coding-keys-protocol": "CaseIterable"}}
+render swift {"rendererOptions": {"coding-keys-protocol": "CaseIterable", "density": "dense"}}
+render swift {"rendererOptions": {"alamofire": true}}
+render swift {"rendererOptions": {"alamofire": true, "just-types": true}}
+render swift {"rendererOptions": {"alamofire": true, "initializers": false}}
+render swift {"rendererOptions": {"type-prefix": "QT"}}
+render swift {"rendererOptions": {"type-prefix": "Top"}}
+render swift {"rendererOptions": {"struct-or-class": "class"}}
+render swift {"rendererOptions": {"struct-or-class": "class", "final-classes": true}}
+render swift {"rendererOptions": {"struct-or-class": "class", "mutable-properties": true}}
+render swift {"rendererOptions": {"struct-or-class": "class", "mutable-properties": true, "sendable": true}}
+render swift {"rendererOptions": {"struct-or-class": "class", "sendable": true}}
+render swift {"rendererOptions": {"mutable-properties": true, "sendable": true}}
+render swift {"rendererOptions": {"sendable": true, "final-classes": true}}
+render swift {"rendererOptions": {"objective-c-support": true}}
+render swift {"rendererOptions": {"objective-c-support": true, "struct-or-class": "class"}}
+render swift {"rendererOptions": {"objective-c-support": true, "struct-or-class": "class", "final-classes": true, "sendable": true}}
+render swift {"rendererOptions": {"objective-c-support": true, "struct-or-class": "class", "access-level": "public"}}
+render swift {"rendererOptions": {"objective-c-support": true, "just-types": true}}
+render swift {"rendererOptions": {"optional-enums": true}}
+render swift {"rendererOptions": {"optional-enums": true, "density": "dense"}}
+render swift {"rendererOptions": {"optional-enums": true, "density": "dense", "mutable-properties": true}}
+render swift {"rendererOptions": {"density": "dense"}}
+render swift {"rendererOptions": {"density": "dense", "just-types": true}}
+render swift {"rendererOptions": {"density": "dense", "access-level": "public"}}
+render swift {"rendererOptions": {"support-linux": true}}
+render swift {"rendererOptions": {"support-linux": true, "alamofire": true}}
+render swift {"rendererOptions": {"access-level": "public"}}
+render swift {"rendererOptions": {"access-level": "public", "struct-or-class": "class", "sendable": true}}
+render swift {"rendererOptions": {"protocol": "equatable"}}
+render swift {"rendererOptions": {"protocol": "hashable", "just-types": true}}
+render swift {"rendererOptions": {"protocol": "equatable", "alamofire": true, "sendable": true, "objective-c-support": true}}
+render swift {"rendererOptions": {"acronym-style": "camel"}}
+render swift {"rendererOptions": {"acronym-style": "lowerCase", "type-prefix": "QT"}}
+render swift {"rendererOptions": {"multi-file-output": true}}
+render swift {"rendererOptions": {"multi-file-output": true, "just-types": true}}
+render swift {"rendererOptions": {"multi-file-output": true, "initializers": false}}
+render swift {"rendererOptions": {"multi-file-output": true, "alamofire": true, "protocol": "hashable"}}
+render swift {"rendererOptions": {"multi-file-output": true, "optional-enums": true, "support-linux": true}}
+render swift {"rendererOptions": {"multi-file-output": true}, "leadingComments": ["Leading comment", {"lines": ["line one", "line two"]}]}
+render swift {"rendererOptions": {"multi-file-output": true, "type-prefix": "QT"}}
+render swift {"alphabetize": true}
+render swift {"rendererOptions": {"density": "dense"}, "alphabetize": true}
+render swift {"indentation": "\t"}
+render swift {"leadingComments": ["Leading comment", {"lines": ["line one", "line two"]}]}
+render swift {"rendererOptions": {"just-types": true}, "leadingComments": ["Leading comment"]}
+render swift {"rendererOptions": {"struct-or-class": "nope", "density": "nope"}}
+render swift {"rendererOptions": {"density": "nope", "access-level": "private"}}
+render swift {"rendererOptions": {"protocol": "comparable"}}

@@ -1,0 +1,13 @@
+# Objective-C class prefix inference from the first top-level name: the
+# leading capitals but the last one (ABCWidget: AB), at least two of them
+# (QT otherwise). A class name shorter than NSString cannot pad the
+# --functions prototypes (repeatString fails). With only classes and enums
+# no map function is needed.
+input schema ABCWidget {"type": "object", "properties": {"x": {"type": "string"}, "k": {"enum": ["a", "b"]}}}
+input schema A {"type": "object", "properties": {"y": {"type": "boolean"}}}
+pipeline {"lang": "objc"}
+
+render objc {}
+render objc {"rendererOptions": {"functions": true}}
+render objc {"rendererOptions": {"class-prefix": "ABCD"}}
+render objc {"rendererOptions": {"class-prefix": "QT", "functions": true}}

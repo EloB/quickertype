@@ -1,0 +1,274 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Numbers"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Number"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Mixed"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 3
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Mixed"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     1,
+     4
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Mixed"
+      ],
+      "alts": [],
+      "d": 5
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Kind"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "x",
+     "y"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "Numbers",
+    0
+   ],
+   [
+    "Mixed",
+    2
+   ],
+   [
+    "Kind",
+    5
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<std::optional<T>> {\n        static void to_json(json & j, const std::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::optional<T> from_json(const json & j) {\n            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n\n    using MixedElement = std::variant<int64_t, std::string>;\n\n    enum class Kind : int { X, Y };\n\n    using Numbers = std::vector<int64_t>;\n    using Mixed = std::vector<MixedElement>;\n}\n\nnamespace quicktype {\nvoid from_json(const json & j, Kind & x);\nvoid to_json(json & j, const Kind & x);\n}\nnamespace nlohmann {\ntemplate <>\nstruct adl_serializer<std::variant<int64_t, std::string>> {\n    static void from_json(const json & j, std::variant<int64_t, std::string> & x);\n    static void to_json(json & j, const std::variant<int64_t, std::string> & x);\n};\n}\nnamespace quicktype {\n    inline void from_json(const json & j, Kind & x) {\n        if (j == \"x\") x = Kind::X;\n        else if (j == \"y\") x = Kind::Y;\n        else { throw std::runtime_error(\"Cannot deserialize to enumeration \\\"Kind\\\"\"); }\n    }\n\n    inline void to_json(json & j, const Kind & x) {\n        switch (x) {\n            case Kind::X: j = \"x\"; break;\n            case Kind::Y: j = \"y\"; break;\n            default: throw std::runtime_error(\"Unexpected value in enumeration \\\"Kind\\\": \" + std::to_string(static_cast<int>(x)));\n        }\n    }\n}\nnamespace nlohmann {\n    inline void adl_serializer<std::variant<int64_t, std::string>>::from_json(const json & j, std::variant<int64_t, std::string> & x) {\n        if (j.is_number_integer())\n            x = j.get<int64_t>();\n        else if (j.is_string())\n            x = j.get<std::string>();\n        else throw std::runtime_error(\"Could not deserialise!\");\n    }\n\n    inline void adl_serializer<std::variant<int64_t, std::string>>::to_json(json & j, const std::variant<int64_t, std::string> & x) {\n        switch (x.index()) {\n            case 0:\n                j = std::get<int64_t>(x);\n                break;\n            case 1:\n                j = std::get<std::string>(x);\n                break;\n            default: throw std::runtime_error(\"Input JSON does not conform to schema!\");\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "#pragma once\n\n#include <variant>\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\nusing MixedElement = std::variant<int64_t, std::string>;\n\nenum class Kind : int { X, Y };\n\nnamespace quicktype {\n    using Numbers = std::vector<int64_t>;\n    using Mixed = std::vector<MixedElement>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "helper.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\n#include <sstream>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n}\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<std::optional<T>> {\n        static void to_json(json & j, const std::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::optional<T> from_json(const json & j) {\n            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n",
+     "annotations": []
+    },
+    {
+     "name": "Generators.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\n#include \"Kind.hpp\"\n#include \"MixedElement.hpp\"\n\nnamespace quicktype {\nvoid from_json(const json & j, Kind & x);\nvoid to_json(json & j, const Kind & x);\n}\nnamespace nlohmann {\ntemplate <>\nstruct adl_serializer<std::variant<int64_t, std::string>> {\n    static void from_json(const json & j, std::variant<int64_t, std::string> & x);\n    static void to_json(json & j, const std::variant<int64_t, std::string> & x);\n};\n}\nnamespace quicktype {\n    inline void from_json(const json & j, Kind & x) {\n        if (j == \"x\") x = Kind::X;\n        else if (j == \"y\") x = Kind::Y;\n        else { throw std::runtime_error(\"Cannot deserialize to enumeration \\\"Kind\\\"\"); }\n    }\n\n    inline void to_json(json & j, const Kind & x) {\n        switch (x) {\n            case Kind::X: j = \"x\"; break;\n            case Kind::Y: j = \"y\"; break;\n            default: throw std::runtime_error(\"Unexpected value in enumeration \\\"Kind\\\": \" + std::to_string(static_cast<int>(x)));\n        }\n    }\n}\nnamespace nlohmann {\n    inline void adl_serializer<std::variant<int64_t, std::string>>::from_json(const json & j, std::variant<int64_t, std::string> & x) {\n        if (j.is_number_integer())\n            x = j.get<int64_t>();\n        else if (j.is_string())\n            x = j.get<std::string>();\n        else throw std::runtime_error(\"Could not deserialise!\");\n    }\n\n    inline void adl_serializer<std::variant<int64_t, std::string>>::to_json(json & j, const std::variant<int64_t, std::string> & x) {\n        switch (x.index()) {\n            case 0:\n                j = std::get<int64_t>(x);\n                break;\n            case 1:\n                j = std::get<std::string>(x);\n                break;\n            default: throw std::runtime_error(\"Input JSON does not conform to schema!\");\n        }\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "MixedElement.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    using MixedElement = std::variant<int64_t, std::string>;\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Kind.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    enum class Kind : int { X, Y };\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "out.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\n#include \"Generators.hpp\"\n#include \"MixedElement.hpp\"\n#include \"Kind.hpp\"\nnamespace quicktype {\n    using Numbers = std::vector<int64_t>;\n    using Mixed = std::vector<MixedElement>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "MixedElement.hpp",
+     "text": "#pragma once\n\n#include <variant>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    using MixedElement = std::variant<int64_t, std::string>;\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Kind.hpp",
+     "text": "#pragma once\n\n#include <variant>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    enum class Kind : int { X, Y };\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "out.hpp",
+     "text": "#pragma once\n\n#include <variant>\n\n#include \"MixedElement.hpp\"\n#include \"Kind.hpp\"\nnamespace quicktype {\n    using Numbers = std::vector<int64_t>;\n    using Mixed = std::vector<MixedElement>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "Kind.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source",
+    "wstring": "use-wstring"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "helper.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Numbers);\n//     std::wcout << wdump((nlohmann::json) Mixed);\n//     std::wcout << wdump((nlohmann::json) Kind);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n#include <codecvt>\n#include <locale>\n\n#include <sstream>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    template<typename T>\n    struct tag {};\n\n    template<typename fromType, typename toType>\n    class Utf16_Utf8 {\n        private:\n        template<typename TF, typename TT>\n        static toType convert(tag<std::shared_ptr<TF> >, tag<std::shared_ptr<TT> >, fromType ptr) {\n            if (ptr == nullptr) return std::unique_ptr<TT>(); else return std::unique_ptr<TT>(new TT(Utf16_Utf8<TF,TT>::convert(*ptr)));\n        }\n\n        template<typename TF, typename TT>\n        static toType convert(tag<std::vector<TF> >, tag<std::vector<TT> >, fromType v) {\n            auto it = v.begin();\n            auto newVector = std::vector<TT>();\n            while (it != v.end()) {\n                newVector.push_back(Utf16_Utf8<TF,TT>::convert(*it));\n                it++;\n            }\n            return newVector;\n        }\n\n        template<typename KF, typename VF, typename KT, typename VT>\n        static toType convert(tag<std::map<KF,VF> >, tag<std::map<KT,VT> >, fromType m) {\n            auto it = m.begin();\n            auto newMap = std::map<KT, VT>();\n            while (it != m.end()) {\n                newMap.insert(std::pair<KT, VT>(Utf16_Utf8<KF, KT>::convert(it->first), Utf16_Utf8<VF, VT>::convert(it->second)));\n                it++;\n            }\n            return newMap;\n        }\n\n        template<typename TF, typename TT>\n        static fromType convert(tag<TF>, tag<TT>, fromType from) {\n            return from;\n        }\n\n        static std::wstring convert(tag<std::string>, tag<std::wstring>, std::string str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.from_bytes(str.data());\n        }\n\n        static std::string convert(tag<std::wstring>, tag<std::string>, std::wstring str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.to_bytes(str.data());\n        }\n\n        public:\n        static toType convert(fromType in) {\n            return convert(tag<fromType>(), tag<toType>(), in);\n        }\n    };\n\n    template<typename T>\n    std::wstring wdump(const T& j) {\n        std::ostringstream s;\n        s << j;\n        return Utf16_Utf8<std::string, std::wstring>::convert(s.str()); \n    }\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n}\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<std::optional<T>> {\n        static void to_json(json & j, const std::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::optional<T> from_json(const json & j) {\n            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n",
+     "annotations": []
+    },
+    {
+     "name": "Generators.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Numbers);\n//     std::wcout << wdump((nlohmann::json) Mixed);\n//     std::wcout << wdump((nlohmann::json) Kind);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\n#include \"Kind.hpp\"\n#include \"MixedElement.hpp\"\n\nnamespace quicktype {\nvoid from_json(const json & j, Kind & x);\nvoid to_json(json & j, const Kind & x);\n}\nnamespace nlohmann {\ntemplate <>\nstruct adl_serializer<std::variant<int64_t, std::wstring>> {\n    static void from_json(const json & j, std::variant<int64_t, std::wstring> & x);\n    static void to_json(json & j, const std::variant<int64_t, std::wstring> & x);\n};\n}\nnamespace quicktype {\n    inline void from_json(const json & j, Kind & x) {\n        if (j == Utf16_Utf8<std::wstring, std::string>::convert(L\"x\")) x = Kind::X;\n        else if (j == Utf16_Utf8<std::wstring, std::string>::convert(L\"y\")) x = Kind::Y;\n        else { throw std::runtime_error(\"Cannot deserialize to enumeration \\\"Kind\\\"\"); }\n    }\n\n    inline void to_json(json & j, const Kind & x) {\n        switch (x) {\n            case Kind::X: j = Utf16_Utf8<std::wstring, std::string>::convert(L\"x\"); break;\n            case Kind::Y: j = Utf16_Utf8<std::wstring, std::string>::convert(L\"y\"); break;\n            default: throw std::runtime_error(\"Unexpected value in enumeration \\\"Kind\\\": \" + std::to_string(static_cast<int>(x)));\n        }\n    }\n}\nnamespace nlohmann {\n    inline void adl_serializer<std::variant<int64_t, std::wstring>>::from_json(const json & j, std::variant<int64_t, std::wstring> & x) {\n        if (j.is_number_integer())\n            x = j.get<int64_t>();\n        else if (j.is_string())\n            x = quicktype::Utf16_Utf8<std::string, std::wstring>::convert(j.get<std::string>());\n        else throw std::runtime_error(\"Could not deserialise!\");\n    }\n\n    inline void adl_serializer<std::variant<int64_t, std::wstring>>::to_json(json & j, const std::variant<int64_t, std::wstring> & x) {\n        switch (x.index()) {\n            case 0:\n                j = std::get<int64_t>(x);\n                break;\n            case 1:\n                j = quicktype::Utf16_Utf8<std::wstring, std::string>::convert(std::get<std::wstring>(x));\n                break;\n            default: throw std::runtime_error(\"Input JSON does not conform to schema!\");\n        }\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "MixedElement.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Numbers);\n//     std::wcout << wdump((nlohmann::json) Mixed);\n//     std::wcout << wdump((nlohmann::json) Kind);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    using MixedElement = std::variant<int64_t, std::wstring>;\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Kind.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Numbers data = nlohmann::json::parse(jsonString);\n//     Mixed data = nlohmann::json::parse(jsonString);\n//     Kind data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Numbers);\n//     std::wcout << wdump((nlohmann::json) Mixed);\n//     std::wcout << wdump((nlohmann::json) Kind);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    enum class Kind : int { X, Y };\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "cplusplus-shapes"
+}

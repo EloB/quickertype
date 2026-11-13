@@ -109,8 +109,6 @@ pub const DART_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DartTargetLanguage;
 
-// TODO(renderer): port the hooks DartTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for DartTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &DART_LANGUAGE_CONFIG
@@ -139,4 +137,23 @@ impl TargetLanguage for DartTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer` + `render`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::dart_renderer::DartOptions::parse(renderer_options)?;
+        let renderer = super::dart_renderer::DartRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

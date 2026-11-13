@@ -1,0 +1,33 @@
+# The C++ renderer on option combinations and schema features the golden
+# corpus does not reach: constraints (with getters/setters, wide strings,
+# boost), default values, qt-enum-values, NUL in literals, uuid/date-time
+# checks, large enums, recursive unions, hide-null-optional on any/null,
+# top-level maps under wstring, nested namespaces, leading comments.
+# Multi-source output overflows the stack on a recursive union (TS
+# generatedTypes recurses without a visited set); the last render records
+# that error.
+input schema TopLevel {"type": "object", "description": "The top level, with a trailing backslash \\", "definitions": {"rec": {"anyOf": [{"type": "integer"}, {"type": "array", "items": {"$ref": "#/definitions/rec"}}]}, "maybeRec": {"anyOf": [{"type": "null"}, {"type": "string"}, {"type": "object", "additionalProperties": {"$ref": "#/definitions/maybeRec"}}]}, "node": {"type": "object", "properties": {"value": {"type": "string"}, "next": {"$ref": "#/definitions/node"}, "children": {"type": "array", "items": {"$ref": "#/definitions/node"}}}, "required": ["value"]}}, "properties": {"small": {"type": "integer", "minimum": -5, "maximum": 100, "default": 7}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 1e+21}, "maybeSmall": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]}, "name": {"type": "string", "minLength": 1, "maxLength": 3, "pattern": "^[a-z\"\\\\]+$", "default": "a\u0000b"}, "optName": {"type": "string", "pattern": "^x"}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4}, "flag": {"type": "boolean", "default": true}, "id": {"type": "string", "format": "uuid"}, "when": {"type": "string", "format": "date-time"}, "optWhen": {"type": "string", "format": "date-time"}, "kind": {"enum": ["one", "two", "nul\u0000"], "default": "two", "qt-enum-values": {"one": "1", "two": {"c++": "20", "*": "2"}}}, "bigKind": {"enum": ["c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c15", "c16"], "default": "c3"}, "maybeKind": {"anyOf": [{"enum": ["a", "b"]}, {"type": "null"}]}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "boolean"}, {"type": "number"}]}, "maybeChoice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "mixedMap": {"type": "object", "additionalProperties": {"anyOf": [{"type": "integer"}, {"type": "array", "items": {"type": "string"}}]}}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "anything": {}, "optAnything": {}, "nothing": {"type": "null"}, "optNothing": {"type": "null"}, "rec": {"$ref": "#/definitions/rec"}, "optRec": {"$ref": "#/definitions/rec"}, "maybeRec": {"$ref": "#/definitions/maybeRec"}, "node": {"$ref": "#/definitions/node"}, "optNode": {"$ref": "#/definitions/node"}, "nul\u0000key": {"type": "integer"}}, "required": ["small", "ratio", "maybeSmall", "name", "tags", "flag", "id", "when", "kind", "bigKind", "maybeKind", "choice", "maybeChoice", "mixedMap", "counts", "anything", "nothing", "rec", "maybeRec", "node", "nul\u0000key"]}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Names {"type": "array", "items": {"type": "string"}}
+input schema Alias {"type": "string"}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+pipeline {"lang": "cplusplus"}
+
+render cplusplus {}
+render cplusplus {"alphabetize": true}
+render cplusplus {"rendererOptions": {"code-format": "with-struct"}}
+render cplusplus {"rendererOptions": {"wstring": "use-wstring"}}
+render cplusplus {"rendererOptions": {"wstring": "use-wstring", "code-format": "with-struct", "const-style": "east-const"}}
+render cplusplus {"rendererOptions": {"boost": true}}
+render cplusplus {"rendererOptions": {"boost": true, "wstring": "use-wstring", "hide-null-optional": true}}
+render cplusplus {"rendererOptions": {"const-style": "east-const"}}
+render cplusplus {"rendererOptions": {"just-types": true}}
+render cplusplus {"rendererOptions": {"just-types": true, "code-format": "with-struct", "boost": true}}
+render cplusplus {"rendererOptions": {"hide-null-optional": true}}
+render cplusplus {"rendererOptions": {"hide-null-optional": true, "code-format": "with-struct"}}
+render cplusplus {"rendererOptions": {"namespace": "acme::json::v1", "include-location": "global-include", "enum-type": "uint8_t"}}
+render cplusplus {"rendererOptions": {"namespace": ""}}
+render cplusplus {"rendererOptions": {"type-style": "camel-case", "member-style": "pascal-case-upper-acronyms", "enumerator-style": "original-case"}}
+render cplusplus {"rendererOptions": {"type-style": "underscore-case", "member-style": "original-case", "enumerator-style": "camel-case-upper-acronyms"}}
+render cplusplus {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block", "two"]}]}
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}
