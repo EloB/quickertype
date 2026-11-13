@@ -1,0 +1,105 @@
+// To parse this JSON data, do
+//
+//     final purpleDateTime = purpleDateTimeFromJson(jsonString);
+
+import 'dart:convert';
+
+PurpleDateTime purpleDateTimeFromJson(String str) => PurpleDateTime.fromMap(json.decode(str));
+
+String purpleDateTimeToJson(PurpleDateTime data) => json.encode(data.toMap());
+
+class PurpleDateTime {
+    final List<dynamic> complexUnionArray;
+    final DateTime date;
+    final DateTime dateTime;
+    final LocalDate? localDateClass;
+    final OffsetDateTime? offsetDateTimeClass;
+    final OffsetTime? offsetTimeClass;
+    final String time;
+    final List<String> unionArray;
+
+    PurpleDateTime({
+        required this.complexUnionArray,
+        required this.date,
+        required this.dateTime,
+        this.localDateClass,
+        this.offsetDateTimeClass,
+        this.offsetTimeClass,
+        required this.time,
+        required this.unionArray,
+    });
+
+    factory PurpleDateTime.fromMap(Map<String, dynamic> json) => PurpleDateTime(
+        complexUnionArray: List<dynamic>.from(json["complex-union-array"].map((x) => x)),
+        date: DateTime.parse(json["date"]),
+        dateTime: DateTime.parse(json["date-time"]),
+        localDateClass: json["local-date-class"] == null ? null : LocalDate.fromMap(json["local-date-class"]),
+        offsetDateTimeClass: json["offset-date-time-class"] == null ? null : OffsetDateTime.fromMap(json["offset-date-time-class"]),
+        offsetTimeClass: json["offset-time-class"] == null ? null : OffsetTime.fromMap(json["offset-time-class"]),
+        time: json["time"],
+        unionArray: List<String>.from(json["union-array"].map((x) => x)),
+    );
+
+    Map<String, dynamic> toMap() => {
+        "complex-union-array": List<dynamic>.from(complexUnionArray.map((x) => x)),
+        "date": "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+        "date-time": dateTime.toIso8601String(),
+        "local-date-class": localDateClass?.toMap(),
+        "offset-date-time-class": offsetDateTimeClass?.toMap(),
+        "offset-time-class": offsetTimeClass?.toMap(),
+        "time": time,
+        "union-array": List<dynamic>.from(unionArray.map((x) => x)),
+    };
+}
+
+enum ComplexUnionArrayEnum {
+    FOO,
+    BAR
+}
+
+final complexUnionArrayEnumValues = EnumValues({
+    "foo": ComplexUnionArrayEnum.FOO,
+    "bar": ComplexUnionArrayEnum.BAR
+});
+
+class LocalDate {
+    LocalDate();
+
+    factory LocalDate.fromMap(Map<String, dynamic> json) => LocalDate(
+    );
+
+    Map<String, dynamic> toMap() => {
+    };
+}
+
+class OffsetDateTime {
+    OffsetDateTime();
+
+    factory OffsetDateTime.fromMap(Map<String, dynamic> json) => OffsetDateTime(
+    );
+
+    Map<String, dynamic> toMap() => {
+    };
+}
+
+class OffsetTime {
+    OffsetTime();
+
+    factory OffsetTime.fromMap(Map<String, dynamic> json) => OffsetTime(
+    );
+
+    Map<String, dynamic> toMap() => {
+    };
+}
+
+class EnumValues<T> {
+    Map<String, T> map;
+    late Map<T, String> reverseMap;
+
+    EnumValues(this.map);
+
+    Map<T, String> get reverse {
+            reverseMap = map.map((k, v) => MapEntry(v, k));
+            return reverseMap;
+    }
+}

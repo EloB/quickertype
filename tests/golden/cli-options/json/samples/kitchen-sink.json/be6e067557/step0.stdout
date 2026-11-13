@@ -1,0 +1,99 @@
+// To parse the JSON, install Klaxon and do:
+//
+//   val kitchenSink = KitchenSink.fromJson(jsonString)
+
+package quicktype
+
+import com.beust.klaxon.*
+
+private fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =
+    this.converter(object: Converter {
+        @Suppress("UNCHECKED_CAST")
+        override fun toJson(value: Any)        = toJson(value as T)
+        override fun fromJson(jv: JsonValue)   = if (isUnion && jv.inside is JsonArray<*>) (jv.inside as JsonArray<*>).map { fromJson(JsonValue(it, null, null, this@convert)) } else fromJson(jv) as Any
+        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)
+    })
+
+private val klaxon = Klaxon()
+    .convert(DifferentThingElement::class, { DifferentThingElement.fromJson(it) }, { it.toJson() }, true)
+    .convert(IntOrString::class,           { IntOrString.fromJson(it) },           { it.toJson() }, true)
+
+data class KitchenSink (
+    val stringValue: String,
+    val dateValue: String,
+    val uuidValue: String,
+
+    @Json(name = "name with spaces")
+    val nameWithSpaces: Any? = null,
+
+    val doubleValue: Double,
+    val intValue: Long,
+    val booleanValue: Boolean,
+    val nullValue: Any? = null,
+    val tuples: List<List<IntOrString>>,
+    val person: PurplePerson,
+    val people: List<PersonElement>,
+    val differentThings: List<DifferentThingElement>,
+    val mapValue: Map<String, Long?>,
+    val nullableMapValue: Map<String, Long?>
+) {
+    public fun toJson() = klaxon.toJsonString(this)
+
+    companion object {
+        public fun fromJson(json: String) = klaxon.parse<KitchenSink>(json)
+    }
+}
+
+sealed class DifferentThingElement {
+    class DifferentThingClassValue(val value: DifferentThingClass) : DifferentThingElement()
+    class IntegerValue(val value: Long)                            : DifferentThingElement()
+    class StringValue(val value: String)                           : DifferentThingElement()
+
+    public fun toJson(): String = klaxon.toJsonString(when (this) {
+        is DifferentThingClassValue -> this.value
+        is IntegerValue             -> this.value
+        is StringValue              -> this.value
+    })
+
+    companion object {
+        public fun fromJson(jv: JsonValue): DifferentThingElement = when (jv.inside) {
+            is JsonObject   -> DifferentThingClassValue(jv.obj?.let { klaxon.parseFromJsonObject<DifferentThingClass>(it) }!!)
+            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)
+            is String       -> StringValue(jv.string!!)
+            else            -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class DifferentThingClass (
+    val name: String
+)
+
+data class PersonElement (
+    val name: String,
+    val intOrString: IntOrString,
+    val optionalValue: Boolean? = null
+)
+
+sealed class IntOrString {
+    class IntegerValue(val value: Long)  : IntOrString()
+    class StringValue(val value: String) : IntOrString()
+
+    public fun toJson(): String = klaxon.toJsonString(when (this) {
+        is IntegerValue -> this.value
+        is StringValue  -> this.value
+    })
+
+    companion object {
+        public fun fromJson(jv: JsonValue): IntOrString = when (jv.inside) {
+            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)
+            is String       -> StringValue(jv.string!!)
+            else            -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class PurplePerson (
+    val name: String,
+    val intOrString: Long
+)

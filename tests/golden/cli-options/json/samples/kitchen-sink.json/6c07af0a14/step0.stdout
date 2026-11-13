@@ -1,0 +1,57 @@
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer = Strict::Integer
+  Nil     = Strict::Nil
+  Bool    = Strict::Bool
+  Hash    = Strict::Hash
+  String  = Strict::String
+  Double  = Strict::Float | Strict::Integer
+end
+
+class DifferentThingClass < Dry::Struct
+  attribute :different_thing_name, Types::String
+end
+
+class DifferentThingElement < Dry::Struct
+  attribute :different_thing_class, DifferentThingClass.optional
+  attribute :integer,               Types::Integer.optional
+  attribute :string,                Types::String.optional
+end
+
+class IntOrString < Dry::Struct
+  attribute :integer, Types::Integer.optional
+  attribute :string,  Types::String.optional
+end
+
+class PersonElement < Dry::Struct
+  attribute :person_name,    Types::String
+  attribute :int_or_string,  Types.Instance(IntOrString)
+  attribute :optional_value, Types::Bool.optional
+end
+
+class Person1 < Dry::Struct
+  attribute :person_name,   Types::String
+  attribute :int_or_string, Types::Integer
+end
+
+class KitchenSink < Dry::Struct
+  attribute :string_value,       Types::String
+  attribute :date_value,         Types::String
+  attribute :uuid_value,         Types::String
+  attribute :name_with_spaces,   Types::Nil
+  attribute :double_value,       Types::Double
+  attribute :int_value,          Types::Integer
+  attribute :boolean_value,      Types::Bool
+  attribute :null_value,         Types::Nil
+  attribute :tuples,             Types.Array(Types.Array(Types.Instance(IntOrString)))
+  attribute :person,             Person1
+  attribute :people,             Types.Array(PersonElement)
+  attribute :different_things,   Types.Array(Types.Instance(DifferentThingElement))
+  attribute :map_value,          Types::Hash.meta(of: Types::Integer.optional)
+  attribute :nullable_map_value, Types::Hash.meta(of: Types::Integer.optional)
+end

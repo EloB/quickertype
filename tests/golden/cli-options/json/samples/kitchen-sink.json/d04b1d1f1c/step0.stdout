@@ -1,0 +1,89 @@
+// Example code that deserializes and serializes the model.
+// extern crate serde;
+// #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_json;
+//
+// use generated_module::kitchen-sink;
+//
+// fn main() {
+//     let json = r#"{"answer": 42}"#;
+//     let model: kitchen-sink = serde_json::from_str(&json).unwrap();
+// }
+
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KitchenSink {
+    pub string_value: String,
+
+    pub date_value: String,
+
+    pub uuid_value: String,
+
+    #[serde(rename = "name with spaces")]
+    pub name_with_spaces: Option<serde_json::Value>,
+
+    pub double_value: f64,
+
+    pub int_value: i64,
+
+    pub boolean_value: bool,
+
+    pub null_value: Option<serde_json::Value>,
+
+    pub tuples: Vec<Vec<IntOrString>>,
+
+    pub person: PurplePerson,
+
+    pub people: Vec<PersonElement>,
+
+    pub different_things: Vec<DifferentThingElement>,
+
+    pub map_value: HashMap<String, Option<i64>>,
+
+    pub nullable_map_value: HashMap<String, Option<i64>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DifferentThingElement {
+    DifferentThingClass(DifferentThingClass),
+
+    Integer(i64),
+
+    PurpleString(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DifferentThingClass {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonElement {
+    pub name: String,
+
+    pub int_or_string: IntOrString,
+
+    pub optional_value: Option<bool>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum IntOrString {
+    Integer(i64),
+
+    PurpleString(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PurplePerson {
+    pub name: String,
+
+    pub int_or_string: i64,
+}

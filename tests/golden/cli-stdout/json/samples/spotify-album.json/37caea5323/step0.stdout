@@ -1,0 +1,84 @@
+import * as z from "zod";
+
+
+export const ExternalUrlsSchema = z.object({
+    "spotify": z.string(),
+});
+export type ExternalUrls = z.infer<typeof ExternalUrlsSchema>;
+
+export const CopyrightSchema = z.object({
+    "text": z.string(),
+    "type": z.string(),
+});
+export type Copyright = z.infer<typeof CopyrightSchema>;
+
+export const ExternalIdsSchema = z.object({
+    "upc": z.string(),
+});
+export type ExternalIds = z.infer<typeof ExternalIdsSchema>;
+
+export const ImageSchema = z.object({
+    "height": z.number().int(),
+    "url": z.string(),
+    "width": z.number().int(),
+});
+export type Image = z.infer<typeof ImageSchema>;
+
+export const ArtistSchema = z.object({
+    "external_urls": ExternalUrlsSchema,
+    "href": z.string(),
+    "id": z.string(),
+    "name": z.string(),
+    "type": z.string(),
+    "uri": z.string(),
+});
+export type Artist = z.infer<typeof ArtistSchema>;
+
+export const ItemSchema = z.object({
+    "artists": z.array(ArtistSchema),
+    "available_markets": z.array(z.string()),
+    "disc_number": z.number().int(),
+    "duration_ms": z.number().int(),
+    "explicit": z.boolean(),
+    "external_urls": ExternalUrlsSchema,
+    "href": z.string(),
+    "id": z.string(),
+    "name": z.string(),
+    "preview_url": z.string(),
+    "track_number": z.number().int(),
+    "type": z.string(),
+    "uri": z.string(),
+});
+export type Item = z.infer<typeof ItemSchema>;
+
+export const TracksSchema = z.object({
+    "href": z.string(),
+    "items": z.array(ItemSchema),
+    "limit": z.number().int(),
+    "next": z.null(),
+    "offset": z.number().int(),
+    "previous": z.null(),
+    "total": z.number().int(),
+});
+export type Tracks = z.infer<typeof TracksSchema>;
+
+export const SpotifyAlbumSchema = z.object({
+    "album_type": z.string(),
+    "artists": z.array(ArtistSchema),
+    "available_markets": z.array(z.string()),
+    "copyrights": z.array(CopyrightSchema),
+    "external_ids": ExternalIdsSchema,
+    "external_urls": ExternalUrlsSchema,
+    "genres": z.array(z.any()),
+    "href": z.string(),
+    "id": z.string(),
+    "images": z.array(ImageSchema),
+    "name": z.string(),
+    "popularity": z.number().int(),
+    "release_date": z.string().regex(/^-?\d+$/),
+    "release_date_precision": z.string(),
+    "tracks": TracksSchema,
+    "type": z.string(),
+    "uri": z.string(),
+});
+export type SpotifyAlbum = z.infer<typeof SpotifyAlbumSchema>;

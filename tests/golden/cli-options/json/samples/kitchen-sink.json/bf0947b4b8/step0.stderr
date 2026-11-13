@@ -1,0 +1,6 @@
+
+Issue in line 23: The only value for this in the input is null, which means you probably need a more complete input sample.
+23:     final dynamic nameWithSpaces;
+
+Issue in line 31: The only value for this in the input is null, which means you probably need a more complete input sample.
+31:     final dynamic nullValue;

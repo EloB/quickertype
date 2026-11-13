@@ -1,0 +1,41 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let dateTime = try DateTime(json)
+
+import Foundation
+
+// MARK: - DateTime
+struct DateTime {
+    let complexUnionArray: [ComplexUnionArrayElement]
+    let date: String
+    let dateTime: Date
+    let localDateClass: LocalDate?
+    let offsetDateTimeClass: OffsetDateTime?
+    let offsetTimeClass: OffsetTime?
+    let time: String
+    let unionArray: [String]
+}
+
+enum ComplexUnionArrayElement {
+    case dateTime(Date)
+    case enumeration(ComplexUnionArrayEnum)
+    case integer(Int)
+}
+
+enum ComplexUnionArrayEnum: String {
+    case foo
+    case bar
+}
+
+// MARK: - LocalDate
+struct LocalDate {
+}
+
+// MARK: - OffsetDateTime
+struct OffsetDateTime {
+}
+
+// MARK: - OffsetTime
+struct OffsetTime {
+}

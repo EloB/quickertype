@@ -1,0 +1,554 @@
+//  To parse this JSON data, first install
+//
+//      json.hpp  https://github.com/nlohmann/json
+//
+//  Then include this file, and then do
+//
+//     SpotifyAlbum data = nlohmann::json::parse(jsonString);
+
+#pragma once
+
+#include "json.hpp"
+
+#include <optional>
+#include <stdexcept>
+#include <regex>
+
+namespace quicktype {
+    using nlohmann::json;
+
+    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER
+    #define NLOHMANN_UNTYPED_quicktype_HELPER
+    inline json get_untyped(const json & j, const char * property) {
+        if (j.find(property) != j.end()) {
+            return j.at(property).get<json>();
+        }
+        return json();
+    }
+
+    inline json get_untyped(const json & j, std::string property) {
+        return get_untyped(j, property.data());
+    }
+    #endif
+
+    class ExternalUrls {
+        public:
+        ExternalUrls() = default;
+        virtual ~ExternalUrls() = default;
+
+        private:
+        std::string spotify;
+
+        public:
+        const std::string & get_spotify() const { return spotify; }
+        std::string & get_mutable_spotify() { return spotify; }
+        void set_spotify(const std::string & value) { this->spotify = value; }
+    };
+
+    class Artist {
+        public:
+        Artist() = default;
+        virtual ~Artist() = default;
+
+        private:
+        ExternalUrls external_urls;
+        std::string href;
+        std::string id;
+        std::string name;
+        std::string type;
+        std::string uri;
+
+        public:
+        const ExternalUrls & get_external_urls() const { return external_urls; }
+        ExternalUrls & get_mutable_external_urls() { return external_urls; }
+        void set_external_urls(const ExternalUrls & value) { this->external_urls = value; }
+
+        const std::string & get_href() const { return href; }
+        std::string & get_mutable_href() { return href; }
+        void set_href(const std::string & value) { this->href = value; }
+
+        const std::string & get_id() const { return id; }
+        std::string & get_mutable_id() { return id; }
+        void set_id(const std::string & value) { this->id = value; }
+
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+
+        const std::string & get_type() const { return type; }
+        std::string & get_mutable_type() { return type; }
+        void set_type(const std::string & value) { this->type = value; }
+
+        const std::string & get_uri() const { return uri; }
+        std::string & get_mutable_uri() { return uri; }
+        void set_uri(const std::string & value) { this->uri = value; }
+    };
+
+    class Copyright {
+        public:
+        Copyright() = default;
+        virtual ~Copyright() = default;
+
+        private:
+        std::string text;
+        std::string type;
+
+        public:
+        const std::string & get_text() const { return text; }
+        std::string & get_mutable_text() { return text; }
+        void set_text(const std::string & value) { this->text = value; }
+
+        const std::string & get_type() const { return type; }
+        std::string & get_mutable_type() { return type; }
+        void set_type(const std::string & value) { this->type = value; }
+    };
+
+    class ExternalIds {
+        public:
+        ExternalIds() = default;
+        virtual ~ExternalIds() = default;
+
+        private:
+        std::string upc;
+
+        public:
+        const std::string & get_upc() const { return upc; }
+        std::string & get_mutable_upc() { return upc; }
+        void set_upc(const std::string & value) { this->upc = value; }
+    };
+
+    class Image {
+        public:
+        Image() = default;
+        virtual ~Image() = default;
+
+        private:
+        int64_t height;
+        std::string url;
+        int64_t width;
+
+        public:
+        const int64_t & get_height() const { return height; }
+        int64_t & get_mutable_height() { return height; }
+        void set_height(const int64_t & value) { this->height = value; }
+
+        const std::string & get_url() const { return url; }
+        std::string & get_mutable_url() { return url; }
+        void set_url(const std::string & value) { this->url = value; }
+
+        const int64_t & get_width() const { return width; }
+        int64_t & get_mutable_width() { return width; }
+        void set_width(const int64_t & value) { this->width = value; }
+    };
+
+    class Item {
+        public:
+        Item() = default;
+        virtual ~Item() = default;
+
+        private:
+        std::vector<Artist> artists;
+        std::vector<std::string> available_markets;
+        int64_t disc_number;
+        int64_t duration_ms;
+        bool item_explicit;
+        ExternalUrls external_urls;
+        std::string href;
+        std::string id;
+        std::string name;
+        std::string preview_url;
+        int64_t track_number;
+        std::string type;
+        std::string uri;
+
+        public:
+        const std::vector<Artist> & get_artists() const { return artists; }
+        std::vector<Artist> & get_mutable_artists() { return artists; }
+        void set_artists(const std::vector<Artist> & value) { this->artists = value; }
+
+        const std::vector<std::string> & get_available_markets() const { return available_markets; }
+        std::vector<std::string> & get_mutable_available_markets() { return available_markets; }
+        void set_available_markets(const std::vector<std::string> & value) { this->available_markets = value; }
+
+        const int64_t & get_disc_number() const { return disc_number; }
+        int64_t & get_mutable_disc_number() { return disc_number; }
+        void set_disc_number(const int64_t & value) { this->disc_number = value; }
+
+        const int64_t & get_duration_ms() const { return duration_ms; }
+        int64_t & get_mutable_duration_ms() { return duration_ms; }
+        void set_duration_ms(const int64_t & value) { this->duration_ms = value; }
+
+        const bool & get_item_explicit() const { return item_explicit; }
+        bool & get_mutable_item_explicit() { return item_explicit; }
+        void set_item_explicit(const bool & value) { this->item_explicit = value; }
+
+        const ExternalUrls & get_external_urls() const { return external_urls; }
+        ExternalUrls & get_mutable_external_urls() { return external_urls; }
+        void set_external_urls(const ExternalUrls & value) { this->external_urls = value; }
+
+        const std::string & get_href() const { return href; }
+        std::string & get_mutable_href() { return href; }
+        void set_href(const std::string & value) { this->href = value; }
+
+        const std::string & get_id() const { return id; }
+        std::string & get_mutable_id() { return id; }
+        void set_id(const std::string & value) { this->id = value; }
+
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+
+        const std::string & get_preview_url() const { return preview_url; }
+        std::string & get_mutable_preview_url() { return preview_url; }
+        void set_preview_url(const std::string & value) { this->preview_url = value; }
+
+        const int64_t & get_track_number() const { return track_number; }
+        int64_t & get_mutable_track_number() { return track_number; }
+        void set_track_number(const int64_t & value) { this->track_number = value; }
+
+        const std::string & get_type() const { return type; }
+        std::string & get_mutable_type() { return type; }
+        void set_type(const std::string & value) { this->type = value; }
+
+        const std::string & get_uri() const { return uri; }
+        std::string & get_mutable_uri() { return uri; }
+        void set_uri(const std::string & value) { this->uri = value; }
+    };
+
+    class Tracks {
+        public:
+        Tracks() = default;
+        virtual ~Tracks() = default;
+
+        private:
+        std::string href;
+        std::vector<Item> items;
+        int64_t limit;
+        nlohmann::json next;
+        int64_t offset;
+        nlohmann::json previous;
+        int64_t total;
+
+        public:
+        const std::string & get_href() const { return href; }
+        std::string & get_mutable_href() { return href; }
+        void set_href(const std::string & value) { this->href = value; }
+
+        const std::vector<Item> & get_items() const { return items; }
+        std::vector<Item> & get_mutable_items() { return items; }
+        void set_items(const std::vector<Item> & value) { this->items = value; }
+
+        const int64_t & get_limit() const { return limit; }
+        int64_t & get_mutable_limit() { return limit; }
+        void set_limit(const int64_t & value) { this->limit = value; }
+
+        const nlohmann::json & get_next() const { return next; }
+        nlohmann::json & get_mutable_next() { return next; }
+        void set_next(const nlohmann::json & value) { this->next = value; }
+
+        const int64_t & get_offset() const { return offset; }
+        int64_t & get_mutable_offset() { return offset; }
+        void set_offset(const int64_t & value) { this->offset = value; }
+
+        const nlohmann::json & get_previous() const { return previous; }
+        nlohmann::json & get_mutable_previous() { return previous; }
+        void set_previous(const nlohmann::json & value) { this->previous = value; }
+
+        const int64_t & get_total() const { return total; }
+        int64_t & get_mutable_total() { return total; }
+        void set_total(const int64_t & value) { this->total = value; }
+    };
+
+    class SpotifyAlbum {
+        public:
+        SpotifyAlbum() = default;
+        virtual ~SpotifyAlbum() = default;
+
+        private:
+        std::string album_type;
+        std::vector<Artist> artists;
+        std::vector<std::string> available_markets;
+        std::vector<Copyright> copyrights;
+        ExternalIds external_ids;
+        ExternalUrls external_urls;
+        std::vector<nlohmann::json> genres;
+        std::string href;
+        std::string id;
+        std::vector<Image> images;
+        std::string name;
+        int64_t popularity;
+        std::string release_date;
+        std::string release_date_precision;
+        Tracks tracks;
+        std::string type;
+        std::string uri;
+
+        public:
+        const std::string & get_album_type() const { return album_type; }
+        std::string & get_mutable_album_type() { return album_type; }
+        void set_album_type(const std::string & value) { this->album_type = value; }
+
+        const std::vector<Artist> & get_artists() const { return artists; }
+        std::vector<Artist> & get_mutable_artists() { return artists; }
+        void set_artists(const std::vector<Artist> & value) { this->artists = value; }
+
+        const std::vector<std::string> & get_available_markets() const { return available_markets; }
+        std::vector<std::string> & get_mutable_available_markets() { return available_markets; }
+        void set_available_markets(const std::vector<std::string> & value) { this->available_markets = value; }
+
+        const std::vector<Copyright> & get_copyrights() const { return copyrights; }
+        std::vector<Copyright> & get_mutable_copyrights() { return copyrights; }
+        void set_copyrights(const std::vector<Copyright> & value) { this->copyrights = value; }
+
+        const ExternalIds & get_external_ids() const { return external_ids; }
+        ExternalIds & get_mutable_external_ids() { return external_ids; }
+        void set_external_ids(const ExternalIds & value) { this->external_ids = value; }
+
+        const ExternalUrls & get_external_urls() const { return external_urls; }
+        ExternalUrls & get_mutable_external_urls() { return external_urls; }
+        void set_external_urls(const ExternalUrls & value) { this->external_urls = value; }
+
+        const std::vector<nlohmann::json> & get_genres() const { return genres; }
+        std::vector<nlohmann::json> & get_mutable_genres() { return genres; }
+        void set_genres(const std::vector<nlohmann::json> & value) { this->genres = value; }
+
+        const std::string & get_href() const { return href; }
+        std::string & get_mutable_href() { return href; }
+        void set_href(const std::string & value) { this->href = value; }
+
+        const std::string & get_id() const { return id; }
+        std::string & get_mutable_id() { return id; }
+        void set_id(const std::string & value) { this->id = value; }
+
+        const std::vector<Image> & get_images() const { return images; }
+        std::vector<Image> & get_mutable_images() { return images; }
+        void set_images(const std::vector<Image> & value) { this->images = value; }
+
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+
+        const int64_t & get_popularity() const { return popularity; }
+        int64_t & get_mutable_popularity() { return popularity; }
+        void set_popularity(const int64_t & value) { this->popularity = value; }
+
+        const std::string & get_release_date() const { return release_date; }
+        std::string & get_mutable_release_date() { return release_date; }
+        void set_release_date(const std::string & value) { this->release_date = value; }
+
+        const std::string & get_release_date_precision() const { return release_date_precision; }
+        std::string & get_mutable_release_date_precision() { return release_date_precision; }
+        void set_release_date_precision(const std::string & value) { this->release_date_precision = value; }
+
+        const Tracks & get_tracks() const { return tracks; }
+        Tracks & get_mutable_tracks() { return tracks; }
+        void set_tracks(const Tracks & value) { this->tracks = value; }
+
+        const std::string & get_type() const { return type; }
+        std::string & get_mutable_type() { return type; }
+        void set_type(const std::string & value) { this->type = value; }
+
+        const std::string & get_uri() const { return uri; }
+        std::string & get_mutable_uri() { return uri; }
+        void set_uri(const std::string & value) { this->uri = value; }
+    };
+}
+
+namespace quicktype {
+    void from_json(const json & j, ExternalUrls & x);
+    void to_json(json & j, const ExternalUrls & x);
+
+    void from_json(const json & j, Artist & x);
+    void to_json(json & j, const Artist & x);
+
+    void from_json(const json & j, Copyright & x);
+    void to_json(json & j, const Copyright & x);
+
+    void from_json(const json & j, ExternalIds & x);
+    void to_json(json & j, const ExternalIds & x);
+
+    void from_json(const json & j, Image & x);
+    void to_json(json & j, const Image & x);
+
+    void from_json(const json & j, Item & x);
+    void to_json(json & j, const Item & x);
+
+    void from_json(const json & j, Tracks & x);
+    void to_json(json & j, const Tracks & x);
+
+    void from_json(const json & j, SpotifyAlbum & x);
+    void to_json(json & j, const SpotifyAlbum & x);
+
+    inline void from_json(const json & j, ExternalUrls& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_spotify(j.at("spotify").get<std::string>());
+    }
+
+    inline void to_json(json & j, const ExternalUrls & x) {
+        j = json::object();
+        j["spotify"] = x.get_spotify();
+    }
+
+    inline void from_json(const json & j, Artist& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_external_urls(j.at("external_urls").get<ExternalUrls>());
+        x.set_href(j.at("href").get<std::string>());
+        x.set_id(j.at("id").get<std::string>());
+        x.set_name(j.at("name").get<std::string>());
+        x.set_type(j.at("type").get<std::string>());
+        x.set_uri(j.at("uri").get<std::string>());
+    }
+
+    inline void to_json(json & j, const Artist & x) {
+        j = json::object();
+        j["external_urls"] = x.get_external_urls();
+        j["href"] = x.get_href();
+        j["id"] = x.get_id();
+        j["name"] = x.get_name();
+        j["type"] = x.get_type();
+        j["uri"] = x.get_uri();
+    }
+
+    inline void from_json(const json & j, Copyright& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_text(j.at("text").get<std::string>());
+        x.set_type(j.at("type").get<std::string>());
+    }
+
+    inline void to_json(json & j, const Copyright & x) {
+        j = json::object();
+        j["text"] = x.get_text();
+        j["type"] = x.get_type();
+    }
+
+    inline void from_json(const json & j, ExternalIds& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_upc(j.at("upc").get<std::string>());
+    }
+
+    inline void to_json(json & j, const ExternalIds & x) {
+        j = json::object();
+        j["upc"] = x.get_upc();
+    }
+
+    inline void from_json(const json & j, Image& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        if (j.find("height") != j.end() && !j.at("height").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_height(j.at("height").get<int64_t>());
+        x.set_url(j.at("url").get<std::string>());
+        if (j.find("width") != j.end() && !j.at("width").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_width(j.at("width").get<int64_t>());
+    }
+
+    inline void to_json(json & j, const Image & x) {
+        j = json::object();
+        j["height"] = x.get_height();
+        j["url"] = x.get_url();
+        j["width"] = x.get_width();
+    }
+
+    inline void from_json(const json & j, Item& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_artists(j.at("artists").get<std::vector<Artist>>());
+        x.set_available_markets(j.at("available_markets").get<std::vector<std::string>>());
+        if (j.find("disc_number") != j.end() && !j.at("disc_number").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_disc_number(j.at("disc_number").get<int64_t>());
+        if (j.find("duration_ms") != j.end() && !j.at("duration_ms").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_duration_ms(j.at("duration_ms").get<int64_t>());
+        x.set_item_explicit(j.at("explicit").get<bool>());
+        x.set_external_urls(j.at("external_urls").get<ExternalUrls>());
+        x.set_href(j.at("href").get<std::string>());
+        x.set_id(j.at("id").get<std::string>());
+        x.set_name(j.at("name").get<std::string>());
+        x.set_preview_url(j.at("preview_url").get<std::string>());
+        if (j.find("track_number") != j.end() && !j.at("track_number").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_track_number(j.at("track_number").get<int64_t>());
+        x.set_type(j.at("type").get<std::string>());
+        x.set_uri(j.at("uri").get<std::string>());
+    }
+
+    inline void to_json(json & j, const Item & x) {
+        j = json::object();
+        j["artists"] = x.get_artists();
+        j["available_markets"] = x.get_available_markets();
+        j["disc_number"] = x.get_disc_number();
+        j["duration_ms"] = x.get_duration_ms();
+        j["explicit"] = x.get_item_explicit();
+        j["external_urls"] = x.get_external_urls();
+        j["href"] = x.get_href();
+        j["id"] = x.get_id();
+        j["name"] = x.get_name();
+        j["preview_url"] = x.get_preview_url();
+        j["track_number"] = x.get_track_number();
+        j["type"] = x.get_type();
+        j["uri"] = x.get_uri();
+    }
+
+    inline void from_json(const json & j, Tracks& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_href(j.at("href").get<std::string>());
+        x.set_items(j.at("items").get<std::vector<Item>>());
+        if (j.find("limit") != j.end() && !j.at("limit").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_limit(j.at("limit").get<int64_t>());
+        x.set_next(get_untyped(j, "next"));
+        if (j.find("offset") != j.end() && !j.at("offset").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_offset(j.at("offset").get<int64_t>());
+        x.set_previous(get_untyped(j, "previous"));
+        if (j.find("total") != j.end() && !j.at("total").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_total(j.at("total").get<int64_t>());
+    }
+
+    inline void to_json(json & j, const Tracks & x) {
+        j = json::object();
+        j["href"] = x.get_href();
+        j["items"] = x.get_items();
+        j["limit"] = x.get_limit();
+        j["next"] = x.get_next();
+        j["offset"] = x.get_offset();
+        j["previous"] = x.get_previous();
+        j["total"] = x.get_total();
+    }
+
+    inline void from_json(const json & j, SpotifyAlbum& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_album_type(j.at("album_type").get<std::string>());
+        x.set_artists(j.at("artists").get<std::vector<Artist>>());
+        x.set_available_markets(j.at("available_markets").get<std::vector<std::string>>());
+        x.set_copyrights(j.at("copyrights").get<std::vector<Copyright>>());
+        x.set_external_ids(j.at("external_ids").get<ExternalIds>());
+        x.set_external_urls(j.at("external_urls").get<ExternalUrls>());
+        x.set_genres(j.at("genres").get<std::vector<nlohmann::json>>());
+        x.set_href(j.at("href").get<std::string>());
+        x.set_id(j.at("id").get<std::string>());
+        x.set_images(j.at("images").get<std::vector<Image>>());
+        x.set_name(j.at("name").get<std::string>());
+        if (j.find("popularity") != j.end() && !j.at("popularity").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_popularity(j.at("popularity").get<int64_t>());
+        x.set_release_date(j.at("release_date").get<std::string>());
+        x.set_release_date_precision(j.at("release_date_precision").get<std::string>());
+        x.set_tracks(j.at("tracks").get<Tracks>());
+        x.set_type(j.at("type").get<std::string>());
+        x.set_uri(j.at("uri").get<std::string>());
+    }
+
+    inline void to_json(json & j, const SpotifyAlbum & x) {
+        j = json::object();
+        j["album_type"] = x.get_album_type();
+        j["artists"] = x.get_artists();
+        j["available_markets"] = x.get_available_markets();
+        j["copyrights"] = x.get_copyrights();
+        j["external_ids"] = x.get_external_ids();
+        j["external_urls"] = x.get_external_urls();
+        j["genres"] = x.get_genres();
+        j["href"] = x.get_href();
+        j["id"] = x.get_id();
+        j["images"] = x.get_images();
+        j["name"] = x.get_name();
+        j["popularity"] = x.get_popularity();
+        j["release_date"] = x.get_release_date();
+        j["release_date_precision"] = x.get_release_date_precision();
+        j["tracks"] = x.get_tracks();
+        j["type"] = x.get_type();
+        j["uri"] = x.get_uri();
+    }
+}

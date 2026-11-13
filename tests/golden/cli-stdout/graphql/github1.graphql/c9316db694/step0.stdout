@@ -1,0 +1,111 @@
+-- To decode the JSON data, add this file to your project, run
+--
+--     elm install NoRedInk/elm-json-decode-pipeline
+--
+-- add these imports
+--
+--     import Json.Decode exposing (decodeString)
+--     import QuickType exposing (github1)
+--
+-- and you're off to the races with
+--
+--     decodeString github1 myJsonString
+
+module QuickType exposing
+    ( Github1
+    , github1ToString
+    , github1
+    , Data
+    , User
+    , Error
+    )
+
+import Json.Decode as Jdec
+import Json.Decode.Pipeline as Jpipe
+import Json.Encode as Jenc
+import Dict exposing (Dict)
+
+type alias Github1 =
+    { data : Maybe Data
+    , errors : Maybe (List Error)
+    }
+
+type alias Data =
+    { viewer : User
+    }
+
+type alias User =
+    { login : String
+    , realName : Maybe String
+    }
+
+type alias Error =
+    { message : String
+    }
+
+-- decoders and encoders
+optionalField key decoder fallback =
+    Jdec.dict Jdec.value
+        |> Jdec.andThen (\m ->
+            case Dict.get key m of
+                Nothing -> Jdec.succeed fallback
+                Just x -> Jdec.decodeValue decoder x |> Result.map Jdec.succeed |> Result.withDefault (Jdec.fail ("Invalid " ++ key)))
+
+github1ToString : Github1 -> String
+github1ToString r = Jenc.encode 0 (encodeGithub1 r)
+
+github1 : Jdec.Decoder Github1
+github1 =
+    Jdec.succeed Github1
+        |> Jpipe.required "data" (Jdec.nullable data)
+        |> Jpipe.custom (optionalField "errors" (Jdec.map Just (Jdec.list error )) Nothing)
+
+encodeGithub1 : Github1 -> Jenc.Value
+encodeGithub1 x =
+    Jenc.object
+        [ ("data", makeNullableEncoder encodeData x.data)
+        , ("errors", makeNullableEncoder (Jenc.list encodeError) x.errors)
+        ]
+
+data : Jdec.Decoder Data
+data =
+    Jdec.succeed Data
+        |> Jpipe.required "viewer" user
+
+encodeData : Data -> Jenc.Value
+encodeData x =
+    Jenc.object
+        [ ("viewer", encodeUser x.viewer)
+        ]
+
+user : Jdec.Decoder User
+user =
+    Jdec.succeed User
+        |> Jpipe.required "login" Jdec.string
+        |> Jpipe.required "realName" (Jdec.nullable Jdec.string)
+
+encodeUser : User -> Jenc.Value
+encodeUser x =
+    Jenc.object
+        [ ("login", Jenc.string x.login)
+        , ("realName", makeNullableEncoder Jenc.string x.realName)
+        ]
+
+error : Jdec.Decoder Error
+error =
+    Jdec.succeed Error
+        |> Jpipe.required "message" Jdec.string
+
+encodeError : Error -> Jenc.Value
+encodeError x =
+    Jenc.object
+        [ ("message", Jenc.string x.message)
+        ]
+
+--- encoder helpers
+
+makeNullableEncoder : (a -> Jenc.Value) -> Maybe a -> Jenc.Value
+makeNullableEncoder f m =
+    case m of
+    Just x -> f x
+    Nothing -> Jenc.null

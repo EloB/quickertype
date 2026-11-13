@@ -1,0 +1,91 @@
+#pragma once
+
+#include <optional>
+#include <variant>
+
+#include <optional>
+#include <stdexcept>
+#include <regex>
+
+enum class ComplexUnionArrayEnum : int { FOO, BAR };
+
+using ComplexUnionArrayElement = std::variant<std::string, ComplexUnionArrayEnum, int64_t>;
+
+class LocalDate {
+    public:
+    LocalDate() = default;
+    virtual ~LocalDate() = default;
+
+    private:
+
+    public:
+};
+
+class OffsetDateTime {
+    public:
+    OffsetDateTime() = default;
+    virtual ~OffsetDateTime() = default;
+
+    private:
+
+    public:
+};
+
+class OffsetTime {
+    public:
+    OffsetTime() = default;
+    virtual ~OffsetTime() = default;
+
+    private:
+
+    public:
+};
+
+class DateTime {
+    public:
+    DateTime() = default;
+    virtual ~DateTime() = default;
+
+    private:
+    std::vector<ComplexUnionArrayElement> complex_union_array;
+    std::string date;
+    std::string date_time;
+    std::optional<LocalDate> local_date_class;
+    std::optional<OffsetDateTime> offset_date_time_class;
+    std::optional<OffsetTime> offset_time_class;
+    std::string time;
+    std::vector<std::string> union_array;
+
+    public:
+    const std::vector<ComplexUnionArrayElement> & get_complex_union_array() const { return complex_union_array; }
+    std::vector<ComplexUnionArrayElement> & get_mutable_complex_union_array() { return complex_union_array; }
+    void set_complex_union_array(const std::vector<ComplexUnionArrayElement> & value) { this->complex_union_array = value; }
+
+    const std::string & get_date() const { return date; }
+    std::string & get_mutable_date() { return date; }
+    void set_date(const std::string & value) { this->date = value; }
+
+    const std::string & get_date_time() const { return date_time; }
+    std::string & get_mutable_date_time() { return date_time; }
+    void set_date_time(const std::string & value) { this->date_time = value; }
+
+    const std::optional<LocalDate> & get_local_date_class() const { return local_date_class; }
+    std::optional<LocalDate> & get_mutable_local_date_class() { return local_date_class; }
+    void set_local_date_class(const std::optional<LocalDate> & value) { this->local_date_class = value; }
+
+    const std::optional<OffsetDateTime> & get_offset_date_time_class() const { return offset_date_time_class; }
+    std::optional<OffsetDateTime> & get_mutable_offset_date_time_class() { return offset_date_time_class; }
+    void set_offset_date_time_class(const std::optional<OffsetDateTime> & value) { this->offset_date_time_class = value; }
+
+    const std::optional<OffsetTime> & get_offset_time_class() const { return offset_time_class; }
+    std::optional<OffsetTime> & get_mutable_offset_time_class() { return offset_time_class; }
+    void set_offset_time_class(const std::optional<OffsetTime> & value) { this->offset_time_class = value; }
+
+    const std::string & get_time() const { return time; }
+    std::string & get_mutable_time() { return time; }
+    void set_time(const std::string & value) { this->time = value; }
+
+    const std::vector<std::string> & get_union_array() const { return union_array; }
+    std::vector<std::string> & get_mutable_union_array() { return union_array; }
+    void set_union_array(const std::vector<std::string> & value) { this->union_array = value; }
+};

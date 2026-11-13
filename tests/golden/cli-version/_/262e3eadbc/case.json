@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-version",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--version",
+        "--telemetry",
+        "bad"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

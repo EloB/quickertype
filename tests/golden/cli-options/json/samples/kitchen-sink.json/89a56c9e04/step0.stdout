@@ -1,0 +1,89 @@
+// Example code that deserializes and serializes the model.
+// extern crate serde;
+// #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_json;
+//
+// use generated_module::kitchen-sink;
+//
+// fn main() {
+//     let json = r#"{"answer": 42}"#;
+//     let model: kitchen-sink = serde_json::from_str(&json).unwrap();
+// }
+
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KitchenSink {
+    pub(crate) string_value: String,
+
+    pub(crate) date_value: String,
+
+    pub(crate) uuid_value: String,
+
+    #[serde(rename = "name with spaces")]
+    pub(crate) name_with_spaces: Option<serde_json::Value>,
+
+    pub(crate) double_value: f64,
+
+    pub(crate) int_value: i64,
+
+    pub(crate) boolean_value: bool,
+
+    pub(crate) null_value: Option<serde_json::Value>,
+
+    pub(crate) tuples: Vec<Vec<IntOrString>>,
+
+    pub(crate) person: PurplePerson,
+
+    pub(crate) people: Vec<PersonElement>,
+
+    pub(crate) different_things: Vec<DifferentThingElement>,
+
+    pub(crate) map_value: HashMap<String, Option<i64>>,
+
+    pub(crate) nullable_map_value: HashMap<String, Option<i64>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DifferentThingElement {
+    DifferentThingClass(DifferentThingClass),
+
+    Integer(i64),
+
+    PurpleString(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DifferentThingClass {
+    pub(crate) name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonElement {
+    pub(crate) name: String,
+
+    pub(crate) int_or_string: IntOrString,
+
+    pub(crate) optional_value: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum IntOrString {
+    Integer(i64),
+
+    PurpleString(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PurplePerson {
+    pub(crate) name: String,
+
+    pub(crate) int_or_string: i64,
+}

@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-help",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--help",
+        "--lang",
+        "smithy4a"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

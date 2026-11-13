@@ -1,0 +1,49 @@
+// Example usage:
+//
+// const { MyShape } = require(./myShape.js);
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+const PropTypes = require("prop-types");
+const Integer = (props, name) => props[name] == null || Number.isInteger(props[name]) ? null : new Error("Expected integer");
+
+let _KitchenSink;
+let _DifferentThingClass;
+let _PersonElement;
+let _PurplePerson;
+_DifferentThingClass = PropTypes.shape({
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_PersonElement = PropTypes.shape({
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "intOrString": PropTypes.oneOfType([PropTypes.oneOfType([Integer, PropTypes.string])]).isRequired,
+    "optionalValue": PropTypes.oneOfType([PropTypes.bool, PropTypes.oneOf([null])]),
+});
+_PurplePerson = PropTypes.shape({
+    "name": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "intOrString": PropTypes.oneOfType([Integer]).isRequired,
+});
+_KitchenSink = PropTypes.shape({
+    "stringValue": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "dateValue": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "uuidValue": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "name with spaces": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOf([null])])(props, name, ...args),
+    "doubleValue": PropTypes.oneOfType([PropTypes.number]).isRequired,
+    "intValue": PropTypes.oneOfType([Integer]).isRequired,
+    "booleanValue": PropTypes.oneOfType([PropTypes.bool]).isRequired,
+    "nullValue": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOf([null])])(props, name, ...args),
+    "tuples": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.oneOfType([Integer, PropTypes.string])))]).isRequired,
+    "person": _PurplePerson,
+    "people": PropTypes.oneOfType([PropTypes.arrayOf(_PersonElement)]).isRequired,
+    "differentThings": PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.oneOfType([_DifferentThingClass, Integer, PropTypes.string]))]).isRequired,
+    "mapValue": PropTypes.oneOfType([PropTypes.objectOf(PropTypes.oneOfType([Integer, PropTypes.oneOf([null])]))]).isRequired,
+    "nullableMapValue": PropTypes.oneOfType([PropTypes.objectOf(PropTypes.oneOfType([Integer, PropTypes.oneOf([null])]))]).isRequired,
+});
+
+module.exports = exports = { KitchenSink: _KitchenSink };

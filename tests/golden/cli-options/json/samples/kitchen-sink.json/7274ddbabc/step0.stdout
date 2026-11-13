@@ -1,0 +1,40 @@
+type alias KitchenSink =
+    { stringValue : String
+    , dateValue : String
+    , uuidValue : String
+    , nameWithSpaces : ()
+    , doubleValue : Float
+    , intValue : Int
+    , booleanValue : Bool
+    , nullValue : ()
+    , tuples : List (List IntOrString)
+    , person : PurplePerson
+    , people : List PersonElement
+    , differentThings : List DifferentThingElement
+    , mapValue : Dict String (Maybe Int)
+    , nullableMapValue : Dict String (Maybe Int)
+    }
+
+type DifferentThingElement
+    = DifferentThingClassInDifferentThingElement DifferentThingClass
+    | IntegerInDifferentThingElement Int
+    | StringInDifferentThingElement String
+
+type alias DifferentThingClass =
+    { name : String
+    }
+
+type alias PersonElement =
+    { name : String
+    , intOrString : IntOrString
+    , optionalValue : Maybe Bool
+    }
+
+type IntOrString
+    = IntegerInIntOrString Int
+    | StringInIntOrString String
+
+type alias PurplePerson =
+    { name : String
+    , intOrString : Int
+    }

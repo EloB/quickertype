@@ -1,0 +1,54 @@
+// To parse the JSON, install kotlin's serialization plugin and do:
+//
+// val json        = Json { allowStructuredMapKeys = true }
+// val kitchenSink = json.parse(KitchenSink.serializer(), jsonString)
+
+package quicktype
+
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.*
+
+@Serializable
+data class KitchenSink (
+    val stringValue: String,
+    val dateValue: String,
+    val uuidValue: String,
+
+    @SerialName("name with spaces")
+    val nameWithSpaces: JsonElement? = null,
+
+    val doubleValue: Double,
+    val intValue: Long,
+    val booleanValue: Boolean,
+    val nullValue: JsonElement? = null,
+    val tuples: List<JsonArray>,
+    val person: PurplePerson,
+    val people: List<PersonElement>,
+    val differentThings: JsonArray,
+    val mapValue: Map<String, Long?>,
+    val nullableMapValue: Map<String, Long?>
+)
+
+typealias DifferentThingElement = JsonElement
+
+@Serializable
+data class DifferentThingClass (
+    val name: String
+)
+
+@Serializable
+data class PersonElement (
+    val name: String,
+    val intOrString: JsonElement,
+    val optionalValue: Boolean? = null
+)
+
+typealias IntOrString = JsonElement
+
+@Serializable
+data class PurplePerson (
+    val name: String,
+    val intOrString: Long
+)

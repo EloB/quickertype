@@ -1,0 +1,208 @@
+from typing import Any, Optional, List, Union, Dict, TypeVar, Callable, cast
+
+
+T = TypeVar("T")
+
+
+def from_str(x: Any) -> str:
+    assert isinstance(x, str)
+    return x
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
+
+
+def from_union(fs, x):
+    for f in fs:
+        try:
+            return f(x)
+        except:
+            pass
+    assert False
+
+
+def from_bool(x: Any) -> bool:
+    assert isinstance(x, bool)
+    return x
+
+
+def from_none(x: Any) -> Any:
+    assert x is None
+    return x
+
+
+def from_float(x: Any) -> float:
+    assert isinstance(x, (float, int)) and not isinstance(x, bool)
+    return float(x)
+
+
+def from_list(f: Callable[[Any], T], x: Any) -> List[T]:
+    assert isinstance(x, list)
+    return [f(y) for y in x]
+
+
+def from_dict(f: Callable[[Any], T], x: Any) -> Dict[str, T]:
+    assert isinstance(x, dict)
+    return { k: f(v) for (k, v) in x.items() }
+
+
+def to_float(x: Any) -> float:
+    assert isinstance(x, (int, float))
+    return x
+
+
+def to_class(c, x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+def is_type(t, x: Any) -> T:
+    assert isinstance(x, t)
+    return x
+
+
+class DifferentThingClass:
+    name: str
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'DifferentThingClass':
+        assert isinstance(obj, dict)
+        name = from_str(obj["name"])
+        return DifferentThingClass(name)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["name"] = from_str(self.name)
+        return result
+
+
+class PersonElement:
+    name: str
+    int_or_string: int
+    optional_value: Optional[bool]
+
+    def __init__(self, name: str, int_or_string: int, optional_value: Optional[bool]) -> None:
+        self.name = name
+        self.int_or_string = int_or_string
+        self.optional_value = optional_value
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'PersonElement':
+        assert isinstance(obj, dict)
+        name = from_str(obj["name"])
+        int_or_string = from_union([from_int, lambda x: int(from_str(x))], obj["intOrString"])
+        optional_value = from_union([from_bool, from_none], obj.get("optionalValue"))
+        return PersonElement(name, int_or_string, optional_value)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["name"] = from_str(self.name)
+        result["intOrString"] = from_int(self.int_or_string)
+        if self.optional_value is not None:
+            result["optionalValue"] = from_union([from_bool, from_none], self.optional_value)
+        return result
+
+
+class PurplePerson:
+    name: str
+    int_or_string: int
+
+    def __init__(self, name: str, int_or_string: int) -> None:
+        self.name = name
+        self.int_or_string = int_or_string
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'PurplePerson':
+        assert isinstance(obj, dict)
+        name = from_str(obj["name"])
+        int_or_string = from_int(obj["intOrString"])
+        return PurplePerson(name, int_or_string)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["name"] = from_str(self.name)
+        result["intOrString"] = from_int(self.int_or_string)
+        return result
+
+
+class KitchenSink:
+    string_value: str
+    date_value: str
+    uuid_value: str
+    name_with_spaces: None
+    double_value: float
+    int_value: int
+    boolean_value: bool
+    null_value: None
+    tuples: List[List[Union[int, str]]]
+    person: PurplePerson
+    people: List[PersonElement]
+    different_things: List[Union[int, DifferentThingClass]]
+    map_value: Dict[str, Optional[int]]
+    nullable_map_value: Dict[str, Optional[int]]
+
+    def __init__(self, string_value: str, date_value: str, uuid_value: str, name_with_spaces: None, double_value: float, int_value: int, boolean_value: bool, null_value: None, tuples: List[List[Union[int, str]]], person: PurplePerson, people: List[PersonElement], different_things: List[Union[int, DifferentThingClass]], map_value: Dict[str, Optional[int]], nullable_map_value: Dict[str, Optional[int]]) -> None:
+        self.string_value = string_value
+        self.date_value = date_value
+        self.uuid_value = uuid_value
+        self.name_with_spaces = name_with_spaces
+        self.double_value = double_value
+        self.int_value = int_value
+        self.boolean_value = boolean_value
+        self.null_value = null_value
+        self.tuples = tuples
+        self.person = person
+        self.people = people
+        self.different_things = different_things
+        self.map_value = map_value
+        self.nullable_map_value = nullable_map_value
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'KitchenSink':
+        assert isinstance(obj, dict)
+        string_value = from_str(obj["stringValue"])
+        date_value = from_str(obj["dateValue"])
+        uuid_value = from_str(obj["uuidValue"])
+        name_with_spaces = from_none(obj["name with spaces"])
+        double_value = from_float(obj["doubleValue"])
+        int_value = from_int(obj["intValue"])
+        boolean_value = from_bool(obj["booleanValue"])
+        null_value = from_none(obj["nullValue"])
+        tuples = from_list(lambda x: from_list(lambda x: from_union([from_int, from_str], x), x), obj["tuples"])
+        person = PurplePerson.from_dict(obj["person"])
+        people = from_list(PersonElement.from_dict, obj["people"])
+        different_things = from_list(lambda x: from_union([from_int, lambda x: int(from_str(x)), DifferentThingClass.from_dict], x), obj["differentThings"])
+        map_value = from_dict(lambda x: from_union([from_int, from_none], x), obj["mapValue"])
+        nullable_map_value = from_dict(lambda x: from_union([from_int, from_none], x), obj["nullableMapValue"])
+        return KitchenSink(string_value, date_value, uuid_value, name_with_spaces, double_value, int_value, boolean_value, null_value, tuples, person, people, different_things, map_value, nullable_map_value)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["stringValue"] = from_str(self.string_value)
+        result["dateValue"] = from_str(self.date_value)
+        result["uuidValue"] = from_str(self.uuid_value)
+        result["name with spaces"] = from_none(self.name_with_spaces)
+        result["doubleValue"] = to_float(self.double_value)
+        result["intValue"] = from_int(self.int_value)
+        result["booleanValue"] = from_bool(self.boolean_value)
+        result["nullValue"] = from_none(self.null_value)
+        result["tuples"] = from_list(lambda x: from_list(lambda x: from_union([from_int, from_str], x), x), self.tuples)
+        result["person"] = to_class(PurplePerson, self.person)
+        result["people"] = from_list(lambda x: to_class(PersonElement, x), self.people)
+        result["differentThings"] = from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: to_class(DifferentThingClass, (lambda x: is_type(DifferentThingClass, x))(x))], x), self.different_things)
+        result["mapValue"] = from_dict(lambda x: from_union([from_int, from_none], x), self.map_value)
+        result["nullableMapValue"] = from_dict(lambda x: from_union([from_int, from_none], x), self.nullable_map_value)
+        return result
+
+
+def kitchen_sink_from_dict(s: Any) -> KitchenSink:
+    return KitchenSink.from_dict(s)
+
+
+def kitchen_sink_to_dict(x: KitchenSink) -> Any:
+    return to_class(KitchenSink, x)

@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Description",
+    "definitions": {
+        "Description": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "bar": {
+                    "type": "boolean",
+                    "description": "A pretty boolean"
+                },
+                "enum": {
+                    "$ref": "#/definitions/Enum",
+                    "description": "An enumeration"
+                },
+                "foo": {
+                    "type": "number"
+                },
+                "object-or-string": {
+                    "$ref": "#/definitions/ObjectOrStringUnion"
+                },
+                "union": {
+                    "$ref": "#/definitions/Union",
+                    "description": "Either a number or a string"
+                }
+            },
+            "required": [
+                "enum",
+                "object-or-string",
+                "union"
+            ],
+            "title": "Description",
+            "description": "The top-level class.\nIts description has two lines."
+        },
+        "ObjectOrStringObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "prop": {
+                    "type": "number",
+                    "description": "This must not get lost"
+                }
+            },
+            "required": [
+                "prop"
+            ],
+            "title": "ObjectOrStringObject"
+        },
+        "ObjectOrStringUnion": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ObjectOrStringObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "ObjectOrStringUnion"
+        },
+        "Union": {
+            "anyOf": [
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Union",
+            "description": "Either a number or a string"
+        },
+        "Enum": {
+            "type": "string",
+            "enum": [
+                "foo",
+                "bar"
+            ],
+            "title": "Enum",
+            "description": "An enumeration"
+        }
+    }
+}

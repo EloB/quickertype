@@ -1,0 +1,148 @@
+#pragma once
+
+#include <optional>
+#include <variant>
+
+#include <optional>
+#include <stdexcept>
+#include <regex>
+
+class DifferentThingClass {
+    public:
+    DifferentThingClass() = default;
+    virtual ~DifferentThingClass() = default;
+
+    private:
+    std::string name;
+
+    public:
+    const std::string & get_name() const { return name; }
+    std::string & get_mutable_name() { return name; }
+    void set_name(const std::string & value) { this->name = value; }
+};
+
+using DifferentThingElement = std::variant<DifferentThingClass, int64_t, std::string>;
+
+using IntOrString = std::variant<int64_t, std::string>;
+
+class PersonElement {
+    public:
+    PersonElement() = default;
+    virtual ~PersonElement() = default;
+
+    private:
+    std::string name;
+    IntOrString int_or_string;
+    std::optional<bool> optional_value;
+
+    public:
+    const std::string & get_name() const { return name; }
+    std::string & get_mutable_name() { return name; }
+    void set_name(const std::string & value) { this->name = value; }
+
+    const IntOrString & get_int_or_string() const { return int_or_string; }
+    IntOrString & get_mutable_int_or_string() { return int_or_string; }
+    void set_int_or_string(const IntOrString & value) { this->int_or_string = value; }
+
+    const std::optional<bool> & get_optional_value() const { return optional_value; }
+    std::optional<bool> & get_mutable_optional_value() { return optional_value; }
+    void set_optional_value(const std::optional<bool> & value) { this->optional_value = value; }
+};
+
+class PurplePerson {
+    public:
+    PurplePerson() = default;
+    virtual ~PurplePerson() = default;
+
+    private:
+    std::string name;
+    int64_t int_or_string;
+
+    public:
+    const std::string & get_name() const { return name; }
+    std::string & get_mutable_name() { return name; }
+    void set_name(const std::string & value) { this->name = value; }
+
+    const int64_t & get_int_or_string() const { return int_or_string; }
+    int64_t & get_mutable_int_or_string() { return int_or_string; }
+    void set_int_or_string(const int64_t & value) { this->int_or_string = value; }
+};
+
+class KitchenSink {
+    public:
+    KitchenSink() = default;
+    virtual ~KitchenSink() = default;
+
+    private:
+    std::string string_value;
+    std::string date_value;
+    std::string uuid_value;
+    nlohmann::json name_with_spaces;
+    double double_value;
+    int64_t int_value;
+    bool boolean_value;
+    nlohmann::json null_value;
+    std::vector<std::vector<IntOrString>> tuples;
+    PurplePerson person;
+    std::vector<PersonElement> people;
+    std::vector<DifferentThingElement> different_things;
+    std::map<std::string, std::optional<int64_t>> map_value;
+    std::map<std::string, std::optional<int64_t>> nullable_map_value;
+
+    public:
+    const std::string & get_string_value() const { return string_value; }
+    std::string & get_mutable_string_value() { return string_value; }
+    void set_string_value(const std::string & value) { this->string_value = value; }
+
+    const std::string & get_date_value() const { return date_value; }
+    std::string & get_mutable_date_value() { return date_value; }
+    void set_date_value(const std::string & value) { this->date_value = value; }
+
+    const std::string & get_uuid_value() const { return uuid_value; }
+    std::string & get_mutable_uuid_value() { return uuid_value; }
+    void set_uuid_value(const std::string & value) { this->uuid_value = value; }
+
+    const nlohmann::json & get_name_with_spaces() const { return name_with_spaces; }
+    nlohmann::json & get_mutable_name_with_spaces() { return name_with_spaces; }
+    void set_name_with_spaces(const nlohmann::json & value) { this->name_with_spaces = value; }
+
+    const double & get_double_value() const { return double_value; }
+    double & get_mutable_double_value() { return double_value; }
+    void set_double_value(const double & value) { this->double_value = value; }
+
+    const int64_t & get_int_value() const { return int_value; }
+    int64_t & get_mutable_int_value() { return int_value; }
+    void set_int_value(const int64_t & value) { this->int_value = value; }
+
+    const bool & get_boolean_value() const { return boolean_value; }
+    bool & get_mutable_boolean_value() { return boolean_value; }
+    void set_boolean_value(const bool & value) { this->boolean_value = value; }
+
+    const nlohmann::json & get_null_value() const { return null_value; }
+    nlohmann::json & get_mutable_null_value() { return null_value; }
+    void set_null_value(const nlohmann::json & value) { this->null_value = value; }
+
+    const std::vector<std::vector<IntOrString>> & get_tuples() const { return tuples; }
+    std::vector<std::vector<IntOrString>> & get_mutable_tuples() { return tuples; }
+    void set_tuples(const std::vector<std::vector<IntOrString>> & value) { this->tuples = value; }
+
+    const PurplePerson & get_person() const { return person; }
+    PurplePerson & get_mutable_person() { return person; }
+    void set_person(const PurplePerson & value) { this->person = value; }
+
+    const std::vector<PersonElement> & get_people() const { return people; }
+    std::vector<PersonElement> & get_mutable_people() { return people; }
+    void set_people(const std::vector<PersonElement> & value) { this->people = value; }
+
+    const std::vector<DifferentThingElement> & get_different_things() const { return different_things; }
+    std::vector<DifferentThingElement> & get_mutable_different_things() { return different_things; }
+    void set_different_things(const std::vector<DifferentThingElement> & value) { this->different_things = value; }
+
+    const std::map<std::string, std::optional<int64_t>> & get_map_value() const { return map_value; }
+    std::map<std::string, std::optional<int64_t>> & get_mutable_map_value() { return map_value; }
+    void set_map_value(const std::map<std::string, std::optional<int64_t>> & value) { this->map_value = value; }
+
+    const std::map<std::string, std::optional<int64_t>> & get_nullable_map_value() const { return nullable_map_value; }
+    std::map<std::string, std::optional<int64_t>> & get_mutable_nullable_map_value() { return nullable_map_value; }
+    void set_nullable_map_value(const std::map<std::string, std::optional<int64_t>> & value) { this->nullable_map_value = value; }
+};

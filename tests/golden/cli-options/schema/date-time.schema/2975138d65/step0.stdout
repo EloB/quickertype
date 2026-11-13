@@ -1,0 +1,43 @@
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer               = Strict::Integer
+  Hash                  = Strict::Hash
+  String                = Strict::String
+  ComplexUnionArrayEnum = Strict::String.enum("foo", "bar")
+end
+
+module ComplexUnionArrayEnum
+  Foo = "foo"
+  Bar = "bar"
+end
+
+class ComplexUnionArrayElement < Dry::Struct
+  attribute :date_time, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i).optional
+  attribute :enum_1,    Types::ComplexUnionArrayEnum.optional
+  attribute :integer,   Types::Integer.optional
+end
+
+class LocalDate < Dry::Struct
+end
+
+class OffsetDateTime < Dry::Struct
+end
+
+class OffsetTime < Dry::Struct
+end
+
+class DateTime1 < Dry::Struct
+  attribute :complex_union_array,    Types.Array(Types.Instance(ComplexUnionArrayElement))
+  attribute :date,                   Types::String
+  attribute :date_time,              Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+  attribute :local_date_class,       LocalDate.optional
+  attribute :offset_date_time_class, OffsetDateTime.optional
+  attribute :offset_time_class,      OffsetTime.optional
+  attribute :time,                   Types::String
+  attribute :union_array,            Types.Array(Types::String)
+end

@@ -1,0 +1,373 @@
+// XYKitchenSink.h
+
+// To parse this JSON:
+//
+//   NSError *error;
+//   XYKitchenSink *kitchenSink = [XYKitchenSink fromJSON:json encoding:NSUTF8Encoding error:&error];
+
+#import <Foundation/Foundation.h>
+
+@class XYKitchenSink;
+@class XYDifferentThingClass;
+@class XYPersonElement;
+@class XYPurplePerson;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Object interfaces
+
+@interface XYKitchenSink : NSObject
+@property (nonatomic, copy)           NSString *stringValue;
+@property (nonatomic, copy)           NSString *dateValue;
+@property (nonatomic, copy)           NSString *uuidValue;
+@property (nonatomic, nullable, copy) id nameWithSpaces;
+@property (nonatomic, assign)         double doubleValue;
+@property (nonatomic, assign)         NSInteger intValue;
+@property (nonatomic, assign)         BOOL isBooleanValue;
+@property (nonatomic, nullable, copy) id nullValue;
+@property (nonatomic, copy)           NSArray<NSArray<id> *> *tuples;
+@property (nonatomic, strong)         XYPurplePerson *person;
+@property (nonatomic, copy)           NSArray<XYPersonElement *> *people;
+@property (nonatomic, copy)           NSArray<id> *differentThings;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *mapValue;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *nullableMapValue;
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error;
+@end
+
+@interface XYDifferentThingClass : NSObject
+@property (nonatomic, copy) NSString *name;
+@end
+
+@interface XYPersonElement : NSObject
+@property (nonatomic, copy)             NSString *name;
+@property (nonatomic, copy)             id intOrString;
+@property (nonatomic, nullable, strong) NSNumber *optionalValue;
+@end
+
+@interface XYPurplePerson : NSObject
+@property (nonatomic, copy)   NSString *name;
+@property (nonatomic, assign) NSInteger intOrString;
+@end
+
+NS_ASSUME_NONNULL_END
+
+// XYKitchenSink.m
+
+#import "XYKitchenSink.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface XYKitchenSink (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface XYDifferentThingClass (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface XYPersonElement (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface XYPurplePerson (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+static id map(id collection, id (^f)(id value)) {
+    id result = nil;
+    if ([collection isKindOfClass:NSArray.class]) {
+            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];
+            for (id x in collection) [result addObject:NSNullify(f(x))];
+    } else if ([collection isKindOfClass:NSDictionary.class]) {
+            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];
+            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];
+    }
+    return result;
+}
+
+#pragma mark - JSON serialization
+
+XYKitchenSink *_Nullable XYKitchenSinkFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        return *error ? nil : [XYKitchenSink fromJSONDictionary:json];
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+XYKitchenSink *_Nullable XYKitchenSinkFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return XYKitchenSinkFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable XYKitchenSinkToData(XYKitchenSink *kitchenSink, NSError **error)
+{
+    @try {
+        id json = [kitchenSink JSONDictionary];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable XYKitchenSinkToJSON(XYKitchenSink *kitchenSink, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = XYKitchenSinkToData(kitchenSink, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+@implementation XYKitchenSink
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"stringValue": @"stringValue",
+        @"dateValue": @"dateValue",
+        @"uuidValue": @"uuidValue",
+        @"name with spaces": @"nameWithSpaces",
+        @"doubleValue": @"doubleValue",
+        @"intValue": @"intValue",
+        @"booleanValue": @"isBooleanValue",
+        @"nullValue": @"nullValue",
+        @"tuples": @"tuples",
+        @"person": @"person",
+        @"people": @"people",
+        @"differentThings": @"differentThings",
+        @"mapValue": @"mapValue",
+        @"nullableMapValue": @"nullableMapValue",
+    };
+}
+
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error
+{
+    return XYKitchenSinkFromData(data, error);
+}
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return XYKitchenSinkFromJSON(json, encoding, error);
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[XYKitchenSink alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"stringValue"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"dateValue"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"uuidValue"] isKindOfClass:NSString.class]) return nil;
+        if (!dict[@"name with spaces"]) return nil;
+        if (![dict[@"doubleValue"] isKindOfClass:NSNumber.class]) return nil;
+        if (![dict[@"intValue"] isKindOfClass:NSNumber.class]) return nil;
+        if ([dict[@"intValue"] doubleValue] != [dict[@"intValue"] longLongValue]) return nil;
+        if (![dict[@"booleanValue"] isKindOfClass:NSNumber.class]) return nil;
+        if (!dict[@"nullValue"]) return nil;
+        if (![dict[@"tuples"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"person"] isKindOfClass:NSDictionary.class]) return nil;
+        if (![dict[@"people"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"differentThings"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"mapValue"] isKindOfClass:NSDictionary.class]) return nil;
+        if (![dict[@"nullableMapValue"] isKindOfClass:NSDictionary.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _person = [XYPurplePerson fromJSONDictionary:(id)_person];
+        if (!_person && dict[@"person"] && ![dict[@"person"] isKindOfClass:NSNull.class]) return nil;
+        _people = map(_people, λ(id x, [XYPersonElement fromJSONDictionary:x]));
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = XYKitchenSink.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = XYKitchenSink.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:XYKitchenSink.properties.allValues] mutableCopy];
+
+    for (id jsonName in XYKitchenSink.properties) {
+        id propertyName = XYKitchenSink.properties[jsonName];
+        if (![jsonName isEqualToString:propertyName]) {
+            dict[jsonName] = dict[propertyName];
+            [dict removeObjectForKey:propertyName];
+        }
+    }
+
+    [dict addEntriesFromDictionary:@{
+        @"booleanValue": _isBooleanValue ? @YES : @NO,
+        @"person": [_person JSONDictionary],
+        @"people": map(_people, λ(id x, [x JSONDictionary])),
+    }];
+
+    return dict;
+}
+
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error
+{
+    return XYKitchenSinkToData(self, error);
+}
+
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return XYKitchenSinkToJSON(self, encoding, error);
+}
+@end
+
+@implementation XYDifferentThingClass
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[XYDifferentThingClass alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = XYDifferentThingClass.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = XYDifferentThingClass.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:XYDifferentThingClass.properties.allValues];
+}
+@end
+
+@implementation XYPersonElement
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+        @"intOrString": @"intOrString",
+        @"optionalValue": @"optionalValue",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[XYPersonElement alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = XYPersonElement.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = XYPersonElement.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:XYPersonElement.properties.allValues];
+}
+@end
+
+@implementation XYPurplePerson
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+        @"intOrString": @"intOrString",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[XYPurplePerson alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"intOrString"] isKindOfClass:NSNumber.class]) return nil;
+        if ([dict[@"intOrString"] doubleValue] != [dict[@"intOrString"] longLongValue]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = XYPurplePerson.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = XYPurplePerson.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:XYPurplePerson.properties.allValues];
+}
+@end
+
+NS_ASSUME_NONNULL_END

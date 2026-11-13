@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-inference",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--out",
+        "foo.d.ts",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [
+        "foo.d.ts"
+      ],
+      "exit": 0
+    }
+  ]
+}

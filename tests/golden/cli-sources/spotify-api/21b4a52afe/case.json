@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-sources",
+  "input": "spotify-api",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "cs",
+        "{INPUTS}/spotify-api/Album"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

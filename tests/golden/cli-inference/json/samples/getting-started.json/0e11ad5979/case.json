@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-inference",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--out",
+        "Generated.cpp",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [
+        "Generated.cpp"
+      ],
+      "exit": 0
+    }
+  ]
+}

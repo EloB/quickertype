@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-options",
+  "input": "json/samples/kitchen-sink.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "flow",
+        "--no-prefer-const-values",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

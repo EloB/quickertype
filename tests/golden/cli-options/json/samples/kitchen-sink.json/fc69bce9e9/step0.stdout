@@ -1,0 +1,38 @@
+import * as z from "zod";
+
+
+export const DifferentThingClassSchema = z.object({
+    "name": z.string(),
+});
+export type DifferentThingClass = z.infer<typeof DifferentThingClassSchema>;
+
+export const PersonElementSchema = z.object({
+    "name": z.string(),
+    "intOrString": z.union([z.number().int(), z.string().regex(/^-?\d+$/).transform(Number)]),
+    "optionalValue": z.boolean().optional(),
+});
+export type PersonElement = z.infer<typeof PersonElementSchema>;
+
+export const PurplePersonSchema = z.object({
+    "name": z.string(),
+    "intOrString": z.number().int(),
+});
+export type PurplePerson = z.infer<typeof PurplePersonSchema>;
+
+export const KitchenSinkSchema = z.object({
+    "stringValue": z.string(),
+    "dateValue": z.string(),
+    "uuidValue": z.string(),
+    "name with spaces": z.null(),
+    "doubleValue": z.number(),
+    "intValue": z.number().int(),
+    "booleanValue": z.boolean(),
+    "nullValue": z.null(),
+    "tuples": z.array(z.array(z.union([z.number().int(), z.string()]))),
+    "person": PurplePersonSchema,
+    "people": z.array(PersonElementSchema),
+    "differentThings": z.array(z.union([DifferentThingClassSchema, z.number().int(), z.string().regex(/^-?\d+$/).transform(Number)])),
+    "mapValue": z.record(z.string(), z.union([z.null(), z.number().int()])),
+    "nullableMapValue": z.record(z.string(), z.union([z.null(), z.number().int()])),
+});
+export type KitchenSink = z.infer<typeof KitchenSinkSchema>;

@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-inference",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--out",
+        "Generated.elm",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [
+        "Generated.elm"
+      ],
+      "exit": 0
+    }
+  ]
+}

@@ -1,0 +1,339 @@
+
+[1mSynopsis[22m
+
+  $ quicktype [[1m--lang[22m LANG] [[1m--src-lang[22m SRC_LANG] [[1m--out[22m FILE] FILE|URL ...     
+                                                                                
+  LANG ... cjson|c++|cr|cs|dart|elixir|elm|flow|go|haskell|java|js|javascript-  
+  prop-                                                                         
+  types|schema|kotlin|objc|php|pike|py|ruby|rs|scala3|smithy4a|swift|ts|typescript- 
+  effect-schema|typescript-zod                                                  
+                                                                                
+  SRC_LANG ... json|schema|graphql|postman|typescript                           
+
+[1mDescription[22m
+
+  Given JSON sample data, quicktype outputs code for working with that data in  
+  C (cJSON), C++, Crystal, C#, Dart, Elixir, Elm, Flow, Go, Haskell, Java,      
+  JavaScript, JavaScript PropTypes, JSON Schema, Kotlin, Objective-C, PHP,      
+  Pike, Python, Ruby, Rust, Scala3, Smithy, Swift, TypeScript, TypeScript       
+  Effect Schema, TypeScript Zod.                                                
+
+[1mOptions[22m
+
+ [1m-o[22m, [1m--out[22m FILE                                              The output file. Determines --lang and --top-level.        
+ [1m-t[22m, [1m--top-level[22m NAME                                        The name for the top level type.                           
+ [1m-l[22m, [1m--lang[22m LANG                                             The target language.                                       
+ [1m-s[22m, [1m--src-lang[22m SRC_LANG                                     The source language (default is json).                     
+ [1m--src[22m FILE|URL|DIRECTORY                                    The file, url, or data directory to type.                  
+ [1m--src-urls[22m FILE                                             Tracery grammar describing URLs to crawl.                  
+ [1m--no-maps[22m                                                   Don't infer maps, always use classes.                      
+ [1m--no-enums[22m                                                  Don't infer enums, always use strings.                     
+ [1m--no-uuids[22m                                                  Don't convert UUIDs to UUID objects.                       
+ [1m--no-date-times[22m                                             Don't infer dates or times.                                
+ [1m--no-integer-strings[22m                                        Don't convert stringified integers to integers.            
+ [1m--no-boolean-strings[22m                                        Don't convert stringified booleans to booleans.            
+ [1m--no-combine-classes[22m                                        Don't combine similar classes.                             
+ [1m--no-ignore-json-refs[22m                                       Treat $ref as a reference in JSON.                         
+ [1m--graphql-schema[22m FILE                                       GraphQL introspection file.                                
+ [1m--graphql-introspect[22m URL                                    Introspect GraphQL schema from a server.                   
+ [1m--http-method[22m METHOD                                        HTTP method to use for the GraphQL introspection query.    
+ [1m--http-header[22m HEADER                                        Header(s) to attach to all HTTP requests, including the    
+                                                             GraphQL introspection query.                               
+ [1m-S[22m, [1m--additional-schema[22m FILE                                Register the $id's of additional JSON Schema files.        
+ [1m--alphabetize-properties[22m                                    Alphabetize order of class properties.                     
+ [1m--all-properties-optional[22m                                   Make all class properties optional.                        
+ [1m--quiet[22m                                                     Don't show issues in the generated code.                   
+ [1m--debug[22m OPTIONS or all                                      Comma separated debug options: print-graph, print-         
+                                                             reconstitution, print-gather-names, print-transformations, 
+                                                             print-schema-resolving, print-times, provenance            
+ [1m--telemetry[22m enable|disable                                  Enable anonymous telemetry to help improve quicktype       
+ [1m-h[22m, [1m--help[22m                                                  Get some help.                                             
+ [1m-v[22m, [1m--version[22m                                               Display the version of quicktype                           
+
+[1mOptions for C (cJSON)[22m
+
+ [1m--source-style[22m single-source|multi-source                   Source code generation type, whether to generate single or 
+                                                             multiple source files                                      
+ [1m--integer-size[22m int8_t|int16_t|int32_t|int64_t               Integer code generation type (int64_t by default)          
+ [1m--hashtable-size[22m SIZE                                       Hashtable size, used when maps are created (64 by default) 
+ [1m--typedef-alias[22m no-typedef|add-typedef                      Add typedef alias to unions, structs, and enums (no        
+                                                             typedef by default)                                        
+ [1m--print-style[22m print-formatted|print-unformatted             Which cJSON print should be used (formatted by default)    
+ [1m--type-style[22m pascal-case|underscore-case|camel-case|upper-  Naming style for types                                     
+ underscore-case|pascal-case-upper-acronyms|camel-case-                                                                 
+ upper-acronyms                                                                                                         
+ [1m--member-style[22m pascal-case|underscore-case|camel-           Naming style for members                                   
+ case|upper-underscore-case|pascal-case-upper-                                                                          
+ acronyms|camel-case-upper-acronyms                                                                                     
+ [1m--enumerator-style[22m pascal-case|underscore-case|camel-       Naming style for enumerators                               
+ case|upper-underscore-case|pascal-case-upper-                                                                          
+ acronyms|camel-case-upper-acronyms                                                                                     
+ [1m--[no-]header-only[22m                                          Generate headers only (on by default)                      
+
+[1mOptions for C++[22m
+
+ [1m--source-style[22m single-source|multi-source                   Source code generation type,  whether to generate single   
+                                                             or multiple source files                                   
+ [1m--include-location[22m local-include|global-include             Whether json.hpp is to be located globally or locally      
+ [1m--code-format[22m with-struct|with-getter-setter                Generate classes with getters/setters, instead of structs  
+ [1m--wstring[22m use-string|use-wstring                            Store strings using Utf-16 std::wstring, rather than Utf-8 
+                                                             std::string                                                
+ [1m--const-style[22m west-const|east-const                         Put const to the left/west (const T) or right/east (T      
+                                                             const)                                                     
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--namespace[22m NAME                                            Name of the generated namespace(s)                         
+ [1m--enum-type[22m NAME                                            Type of enum class                                         
+ [1m--type-style[22m pascal-case|original-case|underscore-          Naming style for types                                     
+ case|camel-case|upper-underscore-case|pascal-case-upper-                                                               
+ acronyms|camel-case-upper-acronyms                                                                                     
+ [1m--member-style[22m pascal-case|original-case|underscore-        Naming style for members                                   
+ case|camel-case|upper-underscore-case|pascal-case-upper-                                                               
+ acronyms|camel-case-upper-acronyms                                                                                     
+ [1m--enumerator-style[22m pascal-case|original-case|underscore-    Naming style for enumerators                               
+ case|camel-case|upper-underscore-case|pascal-case-upper-                                                               
+ acronyms|camel-case-upper-acronyms                                                                                     
+ [1m--[no-]boost[22m                                                Require a dependency on boost. Without boost, C++17 is     
+                                                             required (off by default)                                  
+ [1m--[no-]hide-null-optional[22m                                   Hide null value for optional field (off by default)        
+
+[1mOptions for C#[22m
+
+ [1m--framework[22m NewtonSoft|SystemTextJson                       Serialization framework                                    
+ [1m--array-type[22m array|list                                     Use T[] or List<T>                                         
+ [1m--density[22m normal|dense                                      Property density                                           
+ [1m--namespace[22m NAME                                            Generated namespace                                        
+ [1m--csharp-version[22m 5|6|8                                      C# version                                                 
+ [1m--[no-]virtual[22m                                              Generate virtual properties (off by default)               
+ [1m--[no-]use-records[22m                                          Generate records instead of classes (C# 9+) (off by        
+                                                             default)                                                   
+ [1m--any-type[22m object|dynamic                                   Type to use for "any"                                      
+ [1m--number-type[22m double|decimal                                Type to use for numbers                                    
+ [1m--features[22m complete|attributes-only                         Output features                                            
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--base-class[22m EntityData|Object                              Base class                                                 
+ [1m--[no-]check-required[22m                                       Fail if required properties are missing (off by default)   
+ [1m--[no-]keep-property-name[22m                                   Keep original field name generate (off by default)         
+ [1m--[no-]dateonly-timeonly-converters[22m                         Emit DateOnly/TimeOnly converters (requires .NET 6 or      
+                                                             later) (on by default)                                     
+
+[1mOptions for Dart[22m
+
+ [1m--[no-]just-types[22m                                           Types only (off by default)                                
+ [1m--[no-]coders-in-class[22m                                      Put encoder & decoder in Class (off by default)            
+ [1m--[no-]from-map[22m                                             Use method names fromMap() & toMap() (off by default)      
+ [1m--[no-]required-props[22m                                       Make all properties required (off by default)              
+ [1m--[no-]final-props[22m                                          Make all properties final (on by default)                  
+ [1m--[no-]copy-with[22m                                            Generate CopyWith method (off by default)                  
+ [1m--[no-]use-freezed[22m                                          Generate class definitions with @freezed compatibility     
+                                                             (off by default)                                           
+ [1m--[no-]use-hive[22m                                             Generate annotations for Hive type adapters (off by        
+                                                             default)                                                   
+ [1m--[no-]use-json-annotation[22m                                  Generate annotations for json_serializable (off by         
+                                                             default)                                                   
+ [1m--part-name[22m NAME                                            Use this name in `part` directive                          
+
+[1mOptions for Elixir[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--namespace[22m NAME                                            Specify a module namespace                                 
+
+[1mOptions for Elm[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--array-type[22m array|list                                     Use Array or List                                          
+ [1m--module[22m NAME                                               Generated module name                                      
+
+[1mOptions for Flow[22m
+
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--[no-]runtime-typecheck[22m                                    Verify JSON.parse results at runtime (on by default)       
+ [1m--[no-]runtime-typecheck-ignore-unknown-properties[22m          Ignore unknown properties when verifying at runtime (off   
+                                                             by default)                                                
+ [1m--converters[22m top-level|all-objects                          Which converters to generate (top-level by default)        
+ [1m--raw-type[22m json|any                                         Type of raw input (json by default)                        
+ [1m--[no-]just-types[22m                                           Interfaces only (off by default)                           
+ [1m--[no-]nice-property-names[22m                                  Transform property names to be JavaScripty (off by         
+                                                             default)                                                   
+ [1m--[no-]explicit-unions[22m                                      Explicitly name unions (off by default)                    
+ [1m--[no-]prefer-unions[22m                                        Use union type instead of enum (on by default)             
+ [1m--[no-]prefer-types[22m                                         Use types instead of interfaces (off by default)           
+ [1m--[no-]prefer-const-values[22m                                  Use string instead of enum for string enums with single    
+                                                             value (off by default)                                     
+ [1m--[no-]readonly[22m                                             Use readonly type members (off by default)                 
+ [1m--[no-]prefer-unknown[22m                                       Use unknown (TypeScript) or mixed (Flow) instead of any    
+                                                             (on by default)                                            
+
+[1mOptions for Go[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--[no-]just-types-and-package[22m                               Plain types with package only (off by default)             
+ [1m--package[22m NAME                                              Generated package name                                     
+ [1m--[no-]multi-file-output[22m                                    Renders each top-level object in its own Go file (off by   
+                                                             default)                                                   
+ [1m--field-tags[22m TAGS                                           list of tags which should be generated for fields          
+ [1m--[no-]omit-empty[22m                                           If set, all non-required objects will be tagged with       
+                                                             ",omitempty" (off by default)                              
+ [1m--[no-]enum-type-name-suffix[22m                                Append the enum type name to enum constant names (off by   
+                                                             default)                                                   
+
+[1mOptions for Haskell[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--array-type[22m array|list                                     Use Array or List                                          
+ [1m--module[22m NAME                                               Generated module name                                      
+
+[1mOptions for Java[22m
+
+ [1m--array-type[22m array|list                                     Use T[] or List<T>                                         
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--datetime-provider[22m java8|legacy                            Date time provider type                                    
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--package[22m NAME                                              Generated package name                                     
+ [1m--[no-]lombok[22m                                               Use lombok (off by default)                                
+ [1m--[no-]lombok-copy-annotations[22m                              Copy accessor annotations (on by default)                  
+
+[1mOptions for JavaScript[22m
+
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--[no-]runtime-typecheck[22m                                    Verify JSON.parse results at runtime (on by default)       
+ [1m--[no-]runtime-typecheck-ignore-unknown-properties[22m          Ignore unknown properties when verifying at runtime (off   
+                                                             by default)                                                
+ [1m--converters[22m top-level|all-objects                          Which converters to generate (top-level by default)        
+ [1m--raw-type[22m json|any                                         Type of raw input (json by default)                        
+
+[1mOptions for JavaScript PropTypes[22m
+
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--converters[22m top-level|all-objects                          Which converters to generate (top-level by default)        
+ [1m--module-system[22m common-js|es6                               Which module system to use                                 
+
+[1mOptions for Kotlin[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--framework[22m jackson|klaxon|kotlinx                          Serialization framework                                    
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--package[22m PACKAGE                                           Package                                                    
+
+[1mOptions for Objective-C[22m
+
+ [1m--features[22m all|interface|implementation                     Interface and implementation                               
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--[no-]functions[22m                                            C-style functions (off by default)                         
+ [1m--class-prefix[22m PREFIX                                       Class prefix                                               
+ [1m--[no-]extra-comments[22m                                       Extra comments (off by default)                            
+
+[1mOptions for PHP[22m
+
+ [1m--[no-]with-get[22m                                             Create Getter (on by default)                              
+ [1m--[no-]fast-get[22m                                             getter without validation (off by default)                 
+ [1m--[no-]with-set[22m                                             Create Setter (off by default)                             
+ [1m--[no-]with-closing[22m                                         PHP Closing Tag (off by default)                           
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+
+[1mOptions for Python[22m
+
+ [1m--python-version[22m 3.5|3.6|3.7|3.9|3.10                       Python version                                             
+ [1m--[no-]just-types[22m                                           Classes only (off by default)                              
+ [1m--[no-]nice-property-names[22m                                  Transform property names to be Pythonic (on by default)    
+ [1m--[no-]pydantic-base-model[22m                                  Uses pydantic BaseModel (off by default)                   
+
+[1mOptions for Ruby[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--strictness[22m strict|coercible|none                          Type strictness                                            
+ [1m--namespace[22m NAME                                            Specify a wrapping Namespace                               
+
+[1mOptions for Rust[22m
+
+ [1m--density[22m normal|dense                                      Density                                                    
+ [1m--visibility[22m private|crate|public                           Field visibility                                           
+ [1m--integer-type[22m conservative|force-i32|force-i64             Integer type inference                                     
+ [1m--[no-]derive-debug[22m                                         Derive Debug impl (on by default)                          
+ [1m--[no-]derive-clone[22m                                         Derive Clone impl (on by default)                          
+ [1m--[no-]derive-partial-eq[22m                                    Derive PartialEq impl (off by default)                     
+ [1m--[no-]skip-serializing-none[22m                                Skip serializing empty Option fields (off by default)      
+ [1m--[no-]leading-comments[22m                                     Leading Comments (on by default)                           
+
+[1mOptions for Scala3[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--framework[22m circe|upickle                                   Serialization framework                                    
+ [1m--package[22m PACKAGE                                           Package                                                    
+
+[1mOptions for Smithy[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--package[22m PACKAGE                                           Package                                                    
+
+[1mOptions for Swift[22m
+
+ [1m--[no-]just-types[22m                                           Plain types only (off by default)                          
+ [1m--[no-]initializers[22m                                         Generate initializers and mutators (on by default)         
+ [1m--[no-]coding-keys[22m                                          Explicit CodingKey values in Codable types (on by default) 
+ [1m--coding-keys-protocol[22m protocol1, protocol2...              CodingKeys implements protocols                            
+ [1m--[no-]alamofire[22m                                            Alamofire extensions (off by default)                      
+ [1m--type-prefix[22m PREFIX                                        Prefix for type names                                      
+ [1m--struct-or-class[22m struct|class                              Structs or classes                                         
+ [1m--[no-]final-classes[22m                                        Mark classes as final (off by default)                     
+ [1m--[no-]mutable-properties[22m                                   Use var instead of let for object properties (off by       
+                                                             default)                                                   
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--density[22m dense|normal                                      Code density                                               
+ [1m--[no-]support-linux[22m                                        Support Linux (off by default)                             
+ [1m--[no-]objective-c-support[22m                                  Objects inherit from NSObject and @objcMembers is added to 
+                                                             classes (off by default)                                   
+ [1m--[no-]optional-enums[22m                                       If no matching case is found enum value is set to null     
+                                                             (off by default)                                           
+ [1m--[no-]sendable[22m                                             Mark generated models as Sendable (off by default)         
+ [1m--[no-]multi-file-output[22m                                    Renders each top-level object in its own Swift file (off   
+                                                             by default)                                                
+ [1m--access-level[22m internal|public                              Access level                                               
+ [1m--protocol[22m none|equatable|hashable                          Make types implement protocol                              
+
+[1mOptions for TypeScript[22m
+
+ [1m--acronym-style[22m original|pascal|camel|lowerCase             Acronym naming style                                       
+ [1m--[no-]runtime-typecheck[22m                                    Verify JSON.parse results at runtime (on by default)       
+ [1m--[no-]runtime-typecheck-ignore-unknown-properties[22m          Ignore unknown properties when verifying at runtime (off   
+                                                             by default)                                                
+ [1m--converters[22m top-level|all-objects                          Which converters to generate (top-level by default)        
+ [1m--raw-type[22m json|any                                         Type of raw input (json by default)                        
+ [1m--[no-]just-types[22m                                           Interfaces only (off by default)                           
+ [1m--[no-]nice-property-names[22m                                  Transform property names to be JavaScripty (off by         
+                                                             default)                                                   
+ [1m--[no-]explicit-unions[22m                                      Explicitly name unions (off by default)                    
+ [1m--[no-]prefer-unions[22m                                        Use union type instead of enum (on by default)             
+ [1m--[no-]prefer-types[22m                                         Use types instead of interfaces (off by default)           
+ [1m--[no-]prefer-const-values[22m                                  Use string instead of enum for string enums with single    
+                                                             value (off by default)                                     
+ [1m--[no-]readonly[22m                                             Use readonly type members (off by default)                 
+ [1m--[no-]prefer-unknown[22m                                       Use unknown (TypeScript) or mixed (Flow) instead of any    
+                                                             (on by default)                                            
+
+[1mOptions for TypeScript Effect Schema[22m
+
+ [1m--[no-]just-schema[22m                                          Schema only (off by default)                               
+
+[1mOptions for TypeScript Zod[22m
+
+ [1m--[no-]just-schema[22m                                          Schema only (off by default)                               
+
+[1mExamples[22m
+
+  [2mGenerate C# to parse a Bitcoin API[22m                                            
+  $ quicktype -o LatestBlock.cs https://blockchain.info/latestblock             
+                                                                                
+  [2mGenerate Go code from a directory of samples containing:[22m                      
+  [2m  - Foo.json[22m                                                                  
+  [2m  + Bar[22m                                                                       
+  [2m    - bar-sample-1.json[22m                                                       
+  [2m    - bar-sample-2.json[22m                                                       
+  [2m  - Baz.url[22m                                                                   
+  $ quicktype -l go samples                                                     
+                                                                                
+  [2mGenerate JSON Schema, then TypeScript[22m                                         
+  $ quicktype -o schema.json https://blockchain.info/latestblock                
+  $ quicktype -o bitcoin.ts --src-lang schema schema.json                       
+
+  Learn more at [1mquicktype.io[22m 
+

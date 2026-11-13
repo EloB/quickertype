@@ -1,0 +1,243 @@
+# This code may look unusually verbose for Ruby (and it is), but
+# it performs some subtle and complex validation of JSON data.
+#
+# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:
+#
+#   kitchen_sink = KitchenSink.from_json! "{…}"
+#   puts kitchen_sink.nullable_map_value["…"].nil?
+#
+# If from_json! succeeds, the value returned matches the schema.
+
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer = Coercible::Integer
+  Bool    = Coercible::Bool
+  Hash    = Coercible::Hash
+  String  = Coercible::String
+  Double  = Coercible::Float | Coercible::Integer
+end
+
+class DifferentThingClass < Dry::Struct
+  attribute :different_thing_name, Types::String
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      different_thing_name: d.fetch("name"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "name" => different_thing_name,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class DifferentThingElement < Dry::Struct
+  attribute :different_thing_class, DifferentThingClass.optional
+  attribute :integer,               Types::Integer.optional
+  attribute :string,                Types::String.optional
+
+  def self.from_dynamic!(d)
+    begin
+      value = DifferentThingClass.from_dynamic!(d)
+      if schema.key(:different_thing_class).type.right.valid? value
+        return new(different_thing_class: value, integer: nil, string: nil)
+      end
+    rescue
+    end
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, different_thing_class: nil, string: nil)
+    end
+    if schema.key(:string).type.right.valid? d
+      return new(string: d, different_thing_class: nil, integer: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if different_thing_class != nil
+      different_thing_class.to_dynamic
+    elsif integer != nil
+      integer
+    elsif string != nil
+      string
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class IntOrString < Dry::Struct
+  attribute :integer, Types::Integer.optional
+  attribute :string,  Types::String.optional
+
+  def self.from_dynamic!(d)
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, string: nil)
+    end
+    if schema.key(:string).type.right.valid? d
+      return new(string: d, integer: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if integer != nil
+      integer
+    elsif string != nil
+      string
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class PersonElement < Dry::Struct
+  attribute :person_name,    Types::String
+  attribute :int_or_string,  Types.Instance(IntOrString)
+  attribute :optional_value, Types::Bool.optional
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      person_name:    d.fetch("name"),
+      int_or_string:  IntOrString.from_dynamic!(d.fetch("intOrString")),
+      optional_value: d.key?("optionalValue") ? Types::Bool[d["optionalValue"]] : nil,
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "name"          => person_name,
+      "intOrString"   => int_or_string.to_dynamic,
+      "optionalValue" => optional_value,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class Person1 < Dry::Struct
+  attribute :person_name,   Types::String
+  attribute :int_or_string, Types::Integer
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      person_name:   d.fetch("name"),
+      int_or_string: d.fetch("intOrString"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "name"        => person_name,
+      "intOrString" => int_or_string,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class KitchenSink < Dry::Struct
+  attribute :string_value,       Types::String
+  attribute :date_value,         Types::String
+  attribute :uuid_value,         Types::String
+  attribute :name_with_spaces,   Types::Nil
+  attribute :double_value,       Types::Double
+  attribute :int_value,          Types::Integer
+  attribute :boolean_value,      Types::Bool
+  attribute :null_value,         Types::Nil
+  attribute :tuples,             Types.Array(Types.Array(Types.Instance(IntOrString)))
+  attribute :person,             Person1
+  attribute :people,             Types.Array(PersonElement)
+  attribute :different_things,   Types.Array(Types.Instance(DifferentThingElement))
+  attribute :map_value,          Types::Hash.meta(of: Types::Integer.optional)
+  attribute :nullable_map_value, Types::Hash.meta(of: Types::Integer.optional)
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      string_value:       d.fetch("stringValue"),
+      date_value:         d.fetch("dateValue"),
+      uuid_value:         d.fetch("uuidValue"),
+      name_with_spaces:   d.fetch("name with spaces"),
+      double_value:       d.fetch("doubleValue"),
+      int_value:          d.fetch("intValue"),
+      boolean_value:      d.fetch("booleanValue"),
+      null_value:         d.fetch("nullValue"),
+      tuples:             d.fetch("tuples").map { |x| x.map { |x| IntOrString.from_dynamic!(x) } },
+      person:             Person1.from_dynamic!(d.fetch("person")),
+      people:             d.fetch("people").map { |x| PersonElement.from_dynamic!(x) },
+      different_things:   d.fetch("differentThings").map { |x| DifferentThingElement.from_dynamic!(x) },
+      map_value:          Types::Hash[d.fetch("mapValue")].map { |k, v| [k, v] }.to_h,
+      nullable_map_value: Types::Hash[d.fetch("nullableMapValue")].map { |k, v| [k, v] }.to_h,
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "stringValue"      => string_value,
+      "dateValue"        => date_value,
+      "uuidValue"        => uuid_value,
+      "name with spaces" => name_with_spaces,
+      "doubleValue"      => double_value,
+      "intValue"         => int_value,
+      "booleanValue"     => boolean_value,
+      "nullValue"        => null_value,
+      "tuples"           => tuples.map { |x| x.map { |x| x.to_dynamic } },
+      "person"           => person.to_dynamic,
+      "people"           => people.map { |x| x.to_dynamic },
+      "differentThings"  => different_things.map { |x| x.to_dynamic },
+      "mapValue"         => map_value,
+      "nullableMapValue" => nullable_map_value,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end

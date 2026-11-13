@@ -1,0 +1,19 @@
+// To parse this data:
+//
+//   const Convert = require("./file");
+//
+//   const kitchenSink = Convert.toKitchenSink(json);
+
+// Converts JSON strings to/from your types
+function toKitchenSink(json) {
+    return JSON.parse(json);
+}
+
+function kitchenSinkToJson(value) {
+    return JSON.stringify(value);
+}
+
+module.exports = {
+    "kitchenSinkToJson": kitchenSinkToJson,
+    "toKitchenSink": toKitchenSink,
+};

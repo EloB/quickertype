@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-sources",
+  "input": "schema/description.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "schema"
+      ],
+      "stdin": "{INPUTS}/schema/description.schema",
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

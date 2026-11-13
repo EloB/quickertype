@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "cjson",
+        "--integer-size",
+        "int128_t",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

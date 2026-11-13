@@ -1,0 +1,9 @@
+
+Issue in line 13: quicktype cannot infer this type because there is no data about it in the input.
+13:     private List<Object> genres;
+
+Issue in line 10: The only value for this in the input is null, which means you probably need a more complete input sample.
+10:     private Object next;
+
+Issue in line 12: The only value for this in the input is null, which means you probably need a more complete input sample.
+12:     private Object previous;

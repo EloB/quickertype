@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-stdout",
+  "input": "schema/description.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "objc",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/description.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

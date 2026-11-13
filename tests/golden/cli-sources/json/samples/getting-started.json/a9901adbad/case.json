@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-sources",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--top-level",
+        "Person"
+      ],
+      "stdin": "{INPUTS}/json/samples/getting-started.json",
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

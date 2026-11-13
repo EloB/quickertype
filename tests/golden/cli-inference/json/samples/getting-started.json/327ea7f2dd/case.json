@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-inference",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/date-time.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

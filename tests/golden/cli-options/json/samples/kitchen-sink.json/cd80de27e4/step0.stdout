@@ -1,0 +1,42 @@
+type KitchenSink struct {
+	StringValue      string                  `json:"stringValue"`
+	DateValue        string                  `json:"dateValue"`
+	UUIDValue        string                  `json:"uuidValue"`
+	NameWithSpaces   interface{}             `json:"name with spaces"`
+	DoubleValue      float64                 `json:"doubleValue"`
+	IntValue         int64                   `json:"intValue"`
+	BooleanValue     bool                    `json:"booleanValue"`
+	NullValue        interface{}             `json:"nullValue"`
+	Tuples           [][]IntOrString         `json:"tuples"`
+	Person           PurplePerson            `json:"person"`
+	People           []PersonElement         `json:"people"`
+	DifferentThings  []DifferentThingElement `json:"differentThings"`
+	MapValue         map[string]*int64       `json:"mapValue"`
+	NullableMapValue map[string]*int64       `json:"nullableMapValue"`
+}
+
+type DifferentThingClass struct {
+	Name string `json:"name"`
+}
+
+type PersonElement struct {
+	Name          string       `json:"name"`
+	IntOrString   *IntOrString `json:"intOrString"`
+	OptionalValue *bool        `json:"optionalValue,omitempty"`
+}
+
+type PurplePerson struct {
+	Name        string `json:"name"`
+	IntOrString int64  `json:"intOrString"`
+}
+
+type DifferentThingElement struct {
+	DifferentThingClass *DifferentThingClass
+	Integer             *int64
+	String              *string
+}
+
+type IntOrString struct {
+	Integer *int64
+	String  *string
+}

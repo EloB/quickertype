@@ -1,0 +1,13 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--top-level"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

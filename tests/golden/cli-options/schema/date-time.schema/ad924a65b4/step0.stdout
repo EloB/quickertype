@@ -1,0 +1,80 @@
+// To parse this JSON data, do
+//
+//     final purpleDateTime = purpleDateTimeFromJson(jsonString);
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'date_time.freezed.dart';
+part 'date_time.g.dart';
+
+PurpleDateTime purpleDateTimeFromJson(String str) => PurpleDateTime.fromJson(json.decode(str));
+
+String purpleDateTimeToJson(PurpleDateTime data) => json.encode(data.toJson());
+
+@freezed
+abstract class PurpleDateTime with _$PurpleDateTime {
+    const factory PurpleDateTime({
+        @JsonKey(name: "complex-union-array")
+        required List<dynamic> complexUnionArray,
+        @JsonKey(name: "date")
+        required DateTime date,
+        @JsonKey(name: "date-time")
+        required DateTime dateTime,
+        @JsonKey(name: "local-date-class")
+        LocalDate? localDateClass,
+        @JsonKey(name: "offset-date-time-class")
+        OffsetDateTime? offsetDateTimeClass,
+        @JsonKey(name: "offset-time-class")
+        OffsetTime? offsetTimeClass,
+        @JsonKey(name: "time")
+        required String time,
+        @JsonKey(name: "union-array")
+        required List<String> unionArray,
+    }) = _PurpleDateTime;
+
+    factory PurpleDateTime.fromJson(Map<String, dynamic> json) => _$PurpleDateTimeFromJson(json);
+}
+
+enum ComplexUnionArrayEnum {
+    FOO,
+    BAR
+}
+
+final complexUnionArrayEnumValues = EnumValues({
+    "foo": ComplexUnionArrayEnum.FOO,
+    "bar": ComplexUnionArrayEnum.BAR
+});
+
+@freezed
+abstract class LocalDate with _$LocalDate {
+    const factory LocalDate() = _LocalDate;
+
+    factory LocalDate.fromJson(Map<String, dynamic> json) => _$LocalDateFromJson(json);
+}
+
+@freezed
+abstract class OffsetDateTime with _$OffsetDateTime {
+    const factory OffsetDateTime() = _OffsetDateTime;
+
+    factory OffsetDateTime.fromJson(Map<String, dynamic> json) => _$OffsetDateTimeFromJson(json);
+}
+
+@freezed
+abstract class OffsetTime with _$OffsetTime {
+    const factory OffsetTime() = _OffsetTime;
+
+    factory OffsetTime.fromJson(Map<String, dynamic> json) => _$OffsetTimeFromJson(json);
+}
+
+class EnumValues<T> {
+    Map<String, T> map;
+    late Map<T, String> reverseMap;
+
+    EnumValues(this.map);
+
+    Map<T, String> get reverse {
+            reverseMap = map.map((k, v) => MapEntry(v, k));
+            return reverseMap;
+    }
+}

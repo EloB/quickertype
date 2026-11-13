@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-global-options",
+  "input": "json/samples/kitchen-sink.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "cs",
+        "--no-integer-strings",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

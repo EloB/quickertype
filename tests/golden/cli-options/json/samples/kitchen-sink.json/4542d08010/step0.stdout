@@ -1,0 +1,386 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let kitchenSink = try KitchenSink(json)
+
+import Foundation
+
+// MARK: - KitchenSink
+public struct KitchenSink: Codable {
+    public let stringValue: String
+    public let dateValue: String
+    public let uuidValue: String
+    public let nameWithSpaces: JSONNull?
+    public let doubleValue: Double
+    public let intValue: Int
+    public let booleanValue: Bool
+    public let nullValue: JSONNull?
+    public let tuples: [[IntOrString]]
+    public let person: PurplePerson
+    public let people: [PersonElement]
+    public let differentThings: [DifferentThingElement]
+    public let mapValue: [String: Int?]
+    public let nullableMapValue: [String: Int?]
+
+    public enum CodingKeys: String, CodingKey {
+        case stringValue = "stringValue"
+        case dateValue = "dateValue"
+        case uuidValue = "uuidValue"
+        case nameWithSpaces = "name with spaces"
+        case doubleValue = "doubleValue"
+        case intValue = "intValue"
+        case booleanValue = "booleanValue"
+        case nullValue = "nullValue"
+        case tuples = "tuples"
+        case person = "person"
+        case people = "people"
+        case differentThings = "differentThings"
+        case mapValue = "mapValue"
+        case nullableMapValue = "nullableMapValue"
+    }
+
+    public init(stringValue: String, dateValue: String, uuidValue: String, nameWithSpaces: JSONNull?, doubleValue: Double, intValue: Int, booleanValue: Bool, nullValue: JSONNull?, tuples: [[IntOrString]], person: PurplePerson, people: [PersonElement], differentThings: [DifferentThingElement], mapValue: [String: Int?], nullableMapValue: [String: Int?]) {
+        self.stringValue = stringValue
+        self.dateValue = dateValue
+        self.uuidValue = uuidValue
+        self.nameWithSpaces = nameWithSpaces
+        self.doubleValue = doubleValue
+        self.intValue = intValue
+        self.booleanValue = booleanValue
+        self.nullValue = nullValue
+        self.tuples = tuples
+        self.person = person
+        self.people = people
+        self.differentThings = differentThings
+        self.mapValue = mapValue
+        self.nullableMapValue = nullableMapValue
+    }
+}
+
+// MARK: KitchenSink convenience initializers and mutators
+
+public extension KitchenSink {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(KitchenSink.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        stringValue: String? = nil,
+        dateValue: String? = nil,
+        uuidValue: String? = nil,
+        nameWithSpaces: JSONNull?? = nil,
+        doubleValue: Double? = nil,
+        intValue: Int? = nil,
+        booleanValue: Bool? = nil,
+        nullValue: JSONNull?? = nil,
+        tuples: [[IntOrString]]? = nil,
+        person: PurplePerson? = nil,
+        people: [PersonElement]? = nil,
+        differentThings: [DifferentThingElement]? = nil,
+        mapValue: [String: Int?]? = nil,
+        nullableMapValue: [String: Int?]? = nil
+    ) -> KitchenSink {
+        return KitchenSink(
+            stringValue: stringValue ?? self.stringValue,
+            dateValue: dateValue ?? self.dateValue,
+            uuidValue: uuidValue ?? self.uuidValue,
+            nameWithSpaces: nameWithSpaces ?? self.nameWithSpaces,
+            doubleValue: doubleValue ?? self.doubleValue,
+            intValue: intValue ?? self.intValue,
+            booleanValue: booleanValue ?? self.booleanValue,
+            nullValue: nullValue ?? self.nullValue,
+            tuples: tuples ?? self.tuples,
+            person: person ?? self.person,
+            people: people ?? self.people,
+            differentThings: differentThings ?? self.differentThings,
+            mapValue: mapValue ?? self.mapValue,
+            nullableMapValue: nullableMapValue ?? self.nullableMapValue
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum DifferentThingElement: Codable {
+    case differentThingClass(DifferentThingClass)
+    case integer(Int)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(DifferentThingClass.self) {
+            self = .differentThingClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(DifferentThingElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for DifferentThingElement"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .differentThingClass(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - DifferentThingClass
+public struct DifferentThingClass: Codable {
+    public let name: String
+
+    public enum CodingKeys: String, CodingKey {
+        case name = "name"
+    }
+
+    public init(name: String) {
+        self.name = name
+    }
+}
+
+// MARK: DifferentThingClass convenience initializers and mutators
+
+public extension DifferentThingClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(DifferentThingClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        name: String? = nil
+    ) -> DifferentThingClass {
+        return DifferentThingClass(
+            name: name ?? self.name
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - PersonElement
+public struct PersonElement: Codable {
+    public let name: String
+    public let intOrString: IntOrString
+    public let optionalValue: Bool?
+
+    public enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case intOrString = "intOrString"
+        case optionalValue = "optionalValue"
+    }
+
+    public init(name: String, intOrString: IntOrString, optionalValue: Bool?) {
+        self.name = name
+        self.intOrString = intOrString
+        self.optionalValue = optionalValue
+    }
+}
+
+// MARK: PersonElement convenience initializers and mutators
+
+public extension PersonElement {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PersonElement.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        name: String? = nil,
+        intOrString: IntOrString? = nil,
+        optionalValue: Bool?? = nil
+    ) -> PersonElement {
+        return PersonElement(
+            name: name ?? self.name,
+            intOrString: intOrString ?? self.intOrString,
+            optionalValue: optionalValue ?? self.optionalValue
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+public enum IntOrString: Codable {
+    case integer(Int)
+    case string(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(IntOrString.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for IntOrString"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - PurplePerson
+public struct PurplePerson: Codable {
+    public let name: String
+    public let intOrString: Int
+
+    public enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case intOrString = "intOrString"
+    }
+
+    public init(name: String, intOrString: Int) {
+        self.name = name
+        self.intOrString = intOrString
+    }
+}
+
+// MARK: PurplePerson convenience initializers and mutators
+
+public extension PurplePerson {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(PurplePerson.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        name: String? = nil,
+        intOrString: Int? = nil
+    ) -> PurplePerson {
+        return PurplePerson(
+            name: name ?? self.name,
+            intOrString: intOrString ?? self.intOrString
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - Helper functions for creating encoders and decoders
+
+func newJSONDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        decoder.dateDecodingStrategy = .iso8601
+    }
+    return decoder
+}
+
+func newJSONEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        encoder.dateEncodingStrategy = .iso8601
+    }
+    return encoder
+}
+
+// MARK: - Encode/decode helpers
+
+public class JSONNull: Codable, Hashable {
+
+    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(0)
+    }
+
+    public init() {}
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if !container.decodeNil() {
+            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
+    }
+}

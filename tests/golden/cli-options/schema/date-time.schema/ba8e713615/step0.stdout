@@ -1,0 +1,24 @@
+package quicktype
+
+case class DateTime (
+    val `complex-union-array` : Seq[ComplexUnionArrayElement],
+    val date : String,
+    val `date-time` : java.time.Instant,
+    val `local-date-class` : Option[LocalDate] = None,
+    val `offset-date-time-class` : Option[OffsetDateTime] = None,
+    val `offset-time-class` : Option[OffsetTime] = None,
+    val time : String,
+    val `union-array` : Seq[String]
+)
+
+type ComplexUnionArrayElement = java.time.Instant | ComplexUnionArrayEnum | Long
+enum ComplexUnionArrayEnum :  
+    case Foo
+    case Bar
+
+
+case class LocalDate()
+
+case class OffsetDateTime()
+
+case class OffsetTime()

@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-inference",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src",
+        "{INPUTS}/json/priority/omit-empty.out.omit-empty.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

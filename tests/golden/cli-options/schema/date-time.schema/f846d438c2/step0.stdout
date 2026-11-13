@@ -1,0 +1,45 @@
+// @flow
+
+// To parse this data:
+//
+//   const Convert = require("./file");
+//
+//   const dateTime = Convert.toDateTime(json);
+
+export type DateTime = {
+    "complex-union-array":     Array<Date | ComplexUnionArrayEnum | number>;
+    date:                      Date;
+    "date-time":               Date;
+    "local-date-class"?:       LocalDate;
+    "offset-date-time-class"?: OffsetDateTime;
+    "offset-time-class"?:      OffsetTime;
+    time:                      string;
+    "union-array":             string[];
+};
+
+export type ComplexUnionArrayEnum =
+      "foo"
+    | "bar";
+
+export type LocalDate = {
+};
+
+export type OffsetDateTime = {
+};
+
+export type OffsetTime = {
+};
+
+// Converts JSON strings to/from your types
+function toDateTime(json: string): DateTime {
+    return JSON.parse(json);
+}
+
+function dateTimeToJson(value: DateTime): string {
+    return JSON.stringify(value);
+}
+
+module.exports = {
+    "dateTimeToJson": dateTimeToJson,
+    "toDateTime": toDateTime,
+};
