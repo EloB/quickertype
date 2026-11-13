@@ -342,8 +342,8 @@ function inputFileName() {
 
 const shellQuote = (s) => (/^[A-Za-z0-9_.,:/=+@%-]+$/.test(s) ? s : `'${s.replace(/'/g, "'\\''")}'`);
 
-/** The quicktype CLI command that gives the same output. */
-function cliCommand() {
+/** The arguments of the quicktype CLI command that gives the same output, quoted for a shell. */
+function cliArgs() {
     const args = ["quicktype"];
     if (state.kind === "schema") args.push("--src-lang", "schema");
     args.push("--lang", state.lang.names[0], "--top-level", topLevelName());
@@ -357,11 +357,17 @@ function cliCommand() {
     }
 
     args.push(inputFileName());
-    return args.map(shellQuote).join(" ");
+    return args.map(shellQuote);
 }
 
+/** The quicktype CLI command that gives the same output. */
+const cliCommand = () => cliArgs().join(" ");
+
+/** The command, an argument per span: it wraps between arguments, never inside a flag (its text is the command). */
 function renderCli() {
-    els.cli.textContent = cliCommand();
+    els.cli.innerHTML = cliArgs()
+        .map((arg) => `<span class="arg">${escapeHtml(arg)}</span>`)
+        .join(" ");
 }
 
 function showInput() {

@@ -848,20 +848,26 @@ pre#output:focus-visible {
 
 .cli {
     flex-wrap: nowrap;
+    align-items: baseline;
 }
 
 .cli-label {
     flex: none;
 }
 
+/* The whole command is shown, wrapped between arguments (Copy copies it as one line). */
 #cli {
     flex: 1;
     min-width: 0;
-    overflow-x: auto;
-    white-space: nowrap;
-    font: 12px var(--mono);
+    font: 12px/1.5 var(--mono);
     color: var(--ink);
-    scrollbar-width: thin;
+}
+
+/* An argument wraps only if it is longer than a line. */
+#cli .arg {
+    display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .credits {

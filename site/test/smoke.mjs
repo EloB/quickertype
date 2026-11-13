@@ -19,7 +19,8 @@
 // quicktype's defaults; that the just-types hints are there, and not where
 // the option does nothing; that the general options are labelled as in the
 // CLI's --help, and that a section the user closed stays closed; that the
-// footer links the quicktype commit in tests/golden/REFERENCE; that compare mode reports identical output with each engine in its own
+// command is shown whole, wrapped, and copied as one line; that the footer
+// links the quicktype commit in tests/golden/REFERENCE; that compare mode reports identical output with each engine in its own
 // worker; that invalid JSON shows quicktype's error; that the input survives
 // a reload (localStorage); and that 360 px and 390 px widths do not scroll
 // sideways. And three things that once went wrong: the code shown after a
@@ -338,6 +339,31 @@ const click = (id) => andRun(`document.getElementById(${JSON.stringify(id)}).cli
 
 const hashNow = () => page.evaluate("location.hash");
 
+/** The command under the output: shown whole (wrapped, never cut off), and what Copy copies. */
+async function commandShown(label) {
+    const command = await page.evaluate(`(async () => {
+        const cli = document.getElementById("cli");
+        let copied;
+        Object.defineProperty(navigator.clipboard, "writeText", { configurable: true, value: async (text) => { copied = text; } });
+        document.getElementById("copy-cli").click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const line = parseFloat(getComputedStyle(cli).lineHeight);
+        return {
+            command: playground.cli(),
+            copied,
+            text: cli.textContent,
+            hidden: cli.scrollWidth - cli.clientWidth,
+            lines: Math.round(cli.getBoundingClientRect().height / line),
+            split: [...cli.querySelectorAll(".arg")].filter((a) => a.getBoundingClientRect().height > line * 1.5).map((a) => a.textContent),
+        };
+    })()`);
+    assert.equal(command.text, command.command, `${label}: the command shown`);
+    assert.equal(command.copied, command.command, `${label}: Copy`);
+    assert.ok(command.hidden <= 0, `${label}: ${command.hidden} px of the command are cut off`);
+    assert.deepEqual(command.split, [], `${label}: arguments broken across lines`);
+    return command;
+}
+
 /** Opens `file` with the file picker and waits for the run on it. */
 async function upload(file) {
     const { result: picker } = await page.send("Runtime.evaluate", { expression: "document.getElementById('file')" });
@@ -550,6 +576,8 @@ try {
         "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
     );
     await page.screenshot("general-open.png");
+    const wide = await commandShown("the command with two general options");
+    console.log(`ok: the command is shown whole on ${wide.lines} line(s) at 1440 px, and copied as one line`);
     // Closed by the user, General stays closed through re-renders (another
     // sample, another kind of input) and while its options change.
     await page.evaluate("document.querySelector('#general summary').click()");
@@ -830,15 +858,17 @@ try {
     );
     console.log(`ok: a worker failing after it loaded: "${failure}"`);
 
-    // Phones: stacked, no sideways scrolling.
+    // Phones: stacked, no sideways scrolling, and a long command wrapped.
     for (const width of [360, 390]) {
         await page.viewport(width, 844, { mobile: true });
-        await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
+        await page.navigate(`${url}#v=2&l=rust&s=pokedex&all-properties-optional=true&no-enums=true`);
         await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run on a phone");
         const scrollWidth = await page.evaluate("document.documentElement.scrollWidth");
         assert.ok(scrollWidth <= width, `${width} px: the page is ${scrollWidth} px wide`);
         if (width === 390) await page.screenshot("mobile-390.png", { full: true });
-        console.log(`ok: ${width} px wide, no horizontal scrolling`);
+        const { lines } = await commandShown(`${width} px`);
+        assert.ok(lines > 1, `${width} px: the command is on ${lines} line(s)`);
+        console.log(`ok: ${width} px wide, no horizontal scrolling; the command wraps onto ${lines} lines and copies whole`);
     }
 
     const missing = requests.filter(([status]) => status !== 200);
