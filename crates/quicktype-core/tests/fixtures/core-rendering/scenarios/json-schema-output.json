@@ -1,0 +1,553 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "object",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "0",
+       [
+        "Zero."
+       ]
+      ],
+      [
+       "items",
+       [
+        "Some items."
+       ]
+      ],
+      [
+       "either",
+       [
+        "Either one."
+       ]
+      ],
+      [
+       "kind",
+       [
+        "A kind."
+       ]
+      ]
+     ],
+     "description": [
+      "Top."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "0",
+      1,
+      true
+     ],
+     [
+      "1",
+      2,
+      false
+     ],
+     [
+      "__proto__",
+      3,
+      false
+     ],
+     [
+      "both",
+      4,
+      true
+     ],
+     [
+      "dates",
+      8,
+      false
+     ],
+     [
+      "either",
+      16,
+      true
+     ],
+     [
+      "items",
+      18,
+      true
+     ],
+     [
+      "kind",
+      20,
+      false
+     ],
+     [
+      "m",
+      21,
+      true
+     ]
+    ],
+    "add": 23
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "0"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      null
+     ],
+     "pattern": "^a+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "defaultValue": 5,
+     "minMax": [
+      0,
+      10
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "1"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "__proto__"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "both"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     7,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "both"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 6
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Map"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "object",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "dates"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "b",
+      9,
+      true
+     ],
+     [
+      "d",
+      10,
+      true
+     ],
+     [
+      "dt",
+      11,
+      true
+     ],
+     [
+      "i",
+      12,
+      true
+     ],
+     [
+      "id",
+      13,
+      true
+     ],
+     [
+      "t",
+      14,
+      true
+     ],
+     [
+      "u",
+      15,
+      true
+     ]
+    ],
+    "add": 6
+   },
+   {
+    "k": "bool-string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "b"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "date",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "d"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "dt"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "integer-string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "i"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "uuid",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "id"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "t"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "uri",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "description": [
+      "Either one."
+     ]
+    },
+    "members": [
+     7,
+     17,
+     6
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "items"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 19
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "item"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     },
+     "description": [
+      "A kind."
+     ]
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "m"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 22
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "m"
+      ],
+      "alts": [],
+      "d": 6
+     },
+     "defaultValue": "x",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Map"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "description": [
+      "A map."
+     ]
+    },
+    "fixed": false,
+    "props": [],
+    "add": 7
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Map",
+    24
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n    \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n    \"definitions\": {\n        \"TopLevel\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {},\n            \"properties\": {\n                \"0\": {\n                    \"type\": \"string\",\n                    \"minLength\": 2,\n                    \"pattern\": \"^a+$\",\n                    \"description\": \"Zero.\"\n                },\n                \"1\": {\n                    \"type\": \"integer\",\n                    \"default\": 5,\n                    \"minimum\": 0,\n                    \"maximum\": 10\n                },\n                \"both\": {\n                    \"$ref\": \"#/definitions/Both\"\n                },\n                \"dates\": {\n                    \"$ref\": \"#/definitions/Dates\"\n                },\n                \"either\": {\n                    \"$ref\": \"#/definitions/Either\",\n                    \"description\": \"Either one.\"\n                },\n                \"items\": {\n                    \"type\": \"array\",\n                    \"items\": {\n                        \"type\": \"number\"\n                    },\n                    \"minItems\": 1,\n                    \"description\": \"Some items.\"\n                },\n                \"kind\": {\n                    \"$ref\": \"#/definitions/Kind\",\n                    \"description\": \"A kind.\"\n                },\n                \"m\": {\n                    \"type\": \"object\",\n                    \"additionalProperties\": {\n                        \"type\": \"string\",\n                        \"default\": \"x\"\n                    }\n                }\n            },\n            \"required\": [\n                \"1\",\n                \"__proto__\",\n                \"dates\",\n                \"kind\"\n            ],\n            \"title\": \"TopLevel\",\n            \"description\": \"Top.\"\n        },\n        \"Dates\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n                \"type\": \"string\"\n            },\n            \"properties\": {\n                \"b\": {\n                    \"type\": \"string\",\n                    \"format\": \"boolean\"\n                },\n                \"d\": {\n                    \"type\": \"string\",\n                    \"format\": \"date\"\n                },\n                \"dt\": {\n                    \"type\": \"string\",\n                    \"format\": \"date-time\"\n                },\n                \"i\": {\n                    \"type\": \"string\",\n                    \"format\": \"integer\"\n                },\n                \"id\": {\n                    \"type\": \"string\",\n                    \"format\": \"uuid\"\n                },\n                \"t\": {\n                    \"type\": \"string\",\n                    \"format\": \"time\"\n                },\n                \"u\": {\n                    \"type\": \"string\",\n                    \"format\": \"uri\"\n                }\n            },\n            \"required\": [],\n            \"title\": \"Dates\"\n        },\n        \"Both\": {\n            \"anyOf\": [\n                {\n                    \"type\": \"array\",\n                    \"items\": {\n                        \"type\": \"string\"\n                    }\n                },\n                {\n                    \"type\": \"integer\"\n                }\n            ],\n            \"title\": \"Both\"\n        },\n        \"Either\": {\n            \"anyOf\": [\n                {\n                    \"type\": \"integer\"\n                },\n                {\n                    \"type\": \"null\"\n                },\n                {\n                    \"type\": \"string\"\n                }\n            ],\n            \"title\": \"Either\",\n            \"description\": \"Either one.\"\n        },\n        \"Kind\": {\n            \"type\": \"string\",\n            \"enum\": [\n                \"a\",\n                \"b\"\n            ],\n            \"title\": \"Kind\",\n            \"description\": \"A kind.\"\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n  \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n  \"definitions\": {\n    \"TopLevel\": {\n      \"type\": \"object\",\n      \"additionalProperties\": {},\n      \"properties\": {\n        \"0\": {\n          \"type\": \"string\",\n          \"minLength\": 2,\n          \"pattern\": \"^a+$\",\n          \"description\": \"Zero.\"\n        },\n        \"1\": {\n          \"type\": \"integer\",\n          \"default\": 5,\n          \"minimum\": 0,\n          \"maximum\": 10\n        },\n        \"both\": {\n          \"$ref\": \"#/definitions/Both\"\n        },\n        \"dates\": {\n          \"$ref\": \"#/definitions/Dates\"\n        },\n        \"either\": {\n          \"$ref\": \"#/definitions/Either\",\n          \"description\": \"Either one.\"\n        },\n        \"items\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"number\"\n          },\n          \"minItems\": 1,\n          \"description\": \"Some items.\"\n        },\n        \"kind\": {\n          \"$ref\": \"#/definitions/Kind\",\n          \"description\": \"A kind.\"\n        },\n        \"m\": {\n          \"type\": \"object\",\n          \"additionalProperties\": {\n            \"type\": \"string\",\n            \"default\": \"x\"\n          }\n        }\n      },\n      \"required\": [\n        \"1\",\n        \"__proto__\",\n        \"dates\",\n        \"kind\"\n      ],\n      \"title\": \"TopLevel\",\n      \"description\": \"Top.\"\n    },\n    \"Dates\": {\n      \"type\": \"object\",\n      \"additionalProperties\": {\n        \"type\": \"string\"\n      },\n      \"properties\": {\n        \"b\": {\n          \"type\": \"string\",\n          \"format\": \"boolean\"\n        },\n        \"d\": {\n          \"type\": \"string\",\n          \"format\": \"date\"\n        },\n        \"dt\": {\n          \"type\": \"string\",\n          \"format\": \"date-time\"\n        },\n        \"i\": {\n          \"type\": \"string\",\n          \"format\": \"integer\"\n        },\n        \"id\": {\n          \"type\": \"string\",\n          \"format\": \"uuid\"\n        },\n        \"t\": {\n          \"type\": \"string\",\n          \"format\": \"time\"\n        },\n        \"u\": {\n          \"type\": \"string\",\n          \"format\": \"uri\"\n        }\n      },\n      \"required\": [],\n      \"title\": \"Dates\"\n    },\n    \"Both\": {\n      \"anyOf\": [\n        {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        {\n          \"type\": \"integer\"\n        }\n      ],\n      \"title\": \"Both\"\n    },\n    \"Either\": {\n      \"anyOf\": [\n        {\n          \"type\": \"integer\"\n        },\n        {\n          \"type\": \"null\"\n        },\n        {\n          \"type\": \"string\"\n        }\n      ],\n      \"title\": \"Either\",\n      \"description\": \"Either one.\"\n    },\n    \"Kind\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"a\",\n        \"b\"\n      ],\n      \"title\": \"Kind\",\n      \"description\": \"A kind.\"\n    }\n  }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "json-schema-output"
+}

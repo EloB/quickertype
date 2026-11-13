@@ -106,6 +106,34 @@
    ],
    "error": "Maximum call stack size exceeded",
    "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
   }
  ],
  "id": "recursion-overflow"

@@ -1,0 +1,13 @@
+# JSON Schema output beyond the golden corpus: several top-levels (the
+# root is then empty), a top-level map, objects with additional
+# properties (full object types), every transformed string format,
+# constraints, defaults, descriptions on types, properties and named
+# unions, integer-like and __proto__ property names, and a named union
+# that is not nullable next to a nullable one.
+input schema TopLevel {"type": "object", "description": "Top.", "properties": {"1": {"type": "integer", "minimum": 0, "maximum": 10, "default": 5}, "0": {"type": "string", "minLength": 2, "pattern": "^a+$", "description": "Zero."}, "__proto__": {"type": "boolean"}, "items": {"type": "array", "items": {"type": "number"}, "minItems": 1, "description": "Some items."}, "dates": {"type": "object", "properties": {"d": {"type": "string", "format": "date"}, "t": {"type": "string", "format": "time"}, "dt": {"type": "string", "format": "date-time"}, "id": {"type": "string", "format": "uuid"}, "u": {"type": "string", "format": "uri"}, "i": {"type": "string", "format": "integer"}, "b": {"type": "string", "format": "boolean"}}, "additionalProperties": {"type": "string"}}, "either": {"description": "Either one.", "anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "both": {"anyOf": [{"type": "integer"}, {"type": "array", "items": {"type": "string"}}]}, "kind": {"enum": ["a", "b"], "description": "A kind."}, "m": {"type": "object", "additionalProperties": {"type": "string", "default": "x"}}}, "required": ["1", "kind", "__proto__", "dates"]}
+input schema Map {"type": "object", "additionalProperties": {"type": "integer"}, "description": "A map."}
+pipeline {"lang": "schema"}
+
+render schema {}
+render schema {"indentation": "  "}
+

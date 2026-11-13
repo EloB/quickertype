@@ -1,0 +1,23 @@
+# Go renderer paths the golden corpus does not reach: unions and enums in
+# multi-file output (JSONSchemaSupport.go, the per-file bytes/errors
+# imports, an enum inside a union without UnmarshalJSON), a top-level that
+# is not a named type, several top-levels, just-types-and-package and
+# just-types with unions (multi-file just-types never finishes a union's
+# file, so the next file fails TypeScript's assertion), omit-empty on
+# optional unions, nulls and anys, several and empty field tags, property
+# descriptions, and the import detection that misses an optional slice of
+# time.Time (its JavaScript string is "*,[],time.Time").
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"when": {"type": "array", "items": {"type": "string", "format": "date-time"}}, "times": {"type": "object", "additionalProperties": {"type": "string", "format": "date-time"}}, "u": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "array", "items": {"type": "boolean"}}, {"type": "object", "properties": {"x": {"type": "number"}}}, {"type": "object", "additionalProperties": {"type": "integer"}}, {"enum": ["a", "b"]}, {"type": "null"}]}, "nu": {"type": ["string", "null"], "description": "A nullable string, described at some length so that the description needs to be wrapped over more than one line of the generated comment."}, "anything": {}, "nothing": {"type": "null"}, "kind": {"enum": ["x-y", "z"]}, "list": {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]}}}, "required": ["times"]}
+input schema Other {"type": "array", "items": {"type": "string", "format": "date-time"}}
+pipeline {"lang": "golang"}
+
+render golang {}
+render golang {"rendererOptions": {"multi-file-output": true}}
+render golang {"rendererOptions": {"just-types-and-package": true}}
+render golang {"rendererOptions": {"just-types-and-package": true, "multi-file-output": true}}
+render golang {"rendererOptions": {"just-types": true}}
+render golang {"rendererOptions": {"just-types": true, "multi-file-output": true}}
+render golang {"rendererOptions": {"omit-empty": true, "field-tags": "json,yaml,xml"}}
+render golang {"rendererOptions": {"field-tags": "", "package": "model"}}
+render golang {"rendererOptions": {"enum-type-name-suffix": true, "multi-file-output": true}}
+render golang {"indentation": "  "}

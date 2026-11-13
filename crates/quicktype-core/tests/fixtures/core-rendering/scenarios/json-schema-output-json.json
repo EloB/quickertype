@@ -1,0 +1,154 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "links",
+      4,
+      false
+     ],
+     [
+      "when",
+      9,
+      false
+     ],
+     [
+      "day",
+      1,
+      false
+     ],
+     [
+      "id",
+      3,
+      false
+     ],
+     [
+      "n",
+      8,
+      false
+     ],
+     [
+      "flag",
+      2,
+      false
+     ],
+     [
+      "m",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "date",
+    "a": {}
+   },
+   {
+    "k": "bool-string",
+    "a": {}
+   },
+   {
+    "k": "uuid",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 5
+   },
+   {
+    "k": "uri",
+    "a": {
+     "uriAttributes": [
+      [
+       "https",
+       "ftp",
+       "http"
+      ],
+      [
+       ".png",
+       ".jpg"
+      ]
+     ]
+    }
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      7,
+      false
+     ],
+     [
+      "y",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "integer-string",
+    "a": {}
+   },
+   {
+    "k": "date-time",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n    \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n    \"$ref\": \"#/definitions/TopLevel\",\n    \"definitions\": {\n        \"TopLevel\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n                \"links\": {\n                    \"type\": \"array\",\n                    \"items\": {\n                        \"type\": \"string\",\n                        \"format\": \"uri\",\n                        \"qt-uri-protocols\": [\n                            \"ftp\",\n                            \"http\",\n                            \"https\"\n                        ],\n                        \"qt-uri-extensions\": [\n                            \".jpg\",\n                            \".png\"\n                        ]\n                    }\n                },\n                \"when\": {\n                    \"type\": \"string\",\n                    \"format\": \"date-time\"\n                },\n                \"day\": {\n                    \"type\": \"string\",\n                    \"format\": \"date\"\n                },\n                \"id\": {\n                    \"type\": \"string\",\n                    \"format\": \"uuid\"\n                },\n                \"n\": {\n                    \"type\": \"string\",\n                    \"format\": \"integer\"\n                },\n                \"flag\": {\n                    \"type\": \"string\",\n                    \"format\": \"boolean\"\n                },\n                \"m\": {\n                    \"$ref\": \"#/definitions/M\"\n                }\n            },\n            \"required\": [\n                \"day\",\n                \"flag\",\n                \"id\",\n                \"links\",\n                \"m\",\n                \"n\",\n                \"when\"\n            ],\n            \"title\": \"TopLevel\"\n        },\n        \"M\": {\n            \"type\": \"object\",\n            \"additionalProperties\": false,\n            \"properties\": {\n                \"x\": {\n                    \"type\": \"integer\"\n                },\n                \"y\": {\n                    \"type\": \"integer\"\n                }\n            },\n            \"required\": [\n                \"x\",\n                \"y\"\n            ],\n            \"title\": \"M\"\n        }\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "json-schema-output-json"
+}
