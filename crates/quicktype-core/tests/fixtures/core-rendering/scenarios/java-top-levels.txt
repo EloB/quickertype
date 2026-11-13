@@ -1,0 +1,13 @@
+# Java with top-levels that are not classes: primitives, arrays, maps and
+# unions get no file of their own, only converter methods.
+input schema Count {"type": "integer"}
+input schema Names {"type": "array", "items": {"type": "string"}}
+input schema Table {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Either {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+input schema When {"type": "string", "format": "date-time"}
+pipeline {"lang": "java"}
+
+render java {}
+render java {"rendererOptions": {"array-type": "array"}}
+render java {"rendererOptions": {"datetime-provider": "legacy"}}
+render java {"rendererOptions": {"just-types": true}}

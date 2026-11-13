@@ -18,13 +18,15 @@
 // describes the golden output.
 //
 // A few cases come from quicktype's own unit tests (API calls, no golden
-// recording); their expected output is stored inline.
+// recording), and a few are CLI runs the corpus lacks (cliCases); their
+// expected output is stored inline. A case that mismatches its golden or
+// throws is reported and skipped, and the exit code is 1.
 //
 // Usage: node xtask/core-rendering/record-render-cases.mjs ../quicktype [lang...]
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { dumpTransformation } from "./dump-transformation.mjs";
@@ -264,6 +266,24 @@ function caseFileName(id) {
     return `${id.replace(/[/\\]/g, "__")}.json`;
 }
 
+// What the CLI's writeOutput prints for a render without --out, modeled
+// exactly: each file under a `// <name>` header when there are several
+// (multi-file languages such as Java), separated by "\n" -- except with
+// --quiet, where writeOutput `continue`s before clearing its `onFirst` flag,
+// so no separator is ever printed.
+function joinStdout(files, quiet) {
+    let out = "";
+    let onFirst = true;
+    for (const f of files) {
+        if (!onFirst) out += "\n";
+        if (files.length > 1) out += `// ${f.name}\n\n`;
+        out += f.text;
+        if (quiet) continue;
+        onFirst = false;
+    }
+    return out;
+}
+
 async function recordGolden(id) {
     const c = JSON.parse(readFileSync(join(goldenDir, id, "case.json"), "utf8"));
     if (c.steps.length !== 1) return "skip: several steps";
@@ -274,6 +294,8 @@ async function recordGolden(id) {
     if (!languages.includes(lang)) return undefined;
     const args = step.args.map((a) => a.replaceAll("{INPUTS}", inputsDir));
     const work = mkdtempSync(join(tmpdir(), "qt-render-"));
+    // Directories the case expects to exist (Java writes into src/main/java/...).
+    for (const d of c.dirs ?? []) mkdirSync(join(work, d), { recursive: true });
     captured = {};
     drawnNames = new Set();
     let stdout;
@@ -285,28 +307,42 @@ async function recordGolden(id) {
     const rec = captured;
     captured = undefined;
     if (rec.graph === undefined || rec.render === undefined) return "skip: did not render";
+    // The CLI writes every file next to --out (Java: src/main/java/io/quicktype/).
+    const outIndex = step.args.indexOf("--out");
+    const outDirRel = outIndex < 0 ? "." : posix.dirname(step.args[outIndex + 1]);
+    const goldenFile = (f) => posix.join(outDirRel, f.name);
     // Check the intercepted render against the golden recording.
     if (step.files.length > 0) {
         for (const f of rec.files) {
-            const golden = readFileSync(join(goldenDir, id, "step0", f.name), "utf8");
-            if (golden !== f.text) throw new Error(`${id}: ${f.name} differs from golden`);
+            const golden = readFileSync(join(goldenDir, id, "step0", goldenFile(f)), "utf8");
+            if (golden !== f.text) return `mismatch: ${f.name} differs from golden`;
         }
-        if (step.files.length !== rec.files.length) throw new Error(`${id}: file count differs`);
-    } else {
-        const golden = readFileSync(join(goldenDir, id, "step0.stdout"), "utf8");
-        if (rec.files.length !== 1 || golden !== stdout || stdout !== rec.files[0].text) {
-            throw new Error(`${id}: stdout differs from golden`);
-        }
+        if (step.files.length !== rec.files.length) return "mismatch: file count differs";
     }
     const quiet = step.args.includes("--quiet");
+    if (step.files.length === 0) {
+        const golden = readFileSync(join(goldenDir, id, "step0.stdout"), "utf8");
+        if (rec.files.length === 0 || golden !== stdout || stdout !== joinStdout(rec.files, quiet)) {
+            return "mismatch: stdout differs from golden";
+        }
+    }
+    // Several files printed to stdout: the fixture names the stdout golden
+    // once (`stdout`) and the test joins the rendered files like the CLI.
+    const multiFileStdout = step.files.length === 0 && rec.files.length > 1;
     const fixture = {
         id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
+        stdout: multiFileStdout ? `${id}/step0.stdout` : undefined,
+        quiet: multiFileStdout && quiet ? true : undefined,
         files: rec.files.map((f) => ({
             name: f.name,
-            golden: step.files.length > 0 ? `${id}/step0/${f.name}` : `${id}/step0.stdout`,
+            golden: multiFileStdout
+                ? undefined
+                : step.files.length > 0
+                  ? `${id}/step0/${goldenFile(f)}`
+                  : `${id}/step0.stdout`,
             annotations: quiet ? undefined : f.annotations,
         })),
     };
@@ -467,14 +503,80 @@ function recordCSharpApi(spec) {
     });
 }
 
+// CLI runs the golden corpus lacks, recorded through the real CLI with their
+// stdout stored inline: several files printed to stdout under --quiet, where
+// writeOutput prints no separators.
+const cliCases = [
+    {
+        id: "cli-extra/java-quiet-multi-file-stdout",
+        lang: "java",
+        args: ["--lang", "java", "--quiet", "{INPUTS}/json/samples/kitchen-sink.json"],
+    },
+    {
+        id: "cli-extra/java-just-types-quiet-multi-file-stdout",
+        lang: "java",
+        args: ["--lang", "java", "--just-types", "--quiet", "--src-lang", "schema", "{INPUTS}/schema/date-time.schema"],
+    },
+];
+
+async function recordCli(spec) {
+    const args = spec.args.map((a) => a.replaceAll("{INPUTS}", inputsDir));
+    const work = mkdtempSync(join(tmpdir(), "qt-render-"));
+    captured = {};
+    drawnNames = new Set();
+    let stdout;
+    try {
+        stdout = await runCli(args, work);
+    } finally {
+        rmSync(work, { recursive: true, force: true });
+    }
+    const rec = captured;
+    captured = undefined;
+    if (rec.graph === undefined || rec.render === undefined) return "skip: did not render";
+    const quiet = spec.args.includes("--quiet");
+    if (stdout !== joinStdout(rec.files, quiet)) return "mismatch: stdout differs from the rendered files";
+    const fixture = {
+        id: spec.id,
+        graph: rec.graph,
+        gather: rec.gather,
+        render: rec.render,
+        stdoutText: stdout,
+        quiet: quiet ? true : undefined,
+        files: rec.files.map((f) => ({ name: f.name, annotations: quiet ? undefined : f.annotations })),
+    };
+    writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
+    return "recorded (cli)";
+}
+
+// Records one case; a mismatch or an exception is reported and the run goes
+// on, so one bad case doesn't stop the recording of every other one.
+async function attempt(id, record) {
+    try {
+        return await record();
+    } catch (e) {
+        captured = undefined;
+        return `error: ${e.message}`;
+    }
+}
+
 mkdirSync(outDir, { recursive: true });
 const counts = {};
+function count(id, outcome) {
+    const failed = /^(mismatch|error):/.test(outcome);
+    const key = failed ? outcome.slice(0, outcome.indexOf(":")) : outcome;
+    counts[key] = (counts[key] ?? 0) + 1;
+    if (!outcome.startsWith("recorded")) console.log(`${id}: ${outcome}`);
+    if (failed) process.exitCode = 1;
+}
 for (const id of goldenCases(goldenDir)) {
     if (id.startsWith("cli-") && !id.startsWith("cli-options/") && !id.startsWith("cli-stdout/")) continue;
-    const outcome = await recordGolden(id);
+    const outcome = await attempt(id, () => recordGolden(id));
     if (outcome === undefined) continue;
-    counts[outcome] = (counts[outcome] ?? 0) + 1;
-    if (outcome !== "recorded") console.log(`${id}: ${outcome}`);
+    count(id, outcome);
+}
+for (const spec of cliCases) {
+    if (!languages.includes(spec.lang)) continue;
+    count(spec.id, await attempt(spec.id, () => recordCli(spec)));
 }
 for (const [lang, cases, record] of [
     ["rust", apiCases, recordRustApi],
@@ -482,8 +584,10 @@ for (const [lang, cases, record] of [
 ]) {
     if (!languages.includes(lang)) continue;
     for (const spec of cases) {
-        await record(spec);
-        counts["recorded (api)"] = (counts["recorded (api)"] ?? 0) + 1;
+        count(spec.id, await attempt(spec.id, async () => {
+            await record(spec);
+            return "recorded (api)";
+        }));
     }
 }
 console.log(counts);

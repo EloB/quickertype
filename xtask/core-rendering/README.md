@@ -35,6 +35,17 @@ as `{ target, xfer }`: the index of the target type and the transformer tree.
 Both scripts use `dump-transformation.mjs`, which documents the JSON shape;
 `tests/render_support` rebuilds it with `quicktype_core::transformers`.
 
+Multi-file languages (Java) write every file next to `--out`, into the
+case's `dirs`, which the recorder creates first. When such a render goes to
+stdout, the CLI prints the files under `// <name>` headers; the fixture then
+names the stdout golden once (`stdout`, with `quiet` for `--quiet`, which
+drops the separators) and the test joins the rendered files exactly like
+`writeOutput`. `cliCases` are CLI runs the corpus lacks (`cli-extra/*`, e.g.
+quiet multi-file stdout), recorded through the real CLI with their stdout
+inline (`stdoutText`). A case whose render differs from its golden, or that
+throws, is reported and skipped (the exit code is 1); the others are still
+recorded.
+
 ## Scenarios
 
 A scenario (`scenarios/*.txt`) lists inputs (`input json|schema NAME <json>`),

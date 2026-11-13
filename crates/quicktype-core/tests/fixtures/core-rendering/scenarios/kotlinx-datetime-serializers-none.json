@@ -1,0 +1,80 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "name",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json     = Json { allowStructuredMapKeys = true }\n// val topLevel = json.parse(TopLevel.serializer(), jsonString)\n\npackage quicktype\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n@Serializable\ndata class TopLevel (\n    val name: String\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlinx-datetime-serializers-none"
+}

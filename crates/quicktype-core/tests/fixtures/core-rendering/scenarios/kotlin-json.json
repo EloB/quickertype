@@ -1,0 +1,339 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      10,
+      false
+     ],
+     [
+      "when",
+      21,
+      false
+     ],
+     [
+      "day",
+      5,
+      false
+     ],
+     [
+      "notDay",
+      10,
+      false
+     ],
+     [
+      "at",
+      1,
+      false
+     ],
+     [
+      "zeroOffset",
+      10,
+      false
+     ],
+     [
+      "items",
+      7,
+      false
+     ],
+     [
+      "mixed",
+      16,
+      false
+     ],
+     [
+      "matrix",
+      13,
+      false
+     ],
+     [
+      "byKey",
+      2,
+      false
+     ],
+     [
+      "empty",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "time",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      3,
+      false
+     ],
+     [
+      "b",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "date",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 8
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      9,
+      false
+     ],
+     [
+      "value",
+      11,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     4,
+     10
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     12,
+     10
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 14
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 15
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     4,
+     12,
+     10
+    ]
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 17
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     18,
+     12,
+     20,
+     19,
+     10
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "k",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "date-time",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) }, { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(LocalDate::class,      { LocalDate.parse(it.asText()) },      { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    convert(OffsetTime::class,     { OffsetTime.parse(it.asText()) },     { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    convert(ID::class,             { ID.fromJson(it) },                   { it.toJson() }, true)\n    convert(Matrix::class,         { Matrix.fromJson(it) },               { it.toJson() }, true)\n    convert(MixedElement::class,   { MixedElement.fromJson(it) },         { it.toJson() }, true)\n}\n\ndata class TopLevel (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val name: String,\n\n    @get:JsonProperty(\"when\", required=true)@field:JsonProperty(\"when\", required=true)\n    val topLevelWhen: OffsetDateTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val day: LocalDate,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val notDay: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val at: OffsetTime,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val zeroOffset: String,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val items: List<Item>,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val mixed: List<MixedElement>,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val matrix: List<List<Matrix>>,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val byKey: ByKey,\n\n    @get:JsonProperty(\"empty\", required=true)@field:JsonProperty(\"empty\", required=true)\n    val empty: Empty\n) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<TopLevel>(json)\n    }\n}\n\ndata class ByKey (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val a: A,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val b: A\n)\n\ndata class A (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val v: Long\n)\n\ntypealias Empty = ObjectNode\n\ndata class Item (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val id: ID,\n\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val value: String?\n)\n\nsealed class ID {\n    class IntegerValue(val value: Long)  : ID()\n    class StringValue(val value: String) : ID()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): ID = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Matrix {\n    class IntegerValue(val value: Long)  : Matrix()\n    class StringValue(val value: String) : Matrix()\n    class NullValue()                    : Matrix()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n        is NullValue    -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Matrix = when (jn) {\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class MixedElement {\n    class BoolValue(val value: Boolean)          : MixedElement()\n    class DoubleValue(val value: Double)         : MixedElement()\n    class MixedClassValue(val value: MixedClass) : MixedElement()\n    class StringValue(val value: String)         : MixedElement()\n    class NullValue()                            : MixedElement()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is BoolValue       -> this.value\n        is DoubleValue     -> this.value\n        is MixedClassValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): MixedElement = when (jn) {\n            is BooleanNode                         -> BoolValue(mapper.convertValue(jn))\n            is IntNode, is LongNode, is DoubleNode -> DoubleValue(mapper.convertValue(jn))\n            is ObjectNode                          -> MixedClassValue(mapper.convertValue(jn))\n            is TextNode                            -> StringValue(mapper.convertValue(jn))\n            is NullNode                            -> NullValue()\n            else                                   -> throw IllegalArgumentException()\n        }\n    }\n}\n\ndata class MixedClass (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val k: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = if (isUnion && jv.inside is JsonArray<*>) (jv.inside as JsonArray<*>).map { fromJson(JsonValue(it, null, null, this@convert)) } else fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\nprivate val klaxon = Klaxon()\n    .convert(OffsetDateTime::class, { OffsetDateTime.parse(it.string!!) }, { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    .convert(LocalDate::class,      { LocalDate.parse(it.string!!) },      { \"\\\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\\\"\" })\n    .convert(OffsetTime::class,     { OffsetTime.parse(it.string!!) },     { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\\\"\" })\n    .convert(JsonObject::class,     { it.obj!! },                          { it.toJsonString() })\n    .convert(ID::class,             { ID.fromJson(it) },                   { it.toJson() }, true)\n    .convert(Matrix::class,         { Matrix.fromJson(it) },               { it.toJson() }, true)\n    .convert(MixedElement::class,   { MixedElement.fromJson(it) },         { it.toJson() }, true)\n\ndata class TopLevel (\n    val name: String,\n\n    @Json(name = \"when\")\n    val topLevelWhen: OffsetDateTime,\n\n    val day: LocalDate,\n    val notDay: String,\n    val at: OffsetTime,\n    val zeroOffset: String,\n    val items: List<Item>,\n    val mixed: List<MixedElement>,\n    val matrix: List<List<Matrix>>,\n    val byKey: ByKey,\n    val empty: Empty\n) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\ndata class ByKey (\n    val a: A,\n    val b: A\n)\n\ndata class A (\n    val v: Long\n)\n\ntypealias Empty = JsonObject\n\ndata class Item (\n    val id: ID,\n    val value: String? = null\n)\n\nsealed class ID {\n    class IntegerValue(val value: Long)  : ID()\n    class StringValue(val value: String) : ID()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): ID = when (jv.inside) {\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Matrix {\n    class IntegerValue(val value: Long)  : Matrix()\n    class StringValue(val value: String) : Matrix()\n    class NullValue()                    : Matrix()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is IntegerValue -> this.value\n        is StringValue  -> this.value\n        is NullValue    -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): Matrix = when (jv.inside) {\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class MixedElement {\n    class BoolValue(val value: Boolean)          : MixedElement()\n    class DoubleValue(val value: Double)         : MixedElement()\n    class MixedClassValue(val value: MixedClass) : MixedElement()\n    class StringValue(val value: String)         : MixedElement()\n    class NullValue()                            : MixedElement()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is BoolValue       -> this.value\n        is DoubleValue     -> this.value\n        is MixedClassValue -> this.value\n        is StringValue     -> this.value\n        is NullValue       -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(jv: JsonValue): MixedElement = when (jv.inside) {\n            is Boolean                 -> BoolValue(jv.boolean!!)\n            is Double, is Int, is Long -> DoubleValue(jv.double ?: jv.int?.toDouble() ?: jv.longValue?.toDouble()!!)\n            is JsonObject              -> MixedClassValue(jv.obj?.let { klaxon.parseFromJsonObject<MixedClass>(it) }!!)\n            is String                  -> StringValue(jv.string!!)\n            null                       -> NullValue()\n            else                       -> throw IllegalArgumentException()\n        }\n    }\n}\n\ndata class MixedClass (\n    val k: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json     = Json { allowStructuredMapKeys = true }\n// val topLevel = json.parse(TopLevel.serializer(), jsonString)\n\n@file:UseSerializers(OffsetDateTimeSerializer::class, LocalDateSerializer::class, OffsetTimeSerializer::class)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n@Serializable\ndata class TopLevel (\n    val name: String,\n\n    @SerialName(\"when\")\n    val topLevelWhen: OffsetDateTime,\n\n    val day: LocalDate,\n    val notDay: String,\n    val at: OffsetTime,\n    val zeroOffset: String,\n    val items: List<Item>,\n    val mixed: JsonArray,\n    val matrix: List<JsonArray>,\n    val byKey: ByKey,\n    val empty: Empty\n)\n\n@Serializable\ndata class ByKey (\n    val a: A,\n    val b: A\n)\n\n@Serializable\ndata class A (\n    val v: Long\n)\n\n@Serializable\nclass Empty()\n\n@Serializable\ndata class Item (\n    val id: JsonElement,\n    val value: String? = null\n)\n\ntypealias ID = JsonElement\n\ntypealias Matrix = JsonElement\n\ntypealias MixedElement = JsonElement\n\n@Serializable\ndata class MixedClass (\n    val k: Long\n)\n\nobject OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetDateTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetDateTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))\n    }\n}\n\nobject LocalDateSerializer : KSerializer<LocalDate> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"LocalDate\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: LocalDate) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(value))\n    }\n}\n\nobject OffsetTimeSerializer : KSerializer<OffsetTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetTime = OffsetTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(value))\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport java.time.OffsetDateTime\nimport java.time.LocalDate\nimport java.time.OffsetTime\n\ndata class TopLevel (\n    val name: String,\n    val topLevelWhen: OffsetDateTime,\n    val day: LocalDate,\n    val notDay: String,\n    val at: OffsetTime,\n    val zeroOffset: String,\n    val items: List<Item>,\n    val mixed: List<MixedElement>,\n    val matrix: List<List<Matrix>>,\n    val byKey: ByKey,\n    val empty: Empty\n)\n\ndata class ByKey (\n    val a: A,\n    val b: A\n)\n\ndata class A (\n    val v: Long\n)\n\nclass Empty()\n\ndata class Item (\n    val id: ID,\n    val value: String? = null\n)\n\nsealed class ID {\n    class IntegerValue(val value: Long)  : ID()\n    class StringValue(val value: String) : ID()\n}\n\nsealed class Matrix {\n    class IntegerValue(val value: Long)  : Matrix()\n    class StringValue(val value: String) : Matrix()\n    class NullValue()                    : Matrix()\n}\n\nsealed class MixedElement {\n    class BoolValue(val value: Boolean)          : MixedElement()\n    class DoubleValue(val value: Double)         : MixedElement()\n    class MixedClassValue(val value: MixedClass) : MixedElement()\n    class StringValue(val value: String)         : MixedElement()\n    class NullValue()                            : MixedElement()\n}\n\ndata class MixedClass (\n    val k: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlin-json"
+}
