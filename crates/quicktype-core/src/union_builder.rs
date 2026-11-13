@@ -415,6 +415,10 @@ fn attributes_for_types(
     }
 
     impl Traversal {
+        /// One level of the recursion through nested unions. A union that
+        /// contains itself (through `$ref`s in JSON input) makes it endless,
+        /// as in TypeScript, where V8 overflows its stack: it runs under
+        /// [`guard`], which reports the same `RangeError`.
         fn traverse(
             &mut self,
             graph: &TypeGraph,
@@ -422,30 +426,30 @@ fn attributes_for_types(
             path: &mut Vec<UnionOrFaux>,
             is_equivalent_to_root: bool,
         ) -> Result<()> {
-            if graph.kind(t)? == TypeKind::Union {
-                self.unions.insert(t);
-                if is_equivalent_to_root {
-                    self.unions_equivalent_to_root.insert(t);
+            guard(|| {
+                if graph.kind(t)? == TypeKind::Union {
+                    self.unions.insert(t);
+                    if is_equivalent_to_root {
+                        self.unions_equivalent_to_root.insert(t);
+                    }
+                    let members = graph.type_at(t)?.members()?;
+                    let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
+                    path.push(UnionOrFaux::Union(t));
+                    for &m in members {
+                        self.traverse(graph, m, path, is_equivalent_to_root)?;
+                    }
+                    path.pop();
+                } else {
+                    self.unions_for_type
+                        .entry(t)
+                        .or_default()
+                        .extend(path.iter().copied());
+                    for &u in path.iter() {
+                        self.types_for_union.entry(u).or_default().insert(t);
+                    }
                 }
-                let members = graph.type_at(t)?.members()?;
-                let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
-                path.push(UnionOrFaux::Union(t));
-                for &m in members {
-                    // Endless for a union that contains itself, where
-                    // TypeScript overflows the stack.
-                    guard(|| self.traverse(graph, m, path, is_equivalent_to_root))?;
-                }
-                path.pop();
-            } else {
-                self.unions_for_type
-                    .entry(t)
-                    .or_default()
-                    .extend(path.iter().copied());
-                for &u in path.iter() {
-                    self.types_for_union.entry(u).or_default().insert(t);
-                }
-            }
-            Ok(())
+                Ok(())
+            })
         }
     }
 

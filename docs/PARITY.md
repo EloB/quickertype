@@ -75,12 +75,12 @@ findings per area, with file and line references.
   later steps, which the corpus does not record (JSON to JSON Schema to the
   language, TypeScript to C#). The `roundtrip` workflow runs it weekly
   against the TypeScript CLI as the baseline.
-
 - **Differential fuzzing:** `xtask/fuzz/` generates seeded random JSON
-  samples and JSON Schemas with random renderer and general options for
-  every language, and compares the reference with the port in-process
-  (quicktype-core against our package on WebAssembly, with `JSON.parse` and
-  with the CLI's stream reader) and through both CLIs. Divergences are
+  samples, JSON Schemas, Postman collections and GraphQL queries with
+  random renderer, general and `--debug` options for every language, and
+  compares the reference with the port in-process (quicktype-core against
+  our package on WebAssembly, with `JSON.parse` and with the CLI's stream
+  reader) and through both CLIs. Divergences are
   minimized and kept in `tests/fuzz-regressions/`, which
   `quicktype-cli/tests/fuzz_regressions.rs` and the differential suite's
   `fuzz` scenarios replay. See `xtask/fuzz/README.md`.
@@ -208,7 +208,7 @@ semantics were verified.
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 | V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
-| `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()` |
+| `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()`; the depths at which the reference CLI's parser overflows Node's stack, per construct, are modeled (see "GraphQL input" in Known gaps) |
 | Node's `path` (`path.posix`, and `path.win32` on Windows; Node 24.16: `isAbsolute`, `dirname`, `basename`, `extname`, `normalize`, `join`) | `quicktype_js_compat::path_posix` and `path_win32`, ports of `lib/path.js`; `quicktype_js_compat::path` is one or the other by platform, as `require("path")` is, for the CLI (file names, `--out`) and `NodeIO` (symbolic links) | `xtask/js-compat/gen-path-vectors.mjs`: 437 drive, UNC, device, relative and reserved-name paths through the five `path.win32` functions and 120 joins, and 643 paths and 120 joins through `path.posix`, identical to Node (`tests/path.rs`) |
 
 ## Known gaps
@@ -285,12 +285,32 @@ the others name the fix they need.
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
 - **Very deeply nested JSON.** Both JSON readers are iterative, but
-  inference recurses once per nesting level, as in TypeScript. There the
-  JavaScript stack runs out somewhere between 500 and 1,000 levels
-  (`Maximum call stack size exceeded`, depending on Node's stack size); the
-  port goes much deeper (the CLI generates on a thread with a 256 MB
-  stack) but eventually overflows the native stack and aborts. Fix: an
-  explicit depth limit reporting the `RangeError`, or iterative inference.
+  inference recurses once per nesting level, as in TypeScript, where the
+  JavaScript stack runs out somewhere between 800 and 1,000 levels
+  (`Maximum call stack size exceeded`; for nested arrays the CLI failed
+  from 798 levels with `--lang ts` and from 852 with `--lang go`, varying
+  between runs). The port models this with one rule per reader, which
+  any inference path must follow:
+  - Inference: every `inferType` call (one for the top-level's samples,
+    one for the values of each nested array or object; in
+    `input/inference.rs`, and its counterpart in `tally_inference.rs` for
+    inference from running tallies) runs under
+    `support::recursion::guard`, so a sample whose arrays and objects nest
+    1,000 deep fails with that `RangeError`, and 999 levels are inferred
+    (`[` × 999 + `]` × 999, or `{"a":` × 999 + `1` + `}` × 999). Between
+    Node's limit and 1,000 levels the port still generates code. (A
+    million levels used to overflow the native stack and abort the CLI.)
+  - `JSON.parse` semantics (the API): TypeScript's
+    `CompressedJSONFromString.process` recurses over the parsed value
+    first and overflows at the 4,579th nested value (counting the sample
+    itself; Node 24, fresh process), which it reports as the sample's
+    parse error (`Syntax error in input JSON <name>: Maximum call stack
+    size exceeded`). The port's `process`, which feeds both the
+    compressed JSON and the running tallies, fails the same way past depth
+    4,578 (`PROCESS_MAX_DEPTH` in `input/compressed_json.rs`). Samples
+    between 1,000 and 4,578 levels deep reach inference and fail there.
+  `crates/quicktype-core/tests/deep_json.rs` and the CLI's
+  `inputs_too_deep_for_node_fail_like_node` pin these rules end to end.
 - **Endless recursion over the type graph.** On a graph that cycles
   through a nullable union (`T = T[] | null`), TypeScript's
   type-to-source functions (and C#'s `needTransformerForType`) recurse until
@@ -301,7 +321,21 @@ the others name the fix they need.
   in `needTransformerForType`. Endless recursions fail identically. A
   finite graph nested deeper than either limit could differ, but in
   TypeScript graph rewriting already overflows at about 335 nested arrays,
-  so no such graph reaches a TypeScript renderer.
+  so no such graph reaches a TypeScript renderer. Graph rewriting's
+  recursion (`forceReconstituteTypeRef`, once per level of the graph's
+  depth) runs under the guard too, so a graph nested 1,000 calls deep
+  (about 500 nested nullable lists or classes) fails there with the
+  `RangeError`, where TypeScript fails at about 400 (measured with GraphQL
+  lists and selection sets). A GraphQL field type of 100,000 nested lists
+  used to overflow the CLI's native stack there, and a JSON Schema chain
+  of 1,500 maps a 2 MB one (`tests/deep_schemas.rs`). `UnionBuilder`'s
+  walk through nested unions (`attributesForTypes`) is guarded as well:
+  with `$ref`s handled, JSON can make a union that contains itself
+  (`{"": [{"$ref": "#//0"}, null]}` with `--no-ignore-json-refs`), on
+  which TypeScript recurses until V8's stack overflows. So is the
+  `ConvenienceRenderer`'s `typeNameForUnionMember`, which recurses through
+  arrays and maps: `{"0": true, "1": [[{"$ref": "#/1/0"}]]}` makes an
+  array that is its own items.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports
@@ -309,6 +343,17 @@ the others name the fix they need.
   measured on the reference CLI (Node 24.16): more than 3,731 nested
   folders, or arrays nested more than 2,830 deep. Inside nested folders
   Node's array limit is lower (less stack is left); that is not modelled.
+- **URL grammars (`--src-urls`).** TypeScript's `expand` recurses once
+  per nested array or `oneOf`, and `String(array)` once per nested array
+  when it reports a grammar that is not an object; the port counts both
+  and reports Node's `RangeError` where the reference CLI does (Node 24,
+  varying by one between runs): past 2,227 nested `expand` calls and
+  2,734 nested arrays. (A million levels used to overflow the native
+  stack.) A grammar whose arrays
+  multiply out exponentially (`["u", {"oneOf": ["a", "b"]}, …]` with
+  dozens of `oneOf`s) runs both out of memory: Node aborts at V8's heap
+  limit (`FATAL ERROR: … JavaScript heap out of memory`, after about a
+  minute for 2^28 URLs), the port allocates until the system refuses.
 - **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
   native compiler where the reference runs TypeScript 5.9 and
   typescript-json-schema, and emulates TS 5.9's union member order by
@@ -373,8 +418,16 @@ the others name the fix they need.
   itself overflows somewhere between about 750 and 1,200 levels. The
   generation stages (inference, rewrites, rendering) recurse on the native
   stack; the CLI runs them on a thread with a 256 MB stack (`STACK_SIZE`
-  in `crates/quicktype-cli/src/main.rs`). See "Very deeply nested JSON"
-  and "Endless recursion over the type graph".
+  in `crates/quicktype-cli/src/main.rs`), and inference and graph
+  rewriting, whose depth the input decides, are limited like Node's. The
+  GraphQL parser and schema model Node's stack as well (see "GraphQL
+  input"). See "Very deeply nested JSON" and "Endless recursion over the
+  type graph". Node's limits also move with the size of the process's
+  environment and command line, which share the main thread's stack with
+  V8's: `JSON.stringify` in `--graphql-introspect` writes one level less
+  for about every 170 bytes more environment. The GraphQL input's
+  `makeType` and `--graphql-introspect` limits were measured with a 3 KB
+  environment and short command lines.
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
   recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
@@ -391,18 +444,51 @@ the others name the fix they need.
     Through a field, both fail with V8's `RangeError: Maximum call stack
     size exceeded`.
   - Depth: graphql-js's recursive-descent parser overflows Node's stack
-    somewhere around 1,500 to 7,000 nested levels, depending on the
-    construct (Node 24, in process: 1,562 nested object values, 1,757
-    nested selection sets, 1,952 nested list values, 3,125 nested inline
-    fragments, 7,031 nested list types),
-    and the input's recursions over nested selection sets and `ofType`
-    chains have limits of their own. The port grows its stack on demand and
-    handles any depth.
+    somewhere around 1,300 to 6,300 nested levels, depending on the
+    construct. The port's parser models that stack (`Nesting` in
+    `graphql/parser.rs`): each construct costs a share, set so that what
+    the reference CLI parses (Node 24, `--src-lang graphql`) still fits and
+    one more level does not: 1,655 nested selection sets, 1,294 nested
+    object values and 1,627 nested list values in a field's argument,
+    6,338 nested list types in a variable definition, 1,629 nested inline
+    fragments (there it is TypeScript's input that overflows first). Mixed
+    nesting adds the costs up, which is approximate; Node's own limit
+    varies by one between runs. Deeper documents fail with `RangeError:
+    Maximum call stack size exceeded` (they used to parse, and then take
+    minutes or more in the input). `makeType` in the schema recurses
+    into a list or non-null wrapper's `ofType` and, through
+    `addTypeFields`, into the types of the wrapper's fields, their
+    arguments, its interfaces, possible types and input fields, also on a
+    field no query selects. The port models the stack each path takes
+    (`Via` in `src/lib.rs`): the reference CLI builds 7,459 wrappers
+    nested through `ofType`, 1,658 through fields, 1,657 through input
+    fields, 1,066 through arguments and 2,058 through interfaces or
+    possible types, and fails with the `RangeError` one wrapper later, as
+    the port does. (Only `ofType` used to be counted: a chain of 100,000
+    wrappers through fields was built.) Through arguments and input
+    fields Node's limit varies between runs by up to about 20 levels
+    (the CLI builds the chains above in every run, longer ones in some);
+    mixed paths add their costs up, which is approximate. The input's
+    recursion over the query (`makeIRTypeFromSelectionSet`,
+    `makeIRTypeFromFieldNode`) grows the native stack without a limit of
+    its own; TypeScript fails deep queries later, in graph rewriting (see
+    "Endless recursion over the type graph"). `--graphql-introspect`
+    writes the server's result with `JSON.stringify`, which overflows
+    past 5,987 nested values (the result or its `errors` counted from the
+    top, Node 24). V8 checks its stack on entering each non-empty array
+    or object, so an innermost number, `[]` or `{}` counts the same
+    (measured with each, nested in arrays and in objects); the port fails
+    at the same depth with the `RangeError` (a response nested a million
+    levels deep used to run the port out of memory).
   - Names in the introspection JSON that are not strings (a number or
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them
     with `String(value)`, so `1` and `"1"` coincide. Introspection results
-    only ever have strings there.
+    only ever have strings there. `String(value)` of nested arrays
+    recurses in Node and overflows past 2,710 levels (measured for a type
+    name, which becomes a property key); the port's conversion is
+    iterative and fails with the `RangeError` at the same depth
+    everywhere.
   - A type named `__proto__` (not a valid GraphQL name) becomes the
     prototype of TypeScript's `types` object. The port finds it under
     `__proto__`, but not, as TypeScript does, its own properties (`kind`,

@@ -474,11 +474,15 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
     Ok(stats)
 }
 
-/// The type graph of `case` after inference from tallies (or the error),
-/// for TypeScript with the default flags.
+/// The type graph of `case` after inference from tallies (or the error
+/// of adding a source, or of inference), for TypeScript with the default
+/// flags.
 pub fn graph_text(case: &Case) -> String {
     let lang = language("typescript");
-    let (input, _) = input(case, lang, &RendererOptions::new(), Some(true));
+    let (input, sources) = input(case, lang, &RendererOptions::new(), Some(true));
+    if let Some(failed) = sources.iter().find(|result| result.starts_with("Err")) {
+        return format!("error adding a source: {failed}");
+    }
     let mut data = InputData::new();
     data.add_input(input);
     graph(

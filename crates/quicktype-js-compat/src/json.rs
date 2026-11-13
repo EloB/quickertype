@@ -31,7 +31,10 @@ use crate::number;
 pub mod parse;
 
 /// A JSON value. Objects keep their keys in insertion order.
-#[derive(Debug, Clone, PartialEq)]
+///
+/// `Clone`, `Drop`, `PartialEq` and `Debug` are written out, without
+/// recursion, so that the arbitrarily deep values [`parse()`] accepts cannot
+/// overflow the stack.
 pub enum JsonValue {
     /// `null`.
     Null,
@@ -69,6 +72,245 @@ impl Drop for JsonValue {
             }
             // `child` is now childless and drops without recursing.
         }
+    }
+}
+
+/// Cloning never recurses either (the derived `clone` would, once per
+/// nesting level): a deep GraphQL schema shared by the queries of a
+/// directory used to overflow the stack here.
+impl Clone for JsonValue {
+    fn clone(&self) -> Self {
+        /// A collection being copied: what is done, and what is left.
+        enum Frame<'a> {
+            Array(Vec<JsonValue>, std::slice::Iter<'a, JsonValue>),
+            Object(
+                IndexMap<String, JsonValue>,
+                Option<&'a String>,
+                indexmap::map::Iter<'a, String, JsonValue>,
+            ),
+        }
+
+        /// A copied leaf, or the frame for a collection.
+        fn start(value: &JsonValue) -> Result<JsonValue, Frame<'_>> {
+            match value {
+                JsonValue::Null => Ok(JsonValue::Null),
+                JsonValue::Bool(b) => Ok(JsonValue::Bool(*b)),
+                JsonValue::Number(n) => Ok(JsonValue::Number(*n)),
+                JsonValue::String(s) => Ok(JsonValue::String(s.clone())),
+                JsonValue::Array(items) => {
+                    Err(Frame::Array(Vec::with_capacity(items.len()), items.iter()))
+                }
+                JsonValue::Object(map) => Err(Frame::Object(
+                    IndexMap::with_capacity(map.len()),
+                    None,
+                    map.iter(),
+                )),
+            }
+        }
+
+        let mut stack = match start(self) {
+            Ok(leaf) => return leaf,
+            Err(frame) => vec![frame],
+        };
+        let mut done: Option<JsonValue> = None;
+        while let Some(frame) = stack.last_mut() {
+            // Store the value just copied, then take the next child.
+            let next = match frame {
+                Frame::Array(items, rest) => {
+                    if let Some(value) = done.take() {
+                        items.push(value);
+                    }
+                    rest.next()
+                }
+                Frame::Object(map, key, rest) => {
+                    if let (Some(value), Some(k)) = (done.take(), key.take()) {
+                        map.insert(k.clone(), value);
+                    }
+                    rest.next().map(|(k, v)| {
+                        *key = Some(k);
+                        v
+                    })
+                }
+            };
+            match next {
+                Some(child) => match start(child) {
+                    Ok(leaf) => done = Some(leaf),
+                    Err(frame) => stack.push(frame),
+                },
+                None => {
+                    done = match stack.pop() {
+                        Some(Frame::Array(items, _)) => Some(JsonValue::Array(items)),
+                        Some(Frame::Object(map, _, _)) => Some(JsonValue::Object(map)),
+                        None => None,
+                    };
+                }
+            }
+        }
+        done.unwrap_or(JsonValue::Null)
+    }
+}
+
+/// The derived equality (numbers as `f64`, so `NaN` is unequal to itself;
+/// objects equal with the same entries in any order, as `IndexMap`'s), but
+/// iterative.
+impl PartialEq for JsonValue {
+    fn eq(&self, other: &Self) -> bool {
+        let mut pending = vec![(self, other)];
+        while let Some(pair) = pending.pop() {
+            match pair {
+                (JsonValue::Null, JsonValue::Null) => {}
+                (JsonValue::Bool(a), JsonValue::Bool(b)) if a == b => {}
+                (JsonValue::Number(a), JsonValue::Number(b)) if a == b => {}
+                (JsonValue::String(a), JsonValue::String(b)) if a == b => {}
+                (JsonValue::Array(a), JsonValue::Array(b)) if a.len() == b.len() => {
+                    pending.extend(a.iter().zip(b));
+                }
+                (JsonValue::Object(a), JsonValue::Object(b)) if a.len() == b.len() => {
+                    for (key, value) in a {
+                        let Some(other) = b.get(key) else {
+                            return false;
+                        };
+                        pending.push((value, other));
+                    }
+                }
+                _ => return false,
+            }
+        }
+        true
+    }
+}
+
+/// How deeply [`JsonValue`]'s `Debug` output goes: non-empty arrays and
+/// objects nested deeper are elided as `Array([..])` and `Object({..})`.
+const DEBUG_MAX_DEPTH: usize = 100;
+
+/// The derived format (`Array([Number(1.0), Null])`, or indented with
+/// `{:#?}`), written without recursing, down to [`DEBUG_MAX_DEPTH`]
+/// levels: deeper collections are elided (indented output of a deep value
+/// would be quadratic in its depth).
+impl fmt::Debug for JsonValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        /// What is left to write, last first.
+        enum Step<'a> {
+            /// A value, at a depth (1 for the outermost) and an
+            /// indentation level (for `{:#?}`).
+            Value(&'a JsonValue, usize, usize),
+            /// An object key and the `": "` after it.
+            Key(&'a str),
+            Text(&'static str),
+            /// `{:#?}`: a line break, then the indentation of a level.
+            Line(usize),
+        }
+
+        /// A line break and the indentation of `level`.
+        fn line(f: &mut fmt::Formatter<'_>, level: usize) -> fmt::Result {
+            f.write_str("\n")?;
+            for _ in 0..level {
+                f.write_str("    ")?;
+            }
+            Ok(())
+        }
+
+        let pretty = f.alternate();
+        let mut steps = vec![Step::Value(self, 1, 0)];
+        while let Some(step) = steps.pop() {
+            let (value, depth, level) = match step {
+                Step::Value(value, depth, level) => (value, depth, level),
+                Step::Key(key) => {
+                    fmt::Debug::fmt(key, f)?;
+                    f.write_str(": ")?;
+                    continue;
+                }
+                Step::Text(text) => {
+                    f.write_str(text)?;
+                    continue;
+                }
+                Step::Line(level) => {
+                    line(f, level)?;
+                    continue;
+                }
+            };
+            let (name, open, close, entries): (_, _, _, Vec<(Option<&str>, &JsonValue)>) =
+                match value {
+                    JsonValue::Null => {
+                        f.write_str("Null")?;
+                        continue;
+                    }
+                    JsonValue::Array(items) if depth > DEBUG_MAX_DEPTH && !items.is_empty() => {
+                        f.write_str("Array([..])")?;
+                        continue;
+                    }
+                    JsonValue::Object(map) if depth > DEBUG_MAX_DEPTH && !map.is_empty() => {
+                        f.write_str("Object({..})")?;
+                        continue;
+                    }
+                    JsonValue::Array(items) => {
+                        ("Array", "[", "]", items.iter().map(|v| (None, v)).collect())
+                    }
+                    JsonValue::Object(map) => (
+                        "Object",
+                        "{",
+                        "}",
+                        map.iter().map(|(k, v)| (Some(k.as_str()), v)).collect(),
+                    ),
+                    leaf => {
+                        // `Name(leaf)`, or indented `Name(\n    leaf,\n)`.
+                        let name = match leaf {
+                            JsonValue::Bool(_) => "Bool",
+                            JsonValue::Number(_) => "Number",
+                            _ => "String",
+                        };
+                        f.write_str(name)?;
+                        f.write_str("(")?;
+                        if pretty {
+                            line(f, level + 1)?;
+                        }
+                        match leaf {
+                            JsonValue::Bool(b) => fmt::Debug::fmt(b, f)?,
+                            JsonValue::Number(n) => fmt::Debug::fmt(n, f)?,
+                            JsonValue::String(s) => fmt::Debug::fmt(s, f)?,
+                            _ => {}
+                        }
+                        if pretty {
+                            f.write_str(",")?;
+                            line(f, level)?;
+                        }
+                        f.write_str(")")?;
+                        continue;
+                    }
+                };
+            // `Name([a, b])`, or indented
+            // `Name(\n    [\n        a,\n        b,\n    ],\n)`; pushed in
+            // reverse.
+            f.write_str(name)?;
+            f.write_str("(")?;
+            if pretty {
+                steps.extend([Step::Text(")"), Step::Line(level), Step::Text(",")]);
+                steps.push(Step::Text(close));
+                if !entries.is_empty() {
+                    steps.push(Step::Line(level + 1));
+                }
+                for (key, value) in entries.into_iter().rev() {
+                    steps.push(Step::Text(","));
+                    steps.push(Step::Value(value, depth + 1, level + 2));
+                    steps.extend(key.map(Step::Key));
+                    steps.push(Step::Line(level + 2));
+                }
+                steps.push(Step::Text(open));
+                steps.push(Step::Line(level + 1));
+            } else {
+                steps.extend([Step::Text(")"), Step::Text(close)]);
+                for (i, (key, value)) in entries.into_iter().enumerate().rev() {
+                    steps.push(Step::Value(value, depth + 1, level));
+                    steps.extend(key.map(Step::Key));
+                    if i > 0 {
+                        steps.push(Step::Text(", "));
+                    }
+                }
+                steps.push(Step::Text(open));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -228,6 +470,140 @@ pub fn is_truthy_number(x: f64) -> bool {
     x != 0.0 && !x.is_nan()
 }
 
+/// How deeply `value` nests: 1 for a scalar or an empty array or object,
+/// one more for each level of arrays and objects. Iterative.
+pub fn depth(value: &JsonValue) -> usize {
+    let mut deepest = 0;
+    let mut pending = vec![(value, 1)];
+    while let Some((value, depth)) = pending.pop() {
+        deepest = deepest.max(depth);
+        match value {
+            JsonValue::Array(items) => pending.extend(items.iter().map(|v| (v, depth + 1))),
+            JsonValue::Object(map) => pending.extend(map.values().map(|v| (v, depth + 1))),
+            _ => {}
+        }
+    }
+    deepest
+}
+
+/// Whether `value` nests deeper than `limit`, as [`depth`] counts (1 for a
+/// scalar or an empty array or object, one more for each level of
+/// non-empty arrays and objects around it). Iterative; stops at the first
+/// value deeper than `limit`, and keeps no more than `limit` levels.
+pub fn depth_exceeds(value: &JsonValue, limit: usize) -> bool {
+    /// The values in a non-empty array or object still to be visited.
+    enum Children<'a> {
+        Array(std::slice::Iter<'a, JsonValue>),
+        Object(indexmap::map::Values<'a, String, JsonValue>),
+    }
+
+    // The non-empty arrays and objects from `value` down to the one being
+    // visited.
+    let mut path: Vec<Children<'_>> = Vec::new();
+    let mut next = Some(value);
+    loop {
+        if let Some(value) = next.take() {
+            // `value` is `path.len() + 1` deep.
+            if path.len() >= limit {
+                return true;
+            }
+            match value {
+                JsonValue::Array(items) if !items.is_empty() => {
+                    path.push(Children::Array(items.iter()));
+                }
+                JsonValue::Object(map) if !map.is_empty() => {
+                    path.push(Children::Object(map.values()));
+                }
+                _ => {}
+            }
+        }
+        let child = match path.last_mut() {
+            None => return false,
+            Some(Children::Array(items)) => items.next(),
+            Some(Children::Object(values)) => values.next(),
+        };
+        match child {
+            Some(child) => next = Some(child),
+            None => {
+                path.pop();
+            }
+        }
+    }
+}
+
+/// V8's `RangeError: Maximum call stack size exceeded`, where a JavaScript
+/// recursion this crate models iteratively would overflow Node's stack.
+/// (`quicktype_core` turns it into its `RangeError`.)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StackOverflow;
+
+impl fmt::Display for StackOverflow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Maximum call stack size exceeded")
+    }
+}
+
+impl std::error::Error for StackOverflow {}
+
+/// JavaScript `String(value)`, as a template literal converts a value:
+/// arrays are joined with `,` (`null` elements give `""`), objects are
+/// `[object Object]`, numbers as [`number::to_string`].
+///
+/// Iterative. Node's `Array.prototype.join` recurses once per nested array
+/// and overflows its stack where the caller leaves too little: arrays
+/// nested more than `max_depth` deep (counting `value` itself) fail with
+/// [`StackOverflow`].
+pub fn to_js_string(value: &JsonValue, max_depth: usize) -> Result<String, StackOverflow> {
+    /// `String(value)` of anything but an array.
+    fn scalar(value: &JsonValue) -> String {
+        match value {
+            JsonValue::Null => "null".to_owned(),
+            JsonValue::Bool(b) => b.to_string(),
+            JsonValue::Number(n) => number::to_string(*n),
+            JsonValue::String(s) => s.clone(),
+            JsonValue::Array(_) | JsonValue::Object(_) => "[object Object]".to_owned(),
+        }
+    }
+
+    let JsonValue::Array(items) = value else {
+        return Ok(scalar(value));
+    };
+    // (remaining elements, the text so far, whether an element was written)
+    let mut stack = vec![(items.iter(), String::new(), false)];
+    loop {
+        let Some((elements, text, started)) = stack.last_mut() else {
+            return Ok(String::new());
+        };
+        match elements.next() {
+            Some(element) => {
+                if *started {
+                    text.push(',');
+                }
+                *started = true;
+                match element {
+                    JsonValue::Array(inner) => {
+                        if stack.len() >= max_depth {
+                            return Err(StackOverflow);
+                        }
+                        stack.push((inner.iter(), String::new(), false));
+                    }
+                    JsonValue::Null => {}
+                    other => text.push_str(&scalar(other)),
+                }
+            }
+            None => {
+                let Some((_, text, _)) = stack.pop() else {
+                    return Ok(String::new());
+                };
+                match stack.last_mut() {
+                    Some((_, parent, _)) => parent.push_str(&text),
+                    None => return Ok(text),
+                }
+            }
+        }
+    }
+}
+
 /// `!!value`: JavaScript truthiness. `null`, `false`, `0`, `-0`, `NaN` and
 /// `""` are falsy; arrays and objects (even empty ones) are truthy.
 pub fn is_truthy(value: &JsonValue) -> bool {
@@ -358,6 +734,215 @@ pub(crate) fn array_index(key: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn depth_counts_levels() {
+        let depth_of = |text: &str| depth(&parse(text).unwrap());
+        assert_eq!(depth_of("1"), 1);
+        assert_eq!(depth_of("[]"), 1);
+        assert_eq!(depth_of("{}"), 1);
+        assert_eq!(depth_of("[1]"), 2);
+        assert_eq!(depth_of(r#"[1, {"a": [[]], "b": 2}, []]"#), 4);
+        let n = 1_000_000;
+        assert_eq!(depth_of(&format!("{}{}", "[".repeat(n), "]".repeat(n))), n);
+    }
+
+    #[test]
+    fn depth_exceeds_agrees_with_depth() {
+        for text in [
+            "1",
+            "[]",
+            "{}",
+            "[1]",
+            "[[]]",
+            r#"{"a": {}}"#,
+            r#"[1, {"a": [[]], "b": 2}, []]"#,
+            r#"[[[[1]]], [2], {"a": [{"b": [[[{}]]]}]}, 3]"#,
+            r#"[{}, [], [[], {"x": [null]}], "s"]"#,
+        ] {
+            let value = parse(text).unwrap();
+            let depth = depth(&value);
+            for limit in 0..depth + 2 {
+                assert_eq!(
+                    depth_exceeds(&value, limit),
+                    depth > limit,
+                    "{text} {limit}"
+                );
+            }
+        }
+        // A million levels, checked down to the limit only.
+        let n = 1_000_000;
+        let deep = parse(&format!("{}{}", r#"{"a":["#.repeat(n), "]}".repeat(n))).unwrap();
+        assert!(depth_exceeds(&deep, 5_987));
+        assert!(!depth_exceeds(&deep, 2 * n));
+    }
+
+    #[test]
+    fn clones_keep_order_and_never_recurse() {
+        let v = parse(r#"{"b": [1, {"2": null, "a": "x"}, []], "1": true, "": {}}"#).unwrap();
+        assert_eq!(v.clone(), v);
+        assert_eq!(stringify(&v.clone(), None), stringify(&v, None));
+        assert_eq!(JsonValue::Number(-0.0).clone(), JsonValue::Number(0.0));
+
+        // A million levels, on the test thread's small stack.
+        let depth = 1_000_000;
+        let deep = parse(&format!(
+            "{}1{}",
+            r#"[{"a":"#.repeat(depth),
+            "}]".repeat(depth)
+        ))
+        .unwrap();
+        let mut copy = &deep.clone();
+        let mut levels = 0;
+        loop {
+            copy = match copy {
+                JsonValue::Array(items) if items.len() == 1 => &items[0],
+                JsonValue::Object(map) if map.len() == 1 => &map["a"],
+                _ => break,
+            };
+            levels += 1;
+        }
+        assert_eq!(levels, 2 * depth);
+        assert_eq!(*copy, JsonValue::Number(1.0));
+    }
+
+    /// `JsonValue` as the derived `Debug` writes it.
+    #[derive(Debug)]
+    #[allow(dead_code)] // Read by `Debug` only.
+    enum Derived {
+        Null,
+        Bool(bool),
+        Number(f64),
+        String(String),
+        Array(Vec<Derived>),
+        Object(IndexMap<String, Derived>),
+    }
+
+    impl Derived {
+        fn of(value: &JsonValue) -> Derived {
+            match value {
+                JsonValue::Null => Derived::Null,
+                JsonValue::Bool(b) => Derived::Bool(*b),
+                JsonValue::Number(n) => Derived::Number(*n),
+                JsonValue::String(s) => Derived::String(s.clone()),
+                JsonValue::Array(items) => Derived::Array(items.iter().map(Derived::of).collect()),
+                JsonValue::Object(map) => Derived::Object(
+                    map.iter()
+                        .map(|(k, v)| (k.clone(), Derived::of(v)))
+                        .collect(),
+                ),
+            }
+        }
+    }
+
+    /// A million levels of `[{"a": …}]` around `1`.
+    fn million_levels() -> JsonValue {
+        let depth = 1_000_000;
+        parse(&format!(
+            "{}1{}",
+            r#"[{"a":"#.repeat(depth),
+            "}]".repeat(depth)
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn equality_and_debug_never_recurse() {
+        // On the test thread's small stack.
+        let deep = million_levels();
+        let copy = deep.clone();
+        assert!(deep == copy);
+        let mut other = million_levels();
+        let mut innermost = &mut other;
+        loop {
+            innermost = match innermost {
+                JsonValue::Array(items) => &mut items[0],
+                JsonValue::Object(map) => map.get_index_mut(0).unwrap().1,
+                leaf => break *leaf = JsonValue::Number(2.0),
+            };
+        }
+        assert!(deep != other);
+
+        let compact = format!("{deep:?}");
+        let elided = "Array([Object({\"a\": ".repeat(50) + "Array([..])" + &"})])".repeat(50);
+        assert_eq!(compact, elided);
+        let pretty = format!("{deep:#?}");
+        assert!(
+            pretty.starts_with("Array(\n    [\n        Object(\n"),
+            "{pretty:.40}"
+        );
+        assert!(pretty.contains("Array([..])"));
+    }
+
+    #[test]
+    fn equality_is_the_derived_one() {
+        let v = |text: &str| parse(text).unwrap();
+        assert_eq!(
+            v(r#"{"a": 1, "b": [true, null]}"#),
+            v(r#"{"b": [true, null], "a": 1}"#)
+        );
+        assert_ne!(v(r#"{"a": 1}"#), v(r#"{"a": 1, "b": 1}"#));
+        assert_ne!(v(r#"{"a": 1, "c": 1}"#), v(r#"{"a": 1, "b": 1}"#));
+        assert_ne!(v("[1, 2]"), v("[2, 1]"));
+        assert_ne!(v("[1]"), v("[1, 1]"));
+        assert_ne!(v("[]"), v("{}"));
+        assert_ne!(v("0"), v("false"));
+        assert_ne!(v(r#""""#), v("null"));
+        assert_eq!(v("-0"), v("0"));
+        assert_ne!(JsonValue::Number(f64::NAN), JsonValue::Number(f64::NAN));
+    }
+
+    #[test]
+    fn debug_is_the_derived_format() {
+        for text in [
+            "null",
+            "true",
+            "-0.5",
+            r#""a\"b\n""#,
+            "[]",
+            "{}",
+            "[[]]",
+            r#"[1, null, "x", [false, {}], {"k\n": [2]}]"#,
+            r#"{"a": {"b": [1, {"c": null}]}, "": [[], [[3]]]}"#,
+        ] {
+            let value = parse(text).unwrap();
+            let derived = Derived::of(&value);
+            assert_eq!(format!("{value:?}"), format!("{derived:?}"), "{text}");
+            assert_eq!(format!("{value:#?}"), format!("{derived:#?}"), "{text}");
+        }
+        // Down to the elided depth.
+        let deep = parse(&format!("{}{}", "[".repeat(100), "]".repeat(100))).unwrap();
+        assert_eq!(format!("{deep:#?}"), format!("{:#?}", Derived::of(&deep)));
+        let deeper = parse(&format!("{}{}", "[".repeat(102), "]".repeat(102))).unwrap();
+        let elided = "Array([".repeat(100) + "Array([..])" + &"])".repeat(100);
+        assert_eq!(format!("{deeper:?}"), elided);
+    }
+
+    #[test]
+    fn js_strings() {
+        let v = |text: &str| parse(text).unwrap();
+        assert_eq!(
+            to_js_string(&v(r#"[1, null, "a", [2, [3]], {"x": 1}, true, 1e21]"#), 3).unwrap(),
+            "1,,a,2,3,[object Object],true,1e+21"
+        );
+        assert_eq!(
+            to_js_string(&v("[1,[2,[null,[]]],3]"), 4).unwrap(),
+            "1,2,,,3"
+        );
+        assert_eq!(to_js_string(&v("[[null], [], [[]]]"), 3).unwrap(), ",,");
+        assert_eq!(to_js_string(&v("null"), 0).unwrap(), "null");
+        assert_eq!(to_js_string(&v("{}"), 0).unwrap(), "[object Object]");
+        assert_eq!(to_js_string(&v("-0"), 0).unwrap(), "0");
+        assert_eq!(to_js_string(&v("[]"), 1).unwrap(), "");
+        let nested = |n: usize| v(&format!("{}\"x\"{}", "[".repeat(n), "]".repeat(n)));
+        assert_eq!(to_js_string(&nested(2_710), 2_710).unwrap(), "x");
+        assert_eq!(to_js_string(&nested(2_711), 2_710), Err(StackOverflow));
+        assert_eq!(to_js_string(&nested(1_000_000), 2_710), Err(StackOverflow));
+        assert_eq!(
+            StackOverflow.to_string(),
+            "Maximum call stack size exceeded"
+        );
+    }
 
     #[test]
     fn truthiness_and_property_reads_are_javascript_s() {

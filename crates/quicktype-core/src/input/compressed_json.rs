@@ -48,6 +48,7 @@ use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
 use crate::support::fast_hash::{BuildHasher, HashMap};
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
+use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
@@ -189,6 +190,13 @@ const BLOCK: usize = 1 << 16;
 /// sample is read, and the largest capacity (in items) it keeps.
 const SPARE_BUFFERS: usize = 64;
 const SPARE_CAPACITY: usize = 4096;
+
+/// The deepest value `CompressedJSONFromString.process` reaches before
+/// Node's stack overflows: Node 24 handles 4,578 nested `process` calls
+/// (a sample nested 4,578 deep, counting the sample itself) and fails at
+/// the next, through the quicktype-core API in a fresh process (see "Stack
+/// depth" in docs/PARITY.md).
+const PROCESS_MAX_DEPTH: usize = 4_578;
 
 /// Keeps an emptied buffer for reuse, unless there are enough or it is
 /// large.
@@ -943,33 +951,44 @@ pub(crate) fn parse_string_into<S: JsonSink>(
 
 /// `process(json)`, iteratively: emits `json` into `sink` in
 /// `Object.getOwnPropertyNames` order.
+///
+/// TypeScript recurses once per nesting level and overflows Node's stack
+/// below [`PROCESS_MAX_DEPTH`]: the `RangeError` then becomes the sample's
+/// parse error (`Syntax error in input JSON …: Maximum call stack size
+/// exceeded`).
 fn process<S: JsonSink>(sink: &mut S, json: &JsonValue) -> Result<()> {
     enum Step<'a> {
-        Value(&'a JsonValue),
+        /// A value and its depth (1 for the sample itself).
+        Value(&'a JsonValue, usize),
         Key(&'a str),
         FinishObject,
         FinishArray,
     }
-    let mut steps = vec![Step::Value(json)];
+    let mut steps = vec![Step::Value(json, 1)];
     while let Some(step) = steps.pop() {
+        if let Step::Value(_, depth) = step
+            && depth > PROCESS_MAX_DEPTH
+        {
+            return Err(stack_overflow());
+        }
         match step {
-            Step::Value(JsonValue::Null) => sink.commit_null()?,
-            Step::Value(JsonValue::Bool(b)) => sink.commit_boolean(*b)?,
-            Step::Value(JsonValue::String(s)) => sink.commit_string(s)?,
-            Step::Value(JsonValue::Number(n)) => {
+            Step::Value(JsonValue::Null, _) => sink.commit_null()?,
+            Step::Value(JsonValue::Bool(b), _) => sink.commit_boolean(*b)?,
+            Step::Value(JsonValue::String(s), _) => sink.commit_string(s)?,
+            Step::Value(JsonValue::Number(n), _) => {
                 let is_double = sink.parsed_number_is_double(*n);
                 sink.commit_number(is_double)?;
             }
-            Step::Value(JsonValue::Array(items)) => {
+            Step::Value(JsonValue::Array(items), depth) => {
                 sink.push_array_context()?;
                 steps.push(Step::FinishArray);
-                steps.extend(items.iter().rev().map(Step::Value));
+                steps.extend(items.iter().rev().map(|v| Step::Value(v, depth + 1)));
             }
-            Step::Value(JsonValue::Object(map)) => {
+            Step::Value(JsonValue::Object(map), depth) => {
                 sink.push_object_context()?;
                 steps.push(Step::FinishObject);
                 for (key, value) in map.iter().rev() {
-                    steps.push(Step::Value(value));
+                    steps.push(Step::Value(value, depth + 1));
                     steps.push(Step::Key(key));
                 }
             }
@@ -1162,6 +1181,27 @@ mod tests {
     }
 
     #[test]
+    fn process_overflows_where_node_does() {
+        // Node 24 processes 4,578 nested values and overflows at the next
+        // (`"[" × n`: n values deep; `{"a":` × n with a number: n + 1).
+        let overflow = |r: Result<Value, ParseError>| match r {
+            Err(e) => e.message() == "Maximum call stack size exceeded",
+            Ok(_) => false,
+        };
+        let arrays = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
+        let objects = |n: usize| format!("{}1{}", r#"{"a":"#.repeat(n), "}".repeat(n));
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        assert!(r.parse_string(&arrays(PROCESS_MAX_DEPTH)).is_ok());
+        assert!(overflow(r.parse_string(&arrays(PROCESS_MAX_DEPTH + 1))));
+        assert!(r.parse_string(&objects(PROCESS_MAX_DEPTH - 1)).is_ok());
+        assert!(overflow(r.parse_string(&objects(PROCESS_MAX_DEPTH))));
+        // A million levels (a 2 MB sample) used to reach inference and
+        // overflow the native stack there.
+        assert!(overflow(r.parse_string(&arrays(1_000_000))));
+        assert!(r.parse_string("[1]").is_ok());
+    }
+
+    #[test]
     fn number_classification_like_json_parse() {
         let mut r = cjson(Some(INT64_RANGE.clone()));
         let mut kind = |s: &str| r.parse_string(s).unwrap();
@@ -1228,13 +1268,20 @@ mod tests {
     }
 
     /// Deep samples are processed without recursion, on success and when
-    /// `JSON.parse` fails after the root value or inside it.
+    /// `JSON.parse` fails after the root value or inside it; deeper than
+    /// TypeScript's recursive `process` gets, they fail as it does.
     #[test]
     fn deep_nesting() {
         let n = 1_000_000;
         let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
         let mut r = cjson(None);
-        assert!(matches!(r.parse_string(&deep), Ok(Value::Array(_))));
+        assert_eq!(
+            r.parse_string(&deep).unwrap_err().message(),
+            "Maximum call stack size exceeded"
+        );
+        let m = PROCESS_MAX_DEPTH;
+        let deepest = format!("{}{}", "[".repeat(m), "]".repeat(m));
+        assert!(matches!(r.parse_string(&deepest), Ok(Value::Array(_))));
         assert_eq!(
             r.parse_string(&format!("{deep} x")).unwrap_err().message(),
             "Unexpected non-whitespace character after JSON at position 2000001 (line 1 column 2000002)"

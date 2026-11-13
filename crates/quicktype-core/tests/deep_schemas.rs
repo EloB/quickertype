@@ -147,3 +147,35 @@ fn yaml_alias_nesting_is_bounded() {
     assert!(run(&yaml).is_err());
     assert!(run(&format!("{}1{}", "[".repeat(300), "]".repeat(300))).is_err());
 }
+
+/// Graph rewriting recurses once per level of the graph, as in TypeScript,
+/// which overflows there within a few hundred levels; the port fails with
+/// the same `RangeError` instead of overflowing the native stack (this
+/// test thread's 2 MB; a GraphQL field type of 100,000 nested lists
+/// overflowed even the CLI's 256 MB).
+#[test]
+fn deep_graphs_overflow_in_rewriting_like_node() {
+    use quicktype_core::{InputData, Options, get_target_language, quicktype_multi_file};
+
+    let schema = nested(r#"{"type":"object","additionalProperties":"#, "}", 1500);
+    let result: Result<()> = block_on(async {
+        let mut input = JsonSchemaInput::new(None, Vec::new(), Vec::new());
+        input
+            .add_source(JsonSchemaSourceData {
+                name: "T".to_owned(),
+                schema: Some(schema),
+                ..JsonSchemaSourceData::default()
+            })
+            .await?;
+        let mut input_data = InputData::new();
+        input_data.add_input(input);
+        let options = Options::new(get_target_language("go")?, input_data);
+        quicktype_multi_file(options).await.map(|_| ())
+    });
+    let e = result.unwrap_err();
+    assert_eq!(
+        e.as_js_exception().map(|e| e.name()),
+        Some(JsErrorName::RangeError)
+    );
+    assert_eq!(format!("Error: {e}."), OVERFLOW);
+}

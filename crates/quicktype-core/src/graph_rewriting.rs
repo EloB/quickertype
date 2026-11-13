@@ -558,10 +558,11 @@ impl<'g> TypeBuilder<'g> {
 
     /// `forceReconstituteTypeRef(originalRef, attributes, forwardingRef)`.
     ///
-    /// Reconstitution recurses into the types a type refers to. Some remaps
-    /// never end (an intersection of a type with a union containing a map of
-    /// it), where TypeScript overflows the stack, so this is one level of a
-    /// guarded recursion.
+    /// A type's children are reconstituted from inside it, so this recurses
+    /// once per level of the graph's depth, as in TypeScript, where V8's
+    /// stack overflows within a few hundred levels of nested arrays. It runs
+    /// under [`guard`]: a graph too deep fails with the same `RangeError`
+    /// instead of overflowing the native stack.
     fn force_reconstitute_type_ref(
         &mut self,
         original_ref: TypeRef,
@@ -577,6 +578,8 @@ impl<'g> TypeBuilder<'g> {
         })
     }
 
+    /// [`force_reconstitute_type_ref`](Self::force_reconstitute_type_ref)'s
+    /// body.
     fn force_reconstitute_type_ref_unguarded(
         &mut self,
         original_ref: TypeRef,
