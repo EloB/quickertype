@@ -224,13 +224,10 @@ fn is_integer_string(s: &str) -> bool {
 
 /// `UUID` (`/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`).
 fn is_uuid(s: &str) -> bool {
-    let groups: Vec<&str> = s.split('-').collect();
-    let lengths = [8, 4, 4, 4, 12];
-    groups.len() == 5
-        && groups.iter().zip(lengths).all(|(g, len)| {
-            g.len() == len
-                && g.bytes()
-                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    s.len() == 36
+        && s.bytes().enumerate().all(|(i, b)| match i {
+            8 | 13 | 18 | 23 => b == b'-',
+            _ => b.is_ascii_digit() || (b'a'..=b'f').contains(&b),
         })
 }
 
@@ -274,6 +271,22 @@ pub fn infer_transformed_string_type_kind_for_string(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn uuids() {
+        assert!(is_uuid("123e4567-e89b-12d3-a456-426614174000"));
+        for s in [
+            "123E4567-e89b-12d3-a456-426614174000",
+            "123e4567-e89b-12d3-a456-42661417400",
+            "123e4567-e89b-12d3-a456-4266141740000",
+            "123e4567e-89b-12d3-a456-426614174000",
+            "123e4567-e89b-12d3-a456-42661417400é",
+            "123e4567-e89b-12d3-a456_426614174000",
+            "",
+        ] {
+            assert!(!is_uuid(s), "{s}");
+        }
+    }
 
     fn cases(st: &StringTypes) -> Vec<(String, u64)> {
         st.cases

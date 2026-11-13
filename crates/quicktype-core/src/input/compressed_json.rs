@@ -78,6 +78,23 @@ pub enum Value {
     TransformedString(u32),
 }
 
+/// The value of `-?[0-9]{1,max_digits}` (leading zeros allowed), or `None`
+/// for any other string.
+fn parse_decimal(s: &str, max_digits: usize) -> Option<i128> {
+    let (negative, digits) = match s.strip_prefix('-') {
+        Some(digits) => (true, digits),
+        None => (false, s),
+    };
+    if digits.is_empty() || digits.len() > max_digits || !digits.bytes().all(|b| b.is_ascii_digit())
+    {
+        return None;
+    }
+    let value = digits
+        .bytes()
+        .fold(0i128, |v, d| v * 10 + i128::from(d - b'0'));
+    Some(if negative { -value } else { value })
+}
+
 /// One JSON sample, and which reader reads it (TS: the type `T` of
 /// `JSONInput<T>` and the matching `CompressedJSON<T>` subclass).
 #[non_exhaustive]
@@ -121,6 +138,10 @@ pub struct CompressedJson {
     date_time_recognizer: Box<dyn DateTimeRecognizer>,
     handle_refs: bool,
     supported_integer_range: Option<IntegerRange>,
+    /// `supported_integer_range` as numbers, when its bounds are plain
+    /// decimal integers, to check short integer literals without comparing
+    /// strings.
+    integer_bounds: Option<(i128, i128)>,
     root_value: Option<Value>,
     ctx: Option<Context>,
     context_stack: Vec<Context>,
@@ -158,10 +179,17 @@ impl CompressedJson {
         handle_refs: bool,
         supported_integer_range: Option<IntegerRange>,
     ) -> Self {
+        let integer_bounds = supported_integer_range.as_ref().and_then(|range| {
+            Some((
+                parse_decimal(&range.min, 38)?,
+                parse_decimal(&range.max, 38)?,
+            ))
+        });
         CompressedJson {
             date_time_recognizer,
             handle_refs,
             supported_integer_range,
+            integer_bounds,
             root_value: None,
             ctx: None,
             context_stack: Vec::new(),
@@ -216,7 +244,16 @@ impl CompressedJson {
     pub fn integer_string_fits(&self, integer_string: &str) -> bool {
         match &self.supported_integer_range {
             None => true,
-            Some(range) => integer_string_in_range(integer_string, range),
+            Some(range) => {
+                // Up to 18 digits fit an `i64`; compared as numbers, they
+                // compare as `integerStringInRange` compares their strings.
+                if let (Some((min, max)), Some(n)) =
+                    (self.integer_bounds, parse_decimal(integer_string, 18))
+                {
+                    return min <= n && n <= max;
+                }
+                integer_string_in_range(integer_string, range)
+            }
         }
     }
 
@@ -767,6 +804,43 @@ mod tests {
 
     fn cjson(range: Option<IntegerRange>) -> CompressedJson {
         CompressedJson::new(Box::new(DefaultDateTimeRecognizer), false, range)
+    }
+
+    #[test]
+    fn integer_string_fits_numerically_and_by_string() {
+        use crate::support::integer_range::INT32_RANGE;
+        let r = cjson(Some(INT32_RANGE.clone()));
+        for (s, fits) in [
+            ("0", true),
+            ("-0", true),
+            ("2147483647", true),
+            ("2147483648", false),
+            ("-2147483648", true),
+            ("-2147483649", false),
+            ("000000000000000001", true),
+            ("999999999999999999", false),
+            ("-999999999999999999", false),
+            ("99999999999999999999", false),
+        ] {
+            assert_eq!(r.integer_string_fits(s), fits, "{s}");
+            assert_eq!(integer_string_in_range(s, &INT32_RANGE), fits, "{s}");
+        }
+        let custom = cjson(Some(IntegerRange {
+            min: "-5".into(),
+            max: "+5".into(),
+        }));
+        // A bound that is not a plain decimal compares as a string.
+        assert!(custom.integer_bounds.is_none());
+        assert_eq!(
+            custom.integer_string_fits("3"),
+            integer_string_in_range(
+                "3",
+                &IntegerRange {
+                    min: "-5".into(),
+                    max: "+5".into(),
+                }
+            )
+        );
     }
 
     #[test]

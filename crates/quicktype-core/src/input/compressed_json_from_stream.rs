@@ -24,6 +24,8 @@
 //! like Node's `setEncoding("utf8")` (invalid sequences become U+FFFD); a
 //! byte order mark is not stripped and is a syntax error, as in the CLI.
 
+use std::borrow::Cow;
+
 use super::compressed_json::{CompressedJson, ParseError, Value};
 use crate::messages::{JsErrorName, JsException, Result};
 
@@ -49,7 +51,12 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        let text = String::from_utf8_lossy(sample);
+        // `from_utf8` validates much faster than `from_utf8_lossy`, which
+        // only matters for invalid input.
+        let text = match std::str::from_utf8(sample) {
+            Ok(text) => Cow::Borrowed(text),
+            Err(_) => String::from_utf8_lossy(sample),
+        };
         let result = Tokenizer::new(&text, self).run();
         if result.is_err() {
             self.reset_partial_sample();
@@ -269,15 +276,30 @@ impl<'a> Tokenizer<'a> {
 
     /// A string or key body; the index is past the opening quote. Decodes
     /// escapes; `\uXXXX` escapes are UTF-16 code units, and one that stays
-    /// unpaired becomes U+FFFD.
+    /// unpaired becomes U+FFFD. A string without escapes is borrowed from
+    /// the input.
     ///
     /// stream-json's `string` state matches
     /// `[^\x00-\x1f\"\\]{1,256}|\\[bfnrt\"\\\/]|\\u[\da-fA-F]{4}|\"`: input
     /// that matches none of these is `escaped characters` if any input is
     /// left, and `expected a string value` at the end of the input.
-    fn string(&mut self) -> Result<String, ParseError> {
+    fn string(&mut self) -> Result<Cow<'a, str>, ParseError> {
+        let start = self.index;
+        // The common case: no escapes up to the closing quote.
+        while self
+            .peek()
+            .is_some_and(|b| b >= 0x20 && b != b'"' && b != b'\\')
+        {
+            self.index += 1;
+        }
+        if self.peek() == Some(b'"') {
+            let text: &'a str = self.text;
+            let s = &text[start..self.index];
+            self.index += 1;
+            return Ok(Cow::Borrowed(s));
+        }
         let mut units: Option<Vec<u16>> = None;
-        let mut out = String::new();
+        let mut out = String::from(&self.text[start..self.index]);
         loop {
             let Some(b) = self.peek() else {
                 return Err(syntax("Parser has expected a string value"));
@@ -285,10 +307,10 @@ impl<'a> Tokenizer<'a> {
             match b {
                 b'"' => {
                     self.index += 1;
-                    return Ok(match units {
+                    return Ok(Cow::Owned(match units {
                         Some(units) => String::from_utf16_lossy(&units),
                         None => out,
-                    });
+                    }));
                 }
                 b'\\' => {
                     let decoded: u16 = match self.bytes.get(self.index + 1) {
