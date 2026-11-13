@@ -1,0 +1,8 @@
+# quicktype's test/unit/javascript-all-objects-exports.test.ts: with
+# `--converters all-objects` every object's converters are exported.
+input json TopLevel {"data123": {"name": "quicktype"}}
+pipeline {"lang": "javascript"}
+
+render javascript {"filename": "stdout", "rendererOptions": {"acronym-style": "pascal", "converters": "all-objects"}}
+render javascript {"filename": "stdout", "rendererOptions": {"acronym-style": "pascal", "converters": "top-level"}}
+render typescript {"filename": "stdout", "rendererOptions": {"converters": "all-objects"}}

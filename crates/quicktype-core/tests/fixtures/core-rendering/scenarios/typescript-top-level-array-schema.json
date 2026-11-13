@@ -1,0 +1,157 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TextClassificationOutput"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "object",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TextClassificationOutputElement"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "label",
+      2,
+      false
+     ],
+     [
+      "score",
+      3,
+      false
+     ]
+    ],
+    "add": 4
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "label",
+       "SomeInput"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "score"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "SomeInput"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 2
+   }
+  ],
+  "topLevels": [
+   [
+    "TextClassificationOutput",
+    0
+   ],
+   [
+    "SomeInput",
+    5
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "typescript",
+   "filename": "stdout",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "stdout",
+     "text": "export type TextClassificationOutput = TextClassificationOutputElement[];\n\nexport type SomeInput = string[];\n\nexport interface TextClassificationOutputElement {\n    label: string;\n    score: number;\n    [property: string]: unknown;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "flow",
+   "filename": "stdout",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "stdout",
+     "text": "// @flow\n\nexport type TextClassificationOutput = TextClassificationOutputElement[];\n\nexport type SomeInput = string[];\n\nexport type TextClassificationOutputElement = {\n    label: string;\n    score: number;\n    [property: string]: mixed;\n};\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "typescript-top-level-array-schema"
+}
