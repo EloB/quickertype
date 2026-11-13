@@ -7,6 +7,7 @@
 use crate::ty::transformed_string_type::TypeKind;
 
 /// The name of an inference flag (TS `InferenceFlagName`).
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum InferenceFlagName {
     /// `inferMaps`.
@@ -127,6 +128,7 @@ pub static INFERENCE_FLAGS: [InferenceFlag; 8] = [
 
 /// The values of all inference flags (TS `InferenceFlags`); all `true` by
 /// default (TS `defaultInferenceFlags`).
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InferenceFlags {
     /// Infer maps when object keys look like map keys.

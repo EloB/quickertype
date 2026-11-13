@@ -22,6 +22,7 @@ pub use self::types::{CliOptionDefinitions, OptionDefinition, OptionKind, Option
 /// `undefined`.
 // TODO(api): numbers and objects can reach the JS API's `rendererOptions`;
 // add them when the WASM bindings forward raw JS values.
+#[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OptionValue {
     /// JS `null`.
