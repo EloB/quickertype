@@ -39,11 +39,7 @@ pub fn read_file_sync(path: &str) -> Result<Vec<u8>, CliError> {
 
 /// `fs.readFileSync(path, "utf8")`: invalid UTF-8 is replaced.
 pub fn read_file_sync_utf8(path: &str) -> Result<String, CliError> {
-    // Valid UTF-8, the usual case, is taken over without copying.
-    read_file_sync(path).map(|bytes| {
-        String::from_utf8(bytes)
-            .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned())
-    })
+    read_file_sync(path).map(quicktype_js_compat::utf8::decode_owned)
 }
 
 /// `fs.writeFileSync(path, data)`.

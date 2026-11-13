@@ -20,6 +20,7 @@ pub mod unicode;
 mod unicode_table;
 pub mod uri;
 pub mod utf16;
+pub mod utf8;
 pub mod whitespace;
 pub mod wordwrap;
 pub mod yaml;

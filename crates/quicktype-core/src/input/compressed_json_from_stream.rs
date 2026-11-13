@@ -51,12 +51,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        // `from_utf8` validates much faster than `from_utf8_lossy`, which
-        // only matters for invalid input.
-        let text = match std::str::from_utf8(sample) {
-            Ok(text) => Cow::Borrowed(text),
-            Err(_) => String::from_utf8_lossy(sample),
-        };
+        let text = quicktype_js_compat::utf8::decode(sample);
         let result = Tokenizer::new(&text, self).run();
         if result.is_err() {
             self.reset_partial_sample();
