@@ -181,8 +181,15 @@ async fn add_json_source(
         samples,
         description,
     } = source;
-    let make_input =
-        || json_input_for_target_language(target_language, handle_json_refs, renderer_options);
+    let make_input = || {
+        let mut input =
+            json_input_for_target_language(target_language, handle_json_refs, renderer_options);
+        if reference_inference() {
+            // A fresh input has no sources yet, which is all this checks.
+            let _ = input.set_tally_inference(false);
+        }
+        input
+    };
     if samples.is_empty() {
         // `DriverNoSamplesForTopLevel`.
         let empty = JsonSourceData {
@@ -204,6 +211,14 @@ async fn add_json_source(
         input_data.add_source("json", one, make_input).await?;
     }
     Ok(())
+}
+
+/// Whether `QUICKTYPE_INFERENCE=compressed-json` asks to infer JSON types
+/// from the compressed form of the samples, as quicktype does, instead of
+/// from running tallies (docs/STREAMING-INFERENCE.md). Only for testing
+/// that both give the same output; not a CLI option.
+fn reference_inference() -> bool {
+    std::env::var_os("QUICKTYPE_INFERENCE").is_some_and(|v| v == "compressed-json")
 }
 
 /// The `--debug` components: comma-separated, each trimmed; `all` turns

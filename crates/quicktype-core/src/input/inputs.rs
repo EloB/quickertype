@@ -23,7 +23,10 @@ use std::pin::Pin;
 use indexmap::{IndexMap, IndexSet};
 
 use super::compressed_json::{CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value};
+use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
 use super::inference::TypeInference;
+use super::tallies::{NodeId, Tallies, TallyBuilder};
+use super::tally_inference::TallyInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
 use crate::attributes::type_names::make_names_type_attributes;
@@ -336,7 +339,11 @@ pub struct JsonSourceData<T = JsonSample> {
 #[derive(Debug, Default)]
 struct JsonTopLevel {
     description: Option<String>,
+    /// The samples kept in the compressed form: all of them when
+    /// inferring from the compressed form, the `JSON.parse` ones otherwise.
     samples: Vec<Value>,
+    /// The tally of all samples, when inferring from tallies.
+    tally: Option<NodeId>,
 }
 
 /// A top-level of a JavaScript-built `CompressedJSON` (research 05, §4.2):
@@ -378,19 +385,55 @@ pub struct CompressedTopLevel {
 ///     "Syntax error in input JSON Person: Expected double-quoted property name in JSON at position 16 (line 1 column 17)"
 /// );
 /// ```
+///
+/// # Running tallies
+///
+/// Types are inferred from running tallies of the samples (see
+/// `docs/STREAMING-INFERENCE.md`): samples read with stream-json semantics
+/// ([`JsonSample::Stream`], [`JsonSample::Reader`]) are counted while they
+/// are read and never kept, so memory grows with the number of distinct
+/// places, keys and strings in the samples rather than with their size.
+/// Samples given as text ([`JsonSample::String`], `JSON.parse` semantics)
+/// are kept in the compressed form as well, for
+/// [`to_compressed`](Self::to_compressed). The types are the same as
+/// quicktype infers from the compressed form, which an input built with
+/// [`from_compressed`](Self::from_compressed) still does.
 #[derive(Debug)]
 pub struct JsonInput {
     compressed_json: CompressedJson,
     top_levels: IndexMap<String, JsonTopLevel>,
+    /// The running tallies; `None` to infer from the compressed form.
+    tallies: Option<Tallies>,
 }
 
 impl JsonInput {
-    /// `new JSONInput(compressedJSON)`.
+    /// `new JSONInput(compressedJSON)`: `compressed_json` configures how
+    /// samples are read (and keeps those given as text).
     pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
             compressed_json,
             top_levels: IndexMap::new(),
+            tallies: Some(Tallies::new()),
         }
+    }
+
+    /// Whether types are inferred from running tallies (the default) or,
+    /// as quicktype does, from the compressed form of every sample, the
+    /// reference the tallies are tested against. Only before any source is
+    /// added.
+    #[doc(hidden)]
+    pub fn set_tally_inference(&mut self, tallies: bool) -> Result<()> {
+        if !self.top_levels.is_empty() {
+            return panic("The inference source must be chosen before sources are added");
+        }
+        self.tallies = tallies.then(Tallies::new);
+        Ok(())
+    }
+
+    /// Whether types are inferred from running tallies.
+    #[doc(hidden)]
+    pub fn tally_inference(&self) -> bool {
+        self.tallies.is_some()
     }
 
     /// A JSON input from the tables and top-levels a JavaScript
@@ -407,6 +450,7 @@ impl JsonInput {
             CompressedJson::from_tables(date_time_recognizer, handle_refs, tables)?;
         let (objects, arrays) = compressed_json.counts();
         let mut input = JsonInput::new(compressed_json);
+        input.tallies = None;
         for top_level in top_levels {
             let values = top_level
                 .samples
@@ -419,7 +463,8 @@ impl JsonInput {
     }
 
     /// The inverse of [`from_compressed`](Self::from_compressed): the
-    /// compressed samples as tables and encoded top-levels.
+    /// compressed samples as tables and encoded top-levels. With running
+    /// tallies, only the samples given as text are in the compressed form.
     pub fn to_compressed(&self) -> (CompressedJsonTables, Vec<CompressedTopLevel>) {
         let roots: Vec<Value> = self
             .top_levels
@@ -475,15 +520,59 @@ impl JsonInput {
                 vec![("name", name.into())],
             );
         }
-        let mut values = Vec::with_capacity(samples.len());
+        let report = |e: ParseError| match e {
+            ParseError::Read(e) => e,
+            e => message_parse_error(&name, description.as_deref(), &e),
+        };
+        let Some(tallies) = &mut self.tallies else {
+            let mut values = Vec::with_capacity(samples.len());
+            for sample in samples {
+                values.push(self.compressed_json.parse_sample(sample).map_err(report)?);
+            }
+            self.add_samples(&name, values, description.as_deref());
+            return Ok(());
+        };
+
+        // The samples of this source go to a tree of their own, which is
+        // appended to the top-level's only once they all have been read.
+        let tree = tallies.new_tree()?;
+        let mut values = Vec::new();
         for sample in samples {
-            match self.compressed_json.parse_sample(sample) {
-                Ok(value) => values.push(value),
-                Err(ParseError::Read(e)) => return Err(e),
-                Err(e) => return Err(message_parse_error(&name, description.as_deref(), &e)),
+            let read = match sample {
+                JsonSample::String(text) => {
+                    self.compressed_json.parse_string(&text).and_then(|value| {
+                        values.push(value);
+                        TallyBuilder::new(tallies, &self.compressed_json, tree)
+                            .add_compressed_value(&self.compressed_json, value)
+                            .map_err(ParseError::from)
+                    })
+                }
+                JsonSample::Stream(bytes) => parse_stream_into(
+                    &mut TallyBuilder::new(tallies, &self.compressed_json, tree),
+                    &bytes,
+                ),
+                JsonSample::Reader(reader) => match reader.take() {
+                    Some(mut stream) => parse_stream_reader_into(
+                        &mut TallyBuilder::new(tallies, &self.compressed_json, tree),
+                        &mut *stream,
+                    ),
+                    None => Err(ParseError::Read(already_read())),
+                },
+            };
+            if let Err(e) = read {
+                tallies.free_tree(tree);
+                return Err(report(e));
             }
         }
-        self.add_samples(&name, values, description.as_deref());
+        let top_level = self.top_levels.entry(name.clone()).or_default();
+        match top_level.tally {
+            Some(existing) => tallies.merge(existing, tree)?,
+            None => top_level.tally = Some(tree),
+        }
+        top_level.samples.extend(values);
+        if let Some(description) = description {
+            top_level.description = Some(description);
+        }
         Ok(())
     }
 
@@ -499,13 +588,30 @@ impl JsonInput {
         fixed_top_levels: bool,
     ) -> Result<()> {
         let inference = TypeInference::new(&self.compressed_json, infer_maps, infer_enums);
+        let tally_inference = self.tallies.as_ref().map(|tallies| {
+            TallyInference::new(
+                tallies,
+                self.compressed_json.handle_refs(),
+                infer_maps,
+                infer_enums,
+            )
+        });
         for (name, top_level) in &self.top_levels {
-            let tref = inference.infer_top_level_type(
-                type_builder,
-                make_names_type_attributes(name, false),
-                &top_level.samples,
-                fixed_top_levels,
-            )?;
+            let attributes = make_names_type_attributes(name, false);
+            let tref = match &tally_inference {
+                Some(inference) => inference.infer_top_level_type(
+                    type_builder,
+                    attributes,
+                    defined(top_level.tally)?,
+                    fixed_top_levels,
+                )?,
+                None => inference.infer_top_level_type(
+                    type_builder,
+                    attributes,
+                    &top_level.samples,
+                    fixed_top_levels,
+                )?,
+            };
             type_builder.add_top_level(name, tref)?;
             if let Some(description) = &top_level.description {
                 let attributes = DescriptionTypeAttributeKind
@@ -561,6 +667,13 @@ impl Input for JsonInput {
     fn single_string_schema_source(&self) -> Option<String> {
         None
     }
+}
+
+/// The error for a [`JsonSample::Reader`] read a second time.
+pub(crate) fn already_read() -> QuickTypeError {
+    QuickTypeError::internal(
+        "This JsonSample::Reader's stream was already read; a SampleReader can be read once",
+    )
 }
 
 /// `messageParseError(name, description, e)`.

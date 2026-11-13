@@ -12,3 +12,5 @@ pub mod json_schema_input;
 pub mod json_schema_store;
 pub mod path_element;
 pub mod postman_collection;
+pub(crate) mod tallies;
+pub(crate) mod tally_inference;

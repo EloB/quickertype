@@ -120,7 +120,7 @@ impl SampleReader {
     }
 
     /// The stream, unless it was read already.
-    fn take(&self) -> Option<Box<dyn Read>> {
+    pub(crate) fn take(&self) -> Option<Box<dyn Read>> {
         self.0.borrow_mut().take()
     }
 }
@@ -281,8 +281,9 @@ impl<T: Copy> Runs<T> {
 
 /// The interned strings (TS `_strings` and `_stringIndexes`): the text
 /// once, in blocks that are never reallocated, and a hash table of string
-/// indexes for looking a text up.
-struct Strings {
+/// indexes for looking a text up. The running tallies intern their keys and
+/// string cases in one too ([`Strings::intern_text`]).
+pub(crate) struct Strings {
     blocks: Vec<String>,
     spans: Vec<Span>,
     /// Indexes into `spans`, hashed by text; only looked up.
@@ -291,7 +292,7 @@ struct Strings {
 }
 
 impl Strings {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Strings {
             blocks: Vec::new(),
             spans: Vec::new(),
@@ -300,11 +301,11 @@ impl Strings {
         }
     }
 
-    fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.spans.len()
     }
 
-    fn get(&self, index: usize) -> Option<&str> {
+    pub(crate) fn get(&self, index: usize) -> Option<&str> {
         let span = self.spans.get(index)?;
         let start = span.start as usize;
         self.blocks
@@ -323,6 +324,16 @@ impl Strings {
         if s == "__proto__" {
             return self.append(s, None);
         }
+        let hash = self.hasher.hash_one(s);
+        if let Some(index) = self.find_hashed(s, hash) {
+            return index;
+        }
+        self.append(s, Some(hash))
+    }
+
+    /// The index of `s`, appended if it is not there yet; unlike
+    /// [`intern`](Self::intern), `"__proto__"` is found like any other text.
+    pub(crate) fn intern_text(&mut self, s: &str) -> u32 {
         let hash = self.hasher.hash_one(s);
         if let Some(index) = self.find_hashed(s, hash) {
             return index;
@@ -706,9 +717,7 @@ impl CompressedJson {
             JsonSample::Stream(bytes) => self.parse_stream(&bytes),
             JsonSample::Reader(reader) => match reader.take() {
                 Some(mut stream) => self.parse_stream_reader(&mut *stream),
-                None => Err(ParseError::Read(QuickTypeError::internal(
-                    "This JsonSample::Reader's stream was already read; a SampleReader can be read once",
-                ))),
+                None => Err(ParseError::Read(crate::input::inputs::already_read())),
             },
         }
     }
@@ -916,6 +925,96 @@ impl CompressedJson {
     /// compressed form.
     pub(crate) fn counts(&self) -> (usize, usize) {
         (self.objects.len(), self.arrays.len())
+    }
+}
+
+/// What a JSON reader emits while it reads a sample (TS: the protected
+/// builder methods of `CompressedJSON` that `CompressedJSONFromString` and
+/// the CLI's `CompressedJSONFromStream` call). [`CompressedJson`] builds its
+/// tables from these events; the running tallies of
+/// [`tallies`](crate::input::tallies) count them instead. The readers
+/// raise the same errors at the same points whatever the sink.
+pub(crate) trait JsonSink {
+    /// What a finished sample produces.
+    type Root;
+
+    /// `commitNull()`.
+    fn commit_null(&mut self) -> Result<()>;
+    /// `commitBoolean(v)`.
+    fn commit_boolean(&mut self, v: bool) -> Result<()>;
+    /// `commitNumber(isDouble)`.
+    fn commit_number(&mut self, is_double: bool) -> Result<()>;
+    /// `commitString(s)`.
+    fn commit_string(&mut self, s: &str) -> Result<()>;
+    /// `pushObjectContext()`.
+    fn push_object_context(&mut self) -> Result<()>;
+    /// `setPropertyKey(key)`.
+    fn set_property_key(&mut self, key: &str) -> Result<()>;
+    /// `finishObject()`.
+    fn finish_object(&mut self) -> Result<()>;
+    /// `pushArrayContext()`.
+    fn push_array_context(&mut self) -> Result<()>;
+    /// `finishArray()`.
+    fn finish_array(&mut self) -> Result<()>;
+    /// `finish()`: the sample is complete.
+    fn finish(&mut self) -> Result<Self::Root>;
+    /// `integerStringFits(integerString)`.
+    fn integer_string_fits(&self, integer_string: &str) -> bool;
+    /// Forgets a sample a reader failed on.
+    fn reset_partial_sample(&mut self);
+}
+
+impl JsonSink for CompressedJson {
+    type Root = Value;
+
+    fn commit_null(&mut self) -> Result<()> {
+        CompressedJson::commit_null(self)
+    }
+
+    fn commit_boolean(&mut self, v: bool) -> Result<()> {
+        CompressedJson::commit_boolean(self, v)
+    }
+
+    fn commit_number(&mut self, is_double: bool) -> Result<()> {
+        CompressedJson::commit_number(self, is_double)
+    }
+
+    fn commit_string(&mut self, s: &str) -> Result<()> {
+        CompressedJson::commit_string(self, s)
+    }
+
+    fn push_object_context(&mut self) -> Result<()> {
+        CompressedJson::push_object_context(self);
+        Ok(())
+    }
+
+    fn set_property_key(&mut self, key: &str) -> Result<()> {
+        CompressedJson::set_property_key(self, key)
+    }
+
+    fn finish_object(&mut self) -> Result<()> {
+        CompressedJson::finish_object(self)
+    }
+
+    fn push_array_context(&mut self) -> Result<()> {
+        CompressedJson::push_array_context(self);
+        Ok(())
+    }
+
+    fn finish_array(&mut self) -> Result<()> {
+        CompressedJson::finish_array(self)
+    }
+
+    fn finish(&mut self) -> Result<Value> {
+        CompressedJson::finish(self)
+    }
+
+    fn integer_string_fits(&self, integer_string: &str) -> bool {
+        CompressedJson::integer_string_fits(self, integer_string)
+    }
+
+    fn reset_partial_sample(&mut self) {
+        CompressedJson::reset_partial_sample(self);
     }
 }
 
