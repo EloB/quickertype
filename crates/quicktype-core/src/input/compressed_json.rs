@@ -1148,13 +1148,20 @@ mod tests {
     }
 
     /// Deep samples are processed without recursion, on success and when
-    /// `JSON.parse` fails after the root value or inside it.
+    /// `JSON.parse` fails after the root value or inside it; deeper than
+    /// TypeScript's recursive `process` gets, they fail as it does.
     #[test]
     fn deep_nesting() {
         let n = 1_000_000;
         let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
         let mut r = cjson(None);
-        assert!(matches!(r.parse_string(&deep), Ok(Value::Array(_))));
+        assert_eq!(
+            r.parse_string(&deep).unwrap_err().message(),
+            "Maximum call stack size exceeded"
+        );
+        let m = PROCESS_MAX_DEPTH;
+        let deepest = format!("{}{}", "[".repeat(m), "]".repeat(m));
+        assert!(matches!(r.parse_string(&deepest), Ok(Value::Array(_))));
         assert_eq!(
             r.parse_string(&format!("{deep} x")).unwrap_err().message(),
             "Unexpected non-whitespace character after JSON at position 2000001 (line 1 column 2000002)"
