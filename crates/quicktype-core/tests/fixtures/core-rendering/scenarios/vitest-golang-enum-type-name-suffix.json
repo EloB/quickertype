@@ -1,0 +1,79 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "DogNoise"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "BARK",
+     "GROWL",
+     "HOWL"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "DogNoise",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    dogNoise, err := UnmarshalDogNoise(bytes)\n//    bytes, err = dogNoise.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalDogNoise(data []byte) (DogNoise, error) {\n\tvar r DogNoise\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *DogNoise) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype DogNoise string\n\nconst (\n\tBark  DogNoise = \"BARK\"\n\tGrowl DogNoise = \"GROWL\"\n\tHowl  DogNoise = \"HOWL\"\n)\n\ntype invalidDogNoise string\nfunc (x invalidDogNoise) Error() string { return \"invalid DogNoise: \" + string(x) }\n\nfunc (x *DogNoise) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch DogNoise(value) {\n\tcase Bark, Growl, Howl: *x = DogNoise(value); return nil\n\t}\n\treturn invalidDogNoise(value)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "enum-type-name-suffix": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    dogNoise, err := UnmarshalDogNoise(bytes)\n//    bytes, err = dogNoise.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalDogNoise(data []byte) (DogNoise, error) {\n\tvar r DogNoise\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *DogNoise) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype DogNoise string\n\nconst (\n\tBarkDogNoise  DogNoise = \"BARK\"\n\tGrowlDogNoise DogNoise = \"GROWL\"\n\tHowlDogNoise  DogNoise = \"HOWL\"\n)\n\ntype invalidDogNoise string\nfunc (x invalidDogNoise) Error() string { return \"invalid DogNoise: \" + string(x) }\n\nfunc (x *DogNoise) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch DogNoise(value) {\n\tcase BarkDogNoise, GrowlDogNoise, HowlDogNoise: *x = DogNoise(value); return nil\n\t}\n\treturn invalidDogNoise(value)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-golang-enum-type-name-suffix"
+}

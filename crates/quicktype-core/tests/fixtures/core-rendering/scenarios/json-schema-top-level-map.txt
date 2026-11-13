@@ -1,0 +1,7 @@
+# A single top-level map: its schema (with its attributes added twice, by
+# definitionForObject and by schemaForType) is spread into the root.
+input schema Scores {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}, "description": "Scores by name."}
+pipeline {"lang": "schema"}
+
+render schema {}
+render golang {}

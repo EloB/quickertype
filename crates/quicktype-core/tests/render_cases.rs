@@ -13,6 +13,10 @@
 //! with those languages (any of a language's names: `ts` selects the
 //! `typescript` cases). With `RENDER_CASES_DUMP=<dir>`, the actual output
 //! of every differing file is written to `<dir>/<case id>.<file name>`.
+//!
+//! A fixture's `console` lists the lines the render printed with
+//! `console.log` (none if absent); they must match, and they precede the
+//! files on stdout.
 
 mod render_support;
 
@@ -20,6 +24,7 @@ use std::fs;
 use std::path::Path;
 
 use quicktype_core::language::all::{ALL, language_named};
+use quicktype_core::support::support::capture_console;
 use quicktype_core::target_language::MultiFileRenderResult;
 use render_support::{build_graph, first_difference, gather_and_render};
 use serde_json::Value;
@@ -50,8 +55,20 @@ fn join_stdout(result: &MultiFileRenderResult, quiet: bool) -> String {
 
 fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let mut graph = build_graph(&fixture["graph"]).map_err(|e| format!("graph: {e}"))?;
-    let result = gather_and_render(&mut graph, &fixture["gather"], &fixture["render"])
-        .map_err(|e| format!("render: {e}"))?;
+    let (result, console) =
+        capture_console(|| gather_and_render(&mut graph, &fixture["gather"], &fixture["render"]));
+    let result = result.map_err(|e| format!("render: {e}"))?;
+    // What the render printed with `console.log` (Go's and Swift's
+    // multi-file warnings), which the CLI prints ahead of the files.
+    let expected_console: Vec<&str> = fixture["console"]
+        .as_array()
+        .map(|lines| lines.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    if console != expected_console {
+        return Err(format!(
+            "console {console:?}, expected {expected_console:?}"
+        ));
+    }
     let files = fixture["files"].as_array().ok_or("no files")?;
     let names: Vec<&String> = result.keys().collect();
     let expected_names: Vec<&str> = files.iter().filter_map(|f| f["name"].as_str()).collect();
@@ -72,7 +89,8 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let has_stdout = stdout.is_some();
     if let Some(expected) = stdout {
         let quiet = fixture["quiet"].as_bool().unwrap_or(false);
-        let actual = join_stdout(&result, quiet);
+        let mut actual: String = console.iter().map(|line| format!("{line}\n")).collect();
+        actual.push_str(&join_stdout(&result, quiet));
         if actual != expected {
             return Err(format!(
                 "stdout differs at {}",

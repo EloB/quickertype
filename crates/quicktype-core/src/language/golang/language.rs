@@ -83,9 +83,6 @@ pub const GOLANG_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct GoTargetLanguage;
 
-// TODO(renderer): port the hooks GoTargetLanguage overrides:
-// - makeRenderer
-// - defaultIndentation: "\t"
 impl TargetLanguage for GoTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &GOLANG_LANGUAGE_CONFIG
@@ -115,4 +112,26 @@ impl TargetLanguage for GoTargetLanguage {
     }
 
     // End of inference hooks.
+
+    /// TS `defaultIndentation`: a tab.
+    fn default_indentation(&self) -> &'static str {
+        "\t"
+    }
+
+    /// TS `makeRenderer`: a `GoRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::golang_renderer::GoOptions::parse(renderer_options)?;
+        let renderer = super::golang_renderer::GoRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

@@ -2,8 +2,9 @@
 # array of the union itself makes the renderers' type-to-source functions
 # (C# csType, Pike sourceFor, Ruby dryType, Elixir elixirType, Python
 # pythonType, Swift swiftType, Dart dartType, Rust rustType, Java javaType,
-# TypeScript sourceFor, Zod and Effect typeMapTypeFor, ...) recurse until
-# V8's stack overflows, a RangeError (support::recursion::guard in Rust). The graph comes from the
+# TypeScript sourceFor, Zod and Effect typeMapTypeFor, Go goType, JSON Schema
+# schemaForType, ...) recurse until V8's stack overflows, a
+# RangeError (support::recursion::guard in Rust). The graph comes from the
 # default (Rust) pipeline: C#'s own pipeline already overflows in
 # needTransformerForType.
 input schema TopLevel {"type": "object", "properties": {"x": {"$ref": "#/definitions/a"}}, "required": ["x"], "definitions": {"a": {"type": ["array", "null"], "items": {"$ref": "#/definitions/a"}}}}
@@ -48,3 +49,5 @@ render typescript {}
 render flow {}
 render typescript-zod {}
 render typescript-effect-schema {}
+render golang {}
+render schema {}
