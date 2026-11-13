@@ -131,6 +131,7 @@ const glueExports = [
     "__pendingRuns",
     "__jsonCount",
     "__memoryGrowths",
+    "__memoryPages",
 ];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */

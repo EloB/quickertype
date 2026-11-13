@@ -300,6 +300,17 @@ pub fn memory_growths() -> u32 {
     0
 }
 
+/// The size of the WebAssembly memory in 64 KiB pages, for the facade's
+/// test of [`memory_growths`]; 0 outside WebAssembly.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __memoryPages)]
+pub fn memory_pages() -> u32 {
+    #[cfg(target_arch = "wasm32")]
+    return std::arch::wasm32::memory_size::<0>() as u32;
+    #[cfg(not(target_arch = "wasm32"))]
+    0
+}
+
 /// Panics, for the facade's test of what happens when the engine traps
 /// (release builds abort on panic): the facade must discard the instance
 /// and use a fresh one.

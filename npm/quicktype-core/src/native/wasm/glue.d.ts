@@ -19,6 +19,7 @@ export interface WasmGlue {
     jsonDrop(id: number): void;
     __jsonCount(): number;
     __memoryGrowths(): number;
+    __memoryPages(): number;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;

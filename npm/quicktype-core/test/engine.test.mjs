@@ -424,14 +424,23 @@ test("a run with a large output grows the engine's memory a few times", { timeou
     };
     const glue = engine.engineSync();
     const before = glue.__memoryGrowths();
+    const pagesBefore = glue.__memoryPages();
     const runsBefore = engineStats.wasm;
     const actual = run();
     assert.equal(engineStats.wasm, runsBefore + 1);
     const lines = [...actual.values()].reduce((n, f) => n + f.lines.length, 0);
     assert.ok(lines > 500_000, `${lines} lines`);
-    // Some 200 MB of memory: a few dozen growths, where 64 KiB steps take thousands.
+    // Some 200 MB of memory, several times what the instance had. Each
+    // time an allocation grows the memory, growing ahead adds a quarter of
+    // it (at least a fifth, after what the top of the heap had free): at
+    // most two `memory.grow` calls per step, and a step at least 1.2 times
+    // the memory before. So a few dozen growths, where 64 KiB steps take
+    // thousands (one per page).
     const growths = glue.__memoryGrowths() - before;
-    assert.ok(growths < 60, `the memory grew ${growths} times`);
+    const ratio = glue.__memoryPages() / pagesBefore;
+    assert.ok(ratio > 4, `the memory grew ${ratio} times over`);
+    const bound = 2 * Math.ceil(Math.log(ratio) / Math.log(1.2));
+    assert.ok(growths <= bound, `the memory grew ${growths} times (at most ${bound})`);
     const expected = await tsMode(() => run());
     assert.deepEqual([...actual], [...expected]);
 });

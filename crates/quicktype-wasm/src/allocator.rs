@@ -30,7 +30,9 @@ const PAGE: usize = 64 * 1024;
 /// How often the memory grew (for the facade's tests).
 static GROWTHS: AtomicU32 = AtomicU32::new(0);
 
-/// How often the memory grew since the instance started.
+/// How often the memory grew since the instance started: allocations
+/// during which it grew (dlmalloc grows it at most once per allocation),
+/// and growing ahead when that grew it.
 pub fn growths() -> u32 {
     GROWTHS.load(Ordering::Relaxed)
 }
@@ -61,7 +63,10 @@ impl GrowAhead {
         unsafe {
             let block = System.alloc(reserve);
             if !block.is_null() {
-                GROWTHS.fetch_add(1, Ordering::Relaxed);
+                // dlmalloc may have had room for it already.
+                if memory_size::<0>() != pages {
+                    GROWTHS.fetch_add(1, Ordering::Relaxed);
+                }
                 System.dealloc(block, reserve);
             }
         }
