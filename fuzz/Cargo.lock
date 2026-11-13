@@ -156,14 +156,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "quicktype-core"
-version = "24.0.0"
+name = "quickertype-core"
+version = "0.1.0"
 dependencies = [
  "foldhash",
  "hashbrown",
  "indexmap",
- "quicktype-js-compat",
+ "quickertype-js-compat",
  "regex",
+ "stacker",
+]
+
+[[package]]
+name = "quickertype-graphql-input"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "quickertype-core",
+ "quickertype-js-compat",
+]
+
+[[package]]
+name = "quickertype-js-compat"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "regex",
+ "regex-automata",
+ "ryu",
+ "saphyr-parser",
  "stacker",
 ]
 
@@ -173,30 +194,9 @@ version = "0.0.0"
 dependencies = [
  "indexmap",
  "libfuzzer-sys",
- "quicktype-core",
- "quicktype-graphql-input",
- "quicktype-js-compat",
-]
-
-[[package]]
-name = "quicktype-graphql-input"
-version = "24.0.0"
-dependencies = [
- "indexmap",
- "quicktype-core",
- "quicktype-js-compat",
-]
-
-[[package]]
-name = "quicktype-js-compat"
-version = "24.0.0"
-dependencies = [
- "indexmap",
- "regex",
- "regex-automata",
- "ryu",
- "saphyr-parser",
- "stacker",
+ "quickertype-core",
+ "quickertype-graphql-input",
+ "quickertype-js-compat",
 ]
 
 [[package]]

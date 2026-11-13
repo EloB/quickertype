@@ -7,7 +7,7 @@
 //! own JSON files or generated inputs.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, Once};
@@ -122,8 +122,16 @@ fn prepare_args(args: &[String], cwd: &Path) -> Result<Vec<String>, String> {
             value.to_owned()
         }
     };
+    // An output path escapes the run dir when it has a root (`/x`, `\x`), a
+    // drive or UNC prefix (`C:\x`, `C:x`) or a `..` component.
     let check_out = |value: &str| -> Result<(), String> {
-        if Path::new(value).is_absolute() || value.split('/').any(|c| c == "..") {
+        let escapes = Path::new(value).components().any(|c| {
+            matches!(
+                c,
+                Component::Prefix(_) | Component::RootDir | Component::ParentDir
+            )
+        });
+        if escapes {
             return Err(format!(
                 "--out {value}: use a relative path inside the run dir; both CLIs would \
                  otherwise write the same real file"
@@ -509,10 +517,26 @@ mod tests {
     #[test]
     fn absolute_or_escaping_output_is_rejected() {
         let dir = fixture_dir();
-        for out in [["-o", "/tmp/x.ts"], ["--out", "../x.ts"]] {
-            assert!(prepare_args(&strings(&out), &dir).is_err());
+        let absolute = std::env::temp_dir().join("x.ts");
+        let absolute = absolute.to_str().unwrap();
+        let mut escaping = vec!["/tmp/x.ts", "../x.ts", "a/../../x.ts", absolute];
+        if cfg!(windows) {
+            escaping.extend([
+                "C:\\x.ts",
+                "\\x.ts",
+                "C:x.ts",
+                "..\\x.ts",
+                "\\\\server\\share\\x.ts",
+            ]);
         }
-        assert!(prepare_args(&strings(&["--out=/tmp/x.ts"]), &dir).is_err());
+        for value in escaping {
+            for out in [["-o", value], ["--out", value]] {
+                assert!(prepare_args(&strings(&out), &dir).is_err(), "{out:?}");
+            }
+            let out = format!("--out={value}");
+            assert!(prepare_args(&strings(&[&out]), &dir).is_err(), "{out}");
+        }
+        assert!(prepare_args(&strings(&["-o", "sub/x.ts"]), &dir).is_ok());
     }
 
     #[test]

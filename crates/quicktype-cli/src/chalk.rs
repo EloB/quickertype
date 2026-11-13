@@ -654,8 +654,12 @@ mod tests {
         );
         assert_eq!(level(&["--color"], &[("TERM", "dumb")], false), 1);
         assert_eq!(level(&["--", "--color"], &[], false), 0);
-        assert_eq!(level(&[], &[("TERM", "xterm-256color")], true), 2);
-        assert_eq!(level(&[], &[], true), 0);
+        // On Windows, supports-color decides a terminal's level by the OS
+        // build instead of TERM, CI and TERM_PROGRAM, and the port answers 1
+        // there (see `supports_color`).
+        let windows = |level: i64| if cfg!(windows) { 1 } else { level };
+        assert_eq!(level(&[], &[("TERM", "xterm-256color")], true), windows(2));
+        assert_eq!(level(&[], &[], true), windows(0));
         assert!(teamcity_supports_color("9.1.2"));
         assert!(teamcity_supports_color("10.0"));
         assert!(!teamcity_supports_color("9.0.1"));

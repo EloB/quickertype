@@ -13,8 +13,8 @@ committed fixtures and never need Node.
 ```sh
 node xtask/graphql-input/run-graphql-inputs.mjs ../quicktype
 node xtask/graphql-input/record-introspection.mjs ../quicktype
-cargo test -p quicktype-graphql-input --test graphql_input
-cargo test -p quicktype-cli --test graphql_introspect
+cargo test -p quickertype-graphql-input --test graphql_input
+cargo test -p quickertype --test graphql_introspect
 ```
 
 A case adds its sources (`{name, schema, query}`, the schema read with

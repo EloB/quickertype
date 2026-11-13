@@ -3,21 +3,38 @@ resolver = "3"
 members = ["crates/*", "xtask"]
 default-members = ["crates/*"]
 
+# The port's own version (semver), independent of quicktype's. The CLI
+# reports quicktype's version for parity instead (`QUICKTYPE_VERSION` in
+# crates/quicktype-cli/src/main.rs); see docs/RELEASING.md.
 [workspace.package]
-version = "24.0.0"
+version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+# The oldest Rust that builds every crate: let chains need 1.88
+# (`cargo +1.88 check --workspace`). Development and CI use
+# rust-toolchain.toml.
+rust-version = "1.88"
 license = "Apache-2.0"
-repository = "https://github.com/glideapps/quicktype"
+repository = "https://github.com/EloB/quickertype"
+homepage = "https://github.com/EloB/quickertype"
+readme = "README.md"
 authors = ["quicktype contributors"]
 
 # Shared dependency versions. Several exist specifically to reproduce
 # JavaScript semantics byte-for-byte; see docs/PARITY.md before adding one.
 [workspace.dependencies]
-quicktype-core = { path = "crates/quicktype-core" }
-quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
-quicktype-js-compat = { path = "crates/quicktype-js-compat" }
-quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
+# The workspace's own crates, published to crates.io as quickertype-*
+# (docs/RELEASING.md). Their library names stay quicktype_*. They are
+# released in lockstep, so each `version` is `=` the workspace version
+# above (publish-crates.yml fails otherwise).
+#
+# quickertype-core's default features are off here, so that quicktype-wasm
+# can build without `fs`: Cargo before 1.99 rejects `default-features =
+# false` on an inherited dependency whose workspace entry does not set it.
+# Members that need `fs` or `http` ask for them.
+quickertype-core = { path = "crates/quicktype-core", version = "=0.1.0", default-features = false }
+quickertype-graphql-input = { path = "crates/quicktype-graphql-input", version = "=0.1.0" }
+quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.1.0" }
+quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.1.0" }
 foldhash = "0.2"
 hashbrown = { version = "0.17", default-features = false }
 indexmap = "2"
@@ -49,6 +66,13 @@ all = { level = "warn", priority = -1 }
 dbg_macro = "warn"
 todo = "warn"
 unimplemented = "warn"
+# Deferred: the lints that rust-version 1.88 turns on (`if let` chains for
+# nested ifs, 1.88; `is_multiple_of`, 1.87) flag about 50 places in 30
+# files that open branches are changing. Fixing them is a follow-up after
+# those branches merge (docs/ROADMAP.md, cleanup backlog); then remove
+# these two lines.
+collapsible_if = "allow"
+manual_is_multiple_of = "allow"
 
 [profile.release]
 lto = "fat"
@@ -65,3 +89,9 @@ opt-level = 2
 inherits = "release"
 debug = "line-tables-only"
 strip = false
+
+# The profile that dist (docs/RELEASING.md) builds release artifacts with:
+# exactly the release profile, so a released binary is the one
+# `cargo build --release` makes and parity tests.
+[profile.dist]
+inherits = "release"

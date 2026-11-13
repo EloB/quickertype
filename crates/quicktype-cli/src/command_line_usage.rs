@@ -652,7 +652,8 @@ mod tests {
                 content: Some(Content::Text("Hello".into())),
             }],
         );
-        assert_eq!(usage, Ok("\nTitle\n\n  Hello \n".to_owned()));
+        // Lines inside a section are joined with `os.EOL` (CRLF on Windows).
+        assert_eq!(usage, Ok(["\nTitle", "", "  Hello ", ""].join(EOL)));
     }
 
     #[test]

@@ -78,3 +78,12 @@ equivalent `quicktype` command line, to compare with the TypeScript CLI
 (`cargo xtask diff`). Fix the port to do what quicktype does, and add a
 regression test. `.github/workflows/fuzz.yml` runs every target for a few
 minutes each week.
+
+## Releases
+
+Releases are cut from `main` by pushing a version tag; the version, the
+changelog and the steps are in [docs/RELEASING.md](docs/RELEASING.md).
+Add user-visible changes under `## [Unreleased]` in
+[CHANGELOG.md](CHANGELOG.md). `.github/workflows/release.yml` is generated
+by dist from `dist-workspace.toml`: change the config and run
+`dist generate`, never the workflow.

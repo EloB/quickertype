@@ -32,6 +32,60 @@ code) byte for byte.
 > [docs/PARITY.md](docs/PARITY.md#known-gaps); what is left to do is in
 > [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Install
+
+The CLI: prebuilt binaries for macOS, Linux and Windows are on the
+[releases page](https://github.com/EloB/quickertype/releases), with
+installers:
+
+```sh
+brew install EloB/tap/quickertype      # Homebrew (macOS, Linux)
+npm install -g quickertype             # npm
+cargo install quickertype              # from source, with Cargo
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.sh | sh
+```
+
+On Windows, run the MSI from the releases page, or:
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.ps1 | iex"
+```
+
+Each installs a binary named `quicktype`, the same name as the TypeScript
+quicktype's, so install one or the other (see
+[docs/RELEASING.md](docs/RELEASING.md#the-quicktype-name)).
+`quicktype --version` reports the quicktype version it reproduces (24.0.0),
+as part of matching quicktype's output; the project has its own version, in
+[CHANGELOG.md](CHANGELOG.md). To see which version of quickertype is
+installed, ask the tool that installed it:
+
+```sh
+brew list --versions quickertype       # quickertype 0.1.0
+npm ls -g quickertype                  # └── quickertype@0.1.0
+cargo install --list                   # quickertype v0.1.0:
+# the shell installer's receipt (under $XDG_CONFIG_HOME instead, if set):
+jq -r .version ~/.config/quickertype/quickertype-receipt.json   # 0.1.0
+```
+
+On Windows the PowerShell installer's receipt is
+`%LOCALAPPDATA%\quickertype\quickertype-receipt.json`, and the MSI shows its
+version under Settings → Apps → Installed apps (or `winget list quickertype`).
+
+The libraries:
+
+- **JavaScript:** [`quickertype-core`](https://www.npmjs.com/package/quickertype-core)
+  on npm, a drop-in replacement for quicktype's `quicktype-core` (change the
+  import), see [npm/quicktype-core](npm/quicktype-core/README.md).
+- **Rust:** [`quickertype-core`](https://crates.io/crates/quickertype-core)
+  on crates.io (`use quicktype_core::…`), with
+  `quickertype-graphql-input`, `quickertype-typescript-input` and
+  `quickertype-js-compat`.
+
+The packages are published as quickertype-\*, so they never collide with
+quicktype's own; the directories and Rust library names keep quicktype-\*.
+[docs/RELEASING.md](docs/RELEASING.md) lists every name and describes how
+releases are made.
+
 ## Layout
 
 ```

@@ -17,9 +17,10 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 indexmap = "2"
-quicktype-core = { path = "../crates/quicktype-core", default-features = false }
-quicktype-graphql-input = { path = "../crates/quicktype-graphql-input" }
-quicktype-js-compat = { path = "../crates/quicktype-js-compat" }
+# Published as quickertype-*; the libraries keep their quicktype_* names.
+quickertype-core = { path = "../crates/quicktype-core", default-features = false }
+quickertype-graphql-input = { path = "../crates/quicktype-graphql-input" }
+quickertype-js-compat = { path = "../crates/quicktype-js-compat" }
 
 # A workspace of its own, so that the main workspace never builds it.
 [workspace]
