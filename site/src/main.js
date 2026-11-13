@@ -4,8 +4,9 @@
 //
 // State that can be shared lives in the URL hash, in the form of quicktype's
 // README links (`#l=rust`), plus `v` (the hash format, see hash.js), `s` (an
-// unmodified sample), `n` (a typed top-level name), `c=1` (compare mode),
-// the general options that are on (`no-enums=true`) and renderer options
+// unmodified sample), `n` (a typed top-level name), `e=quicktype` (the
+// engine, when it is not quickertype), the general options that are on
+// (`no-enums=true`) and renderer options
 // by their CLI names (`#v=2&l=cs&density=dense`). A renderer option is in
 // the hash when it differs from the page's default: the language's preset
 // (see site/build.mjs), else quicktype's default; so moving a preset back to
@@ -16,7 +17,7 @@
 
 /* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
 
-import { EngineClient } from "./engine-client.js";
+import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
@@ -31,12 +32,17 @@ const storageKey = "quickertype.input";
 const LARGE = 1_000_000;
 const defaultLanguage = "typescript";
 const defaultSample = "pokedex";
+const defaultEngine = "wasm";
+
+/** The engines by the names the page gives them (and the hash, as `e`). */
+const engineNames = { wasm: "quickertype", ts: "quicktype" };
+const otherEngine = (engine) => (engine === "wasm" ? "ts" : "wasm");
+const engineNamed = (name) => Object.keys(engineNames).find((engine) => engineNames[engine] === name);
 
 const $ = (id) => document.getElementById(id);
 const els = {
     lang: $("lang"),
     name: $("name"),
-    compare: $("compare"),
     options: $("options"),
     general: $("general"),
     generalOptions: $("general-options"),
@@ -122,7 +128,8 @@ const state = {
     options: {},
     /** The general options that are on, by CLI name (all are off by default). */
     general: {},
-    compare: false,
+    /** The engine whose output the page shows: "wasm" (quickertype) or "ts" (quicktype). */
+    engine: "wasm",
     /** Show a large input in the editor anyway. */
     largeInEditor: false,
 };
@@ -177,6 +184,8 @@ function readHash() {
         general: on,
         name: params.get(hashKeys.name) ?? "",
         sample: sampleWithId(params.get(hashKeys.sample)),
+        engine: engineNamed(params.get(hashKeys.engine)) ?? defaultEngine,
+        // From a link older than `e`: compare mode, which ran both engines.
         compare: params.get(hashKeys.compare) === "1",
     };
 }
@@ -187,7 +196,7 @@ function writeHash() {
     params.set(hashKeys.language, state.lang.names[0]);
     if (state.source.type === "sample") params.set(hashKeys.sample, state.source.id);
     if (typedName() !== "") params.set(hashKeys.name, typedName());
-    if (state.compare) params.set(hashKeys.compare, "1");
+    if (state.engine !== defaultEngine) params.set(hashKeys.engine, engineNames[state.engine]);
     for (const g of general) if (state.general[g.name]) params.set(g.name, "true");
     for (const definition of state.lang.options) {
         if (definition.name in state.options) params.set(definition.name, String(state.options[definition.name]));
@@ -326,7 +335,7 @@ function renderControls() {
     els.lang.value = state.lang.names[0];
     if (document.activeElement !== els.name) els.name.value = topLevelName();
     els.name.placeholder = state.autoName;
-    els.compare.checked = state.compare;
+    for (const radio of document.querySelectorAll('input[name="engine"]')) radio.checked = radio.value === state.engine;
     for (const radio of document.querySelectorAll('input[name="kind"]')) radio.checked = radio.value === state.kind;
     els.sample.value = state.source.type === "sample" ? state.source.id : "";
     renderOptions();
@@ -394,38 +403,61 @@ function showInputInfo() {
 
 // ---------------------------------------------------------------------------
 // Running
+//
+// Each change to the input or options is a new request, run `generation`,
+// run on the engine picked. Switching engine is not a new request: the
+// engine picked runs the current one only if it has not yet, so switching
+// back and forth leaves both results, which the page then compares.
 
-const engines = { wasm: new EngineClient("wasm"), ts: new EngineClient("ts") };
-const engineNames = { wasm: "WebAssembly", ts: "TypeScript" };
+// One request at a time across both workers: no time is taken while the other engine runs.
+const workerLane = new Lane();
+const engines = { wasm: new EngineClient("wasm", workerLane), ts: new EngineClient("ts", workerLane) };
 
 /** What the output pane shows. */
 const view = {
-    status: "idle", // "empty" | "running" | "done"
+    status: "idle", // "idle" | "empty" | "running" | "done"
+    /** The current request: the input and options of run `generation`. */
     request: undefined,
-    wasm: undefined, // the WebAssembly worker's result
-    ts: undefined, // the TypeScript worker's result, "running", or undefined
-    /** A warm measurement of the result shown: { wasm, ts }, each a result, "running" or undefined. */
+    /**
+     * Each engine's latest run, { gen, result }, the result "running" while
+     * it runs. One for the current request is that engine's result for it.
+     * A worker failure is not kept: the next switch or run tries again.
+     */
+    results: { wasm: undefined, ts: undefined },
+    /** What the output pane shows: `engine`'s result for the request of run `gen`, which had `lang` and `name`. */
+    shown: { gen: 0, engine: defaultEngine, result: undefined, lang: undefined, name: "" },
+    /**
+     * A warm measurement of both engines on the request of run `gen`:
+     * { gen, wasm, ts, failure }, each side a result, "running" or
+     * undefined; `failure` says why it stopped, if a worker failed.
+     */
     bench: undefined,
     files: [],
     tab: 0,
     runningSince: 0,
-    /** The language and top-level name of the result shown. */
-    shown: { lang: undefined, name: "" },
-    /** The run whose WebAssembly (and, comparing, TypeScript) result is shown. */
-    settled: 0,
-    settledTs: 0,
-    /** How many TypeScript results have been shown (for tests). */
-    comparisons: 0,
+    /** The run whose result on the engine picked is shown; 0 while there is none. */
+    get settled() {
+        return view.shown.engine === state.engine ? view.shown.gen : 0;
+    },
 };
 
 let generation = 0;
 let runTimer;
 let ticker;
-/**
- * The latest run (or comparison), settled once its results are shown.
- * A measurement waits for it, so that it never replaces a run's request.
- */
-let currentRun = Promise.resolve();
+/** The runs under way; a measurement waits for them, so that it measures what they show. */
+const underway = new Set();
+
+function track(promise) {
+    underway.add(promise);
+    void promise.then(() => underway.delete(promise));
+    return promise;
+}
+
+/** `engine`'s result for the request of run `gen`: the result, "running", or undefined if it has not run it. */
+function resultOf(engine, gen) {
+    const latest = view.results[engine];
+    return latest !== undefined && latest.gen === gen ? latest.result : undefined;
+}
 
 /** The `quicktype()` options the general options that are on set, as quicktype's CLI sets them. */
 function runOptions() {
@@ -453,76 +485,114 @@ function schedule(delay) {
 /** Debounce for typing: longer for longer inputs. */
 const typingDelay = () => Math.min(1000, 200 + state.text.length / 5000);
 
-/** Runs the input on WebAssembly, and comparing, then on TypeScript. A newer run replaces it. */
-function run() {
+/**
+ * Runs the input as it is now, a new request, on the engine picked; with
+ * `compare` (a link from compare mode), then on the other engine too (the
+ * lane runs them one after the other). A newer run replaces it.
+ */
+function run({ compare = false } = {}) {
     clearTimeout(runTimer);
-    currentRun = runGeneration(++generation);
-    return currentRun;
-}
-
-async function runGeneration(gen) {
+    const gen = ++generation;
     const req = request();
     view.request = req;
     view.bench = undefined;
+    // Whatever still waits for a worker is for an older request.
+    engines.wasm.drop();
+    engines.ts.drop();
     if (!/\S/.test(req.text)) {
         setRunning(false);
         view.status = "empty";
-        view.wasm = undefined;
-        view.ts = undefined;
-        view.settled = gen;
-        view.settledTs = gen;
+        view.shown = { gen, engine: state.engine, result: undefined, lang: languageNamed(req.lang), name: req.name };
+        render();
+        return Promise.resolve();
+    }
+
+    setRunning(true);
+    const first = runOn(state.engine);
+    if (compare) void runOn(otherEngine(state.engine));
+    return first;
+}
+
+/**
+ * Runs the current request on `engine`, unless it has run it or is running
+ * it; after whatever runs on the other engine, never beside it (the lane).
+ * The result is shown if `engine` is the one picked, and kept for the
+ * comparison either way, unless the worker failed.
+ */
+function runOn(engine) {
+    const gen = generation;
+    if (resultOf(engine, gen) !== undefined) return Promise.resolve();
+    view.results[engine] = { gen, result: "running" };
+    // Not the engine picked: its bar shows it running, next to the result shown.
+    if (engine !== state.engine) render();
+    return track(
+        engines[engine].run(view.request).then((result) => {
+            // A newer request is the current one, and runs by itself.
+            if (gen !== generation) return;
+            if (result === undefined) {
+                // Dropped, which only a newer request does; but never leave
+                // the page saying "Running" for good: run again.
+                view.results[engine] = undefined;
+                if (engine === state.engine) schedule(0);
+                return;
+            }
+
+            // A worker that failed is not this engine's result for the request:
+            // shown, but not kept, so that the next switch or run tries again.
+            view.results[engine] = result.workerFailure ? undefined : { gen, result };
+            if (engine === state.engine) show(engine, gen, result);
+            render();
+        }),
+    );
+}
+
+/** Shows `engine`'s result for the current request (that of run `gen`). */
+function show(engine, gen, result) {
+    view.shown = { gen, engine, result, lang: languageNamed(view.request.lang), name: view.request.name };
+    view.status = "done";
+    if (result.ok) showFiles(result.files);
+    setRunning(false);
+}
+
+/**
+ * Picks the engine whose output the page shows. The input and options stay
+ * as they are; the engine runs them only if it has not yet.
+ */
+function setEngine(engine) {
+    if (engine === state.engine) return;
+    state.engine = engine;
+    writeHash();
+    if (view.request === undefined || view.status === "empty") {
+        // No input to run (none yet, or a sample that did not load): the next run is on this engine.
+        view.shown = { ...view.shown, engine };
         render();
         return;
     }
 
-    setRunning(true);
-    const wasm = await engines.wasm.run(req);
-    // A newer run is under way and shows its own result.
-    if (gen !== generation) return;
-    if (wasm === undefined) {
-        // Replaced by a request that is not a newer run. Nothing should do
-        // that (a measurement waits for runs), but never leave the page
-        // saying "Running" for good: run again.
-        schedule(0);
-        return;
+    const result = resultOf(engine, generation);
+    if (result === undefined) {
+        setRunning(true);
+        void runOn(engine);
+    } else if (result === "running") {
+        // Under way already; shown when it is done.
+        setRunning(true);
+    } else {
+        show(engine, generation, result);
     }
 
-    view.wasm = wasm;
-    view.shown = { lang: languageNamed(req.lang), name: req.name };
-    view.settled = gen;
-    view.status = "done";
-    view.ts = undefined;
-    if (wasm.ok) showFiles(wasm.files);
-    setRunning(false);
-    if (state.compare) await compare(gen, req);
-    else render();
-}
-
-/** Runs the request whose WebAssembly result is shown on the TypeScript engine too. */
-async function compare(gen, req) {
-    view.ts = "running";
-    render();
-    const ts = await engines.ts.run(req);
-    if (ts === undefined || gen !== generation || !state.compare) return;
-    view.ts = ts;
-    view.settledTs = gen;
-    view.comparisons++;
     render();
 }
 
 /**
- * Measures warm runs of what the page shows: after the run in progress, if
- * any, so that the numbers belong to the result on screen. A newer run
- * cancels the measurement (it replaces `view.bench`).
+ * Measures warm runs of both engines on what the page shows: after the runs
+ * under way, if any, so that the numbers belong to the result on screen. A
+ * newer run cancels the measurement (it replaces `view.bench`).
  */
 async function measure() {
-    const bench = { wasm: "running", ts: undefined };
+    const bench = { gen: generation, wasm: undefined, ts: undefined };
     view.bench = bench;
     render();
-    for (let pending = currentRun; ; pending = currentRun) {
-        await pending;
-        if (pending === currentRun) break;
-    }
+    while (underway.size > 0) await Promise.all(underway);
 
     const current = () => view.bench === bench;
     const giveUp = () => {
@@ -532,21 +602,27 @@ async function measure() {
         }
     };
     if (!current()) return;
-    if (view.status !== "done" || !view.wasm?.ok) return giveUp();
+    if (view.status !== "done" || view.settled !== bench.gen || !view.shown.result?.ok) return giveUp();
 
     const req = view.request;
     const repeat = { warmup: 1, repeat: 5 };
-    const wasm = await engines.wasm.run({ ...req, ...repeat });
-    if (!current()) return;
-    if (wasm === undefined || !wasm.ok) return giveUp();
-    bench.wasm = wasm;
-    if (state.compare) {
-        bench.ts = "running";
+    for (const engine of ["wasm", "ts"]) {
+        bench[engine] = "running";
         render();
-        const ts = await engines.ts.run({ ...req, ...repeat });
+        const result = await engines[engine].run({ ...req, ...repeat });
         if (!current()) return;
-        if (ts === undefined) return giveUp();
-        bench.ts = ts;
+        if (result === undefined) return giveUp();
+        if (result.workerFailure) {
+            // Said under the result shown, which stays; measuring again starts a new worker.
+            bench[engine] = undefined;
+            bench.failure = result.error.message;
+            render();
+            return;
+        }
+
+        bench[engine] = result;
+        // It is the engine's result for this request too: switching to it needs no run.
+        if (resultOf(engine, bench.gen) === undefined) view.results[engine] = { gen: bench.gen, result: { ...result, first: false } };
     }
 
     render();
@@ -579,7 +655,7 @@ function showFiles(files) {
 }
 
 function renderTabs() {
-    const files = view.status !== "empty" && view.wasm?.ok ? view.files : [];
+    const files = view.status !== "empty" && view.shown.result?.ok ? view.files : [];
     els.tabs.classList.toggle("multi", files.length > 1);
     if (files.length <= 1) {
         els.tabs.innerHTML = files.length === 1 ? `<span class="filename">${escapeHtml(fileLabel(files[0]))}</span>` : "";
@@ -598,7 +674,7 @@ function renderTabs() {
 let drawn = { files: undefined, tab: -1 };
 
 function renderCode() {
-    const result = view.wasm;
+    const result = view.shown.result;
     const showError = view.status !== "empty" && result !== undefined && !result.ok;
     const file = view.status !== "empty" && result?.ok ? view.files[view.tab] : undefined;
     els.error.hidden = !showError && view.status !== "empty";
@@ -634,39 +710,39 @@ function renderCode() {
         .join("");
 }
 
-/** Whether two results show the same thing: the same files, byte for byte, or the same error. */
+/** Whether quickertype's result `a` and quicktype's `b` are the same: the same files, byte for byte, or the same error. */
 function verdict(a, b) {
     if (a.ok && b.ok) {
-        const bytes = a.files.reduce((n, f) => n + utf8Length(f.text), 0);
         const count = a.files.length;
-        const files = `${count} file${count === 1 ? "" : "s"}, ${bytes.toLocaleString("en-US")} bytes`;
-        if (a.files.length !== b.files.length || a.files.some((f, i) => f.name !== b.files[i].name)) {
-            return { same: false, text: "The engines generated different files." };
+        if (count !== b.files.length || a.files.some((f, i) => f.name !== b.files[i].name)) {
+            return { same: false, text: "different files" };
         }
 
-        for (let i = 0; i < a.files.length; i++) {
+        for (let i = 0; i < count; i++) {
             if (a.files[i].text === b.files[i].text) continue;
             const left = a.files[i].text.split("\n");
             const right = b.files[i].text.split("\n");
             let line = 0;
             while (line < left.length && left[line] === right[line]) line++;
             const where = count > 1 ? ` in ${a.files[i].name}` : "";
-            return { same: false, text: `The outputs differ${where}, from line ${line + 1}.` };
+            return { same: false, text: `outputs differ${where} from line ${line + 1}` };
         }
 
-        return { same: true, text: `Byte-identical output: ${files}.` };
+        const bytes = a.files.reduce((n, f) => n + utf8Length(f.text), 0);
+        const detail = `The outputs are identical byte for byte: ${count} file${count === 1 ? "" : "s"}, ${bytes.toLocaleString("en-US")} bytes.`;
+        return { same: true, text: "identical output", detail };
     }
 
     if (!a.ok && !b.ok) {
         return a.error.message === b.error.message
-            ? { same: true, text: "Both engines stopped with the same error." }
-            : { same: false, text: "The engines stopped with different errors." };
+            ? { same: true, text: "the same error" }
+            : { same: false, text: "different errors" };
     }
 
-    return { same: false, text: `Only the ${a.ok ? "TypeScript" : "WebAssembly"} engine stopped with an error.` };
+    return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error` };
 }
 
-/** WebAssembly's time against TypeScript's, in words. */
+/** quickertype's time against quicktype's, in words. */
 function relative(wasmMs, tsMs) {
     const ratio = tsMs / wasmMs;
     if (!Number.isFinite(ratio) || ratio <= 0) return undefined;
@@ -674,20 +750,6 @@ function relative(wasmMs, tsMs) {
     if (ratio >= 1.05) return `${times(ratio)}× faster`;
     if (ratio > 1 / 1.05) return "about as fast";
     return `${times(1 / ratio)}× slower`;
-}
-
-/** How the two runs compare, overall and generating alone, and which of them include start-up. */
-function speed(wasm, ts, phases) {
-    const overall = relative(phases(wasm).total, phases(ts).total);
-    if (overall === undefined) return "";
-    const generating = relative(phases(wasm).generate, phases(ts).generate);
-    let text = `WebAssembly was ${overall} overall`;
-    if (generating === overall) text += " and at generating the code";
-    else if (generating !== undefined) text += ` and ${generating} at generating the code`;
-    const cold = [wasm.first && "WebAssembly", ts.first && "TypeScript"].filter(Boolean);
-    if (cold.length === 2) return `${text}, start-up included on both sides.`;
-    if (cold.length === 1) return `${text}, start-up included in the ${cold[0]} time.`;
-    return `${text}.`;
 }
 
 /** A result's time, split into reading the input and generating; medians for a measurement. */
@@ -705,122 +767,199 @@ function phasesOf(result, measured) {
 function engineTag(worker, result) {
     if (result.ran === undefined && !result.ok) return "stopped while reading the input";
     if (result.ran !== undefined && result.ran !== worker) {
-        return `ran on ${engineNames[result.ran]}${result.reason ? `: ${result.reason}` : ""}`;
+        return `ran on the ${engineKinds[result.ran]} engine${result.reason ? `: ${result.reason}` : ""}`;
     }
 
     return undefined;
 }
 
-function lane(worker, result, scale, timeOf, note, split) {
-    const name = engineNames[worker];
-    if (result === undefined || result === "running") {
-        const waiting = result === "running" ? "running…" : "";
-        return `<div class="lane ${worker}"><span class="engine">${name}</span><span class="bar"><span class="fill pending"></span></span><span class="time muted">${waiting}</span></div>`;
+/** One engine's bar: its time (`timeOf`) against `scale`, the part spent reading the input lighter. */
+function lane(engine, result, { scale, timeOf, note, split, shown }) {
+    const name = engineNames[engine];
+    const head = `<div class="lane ${engine}${shown ? " shown" : ""}"><span class="engine">${name}</span>`;
+    if (result === "running") {
+        const what = engines[engine].boot === undefined ? "loading…" : "running…";
+        return `${head}<span class="bar"><span class="fill pending"></span></span><span class="time muted">${what}</span></div>`;
     }
 
     const ms = timeOf(result);
     const width = scale > 0 ? Math.max(1.5, (ms / scale) * 100) : 0;
-    const tag = engineTag(worker, result);
-    // The bar: reading the input (the same TypeScript code on both sides), then generating.
+    const tag = engineTag(engine, result);
     const inputShare = split !== undefined && split.input !== undefined && ms > 0 ? Math.min(1, split.input / ms) : 0;
     const detail =
         split !== undefined && split.input !== undefined
             ? `reading the input ${formatMs(split.input)}, generating ${formatMs(split.generate)}`
             : undefined;
     const notes = [detail, note].filter(Boolean).join("; ");
-    return `<div class="lane ${worker}"><span class="engine">${name}</span><span class="bar"><span class="fill" style="width:${width.toFixed(2)}%"><span class="input-part" style="width:${(inputShare * 100).toFixed(2)}%"></span></span></span><span class="time">${formatMs(ms)}</span>${
+    return `${head}<span class="bar"><span class="fill" style="width:${width.toFixed(2)}%"><span class="input-part" style="width:${(inputShare * 100).toFixed(2)}%"></span></span></span><span class="time">${formatMs(ms)}</span>${
         notes ? `<span class="lane-note">${escapeHtml(notes)}</span>` : ""
     }${tag ? `<span class="lane-note warn">${escapeHtml(tag)}</span>` : ""}</div>`;
 }
 
-function bootNote() {
+/** "quickertype: 2.90 ms · quicktype: 4.20 ms · 1.4× faster · identical output ✓", from both engines' results. */
+function summary({ wasm, ts }, timeOf, phases, measured) {
+    const v = verdict(wasm, ts);
+    const parts = [
+        `<span class="who wasm">${engineNames.wasm}: <b>${formatMs(timeOf(wasm))}</b></span>`,
+        `<span class="who ts">${engineNames.ts}: <b>${formatMs(timeOf(ts))}</b></span>`,
+    ];
+    if (wasm.ok && ts.ok) {
+        const pace = relative(phases(wasm).total, phases(ts).total);
+        if (pace !== undefined) {
+            const cold = measured ? [] : ["wasm", "ts"].filter((engine) => ({ wasm, ts })[engine].first);
+            const startUp =
+                cold.length === 2 ? ", start-up included" : cold.length === 1 ? `, ${engineNames[cold[0]]}'s start-up included` : "";
+            parts.push(`<span>${escapeHtml(pace + startUp)}</span>`);
+        }
+    }
+
+    parts.push(
+        `<span class="verdict ${v.same ? "same" : "differ"}">${escapeHtml(v.text)} <span class="verdict-mark" aria-hidden="true">${v.same ? "✓" : "≠"}</span></span>`,
+    );
+    const prefix = measured ? `<span class="muted">Warm medians:</span> ` : "";
+    return {
+        same: v.same,
+        detail: v.detail,
+        html: `<p class="summary" role="status">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
+    };
+}
+
+/** What starting the engines cost, for those in `lanes`. */
+function bootNote(lanes) {
     const parts = [];
     const wasm = engines.wasm.boot;
-    if (wasm?.loadError) parts.push(`The WebAssembly engine did not load (${wasm.loadError}); runs use the TypeScript engine.`);
-    else if (wasm?.compileMs !== undefined) parts.push(`The .wasm engine downloaded and compiled in ${formatMs(wasm.compileMs)}.`);
-    if (state.compare && engines.ts.boot !== undefined) parts.push(`The TypeScript worker loaded in ${formatMs(engines.ts.boot.startMs)}.`);
+    if (lanes.includes("wasm") && wasm !== undefined) {
+        if (wasm.loadError) parts.push(`The WebAssembly engine did not load (${wasm.loadError}); quickertype ran on the TypeScript engine.`);
+        else if (wasm.compileMs !== undefined) parts.push(`quickertype's engine (.wasm) downloaded and compiled in ${formatMs(wasm.compileMs)}.`);
+    }
+
+    if (lanes.includes("ts") && engines.ts.boot !== undefined) {
+        parts.push(`The quicktype worker loaded in ${formatMs(engines.ts.boot.startMs)}.`);
+    }
+
     return parts.join(" ");
 }
 
+const isResult = (r) => typeof r === "object";
+/** A result with a time: the run happened (a worker that did not start has none). */
+const timed = (r) => isResult(r) && r.times.length > 0;
+
 function renderMeter() {
-    const { status, wasm, ts, bench } = view;
-    if (status === "empty" || (status === "idle" && wasm === undefined)) {
-        els.meter.innerHTML = status === "idle" ? `<div class="lane-line muted">Loading the engine…</div>` : "";
-        document.body.dataset.status = status;
+    const { status, shown, bench } = view;
+    const result = shown.result;
+    const body = document.body.dataset;
+    if (status === "empty") {
+        els.meter.innerHTML = "";
+        body.status = "empty";
+        body.compare = "off";
         return;
     }
 
-    if (status === "running" || wasm === undefined) {
-        const elapsed = performance.now() - view.runningSince;
-        const what = engines.wasm.boot === undefined ? "Loading the WebAssembly engine…" : "Running on WebAssembly…";
-        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot wasm"></span>${what} <span class="time muted">${formatMs(elapsed)}</span></div>`;
-        document.body.dataset.status = "running";
+    // Nothing to show yet, or what is shown is for an older request.
+    if (result === undefined || (status === "running" && shown.gen !== generation)) {
+        const engine = state.engine;
+        const name = engineNames[engine];
+        const line =
+            status === "running"
+                ? `${engines[engine].boot === undefined ? `Loading ${name}…` : `Running on ${name}…`} <span class="time muted">${formatMs(performance.now() - view.runningSince)}</span>`
+                : `<span class="muted">Loading ${name}…</span>`;
+        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot ${engine}"></span>${line}</div>`;
+        body.status = status === "running" ? "running" : "idle";
+        body.compare = "off";
         return;
     }
 
-    document.body.dataset.status = wasm.ok ? "done" : "error";
-    if (wasm.ms === undefined) {
+    body.status = status === "running" ? "running" : result.ok ? "done" : "error";
+    if (result.ms === undefined) {
         // Nothing ran (a sample that did not load, a worker that did not start).
         els.meter.innerHTML = "";
+        body.compare = "off";
         return;
     }
 
-    const measured = bench !== undefined && typeof bench.wasm === "object";
-    const benchTs = measured && typeof bench.ts === "object" ? bench.ts : undefined;
-    const showTs = state.compare;
+    // Each engine's side: its result for the request shown (warm medians
+    // once measured), "running", or undefined if it has not run it.
+    const gen = shown.gen;
+    const measured = bench !== undefined && bench.gen === gen && timed(bench.wasm) && timed(bench.ts);
+    const sides = {};
+    for (const engine of ["wasm", "ts"]) {
+        const side = measured ? bench[engine] : engine === shown.engine ? result : resultOf(engine, gen);
+        sides[engine] = isResult(side) && !timed(side) ? undefined : side;
+    }
+
+    const lanes = ["wasm", "ts"].filter((engine) => sides[engine] !== undefined);
+    const solo = lanes.length === 1;
     const timeOf = measured ? (r) => median(r.times) : (r) => r.ms;
     const phases = (r) => phasesOf(r, measured);
-    const wasmShown = measured ? bench.wasm : wasm;
-    const tsShown = measured ? bench.ts : ts;
-    const times = [wasmShown, tsShown].filter((r) => r !== undefined && r !== "running").map(timeOf);
-    const scale = Math.max(...times, 0);
-    const noteFor = (r) => {
-        if (measured) return `median of ${r.times.length} warm runs`;
-        return r.first ? "first run, includes start-up" : undefined;
-    };
-
-    let html = `<div class="race${showTs ? "" : " solo"}">`;
-    const splitOf = (r) => (r !== undefined && r !== "running" && r.ok ? phases(r) : undefined);
-    html += lane("wasm", wasmShown, showTs ? scale : timeOf(wasmShown), timeOf, noteFor(wasmShown), splitOf(wasmShown));
-    if (showTs) {
-        const done = tsShown !== undefined && tsShown !== "running";
-        html += lane("ts", tsShown, scale, timeOf, done ? noteFor(tsShown) : undefined, splitOf(tsShown));
+    const scale = Math.max(0, ...lanes.filter((engine) => isResult(sides[engine])).map((engine) => timeOf(sides[engine])));
+    let html = `<div class="race${solo ? " solo" : ""}">`;
+    for (const engine of lanes) {
+        const side = sides[engine];
+        const done = isResult(side);
+        html += lane(engine, side, {
+            scale: solo ? timeOf(side) : scale,
+            timeOf,
+            note: !done ? undefined : measured ? `median of ${side.times.length} warm runs` : side.first ? "first run, includes start-up" : undefined,
+            split: done && side.ok ? phases(side) : undefined,
+            shown: engine === shown.engine,
+        });
     }
 
     html += "</div>";
 
-    let compareState = "off";
-    if (showTs) {
-        const a = measured ? bench.wasm : wasm;
-        const b = measured ? benchTs : ts;
-        if (b !== undefined && b !== "running") {
-            const v = verdict(a, b);
-            compareState = v.same ? "identical" : "different";
-            const pace = a.ok && b.ok ? ` ${speed(measured ? { ...a, first: false } : a, measured ? { ...b, first: false } : b, phases)}` : "";
-            html += `<p class="verdict ${v.same ? "same" : "differ"}" role="status"><span class="verdict-mark" aria-hidden="true">${v.same ? "✓" : "≠"}</span>${escapeHtml(v.text + pace)}</p>`;
-        } else {
-            compareState = "running";
+    const fine = [];
+    let compare = "off";
+    if (isResult(sides.wasm) && isResult(sides.ts)) {
+        const line = summary(sides, timeOf, phases, measured);
+        compare = line.same ? "identical" : "different";
+        html += line.html;
+        if (line.detail !== undefined) fine.push(line.detail);
+        fine.push("The lighter part of each bar is reading the input; the rest is generating the code.");
+        if (sides.wasm.ok && sides.ts.ok) {
+            const overall = relative(phases(sides.wasm).total, phases(sides.ts).total);
+            const generating = relative(phases(sides.wasm).generate, phases(sides.ts).generate);
+            if (generating !== undefined && generating !== overall) {
+                fine.push(`At generating the code alone, quickertype was ${generating}.`);
+            }
         }
+    } else if (!solo) {
+        compare = "running";
+    } else {
+        fine.push(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
     }
 
-    document.body.dataset.compare = compareState;
-
-    const busy = bench !== undefined && (bench.wasm === "running" || bench.ts === "running");
-    const fine = [];
-    if (showTs) fine.push("Reading the input is quicktype's TypeScript code on both sides (the lighter part of each bar).");
-    if (!measured && (wasm.first || (ts !== undefined && ts !== "running" && ts.first))) {
+    body.compare = compare;
+    // Said when the times are compared (one engine's first run is marked as such on its bar).
+    if (!solo && !measured && lanes.some((engine) => isResult(sides[engine]) && sides[engine].first)) {
         fine.push(
             "A worker's first run includes start-up: instantiating the WebAssembly engine, or compiling cold JavaScript. Measure warm runs to compare speed.",
         );
     }
 
-    if (measured) fine.push(`Each engine ran ${bench.wasm.times.length + 1} times; the first is not counted.`);
-    const boot = bootNote();
+    if (measured) fine.push(`Each engine ran ${bench.wasm.times.length + 1} times on this input; the first run is not counted.`);
+    const boot = bootNote(lanes);
     if (boot) fine.push(boot);
-    html += `<div class="fine"><p>${escapeHtml(fine.join(" "))}</p><button type="button" id="measure" class="quiet"${busy || !wasm.ok ? " disabled" : ""}>${
-        busy ? "Measuring…" : showTs ? "Measure warm runs" : "Measure warm run"
-    }</button></div>`;
+
+    if (bench?.failure !== undefined) {
+        html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
+    }
+
+    const measuring = bench !== undefined && bench.failure === undefined && !(isResult(bench.wasm) && isResult(bench.ts));
+    const label = !measuring
+        ? "Measure warm runs (5×)"
+        : bench.wasm === "running"
+          ? `Measuring ${engineNames.wasm}…`
+          : bench.ts === "running"
+            ? `Measuring ${engineNames.ts}…`
+            : "Measuring…";
+    // aria-disabled rather than disabled, so that the button keeps the keyboard focus while it measures.
+    const off = measuring || !result.ok;
+    const focused = document.activeElement?.id === "measure";
+    html += `<div class="fine"><p>${escapeHtml(fine.join(" "))}</p><button type="button" id="measure" class="measure" title="Runs both engines 6 times on this input, and compares the medians of the last 5"${
+        off ? ' aria-disabled="true"' : ""
+    }>${label}</button></div>`;
     els.meter.innerHTML = html;
+    if (focused) document.getElementById("measure").focus();
 }
 
 function render() {
@@ -878,17 +1017,28 @@ function setInput(text, source, kind, autoName, keepName = false) {
     saveInput();
 }
 
-async function loadSample(sample, keepName = false) {
+/** Loads a sample and runs it (`compare`: on both engines, for a link from compare mode). */
+async function loadSample(sample, keepName = false, compare = false) {
     try {
         setInput(await fetchSample(sample), { type: "sample", id: sample.id }, sample.kind, sample.name, keepName);
     } catch (e) {
+        // No current input: what runs or waits is for the input before, and
+        // switching engine runs nothing until there is one.
+        clearTimeout(runTimer);
+        const gen = ++generation;
+        view.request = undefined;
+        view.bench = undefined;
+        engines.wasm.drop();
+        engines.ts.drop();
+        setRunning(false);
         view.status = "done";
-        view.wasm = { ok: false, error: { message: `Could not load the sample ${sample.path}: ${e.message}` } };
+        const failure = { ok: false, error: { message: `Could not load the sample ${sample.path}: ${e.message}` }, times: [] };
+        view.shown = { gen, engine: state.engine, result: failure, lang: state.lang, name: topLevelName() };
         render();
         return;
     }
 
-    void run();
+    void run({ compare });
 }
 
 async function loadFile(file) {
@@ -917,26 +1067,12 @@ function bind() {
         schedule(300);
     });
 
-    els.compare.addEventListener("change", () => {
-        state.compare = els.compare.checked;
-        writeHash();
-        // A measurement was of the other setting.
-        view.bench = undefined;
-        if (!state.compare) {
-            view.ts = undefined;
-            render();
-            return;
-        }
-
-        void engines.ts.start();
-        if (view.settled === generation && view.status === "done") {
-            // The WebAssembly result is current: only the TypeScript side runs.
-            currentRun = compare(generation, view.request);
-        } else {
-            // A run is under way (it compares when it is done) or nothing is shown.
-            render();
-        }
-    });
+    // Native radio buttons: the arrow keys move between them, and pick.
+    for (const radio of document.querySelectorAll('input[name="engine"]')) {
+        radio.addEventListener("change", () => {
+            if (radio.checked) setEngine(radio.value);
+        });
+    }
 
     els.options.addEventListener("input", (event) => {
         const control = event.target.closest("[data-option]");
@@ -1056,7 +1192,8 @@ function bind() {
     els.download.addEventListener("click", download);
     els.copyCli.addEventListener("click", () => void copyText(els.cli.textContent, els.copyCli));
     els.meter.addEventListener("click", (event) => {
-        if (event.target.closest("#measure")) void measure();
+        const button = event.target.closest("#measure");
+        if (button !== null && button.getAttribute("aria-disabled") !== "true") void measure();
     });
 
     window.addEventListener("hashchange", () => void applyHash(readHash()));
@@ -1070,28 +1207,29 @@ async function applyHash(hash) {
     if (hash.lang.options.some((o) => o.kind !== "primary" && o.name in hash.options)) moreOpen = true;
     if (general.some((g) => hash.general[g.name])) els.general.open = true;
     state.name = hash.name;
-    state.compare = hash.compare;
-    if (state.compare) void engines.ts.start();
+    state.engine = hash.engine;
     if (hash.sample !== undefined && (state.source.type !== "sample" || state.source.id !== hash.sample.id)) {
         renderControls();
-        await loadSample(hash.sample, true);
+        await loadSample(hash.sample, true, hash.compare);
         return;
     }
 
     renderControls();
     writeHash();
-    void run();
+    void run({ compare: hash.compare });
 }
 
 async function start() {
     renderLanguages();
     renderSamples();
     bind();
-    void engines.wasm.start();
     engines.wasm.onBoot = () => render();
     engines.ts.onBoot = () => render();
 
     const hash = readHash();
+    // Only the engine picked loads now; quicktype alone never downloads the .wasm.
+    state.engine = hash.engine;
+    void engines[state.engine].start();
     if (hash.sample === undefined) {
         const saved = loadSavedInput();
         const sample = sampleWithId(defaultSample);
@@ -1124,6 +1262,9 @@ globalThis.playground = {
     },
     get generation() {
         return generation;
+    },
+    get engine() {
+        return state.engine;
     },
     cli: cliCommand,
     engines,
