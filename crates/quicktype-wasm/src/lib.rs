@@ -231,3 +231,12 @@ pub fn engine_version() -> String {
 pub fn pow_for_tests(x: f64, y: f64) -> f64 {
     quicktype_js_compat::number::pow(x, y)
 }
+
+/// Panics, for the facade's test of what happens when the engine traps
+/// (release builds abort on panic): the facade must discard the instance
+/// and use a fresh one.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __panicForTests)]
+pub fn panic_for_tests() {
+    std::panic::panic_any("quicktype-wasm test panic");
+}
