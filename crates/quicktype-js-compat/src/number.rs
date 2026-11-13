@@ -106,13 +106,17 @@ fn shortest_digits(formatted: &str) -> (String, i32) {
 /// Never use the `libm` crate here: it disagrees with Node on about 7% of
 /// inputs.
 ///
-/// # Warning: not exact on `wasm32`
+/// # On `wasm32`
 ///
-/// On `wasm32` there is no platform `pow`: `f64::powf` is compiler-builtins'
-/// port of `libm`, which disagrees with Node in the last bit on about 7% of
-/// inputs. Through `MarkovChain.evaluate` that can flip `InferMaps`' class
-/// versus map decision near its threshold. A correctly rounded `pow` is a
-/// known gap (see `docs/PARITY.md`, "Known gaps").
+/// WebAssembly has no platform `pow`. With the `js-host-math` feature (which
+/// the `quicktype-wasm` bindings enable), `wasm32` builds call the host's
+/// own `Math.pow`: in Node that is V8's, so the engine computes exactly
+/// what the TypeScript quicktype computes in the same process, and in any
+/// other JavaScript host exactly what the TypeScript quicktype would compute
+/// there. Without the feature, `f64::powf` is compiler-builtins' port of
+/// `libm`, which disagrees with Node in the last bit on about 7% of inputs;
+/// through `MarkovChain.evaluate` that can flip `InferMaps`' class versus map
+/// decision near its threshold (see `docs/PARITY.md`, "Known gaps").
 pub fn pow(x: f64, y: f64) -> f64 {
     if y.is_nan() || (y.is_infinite() && x.abs() == 1.0) {
         return f64::NAN;
@@ -133,12 +137,29 @@ fn platform_pow(x: f64, y: f64) -> f64 {
     std::hint::black_box(x).powf(std::hint::black_box(y))
 }
 
-/// Not the platform `pow`: wasm32 has none, and this libm port differs from
-/// Node on about 7% of inputs.
-#[cfg(target_arch = "wasm32")]
+/// The JavaScript host's `Math.pow`, which on V8 is the platform `pow` it
+/// was built with (the special cases above are V8's own, so they agree).
+#[cfg(all(target_arch = "wasm32", feature = "js-host-math"))]
 fn platform_pow(x: f64, y: f64) -> f64 {
-    // TODO(wasm): correctly rounded pow (e.g. a port of glibc's or CORE-MATH's
-    // pow) so that wasm32 matches Node; see "Known gaps" in docs/PARITY.md.
+    host_math::pow(x, y)
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "js-host-math"))]
+mod host_math {
+    use wasm_bindgen::prelude::wasm_bindgen;
+
+    #[wasm_bindgen]
+    extern "C" {
+        /// `Math.pow`, looked up on every call like the TypeScript's `**`.
+        #[wasm_bindgen(js_namespace = Math)]
+        pub fn pow(x: f64, y: f64) -> f64;
+    }
+}
+
+/// Not the platform `pow`: a `wasm32` build without a JavaScript host has
+/// none, and this libm port differs from Node on about 7% of inputs.
+#[cfg(all(target_arch = "wasm32", not(feature = "js-host-math")))]
+fn platform_pow(x: f64, y: f64) -> f64 {
     std::hint::black_box(x).powf(std::hint::black_box(y))
 }
 

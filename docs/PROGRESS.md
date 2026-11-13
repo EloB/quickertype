@@ -12,6 +12,12 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
   every output language except C is on `main`; the remaining 381 cases all
   need the C renderer (in progress).
 - Phase 7 (benchmarks + hot paths) started.
+- JS API after the code review fixes and merging Go/JSON Schema/GraphQL:
+  differential suite 18,742 scenarios, 18,741 identical (18,025 on
+  WebAssembly, 625 on the TypeScript fallback (C renderer, lone surrogates
+  and circular store documents), 1 redone after an engine stack overflow,
+  90 on TypeScript by eligibility), 1 known gap, 0 different. Engine:
+  4.9 MiB.
 
 - **Parity 10,174 / 11,177 (91.0%), 0 regressions.** Merged language wave
   2 so far: Crystal, C++; Swift, Objective-C, Dart; Ruby, Elixir, Python

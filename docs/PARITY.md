@@ -48,14 +48,26 @@ findings per area, with file and line references.
   the same for hand-written scenarios, rendered with real languages or a
   configurable probe renderer that exercises the framework directly. See
   `docs/RENDERERS.md`.
-- **JS API:** a differential suite (planned, `npm/`) runs the same API calls
-  against npm `quicktype-core` and our WASM package and compares results.
+- **JS API:** `npm/quicktype-core/test/differential` runs the same API
+  calls against the reference `quicktype-core` (the built
+  `packages/quicktype-core` of a quicktype checkout) and our package on
+  WebAssembly, and compares results (every file, line and annotation),
+  errors (class, `messageName`, message, properties) and console output:
+  the golden corpus replayed through the API (samples as strings, so
+  `JSON.parse` semantics), every input × every language with default
+  options, ports of quicktype's API-level unit tests, JSON Schema store
+  paths (lazy fetch order, failures, concurrency, re-entrancy), errors and
+  options. Without a checkout (CI) the reference is the package's own,
+  vendored TypeScript engine. Runs the engine declines as unsupported
+  (`QuickTypeError::unsupported`, e.g. a renderer not ported yet) run on
+  the TypeScript engine and are reported separately from those identical
+  on WebAssembly.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
 rather than the CLI, so it has no CLI recording. The `golang-leading-comments`
 render scenario reproduces its renders (`leadingComments: []`, one file and
-multi-file); the API path itself will be covered by the JS API differential
-suite.
+multi-file); the JS API differential suite covers `leadingComments` through
+the API for every language (`options` scenarios).
 
 ## Rules
 
@@ -117,7 +129,8 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     `y == 2 → x*x` and `y == 0.5 → sqrt(x)`. Natively use `f64::powf` plus
     those cases (verified identical on 300k samples), as
     `quicktype_js_compat::number::pow` does; the `libm` crate is not (7–9%
-    mismatches). WASM needs a correctly rounded `pow` port.
+    mismatches). On `wasm32` (feature `js-host-math`, which the WebAssembly
+    bindings enable) it calls the JavaScript host's own `Math.pow`.
 13. **`JSON.stringify`** escaping and number output differ from
     `serde_json`; use `quicktype_js_compat::json`.
 
@@ -159,6 +172,7 @@ semantics were verified.
 | Node's `fetch` (undici, Node 24), as `NodeIO` (`GET`) and `--graphql-introspect` (`POST` with a body) use it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` and `tests/fetch_post.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`; a 301/302 after `POST` and a 303 after anything but `GET`/`HEAD` continue as a `GET` without the body and its `content-*` headers), undici's default headers and case-insensitive header combining (`3, 2`), the method's validation and normalization (`post` → `POST`, `Patch` as is; `CONNECT`/`TRACE`/`TRACK` refused), no body on `GET`/`HEAD`, `text/plain;charset=UTF-8` as the default body type, `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, methods, header names/values and `ByteString`s (headers before the method), the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case; the 38 recorded `--graphql-introspect` runs (`xtask/graphql-input/record-introspection.mjs`) |
 | Node's stack depth (`RangeError: Maximum call stack size exceeded`) | a model of the JavaScript stack in `JSONSchemaInput` (per-keyword costs, reset after every `await`) and a depth limit for `addIDs`, with `stacker` 0.1 growing the native stack on demand | `xtask/core-json-schema-input/measure-stack-depth.mjs` measures Node 24 per recursion path in fresh processes; `tests/deep_schemas.rs` pins the same last-good and first-failing depths (items 322, tuples 198, properties 161, `allOf` 200, `oneOf`/`anyOf` 170, properties plus items 107, `addIDs` 4,150) and runs on 2 MB test-thread stacks |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
+| V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
 | `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()` |
 
@@ -168,13 +182,59 @@ Known divergences from the reference that no golden case exercises. Some are
 deliberate (behavior of the JavaScript runtime rather than of quicktype);
 the others name the fix they need.
 
-- **`pow` on WASM (Phase 6 blocker).** `quicktype_js_compat::number::pow`
-  matches V8 natively because both call the platform `pow`. On `wasm32`
-  there is none: `f64::powf` is compiler-builtins' port of `libm`, which
-  disagrees with Node in the last bit on about 7% of inputs. Through
-  `markov_chain::evaluate` this can flip `InferMaps`' class-versus-map
-  decision for names near the threshold. Fix: a correctly rounded `pow` for
-  `wasm32` (marked `TODO(wasm)` in `number.rs`).
+- **`pow` on `wasm32` without a JavaScript host.** With the
+  `js-host-math` feature (on in the WebAssembly bindings), `**` is the
+  host's `Math.pow`, exact by construction. A `wasm32` build of the core
+  without it (e.g. for a non-JavaScript WebAssembly runtime) falls back to
+  `f64::powf`, compiler-builtins' port of `libm`, which disagrees with Node
+  in the last bit on about 7% of inputs; through `markov_chain::evaluate`
+  that can flip `InferMaps`' class-versus-map decision near its threshold.
+- **The JavaScript facade (`npm/quicktype-core`).** Runs the engine does
+  not model use the TypeScript engine (see its README): custom classes,
+  odd option values, GraphQL input (the npm `quicktype-graphql-input`),
+  languages the engine has no renderer for (`has_renderer`, decided before
+  a run starts), and any string that is not well-formed UTF-16 (a lone
+  surrogate would reach the engine as U+FFFD). Some runs are redone on the
+  TypeScript engine after they started on the engine: when a store
+  document cannot be read exactly (lone surrogates, circular, too large to
+  flatten), when the engine reports a feature it lacks midway, and when
+  the engine traps or overflows V8's stack (every run in flight on that
+  instance is redone; the instance is replaced). The inputs are put back
+  as they were first (store wrapping, top-levels, the store's cache) and
+  the attempt's store fetches are awaited, so the TypeScript run starts
+  from the state it would have; what the attempt did outside the inputs
+  (store `fetch` calls, `--debug` output, `onTiming` calls) happens twice.
+  Beyond that, only these differ:
+  - a custom `JSONSchemaStore` can return documents holding `undefined`
+    (or functions, symbols, bigints), which `JSON.parse` and YAML never
+    produce; the engine reads such a property as absent and such an array
+    item as `null`, where TypeScript fails (a `TypeError`, or `Value of
+    type undefined is not valid JSON Schema`);
+  - a run started from inside another run's callback (`onTiming`, a
+    replaced `console.log`) runs to its first schema fetch synchronously,
+    where TypeScript runs only up to its first `await`; only the
+    interleaving of the two runs' `--debug` output and `onTiming` calls can
+    show it;
+  - an `onTiming` (or a replaced `console.log`) that throws stops the
+    TypeScript engine at once; the engine finishes the run silently
+    (no more output or callbacks) and then rethrows the exception;
+  - the engine prints the TypeScript Zod renderer's `console.warn` with
+    `console.error` (the same stream in Node);
+  - Rust polls a run's future from its root, so a long chain of `$ref`ed
+    documents nests WebAssembly frames on V8's own stack; at a few hundred
+    documents (300 work, 500 do not, with Node's default stack) that
+    overflows, and the run is redone on the TypeScript engine, which
+    overflows at about the same length. (The core's model of the
+    JavaScript stack lets `$ref` chains go 10,000 deep, so the native CLI
+    does not fail there; see "Stack depth".)
+  - a JSON Schema nested deeper than Node's stack allows (see "Stack
+    depth") makes the TypeScript quicktype-core overflow inside a promise
+    callback, which takes the whole process down (`Exception in
+    PromiseRejectCallback`); the engine rejects the run with the same
+    `RangeError: Maximum call stack size exceeded`;
+  - a run whose store promise never settles is dropped by the engine once
+    nothing can observe it any more (a `FinalizationRegistry`); hosts
+    without `WeakRef` and `FinalizationRegistry` keep such runs.
 - **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
   surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
   `String`s cannot. Wherever the TypeScript produces one, the port drops it:

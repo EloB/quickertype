@@ -4,3 +4,4 @@ node_modules/
 /npm/*/dist/
 /npm/*/pkg/
 .DS_Store
+/npm/*/build/
