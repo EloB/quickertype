@@ -33,7 +33,9 @@ export async function makeChecker({ reference, bin }) {
         if (mode === "cli") {
             if (!cliCompatible(kase)) return { status: "skip" };
             const invocation = cliInvocation(kase);
-            const [expected, actual] = await Promise.all([runCli(commands.ref, invocation), runCli(commands.ours, invocation)]);
+            // One after the other: a worker is one busy process at a time.
+            const expected = await runCli(commands.ref, invocation);
+            const actual = await runCli(commands.ours, invocation);
             if (typeof expected.exit === "string") return { status: "timeout", detail: `reference ${expected.exit}` };
             return compareOutcomes(expected, actual);
         }

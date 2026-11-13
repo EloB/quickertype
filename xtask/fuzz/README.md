@@ -11,13 +11,17 @@ built npm package (`cd npm/quicktype-core && npm ci && npm run build`) and the
 release CLI (`cargo build --release -p quicktype-cli`).
 
 ```sh
-node xtask/fuzz/fuzz.mjs --seed 1 --count 5000 -j 6       # seeds 1..5000
-node xtask/fuzz/fuzz.mjs --seed 100000 --minutes 120 -j 6 # as many as fit
+node xtask/fuzz/fuzz.mjs --seed 1 --count 5000 -j 3       # seeds 1..5000
+node xtask/fuzz/fuzz.mjs --seed 100000 --minutes 120 -j 3 # as many as fit
 node xtask/fuzz/fuzz.mjs --print 1234                     # the case of seed 1234
 node xtask/fuzz/fuzz.mjs --replay target/fuzz/run-1/1234-api.json
 node xtask/fuzz/minimize.mjs target/fuzz/run-1/1234-api.json
 node xtask/fuzz/record.mjs target/fuzz/run-1/1234-api.min.json <name> "<what it checks>"
 ```
+
+Each worker (`-j`, default 4) is one busy process at a time: it runs a case
+on the reference, then on the port (in-process, or the two CLIs one after the
+other).
 
 ## Cases
 
