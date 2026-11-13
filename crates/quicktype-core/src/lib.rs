@@ -1,4 +1,70 @@
 //! Port of `packages/quicktype-core/src/index.ts`.
+//!
+//! quicktype infers types from JSON samples, JSON Schema, GraphQL queries
+//! and Postman collections, and generates code for them in about 25 target
+//! languages. This crate is the engine: it reproduces the TypeScript
+//! `quicktype-core` byte for byte.
+//!
+//! # The public API
+//!
+//! The items re-exported at the crate root are the API. They mirror the
+//! exports of TypeScript's `index.ts`, with Rust names:
+//!
+//! - **Running:** [`quicktype`], [`quicktype_multi_file`] and
+//!   [`quicktype_multi_file_sync`] take [`Options`] and return
+//!   [`SerializedRenderResult`]s (the lines of each generated file and
+//!   their [`Annotation`]s); [`combine_render_results`] squashes several
+//!   files into one.
+//! - **Inputs:** an [`InputData`] holds one [`Input`] per source language.
+//!   [`JsonInput`] reads JSON samples ([`JsonSourceData`], each sample a
+//!   [`JsonSample`] read with `JSON.parse` semantics as the JavaScript API
+//!   does, or with stream-json semantics as the CLI does);
+//!   [`json_input_for_target_language`] makes one that suits a language.
+//!   [`sources_from_postman_collection`] turns a Postman collection into
+//!   JSON sources.
+//! - **Languages and their options:** [`TargetLanguage`],
+//!   [`default_target_languages`], [`language_named`],
+//!   [`get_target_language`], and the untyped [`RendererOptions`] the
+//!   renderers read (with the [`OptionDefinition`]s a front end needs to
+//!   parse them).
+//! - **Inference flags:** [`InferenceFlags`] and their descriptions,
+//!   [`INFERENCE_FLAGS`].
+//! - **Errors:** every failure is a [`QuickTypeError`], whose
+//!   [`user_message`](QuickTypeError::user_message) is the message the
+//!   TypeScript implementation reports; nothing panics on user input.
+//! - **Diagnostics:** `--debug` output is written with [`console_log`];
+//!   [`set_console_sink`] redirects it.
+//!
+//! ```
+//! use quicktype_core::{
+//!     InputData, JsonSourceData, Options, get_target_language, json_input_for_target_language,
+//!     quicktype_multi_file_sync,
+//! };
+//!
+//! let lang = get_target_language("rust")?;
+//! let mut input = json_input_for_target_language(lang, false, &Default::default());
+//! input.add_source_sync(JsonSourceData {
+//!     name: "Coordinate".to_owned(),
+//!     samples: vec![r#"{"lat": 51.5, "lng": -0.12}"#.into()],
+//!     description: None,
+//! })?;
+//! let mut input_data = InputData::new();
+//! input_data.add_input(input);
+//!
+//! let files = quicktype_multi_file_sync(Options {
+//!     output_filename: "coordinate.rs".to_owned(),
+//!     ..Options::new(lang, input_data)
+//! })?;
+//! assert!(files["coordinate.rs"].lines.join("\n").contains("pub lat: f64,"));
+//! # Ok::<(), quicktype_core::QuickTypeError>(())
+//! ```
+//!
+//! # Modules
+//!
+//! The modules mirror `packages/quicktype-core/src` file for file
+//! (snake_case, `Type/` as `ty/`), so each has one obvious TypeScript
+//! counterpart. They are public for the renderers, the WebAssembly bindings
+//! and tests; front ends use the root re-exports.
 
 pub mod annotation;
 pub mod attributes;
@@ -28,3 +94,47 @@ pub mod ty;
 pub mod types;
 pub mod unify_classes;
 pub mod union_builder;
+
+// ---- Running (`Run.ts`) -------------------------------------------------
+
+pub use crate::annotation::AnnotationData;
+pub use crate::run::{
+    Clock, DebugOptions, Options, QuicktypeTiming, RunContext, TimingCallback,
+    combine_render_results, get_target_language, quicktype, quicktype_multi_file,
+    quicktype_multi_file_sync,
+};
+pub use crate::source::{Annotation, Location, SerializedRenderResult, Span};
+pub use crate::target_language::MultiFileRenderResult;
+
+// ---- Inference flags (`Inference.ts`) -----------------------------------
+
+pub use crate::inference::{INFERENCE_FLAGS, InferenceFlag, InferenceFlagName, InferenceFlags};
+
+// ---- Inputs (`input/`) ---------------------------------------------------
+
+pub use crate::input::compressed_json::{CompressedJsonTables, JsonSample};
+pub use crate::input::inputs::{
+    CompressedTopLevel, Input, InputData, JsonInput, JsonSourceData, LocalBoxFuture,
+    json_input_for_target_language, json_input_for_target_language_named,
+};
+pub use crate::input::postman_collection::{PostmanSources, sources_from_postman_collection};
+
+// ---- Languages and renderer options --------------------------------------
+
+pub use crate::language::all::{
+    default_target_languages, is_language_display_name, is_language_name, language_named,
+};
+pub use crate::renderer_options::{
+    CliOptionDefinitions, OptionDefinition, OptionKind, OptionType, OptionValue, RendererOptions,
+};
+pub use crate::target_language::{LanguageConfig, TargetLanguage};
+
+// ---- Errors (`Messages.ts`) ----------------------------------------------
+
+pub use crate::messages::{ErrorKind, MessageValue, QuickTypeError, Result};
+
+// ---- Support -------------------------------------------------------------
+
+pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
+pub use crate::support::comments::{Comment, CommentOptions};
+pub use crate::support::support::{ConsoleSink, console_log, set_console_sink};
