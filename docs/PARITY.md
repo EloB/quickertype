@@ -190,50 +190,51 @@ the others name the fix they need.
   in the last bit on about 7% of inputs; through `markov_chain::evaluate`
   that can flip `InferMaps`' class-versus-map decision near its threshold.
 - **The JavaScript facade (`npm/quicktype-core`).** Runs the engine does
-  not model use the TypeScript engine (see its README), so only these
-  differ:
+  not model use the TypeScript engine (see its README): custom classes,
+  odd option values, GraphQL input (the npm `quicktype-graphql-input`),
+  languages the engine has no renderer for (`has_renderer`, decided before
+  a run starts), and any string that is not well-formed UTF-16 (a lone
+  surrogate would reach the engine as U+FFFD). Some runs are redone on the
+  TypeScript engine after they started on the engine: when a store
+  document cannot be read exactly (lone surrogates, circular, too large to
+  flatten), when the engine reports a feature it lacks midway, and when
+  the engine traps or overflows V8's stack (every run in flight on that
+  instance is redone; the instance is replaced). The inputs are put back
+  as they were first (store wrapping, top-levels, the store's cache) and
+  the attempt's store fetches are awaited, so the TypeScript run starts
+  from the state it would have; what the attempt did outside the inputs
+  (store `fetch` calls, `--debug` output, `onTiming` calls) happens twice.
+  Beyond that, only these differ:
   - a custom `JSONSchemaStore` can return documents holding `undefined`
     (or functions, symbols, bigints), which `JSON.parse` and YAML never
     produce; the engine reads such a property as absent and such an array
     item as `null`, where TypeScript fails (a `TypeError`, or `Value of
     type undefined is not valid JSON Schema`);
-  - when a run fails inside `JSONSchemaInput.addTypes`, the top-levels it
-    had found are not added to the input object (TypeScript adds them one
-    by one, so a later run on the same `InputData` starts from them);
-  - a run started from inside another run's callback (a store, `onTiming`)
-    runs to its first schema fetch synchronously, where TypeScript runs
-    only up to its first `await`; only the interleaving of the two runs'
-    `--debug` output and `onTiming` calls can show it;
+  - a run started from inside another run's callback (`onTiming`, a
+    replaced `console.log`) runs to its first schema fetch synchronously,
+    where TypeScript runs only up to its first `await`; only the
+    interleaving of the two runs' `--debug` output and `onTiming` calls can
+    show it;
   - an `onTiming` (or a replaced `console.log`) that throws stops the
     TypeScript engine at once; the engine finishes the run silently
     (no more output or callbacks) and then rethrows the exception;
   - the engine prints the TypeScript Zod renderer's `console.warn` with
     `console.error` (the same stream in Node);
-  - `console.log` replaced by a function that runs quicktype synchronously
-    would re-enter the engine's console sink (a `RefCell`) and trap; the
-    instance is then discarded and the run fails with an `InternalError`;
-  - GraphQL input (`quicktype-graphql-input`) is not ported yet, so its
-    runs use the TypeScript engine;
-  - the engine declines languages whose renderer is not ported before a
-    run starts (`has_renderer`); should a run hit another unsupported
-    feature midway, it is redone on the TypeScript engine, and what the
-    first attempt did (schema fetches through the store, `--debug`
-    output, `onTiming` calls) happens twice. No such feature exists
-    today;
   - Rust polls a run's future from its root, so a long chain of `$ref`ed
     documents nests WebAssembly frames on V8's own stack; at a few hundred
     documents (300 work, 500 do not, with Node's default stack) that
-    overflows with `RangeError: Maximum call stack size exceeded`, as the
-    TypeScript engine does at about the same length, though not
-    necessarily the same one. The instance is then discarded, and other
-    runs in flight on it fail with an `InternalError`. (The core's model
-    of the JavaScript stack lets `$ref` chains go 10,000 deep, so the
-    native CLI does not fail there; see "Stack depth".)
+    overflows, and the run is redone on the TypeScript engine, which
+    overflows at about the same length. (The core's model of the
+    JavaScript stack lets `$ref` chains go 10,000 deep, so the native CLI
+    does not fail there; see "Stack depth".)
   - a JSON Schema nested deeper than Node's stack allows (see "Stack
     depth") makes the TypeScript quicktype-core overflow inside a promise
     callback, which takes the whole process down (`Exception in
     PromiseRejectCallback`); the engine rejects the run with the same
-    `RangeError: Maximum call stack size exceeded`.
+    `RangeError: Maximum call stack size exceeded`;
+  - a run whose store promise never settles is dropped by the engine once
+    nothing can observe it any more (a `FinalizationRegistry`); hosts
+    without `WeakRef` and `FinalizationRegistry` keep such runs.
 - **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
   surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
   `String`s cannot. Wherever the TypeScript produces one, the port drops it:

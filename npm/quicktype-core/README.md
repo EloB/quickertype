@@ -43,19 +43,27 @@ same results by construction:
 - GraphQL input (`quicktype-graphql-input`, not ported yet);
 - languages whose renderer the engine does not have yet: the engine says
   so (`supportsLanguage`, and an `{ unsupported }` outcome should a run
-  hit a missing feature midway), never with an error.
+  hit a missing feature midway), never with an error;
+- strings that are not well-formed UTF-16 (lone surrogates, which
+  `JSON.parse` accepts), anywhere in the run, and store documents with
+  them, circular ones or ones too large to flatten.
+
+If the engine fails (traps, or overflows the stack), every run in flight on
+that instance is redone on the TypeScript engine and the instance is
+replaced. Before a run is redone, its JSON Schema inputs are put back as
+they were.
 
 `QUICKTYPE_ENGINE=ts` (or `globalThis[Symbol.for("quicktype-core.engine")] =
 "ts"`) runs everything on the TypeScript engine; `wasm` makes a failure to
 load the engine an error instead of a fallback. `engineStats` in
 `dist/native/bridge.js` counts the runs on each engine (`wasm`, `ts`) and
 the runs the engine declined (`unsupported`, by feature in
-`unsupportedBy`).
+`unsupportedBy`) or that were redone after it failed (`rerun`).
 
 ## Loading
 
 The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
-(4.8 MiB, 1.6 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
+(4.9 MiB, 1.6 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
 (`dist/esm/`) builds.
 
 - **Node**: nothing happens at import. The first run reads and compiles the
