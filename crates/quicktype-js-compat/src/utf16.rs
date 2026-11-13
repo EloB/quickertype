@@ -31,6 +31,10 @@ pub fn code_points(s: &str) -> impl Iterator<Item = u32> + '_ {
 
 /// `s.charCodeAt(index)`; `None` where JavaScript returns `NaN` (index out of
 /// range).
+///
+/// **O(n) per call**: it walks `s` from the start. To port a loop such as
+/// `for (let i = 0; i < s.length; i++) s.charCodeAt(i)`, build a
+/// [`CodeUnits`] once and index that instead.
 pub fn char_code_at(s: &str, index: usize) -> Option<u16> {
     s.encode_utf16().nth(index)
 }
@@ -39,6 +43,8 @@ pub fn char_code_at(s: &str, index: usize) -> Option<u16> {
 ///
 /// `index` counts UTF-16 code units. At the high half of a surrogate pair this
 /// is the whole code point; at the low half it is the low surrogate itself.
+///
+/// **O(n) per call**, like [`char_code_at`]; use [`CodeUnits`] in loops.
 pub fn code_point_at(s: &str, index: usize) -> Option<u32> {
     let mut position = 0;
     for c in s.chars() {
@@ -199,26 +205,40 @@ fn map_case_units(units: &[u16], map: fn(&str) -> String) -> Vec<u16> {
 /// left unchanged (`"𐐨x"` stays `"𐐨x"`), while a full case mapping can
 /// lengthen the string (`"ßa"` → `"SSa"`).
 pub fn upper_first_unit(s: &str) -> String {
-    map_first_unit(s, |c| c.to_uppercase().collect())
+    map_first_unit(s, |c| c.to_uppercase().collect(), str::to_owned)
 }
 
 /// `s[0].toLowerCase() + s.slice(1)` (`""` stays `""`); see
 /// [`upper_first_unit`].
 pub fn lower_first_unit(s: &str) -> String {
-    map_first_unit(s, |c| c.to_lowercase().collect())
+    map_first_unit(s, |c| c.to_lowercase().collect(), str::to_owned)
 }
 
-fn map_first_unit(s: &str, map: impl Fn(char) -> String) -> String {
+/// `map_first(s[0]) + map_rest(s.slice(1))` for a case mapping `map_first`
+/// of the first UTF-16 code unit and a case mapping (or the identity)
+/// `map_rest`; `""` stays `""`.
+///
+/// If `s` starts with an astral character, `s[0]` is its high surrogate,
+/// which no case mapping changes, and `s.slice(1)` starts with the lone low
+/// surrogate, which is unchanged too and cuts the case-mapping context (as
+/// for the final-sigma rule). So the character is kept and `map_rest` sees
+/// only the text after it.
+pub fn map_first_unit(
+    s: &str,
+    map_first: impl FnOnce(char) -> String,
+    map_rest: impl FnOnce(&str) -> String,
+) -> String {
     let mut chars = s.chars();
-    match chars.next() {
-        Some(first) if first.len_utf16() == 1 => {
-            let mut out = map(first);
-            out.push_str(chars.as_str());
-            out
-        }
-        // Empty, or an astral character whose high surrogate maps to itself.
-        _ => s.to_owned(),
-    }
+    let Some(first) = chars.next() else {
+        return String::new();
+    };
+    let mut out = if first.len_utf16() == 1 {
+        map_first(first)
+    } else {
+        first.to_string()
+    };
+    out.push_str(&map_rest(chars.as_str()));
+    out
 }
 
 /// Whether the single UTF-16 code unit `unit` is unchanged by `toUpperCase()`,
@@ -231,6 +251,73 @@ pub fn unit_is_own_uppercase(unit: u16) -> bool {
             let mut upper = c.to_uppercase();
             upper.next() == Some(c) && upper.next().is_none()
         }
+    }
+}
+
+/// A string's UTF-16 code units, for porting JavaScript code that indexes a
+/// string in a loop: `length`, `charCodeAt` and `codePointAt` are O(1) here,
+/// where the `&str` functions of this module are O(n) per call.
+///
+/// The units may contain lone surrogates (for example after
+/// [`CodeUnits::slice`]); converting back with [`CodeUnits::to_string_lossy`]
+/// drops them.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub struct CodeUnits {
+    units: Vec<u16>,
+}
+
+impl CodeUnits {
+    /// The code units of `s`.
+    pub fn new(s: &str) -> Self {
+        CodeUnits {
+            units: s.encode_utf16().collect(),
+        }
+    }
+
+    /// `s.length`.
+    pub fn len(&self) -> usize {
+        self.units.len()
+    }
+
+    /// `s.length === 0`.
+    pub fn is_empty(&self) -> bool {
+        self.units.is_empty()
+    }
+
+    /// The code units.
+    pub fn as_units(&self) -> &[u16] {
+        &self.units
+    }
+
+    /// `s.charCodeAt(index)`; `None` where JavaScript returns `NaN`.
+    pub fn char_code_at(&self, index: usize) -> Option<u16> {
+        self.units.get(index).copied()
+    }
+
+    /// `s.codePointAt(index)`; `None` where JavaScript returns `undefined`.
+    pub fn code_point_at(&self, index: usize) -> Option<u32> {
+        code_point_at_units(&self.units, index)
+    }
+
+    /// `s.slice(start, end)`, exact (it may split surrogate pairs).
+    pub fn slice(&self, start: i64, end: Option<i64>) -> &[u16] {
+        slice_units(&self.units, start, end)
+    }
+
+    /// `s.substring(start, end)`, exact (it may split surrogate pairs).
+    pub fn substring(&self, start: i64, end: Option<i64>) -> &[u16] {
+        substring_units(&self.units, start, end)
+    }
+
+    /// The string, with any lone surrogates dropped (see [`units_to_string`]).
+    pub fn to_string_lossy(&self) -> String {
+        units_to_string(&self.units)
+    }
+}
+
+impl From<&str> for CodeUnits {
+    fn from(s: &str) -> Self {
+        CodeUnits::new(s)
     }
 }
 
@@ -263,11 +350,27 @@ mod tests {
     }
 
     #[test]
+    fn code_units_index_in_constant_time() {
+        let units = CodeUnits::new("a😀b");
+        assert_eq!(units.len(), 4);
+        assert_eq!(units.char_code_at(1), Some(0xD83D));
+        assert_eq!(units.code_point_at(1), Some(0x1F600));
+        assert_eq!(units.code_point_at(2), Some(0xDE00));
+        assert_eq!(units.char_code_at(4), None);
+        assert_eq!(units.slice(0, Some(2)), &[0x61, 0xD83D]);
+        assert_eq!(units.to_string_lossy(), "a😀b");
+    }
+
+    #[test]
     fn first_unit_case() {
         assert_eq!(upper_first_unit("ßtraße"), "SStraße");
         assert_eq!(upper_first_unit("𐐨x"), "𐐨x");
         assert_eq!(lower_first_unit("ABC"), "aBC");
         assert_eq!(upper_first_unit(""), "");
+        let first_upper_rest_lower =
+            |s| map_first_unit(s, |c| c.to_uppercase().collect(), str::to_lowercase);
+        assert_eq!(first_upper_rest_lower("ßTRASSE"), "SStrasse");
+        assert_eq!(first_upper_rest_lower("𐐨XΣ"), "𐐨xς");
         assert!(unit_is_own_uppercase(0xD800));
         assert!(!unit_is_own_uppercase(u16::from(b'a')));
         assert!(!unit_is_own_uppercase(0xDF)); // ß → SS

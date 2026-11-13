@@ -53,28 +53,36 @@ impl WordWrap {
     /// Wraps `text`.
     pub fn wrap(&self, text: &str) -> String {
         let indent = " ".repeat(self.start);
-        let mut lines = vec![indent.clone()];
+        // Finished lines, and the current (last) line with its UTF-16 length.
+        let mut lines = Vec::new();
+        let mut line = indent.clone();
+        let mut line_len = self.start;
         for raw_chunk in chunks(text) {
             let chunk = raw_chunk.replace('\t', "    ");
-            let Some(last) = lines.last_mut() else { break };
-            if utf16::len(last) + utf16::len(&chunk) > self.stop {
-                let trimmed_len = whitespace::trim_end(last).len();
-                last.truncate(trimmed_len);
+            let chunk_len = utf16::len(&chunk);
+            if line_len + chunk_len > self.stop {
+                line.truncate(whitespace::trim_end(&line).len());
                 for piece in chunk.split('\n') {
-                    lines.push(format!("{indent}{}", whitespace::trim_start(piece)));
+                    let next = format!("{indent}{}", whitespace::trim_start(piece));
+                    lines.push(std::mem::replace(&mut line, next));
                 }
+                line_len = utf16::len(&line);
             } else if chunk.contains('\n') {
                 let mut pieces = chunk.split('\n');
                 if let Some(first) = pieces.next() {
-                    last.push_str(first);
+                    line.push_str(first);
                 }
                 for piece in pieces {
-                    lines.push(format!("{indent}{}", whitespace::trim_start(piece)));
+                    let next = format!("{indent}{}", whitespace::trim_start(piece));
+                    lines.push(std::mem::replace(&mut line, next));
                 }
+                line_len = utf16::len(&line);
             } else {
-                last.push_str(&chunk);
+                line.push_str(&chunk);
+                line_len += chunk_len;
             }
         }
+        lines.push(line);
         lines.join("\n")
     }
 }

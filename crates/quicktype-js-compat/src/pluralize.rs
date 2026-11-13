@@ -564,17 +564,15 @@ fn interpolate(template: &str, captures: &Captures<'_>, offset: usize, word: &[u
 }
 
 /// `replace(word, rule)`: `word.replace(rule[0], ...)`, rewriting the first
-/// match with the interpolated, case-restored replacement.
-fn replace(word: &[u16], encoded: &str, rule: &Rule) -> Vec<u16> {
-    let Some(captures) = rule.regex.captures(encoded) else {
-        return word.to_vec();
-    };
+/// match (`captures`, found on `encoded`) with the interpolated,
+/// case-restored replacement.
+fn replace(word: &[u16], encoded: &str, rule: &Rule, captures: &Captures<'_>) -> Vec<u16> {
     let Some(whole) = captures.get(0) else {
         return word.to_vec();
     };
     let index = encoded[..whole.start()].chars().count();
     let matched = decode_units(whole.as_str());
-    let result = interpolate(rule.replacement, &captures, index, word);
+    let result = interpolate(rule.replacement, captures, index, word);
     let restored = if matched.is_empty() {
         // An empty match takes its case from the preceding unit. (At index 0
         // JavaScript would throw; no rule matches empty there.)
@@ -598,14 +596,14 @@ fn sanitize_word(tables: &Tables, token: &str, word: &[u16], rules: &[Rule]) -> 
         return word.to_vec();
     }
     let encoded = encode_units(word);
-    match rules
-        .iter()
-        .rev()
-        .find(|rule| rule.regex.is_match(&encoded))
-    {
-        Some(rule) => replace(word, &encoded, rule),
-        None => word.to_vec(),
+    // `rule[0].test(word)`, then `word.replace(rule[0], ...)` on the same
+    // first match: one search per rule.
+    for rule in rules.iter().rev() {
+        if let Some(captures) = rule.regex.captures(&encoded) {
+            return replace(word, &encoded, rule, &captures);
+        }
     }
+    word.to_vec()
 }
 
 /// `replaceWord(replaceMap, keepMap, rules)(word)`.

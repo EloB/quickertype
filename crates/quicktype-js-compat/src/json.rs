@@ -123,7 +123,8 @@ fn write_value(out: &mut String, value: &JsonValue, gap: Option<&str>, indent: &
     match value {
         JsonValue::Null => out.push_str("null"),
         JsonValue::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
-        JsonValue::Number(x) => out.push_str(&number(*x)),
+        JsonValue::Number(x) if x.is_finite() => number::write_to_string(out, *x),
+        JsonValue::Number(_) => out.push_str("null"),
         JsonValue::String(s) => write_quoted(out, s),
         JsonValue::Array(items) => {
             write_container(out, '[', ']', items.iter().map(|v| (None, v)), gap, indent);
@@ -197,6 +198,11 @@ pub fn is_array_index(key: &str) -> bool {
 /// smaller array-index keys and before every other key; any other new key
 /// goes last.
 ///
+/// `map` must hold its keys in that order already, i.e. have been built with
+/// this function. Finding the position of an array-index key is then a
+/// binary search over the leading array-index keys (and appending is O(1)),
+/// though inserting before existing keys still shifts them.
+///
 /// This is `CreateDataProperty`, as `JSON.parse` uses. Plain assignment
 /// (`obj[key] = value`) differs only for `"__proto__"`, which then sets the
 /// prototype instead of adding a key; callers modelling assignment must skip
@@ -206,16 +212,32 @@ pub fn insert_js_property<V>(map: &mut IndexMap<String, V>, key: String, value: 
         *existing = value;
         return;
     }
-    if !is_array_index(&key) {
+    let Some(index) = array_index(&key) else {
+        map.insert(key, value);
+        return;
+    };
+    // Fast path: every key so far is a smaller array index (or there is
+    // none), so the new one goes last.
+    let last_is_smaller_index = map
+        .last()
+        .is_none_or(|(k, _)| array_index(k).is_some_and(|i| i < index));
+    if last_is_smaller_index {
         map.insert(key, value);
         return;
     }
-    let index_value = key.parse::<u64>().unwrap_or(0);
-    let position = map
-        .keys()
-        .position(|k| !is_array_index(k) || k.parse::<u64>().unwrap_or(0) > index_value)
-        .unwrap_or(map.len());
+    // The leading keys are the array indices in ascending order, so "is an
+    // array index below `index`" holds for exactly a prefix.
+    let position = map.partition_point(|k, _| array_index(k).is_some_and(|i| i < index));
     map.shift_insert(position, key, value);
+}
+
+/// The numeric value of an array-index key.
+fn array_index(key: &str) -> Option<u32> {
+    if is_array_index(key) {
+        key.parse().ok()
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]

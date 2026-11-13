@@ -486,21 +486,7 @@ pub type WordStyle<'a> = &'a dyn Fn(&str) -> String;
 /// `firstUpperWordStyle(s)`: `s[0].toUpperCase() + s.slice(1).toLowerCase()`.
 pub fn first_upper_word_style(s: &str) -> String {
     debug_assert!(!s.is_empty(), "Cannot style an empty string");
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(first) if first.len_utf16() == 1 => {
-            let mut out: String = first.to_uppercase().collect();
-            out.push_str(&chars.as_str().to_lowercase());
-            out
-        }
-        // An astral first character: its high surrogate maps to itself.
-        Some(first) => {
-            let mut out = first.to_string();
-            out.push_str(&chars.as_str().to_lowercase());
-            out
-        }
-        None => String::new(),
-    }
+    utf16::map_first_unit(s, |c| c.to_uppercase().collect(), str::to_lowercase)
 }
 
 /// `allUpperWordStyle(s)`: `s.toUpperCase()`.

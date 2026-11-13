@@ -16,7 +16,7 @@
 use std::sync::LazyLock;
 
 use quicktype_js_compat::json::{self, IndexMap, JsonValue};
-use quicktype_js_compat::number;
+use quicktype_js_compat::{number, utf16};
 
 const ALPHABET: &[u8] = b" -0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 const ALPHABET_SIZE: usize = ALPHABET.len();
@@ -297,46 +297,48 @@ fn score(mc: &MarkovChain, first: i32, second: i32, third: i32) -> f64 {
     UNSEEN_PROBABILITY
 }
 
-/// `evaluateFull(mc, word)`: the geometric mean of the trigram probabilities
-/// of `word`, and the individual probabilities. Words shorter than three
-/// UTF-16 code units score 1.
-pub fn evaluate_full(mc: &MarkovChain, word: &str) -> (f64, Vec<f64>) {
-    let units: Vec<u16> = word.encode_utf16().collect();
-    if units.len() < mc.depth {
-        return (1.0, Vec::new());
-    }
-    let mut first = character_index(units[0]);
-    let mut second = character_index(units[1]);
+/// The loop `evaluate` and `evaluateFull` share: walks the trigrams of
+/// `word`'s UTF-16 code units, passes each score to `on_score` and returns
+/// their product, multiplied left to right.
+fn trigram_product(mc: &MarkovChain, word: &str, mut on_score: impl FnMut(f64)) -> f64 {
+    let mut units = word.encode_utf16();
+    // `characterIndexes[word.charCodeAt(i)]` is undefined past the end,
+    // which compares like -1.
+    let mut first = units.next().map_or(-1, character_index);
+    let mut second = units.next().map_or(-1, character_index);
     let mut probability = 1.0;
-    let mut scores = Vec::with_capacity(units.len() - 2);
-    for &unit in &units[2..] {
+    for unit in units {
         let third = character_index(unit);
         let score = score(mc, first, second, third);
-        scores.push(score);
+        on_score(score);
         probability *= score;
         first = second;
         second = third;
     }
+    probability
+}
+
+/// `evaluateFull(mc, word)`: the geometric mean of the trigram probabilities
+/// of `word`, and the individual probabilities. Words shorter than three
+/// UTF-16 code units score 1.
+pub fn evaluate_full(mc: &MarkovChain, word: &str) -> (f64, Vec<f64>) {
+    if utf16::len(word) < mc.depth {
+        return (1.0, Vec::new());
+    }
+    let mut scores = Vec::new();
+    let probability = trigram_product(mc, word, |score| scores.push(score));
     (number::pow(probability, 1.0 / scores.len() as f64), scores)
 }
 
 /// `evaluate(mc, word)`: the geometric mean of the trigram probabilities of
 /// `word`; see [`evaluate_full`].
 pub fn evaluate(mc: &MarkovChain, word: &str) -> f64 {
-    let units: Vec<u16> = word.encode_utf16().collect();
-    if units.len() < mc.depth {
+    let length = utf16::len(word);
+    if length < mc.depth {
         return 1.0;
     }
-    let mut first = character_index(units[0]);
-    let mut second = character_index(units[1]);
-    let mut probability = 1.0;
-    for &unit in &units[2..] {
-        let third = character_index(unit);
-        probability *= score(mc, first, second, third);
-        first = second;
-        second = third;
-    }
-    number::pow(probability, 1.0 / (units.len() - 2) as f64)
+    let probability = trigram_product(mc, word, |_| {});
+    number::pow(probability, 1.0 / (length as f64 - 2.0))
 }
 
 /// `SubTrie`: one slot of a training [`Trie`].
