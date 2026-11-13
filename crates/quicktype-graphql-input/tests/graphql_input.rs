@@ -21,7 +21,10 @@ use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_builder_utils::get_no_string_type_mapping;
 use quicktype_core::ty::type_graph::TypeGraph;
 use quicktype_core::ty::type_ref::TypeRef;
-use quicktype_core::{Input, QuickTypeError, Result, RunContext, parse_json};
+use quicktype_core::{
+    Input, InputData, Options, QuickTypeError, Result, RunContext, get_target_language, parse_json,
+    quicktype_multi_file_sync,
+};
 use quicktype_graphql_input::graphql::get_introspection_query;
 use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::json::{self, JsonValue};
@@ -221,14 +224,20 @@ fn parser_matches_graphql_js() {
     );
 }
 
-/// Far deeper than Node's stack allows (see `docs/PARITY.md`, Known gaps):
-/// nested selection sets and `ofType` chains build without overflowing the
-/// native stack, on a test thread's small stack.
+/// Deeper than Node's stack allows (see "Stack depth" in
+/// `docs/PARITY.md`), the input fails with V8's `RangeError` where
+/// TypeScript does, on a test thread's small stack: nested selection sets
+/// in the parser, `ofType` chains in `makeType` (see
+/// `make_type_overflows_like_node_on_every_path`) and, in the run, the
+/// graph rewriting that TypeScript overflows in at about 400 nested lists.
+/// Before, a chain of 100,000 list types aborted the CLI, 3,000 nested
+/// selection sets took it minutes.
 #[test]
-fn deep_queries_and_schemas_do_not_overflow() {
-    let depth = 50_000;
+fn deep_queries_and_schemas_fail_like_node() {
+    let overflow = ("RangeError", "Maximum call stack size exceeded");
     let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
         .expect("the basic schema");
+    let depth = 50_000;
     let query = format!(
         "{{ viewer {}{{ name }}{} }}",
         "{ best ".repeat(depth),
@@ -242,29 +251,139 @@ fn deep_queries_and_schemas_do_not_overflow() {
     });
     let mut builder =
         TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    input.add_types_sync(&mut builder).unwrap();
-    assert!(builder.len() > 2 * depth);
+    let e = input.add_types_sync(&mut builder).unwrap_err();
+    assert_eq!((error_class(&e), e.user_message()), overflow);
 
-    // `[[[...Int...]]]` as nested `ofType`s.
-    let mut wrapped = String::from(r#"{"kind": "SCALAR", "name": "Int"}"#);
-    for _ in 0..depth {
-        wrapped = format!(r#"{{"kind": "LIST", "ofType": {wrapped}}}"#);
+    // `[[[...Int...]]]` as `depth` nested `ofType`s.
+    let source = |depth: usize| {
+        let mut wrapped = String::from(r#"{"kind": "SCALAR", "name": "Int"}"#);
+        for _ in 0..depth {
+            wrapped = format!(r#"{{"kind": "LIST", "ofType": {wrapped}}}"#);
+        }
+        let schema = format!(
+            r#"{{"data": {{"__schema": {{"queryType": {{"name": "Q"}}, "mutationType": null, "types": [
+                {{"kind": "OBJECT", "name": "Q", "fields": [{{"name": "a", "args": [], "type": {wrapped}}}]}},
+                {{"kind": "SCALAR", "name": "Int"}}]}}}}}}"#
+        );
+        GraphQlSourceData {
+            name: "Lists".to_owned(),
+            schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
+            query: "{ a }".to_owned(),
+        }
+    };
+    let add_types = |depth| {
+        let mut input = GraphQlInput::new();
+        input.add_source_sync(source(depth));
+        let mut builder =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        input.add_types_sync(&mut builder).map(|()| builder.len())
+    };
+    assert!(add_types(7_459).unwrap() > 2 * 7_459);
+    for depth in [7_460, 100_000] {
+        let e = add_types(depth).unwrap_err();
+        assert_eq!((error_class(&e), e.user_message()), overflow);
     }
-    let schema = format!(
-        r#"{{"data": {{"__schema": {{"queryType": {{"name": "Q"}}, "mutationType": null, "types": [
-            {{"kind": "OBJECT", "name": "Q", "fields": [{{"name": "a", "args": [], "type": {wrapped}}}]}},
-            {{"kind": "SCALAR", "name": "Int"}}]}}}}}}"#
-    );
+
     let mut input = GraphQlInput::new();
-    input.add_source_sync(GraphQlSourceData {
-        name: "Lists".to_owned(),
-        schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
-        query: "{ a }".to_owned(),
-    });
-    let mut builder =
-        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    input.add_types_sync(&mut builder).unwrap();
-    assert!(builder.len() > 2 * depth);
+    input.add_source_sync(source(7_459));
+    let mut input_data = InputData::new();
+    input_data.add_input(input);
+    let lang = get_target_language("go").unwrap();
+    let e = quicktype_multi_file_sync(Options::new(lang, input_data)).unwrap_err();
+    assert_eq!((error_class(&e), e.user_message()), overflow);
+}
+
+/// `n` list wrappers `[Int]`, as an introspection result writes types,
+/// each leading to the next through `path`: its `ofType` (the innermost
+/// then wraps `Int`), the type of its field (`fields`) or of an argument of
+/// that field (`args`), its `interfaces`, `possibleTypes` or `inputFields`.
+fn wrapper_chain(path: &str, n: usize) -> String {
+    const INT: &str = r#"{"kind":"SCALAR","name":"Int","ofType":null}"#;
+    if path == "ofType" {
+        let open = r#"{"kind":"LIST","name":null,"ofType":"#;
+        return format!("{}{INT}{}", open.repeat(n), "}".repeat(n));
+    }
+    let wrapper = format!(r#"{{"kind":"LIST","name":null,"ofType":{INT}"#);
+    let field = r#""fields":[{"name":"a","description":null,"#;
+    let field_end = r#","isDeprecated":false,"deprecationReason":null}]}"#;
+    let (open, close) = match path {
+        "fields" => (format!(r#"{field}"args":[],"type":"#), field_end.to_owned()),
+        "args" => (
+            format!(r#"{field}"args":[{{"name":"x","description":null,"type":"#),
+            format!(r#","defaultValue":null}}],"type":{INT}{field_end}"#),
+        ),
+        "interfaces" | "possibleTypes" => (format!(r#""{path}":["#), "]}".to_owned()),
+        "inputFields" => (
+            r#""inputFields":[{"name":"x","description":null,"type":"#.to_owned(),
+            r#","defaultValue":null}]}"#.to_owned(),
+        ),
+        _ => unreachable!("{path}"),
+    };
+    let open = format!("{wrapper},{open}");
+    format!("{}{wrapper}}}{}", open.repeat(n - 1), close.repeat(n - 1))
+}
+
+/// `makeType` recurses into a wrapper type's `ofType` and, through
+/// `addTypeFields`, into its fields, their arguments, its interfaces,
+/// possible types and input fields, each path taking its own share of
+/// Node's stack. A chain of wrappers through each path builds up to the
+/// length the quicktype CLI (Node 24) builds in a field of the query type
+/// that the query does not select, and one more wrapper fails with V8's
+/// `RangeError`, as the CLI does: `Error: Maximum call stack size
+/// exceeded.` (measured on the basic schema with the chain added; Node's
+/// limits vary between runs, see `Via` in `src/lib.rs`). Before, only
+/// `ofType` chains were counted: a chain of 100,000 wrappers through
+/// `fields` or `possibleTypes` was built.
+#[test]
+fn make_type_overflows_like_node_on_every_path() {
+    let basic = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
+        .expect("the basic schema");
+    let mut basic: Value = serde_json::from_str(&basic).unwrap();
+    let query_type = basic["data"]["__schema"]["types"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|t| t["name"] == "Query")
+        .unwrap();
+    query_type["fields"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "name": "deep", "description": null, "args": [], "type": "DEEP",
+            "isDeprecated": false, "deprecationReason": null
+        }));
+    let basic = basic.to_string();
+    let add_types = |path: &str, n: usize| {
+        let schema = basic.replace(r#""DEEP""#, &wrapper_chain(path, n));
+        let mut input = GraphQlInput::new();
+        input.add_source_sync(GraphQlSourceData {
+            name: "Deep".to_owned(),
+            schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
+            query: "{ viewer { name } }".to_owned(),
+        });
+        let mut builder =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        input.add_types_sync(&mut builder)
+    };
+    let overflow = ("RangeError", "Maximum call stack size exceeded");
+    for (path, longest) in [
+        ("ofType", 7_459),
+        ("fields", 1_658),
+        ("inputFields", 1_657),
+        ("args", 1_066),
+        ("interfaces", 2_058),
+        ("possibleTypes", 2_058),
+    ] {
+        if let Err(e) = add_types(path, longest) {
+            panic!("{path} × {longest}: {}", e.user_message());
+        }
+        let e = add_types(path, longest + 1).unwrap_err();
+        assert_eq!((error_class(&e), e.user_message()), overflow, "{path}");
+    }
+    for path in ["fields", "possibleTypes"] {
+        let e = add_types(path, 100_000).unwrap_err();
+        assert_eq!((error_class(&e), e.user_message()), overflow, "{path}");
+    }
 }
 
 /// A chain of `length` fragments, each spreading the next, as a GraphQL

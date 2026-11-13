@@ -14,6 +14,7 @@ use crate::attributes::type_attributes::{
     combine_type_attributes2, increase_type_attributes_distance, make_type_attributes_inferred,
 };
 use crate::messages::Result;
+use crate::support::recursion::guard;
 use crate::support::support::{assert, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -414,6 +415,10 @@ fn attributes_for_types(
     }
 
     impl Traversal {
+        /// One level of the recursion through nested unions. A union that
+        /// contains itself (through `$ref`s in JSON input) makes it endless,
+        /// as in TypeScript, where V8 overflows its stack: it runs under
+        /// [`guard`], which reports the same `RangeError`.
         fn traverse(
             &mut self,
             graph: &TypeGraph,
@@ -421,28 +426,30 @@ fn attributes_for_types(
             path: &mut Vec<UnionOrFaux>,
             is_equivalent_to_root: bool,
         ) -> Result<()> {
-            if graph.kind(t)? == TypeKind::Union {
-                self.unions.insert(t);
-                if is_equivalent_to_root {
-                    self.unions_equivalent_to_root.insert(t);
+            guard(|| {
+                if graph.kind(t)? == TypeKind::Union {
+                    self.unions.insert(t);
+                    if is_equivalent_to_root {
+                        self.unions_equivalent_to_root.insert(t);
+                    }
+                    let members = graph.type_at(t)?.members()?;
+                    let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
+                    path.push(UnionOrFaux::Union(t));
+                    for &m in members {
+                        self.traverse(graph, m, path, is_equivalent_to_root)?;
+                    }
+                    path.pop();
+                } else {
+                    self.unions_for_type
+                        .entry(t)
+                        .or_default()
+                        .extend(path.iter().copied());
+                    for &u in path.iter() {
+                        self.types_for_union.entry(u).or_default().insert(t);
+                    }
                 }
-                let members = graph.type_at(t)?.members()?;
-                let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
-                path.push(UnionOrFaux::Union(t));
-                for &m in members {
-                    self.traverse(graph, m, path, is_equivalent_to_root)?;
-                }
-                path.pop();
-            } else {
-                self.unions_for_type
-                    .entry(t)
-                    .or_default()
-                    .extend(path.iter().copied());
-                for &u in path.iter() {
-                    self.types_for_union.entry(u).or_default().insert(t);
-                }
-            }
-            Ok(())
+                Ok(())
+            })
         }
     }
 

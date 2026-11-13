@@ -1,0 +1,107 @@
+# Fuzz targets for the quicktype port (cargo-fuzz, libFuzzer).
+#
+# Not a member of the main workspace: cargo-fuzz needs a nightly toolchain,
+# which only this directory uses (`cargo +nightly fuzz run <target>`).
+# Run `fuzz/seed-corpora.sh` first to build the seed corpora from the test
+# inputs. See "Fuzzing" in CONTRIBUTING.md.
+
+[package]
+name = "quicktype-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+indexmap = "2"
+# Published as quickertype-*; the libraries keep their quicktype_* names.
+quickertype-core = { path = "../crates/quicktype-core", default-features = false }
+quickertype-graphql-input = { path = "../crates/quicktype-graphql-input" }
+quickertype-js-compat = { path = "../crates/quicktype-js-compat" }
+
+# A workspace of its own, so that the main workspace never builds it.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "json_stream"
+path = "fuzz_targets/json_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "json_parse"
+path = "fuzz_targets/json_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "json_schema"
+path = "fuzz_targets/json_schema.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "graphql_parse"
+path = "fuzz_targets/graphql_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "graphql_input"
+path = "fuzz_targets/graphql_input.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "yaml"
+path = "fuzz_targets/yaml.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "uri"
+path = "fuzz_targets/uri.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "number"
+path = "fuzz_targets/number.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cli_args"
+path = "fuzz_targets/cli_args.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "postman"
+path = "fuzz_targets/postman.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "pipeline"
+path = "fuzz_targets/pipeline.rs"
+test = false
+doc = false
+bench = false

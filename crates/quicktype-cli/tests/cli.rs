@@ -306,6 +306,12 @@ fn errors_before_rendering() {
             &["--lang", "rust", "--density", "sparse", "x.json"],
             "Error: Cannot read from file or URL x.json: Error: ENOENT: no such file or directory, lstat 'x.json'.\n",
         ),
+        // A multi-byte character right before `//` (found by fuzzing): not
+        // a URL, so a missing file.
+        (
+            &["--lang", "rust", "é//foo"],
+            "Error: Cannot read from file or URL é//foo: Error: ENOENT: no such file or directory, lstat 'é//foo'.\n",
+        ),
     ];
     for (args, expected) in cases {
         let output = quicktype(args);
@@ -379,6 +385,173 @@ fn deep_inputs_do_not_overflow_the_stack() {
     let output = quicktype_in(&dir, &["--lang", "rust", "deep.json"], None);
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert!(stdout(&output).contains("pub type Deep = Vec<Vec<"));
+}
+
+#[test]
+fn inputs_too_deep_for_node_fail_like_node() {
+    // TypeScript's inference overflows V8's stack within about 1,000
+    // levels. A million levels used to overflow even the generation
+    // thread's stack (an abort); now inference stops at the same
+    // `RangeError`.
+    let dir = work_dir("deeper");
+    let depth = 1_000_000;
+    let arrays = format!("{}{}", "[".repeat(depth), "]".repeat(depth));
+    let objects = format!("{}1{}", r#"{"a":"#.repeat(depth), "}".repeat(depth));
+    for (name, json) in [("arrays.json", arrays), ("objects.json", objects)] {
+        fs::write(dir.join(name), json).unwrap();
+        let output = quicktype_in(&dir, &["--lang", "rust", name], None);
+        assert_eq!(output.status.code(), Some(1), "{name}");
+        assert_eq!(stdout(&output), "", "{name}");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n",
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn self_referencing_json_fails_like_node() {
+    // With `$ref`s handled, references from inside the values they point
+    // to make types that contain themselves without a class in between: a
+    // union in its own members (also across two samples), an array that is
+    // its own items. quicktype recurses through them until its stack
+    // overflows; the port overflowed the native stack (an abort) or, with
+    // the second pair of samples, ran for minutes.
+    let dir = work_dir("ref-cycle");
+    for (name, json) in [
+        ("cycle.json", r##"{"": [{"$ref": "#//0"}, null]}"##),
+        ("items.json", r##"{"0": true, "1": [[{"$ref": "#/1/0"}]]}"##),
+        ("string.json", r#"{"a":"x"}"#),
+        ("number.json", r#"{"a":1}"#),
+        ("ref.json", r##"{"a":{"$ref":"#/a"}}"##),
+    ] {
+        fs::write(dir.join(name), json).unwrap();
+    }
+    let runs: &[&[&str]] = &[
+        &["--lang", "go", "cycle.json"],
+        &["--lang", "go", "items.json"],
+        &["--lang", "rust", "items.json"],
+        &["-t", "X", "string.json", "ref.json", "-l", "java"],
+        &["-t", "X", "number.json", "ref.json", "-l", "java"],
+        &["-t", "X", "number.json", "ref.json", "-l", "ts"],
+    ];
+    for args in runs {
+        let mut args = args.to_vec();
+        args.push("--no-ignore-json-refs");
+        let output = quicktype_in(&dir, &args, None);
+        assert_eq!(output.status.code(), Some(1), "{args:?}");
+        assert_eq!(stdout(&output), "", "{args:?}");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n",
+            "{args:?}"
+        );
+    }
+}
+
+#[test]
+fn graphql_inputs_too_deep_for_node_fail_like_node() {
+    // Before: a field type nested in 100,000 lists aborted the
+    // CLI (TypeScript overflows building the schema), 3,000 nested
+    // selection sets took minutes (graphql-js overflows parsing them), a
+    // directory's deep schema, shared by its queries, overflowed while
+    // being copied, and list types nested 10,000 deep through a field's
+    // type or `possibleTypes` (where TypeScript's `makeType` overflows
+    // too, after 1,658 and 2,058) were built.
+    let dir = work_dir("graphql-deep");
+    let basic = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema");
+    let mut schema: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&basic).unwrap()).unwrap();
+    let query_type = schema["data"]["__schema"]["types"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|t| t["name"] == "Query")
+        .unwrap();
+    query_type["fields"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "name": "deep", "description": null, "args": [], "type": "DEEP",
+            "isDeprecated": false, "deprecationReason": null
+        }));
+    let depth = 100_000;
+    let lists = format!(
+        "{}{}{}",
+        r#"{"kind":"LIST","name":null,"ofType":"#.repeat(depth),
+        r#"{"kind":"SCALAR","name":"String","ofType":null}"#,
+        "}".repeat(depth)
+    );
+    let deep_schema = schema.to_string().replace(r#""DEEP""#, &lists);
+    fs::write(dir.join("deep.gqlschema"), &deep_schema).unwrap();
+    let int = r#"{"kind":"SCALAR","name":"Int","ofType":null}"#;
+    let wrapper = format!(r#"{{"kind":"LIST","name":null,"ofType":{int}"#);
+    let chain = |open: &str, close: &str| {
+        let depth = 10_000;
+        format!(
+            "{}{wrapper}}}{}",
+            format!("{wrapper},{open}").repeat(depth - 1),
+            close.repeat(depth - 1)
+        )
+    };
+    let fields = chain(
+        r#""fields":[{"name":"a","description":null,"args":[],"type":"#,
+        r#","isDeprecated":false,"deprecationReason":null}]}"#,
+    );
+    let possible_types = chain(r#""possibleTypes":["#, "]}");
+    for (file, chain) in [
+        ("fields.gqlschema", fields),
+        ("possible.gqlschema", possible_types),
+    ] {
+        let text = schema.to_string().replace(r#""DEEP""#, &chain);
+        fs::write(dir.join(file), text).unwrap();
+    }
+    fs::copy(&basic, dir.join("basic.gqlschema")).unwrap();
+    fs::write(dir.join("deep.graphql"), "{ deep }").unwrap();
+    let selections = 3_000;
+    let query = format!(
+        "{{ viewer {}name{} }}",
+        "{ best ".repeat(selections),
+        " }".repeat(selections)
+    );
+    fs::write(dir.join("nested.graphql"), query).unwrap();
+    let queries = dir.join("queries");
+    fs::create_dir(&queries).unwrap();
+    fs::write(queries.join("schema.gqlschema"), &deep_schema).unwrap();
+    fs::write(queries.join("a.graphql"), "{ viewer { name } }").unwrap();
+    fs::write(queries.join("b.graphql"), "{ viewer { age } }").unwrap();
+
+    let graphql = |schema: &str, query: &str| {
+        quicktype_in(
+            &dir,
+            &[
+                "--lang",
+                "go",
+                "--src-lang",
+                "graphql",
+                "--graphql-schema",
+                schema,
+                query,
+            ],
+            None,
+        )
+    };
+    for output in [
+        graphql("deep.gqlschema", "deep.graphql"),
+        graphql("fields.gqlschema", "queries/a.graphql"),
+        graphql("possible.gqlschema", "queries/a.graphql"),
+        graphql("basic.gqlschema", "nested.graphql"),
+        quicktype_in(&dir, &["--lang", "go", "queries"], None),
+    ] {
+        assert_eq!(output.status.code(), Some(1));
+        assert_eq!(stdout(&output), "");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n"
+        );
+    }
 }
 
 /// Runs `args` on TypeScript sources written to a fresh directory (the

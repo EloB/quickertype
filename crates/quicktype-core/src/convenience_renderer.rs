@@ -1058,6 +1058,18 @@ pub mod defaults {
         t: TypeRef,
         pieces: &mut Vec<Piece>,
     ) -> Result<()> {
+        // Through arrays and maps this recurses without passing a named
+        // type, so an array that is its own items (a `$ref` cycle) makes it
+        // endless, as in TypeScript, where V8 overflows its stack.
+        crate::support::recursion::guard(|| type_name_for_union_member_level(r, t, pieces))
+    }
+
+    /// One level of [`type_name_for_union_member`].
+    fn type_name_for_union_member_level<'a, R: ConvenienceRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        pieces: &mut Vec<Piece>,
+    ) -> Result<()> {
         let graph = r.core().base.type_graph();
         let ty = graph.type_at(t)?;
         let text = |s: &str| Piece::Text(s.to_owned());

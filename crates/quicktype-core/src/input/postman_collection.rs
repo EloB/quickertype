@@ -12,11 +12,12 @@
 //! the `RangeError` at the depths where the reference CLI does.
 
 use quicktype_js_compat::json::{self, JsonValue};
-use quicktype_js_compat::{number, whitespace};
+use quicktype_js_compat::whitespace;
 
 use super::inputs::JsonSourceData;
 use crate::messages::{JsErrorName, QuickTypeError, Result};
 use crate::support::parse_json::parse_json;
+use crate::support::recursion::stack_overflow;
 
 /// The result of [`sources_from_postman_collection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -68,11 +69,6 @@ const MAX_COLLECTION_DEPTH: usize = 3_732;
 /// left, so its limit is lower; that is not modelled.
 const MAX_STRING_ARRAY_DEPTH: usize = 2_830;
 
-/// The `RangeError` Node throws when its stack runs out.
-fn stack_overflow() -> QuickTypeError {
-    QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded")
-}
-
 /// `obj[key]` for a JSON value that is an object (`typeof obj ===
 /// "object"`): `None` for `undefined`. Reading a property of `null`
 /// throws.
@@ -93,60 +89,10 @@ fn is_object(v: &JsonValue) -> bool {
     )
 }
 
-/// `String(v)`, as a template literal converts a value. Arrays are joined
-/// with `,` (`null` elements give `""`), iteratively; nesting deeper than
-/// [`MAX_STRING_ARRAY_DEPTH`] is Node's `RangeError`.
+/// `String(v)`, as a template literal converts a value; nesting deeper
+/// than [`MAX_STRING_ARRAY_DEPTH`] is Node's `RangeError`.
 fn js_string(v: &JsonValue) -> Result<String> {
-    let JsonValue::Array(items) = v else {
-        return Ok(scalar_string(v));
-    };
-    // (remaining elements, the text so far, whether an element was written)
-    let mut stack: Vec<(std::slice::Iter<'_, JsonValue>, String, bool)> =
-        vec![(items.iter(), String::new(), false)];
-    loop {
-        let Some((elements, text, started)) = stack.last_mut() else {
-            return Ok(String::new());
-        };
-        match elements.next() {
-            Some(element) => {
-                if *started {
-                    text.push(',');
-                }
-                *started = true;
-                match element {
-                    JsonValue::Array(inner) => {
-                        if stack.len() >= MAX_STRING_ARRAY_DEPTH {
-                            return Err(stack_overflow());
-                        }
-                        stack.push((inner.iter(), String::new(), false));
-                    }
-                    JsonValue::Null => {}
-                    other => text.push_str(&scalar_string(other)),
-                }
-            }
-            None => {
-                let Some((_, text, _)) = stack.pop() else {
-                    return Ok(String::new());
-                };
-                match stack.last_mut() {
-                    Some((_, parent, _)) => parent.push_str(&text),
-                    None => return Ok(text),
-                }
-            }
-        }
-    }
-}
-
-/// `String(v)` for anything but an array.
-fn scalar_string(v: &JsonValue) -> String {
-    match v {
-        JsonValue::Null => "null".to_owned(),
-        JsonValue::Bool(b) => b.to_string(),
-        JsonValue::Number(n) => number::to_string(*n),
-        JsonValue::String(s) => s.clone(),
-        JsonValue::Object(_) => "[object Object]".to_owned(),
-        JsonValue::Array(_) => String::new(),
-    }
+    Ok(json::to_js_string(v, MAX_STRING_ARRAY_DEPTH)?)
 }
 
 /// `processCollection(c)`, iteratively: a folder's items first, then its
