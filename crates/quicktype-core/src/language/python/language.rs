@@ -61,8 +61,6 @@ pub const PYTHON_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PythonTargetLanguage;
 
-// TODO(renderer): port the hooks PythonTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for PythonTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &PYTHON_LANGUAGE_CONFIG
@@ -120,4 +118,36 @@ impl TargetLanguage for PythonTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: a [`PythonPlainRenderer`](super::python_renderer::PythonPlainRenderer)
+    /// with `just-types`, otherwise a
+    /// [`JsonPythonRenderer`](super::json_python_renderer::JsonPythonRenderer).
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> Result<crate::renderer::RenderResult> {
+        let options = super::python_renderer::PythonOptions::parse(renderer_options)?;
+        if options.just_types {
+            let renderer =
+                super::python_renderer::PythonPlainRenderer::new(self, render_context, options);
+            return crate::convenience_renderer::render_with(
+                renderer,
+                given_output_filename,
+                alphabetize_properties,
+            );
+        }
+
+        let renderer =
+            super::json_python_renderer::JsonPythonRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }
