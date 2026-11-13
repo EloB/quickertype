@@ -1,6 +1,7 @@
 /* quickertype playground. System fonts; light and dark from
    prefers-color-scheme. The two engines have a colour each: violet for
-   WebAssembly, blue for TypeScript, used for the timing bars and the mark. */
+   quickertype (WebAssembly), blue for quicktype (TypeScript), used for the
+   engine switch, the timing bars and the mark. */
 
 :root {
     --paper: #f3f4f7;
@@ -158,7 +159,7 @@ p {
 .settings-row {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 10px 16px;
 }
 
@@ -192,7 +193,44 @@ input[type="text"] {
     width: 190px;
 }
 
-.toggle,
+/* The engine switch, with a note under it. */
+.engine-field {
+    max-width: 620px;
+}
+
+.engines {
+    align-self: flex-start;
+}
+
+.engines span::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: 1px;
+    background: var(--ts);
+}
+
+.engines input[value="wasm"] + span::before {
+    background: var(--wasm);
+}
+
+.engines input:checked + span {
+    font-weight: 600;
+}
+
+.engine-note {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.engine-note b {
+    font-weight: 600;
+    color: var(--ink);
+}
+
 .check {
     display: inline-flex;
     align-items: center;
@@ -201,7 +239,6 @@ input[type="text"] {
     cursor: pointer;
 }
 
-.toggle input,
 .check input {
     width: 16px;
     height: 16px;
@@ -387,11 +424,12 @@ button {
     white-space: nowrap;
 }
 
-button:hover:not(:disabled) {
+button:hover:not(:disabled, [aria-disabled="true"]) {
     border-color: var(--muted);
 }
 
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
     opacity: 0.5;
     cursor: default;
 }
@@ -593,7 +631,7 @@ textarea:focus-visible {
 
 .lane {
     display: grid;
-    grid-template-columns: 92px minmax(40px, 1fr) minmax(64px, auto);
+    grid-template-columns: 96px minmax(40px, 1fr) minmax(64px, auto);
     align-items: center;
     column-gap: 10px;
 }
@@ -608,6 +646,11 @@ textarea:focus-visible {
 
 .lane.ts .engine {
     color: var(--ts);
+}
+
+/* The engine whose output is shown is named in bold; the other is not. */
+.race:not(.solo) .lane:not(.shown) .engine {
+    font-weight: 400;
 }
 
 .bar {
@@ -711,11 +754,33 @@ textarea:focus-visible {
     background: var(--wasm);
 }
 
-.verdict {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
+.engine-dot.ts {
+    background: var(--ts);
+}
+
+/* Both engines' results: "quickertype: 2.90 ms · quicktype: 4.20 ms · 1.4× faster · identical output ✓". */
+.summary {
     margin-top: 9px;
+}
+
+/* It wraps between its parts. */
+.summary > span:not(.sep) {
+    white-space: nowrap;
+}
+
+.summary .sep {
+    color: var(--muted);
+}
+
+.who.wasm b {
+    color: var(--wasm);
+}
+
+.who.ts b {
+    color: var(--ts);
+}
+
+.verdict {
     font-weight: 600;
 }
 
@@ -728,7 +793,6 @@ textarea:focus-visible {
 }
 
 .verdict-mark {
-    flex: none;
     display: inline-grid;
     place-items: center;
     width: 18px;
@@ -737,6 +801,12 @@ textarea:focus-visible {
     border: 1.5px solid currentColor;
     font-size: 11px;
     line-height: 1;
+}
+
+.bench-failure {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--bad);
 }
 
 .fine {
@@ -752,6 +822,14 @@ textarea:focus-visible {
 
 .fine p {
     flex: 1 1 280px;
+}
+
+button.measure {
+    height: 26px;
+    padding: 0 10px;
+    color: var(--wasm);
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .notes {
@@ -967,7 +1045,7 @@ pre#output:focus-visible {
     }
 
     .lane {
-        grid-template-columns: 84px minmax(30px, 1fr) auto;
+        grid-template-columns: 88px minmax(30px, 1fr) auto;
     }
 }
 
