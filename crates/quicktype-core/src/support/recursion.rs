@@ -18,6 +18,8 @@
 
 use std::cell::Cell;
 
+use quicktype_js_compat::json::StackOverflow;
+
 use crate::messages::{JsErrorName, QuickTypeError, Result};
 
 /// How many guarded calls may be nested on one thread.
@@ -41,9 +43,18 @@ thread_local! {
     static DEPTH: Cell<usize> = const { Cell::new(0) };
 }
 
-/// V8's `RangeError: Maximum call stack size exceeded`.
+/// V8's `RangeError: Maximum call stack size exceeded`, wherever the port
+/// reports Node's stack running out.
 pub fn stack_overflow() -> QuickTypeError {
     QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded")
+}
+
+/// js-compat's iterative models of JavaScript recursions (e.g.
+/// `json::to_js_string`) fail with [`stack_overflow`].
+impl From<StackOverflow> for QuickTypeError {
+    fn from(_: StackOverflow) -> Self {
+        stack_overflow()
+    }
 }
 
 /// Leaves a guarded call, also when it unwinds.

@@ -242,7 +242,9 @@ fn enum_thresholds() {
 
 /// Nesting around inference's depth limit and far beyond it: both paths
 /// fail with TypeScript's `RangeError` at the same depth, and neither
-/// overflows the native stack.
+/// overflows the native stack. (Past 4,578 levels, a sample read with
+/// `JSON.parse` semantics fails while it is read, as in TypeScript; see
+/// "Very deeply nested JSON" in `docs/PARITY.md`.)
 #[test]
 fn deep_nesting() {
     streaming_support::on_cli_stack(deep_nesting_on_cli_stack);

@@ -6,9 +6,13 @@
 //! and every rejected document fails with graphql-js's message at the same
 //! token. Only the AST quicktype reads is built (see [`ast`](super::ast)).
 //!
-//! Like graphql-js the parser is recursive descent. Nesting is limited
-//! only by memory: the stack grows on demand where graphql-js would
-//! eventually overflow Node's stack (`docs/PARITY.md`, Known gaps).
+//! Like graphql-js the parser is recursive descent. graphql-js overflows
+//! Node's stack on deeply nested documents (`RangeError: Maximum call stack
+//! size exceeded`); the parser models that stack ([`Parser::nest`]): each
+//! nesting construct costs a share of it, measured on the quicktype CLI, so
+//! the document fails at the depth graphql-js does. The native stack
+//! grows on demand, so the model, not the thread's stack, ends the
+//! recursion (`docs/PARITY.md`, "Stack depth").
 
 use quicktype_core::support::recursion::grow_stack;
 
@@ -16,7 +20,7 @@ use super::ast::{
     Definition, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, OperationType, Selection, SelectionSet,
 };
-use super::error::{GraphQlError, syntax_error};
+use super::error::{GraphQlError, stack_overflow, syntax_error};
 use super::lexer::{Lexer, Token, TokenKind, token_desc, token_kind_desc};
 
 type Result<T> = std::result::Result<T, GraphQlError>;
@@ -45,6 +49,49 @@ const DIRECTIVE_LOCATIONS: [&str; 20] = [
     "DIRECTIVE_DEFINITION",
 ];
 
+/// Node's stack in the model's units: large, so that each construct's
+/// share can be set to the unit.
+const NODE_STACK: u64 = 1 << 40;
+
+/// The stack one level of a nesting construct takes, as a share of
+/// [`NODE_STACK`] such that the deepest nesting the quicktype CLI (Node 24,
+/// `--src-lang graphql`) parses still fits and one more level does not.
+/// Measured with documents that nest one construct, in a fresh process
+/// each (Node's limit varies by one between runs):
+///
+/// - selection sets: 1,655 nested (`{ f { a { a … } } }` with 1,654
+///   below `f`);
+/// - object values: 1,294 nested in an argument of a top-level field;
+/// - list values: 1,627 nested likewise;
+/// - list types: 6,338 nested in a variable definition;
+/// - inline fragments: 1,629 nested at the top level, each with its
+///   selection set (in TypeScript it is the input's recursion over them
+///   that overflows first; the parser stops them at the same depth).
+///
+/// Mixed nesting adds the costs up, which is approximate.
+#[derive(Clone, Copy)]
+enum Nesting {
+    SelectionSet,
+    Object,
+    List,
+    ListType,
+    InlineFragment,
+}
+
+impl Nesting {
+    /// The stack one level takes.
+    const fn cost(self) -> u64 {
+        const SELECTION_SET: u64 = NODE_STACK / 1_655;
+        match self {
+            Nesting::SelectionSet => SELECTION_SET,
+            Nesting::Object => (NODE_STACK - SELECTION_SET) / 1_294,
+            Nesting::List => (NODE_STACK - SELECTION_SET) / 1_627,
+            Nesting::ListType => NODE_STACK / 6_338,
+            Nesting::InlineFragment => (NODE_STACK - 1_630 * SELECTION_SET) / 1_629,
+        }
+    }
+}
+
 /// `parse(source)`: the document, or graphql-js's `GraphQLError`.
 ///
 /// ```
@@ -64,13 +111,30 @@ pub fn parse(source: &str) -> Result<Document> {
 /// The parser (`Parser`).
 struct Parser {
     lexer: Lexer,
+    /// The modeled Node stack in use (see [`Nesting`]).
+    stack: u64,
 }
 
 impl Parser {
     fn new(source: &str) -> Self {
         Parser {
             lexer: Lexer::new(source),
+            stack: 0,
         }
+    }
+
+    /// Runs `f`, one level of `nesting`: fails with V8's `RangeError` where
+    /// that level no longer fits on Node's stack, and grows the native
+    /// stack as needed.
+    fn nest<T>(&mut self, nesting: Nesting, f: impl FnOnce(&mut Self) -> Result<T>) -> Result<T> {
+        let cost = nesting.cost();
+        if self.stack + cost > NODE_STACK {
+            return Err(stack_overflow(self.token().start));
+        }
+        self.stack += cost;
+        let result = grow_stack(|| f(self));
+        self.stack -= cost;
+        result
     }
 
     fn token(&self) -> &Token {
@@ -209,9 +273,8 @@ impl Parser {
 
     /// `parseSelectionSet()`.
     fn parse_selection_set(&mut self) -> Result<SelectionSet> {
-        grow_stack(|| {
-            let selections =
-                self.many(TokenKind::BraceL, Self::parse_selection, TokenKind::BraceR)?;
+        self.nest(Nesting::SelectionSet, |p| {
+            let selections = p.many(TokenKind::BraceL, Self::parse_selection, TokenKind::BraceR)?;
             Ok(SelectionSet { selections })
         })
     }
@@ -285,7 +348,7 @@ impl Parser {
             None
         };
         let directives = self.parse_directives(false)?;
-        let selection_set = self.parse_selection_set()?;
+        let selection_set = self.nest(Nesting::InlineFragment, Self::parse_selection_set)?;
         Ok(Selection::InlineFragment(InlineFragment {
             type_condition,
             directives,
@@ -323,9 +386,9 @@ impl Parser {
 
     /// `parseValueLiteral(isConst)`.
     fn parse_value_literal(&mut self, is_const: bool) -> Result<()> {
-        grow_stack(|| match self.token().kind {
-            TokenKind::BracketL => self.parse_list(is_const),
-            TokenKind::BraceL => self.parse_object(is_const),
+        match self.token().kind {
+            TokenKind::BracketL => self.nest(Nesting::List, |p| p.parse_list(is_const)),
+            TokenKind::BraceL => self.nest(Nesting::Object, |p| p.parse_object(is_const)),
             TokenKind::Int | TokenKind::Float | TokenKind::Name => self.advance_lexer(),
             TokenKind::String | TokenKind::BlockString => self.parse_string_literal(),
             TokenKind::Dollar if is_const => {
@@ -344,7 +407,7 @@ impl Parser {
             }
             TokenKind::Dollar => self.parse_variable(),
             _ => Err(self.unexpected(None)),
-        })
+        }
     }
 
     /// `parseConstValueLiteral()`.
@@ -412,16 +475,14 @@ impl Parser {
 
     /// `parseTypeReference()`.
     fn parse_type_reference(&mut self) -> Result<()> {
-        grow_stack(|| {
-            if self.expect_optional_token(TokenKind::BracketL)? {
-                self.parse_type_reference()?;
-                self.expect_token(TokenKind::BracketR)?;
-            } else {
-                self.parse_named_type()?;
-            }
-            self.expect_optional_token(TokenKind::Bang)?;
-            Ok(())
-        })
+        if self.expect_optional_token(TokenKind::BracketL)? {
+            self.nest(Nesting::ListType, Self::parse_type_reference)?;
+            self.expect_token(TokenKind::BracketR)?;
+        } else {
+            self.parse_named_type()?;
+        }
+        self.expect_optional_token(TokenKind::Bang)?;
+        Ok(())
     }
 
     /// `parseNamedType()`: the type's name.
@@ -963,15 +1024,58 @@ mod tests {
 mod deep_tests {
     use super::*;
 
+    /// Whether `source` parses, or overflows the modeled stack.
+    fn parses(source: &str) -> bool {
+        match parse(source) {
+            Ok(_) => true,
+            Err(e) => {
+                assert!(e.is_stack_overflow(), "{e}");
+                assert_eq!(e.message(), "Maximum call stack size exceeded");
+                false
+            }
+        }
+    }
+
+    /// The deepest nesting of each construct that the quicktype CLI parses
+    /// (see [`Nesting`]), and one level more, which overflows.
     #[test]
-    fn deep_documents_parse_and_drop() {
+    fn deep_documents_overflow_where_graphql_js_does() {
+        let nested = |open: &str, inner: &str, close: &str, n: usize| {
+            format!("{}{inner}{}", open.repeat(n), close.repeat(n))
+        };
+        // 1 + 1,654 selection sets.
+        let selections = |n| format!("{{ f {} }}", nested("{ a ", "", "}", n));
+        assert!(parses(&selections(1_654)));
+        assert!(!parses(&selections(1_655)));
+        let objects = |n| format!("{{ f(x: {}) }}", nested("{a: ", "1", "}", n));
+        assert!(parses(&objects(1_294)));
+        assert!(!parses(&objects(1_295)));
+        let lists = |n| format!("{{ f(x: {}) }}", nested("[", "1", "]", n));
+        assert!(parses(&lists(1_627)));
+        assert!(!parses(&lists(1_628)));
+        let types = |n| format!("query ($x: {}) {{ f }}", nested("[", "Int", "]", n));
+        assert!(parses(&types(6_338)));
+        assert!(!parses(&types(6_339)));
+        let fragments = |n| format!("{{ {} }}", nested("... { ", "f", " }", n));
+        assert!(parses(&fragments(1_629)));
+        assert!(!parses(&fragments(1_630)));
+        // Leaving a construct gives its stack back.
+        let field = format!("f {}", nested("{ a ", "", "}", 1_000));
+        let siblings = format!("{{ {} }}", vec![field; 3].join(" "));
+        assert!(parses(&siblings));
+    }
+
+    /// Far deeper documents fail at once, without building anything
+    /// (they used to parse, and the input then took minutes or more).
+    #[test]
+    fn very_deep_documents_fail_fast() {
         let depth = 200_000;
-        let source = format!("{{{}b{}}}", "a{".repeat(depth), "}".repeat(depth));
-        let document = parse(&source).unwrap();
-        drop(document);
-        let source = format!("{{{}b{}}}", "... on T {".repeat(depth), "}".repeat(depth));
-        drop(parse(&source).unwrap());
-        let source = format!("{{a(x:{}{})}}", "[".repeat(depth), "]".repeat(depth));
-        assert!(parse(&source).is_ok());
+        for source in [
+            format!("{{{}b{}}}", "a{".repeat(depth), "}".repeat(depth)),
+            format!("{{{}b{}}}", "... on T {".repeat(depth), "}".repeat(depth)),
+            format!("{{a(x:{}{})}}", "[".repeat(depth), "]".repeat(depth)),
+        ] {
+            assert!(!parses(&source));
+        }
     }
 }
