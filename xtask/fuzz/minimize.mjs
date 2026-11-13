@@ -15,7 +15,7 @@ import * as fs from "node:fs";
 
 import { makeChecker, outcomeKind } from "./check.mjs";
 import { findReference } from "./engines.mjs";
-import { arr, lit, num, obj, parse, size, str, toText } from "./json-text.mjs";
+import { arr, lit, num, obj, parse, size, str, stringValue, toText } from "./json-text.mjs";
 
 const args = process.argv.slice(2);
 const option = (name, fallback) => {
@@ -228,11 +228,17 @@ async function shrinkTree(get, set) {
                     if (await attempt((c) => setIf(set, c, replaceAt(get(c), [...path, i], str(leaf.raw.length > 12 ? "x" : "ab"))))) progress = true;
                 }
 
-                if (node.t === "o" && node.e[i][0].raw.length > 4 && /^[\x20-\x7e]*$/.test(node.e[i][0].raw)) {
-                    const shorter = node.e[i][0].raw.slice(0, Math.max(1, node.e[i][0].raw.length >> 1)).replace(/\\$/, "");
+                // The first half of a key: cut between code points of its
+                // value and escaped again (a cut in the escaped text could
+                // split `\u00e9` or `\"` and leave text that is not JSON),
+                // all-ASCII if it was.
+                const key = node.t === "o" ? node.e[i][0] : undefined;
+                const chars = key === undefined ? [] : Array.from(stringValue(key));
+                if (chars.length > 4) {
+                    const shorter = str(chars.slice(0, chars.length >> 1).join(""), /^[\x20-\x7e]*$/.test(key.raw));
                     if (await attempt((c) => {
                         const root = get(c);
-                        at(root, path).e[i][0] = { t: "s", raw: shorter };
+                        at(root, path).e[i][0] = shorter;
                         return set(c, root);
                     })) progress = true;
                 }
