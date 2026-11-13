@@ -130,6 +130,8 @@ semantics were verified.
 | `wordwrap` 1.0.0 | hand port (`quicktype_js_compat::wordwrap`) | 407 texts at several widths compared to npm |
 | V8 `Array.prototype.sort` | port of `array-sort.tq` (`quicktype_js_compat::sort`) | 210 seeded comparator runs (consistent, fully inconsistent, noisy, run-shaped, NaN) up to 2,000 elements, 41 mixed number/string `<` tables and 60 default string sorts compared to Node 24 |
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
+| `urijs` 1.19.11 (with its bundled punycode.js `toASCII` and `IPv6.best`), `encodeURIComponent`/`decodeURIComponent` | hand port of the used subset (`quicktype_js_compat::uri`) | `xtask/core-json-schema-input/gen-uri-vectors.mjs`: 1,411 URIs (curated edge cases, every `$ref`/`$id` and a sample of the URL strings in `tests/inputs`, seeded fuzz) through parse, every accessor, `clone`, `normalize`, `URI.decode`, `absoluteTo` against 8 bases and the setters (33,703 checks), 381 `equals` pairs and 321 strings through the component coders, all identical to Node 24 |
+| `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 
 ## Known gaps
 
