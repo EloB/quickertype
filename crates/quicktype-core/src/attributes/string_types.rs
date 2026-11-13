@@ -201,14 +201,7 @@ impl JsEquals for StringTypes {
 
 /// The `DateTimeRecognizer` interface of `DateTime.ts`, which
 /// [`infer_transformed_string_type_kind_for_string`] takes.
-pub trait DateTimeRecognizer {
-    /// Whether `s` is a date.
-    fn is_date(&self, s: &str) -> bool;
-    /// Whether `s` is a time.
-    fn is_time(&self, s: &str) -> bool;
-    /// Whether `s` is a date-time.
-    fn is_date_time(&self, s: &str) -> bool;
-}
+pub use crate::date_time::DateTimeRecognizer;
 
 /// `INTEGER_STRING` (`/^(0|-?[1-9]\d*)$/`) within the 32-bit signed range.
 fn is_integer_string(s: &str) -> bool {
