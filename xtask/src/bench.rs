@@ -10,6 +10,10 @@
 //!
 //! The generated inputs (`generated-*.json`) are written to `target/bench`
 //! by a seeded generator, so every machine benchmarks the same bytes.
+//!
+//! `--json <file>` also writes the results as JSON (the playground's
+//! `site/data/benchmarks.json`, which `site/build.mjs` validates): the
+//! date, the machine, the commits measured, and every number of the report.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -46,6 +50,9 @@ report (median and min wall time, peak RSS, speedup).
                          process (xtask/bench/in-process.mjs)
   -j <n>                 parallel jobs for --corpus (default: number of cores)
   --out <file>           also write the report to <file>
+  --json <file>          also write the results as JSON to <file>, with the
+                         date, the machine and the commits measured (the
+                         playground's site/data/benchmarks.json)
 ";
 
 struct Options {
@@ -60,6 +67,7 @@ struct Options {
     in_process: bool,
     jobs: usize,
     out: Option<PathBuf>,
+    json: Option<PathBuf>,
 }
 
 fn parse_options(args: Vec<String>) -> Result<Options, String> {
@@ -75,6 +83,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
         in_process: false,
         jobs: std::thread::available_parallelism().map_or(4, |n| n.get()),
         out: None,
+        json: None,
     };
     let split = |s: String| -> Vec<String> { s.split_whitespace().map(String::from).collect() };
     let mut args = args.into_iter();
@@ -94,6 +103,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
             "--in-process" => o.in_process = true,
             "-j" | "--jobs" => o.jobs = value()?.parse().map_err(|_| "bad -j")?,
             "--out" => o.out = Some(PathBuf::from(value()?)),
+            "--json" => o.json = Some(PathBuf::from(value()?)),
             _ => return Err(format!("unknown argument {a}\n\n{USAGE}")),
         }
     }
@@ -103,6 +113,8 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
 
 /// A command under test.
 struct Tool {
+    /// Its key in the JSON results: `typescript`, `baseline` or `rust`.
+    id: &'static str,
     label: &'static str,
     cmd: Vec<String>,
 }
@@ -721,22 +733,40 @@ fn shell_output(program: &str, args: &[&str]) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-fn machine_info(tools: &[Tool]) -> Vec<(String, String)> {
+/// One line of the machine's description: its JSON key, its label in the
+/// report, its value.
+struct MachineFact {
+    key: &'static str,
+    label: &'static str,
+    value: String,
+}
+
+fn machine_info(tools: &[Tool]) -> Vec<MachineFact> {
     let mut info = vec![];
+    let mut fact = |key, label, value| info.push(MachineFact { key, label, value });
     if cfg!(target_os = "macos") {
         if let Some(cpu) = shell_output("sysctl", &["-n", "machdep.cpu.brand_string"]) {
-            info.push(("CPU".into(), cpu));
+            fact("cpu", "CPU", cpu);
         }
         if let Some(n) = shell_output("sysctl", &["-n", "hw.ncpu"]) {
-            info.push(("Cores".into(), n));
+            fact("cores", "Cores", n);
         }
         if let Some(bytes) =
             shell_output("sysctl", &["-n", "hw.memsize"]).and_then(|s| s.parse::<u64>().ok())
         {
-            info.push(("Memory".into(), format!("{} GiB", bytes >> 30)));
+            fact("memory", "Memory", format!("{} GiB", bytes >> 30));
         }
         if let Some(v) = shell_output("sw_vers", &["-productVersion"]) {
-            info.push(("OS".into(), format!("macOS {v}")));
+            fact("os", "OS", format!("macOS {v}"));
+        }
+        // "{ 1.23 4.56 7.89 }"
+        if let Some(load) = shell_output("sysctl", &["-n", "vm.loadavg"]).and_then(|l| {
+            l.trim_matches(['{', '}', ' '])
+                .split_whitespace()
+                .next()
+                .map(String::from)
+        }) {
+            fact("load_average", "Load average (1 min, at the start)", load);
         }
     } else {
         if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
@@ -744,25 +774,31 @@ fn machine_info(tools: &[Tool]) -> Vec<(String, String)> {
                 l.strip_prefix("model name")
                     .and_then(|r| r.split(':').nth(1))
             }) {
-                info.push(("CPU".into(), model.trim().to_owned()));
+                fact("cpu", "CPU", model.trim().to_owned());
             }
         }
         if let Some(n) = shell_output("nproc", &[]) {
-            info.push(("Cores".into(), n));
+            fact("cores", "Cores", n);
         }
         if let Some(os) = shell_output("uname", &["-sr"]) {
-            info.push(("OS".into(), os));
+            fact("os", "OS", os);
+        }
+        if let Some(load) = fs::read_to_string("/proc/loadavg")
+            .ok()
+            .and_then(|l| l.split_whitespace().next().map(String::from))
+        {
+            fact("load_average", "Load average (1 min, at the start)", load);
         }
     }
     if let Some(v) = shell_output("rustc", &["--version"]) {
-        info.push(("rustc".into(), v));
+        fact("rustc", "rustc", v);
     }
     if tools
         .iter()
         .any(|t| t.cmd.first().is_some_and(|c| c == "node"))
     {
         if let Some(v) = shell_output("node", &["--version"]) {
-            info.push(("Node.js".into(), v));
+            fact("node", "Node.js", v);
         }
     }
     info
@@ -794,6 +830,10 @@ fn ratio(slow: f64, fast: f64) -> String {
 }
 
 pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
+    let invocation = std::iter::once("cargo xtask bench".to_owned())
+        .chain(args.iter().map(|a| shell_quote(a)))
+        .collect::<Vec<_>>()
+        .join(" ");
     let o = parse_options(args)?;
     // Found (or refused) up front, before minutes of other benchmarks.
     let in_process_checkout = if o.in_process && !o.no_ref {
@@ -813,12 +853,14 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             }
         };
         tools.push(Tool {
+            id: "typescript",
             label: "TypeScript",
             cmd,
         });
     }
     if let Some(cmd) = &o.baseline {
         tools.push(Tool {
+            id: "baseline",
             label: "Rust (before)",
             cmd: cmd.clone(),
         });
@@ -828,6 +870,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         None => build_cli(root)?,
     };
     tools.push(Tool {
+        id: "rust",
         label: if o.baseline.is_some() {
             "Rust (after)"
         } else {
@@ -835,6 +878,10 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         },
         cmd: ours,
     });
+
+    // Before anything runs: the load average says how quiet the machine was.
+    let machine = machine_info(&tools);
+    let date = utc_date();
 
     let bench_dir = root.join("target/bench");
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
@@ -903,16 +950,34 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         in_process = run_in_process(root, o.iterations, in_process_checkout.as_deref())?;
     }
 
-    let report = render_report(&o, &tools, &rows, &corpus, &in_process);
+    let report = render_report(&o, &machine, &tools, &rows, &corpus, &in_process);
     print!("{report}");
     if let Some(path) = &o.out {
         fs::write(path, &report).map_err(|e| format!("{}: {e}", path.display()))?;
+    }
+    if let Some(path) = &o.json {
+        let results = Results {
+            date,
+            command: invocation,
+            machine: &machine,
+            iterations: o.iterations,
+            jobs: o.jobs,
+            tools: &tools,
+            rows: &rows,
+            corpus: &corpus,
+            in_process: &in_process,
+        };
+        let json = json_results(root, &results);
+        let text = serde_json::to_string_pretty(&json).map_err(|e| e.to_string())?;
+        fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))?;
+        eprintln!("bench: wrote {}", path.display());
     }
     Ok(rows.iter().all(|(_, _, identical)| *identical))
 }
 
 fn render_report(
     o: &Options,
+    machine: &[MachineFact],
     tools: &[Tool],
     rows: &[(&Bench, Vec<Stats>, bool)],
     corpus: &[CorpusStats],
@@ -920,8 +985,8 @@ fn render_report(
 ) -> String {
     let mut r = String::new();
     let _ = writeln!(r, "Machine:\n");
-    for (k, v) in machine_info(tools) {
-        let _ = writeln!(r, "- {k}: {v}");
+    for fact in machine {
+        let _ = writeln!(r, "- {}: {}", fact.label, fact.value);
     }
     let _ = writeln!(
         r,
@@ -1069,6 +1134,198 @@ fn render_report(
 }
 
 // ---------------------------------------------------------------------------
+// The JSON results (`--json`).
+
+/// Everything one run measured, for `json_results`.
+struct Results<'a> {
+    date: String,
+    command: String,
+    machine: &'a [MachineFact],
+    iterations: usize,
+    jobs: usize,
+    tools: &'a [Tool],
+    rows: &'a [(&'a Bench, Vec<Stats>, bool)],
+    corpus: &'a [CorpusStats],
+    in_process: &'a [InProcess],
+}
+
+/// A number as JSON, rounded to `digits` decimals (the measurements are not
+/// more precise than that, and the file stays readable).
+fn number(v: f64, digits: i32) -> serde_json::Value {
+    let scale = 10f64.powi(digits);
+    serde_json::Number::from_f64((v * scale).round() / scale)
+        .map_or(serde_json::Value::Null, serde_json::Value::Number)
+}
+
+/// Today's date in UTC, `YYYY-MM-DD` (Howard Hinnant's `civil_from_days`).
+fn utc_date() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let z = i64::try_from(secs / 86_400).unwrap_or(0) + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
+/// An argument as a shell would need it.
+fn shell_quote(arg: &str) -> String {
+    if !arg.is_empty()
+        && arg
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_./=:,+@%".contains(c))
+    {
+        arg.to_owned()
+    } else {
+        format!("'{}'", arg.replace('\'', r"'\''"))
+    }
+}
+
+/// The commit checked out in `dir`, if it is a git work tree.
+fn git_head(dir: &Path) -> Option<String> {
+    shell_output("git", &["-C", &dir.to_string_lossy(), "rev-parse", "HEAD"])
+}
+
+/// The quicktype commit the TypeScript CLI was built from: its checkout's
+/// HEAD if `node <checkout>/dist/index.js` is a git work tree, else the one
+/// `tests/golden/REFERENCE` names.
+fn quicktype_commit(root: &Path, tools: &[Tool]) -> Option<String> {
+    let checkout = tools
+        .iter()
+        .find(|t| t.id == "typescript")?
+        .cmd
+        .iter()
+        .map(PathBuf::from)
+        .find(|p| p.ends_with("dist/index.js"))
+        .and_then(|p| p.parent()?.parent().map(Path::to_path_buf));
+    checkout.as_deref().and_then(git_head).or_else(|| {
+        let reference = fs::read_to_string(root.join("tests/golden/REFERENCE")).ok()?;
+        reference
+            .lines()
+            .find_map(|l| l.trim().strip_prefix("quicktype_commit="))
+            .map(String::from)
+    })
+}
+
+fn json_results(root: &Path, r: &Results<'_>) -> serde_json::Value {
+    use serde_json::{Map, Value, json};
+
+    let machine: Map<String, Value> = r
+        .machine
+        .iter()
+        .map(|f| (f.key.to_owned(), Value::String(f.value.clone())))
+        .collect();
+    let dirty = shell_output(
+        "git",
+        &[
+            "-C",
+            &root.to_string_lossy(),
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+        ],
+    )
+    .is_some();
+    let tools: Map<String, Value> = r
+        .tools
+        .iter()
+        .map(|t| (t.id.to_owned(), json!({ "label": t.label })))
+        .collect();
+    let cli: Vec<Value> = r
+        .rows
+        .iter()
+        .map(|(b, stats, identical)| {
+            let results: Map<String, Value> = r
+                .tools
+                .iter()
+                .zip(stats)
+                .map(|(t, s)| {
+                    let rss = s
+                        .rss
+                        .map_or(Value::Null, |b| number(b as f64 / 1_048_576.0, 1));
+                    (
+                        t.id.to_owned(),
+                        json!({
+                            "median_ms": number(s.median, 3),
+                            "min_ms": number(s.min, 3),
+                            "peak_rss_mib": rss,
+                        }),
+                    )
+                })
+                .collect();
+            json!({
+                "group": b.group,
+                "name": b.name,
+                "identical": identical,
+                "results": results,
+            })
+        })
+        .collect();
+    let corpus = if r.corpus.is_empty() {
+        Value::Null
+    } else {
+        let results: Map<String, Value> = r
+            .tools
+            .iter()
+            .zip(r.corpus)
+            .map(|(t, c)| {
+                (
+                    t.id.to_owned(),
+                    json!({
+                        "steps": c.steps,
+                        "wall_s": number(c.wall.as_secs_f64(), 2),
+                        "cli_time_s": number(c.process.as_secs_f64(), 2),
+                        "unexpected_exits": c.failed_steps,
+                    }),
+                )
+            })
+            .collect();
+        json!({ "jobs": r.jobs, "results": results })
+    };
+    let in_process = r.in_process.first().map_or(Value::Null, |first| {
+        let results: Map<String, Value> = r
+            .in_process
+            .iter()
+            .map(|p| {
+                (
+                    p.id.to_owned(),
+                    json!({
+                        "label": p.label,
+                        "total_ms": number(p.total, 2),
+                        "total_min_ms": number(p.total_min, 2),
+                        "parse_ms": number(p.parse, 2),
+                        "engine_ms": number(p.engine, 2),
+                    }),
+                )
+            })
+            .collect();
+        json!({ "runs": first.runs, "iterations": r.iterations, "results": results })
+    });
+    json!({
+        "format": 1,
+        "date": r.date,
+        "command": r.command,
+        "machine": machine,
+        "commits": {
+            "quickertype": git_head(root),
+            "quickertype_modified": dirty,
+            "quicktype": quicktype_commit(root, r.tools),
+        },
+        "iterations": r.iterations,
+        "tools": tools,
+        "cli": cli,
+        "corpus": corpus,
+        "in_process": in_process,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // In process.
 
 /// The TypeScript checkout for the in-process benchmark: `--ref-dir`, else
@@ -1101,6 +1358,8 @@ fn reference_checkout(root: &Path, o: &Options) -> Result<PathBuf, String> {
 }
 
 struct InProcess {
+    /// Its key in the JSON results.
+    id: &'static str,
     label: &'static str,
     runs: u64,
     total: f64,
@@ -1110,7 +1369,11 @@ struct InProcess {
 }
 
 /// Reads the `--json` line the two in-process benchmarks print.
-fn parse_in_process(label: &'static str, stdout: &[u8]) -> Result<InProcess, String> {
+fn parse_in_process(
+    id: &'static str,
+    label: &'static str,
+    stdout: &[u8],
+) -> Result<InProcess, String> {
     let text = String::from_utf8_lossy(stdout);
     let line = text
         .lines()
@@ -1124,6 +1387,7 @@ fn parse_in_process(label: &'static str, stdout: &[u8]) -> Result<InProcess, Str
             .unwrap_or(f64::NAN)
     };
     Ok(InProcess {
+        id,
         label,
         runs: v
             .get("runs")
@@ -1155,14 +1419,19 @@ fn run_in_process(
         if !out.status.success() {
             return Err("xtask/bench/in-process.mjs failed".into());
         }
-        results.push(parse_in_process("TypeScript (warm Node)", &out.stdout)?);
+        results.push(parse_in_process(
+            "typescript",
+            "TypeScript (warm Node)",
+            &out.stdout,
+        )?);
     }
-    for (label, features) in [
+    for (id, label, features) in [
         (
+            "rust-system-allocator",
             "Rust (native, system allocator)",
             Some("--no-default-features"),
         ),
-        ("Rust (native, mimalloc)", None),
+        ("rust", "Rust (native, mimalloc)", None),
     ] {
         eprintln!("bench: in process, {label}");
         let mut command = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
@@ -1177,7 +1446,7 @@ fn run_in_process(
         if !out.status.success() {
             return Err("cargo bench --bench in_process failed".into());
         }
-        results.push(parse_in_process(label, &out.stdout)?);
+        results.push(parse_in_process(id, label, &out.stdout)?);
     }
     Ok(results)
 }

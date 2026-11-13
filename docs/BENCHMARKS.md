@@ -336,6 +336,8 @@ cargo xtask bench --in-process        # + the engine in process vs warm TypeScri
 cargo xtask bench --filter json -n 20 # a subset, more runs
 cargo xtask bench --no-ref            # without the TypeScript CLI
 cargo xtask bench --out report.md     # also write the Markdown table
+cargo xtask bench --corpus --in-process --json site/data/benchmarks.json
+                                      # the playground's numbers, as JSON
 
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
