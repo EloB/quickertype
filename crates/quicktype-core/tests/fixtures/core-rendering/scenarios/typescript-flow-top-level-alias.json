@@ -1,0 +1,156 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "EmptySchema"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 3
+   },
+   {
+    "k": "object",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "one",
+      4,
+      false
+     ],
+     [
+      "two",
+      5,
+      false
+     ]
+    ],
+    "add": 1
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "one"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "two"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "EmptySchema",
+    0
+   ],
+   [
+    "TopLevel",
+    2
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "typescript",
+   "filename": "stdout",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "stdout",
+     "text": "export type EmptySchema = { [key: string]: unknown };\n\nexport interface TopLevel {\n    one: number;\n    two: boolean;\n    [property: string]: unknown;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "flow",
+   "filename": "stdout",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "stdout",
+     "text": "// @flow\n\nexport type EmptySchema = { [key: string]: mixed };\n\nexport type TopLevel = {\n    one: number;\n    two: boolean;\n    [property: string]: mixed;\n};\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "typescript-flow-top-level-alias"
+}

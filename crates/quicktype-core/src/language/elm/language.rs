@@ -48,8 +48,6 @@ pub const ELM_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ElmTargetLanguage;
 
-// TODO(renderer): port the hooks ElmTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for ElmTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &ELM_LANGUAGE_CONFIG
@@ -80,4 +78,23 @@ impl TargetLanguage for ElmTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: an `ElmRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::elm_renderer::ElmOptions::parse(renderer_options)?;
+        let renderer = super::elm_renderer::ElmRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

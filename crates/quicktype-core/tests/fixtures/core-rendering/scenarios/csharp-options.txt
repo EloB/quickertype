@@ -1,0 +1,29 @@
+# The C# renderers on the option values and combinations the golden corpus
+# leaves out (it renders Newtonsoft only with its fixture's options), on a
+# schema with every kind of converter: enums, unions, constraints and
+# transformed strings, top-level arrays, maps and enums.
+input schema TopLevel {"type": "object", "description": "A <top> & level.", "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 10, "description": "The name."}, "count": {"type": "integer", "minimum": 0, "maximum": 100}, "ratio": {"type": "number", "minimum": 0.5}, "flag": {"type": "boolean"}, "color": {"enum": ["red", "green", ""]}, "maybeColor": {"anyOf": [{"enum": ["a", "b"]}, {"type": "null"}]}, "when": {"type": "string", "format": "date-time"}, "day": {"type": "string", "format": "date"}, "time": {"type": "string", "format": "time"}, "id": {"type": "string", "format": "uuid"}, "link": {"type": "string", "format": "uri"}, "numStr": {"type": "string", "format": "integer"}, "boolStr": {"type": "string", "format": "boolean"}, "maybeNumStr": {"anyOf": [{"type": "string", "format": "integer"}, {"type": "null"}]}, "mixed": {"oneOf": [{"type": "integer"}, {"type": "string"}, {"type": "array", "items": {"type": "number"}}, {"type": "null"}]}, "both": {"oneOf": [{"type": "integer"}, {"type": "number"}, {"type": "boolean"}, {"type": "object", "properties": {"a": {"type": "string"}}}]}, "list": {"type": "array", "items": {"type": "string", "maxLength": 3}}, "dict": {"type": "object", "additionalProperties": {"type": "integer"}}, "anything": {}, "optStr": {"type": "string"}, "optNullable": {"type": ["string", "null"], "description": "Optional & nullable."}, "self": {"$ref": "#"}}, "required": ["name", "count", "color", "mixed", "both", "numStr"]}
+input schema Numbers {"type": "array", "items": {"type": "number"}}
+input schema Lookup {"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}}
+input schema Kind {"enum": ["one", "two"]}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string", "format": "date-time"}, {"type": "null"}]}
+pipeline {"lang": "csharp"}
+
+render csharp {}
+render csharp {"rendererOptions": {"framework": "NewtonSoft"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "base-class": "EntityData"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "keep-property-name": true, "virtual": true}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "just-types": true, "array-type": "list"}}
+render csharp {"rendererOptions": {"framework": "SystemTextJson", "just-types": true, "array-type": "list"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "features": "attributes-only"}}
+render csharp {"rendererOptions": {"framework": "SystemTextJson", "features": "attributes-only", "density": "dense"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "5", "density": "dense", "number-type": "decimal"}}
+render csharp {"rendererOptions": {"framework": "SystemTextJson", "csharp-version": "5", "number-type": "decimal"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "6", "namespace": "My.Space", "any-type": "dynamic", "check-required": true}}
+render csharp {"rendererOptions": {"framework": "SystemTextJson", "check-required": true, "use-records": true, "dateonly-timeonly-converters": "false"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "use-records": true, "base-class": "EntityData", "keep-property-name": true}}
+render csharp {"alphabetize": true, "leadingComments": ["Leading", "comments"]}
+render csharp {"rendererOptions": {"framework": "NewtonSoft"}, "leadingComments": ["Leading"]}
+render csharp {"rendererOptions": {"framework": "Jackson"}}
+render csharp {"rendererOptions": {"csharp-version": "7", "array-type": "set"}}
+render csharp {"rendererOptions": {"features": "everything", "framework": "NewtonSoft"}}

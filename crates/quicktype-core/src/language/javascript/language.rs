@@ -62,9 +62,6 @@ pub const JAVA_SCRIPT_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct JavaScriptTargetLanguage;
 
-// TODO(renderer): port the hooks JavaScriptTargetLanguage overrides:
-// - makeRenderer
-// - supportsFullObjectType: true
 impl TargetLanguage for JavaScriptTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JAVA_SCRIPT_LANGUAGE_CONFIG
@@ -101,4 +98,42 @@ impl TargetLanguage for JavaScriptTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `supportsFullObjectType`.
+    fn supports_full_object_type(&self) -> bool {
+        true
+    }
+
+    /// TS `makeRenderer`: a `JavaScriptRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::java_script_renderer::JavaScriptOptions::parse(renderer_options)?;
+        let renderer = super::java_script_renderer::PlainJavaScriptRenderer::new(
+            self,
+            render_context,
+            options,
+        );
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
+}
+
+/// TS `javaScriptOptions.rawType`'s values: what the converters take and
+/// return.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RawType {
+    /// `"json"`: JSON strings.
+    Json,
+    /// `"any"`: already parsed values.
+    Any,
 }

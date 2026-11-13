@@ -191,8 +191,6 @@ pub const C_SHARP_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CSharpTargetLanguage;
 
-// TODO(renderer): port the hooks CSharpTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for CSharpTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_SHARP_LANGUAGE_CONFIG
@@ -239,4 +237,48 @@ impl TargetLanguage for CSharpTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: the framework option picks the renderer.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> Result<crate::renderer::RenderResult> {
+        use super::c_sharp_renderer::{CSharpOptions, Framework};
+        use crate::convenience_renderer::render_with;
+
+        // `getOptionValues(cSharpOptions, ...)`; the framework's own option
+        // set reads the same options again (plus `dateTimeOnlyConverters`
+        // for System.Text.Json).
+        let options = CSharpOptions::parse(renderer_options)?;
+        match options.framework {
+            Framework::NewtonSoft => render_with(
+                super::newton_soft_c_sharp_renderer::NewtonsoftCSharpRenderer::new(
+                    self,
+                    render_context,
+                    options,
+                ),
+                given_output_filename,
+                alphabetize_properties,
+            ),
+            Framework::SystemTextJson => {
+                let date_time_only_converters =
+                    DATE_TIME_ONLY_CONVERTERS.get_value(renderer_options);
+                render_with(
+                    super::system_text_json_c_sharp_renderer::SystemTextJsonCSharpRenderer::new(
+                        self,
+                        render_context,
+                        options,
+                        date_time_only_converters,
+                    ),
+                    given_output_filename,
+                    alphabetize_properties,
+                )
+            }
+        }
+    }
 }

@@ -1,0 +1,92 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "plain",
+      1,
+      false
+     ],
+     [
+      "widgets",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "map",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": 1
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport com.beust.klaxon.*\n\nprivate val klaxon = Klaxon()\n\ndata class TopLevel (\n    val plain: Plain,\n    val widgets: Map<String, Plain>\n) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\ndata class Plain (\n    val x: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlin-klaxon-empty-object-map-plain"
+}

@@ -1,0 +1,8 @@
+# quicktype's test/unit/typescript-top-level-array.test.ts: JSON sample
+# arrays (of objects and of primitives) emit aliases.
+input json Sample [{"label":"a","score":1},{"label":"b","score":2}]
+input json Strings ["one","two"]
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": true}}
+render typescript {"filename": "stdout"}

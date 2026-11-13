@@ -8,6 +8,7 @@ pub mod comments;
 pub mod converters;
 pub mod integer_range;
 pub mod parse_json;
+pub mod recursion;
 pub mod strings;
 #[allow(clippy::module_inception)]
 pub mod support;

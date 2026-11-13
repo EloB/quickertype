@@ -1,0 +1,20 @@
+# Kotlin top-levels of every kind: arrays (of integers for Klaxon's
+# parseArray), maps (of objects for kotlinx), primitives, enums and unions.
+input schema Ints {"type": "array", "items": {"type": "integer"}}
+input schema Names {"type": "array", "items": {"type": "string"}}
+input schema Table {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Bag {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {}}}
+input schema Count {"type": "integer"}
+input schema Ratio {"type": "number"}
+input schema Title {"type": "string"}
+input schema Flag {"type": "boolean"}
+input schema When {"type": "string", "format": "date-time"}
+input schema Color {"enum": ["red", "green", "light blue"]}
+input schema Either {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "array", "items": {"type": "number"}}, {"type": "null"}]}
+input schema Point {"type": "object", "properties": {"x": {"type": "number"}}, "required": ["x"]}
+pipeline {"lang": "kotlin"}
+
+render kotlin {}
+render kotlin {"rendererOptions": {"framework": "klaxon"}}
+render kotlin {"rendererOptions": {"framework": "kotlinx"}}
+render kotlin {"rendererOptions": {"just-types": true}}

@@ -1,0 +1,9 @@
+# quicktype's test/unit/typescript-flow-top-level-alias.test.ts: an
+# empty-object schema is a map with a top-level alias; a map whose value
+# type claims the top-level name is declared once.
+input schema EmptySchema {"$schema": "http://json-schema.org/draft-06/schema#", "type": "object", "properties": {}}
+input schema TopLevel {"type": "object", "additionalProperties": {"type": "object", "properties": {"one": {"type": "integer"}, "two": {"type": "boolean"}}, "required": ["one", "two"]}}
+pipeline {"lang": "typescript"}
+
+render typescript {"filename": "stdout", "rendererOptions": {"just-types": true}}
+render flow {"filename": "stdout", "rendererOptions": {"just-types": true}}

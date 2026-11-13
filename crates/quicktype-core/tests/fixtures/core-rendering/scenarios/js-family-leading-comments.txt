@@ -1,0 +1,13 @@
+# Leading comments and description blocks in the JavaScript family and Elm
+# (the golden corpus records no leading comments).
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"name": {"type": "string", "description": "The name, with a */ closer."}, "kind": {"enum": ["a", "b"], "description": "One line."}, "list": {"type": "array", "items": {"type": "integer"}}}, "required": ["name"]}
+pipeline {"lang": "typescript"}
+
+render javascript {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block", "two"]}]}
+render typescript {"leadingComments": ["string comment", {"descriptionBlock": ["block"]}]}
+render flow {"leadingComments": ["string comment"]}
+render typescript-zod {"leadingComments": ["string comment", {"lines": ["line one"]}]}
+render typescript-effect-schema {"leadingComments": ["string comment"]}
+render javascript-prop-types {"leadingComments": ["string comment"]}
+render elm {"leadingComments": ["string comment", {"descriptionBlock": ["block", "two"]}]}
+render elm {"rendererOptions": {"just-types": true}}
