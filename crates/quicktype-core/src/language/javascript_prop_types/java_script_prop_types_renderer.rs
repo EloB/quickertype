@@ -4,6 +4,8 @@
 //! shape is declared before the shapes that use it, by looking for the
 //! names each gathered shape references.
 
+use std::collections::HashMap;
+
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -57,7 +59,8 @@ impl JavaScriptPropTypesOptions {
     }
 }
 
-/// `nameStyle(original, upper)`.
+/// `nameStyle(original, upper)`: the TypeScript duplicates the JavaScript
+/// renderer's `nameStyle` here instead of sharing it, and so does the port.
 fn name_style(acronym_style_option: AcronymStyleOptions, original: &str, upper: bool) -> String {
     let acronyms = acronym_style(acronym_style_option);
     let words = split_into_words(original);
@@ -100,11 +103,6 @@ const OBJECT_PROTOTYPE_PROPERTIES: [&str; 12] = [
     "__proto__",
     "toLocaleString",
 ];
-
-/// The `${n}` of a constraint bound.
-fn bound(n: f64) -> String {
-    js_number(n)
-}
 
 /// `JavaScriptPropTypesRenderer`.
 pub struct JavaScriptPropTypesRenderer<'a> {
@@ -152,11 +150,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             "(props, name) => { const value = props[name]; return value == null || (typeof value === 'string'",
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && [...value].length >= ", bound(min)],
+                Some(min) => sl![" && [...value].length >= ", js_number(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && [...value].length <= ", bound(max)],
+                Some(max) => sl![" && [...value].length <= ", js_number(max)],
             },
             match pattern {
                 None => Source::from(""),
@@ -193,11 +191,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             },
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && value >= ", bound(min)],
+                Some(min) => sl![" && value >= ", js_number(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && value <= ", bound(max)],
+                Some(max) => sl![" && value <= ", js_number(max)],
             },
             ") ? null : new Error(\"Expected bounded number\"); }"
         ])
@@ -240,12 +238,12 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                         "(props, name, ...args) => { const value = props[name]; if (value != null && (",
                         match min {
                             None => Source::from("false"),
-                            Some(min) => sl!["value.length < ", bound(min)],
+                            Some(min) => sl!["value.length < ", js_number(min)],
                         },
                         " || ",
                         match max {
                             None => Source::from("false"),
-                            Some(max) => sl!["value.length > ", bound(max)],
+                            Some(max) => sl!["value.length > ", js_number(max)],
                         },
                         ")) return new Error(\"Expected bounded array\"); return PropTypes.arrayOf(",
                         item,
@@ -410,35 +408,43 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             map_value.push(r.gather_source(|r| r.emit_object(name, t))?);
             Ok(())
         })?;
-        // `find(value)`: the names of `map_key` the gathered source refers
-        // to, in order.
-        let find = |items: &[Source]| -> Vec<Name> {
-            let mut found = Vec::new();
-            for item in items {
-                item.for_each_name(&mut |name| {
-                    if map_key.contains(&name) {
-                        found.push(name);
-                    }
-                });
-            }
-            found
-        };
+        // `find(value)` for every shape, once: the shapes (as indexes into
+        // `map_key`, by `mapKey.indexOf(name)`) its gathered source refers
+        // to, other than itself.
+        let mut index_of_name: HashMap<Name, usize> = HashMap::new();
+        for (index, &name) in map_key.iter().enumerate() {
+            index_of_name.entry(name).or_insert(index);
+        }
+        let dependencies: Vec<Vec<usize>> = map_value
+            .iter()
+            .zip(&map_key)
+            .map(|(items, &own_name)| {
+                let mut found = Vec::new();
+                for item in items {
+                    item.for_each_name(&mut |name| {
+                        if name != own_name {
+                            if let Some(&dependency) = index_of_name.get(&name) {
+                                found.push(dependency);
+                            }
+                        }
+                    });
+                }
+                found
+            })
+            .collect();
 
+        // Pick the first shape whose dependencies are all in `order`, or
+        // else the last pending one.
+        let mut placed = vec![false; map_key.len()];
         let mut pending: Vec<usize> = (0..map_key.len()).collect();
         while !pending.is_empty() {
-            let ready = pending.iter().position(|&index| {
-                find(&map_value[index]).into_iter().all(|name| {
-                    if name == map_key[index] {
-                        return true;
-                    }
-                    match map_key.iter().position(|&k| k == name) {
-                        None => true,
-                        Some(dependency) => order.contains(&dependency),
-                    }
-                })
-            });
+            let ready = pending
+                .iter()
+                .position(|&index| dependencies[index].iter().all(|&d| placed[d]));
             let at = ready.unwrap_or(pending.len() - 1);
-            order.push(pending.remove(at));
+            let index = pending.remove(at);
+            placed[index] = true;
+            order.push(index);
         }
 
         // now emit ordered source
