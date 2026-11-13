@@ -436,20 +436,31 @@ the others name the fix they need.
     nesting adds the costs up, which is approximate; Node's own limit
     varies by one between runs. Deeper documents fail with `RangeError:
     Maximum call stack size exceeded` (they used to parse, and then take
-    minutes or more in the input). `makeType` in the schema overflows
-    after 7,459 nested `ofType` wrappers, also on a field no query
-    selects; the port stops there too. The input's recursion over the
-    query (`makeIRTypeFromSelectionSet`, `makeIRTypeFromFieldNode`) grows
-    the native stack without a limit of its own; TypeScript fails deep
-    queries later, in graph rewriting (see "Endless recursion over the
-    type graph"). `--graphql-introspect` writes the server's result with
-    `JSON.stringify`, which overflows past 5,987 nested values (the result
-    or its `errors` counted from the top, Node 24). V8 checks its stack
-    on entering each non-empty array or object, so an innermost number,
-    `[]` or `{}` counts the same (measured with each, nested in arrays and
-    in objects); the port fails at the same depth with the `RangeError`
-    (a response nested a million levels deep used to run the port out of
-    memory).
+    minutes or more in the input). `makeType` in the schema recurses
+    into a list or non-null wrapper's `ofType` and, through
+    `addTypeFields`, into the types of the wrapper's fields, their
+    arguments, its interfaces, possible types and input fields, also on a
+    field no query selects. The port models the stack each path takes
+    (`Via` in `src/lib.rs`): the reference CLI builds 7,459 wrappers
+    nested through `ofType`, 1,658 through fields, 1,657 through input
+    fields, 1,066 through arguments and 2,058 through interfaces or
+    possible types, and fails with the `RangeError` one wrapper later, as
+    the port does. (Only `ofType` used to be counted: a chain of 100,000
+    wrappers through fields was built.) Through arguments and input
+    fields Node's limit varies between runs by up to about 20 levels
+    (the CLI builds the chains above in every run, longer ones in some);
+    mixed paths add their costs up, which is approximate. The input's
+    recursion over the query (`makeIRTypeFromSelectionSet`,
+    `makeIRTypeFromFieldNode`) grows the native stack without a limit of
+    its own; TypeScript fails deep queries later, in graph rewriting (see
+    "Endless recursion over the type graph"). `--graphql-introspect`
+    writes the server's result with `JSON.stringify`, which overflows
+    past 5,987 nested values (the result or its `errors` counted from the
+    top, Node 24). V8 checks its stack on entering each non-empty array
+    or object, so an innermost number, `[]` or `{}` counts the same
+    (measured with each, nested in arrays and in objects); the port fails
+    at the same depth with the `RangeError` (a response nested a million
+    levels deep used to run the port out of memory).
   - Names in the introspection JSON that are not strings (a number or
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them

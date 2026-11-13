@@ -161,11 +161,78 @@ impl TypesObject {
     }
 }
 
-/// How many list or non-null wrappers `makeType` unwraps (recursively)
-/// before Node's stack overflows: the quicktype CLI (Node 24) reads a field
-/// type nested in 7,459 `LIST`s and fails at 7,460 with `RangeError:
-/// Maximum call stack size exceeded`, also when no query selects the field.
-const MAKE_TYPE_MAX_DEPTH: usize = 7_459;
+/// Node's stack in [`GqlSchema::make_type`]'s model: large, so that each
+/// recursion path's share can be set to the unit.
+const NODE_STACK: u64 = 1 << 40;
+
+/// How a `makeType` call is reached from the `makeType` it is nested in,
+/// for the stack that takes in Node. `makeType` recurses into a list or
+/// non-null wrapper's `ofType`, and then, through `addTypeFields`, into the
+/// types of its `fields`, their `args`, its `interfaces`, `possibleTypes`
+/// and `inputFields`, with more JavaScript frames in between on some paths
+/// than on others.
+///
+/// Each path's share of [`NODE_STACK`] is set so that the longest chain of
+/// wrappers through that path the quicktype CLI (Node 24) builds still
+/// fits and one more does not. Measured on a field of the query type
+/// (added to the basic test schema, an introspection result with every
+/// key present; the query selects another field), each wrapper `[Int]`
+/// leading to the next through the path, in a fresh process each, with a
+/// 3 KB environment:
+///
+/// - `ofType`: 7,459 nested wrappers around `Int`;
+/// - `fields` (a field's type): 1,658 wrappers;
+/// - `inputFields`: 1,657 wrappers;
+/// - `args` (an argument of a field): 1,066 wrappers;
+/// - `interfaces` and `possibleTypes`: 2,058 wrappers.
+///
+/// Node's limits vary: between runs (V8 compiles `makeType` concurrently)
+/// by a level for `ofType`, `fields`, `interfaces` and `possibleTypes`, and
+/// by up to about 20 for `inputFields` and `args`, where the CLI builds the
+/// chains above in every run and longer ones in some; with the
+/// size of the environment and command line, which share the main
+/// thread's stack with V8's (an `ofType` level takes about 135 bytes);
+/// and by up to about 20 with the schema around the chain (e.g. without
+/// the basic schema's types before it). Mixed nesting
+/// adds the costs up, which is approximate, and the stack a top-level
+/// type's own `addTypeFields` takes (from the constructor) differs by a
+/// few frames between the paths, which is not modelled.
+#[derive(Clone, Copy)]
+enum Via {
+    /// Not nested in a `makeType`: a named type's fields, interfaces, ...
+    /// as the constructor adds them.
+    Top,
+    /// `makeType(t.ofType)`.
+    OfType,
+    /// `makeType(f.type)` of a field.
+    Field,
+    /// `makeType(iv.type)` of an input field (`makeInputValue`).
+    InputField,
+    /// `makeType(iv.type)` of an argument of a field (`makeInputValue`).
+    Arg,
+    /// An element of `interfaces` or `possibleTypes`.
+    InterfaceOrPossibleType,
+}
+
+impl Via {
+    /// The stack one more `makeType` call through this path takes.
+    const fn cost(self) -> u64 {
+        const OF_TYPE: u64 = NODE_STACK / 7_459;
+        // A chain of n wrappers through a path nests n - 1 calls through
+        // it, then the last wrapper's `ofType`.
+        const fn chain(wrappers: u64) -> u64 {
+            (NODE_STACK - OF_TYPE) / (wrappers - 1)
+        }
+        match self {
+            Via::Top => 0,
+            Via::OfType => OF_TYPE,
+            Via::Field => chain(1_658),
+            Via::InputField => chain(1_657),
+            Via::Arg => chain(1_066),
+            Via::InterfaceOrPossibleType => chain(2_058),
+        }
+    }
+}
 
 /// `GQLSchemaFromJSON`: the introspection result as type objects.
 #[derive(Debug)]
@@ -174,8 +241,9 @@ struct GqlSchema<'a> {
     types: TypesObject,
     query_type: GqlTypeRef,
     mutation_type: Option<GqlTypeRef>,
-    /// The wrappers [`make_type`](Self::make_type) is unwrapping.
-    wrapper_depth: usize,
+    /// The modeled Node stack the [`make_type`](Self::make_type) calls in
+    /// progress take (see [`Via`]).
+    stack: u64,
 }
 
 impl<'a> GqlSchema<'a> {
@@ -186,7 +254,7 @@ impl<'a> GqlSchema<'a> {
             types: TypesObject::default(),
             query_type: GqlTypeRef::ObjectPrototype,
             mutation_type: None,
-            wrapper_depth: 0,
+            stack: 0,
         };
         let data = JsVal::Json(json).get("data")?;
         let query_type_name = || data.get("__schema")?.get("queryType")?.get("name");
@@ -211,7 +279,7 @@ impl<'a> GqlSchema<'a> {
                 return panic("This cannot happen");
             }
             let target = schema.types.get(&name.to_js_string()?);
-            schema.add_type_fields(target, t)?;
+            schema.add_type_fields(target, t, false)?;
         }
 
         let Some(query_type) = schema.types.get(&query_type_name()?.to_js_string()?) else {
@@ -237,7 +305,14 @@ impl<'a> GqlSchema<'a> {
     /// `addTypeFields(target, source)`. Only the fields and enum values are
     /// kept (the query side reads nothing else), but interfaces, possible
     /// types and input fields are built all the same, for their errors.
-    fn add_type_fields(&mut self, target: Option<GqlTypeRef>, source: JsVal<'a>) -> Result<()> {
+    /// `nested`: called by `makeType` (for a wrapper), not the constructor.
+    fn add_type_fields(
+        &mut self,
+        target: Option<GqlTypeRef>,
+        source: JsVal<'a>,
+        nested: bool,
+    ) -> Result<()> {
+        let via = |via| if nested { via } else { Via::Top };
         let fields = source.get("fields")?;
         if fields.truthy() {
             let mut built = Vec::new();
@@ -245,9 +320,9 @@ impl<'a> GqlSchema<'a> {
                 let f = JsVal::Json(f);
                 let name = f.get("name")?;
                 f.get("description")?;
-                let ty = self.make_type(f.get("type")?)?;
+                let ty = self.make_type(f.get("type")?, via(Via::Field))?;
                 for arg in f.get("args")?.map_elements("f.args")? {
-                    self.make_input_value(JsVal::Json(arg))?;
+                    self.make_input_value(JsVal::Json(arg), via(Via::Arg))?;
                 }
                 built.push(GqlField { name, ty });
             }
@@ -258,19 +333,19 @@ impl<'a> GqlSchema<'a> {
         let interfaces = source.get("interfaces")?;
         if interfaces.truthy() {
             for t in interfaces.map_elements("source.interfaces")? {
-                self.make_type(JsVal::Json(t))?;
+                self.make_type(JsVal::Json(t), via(Via::InterfaceOrPossibleType))?;
             }
         }
         let possible_types = source.get("possibleTypes")?;
         if possible_types.truthy() {
             for t in possible_types.map_elements("source.possibleTypes")? {
-                self.make_type(JsVal::Json(t))?;
+                self.make_type(JsVal::Json(t), via(Via::InterfaceOrPossibleType))?;
             }
         }
         let input_fields = source.get("inputFields")?;
         if input_fields.truthy() {
             for iv in input_fields.map_elements("source.inputFields")? {
-                self.make_input_value(JsVal::Json(iv))?;
+                self.make_input_value(JsVal::Json(iv), via(Via::InputField))?;
             }
         }
         let enum_values = source.get("enumValues")?;
@@ -302,49 +377,56 @@ impl<'a> GqlSchema<'a> {
         }
     }
 
-    /// `makeInputValue(iv)`.
-    fn make_input_value(&mut self, iv: JsVal<'a>) -> Result<()> {
+    /// `makeInputValue(iv)`, reached `via` a path from the `makeType` it is
+    /// nested in.
+    fn make_input_value(&mut self, iv: JsVal<'a>, via: Via) -> Result<()> {
         iv.get("name")?;
         iv.get("description")?;
-        self.make_type(iv.get("type")?)?;
+        self.make_type(iv.get("type")?, via)?;
         iv.get("defaultValue")?;
         Ok(())
     }
 
-    /// `makeType(t)`: a named type's object, or a new object for a list or
-    /// non-null wrapper.
-    fn make_type(&mut self, t: JsVal<'a>) -> Result<GqlTypeRef> {
-        grow_stack(|| {
-            let name = t.get("name")?;
-            if name.truthy() {
-                return match self.types.get(&name.to_js_string()?) {
-                    Some(named_type) => Ok(named_type),
-                    None => panic(format!("Type {} not found", name.to_js_string()?)),
-                };
-            }
-            let of_type = t.get("ofType")?;
-            if !of_type.truthy() {
-                return panic(format!(
-                    "Type of kind {} has neither name nor ofType",
-                    t.get("kind")?.to_js_string()?
-                ));
-            }
-            let kind = t.get("kind")?;
-            t.get("description")?;
-            if self.wrapper_depth >= MAKE_TYPE_MAX_DEPTH {
-                return Err(stack_overflow());
-            }
-            self.wrapper_depth += 1;
-            let of_type = self.make_type(of_type);
-            self.wrapper_depth -= 1;
-            let of_type = of_type?;
-            let mut wrapper = GqlType::new(kind, JsVal::Undefined);
-            wrapper.of_type = Some(of_type);
-            self.arena.push(wrapper);
-            let index = GqlTypeRef::Type(self.arena.len() - 1);
-            self.add_type_fields(Some(index), t)?;
-            Ok(index)
-        })
+    /// `makeType(t)`, reached `via` a path from the `makeType` it is nested
+    /// in: V8's `RangeError` where that call no longer fits on Node's stack
+    /// (see [`Via`]).
+    fn make_type(&mut self, t: JsVal<'a>, via: Via) -> Result<GqlTypeRef> {
+        let cost = via.cost();
+        if self.stack + cost > NODE_STACK {
+            return Err(stack_overflow());
+        }
+        self.stack += cost;
+        let result = grow_stack(|| self.make_type_here(t));
+        self.stack -= cost;
+        result
+    }
+
+    /// The body of `makeType(t)`: a named type's object, or a new object
+    /// for a list or non-null wrapper.
+    fn make_type_here(&mut self, t: JsVal<'a>) -> Result<GqlTypeRef> {
+        let name = t.get("name")?;
+        if name.truthy() {
+            return match self.types.get(&name.to_js_string()?) {
+                Some(named_type) => Ok(named_type),
+                None => panic(format!("Type {} not found", name.to_js_string()?)),
+            };
+        }
+        let of_type = t.get("ofType")?;
+        if !of_type.truthy() {
+            return panic(format!(
+                "Type of kind {} has neither name nor ofType",
+                t.get("kind")?.to_js_string()?
+            ));
+        }
+        let kind = t.get("kind")?;
+        t.get("description")?;
+        let of_type = self.make_type(of_type, Via::OfType)?;
+        let mut wrapper = GqlType::new(kind, JsVal::Undefined);
+        wrapper.of_type = Some(of_type);
+        self.arena.push(wrapper);
+        let index = GqlTypeRef::Type(self.arena.len() - 1);
+        self.add_type_fields(Some(index), t, true)?;
+        Ok(index)
     }
 
     fn get(&self, t: GqlTypeRef) -> Option<&GqlType<'a>> {

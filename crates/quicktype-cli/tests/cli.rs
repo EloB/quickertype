@@ -454,9 +454,11 @@ fn self_referencing_json_fails_like_node() {
 fn graphql_inputs_too_deep_for_node_fail_like_node() {
     // Before: a field type nested in 100,000 lists aborted the
     // CLI (TypeScript overflows building the schema), 3,000 nested
-    // selection sets took minutes (graphql-js overflows parsing them), and
-    // a directory's deep schema, shared by its queries, overflowed while
-    // being copied.
+    // selection sets took minutes (graphql-js overflows parsing them), a
+    // directory's deep schema, shared by its queries, overflowed while
+    // being copied, and list types nested 10,000 deep through a field's
+    // type or `possibleTypes` (where TypeScript's `makeType` overflows
+    // too, after 1,658 and 2,058) were built.
     let dir = work_dir("graphql-deep");
     let basic = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema");
@@ -484,6 +486,28 @@ fn graphql_inputs_too_deep_for_node_fail_like_node() {
     );
     let deep_schema = schema.to_string().replace(r#""DEEP""#, &lists);
     fs::write(dir.join("deep.gqlschema"), &deep_schema).unwrap();
+    let int = r#"{"kind":"SCALAR","name":"Int","ofType":null}"#;
+    let wrapper = format!(r#"{{"kind":"LIST","name":null,"ofType":{int}"#);
+    let chain = |open: &str, close: &str| {
+        let depth = 10_000;
+        format!(
+            "{}{wrapper}}}{}",
+            format!("{wrapper},{open}").repeat(depth - 1),
+            close.repeat(depth - 1)
+        )
+    };
+    let fields = chain(
+        r#""fields":[{"name":"a","description":null,"args":[],"type":"#,
+        r#","isDeprecated":false,"deprecationReason":null}]}"#,
+    );
+    let possible_types = chain(r#""possibleTypes":["#, "]}");
+    for (file, chain) in [
+        ("fields.gqlschema", fields),
+        ("possible.gqlschema", possible_types),
+    ] {
+        let text = schema.to_string().replace(r#""DEEP""#, &chain);
+        fs::write(dir.join(file), text).unwrap();
+    }
     fs::copy(&basic, dir.join("basic.gqlschema")).unwrap();
     fs::write(dir.join("deep.graphql"), "{ deep }").unwrap();
     let selections = 3_000;
@@ -516,6 +540,8 @@ fn graphql_inputs_too_deep_for_node_fail_like_node() {
     };
     for output in [
         graphql("deep.gqlschema", "deep.graphql"),
+        graphql("fields.gqlschema", "queries/a.graphql"),
+        graphql("possible.gqlschema", "queries/a.graphql"),
         graphql("basic.gqlschema", "nested.graphql"),
         quicktype_in(&dir, &["--lang", "go", "queries"], None),
     ] {
