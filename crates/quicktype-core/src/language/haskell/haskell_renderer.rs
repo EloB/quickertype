@@ -248,14 +248,19 @@ impl<'a> HaskellRenderer<'a> {
         })
     }
 
-    /// `enumCaseName(name, enumName)`: the case's name.
+    /// `enumCaseName(name, enumName)`: the name itself if it is a
+    /// `DependencyName` (which already ends in the enum's name), else
+    /// `[name, enumName]`.
     ///
-    /// TypeScript returns `[name, enumName]` unless `name` is a
-    /// `DependencyName`, but
     /// [`make_name_for_enum_case`](ConvenienceRenderer::make_name_for_enum_case)
-    /// always makes one.
-    fn enum_case_name(name: Name) -> Source {
-        name.into()
+    /// always makes a dependency name; the only other enum case names are
+    /// the fixed names of `qt-accessors`.
+    fn enum_case_name(&self, name: Name, enum_name: Name) -> Source {
+        if self.naming().is_fixed(name) {
+            sl![name, enum_name]
+        } else {
+            name.into()
+        }
     }
 
     /// `emitEnumDefinition(e, enumName)`.
@@ -267,7 +272,8 @@ impl<'a> HaskellRenderer<'a> {
             let mut on_first = true;
             r.for_each_enum_case(e, BlankLinePosition::None, |r, name, _, _| {
                 let equals_or_pipe = if on_first { "=" } else { "|" };
-                r.emit_line(sl![equals_or_pipe, " ", Self::enum_case_name(name)]);
+                let case_name = r.enum_case_name(name, enum_name);
+                r.emit_line(sl![equals_or_pipe, " ", case_name]);
                 on_first = false;
                 Ok(())
             })?;
@@ -409,9 +415,10 @@ impl<'a> HaskellRenderer<'a> {
         self.emit_line(sl!["instance ToJSON ", enum_name, " where"]);
         self.indent(|r| {
             r.for_each_enum_case(e, BlankLinePosition::None, |r, name, json_name, _| {
+                let case_name = r.enum_case_name(name, enum_name);
                 r.emit_line(sl![
                     "toJSON ",
-                    Self::enum_case_name(name),
+                    case_name,
                     " = \"",
                     haskell_string_escape(json_name),
                     "\""
@@ -430,11 +437,12 @@ impl<'a> HaskellRenderer<'a> {
                 r.emit_line("where");
                 r.indent(|r| {
                     r.for_each_enum_case(e, BlankLinePosition::None, |r, name, json_name, _| {
+                        let case_name = r.enum_case_name(name, enum_name);
                         r.emit_line(sl![
                             "parseText \"",
                             haskell_string_escape(json_name),
                             "\" = return ",
-                            Self::enum_case_name(name)
+                            case_name
                         ]);
                         Ok(())
                     })
