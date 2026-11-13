@@ -1,0 +1,38 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union login | children 1,0 | 2 | given login,name (User_login,User_name,Repository_name)
+3: class User | children 0,2 | 3 | given User (viewer,data_User,data_viewer)
+4: union viewer | children 3,1 | 4 | given viewer (data_viewer)
+5: class data | children 3 | 5 | given data (github1_data)
+6: union | children 5,1 | 6
+7: class error | children 0 | 7 | given error (graphQLError)
+8: array errors | children 7 | 8 | given errors (graphQLErrors)
+9: class github1 | children 6,8 | 9 | given github1 ()
+10: integer | 10
+11: union totalCount | children 10,1 | 11 | given totalCount (RepositoryConnection_totalCount)
+12: class Repository | children 0 | 12 | given Repository (nodes,RepositoryConnection_Repository,RepositoryConnection_nodes)
+13: union nodes | children 12,1 | 13 | given nodes (RepositoryConnection_nodes)
+14: array | children 13 | 14
+15: union nodes | children 14,1 | 15 | given nodes (RepositoryConnection_nodes)
+16: class RepositoryConnection | children 15,10 | 16 | given RepositoryConnection (repositories,User_RepositoryConnection,User_repositories)
+17: union repositories | children 16,1 | 17 | given repositories (User_repositories)
+18: class User | children 0,16 | 18 | given User (viewer,data_User,data_viewer)
+19: union viewer | children 18,1 | 19 | given viewer (data_viewer)
+20: class data | children 18 | 20 | given data (github2_data)
+21: union | children 20,1 | 21
+22: class github2 | children 21,8 | 22 | given github2 ()
+# properties
+3 properties [["login",0,false],["realName",2,false]]
+5 properties [["viewer",3,false]]
+7 properties [["message",0,false]]
+9 properties [["data",6,false],["errors",8,true]]
+12 properties [["name",0,false]]
+16 properties [["totalCount",10,false],["nodes",15,false]]
+18 properties [["login",0,false],["repositories",16,false]]
+20 properties [["viewer",18,false]]
+22 properties [["data",21,false],["errors",8,true]]
+# top-levels
+"github1": 9
+"github2": 22

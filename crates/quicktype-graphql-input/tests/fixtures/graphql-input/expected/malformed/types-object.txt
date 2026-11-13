@@ -1,0 +1,1 @@
+error: TypeError schema.__schema.types is not iterable

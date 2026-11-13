@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Invalid character escape sequence: "\q".

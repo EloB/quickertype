@@ -1,0 +1,24 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union name | children 1,0 | 2 | given name (User_name)
+3: class User | children 2 | 3 | given User (rename,data_User,data_rename)
+4: union rename | children 3,1 | 4 | given rename (data_rename)
+5: bool | 5
+6: union barks | children 5,1 | 6 | given barks (Pet_barks)
+7: class Pet | children 5 | 7 | given Pet (like,data_Pet,data_like)
+8: union like | children 7,1 | 8 | given like (data_like)
+9: class data | children 7,4 | 9 | given data (M_data)
+10: union | children 9,1 | 10
+11: class error | children 0 | 11 | given error (graphQLError)
+12: array errors | children 11 | 12 | given errors (graphQLErrors)
+13: class M | children 10,12 | 13 | given M ()
+# properties
+3 properties [["name",2,false]]
+7 properties [["barks",5,true]]
+9 properties [["rename",4,false],["like",7,false]]
+11 properties [["message",0,false]]
+13 properties [["data",10,false],["errors",12,true]]
+# top-levels
+"TopLevel": 13

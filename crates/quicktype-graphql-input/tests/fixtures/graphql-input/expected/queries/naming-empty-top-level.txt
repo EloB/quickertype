@@ -1,0 +1,19 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union x | children 1,0 | 2 | given x (Thing_x)
+3: class Thing | children 2 | 3 | given Thing (b,data_Thing,data_b)
+4: union b | children 3,1 | 4 | given b (data_b)
+5: class data | children 4 | 5 | given data ()
+6: union | children 5,1 | 6
+7: class error | children 0 | 7 | given error (graphQLError)
+8: array errors | children 7 | 8 | given errors (graphQLErrors)
+9: class  | children 6,8 | 9 | given  ()
+# properties
+3 properties [["x",2,false]]
+5 properties [["b",4,false]]
+7 properties [["message",0,false]]
+9 properties [["data",6,false],["errors",8,true]]
+# top-levels
+"": 9
