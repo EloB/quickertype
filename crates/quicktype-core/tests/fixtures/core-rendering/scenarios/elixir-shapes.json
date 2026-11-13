@@ -1,0 +1,1070 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "name",
+       [
+        "The name."
+       ]
+      ],
+      [
+       "flag",
+       [
+        "A flag\nover two lines."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "_1",
+      1,
+      false
+     ],
+     [
+      "anything",
+      2,
+      false
+     ],
+     [
+      "children",
+      3,
+      false
+     ],
+     [
+      "choice",
+      6,
+      false
+     ],
+     [
+      "class",
+      7,
+      false
+     ],
+     [
+      "counts",
+      8,
+      false
+     ],
+     [
+      "flag",
+      9,
+      false
+     ],
+     [
+      "id",
+      7,
+      false
+     ],
+     [
+      "kind",
+      10,
+      false
+     ],
+     [
+      "list",
+      11,
+      false
+     ],
+     [
+      "maybeChild",
+      12,
+      false
+     ],
+     [
+      "maybeChoice",
+      14,
+      false
+     ],
+     [
+      "maybeInt",
+      15,
+      false
+     ],
+     [
+      "maybeKind",
+      16,
+      false
+     ],
+     [
+      "name",
+      18,
+      false
+     ],
+     [
+      "nothing",
+      13,
+      false
+     ],
+     [
+      "optChild",
+      4,
+      true
+     ],
+     [
+      "optKind",
+      19,
+      true
+     ],
+     [
+      "optList",
+      20,
+      true
+     ],
+     [
+      "optMap",
+      22,
+      true
+     ],
+     [
+      "optSmall",
+      23,
+      true
+     ],
+     [
+      "ratio",
+      24,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "small",
+      25,
+      false
+     ],
+     [
+      "tags",
+      26,
+      false
+     ],
+     [
+      "when",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "_1",
+       "Number",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "child"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "description": [
+      "A child."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "parent",
+      5,
+      true
+     ],
+     [
+      "x",
+      21,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "parent",
+       "TopLeve",
+       "self"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "name",
+       [
+        "The name."
+       ]
+      ],
+      [
+       "flag",
+       [
+        "A flag\nover two lines."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "_1",
+      1,
+      false
+     ],
+     [
+      "anything",
+      2,
+      false
+     ],
+     [
+      "children",
+      3,
+      false
+     ],
+     [
+      "choice",
+      6,
+      false
+     ],
+     [
+      "class",
+      7,
+      false
+     ],
+     [
+      "counts",
+      8,
+      false
+     ],
+     [
+      "flag",
+      9,
+      false
+     ],
+     [
+      "id",
+      7,
+      false
+     ],
+     [
+      "kind",
+      10,
+      false
+     ],
+     [
+      "list",
+      11,
+      false
+     ],
+     [
+      "maybeChild",
+      12,
+      false
+     ],
+     [
+      "maybeChoice",
+      14,
+      false
+     ],
+     [
+      "maybeInt",
+      15,
+      false
+     ],
+     [
+      "maybeKind",
+      16,
+      false
+     ],
+     [
+      "name",
+      18,
+      false
+     ],
+     [
+      "nothing",
+      13,
+      false
+     ],
+     [
+      "optChild",
+      4,
+      true
+     ],
+     [
+      "optKind",
+      19,
+      true
+     ],
+     [
+      "optList",
+      20,
+      true
+     ],
+     [
+      "optMap",
+      22,
+      true
+     ],
+     [
+      "optSmall",
+      23,
+      true
+     ],
+     [
+      "ratio",
+      24,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "small",
+      25,
+      false
+     ],
+     [
+      "tags",
+      26,
+      false
+     ],
+     [
+      "when",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "choice"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     1,
+     4,
+     7
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "counts"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flag",
+       "z"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "one-two",
+     "three \"four\"",
+     "#{x}",
+     "5"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 4
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeChild"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     4,
+     13
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeChoice"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     1,
+     13,
+     7
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeInt"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     1,
+     13
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     13,
+     17
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      1,
+      3
+     ],
+     "pattern": "^[a-z#\"\\\\]+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optKind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "x",
+     "y"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optList"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 21
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 7
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      1,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "optSmall"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0.5,
+      1e+21
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      -5,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "small"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      4
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 7
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Children"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 28
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Child"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "y",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Numbers"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 21
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     1,
+     32,
+     7
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "z",
+      9,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Mode"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "on",
+     "off"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Children",
+    27
+   ],
+   [
+    "Numbers",
+    29
+   ],
+   [
+    "Scores",
+    30
+   ],
+   [
+    "Choice",
+    31
+   ],
+   [
+    "Alias",
+    7
+   ],
+   [
+    "Mode",
+    33
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This file was autogenerated using quicktype https://github.com/quicktype/quicktype\n#\n# Add Jason to your mix.exs\n#\n# Decode a JSON string: TopLevel.from_json(data)\n# Encode into a JSON string: TopLevel.to_json(struct)\n#\n# Decode a JSON string: Children.from_json(data)\n# Encode into a JSON string: Children.to_json(struct)\n#\n# Decode a JSON string: Numbers.from_json(data)\n# Encode into a JSON string: Numbers.to_json(struct)\n#\n# Decode a JSON string: Scores.from_json(data)\n# Encode into a JSON string: Scores.to_json(struct)\n#\n# Decode a JSON string: Choice.from_json(data)\n# Encode into a JSON string: Choice.to_json(struct)\n#\n# Decode a JSON string: Alias1.from_json(data)\n# Encode into a JSON string: Alias1.to_json(struct)\n#\n# Decode a JSON string: Mode.from_json(data)\n# Encode into a JSON string: Mode.to_json(struct)\n\ndefmodule Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          parent_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding Parent.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding Parent.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding Parent.choice\"}\n\n  def encode_choice(%{__struct__: Child} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding Parent.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding Parent.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding Parent.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding Parent.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding Parent.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding Parent.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding Parent.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding Parent.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding Parent.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding Parent.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding Parent.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding Parent.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding Parent.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding Parent.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding Parent.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Parent.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Parent.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding Parent.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding Parent.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding Parent.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding Parent.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding Parent.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding Parent.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding Parent.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding Parent.tags\"}\n\n  def decode_parent_when(value) when is_binary(value), do: value\n  def decode_parent_when(_), do: {:error, \"Unexpected type when decoding Parent.parent_when\"}\n\n  def encode_parent_when(value) when is_binary(value), do: value\n  def encode_parent_when(_), do: {:error, \"Unexpected type when encoding Parent.parent_when\"}\n\n  def from_map(m) do\n    %Parent{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      parent_when: decode_parent_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.parent_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Parent.t() | nil,\n          x: float()\n        }\n\n  def decode_x(value) when is_float(value), do: value\n  def decode_x(value) when is_integer(value), do: value\n  def decode_x(_), do: {:error, \"Unexpected type when decoding Child.x\"}\n\n  def encode_x(value) when is_float(value), do: value\n  def encode_x(value) when is_integer(value), do: value\n  def encode_x(_), do: {:error, \"Unexpected type when encoding Child.x\"}\n\n  def from_map(m) do\n    %Child{\n      parent: m[\"parent\"] && Parent.from_map(m[\"parent\"]),\n      x: decode_x(m[\"x\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"parent\" => struct.parent && Parent.to_map(struct.parent),\n      \"x\" => struct.x,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          top_level_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding TopLevel.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding TopLevel.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding TopLevel.choice\"}\n\n  def encode_choice(%Child{} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding TopLevel.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding TopLevel.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding TopLevel.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding TopLevel.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding TopLevel.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding TopLevel.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding TopLevel.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding TopLevel.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding TopLevel.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding TopLevel.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding TopLevel.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding TopLevel.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding TopLevel.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding TopLevel.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding TopLevel.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding TopLevel.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding TopLevel.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding TopLevel.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding TopLevel.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding TopLevel.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding TopLevel.tags\"}\n\n  def decode_top_level_when(value) when is_binary(value), do: value\n  def decode_top_level_when(_), do: {:error, \"Unexpected type when decoding TopLevel.top_level_when\"}\n\n  def encode_top_level_when(value) when is_binary(value), do: value\n  def encode_top_level_when(_), do: {:error, \"Unexpected type when encoding TopLevel.top_level_when\"}\n\n  def from_map(m) do\n    %TopLevel{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      top_level_when: decode_top_level_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.top_level_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\n\n  def decode_y(value) when is_binary(value), do: value\n  def decode_y(_), do: {:error, \"Unexpected type when decoding ChildElement.y\"}\n\n  def encode_y(value) when is_binary(value), do: value\n  def encode_y(_), do: {:error, \"Unexpected type when encoding ChildElement.y\"}\n\n  def from_map(m) do\n    %ChildElement{\n      y: decode_y(m[\"y\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"y\" => struct.y,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\n\n  def from_map(m) do\n    %ChoiceClass{\n      z: m[\"z\"],\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"z\" => struct.z,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Children do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&ChildElement.from_map/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &ChildElement.to_map/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Numbers do\n\n  def decode_element(value) when is_integer(value), do: value\n  def decode_element(_), do: {:error, \"Unexpected type when decoding Numbers.element\"}\n\n  def encode_element(value) when is_integer(value), do: value\n  def encode_element(_), do: {:error, \"Unexpected type when encoding Numbers.element\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&decode_element/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &encode_element/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Scores do\n  def decode_value(value) when is_map(value), do: value\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n\ndefmodule Choice do\n\n  def decode_value(%{} = value), do: ChoiceClass.from_map(value)\n  def decode_value(value) when is_integer(value), do: value\n  def decode_value(value) when is_binary(value), do: value\n  def decode_value(_), do: {:error, \"Unexpected type when decoding Choice.value\"}\n\n  def encode_value(%ChoiceClass{} = value), do: ChoiceClass.to_map(value)\n  def encode_value(value) when is_integer(value), do: value\n  def encode_value(value) when is_binary(value), do: value\n  def encode_value(_), do: {:error, \"Unexpected type when encoding Choice.value\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    data |> encode_value()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Alias1 do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This file was autogenerated using quicktype https://github.com/quicktype/quicktype\n#\n# Add Jason to your mix.exs\n#\n# Decode a JSON string: TopLevel.from_json(data)\n# Encode into a JSON string: TopLevel.to_json(struct)\n#\n# Decode a JSON string: Children.from_json(data)\n# Encode into a JSON string: Children.to_json(struct)\n#\n# Decode a JSON string: Numbers.from_json(data)\n# Encode into a JSON string: Numbers.to_json(struct)\n#\n# Decode a JSON string: Scores.from_json(data)\n# Encode into a JSON string: Scores.to_json(struct)\n#\n# Decode a JSON string: Choice.from_json(data)\n# Encode into a JSON string: Choice.to_json(struct)\n#\n# Decode a JSON string: Alias1.from_json(data)\n# Encode into a JSON string: Alias1.to_json(struct)\n#\n# Decode a JSON string: Mode.from_json(data)\n# Encode into a JSON string: Mode.to_json(struct)\n\ndefmodule Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :parent_when, :ratio, :small, :tags, :the_1]\n  defstruct [:anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :parent_when, :ratio, :self, :small, :tags, :the_1]\n\n  @type t :: %__MODULE__{\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          parent_when: String.t(),\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          the_1: integer()\n        }\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding Parent.choice\"}\n\n  def encode_choice(%{__struct__: Child} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding Parent.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding Parent.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding Parent.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding Parent.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding Parent.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding Parent.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding Parent.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding Parent.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding Parent.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding Parent.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding Parent.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding Parent.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding Parent.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding Parent.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding Parent.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Parent.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Parent.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding Parent.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding Parent.opt_small\"}\n\n  def decode_parent_when(value) when is_binary(value), do: value\n  def decode_parent_when(_), do: {:error, \"Unexpected type when decoding Parent.parent_when\"}\n\n  def encode_parent_when(value) when is_binary(value), do: value\n  def encode_parent_when(_), do: {:error, \"Unexpected type when encoding Parent.parent_when\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding Parent.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding Parent.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding Parent.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding Parent.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding Parent.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding Parent.tags\"}\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding Parent.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding Parent.the_1\"}\n\n  def from_map(m) do\n    %Parent{\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      parent_when: decode_parent_when(m[\"when\"]),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      the_1: decode_the_1(m[\"_1\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"when\" => struct.parent_when,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"_1\" => struct.the_1,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Parent.t() | nil,\n          x: float()\n        }\n\n  def decode_x(value) when is_float(value), do: value\n  def decode_x(value) when is_integer(value), do: value\n  def decode_x(_), do: {:error, \"Unexpected type when decoding Child.x\"}\n\n  def encode_x(value) when is_float(value), do: value\n  def encode_x(value) when is_integer(value), do: value\n  def encode_x(_), do: {:error, \"Unexpected type when encoding Child.x\"}\n\n  def from_map(m) do\n    %Child{\n      parent: m[\"parent\"] && Parent.from_map(m[\"parent\"]),\n      x: decode_x(m[\"x\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"parent\" => struct.parent && Parent.to_map(struct.parent),\n      \"x\" => struct.x,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :the_1, :top_level_when]\n  defstruct [:anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :the_1, :top_level_when]\n\n  @type t :: %__MODULE__{\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          the_1: integer(),\n          top_level_when: String.t()\n        }\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding TopLevel.choice\"}\n\n  def encode_choice(%Child{} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding TopLevel.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding TopLevel.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding TopLevel.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding TopLevel.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding TopLevel.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding TopLevel.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding TopLevel.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding TopLevel.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding TopLevel.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding TopLevel.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding TopLevel.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding TopLevel.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding TopLevel.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding TopLevel.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding TopLevel.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding TopLevel.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding TopLevel.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding TopLevel.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding TopLevel.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding TopLevel.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding TopLevel.tags\"}\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding TopLevel.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding TopLevel.the_1\"}\n\n  def decode_top_level_when(value) when is_binary(value), do: value\n  def decode_top_level_when(_), do: {:error, \"Unexpected type when decoding TopLevel.top_level_when\"}\n\n  def encode_top_level_when(value) when is_binary(value), do: value\n  def encode_top_level_when(_), do: {:error, \"Unexpected type when encoding TopLevel.top_level_when\"}\n\n  def from_map(m) do\n    %TopLevel{\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      the_1: decode_the_1(m[\"_1\"]),\n      top_level_when: decode_top_level_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"_1\" => struct.the_1,\n      \"when\" => struct.top_level_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\n\n  def decode_y(value) when is_binary(value), do: value\n  def decode_y(_), do: {:error, \"Unexpected type when decoding ChildElement.y\"}\n\n  def encode_y(value) when is_binary(value), do: value\n  def encode_y(_), do: {:error, \"Unexpected type when encoding ChildElement.y\"}\n\n  def from_map(m) do\n    %ChildElement{\n      y: decode_y(m[\"y\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"y\" => struct.y,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\n\n  def from_map(m) do\n    %ChoiceClass{\n      z: m[\"z\"],\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"z\" => struct.z,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Children do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&ChildElement.from_map/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &ChildElement.to_map/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Numbers do\n\n  def decode_element(value) when is_integer(value), do: value\n  def decode_element(_), do: {:error, \"Unexpected type when decoding Numbers.element\"}\n\n  def encode_element(value) when is_integer(value), do: value\n  def encode_element(_), do: {:error, \"Unexpected type when encoding Numbers.element\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&decode_element/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &encode_element/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Scores do\n  def decode_value(value) when is_map(value), do: value\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n\ndefmodule Choice do\n\n  def decode_value(%{} = value), do: ChoiceClass.from_map(value)\n  def decode_value(value) when is_integer(value), do: value\n  def decode_value(value) when is_binary(value), do: value\n  def decode_value(_), do: {:error, \"Unexpected type when decoding Choice.value\"}\n\n  def encode_value(%ChoiceClass{} = value), do: ChoiceClass.to_map(value)\n  def encode_value(value) when is_integer(value), do: value\n  def encode_value(value) when is_binary(value), do: value\n  def encode_value(_), do: {:error, \"Unexpected type when encoding Choice.value\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    data |> encode_value()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Alias1 do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "defmodule Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          parent_when: String.t()\n        }\nend\n\ndefmodule Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Parent.t() | nil,\n          x: float()\n        }\nend\n\ndefmodule TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          top_level_when: String.t()\n        }\nend\n\ndefmodule ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\nend\n\ndefmodule ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\nend\n\ndefmodule Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "namespace": "Outer.Inner"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This file was autogenerated using quicktype https://github.com/quicktype/quicktype\n#\n# Add Jason to your mix.exs\n#\n# Decode a JSON string: Outer.Inner.TopLevel.from_json(data)\n# Encode into a JSON string: Outer.Inner.TopLevel.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Children.from_json(data)\n# Encode into a JSON string: Outer.Inner.Children.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Numbers.from_json(data)\n# Encode into a JSON string: Outer.Inner.Numbers.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Scores.from_json(data)\n# Encode into a JSON string: Outer.Inner.Scores.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Choice.from_json(data)\n# Encode into a JSON string: Outer.Inner.Choice.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Alias1.from_json(data)\n# Encode into a JSON string: Outer.Inner.Alias1.to_json(struct)\n#\n# Decode a JSON string: Outer.Inner.Mode.from_json(data)\n# Encode into a JSON string: Outer.Inner.Mode.to_json(struct)\n\ndefmodule Outer.Inner.Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Outer.Inner.Child.t()},\n          choice: Outer.Inner.Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Outer.Inner.Kind.t(),\n          list: [Outer.Inner.Child.t()],\n          maybe_child: Outer.Inner.Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: Outer.Inner.MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Outer.Inner.Child.t() | nil,\n          opt_kind: Outer.Inner.OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Outer.Inner.Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          parent_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Outer.Inner.Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.choice\"}\n\n  def encode_choice(%{__struct__: Outer.Inner.Child} = value), do: Outer.Inner.Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.tags\"}\n\n  def decode_parent_when(value) when is_binary(value), do: value\n  def decode_parent_when(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Parent.parent_when\"}\n\n  def encode_parent_when(value) when is_binary(value), do: value\n  def encode_parent_when(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Parent.parent_when\"}\n\n  def from_map(m) do\n    %Outer.Inner.Parent{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Outer.Inner.Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Outer.Inner.Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Outer.Inner.Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Outer.Inner.Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && Outer.Inner.MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Outer.Inner.Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && Outer.Inner.OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Outer.Inner.Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      parent_when: decode_parent_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Outer.Inner.Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Outer.Inner.Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Outer.Inner.Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Outer.Inner.Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && Outer.Inner.MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Outer.Inner.Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && Outer.Inner.OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Outer.Inner.Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.parent_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Outer.Inner.Parent.t() | nil,\n          x: float()\n        }\n\n  def decode_x(value) when is_float(value), do: value\n  def decode_x(value) when is_integer(value), do: value\n  def decode_x(_), do: {:error, \"Unexpected type when decoding Outer.Inner.Child.x\"}\n\n  def encode_x(value) when is_float(value), do: value\n  def encode_x(value) when is_integer(value), do: value\n  def encode_x(_), do: {:error, \"Unexpected type when encoding Outer.Inner.Child.x\"}\n\n  def from_map(m) do\n    %Outer.Inner.Child{\n      parent: m[\"parent\"] && Outer.Inner.Parent.from_map(m[\"parent\"]),\n      x: decode_x(m[\"x\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"parent\" => struct.parent && Outer.Inner.Parent.to_map(struct.parent),\n      \"x\" => struct.x,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Outer.Inner.Child.t()},\n          choice: Outer.Inner.Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Outer.Inner.Kind.t(),\n          list: [Outer.Inner.Child.t()],\n          maybe_child: Outer.Inner.Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: Outer.Inner.MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Outer.Inner.Child.t() | nil,\n          opt_kind: Outer.Inner.OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Outer.Inner.Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          top_level_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Outer.Inner.Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.choice\"}\n\n  def encode_choice(%Outer.Inner.Child{} = value), do: Outer.Inner.Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.tags\"}\n\n  def decode_top_level_when(value) when is_binary(value), do: value\n  def decode_top_level_when(_), do: {:error, \"Unexpected type when decoding Outer.Inner.TopLevel.top_level_when\"}\n\n  def encode_top_level_when(value) when is_binary(value), do: value\n  def encode_top_level_when(_), do: {:error, \"Unexpected type when encoding Outer.Inner.TopLevel.top_level_when\"}\n\n  def from_map(m) do\n    %Outer.Inner.TopLevel{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Outer.Inner.Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Outer.Inner.Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Outer.Inner.Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Outer.Inner.Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && Outer.Inner.MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Outer.Inner.Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && Outer.Inner.OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Outer.Inner.Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      top_level_when: decode_top_level_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Outer.Inner.Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Outer.Inner.Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Outer.Inner.Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Outer.Inner.Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && Outer.Inner.MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Outer.Inner.Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && Outer.Inner.OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Outer.Inner.Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.top_level_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\n\n  def decode_y(value) when is_binary(value), do: value\n  def decode_y(_), do: {:error, \"Unexpected type when decoding Outer.Inner.ChildElement.y\"}\n\n  def encode_y(value) when is_binary(value), do: value\n  def encode_y(_), do: {:error, \"Unexpected type when encoding Outer.Inner.ChildElement.y\"}\n\n  def from_map(m) do\n    %Outer.Inner.ChildElement{\n      y: decode_y(m[\"y\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"y\" => struct.y,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\n\n  def from_map(m) do\n    %Outer.Inner.ChoiceClass{\n      z: m[\"z\"],\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"z\" => struct.z,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Children do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&Outer.Inner.ChildElement.from_map/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &Outer.Inner.ChildElement.to_map/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Numbers do\n\n  def decode_element(value) when is_integer(value), do: value\n  def decode_element(_), do: {:error, \"Unexpected type when decoding Numbers.element\"}\n\n  def encode_element(value) when is_integer(value), do: value\n  def encode_element(_), do: {:error, \"Unexpected type when encoding Numbers.element\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&decode_element/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &encode_element/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Scores do\n  def decode_value(value) when is_map(value), do: value\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n\ndefmodule Outer.Inner.Choice do\n\n  def decode_value(%{} = value), do: Outer.Inner.ChoiceClass.from_map(value)\n  def decode_value(value) when is_integer(value), do: value\n  def decode_value(value) when is_binary(value), do: value\n  def decode_value(_), do: {:error, \"Unexpected type when decoding Choice.value\"}\n\n  def encode_value(%Outer.Inner.ChoiceClass{} = value), do: Outer.Inner.ChoiceClass.to_map(value)\n  def encode_value(value) when is_integer(value), do: value\n  def encode_value(value) when is_binary(value), do: value\n  def encode_value(_), do: {:error, \"Unexpected type when encoding Choice.value\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    data |> encode_value()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Outer.Inner.Alias1 do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true,
+    "namespace": "Only"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "defmodule Only.Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Only.MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Only.OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Only.Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Only.Child.t()},\n          choice: Only.Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Only.Kind.t(),\n          list: [Only.Child.t()],\n          maybe_child: Only.Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: Only.MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Only.Child.t() | nil,\n          opt_kind: Only.OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Only.Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          parent_when: String.t()\n        }\nend\n\ndefmodule Only.Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Only.Parent.t() | nil,\n          x: float()\n        }\nend\n\ndefmodule Only.TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Only.Child.t()},\n          choice: Only.Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Only.Kind.t(),\n          list: [Only.Child.t()],\n          maybe_child: Only.Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: Only.MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Only.Child.t() | nil,\n          opt_kind: Only.OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Only.Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          top_level_when: String.t()\n        }\nend\n\ndefmodule Only.ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\nend\n\ndefmodule Only.ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\nend\n\ndefmodule Only.Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "\t",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This file was autogenerated using quicktype https://github.com/quicktype/quicktype\n#\n# Add Jason to your mix.exs\n#\n# Decode a JSON string: TopLevel.from_json(data)\n# Encode into a JSON string: TopLevel.to_json(struct)\n#\n# Decode a JSON string: Children.from_json(data)\n# Encode into a JSON string: Children.to_json(struct)\n#\n# Decode a JSON string: Numbers.from_json(data)\n# Encode into a JSON string: Numbers.to_json(struct)\n#\n# Decode a JSON string: Scores.from_json(data)\n# Encode into a JSON string: Scores.to_json(struct)\n#\n# Decode a JSON string: Choice.from_json(data)\n# Encode into a JSON string: Choice.to_json(struct)\n#\n# Decode a JSON string: Alias1.from_json(data)\n# Encode into a JSON string: Alias1.to_json(struct)\n#\n# Decode a JSON string: Mode.from_json(data)\n# Encode into a JSON string: Mode.to_json(struct)\n\ndefmodule Kind do\n\t@valid_enum_members [\n\t\t:\"one-two\",\n\t\t:\"three \"four\"\",\n\t\t:\"#{x}\",\n\t\t:\"5\",\n\t]\n\n\tdef valid_atom?(value), do: value in @valid_enum_members\n\n\tdef valid_atom_string?(value) do\n\t\ttry do\n\t\t\t\tatom = String.to_existing_atom(value)\n\t\t\t\tatom in @valid_enum_members\n\t\trescue\n\t\t\t\tArgumentError -> false\n\t\tend\n\tend\n\n\tdef encode(value) do\n\t\tif valid_atom?(value) do\n\t\t\t\tAtom.to_string(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef decode(value) do\n\t\tif valid_atom_string?(value) do\n\t\t\t\tString.to_existing_atom(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode()\n\tend\n\n\tdef to_json(data) do\n\t\tdata\n\t\t|> encode()\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule MaybeKind do\n\t@valid_enum_members [\n\t\t:a,\n\t\t:b,\n\t]\n\n\tdef valid_atom?(value), do: value in @valid_enum_members\n\n\tdef valid_atom_string?(value) do\n\t\ttry do\n\t\t\t\tatom = String.to_existing_atom(value)\n\t\t\t\tatom in @valid_enum_members\n\t\trescue\n\t\t\t\tArgumentError -> false\n\t\tend\n\tend\n\n\tdef encode(value) do\n\t\tif valid_atom?(value) do\n\t\t\t\tAtom.to_string(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef decode(value) do\n\t\tif valid_atom_string?(value) do\n\t\t\t\tString.to_existing_atom(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode()\n\tend\n\n\tdef to_json(data) do\n\t\tdata\n\t\t|> encode()\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule OptKind do\n\t@valid_enum_members [\n\t\t:x,\n\t\t:y,\n\t]\n\n\tdef valid_atom?(value), do: value in @valid_enum_members\n\n\tdef valid_atom_string?(value) do\n\t\ttry do\n\t\t\t\tatom = String.to_existing_atom(value)\n\t\t\t\tatom in @valid_enum_members\n\t\trescue\n\t\t\t\tArgumentError -> false\n\t\tend\n\tend\n\n\tdef encode(value) do\n\t\tif valid_atom?(value) do\n\t\t\t\tAtom.to_string(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef decode(value) do\n\t\tif valid_atom_string?(value) do\n\t\t\t\tString.to_existing_atom(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode()\n\tend\n\n\tdef to_json(data) do\n\t\tdata\n\t\t|> encode()\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Parent do\n\t@moduledoc \"\"\"\n\tThe top level.\n\tSecond line.\n\t- `:flag` - A flagover two lines.\n\t- `:name` - The name.\n\t\"\"\"\n\n\t@enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n\tdefstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n\t@type t :: %__MODULE__{\n\t        the_1: integer(),\n\t        anything: any(),\n\t        children: %{String.t() => Child.t()},\n\t        choice: Child.t() | integer() | String.t(),\n\t        class: String.t(),\n\t        counts: %{String.t() => integer()},\n\t        flag: boolean(),\n\t        id: String.t(),\n\t        kind: Kind.t(),\n\t        list: [Child.t()],\n\t        maybe_child: Child.t() | nil,\n\t        maybe_choice: integer() | nil | String.t(),\n\t        maybe_int: integer() | nil,\n\t        maybe_kind: MaybeKind.t() | nil,\n\t        name: String.t(),\n\t        nothing: nil,\n\t        opt_child: Child.t() | nil,\n\t        opt_kind: OptKind.t() | nil,\n\t        opt_list: [float()] | nil,\n\t        opt_map: %{String.t() => String.t()} | nil,\n\t        opt_small: integer() | nil,\n\t        ratio: float(),\n\t        self: Parent.t() | nil,\n\t        small: integer(),\n\t        tags: [String.t()],\n\t        parent_when: String.t()\n\t      }\n\n\tdef decode_the_1(value) when is_integer(value), do: value\n\tdef decode_the_1(_), do: {:error, \"Unexpected type when decoding Parent.the_1\"}\n\n\tdef encode_the_1(value) when is_integer(value), do: value\n\tdef encode_the_1(_), do: {:error, \"Unexpected type when encoding Parent.the_1\"}\n\n\tdef decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n\tdef decode_choice(value) when is_integer(value), do: value\n\tdef decode_choice(value) when is_binary(value), do: value\n\tdef decode_choice(_), do: {:error, \"Unexpected type when decoding Parent.choice\"}\n\n\tdef encode_choice(%{__struct__: Child} = value), do: Child.to_map(value)\n\tdef encode_choice(value) when is_integer(value), do: value\n\tdef encode_choice(value) when is_binary(value), do: value\n\tdef encode_choice(_), do: {:error, \"Unexpected type when encoding Parent.choice\"}\n\n\tdef decode_class(value) when is_binary(value), do: value\n\tdef decode_class(_), do: {:error, \"Unexpected type when decoding Parent.class\"}\n\n\tdef encode_class(value) when is_binary(value), do: value\n\tdef encode_class(_), do: {:error, \"Unexpected type when encoding Parent.class\"}\n\n\tdef decode_counts_value(value) when is_integer(value), do: value\n\tdef decode_counts_value(_), do: {:error, \"Unexpected type when decoding Parent.counts\"}\n\n\tdef encode_counts_value(value) when is_integer(value), do: value\n\tdef encode_counts_value(_), do: {:error, \"Unexpected type when encoding Parent.counts\"}\n\n\tdef decode_flag(value) when is_boolean(value), do: value\n\tdef decode_flag(_), do: {:error, \"Unexpected type when decoding Parent.flag\"}\n\n\tdef encode_flag(value) when is_boolean(value), do: value\n\tdef encode_flag(_), do: {:error, \"Unexpected type when encoding Parent.flag\"}\n\n\tdef decode_id(value) when is_binary(value), do: value\n\tdef decode_id(_), do: {:error, \"Unexpected type when decoding Parent.id\"}\n\n\tdef encode_id(value) when is_binary(value), do: value\n\tdef encode_id(_), do: {:error, \"Unexpected type when encoding Parent.id\"}\n\n\tdef decode_list(value) when is_list(value), do: value\n\tdef decode_list(_), do: {:error, \"Unexpected type when decoding Parent.list\"}\n\n\tdef encode_list(value) when is_list(value), do: value\n\tdef encode_list(_), do: {:error, \"Unexpected type when encoding Parent.list\"}\n\n\tdef decode_name(value) when is_binary(value) do\n\t  if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n\tend\n\tdef decode_name(_), do: {:error, \"Unexpected type when decoding Parent.name\"}\n\n\tdef encode_name(value) when is_binary(value), do: value\n\tdef encode_name(_), do: {:error, \"Unexpected type when encoding Parent.name\"}\n\n\tdef decode_nothing(value) when is_nil(value), do: value\n\tdef decode_nothing(_), do: {:error, \"Unexpected type when decoding Parent.nothing\"}\n\n\tdef encode_nothing(value) when is_nil(value), do: value\n\tdef encode_nothing(_), do: {:error, \"Unexpected type when encoding Parent.nothing\"}\n\n\tdef decode_opt_map_value(value) when is_binary(value), do: value\n\tdef decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Parent.opt_map\"}\n\n\tdef encode_opt_map_value(value) when is_binary(value), do: value\n\tdef encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Parent.opt_map\"}\n\n\tdef decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n\tdef decode_opt_small(_), do: {:error, \"Unexpected type when decoding Parent.opt_small\"}\n\n\tdef encode_opt_small(value) when is_integer(value), do: value\n\tdef encode_opt_small(_), do: {:error, \"Unexpected type when encoding Parent.opt_small\"}\n\n\tdef decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n\tdef decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n\tdef decode_ratio(_), do: {:error, \"Unexpected type when decoding Parent.ratio\"}\n\n\tdef encode_ratio(value) when is_float(value), do: value\n\tdef encode_ratio(value) when is_integer(value), do: value\n\tdef encode_ratio(_), do: {:error, \"Unexpected type when encoding Parent.ratio\"}\n\n\tdef decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n\tdef decode_small(_), do: {:error, \"Unexpected type when decoding Parent.small\"}\n\n\tdef encode_small(value) when is_integer(value), do: value\n\tdef encode_small(_), do: {:error, \"Unexpected type when encoding Parent.small\"}\n\n\tdef decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n\tdef decode_tags(_), do: {:error, \"Unexpected type when decoding Parent.tags\"}\n\n\tdef encode_tags(value) when is_list(value), do: value\n\tdef encode_tags(_), do: {:error, \"Unexpected type when encoding Parent.tags\"}\n\n\tdef decode_parent_when(value) when is_binary(value), do: value\n\tdef decode_parent_when(_), do: {:error, \"Unexpected type when decoding Parent.parent_when\"}\n\n\tdef encode_parent_when(value) when is_binary(value), do: value\n\tdef encode_parent_when(_), do: {:error, \"Unexpected type when encoding Parent.parent_when\"}\n\n\tdef from_map(m) do\n\t\t%Parent{\n\t\t\tthe_1: decode_the_1(m[\"_1\"]),\n\t\t\tanything: m[\"anything\"],\n\t\t\tchildren: m[\"children\"]\n\t\t\t|> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n\t\t\tchoice: decode_choice(m[\"choice\"]),\n\t\t\tclass: decode_class(m[\"class\"]),\n\t\t\tcounts: m[\"counts\"]\n\t\t\t|> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n\t\t\tflag: decode_flag(m[\"flag\"]),\n\t\t\tid: decode_id(m[\"id\"]),\n\t\t\tkind: Kind.decode(m[\"kind\"]),\n\t\t\tlist: Enum.map(m[\"list\"], &Child.from_map/1),\n\t\t\tmaybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n\t\t\tmaybe_choice: Map.fetch!(m, \"maybeChoice\"),\n\t\t\tmaybe_int: Map.fetch!(m, \"maybeInt\"),\n\t\t\tmaybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n\t\t\tname: decode_name(m[\"name\"]),\n\t\t\tnothing: decode_nothing(m[\"nothing\"]),\n\t\t\topt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n\t\t\topt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n\t\t\topt_list: m[\"optList\"],\n\t\t\topt_map: m[\"optMap\"],\n\t\t\topt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n\t\t\tratio: decode_ratio(m[\"ratio\"]),\n\t\t\tself: m[\"self\"] && Parent.from_map(m[\"self\"]),\n\t\t\tsmall: decode_small(m[\"small\"]),\n\t\t\ttags: decode_tags(m[\"tags\"]),\n\t\t\tparent_when: decode_parent_when(m[\"when\"]),\n\t\t}\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t\t\t\t|> Jason.decode!()\n\t\t\t\t\t|> from_map()\n\tend\n\n\tdef to_map(struct) do\n\t\t%{\n\t\t\t\"_1\" => struct.the_1,\n\t\t\t\"anything\" => struct.anything,\n\t\t\t\"children\" => struct.children\n\t\t\t|> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n\t\t\t\"choice\" => encode_choice(struct.choice),\n\t\t\t\"class\" => struct.class,\n\t\t\t\"counts\" => struct.counts,\n\t\t\t\"flag\" => struct.flag,\n\t\t\t\"id\" => struct.id,\n\t\t\t\"kind\" => Kind.encode(struct.kind),\n\t\t\t\"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n\t\t\t\"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n\t\t\t\"maybeChoice\" => struct.maybe_choice,\n\t\t\t\"maybeInt\" => struct.maybe_int,\n\t\t\t\"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n\t\t\t\"name\" => struct.name,\n\t\t\t\"nothing\" => struct.nothing,\n\t\t\t\"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n\t\t\t\"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n\t\t\t\"optList\" => struct.opt_list,\n\t\t\t\"optMap\" => struct.opt_map,\n\t\t\t\"optSmall\" => struct.opt_small,\n\t\t\t\"ratio\" => struct.ratio,\n\t\t\t\"self\" => struct.self && Parent.to_map(struct.self),\n\t\t\t\"small\" => struct.small,\n\t\t\t\"tags\" => struct.tags,\n\t\t\t\"when\" => struct.parent_when,\n\t\t}\n\tend\n\n\tdef to_json(struct) do\n\t\tstruct\n\t\t\t\t\t|> to_map()\n\t\t\t\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Child do\n\t@moduledoc \"\"\"\n\tA child.\n\t\"\"\"\n\n\t@enforce_keys [:x]\n\tdefstruct [:parent, :x]\n\n\t@type t :: %__MODULE__{\n\t        parent: Parent.t() | nil,\n\t        x: float()\n\t      }\n\n\tdef decode_x(value) when is_float(value), do: value\n\tdef decode_x(value) when is_integer(value), do: value\n\tdef decode_x(_), do: {:error, \"Unexpected type when decoding Child.x\"}\n\n\tdef encode_x(value) when is_float(value), do: value\n\tdef encode_x(value) when is_integer(value), do: value\n\tdef encode_x(_), do: {:error, \"Unexpected type when encoding Child.x\"}\n\n\tdef from_map(m) do\n\t\t%Child{\n\t\t\tparent: m[\"parent\"] && Parent.from_map(m[\"parent\"]),\n\t\t\tx: decode_x(m[\"x\"]),\n\t\t}\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t\t\t\t|> Jason.decode!()\n\t\t\t\t\t|> from_map()\n\tend\n\n\tdef to_map(struct) do\n\t\t%{\n\t\t\t\"parent\" => struct.parent && Parent.to_map(struct.parent),\n\t\t\t\"x\" => struct.x,\n\t\t}\n\tend\n\n\tdef to_json(struct) do\n\t\tstruct\n\t\t\t\t\t|> to_map()\n\t\t\t\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule TopLevel do\n\t@moduledoc \"\"\"\n\tThe top level.\n\tSecond line.\n\t- `:flag` - A flagover two lines.\n\t- `:name` - The name.\n\t\"\"\"\n\n\t@enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n\tdefstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n\t@type t :: %__MODULE__{\n\t        the_1: integer(),\n\t        anything: any(),\n\t        children: %{String.t() => Child.t()},\n\t        choice: Child.t() | integer() | String.t(),\n\t        class: String.t(),\n\t        counts: %{String.t() => integer()},\n\t        flag: boolean(),\n\t        id: String.t(),\n\t        kind: Kind.t(),\n\t        list: [Child.t()],\n\t        maybe_child: Child.t() | nil,\n\t        maybe_choice: integer() | nil | String.t(),\n\t        maybe_int: integer() | nil,\n\t        maybe_kind: MaybeKind.t() | nil,\n\t        name: String.t(),\n\t        nothing: nil,\n\t        opt_child: Child.t() | nil,\n\t        opt_kind: OptKind.t() | nil,\n\t        opt_list: [float()] | nil,\n\t        opt_map: %{String.t() => String.t()} | nil,\n\t        opt_small: integer() | nil,\n\t        ratio: float(),\n\t        self: Parent.t() | nil,\n\t        small: integer(),\n\t        tags: [String.t()],\n\t        top_level_when: String.t()\n\t      }\n\n\tdef decode_the_1(value) when is_integer(value), do: value\n\tdef decode_the_1(_), do: {:error, \"Unexpected type when decoding TopLevel.the_1\"}\n\n\tdef encode_the_1(value) when is_integer(value), do: value\n\tdef encode_the_1(_), do: {:error, \"Unexpected type when encoding TopLevel.the_1\"}\n\n\tdef decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n\tdef decode_choice(value) when is_integer(value), do: value\n\tdef decode_choice(value) when is_binary(value), do: value\n\tdef decode_choice(_), do: {:error, \"Unexpected type when decoding TopLevel.choice\"}\n\n\tdef encode_choice(%Child{} = value), do: Child.to_map(value)\n\tdef encode_choice(value) when is_integer(value), do: value\n\tdef encode_choice(value) when is_binary(value), do: value\n\tdef encode_choice(_), do: {:error, \"Unexpected type when encoding TopLevel.choice\"}\n\n\tdef decode_class(value) when is_binary(value), do: value\n\tdef decode_class(_), do: {:error, \"Unexpected type when decoding TopLevel.class\"}\n\n\tdef encode_class(value) when is_binary(value), do: value\n\tdef encode_class(_), do: {:error, \"Unexpected type when encoding TopLevel.class\"}\n\n\tdef decode_counts_value(value) when is_integer(value), do: value\n\tdef decode_counts_value(_), do: {:error, \"Unexpected type when decoding TopLevel.counts\"}\n\n\tdef encode_counts_value(value) when is_integer(value), do: value\n\tdef encode_counts_value(_), do: {:error, \"Unexpected type when encoding TopLevel.counts\"}\n\n\tdef decode_flag(value) when is_boolean(value), do: value\n\tdef decode_flag(_), do: {:error, \"Unexpected type when decoding TopLevel.flag\"}\n\n\tdef encode_flag(value) when is_boolean(value), do: value\n\tdef encode_flag(_), do: {:error, \"Unexpected type when encoding TopLevel.flag\"}\n\n\tdef decode_id(value) when is_binary(value), do: value\n\tdef decode_id(_), do: {:error, \"Unexpected type when decoding TopLevel.id\"}\n\n\tdef encode_id(value) when is_binary(value), do: value\n\tdef encode_id(_), do: {:error, \"Unexpected type when encoding TopLevel.id\"}\n\n\tdef decode_list(value) when is_list(value), do: value\n\tdef decode_list(_), do: {:error, \"Unexpected type when decoding TopLevel.list\"}\n\n\tdef encode_list(value) when is_list(value), do: value\n\tdef encode_list(_), do: {:error, \"Unexpected type when encoding TopLevel.list\"}\n\n\tdef decode_name(value) when is_binary(value) do\n\t  if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n\tend\n\tdef decode_name(_), do: {:error, \"Unexpected type when decoding TopLevel.name\"}\n\n\tdef encode_name(value) when is_binary(value), do: value\n\tdef encode_name(_), do: {:error, \"Unexpected type when encoding TopLevel.name\"}\n\n\tdef decode_nothing(value) when is_nil(value), do: value\n\tdef decode_nothing(_), do: {:error, \"Unexpected type when decoding TopLevel.nothing\"}\n\n\tdef encode_nothing(value) when is_nil(value), do: value\n\tdef encode_nothing(_), do: {:error, \"Unexpected type when encoding TopLevel.nothing\"}\n\n\tdef decode_opt_map_value(value) when is_binary(value), do: value\n\tdef decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_map\"}\n\n\tdef encode_opt_map_value(value) when is_binary(value), do: value\n\tdef encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_map\"}\n\n\tdef decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n\tdef decode_opt_small(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_small\"}\n\n\tdef encode_opt_small(value) when is_integer(value), do: value\n\tdef encode_opt_small(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_small\"}\n\n\tdef decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n\tdef decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n\tdef decode_ratio(_), do: {:error, \"Unexpected type when decoding TopLevel.ratio\"}\n\n\tdef encode_ratio(value) when is_float(value), do: value\n\tdef encode_ratio(value) when is_integer(value), do: value\n\tdef encode_ratio(_), do: {:error, \"Unexpected type when encoding TopLevel.ratio\"}\n\n\tdef decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n\tdef decode_small(_), do: {:error, \"Unexpected type when decoding TopLevel.small\"}\n\n\tdef encode_small(value) when is_integer(value), do: value\n\tdef encode_small(_), do: {:error, \"Unexpected type when encoding TopLevel.small\"}\n\n\tdef decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n\tdef decode_tags(_), do: {:error, \"Unexpected type when decoding TopLevel.tags\"}\n\n\tdef encode_tags(value) when is_list(value), do: value\n\tdef encode_tags(_), do: {:error, \"Unexpected type when encoding TopLevel.tags\"}\n\n\tdef decode_top_level_when(value) when is_binary(value), do: value\n\tdef decode_top_level_when(_), do: {:error, \"Unexpected type when decoding TopLevel.top_level_when\"}\n\n\tdef encode_top_level_when(value) when is_binary(value), do: value\n\tdef encode_top_level_when(_), do: {:error, \"Unexpected type when encoding TopLevel.top_level_when\"}\n\n\tdef from_map(m) do\n\t\t%TopLevel{\n\t\t\tthe_1: decode_the_1(m[\"_1\"]),\n\t\t\tanything: m[\"anything\"],\n\t\t\tchildren: m[\"children\"]\n\t\t\t|> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n\t\t\tchoice: decode_choice(m[\"choice\"]),\n\t\t\tclass: decode_class(m[\"class\"]),\n\t\t\tcounts: m[\"counts\"]\n\t\t\t|> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n\t\t\tflag: decode_flag(m[\"flag\"]),\n\t\t\tid: decode_id(m[\"id\"]),\n\t\t\tkind: Kind.decode(m[\"kind\"]),\n\t\t\tlist: Enum.map(m[\"list\"], &Child.from_map/1),\n\t\t\tmaybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n\t\t\tmaybe_choice: Map.fetch!(m, \"maybeChoice\"),\n\t\t\tmaybe_int: Map.fetch!(m, \"maybeInt\"),\n\t\t\tmaybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n\t\t\tname: decode_name(m[\"name\"]),\n\t\t\tnothing: decode_nothing(m[\"nothing\"]),\n\t\t\topt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n\t\t\topt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n\t\t\topt_list: m[\"optList\"],\n\t\t\topt_map: m[\"optMap\"],\n\t\t\topt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n\t\t\tratio: decode_ratio(m[\"ratio\"]),\n\t\t\tself: m[\"self\"] && Parent.from_map(m[\"self\"]),\n\t\t\tsmall: decode_small(m[\"small\"]),\n\t\t\ttags: decode_tags(m[\"tags\"]),\n\t\t\ttop_level_when: decode_top_level_when(m[\"when\"]),\n\t\t}\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t\t\t\t|> Jason.decode!()\n\t\t\t\t\t|> from_map()\n\tend\n\n\tdef to_map(struct) do\n\t\t%{\n\t\t\t\"_1\" => struct.the_1,\n\t\t\t\"anything\" => struct.anything,\n\t\t\t\"children\" => struct.children\n\t\t\t|> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n\t\t\t\"choice\" => encode_choice(struct.choice),\n\t\t\t\"class\" => struct.class,\n\t\t\t\"counts\" => struct.counts,\n\t\t\t\"flag\" => struct.flag,\n\t\t\t\"id\" => struct.id,\n\t\t\t\"kind\" => Kind.encode(struct.kind),\n\t\t\t\"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n\t\t\t\"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n\t\t\t\"maybeChoice\" => struct.maybe_choice,\n\t\t\t\"maybeInt\" => struct.maybe_int,\n\t\t\t\"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n\t\t\t\"name\" => struct.name,\n\t\t\t\"nothing\" => struct.nothing,\n\t\t\t\"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n\t\t\t\"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n\t\t\t\"optList\" => struct.opt_list,\n\t\t\t\"optMap\" => struct.opt_map,\n\t\t\t\"optSmall\" => struct.opt_small,\n\t\t\t\"ratio\" => struct.ratio,\n\t\t\t\"self\" => struct.self && Parent.to_map(struct.self),\n\t\t\t\"small\" => struct.small,\n\t\t\t\"tags\" => struct.tags,\n\t\t\t\"when\" => struct.top_level_when,\n\t\t}\n\tend\n\n\tdef to_json(struct) do\n\t\tstruct\n\t\t\t\t\t|> to_map()\n\t\t\t\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule ChildElement do\n\t@enforce_keys [:y]\n\tdefstruct [:y]\n\n\t@type t :: %__MODULE__{\n\t        y: String.t()\n\t      }\n\n\tdef decode_y(value) when is_binary(value), do: value\n\tdef decode_y(_), do: {:error, \"Unexpected type when decoding ChildElement.y\"}\n\n\tdef encode_y(value) when is_binary(value), do: value\n\tdef encode_y(_), do: {:error, \"Unexpected type when encoding ChildElement.y\"}\n\n\tdef from_map(m) do\n\t\t%ChildElement{\n\t\t\ty: decode_y(m[\"y\"]),\n\t\t}\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t\t\t\t|> Jason.decode!()\n\t\t\t\t\t|> from_map()\n\tend\n\n\tdef to_map(struct) do\n\t\t%{\n\t\t\t\"y\" => struct.y,\n\t\t}\n\tend\n\n\tdef to_json(struct) do\n\t\tstruct\n\t\t\t\t\t|> to_map()\n\t\t\t\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule ChoiceClass do\n\tdefstruct [:z]\n\n\t@type t :: %__MODULE__{\n\t        z: boolean() | nil\n\t      }\n\n\tdef from_map(m) do\n\t\t%ChoiceClass{\n\t\t\tz: m[\"z\"],\n\t\t}\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t\t\t\t|> Jason.decode!()\n\t\t\t\t\t|> from_map()\n\tend\n\n\tdef to_map(struct) do\n\t\t%{\n\t\t\t\"z\" => struct.z,\n\t\t}\n\tend\n\n\tdef to_json(struct) do\n\t\tstruct\n\t\t\t\t\t|> to_map()\n\t\t\t\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Mode do\n\t@valid_enum_members [\n\t\t:on,\n\t\t:off,\n\t]\n\n\tdef valid_atom?(value), do: value in @valid_enum_members\n\n\tdef valid_atom_string?(value) do\n\t\ttry do\n\t\t\t\tatom = String.to_existing_atom(value)\n\t\t\t\tatom in @valid_enum_members\n\t\trescue\n\t\t\t\tArgumentError -> false\n\t\tend\n\tend\n\n\tdef encode(value) do\n\t\tif valid_atom?(value) do\n\t\t\t\tAtom.to_string(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef decode(value) do\n\t\tif valid_atom_string?(value) do\n\t\t\t\tString.to_existing_atom(value)\n\t\telse\n\t\t\t\t{:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n\t\tend\n\tend\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode()\n\tend\n\n\tdef to_json(data) do\n\t\tdata\n\t\t|> encode()\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Children do\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> Enum.map(&ChildElement.from_map/1)\n\tend\n\n\tdef to_json(list) do\n\t\tEnum.map(list, &ChildElement.to_map/1)\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Numbers do\n\n\tdef decode_element(value) when is_integer(value), do: value\n\tdef decode_element(_), do: {:error, \"Unexpected type when decoding Numbers.element\"}\n\n\tdef encode_element(value) when is_integer(value), do: value\n\tdef encode_element(_), do: {:error, \"Unexpected type when encoding Numbers.element\"}\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> Enum.map(&decode_element/1)\n\tend\n\n\tdef to_json(list) do\n\t\tEnum.map(list, &encode_element/1)\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Scores do\n\tdef decode_value(value) when is_map(value), do: value\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode_value()\n\tend\n\n\tdef to_json(data) do\n\t\tJason.encode!(data)\n\tend\nend\n\ndefmodule Choice do\n\n\tdef decode_value(%{} = value), do: ChoiceClass.from_map(value)\n\tdef decode_value(value) when is_integer(value), do: value\n\tdef decode_value(value) when is_binary(value), do: value\n\tdef decode_value(_), do: {:error, \"Unexpected type when decoding Choice.value\"}\n\n\tdef encode_value(%ChoiceClass{} = value), do: ChoiceClass.to_map(value)\n\tdef encode_value(value) when is_integer(value), do: value\n\tdef encode_value(value) when is_binary(value), do: value\n\tdef encode_value(_), do: {:error, \"Unexpected type when encoding Choice.value\"}\n\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\t\t|> decode_value()\n\tend\n\n\tdef to_json(data) do\n\t\tdata |> encode_value()\n\t\t|> Jason.encode!()\n\tend\nend\n\ndefmodule Alias1 do\n\tdef from_json(json) do\n\t\tjson\n\t\t|> Jason.decode!()\n\tend\n\n\tdef to_json(data) do\n\t\tJason.encode!(data)\n\tend\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "elixir",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "string comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    },
+    {
+     "descriptionBlock": [
+      "block \"\"\" with \\ quotes",
+      "two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# string comment\n\n# line one\n# line two\n\n@moduledoc \"\"\"\nblock \\\"\\\"\\\" with \\\\ quotes\ntwo\n\"\"\"\n\ndefmodule Kind do\n  @valid_enum_members [\n    :\"one-two\",\n    :\"three \"four\"\",\n    :\"#{x}\",\n    :\"5\",\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule MaybeKind do\n  @valid_enum_members [\n    :a,\n    :b,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule OptKind do\n  @valid_enum_members [\n    :x,\n    :y,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Parent do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :parent_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :parent_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          parent_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding Parent.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding Parent.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding Parent.choice\"}\n\n  def encode_choice(%{__struct__: Child} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding Parent.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding Parent.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding Parent.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding Parent.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding Parent.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding Parent.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding Parent.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding Parent.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding Parent.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding Parent.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding Parent.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding Parent.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding Parent.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding Parent.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding Parent.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding Parent.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding Parent.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding Parent.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding Parent.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding Parent.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding Parent.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding Parent.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding Parent.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding Parent.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding Parent.tags\"}\n\n  def decode_parent_when(value) when is_binary(value), do: value\n  def decode_parent_when(_), do: {:error, \"Unexpected type when decoding Parent.parent_when\"}\n\n  def encode_parent_when(value) when is_binary(value), do: value\n  def encode_parent_when(_), do: {:error, \"Unexpected type when encoding Parent.parent_when\"}\n\n  def from_map(m) do\n    %Parent{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      parent_when: decode_parent_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.parent_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Child do\n  @moduledoc \"\"\"\n  A child.\n  \"\"\"\n\n  @enforce_keys [:x]\n  defstruct [:parent, :x]\n\n  @type t :: %__MODULE__{\n          parent: Parent.t() | nil,\n          x: float()\n        }\n\n  def decode_x(value) when is_float(value), do: value\n  def decode_x(value) when is_integer(value), do: value\n  def decode_x(_), do: {:error, \"Unexpected type when decoding Child.x\"}\n\n  def encode_x(value) when is_float(value), do: value\n  def encode_x(value) when is_integer(value), do: value\n  def encode_x(_), do: {:error, \"Unexpected type when encoding Child.x\"}\n\n  def from_map(m) do\n    %Child{\n      parent: m[\"parent\"] && Parent.from_map(m[\"parent\"]),\n      x: decode_x(m[\"x\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"parent\" => struct.parent && Parent.to_map(struct.parent),\n      \"x\" => struct.x,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule TopLevel do\n  @moduledoc \"\"\"\n  The top level.\n  Second line.\n  - `:flag` - A flagover two lines.\n  - `:name` - The name.\n  \"\"\"\n\n  @enforce_keys [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :ratio, :small, :tags, :top_level_when]\n  defstruct [:the_1, :anything, :children, :choice, :class, :counts, :flag, :id, :kind, :list, :maybe_child, :maybe_choice, :maybe_int, :maybe_kind, :name, :nothing, :opt_child, :opt_kind, :opt_list, :opt_map, :opt_small, :ratio, :self, :small, :tags, :top_level_when]\n\n  @type t :: %__MODULE__{\n          the_1: integer(),\n          anything: any(),\n          children: %{String.t() => Child.t()},\n          choice: Child.t() | integer() | String.t(),\n          class: String.t(),\n          counts: %{String.t() => integer()},\n          flag: boolean(),\n          id: String.t(),\n          kind: Kind.t(),\n          list: [Child.t()],\n          maybe_child: Child.t() | nil,\n          maybe_choice: integer() | nil | String.t(),\n          maybe_int: integer() | nil,\n          maybe_kind: MaybeKind.t() | nil,\n          name: String.t(),\n          nothing: nil,\n          opt_child: Child.t() | nil,\n          opt_kind: OptKind.t() | nil,\n          opt_list: [float()] | nil,\n          opt_map: %{String.t() => String.t()} | nil,\n          opt_small: integer() | nil,\n          ratio: float(),\n          self: Parent.t() | nil,\n          small: integer(),\n          tags: [String.t()],\n          top_level_when: String.t()\n        }\n\n  def decode_the_1(value) when is_integer(value), do: value\n  def decode_the_1(_), do: {:error, \"Unexpected type when decoding TopLevel.the_1\"}\n\n  def encode_the_1(value) when is_integer(value), do: value\n  def encode_the_1(_), do: {:error, \"Unexpected type when encoding TopLevel.the_1\"}\n\n  def decode_choice(%{\"x\" => _,} = value), do: Child.from_map(value)\n  def decode_choice(value) when is_integer(value), do: value\n  def decode_choice(value) when is_binary(value), do: value\n  def decode_choice(_), do: {:error, \"Unexpected type when decoding TopLevel.choice\"}\n\n  def encode_choice(%Child{} = value), do: Child.to_map(value)\n  def encode_choice(value) when is_integer(value), do: value\n  def encode_choice(value) when is_binary(value), do: value\n  def encode_choice(_), do: {:error, \"Unexpected type when encoding TopLevel.choice\"}\n\n  def decode_class(value) when is_binary(value), do: value\n  def decode_class(_), do: {:error, \"Unexpected type when decoding TopLevel.class\"}\n\n  def encode_class(value) when is_binary(value), do: value\n  def encode_class(_), do: {:error, \"Unexpected type when encoding TopLevel.class\"}\n\n  def decode_counts_value(value) when is_integer(value), do: value\n  def decode_counts_value(_), do: {:error, \"Unexpected type when decoding TopLevel.counts\"}\n\n  def encode_counts_value(value) when is_integer(value), do: value\n  def encode_counts_value(_), do: {:error, \"Unexpected type when encoding TopLevel.counts\"}\n\n  def decode_flag(value) when is_boolean(value), do: value\n  def decode_flag(_), do: {:error, \"Unexpected type when decoding TopLevel.flag\"}\n\n  def encode_flag(value) when is_boolean(value), do: value\n  def encode_flag(_), do: {:error, \"Unexpected type when encoding TopLevel.flag\"}\n\n  def decode_id(value) when is_binary(value), do: value\n  def decode_id(_), do: {:error, \"Unexpected type when decoding TopLevel.id\"}\n\n  def encode_id(value) when is_binary(value), do: value\n  def encode_id(_), do: {:error, \"Unexpected type when encoding TopLevel.id\"}\n\n  def decode_list(value) when is_list(value), do: value\n  def decode_list(_), do: {:error, \"Unexpected type when decoding TopLevel.list\"}\n\n  def encode_list(value) when is_list(value), do: value\n  def encode_list(_), do: {:error, \"Unexpected type when encoding TopLevel.list\"}\n\n  def decode_name(value) when is_binary(value) do\n    if length(String.codepoints(value)) >= 1 and length(String.codepoints(value)) <= 3 and Regex.match?(Regex.compile!(\"^[a-z#\\\"\\\\\\\\]+$\"), value), do: value, else: raise(ArgumentError)\n  end\n  def decode_name(_), do: {:error, \"Unexpected type when decoding TopLevel.name\"}\n\n  def encode_name(value) when is_binary(value), do: value\n  def encode_name(_), do: {:error, \"Unexpected type when encoding TopLevel.name\"}\n\n  def decode_nothing(value) when is_nil(value), do: value\n  def decode_nothing(_), do: {:error, \"Unexpected type when decoding TopLevel.nothing\"}\n\n  def encode_nothing(value) when is_nil(value), do: value\n  def encode_nothing(_), do: {:error, \"Unexpected type when encoding TopLevel.nothing\"}\n\n  def decode_opt_map_value(value) when is_binary(value), do: value\n  def decode_opt_map_value(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_map\"}\n\n  def encode_opt_map_value(value) when is_binary(value), do: value\n  def encode_opt_map_value(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_map\"}\n\n  def decode_opt_small(value) when is_integer(value) and value >= 1, do: value\n  def decode_opt_small(_), do: {:error, \"Unexpected type when decoding TopLevel.opt_small\"}\n\n  def encode_opt_small(value) when is_integer(value), do: value\n  def encode_opt_small(_), do: {:error, \"Unexpected type when encoding TopLevel.opt_small\"}\n\n  def decode_ratio(value) when is_float(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(value) when is_integer(value) and value >= 0.5 and value <= 1e+21, do: value\n  def decode_ratio(_), do: {:error, \"Unexpected type when decoding TopLevel.ratio\"}\n\n  def encode_ratio(value) when is_float(value), do: value\n  def encode_ratio(value) when is_integer(value), do: value\n  def encode_ratio(_), do: {:error, \"Unexpected type when encoding TopLevel.ratio\"}\n\n  def decode_small(value) when is_integer(value) and value >= -5 and value <= 100, do: value\n  def decode_small(_), do: {:error, \"Unexpected type when decoding TopLevel.small\"}\n\n  def encode_small(value) when is_integer(value), do: value\n  def encode_small(_), do: {:error, \"Unexpected type when encoding TopLevel.small\"}\n\n  def decode_tags(value) when is_list(value) and length(value) >= 1 and length(value) <= 4, do: value\n  def decode_tags(_), do: {:error, \"Unexpected type when decoding TopLevel.tags\"}\n\n  def encode_tags(value) when is_list(value), do: value\n  def encode_tags(_), do: {:error, \"Unexpected type when encoding TopLevel.tags\"}\n\n  def decode_top_level_when(value) when is_binary(value), do: value\n  def decode_top_level_when(_), do: {:error, \"Unexpected type when decoding TopLevel.top_level_when\"}\n\n  def encode_top_level_when(value) when is_binary(value), do: value\n  def encode_top_level_when(_), do: {:error, \"Unexpected type when encoding TopLevel.top_level_when\"}\n\n  def from_map(m) do\n    %TopLevel{\n      the_1: decode_the_1(m[\"_1\"]),\n      anything: m[\"anything\"],\n      children: m[\"children\"]\n      |> Map.new(fn {key, value} -> {key, Child.from_map(value)} end),\n      choice: decode_choice(m[\"choice\"]),\n      class: decode_class(m[\"class\"]),\n      counts: m[\"counts\"]\n      |> Map.new(fn {key, value} -> {key, decode_counts_value(value)} end),\n      flag: decode_flag(m[\"flag\"]),\n      id: decode_id(m[\"id\"]),\n      kind: Kind.decode(m[\"kind\"]),\n      list: Enum.map(m[\"list\"], &Child.from_map/1),\n      maybe_child: m[\"maybeChild\"] && Child.from_map(m[\"maybeChild\"]),\n      maybe_choice: Map.fetch!(m, \"maybeChoice\"),\n      maybe_int: Map.fetch!(m, \"maybeInt\"),\n      maybe_kind: m[\"maybeKind\"] && MaybeKind.decode(m[\"maybeKind\"]),\n      name: decode_name(m[\"name\"]),\n      nothing: decode_nothing(m[\"nothing\"]),\n      opt_child: m[\"optChild\"] && Child.from_map(m[\"optChild\"]),\n      opt_kind: m[\"optKind\"] && OptKind.decode(m[\"optKind\"]),\n      opt_list: m[\"optList\"],\n      opt_map: m[\"optMap\"],\n      opt_small: (if Map.has_key?(m, \"optSmall\"), do: decode_opt_small(m[\"optSmall\"])),\n      ratio: decode_ratio(m[\"ratio\"]),\n      self: m[\"self\"] && Parent.from_map(m[\"self\"]),\n      small: decode_small(m[\"small\"]),\n      tags: decode_tags(m[\"tags\"]),\n      top_level_when: decode_top_level_when(m[\"when\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"_1\" => struct.the_1,\n      \"anything\" => struct.anything,\n      \"children\" => struct.children\n      |> Map.new(fn {key, value} -> {key, Child.to_map(value)} end),\n      \"choice\" => encode_choice(struct.choice),\n      \"class\" => struct.class,\n      \"counts\" => struct.counts,\n      \"flag\" => struct.flag,\n      \"id\" => struct.id,\n      \"kind\" => Kind.encode(struct.kind),\n      \"list\" => struct.list && Enum.map(struct.list, &Child.to_map/1),\n      \"maybeChild\" => struct.maybe_child && Child.to_map(struct.maybe_child),\n      \"maybeChoice\" => struct.maybe_choice,\n      \"maybeInt\" => struct.maybe_int,\n      \"maybeKind\" => struct.maybe_kind && MaybeKind.encode(struct.maybe_kind),\n      \"name\" => struct.name,\n      \"nothing\" => struct.nothing,\n      \"optChild\" => struct.opt_child && Child.to_map(struct.opt_child),\n      \"optKind\" => struct.opt_kind && OptKind.encode(struct.opt_kind),\n      \"optList\" => struct.opt_list,\n      \"optMap\" => struct.opt_map,\n      \"optSmall\" => struct.opt_small,\n      \"ratio\" => struct.ratio,\n      \"self\" => struct.self && Parent.to_map(struct.self),\n      \"small\" => struct.small,\n      \"tags\" => struct.tags,\n      \"when\" => struct.top_level_when,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChildElement do\n  @enforce_keys [:y]\n  defstruct [:y]\n\n  @type t :: %__MODULE__{\n          y: String.t()\n        }\n\n  def decode_y(value) when is_binary(value), do: value\n  def decode_y(_), do: {:error, \"Unexpected type when decoding ChildElement.y\"}\n\n  def encode_y(value) when is_binary(value), do: value\n  def encode_y(_), do: {:error, \"Unexpected type when encoding ChildElement.y\"}\n\n  def from_map(m) do\n    %ChildElement{\n      y: decode_y(m[\"y\"]),\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"y\" => struct.y,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule ChoiceClass do\n  defstruct [:z]\n\n  @type t :: %__MODULE__{\n          z: boolean() | nil\n        }\n\n  def from_map(m) do\n    %ChoiceClass{\n      z: m[\"z\"],\n    }\n  end\n\n  def from_json(json) do\n    json\n          |> Jason.decode!()\n          |> from_map()\n  end\n\n  def to_map(struct) do\n    %{\n      \"z\" => struct.z,\n    }\n  end\n\n  def to_json(struct) do\n    struct\n          |> to_map()\n          |> Jason.encode!()\n  end\nend\n\ndefmodule Mode do\n  @valid_enum_members [\n    :on,\n    :off,\n  ]\n\n  def valid_atom?(value), do: value in @valid_enum_members\n\n  def valid_atom_string?(value) do\n    try do\n        atom = String.to_existing_atom(value)\n        atom in @valid_enum_members\n    rescue\n        ArgumentError -> false\n    end\n  end\n\n  def encode(value) do\n    if valid_atom?(value) do\n        Atom.to_string(value)\n    else\n        {:error, \"Unexpected value when encoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def decode(value) do\n    if valid_atom_string?(value) do\n        String.to_existing_atom(value)\n    else\n        {:error, \"Unexpected value when decoding atom: #{inspect(value)}\"}\n    end\n  end\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode()\n  end\n\n  def to_json(data) do\n    data\n    |> encode()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Children do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&ChildElement.from_map/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &ChildElement.to_map/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Numbers do\n\n  def decode_element(value) when is_integer(value), do: value\n  def decode_element(_), do: {:error, \"Unexpected type when decoding Numbers.element\"}\n\n  def encode_element(value) when is_integer(value), do: value\n  def encode_element(_), do: {:error, \"Unexpected type when encoding Numbers.element\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> Enum.map(&decode_element/1)\n  end\n\n  def to_json(list) do\n    Enum.map(list, &encode_element/1)\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Scores do\n  def decode_value(value) when is_map(value), do: value\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n\ndefmodule Choice do\n\n  def decode_value(%{} = value), do: ChoiceClass.from_map(value)\n  def decode_value(value) when is_integer(value), do: value\n  def decode_value(value) when is_binary(value), do: value\n  def decode_value(_), do: {:error, \"Unexpected type when decoding Choice.value\"}\n\n  def encode_value(%ChoiceClass{} = value), do: ChoiceClass.to_map(value)\n  def encode_value(value) when is_integer(value), do: value\n  def encode_value(value) when is_binary(value), do: value\n  def encode_value(_), do: {:error, \"Unexpected type when encoding Choice.value\"}\n\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n    |> decode_value()\n  end\n\n  def to_json(data) do\n    data |> encode_value()\n    |> Jason.encode!()\n  end\nend\n\ndefmodule Alias1 do\n  def from_json(json) do\n    json\n    |> Jason.decode!()\n  end\n\n  def to_json(data) do\n    Jason.encode!(data)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "elixir-shapes"
+}

@@ -1,0 +1,8 @@
+# Elixir top-level arrays whose element is neither primitive nor named (a
+# map, a nullable union): TypeScript asks for the element's module name and
+# fails. With just-types there are no top-level modules.
+input schema Maps {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "integer"}}}
+pipeline {"lang": "elixir"}
+
+render elixir {}
+render elixir {"rendererOptions": {"just-types": true}}

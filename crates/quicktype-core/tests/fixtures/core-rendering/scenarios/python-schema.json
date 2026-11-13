@@ -1,0 +1,1112 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "name",
+       [
+        "The name."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nIt has \"\"\"quotes\"\"\" and a \\ backslash."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "anything",
+      1,
+      false
+     ],
+     [
+      "at",
+      2,
+      false
+     ],
+     [
+      "children",
+      3,
+      false
+     ],
+     [
+      "choice",
+      7,
+      false
+     ],
+     [
+      "count",
+      10,
+      true
+     ],
+     [
+      "day",
+      13,
+      false
+     ],
+     [
+      "flag",
+      14,
+      true
+     ],
+     [
+      "id",
+      17,
+      false
+     ],
+     [
+      "kind",
+      18,
+      false
+     ],
+     [
+      "list",
+      19,
+      false
+     ],
+     [
+      "maybeChild",
+      20,
+      false
+     ],
+     [
+      "maybeChoice",
+      21,
+      false
+     ],
+     [
+      "maybeKind",
+      22,
+      false
+     ],
+     [
+      "name",
+      24,
+      false
+     ],
+     [
+      "nothing",
+      12,
+      false
+     ],
+     [
+      "number",
+      25,
+      false
+     ],
+     [
+      "optName",
+      27,
+      true
+     ],
+     [
+      "ratio",
+      29,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "small",
+      30,
+      false
+     ],
+     [
+      "tags",
+      31,
+      false
+     ],
+     [
+      "when",
+      32,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "at"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "child"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "propertyDescriptions": [
+      [
+       "x",
+       [
+        "One line."
+       ]
+      ]
+     ],
+     "description": [
+      "A child."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "parent",
+      5,
+      true
+     ],
+     [
+      "sibling",
+      20,
+      false
+     ],
+     [
+      "x",
+      26,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "parent",
+       "TopLeve",
+       "self"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "name",
+       [
+        "The name."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nIt has \"\"\"quotes\"\"\" and a \\ backslash."
+     ]
+    },
+    "members": [
+     6,
+     12
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "parent",
+       "TopLeve",
+       "self"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "name",
+       [
+        "The name."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nIt has \"\"\"quotes\"\"\" and a \\ backslash."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "anything",
+      1,
+      false
+     ],
+     [
+      "at",
+      2,
+      false
+     ],
+     [
+      "children",
+      3,
+      false
+     ],
+     [
+      "choice",
+      7,
+      false
+     ],
+     [
+      "count",
+      10,
+      true
+     ],
+     [
+      "day",
+      13,
+      false
+     ],
+     [
+      "flag",
+      14,
+      true
+     ],
+     [
+      "id",
+      17,
+      false
+     ],
+     [
+      "kind",
+      18,
+      false
+     ],
+     [
+      "list",
+      19,
+      false
+     ],
+     [
+      "maybeChild",
+      20,
+      false
+     ],
+     [
+      "maybeChoice",
+      21,
+      false
+     ],
+     [
+      "maybeKind",
+      22,
+      false
+     ],
+     [
+      "name",
+      24,
+      false
+     ],
+     [
+      "nothing",
+      12,
+      false
+     ],
+     [
+      "number",
+      25,
+      false
+     ],
+     [
+      "optName",
+      27,
+      true
+     ],
+     [
+      "ratio",
+      29,
+      false
+     ],
+     [
+      "self",
+      5,
+      true
+     ],
+     [
+      "small",
+      30,
+      false
+     ],
+     [
+      "tags",
+      31,
+      false
+     ],
+     [
+      "when",
+      32,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "choice"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     8,
+     4,
+     9
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 11,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 1,
+       "null": {
+        "k": "decode",
+        "s": 12,
+        "c": {
+         "k": "union-instantiation",
+         "s": 12
+        }
+       },
+       "integer": null,
+       "double": null,
+       "bool": null,
+       "string": {
+        "k": "decode",
+        "s": 9,
+        "c": {
+         "k": "parse-string",
+         "s": 9,
+         "c": {
+          "k": "union-instantiation",
+          "s": 8
+         }
+        }
+       },
+       "array": null,
+       "object": null
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "count"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     8,
+     12
+    ]
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "date",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "day"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 15,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 1,
+       "null": {
+        "k": "decode",
+        "s": 12,
+        "c": {
+         "k": "union-instantiation",
+         "s": 12
+        }
+       },
+       "integer": null,
+       "double": null,
+       "bool": null,
+       "string": {
+        "k": "decode",
+        "s": 9,
+        "c": {
+         "k": "parse-string",
+         "s": 9,
+         "c": {
+          "k": "union-instantiation",
+          "s": 16
+         }
+        }
+       },
+       "array": null,
+       "object": null
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flag"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     16,
+     12
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "uuid",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "id"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "one-two",
+     "three \"four\"",
+     "5",
+     "class"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 4
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeChild",
+       "sibling"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     4,
+     12
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     8,
+     12,
+     9
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     12,
+     23
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeKind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      1,
+      3
+     ],
+     "pattern": "^[a-z\"]+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "number"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     26,
+     8
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optName"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      null
+     ],
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     28,
+     12
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "optName"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      null
+     ],
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0.5,
+      1e+21
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      -5,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "small"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      4
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 9
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "when"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Mode"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "on",
+     "off"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Mode",
+    33
+   ],
+   [
+    "Choice",
+    21
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom dataclasses import dataclass\nfrom uuid import UUID\nfrom typing import Any, cast, TypeVar, Callable, Type\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\n@dataclass\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, 'Child']\n    choice: 'int | Child | str'\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: 'Child | None' = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    parent_self: 'Parent | None' = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\n@dataclass\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Parent | None = None\n    sibling: 'Child | None' = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\n@dataclass\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, Child]\n    choice: int | Child | str\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: Child | None = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    top_level_self: Parent | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> int | str | None:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: int | str | None) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom dataclasses import dataclass\nfrom uuid import UUID\nfrom typing import Any, cast, TypeVar, Callable, Type\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\n@dataclass\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, 'Child']\n    choice: 'int | Child | str'\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any\n    count: int | None\n    flag: bool | None\n    maybe_child: 'Child | None'\n    maybe_choice: int | str | None\n    maybe_kind: MaybeKind | None\n    nothing: None\n    opt_name: str | None\n    parent_self: 'Parent | None'\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\n@dataclass\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Parent | None\n    sibling: 'Child | None'\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\n@dataclass\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, Child]\n    choice: int | Child | str\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any\n    count: int | None\n    flag: bool | None\n    maybe_child: Child | None\n    maybe_choice: int | str | None\n    maybe_kind: MaybeKind | None\n    nothing: None\n    opt_name: str | None\n    top_level_self: Parent | None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> int | str | None:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: int | str | None) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.5"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom uuid import UUID\nimport dateutil.parser\n\n\ndef from_time(x):\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f, x):\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x):\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x):\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_none(x):\n    assert x is None\n    return x\n\n\ndef from_date(x):\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_stringified_bool(x):\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_list(f, x):\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x):\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x):\n    return dateutil.parser.parse(x)\n\n\ndef to_class(c, x):\n    assert isinstance(x, c)\n    return x.to_dict()\n\n\ndef is_type(t, x):\n    assert isinstance(x, t)\n    return x\n\n\ndef to_enum(c, x):\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x):\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    def __init__(self, anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, parent_self, small, tags, when):\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.parent_self = parent_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        anything = obj[\"anything\"]\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        day = from_date(obj[\"day\"])\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(obj[\"name\"])\n        assert name is None or len(obj[\"name\"]) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", obj[\"name\"])\n        nothing = from_none(obj[\"nothing\"])\n        number = from_union([from_int, from_float], obj[\"number\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(obj.get(\"optName\"))\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        return Parent(anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, parent_self, small, tags, when)\n\n    def to_dict(self):\n        result = {}\n        result[\"anything\"] = self.anything\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        result[\"day\"] = self.day.isoformat()\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"name\"] = from_str(self.name)\n        result[\"nothing\"] = from_none(self.nothing)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        result[\"ratio\"] = to_float(self.ratio)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        return result\n\n\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    def __init__(self, parent, sibling, x):\n        self.parent = parent\n        self.sibling = sibling\n        self.x = x\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        x = from_float(obj[\"x\"])\n        return Child(parent, sibling, x)\n\n    def to_dict(self):\n        result = {}\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        result[\"x\"] = to_float(self.x)\n        return result\n\n\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    def __init__(self, anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, top_level_self, small, tags, when):\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.top_level_self = top_level_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        anything = obj[\"anything\"]\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        day = from_date(obj[\"day\"])\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(obj[\"name\"])\n        assert name is None or len(obj[\"name\"]) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", obj[\"name\"])\n        nothing = from_none(obj[\"nothing\"])\n        number = from_union([from_int, from_float], obj[\"number\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(obj.get(\"optName\"))\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        return TopLevel(anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, top_level_self, small, tags, when)\n\n    def to_dict(self):\n        result = {}\n        result[\"anything\"] = self.anything\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        result[\"day\"] = self.day.isoformat()\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"name\"] = from_str(self.name)\n        result[\"nothing\"] = from_none(self.nothing)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        result[\"ratio\"] = to_float(self.ratio)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s):\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x):\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s):\n    return Mode(s)\n\n\ndef mode_to_dict(x):\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s):\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x):\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom typing import Any, Dict, Union, Optional, List, cast, TypeVar, Callable\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> Dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_enum(c, x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    anything: Any\n    at: datetime.time\n    children: Dict[str, 'Child']\n    choice: Union[int, 'Child', str]\n    count: Optional[int]\n    day: datetime.date\n    flag: Optional[bool]\n    id: UUID\n    kind: Kind\n    list: List['Child']\n    maybe_child: Optional['Child']\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    nothing: None\n    number: Union[float, int]\n    opt_name: Optional[str]\n    ratio: float\n    parent_self: Optional['Parent']\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n\n    def __init__(self, anything: Any, at: datetime.time, children: Dict[str, 'Child'], choice: Union[int, 'Child', str], count: Optional[int], day: datetime.date, flag: Optional[bool], id: UUID, kind: Kind, list: List['Child'], maybe_child: Optional['Child'], maybe_choice: Optional[Union[int, str]], maybe_kind: Optional[MaybeKind], name: str, nothing: None, number: Union[float, int], opt_name: Optional[str], ratio: float, parent_self: Optional['Parent'], small: int, tags: List[str], when: datetime.datetime) -> None:\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.parent_self = parent_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        anything = obj[\"anything\"]\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        day = from_date(obj[\"day\"])\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        nothing = from_none(obj[\"nothing\"])\n        number = from_union([from_int, from_float], obj[\"number\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        return Parent(anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, parent_self, small, tags, when)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"anything\"] = self.anything\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        result[\"day\"] = self.day.isoformat()\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"name\"] = from_str(self.name)\n        result[\"nothing\"] = from_none(self.nothing)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        result[\"ratio\"] = to_float(self.ratio)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        return result\n\n\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    parent: Optional[Parent]\n    sibling: Optional['Child']\n    x: float\n    \"\"\"One line.\"\"\"\n\n    def __init__(self, parent: Optional[Parent], sibling: Optional['Child'], x: float) -> None:\n        self.parent = parent\n        self.sibling = sibling\n        self.x = x\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        x = from_float(obj[\"x\"])\n        return Child(parent, sibling, x)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        result[\"x\"] = to_float(self.x)\n        return result\n\n\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    anything: Any\n    at: datetime.time\n    children: Dict[str, Child]\n    choice: Union[int, Child, str]\n    count: Optional[int]\n    day: datetime.date\n    flag: Optional[bool]\n    id: UUID\n    kind: Kind\n    list: List[Child]\n    maybe_child: Optional[Child]\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    nothing: None\n    number: Union[float, int]\n    opt_name: Optional[str]\n    ratio: float\n    top_level_self: Optional[Parent]\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n\n    def __init__(self, anything: Any, at: datetime.time, children: Dict[str, Child], choice: Union[int, Child, str], count: Optional[int], day: datetime.date, flag: Optional[bool], id: UUID, kind: Kind, list: List[Child], maybe_child: Optional[Child], maybe_choice: Optional[Union[int, str]], maybe_kind: Optional[MaybeKind], name: str, nothing: None, number: Union[float, int], opt_name: Optional[str], ratio: float, top_level_self: Optional[Parent], small: int, tags: List[str], when: datetime.datetime) -> None:\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.top_level_self = top_level_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        anything = obj[\"anything\"]\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        day = from_date(obj[\"day\"])\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        nothing = from_none(obj[\"nothing\"])\n        number = from_union([from_int, from_float], obj[\"number\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        return TopLevel(anything, at, children, choice, count, day, flag, id, kind, list, maybe_child, maybe_choice, maybe_kind, name, nothing, number, opt_name, ratio, top_level_self, small, tags, when)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"anything\"] = self.anything\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        result[\"day\"] = self.day.isoformat()\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"name\"] = from_str(self.name)\n        result[\"nothing\"] = from_none(self.nothing)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        result[\"ratio\"] = to_float(self.ratio)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> Optional[Union[int, str]]:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: Optional[Union[int, str]]) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.7"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom dataclasses import dataclass\nfrom typing import Dict, Union, List, Any, Optional, cast, TypeVar, Callable, Type\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> Dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\n@dataclass\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: Dict[str, 'Child']\n    choice: Union[int, 'Child', str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: List['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: Optional[int] = None\n    flag: Optional[bool] = None\n    maybe_child: Optional['Child'] = None\n    maybe_choice: Optional[Union[int, str]] = None\n    maybe_kind: Optional[MaybeKind] = None\n    nothing: None = None\n    opt_name: Optional[str] = None\n    parent_self: Optional['Parent'] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\n@dataclass\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Optional[Parent] = None\n    sibling: Optional['Child'] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\n@dataclass\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: Dict[str, Child]\n    choice: Union[int, Child, str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: List[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: Optional[int] = None\n    flag: Optional[bool] = None\n    maybe_child: Optional[Child] = None\n    maybe_choice: Optional[Union[int, str]] = None\n    maybe_kind: Optional[MaybeKind] = None\n    nothing: None = None\n    opt_name: Optional[str] = None\n    top_level_self: Optional[Parent] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> Optional[Union[int, str]]:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: Optional[Union[int, str]]) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.9"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom dataclasses import dataclass\nfrom typing import Union, Any, Optional, cast, TypeVar, Callable, Type\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\n@dataclass\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, 'Child']\n    choice: Union[int, 'Child', str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: Optional[int] = None\n    flag: Optional[bool] = None\n    maybe_child: Optional['Child'] = None\n    maybe_choice: Optional[Union[int, str]] = None\n    maybe_kind: Optional[MaybeKind] = None\n    nothing: None = None\n    opt_name: Optional[str] = None\n    parent_self: Optional['Parent'] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\n@dataclass\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Optional[Parent] = None\n    sibling: Optional['Child'] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\n@dataclass\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, Child]\n    choice: Union[int, Child, str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: Optional[int] = None\n    flag: Optional[bool] = None\n    maybe_child: Optional[Child] = None\n    maybe_choice: Optional[Union[int, str]] = None\n    maybe_kind: Optional[MaybeKind] = None\n    nothing: None = None\n    opt_name: Optional[str] = None\n    top_level_self: Optional[Parent] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> Optional[Union[int, str]]:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: Optional[Union[int, str]]) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom enum import Enum\nfrom dataclasses import dataclass\nfrom uuid import UUID\nfrom typing import Any\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\n@dataclass\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, 'Child']\n    choice: 'int | Child | str'\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: 'Child | None' = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    parent_self: 'Parent | None' = None\n\n\n@dataclass\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Parent | None = None\n    sibling: 'Child | None' = None\n\n\n@dataclass\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, Child]\n    choice: int | Child | str\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: Child | None = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    top_level_self: Parent | None = None\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true,
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom enum import Enum\nfrom typing import Any, Dict, Union, Optional, List\nfrom uuid import UUID\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\nclass Parent:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    anything: Any\n    at: datetime.time\n    children: Dict[str, 'Child']\n    choice: Union[int, 'Child', str]\n    count: Optional[int]\n    day: datetime.date\n    flag: Optional[bool]\n    id: UUID\n    kind: Kind\n    list: List['Child']\n    maybe_child: Optional['Child']\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    nothing: None\n    number: Union[float, int]\n    opt_name: Optional[str]\n    ratio: float\n    parent_self: Optional['Parent']\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n\n    def __init__(self, anything: Any, at: datetime.time, children: Dict[str, 'Child'], choice: Union[int, 'Child', str], count: Optional[int], day: datetime.date, flag: Optional[bool], id: UUID, kind: Kind, list: List['Child'], maybe_child: Optional['Child'], maybe_choice: Optional[Union[int, str]], maybe_kind: Optional[MaybeKind], name: str, nothing: None, number: Union[float, int], opt_name: Optional[str], ratio: float, parent_self: Optional['Parent'], small: int, tags: List[str], when: datetime.datetime) -> None:\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.parent_self = parent_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n\nclass Child:\n    \"\"\"A child.\"\"\"\n\n    parent: Optional[Parent]\n    sibling: Optional['Child']\n    x: float\n    \"\"\"One line.\"\"\"\n\n    def __init__(self, parent: Optional[Parent], sibling: Optional['Child'], x: float) -> None:\n        self.parent = parent\n        self.sibling = sibling\n        self.x = x\n\n\nclass TopLevel:\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    anything: Any\n    at: datetime.time\n    children: Dict[str, Child]\n    choice: Union[int, Child, str]\n    count: Optional[int]\n    day: datetime.date\n    flag: Optional[bool]\n    id: UUID\n    kind: Kind\n    list: List[Child]\n    maybe_child: Optional[Child]\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    nothing: None\n    number: Union[float, int]\n    opt_name: Optional[str]\n    ratio: float\n    top_level_self: Optional[Parent]\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n\n    def __init__(self, anything: Any, at: datetime.time, children: Dict[str, Child], choice: Union[int, Child, str], count: Optional[int], day: datetime.date, flag: Optional[bool], id: UUID, kind: Kind, list: List[Child], maybe_child: Optional[Child], maybe_choice: Optional[Union[int, str]], maybe_kind: Optional[MaybeKind], name: str, nothing: None, number: Union[float, int], opt_name: Optional[str], ratio: float, top_level_self: Optional[Parent], small: int, tags: List[str], when: datetime.datetime) -> None:\n        self.anything = anything\n        self.at = at\n        self.children = children\n        self.choice = choice\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.kind = kind\n        self.list = list\n        self.maybe_child = maybe_child\n        self.maybe_choice = maybe_choice\n        self.maybe_kind = maybe_kind\n        self.name = name\n        self.nothing = nothing\n        self.number = number\n        self.opt_name = opt_name\n        self.ratio = ratio\n        self.top_level_self = top_level_self\n        self.small = small\n        self.tags = tags\n        self.when = when\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "pydantic-base-model": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom pydantic import BaseModel\nfrom uuid import UUID\nfrom typing import Any, cast, TypeVar, Callable, Type\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\nclass Parent(BaseModel):\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, 'Child']\n    choice: 'int | Child | str'\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: 'Child | None' = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    parent_self: 'Parent | None' = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\nclass Child(BaseModel):\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Parent | None = None\n    sibling: 'Child | None' = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\nclass TopLevel(BaseModel):\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: dict[str, Child]\n    choice: int | Child | str\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: list[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: float | int\n    ratio: float\n    small: int\n    tags: list[str]\n    when: datetime.datetime\n    anything: Any = None\n    count: int | None = None\n    flag: bool | None = None\n    maybe_child: Child | None = None\n    maybe_choice: int | str | None = None\n    maybe_kind: MaybeKind | None = None\n    nothing: None = None\n    opt_name: str | None = None\n    top_level_self: Parent | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> int | str | None:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: int | str | None) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "pydantic-base-model": true,
+    "python-version": "3.7"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom enum import Enum\nfrom pydantic import BaseModel\nfrom typing import Dict, Union, List, Any, Optional, cast, TypeVar, Callable, Type\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\nEnumT = TypeVar(\"EnumT\", bound=Enum)\n\n\ndef from_time(x: Any) -> datetime.time:\n    assert isinstance(x, str) and re.match(r\"^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$\", x)\n    return dateutil.parser.parse(x).timetz()\n\n\ndef from_dict(f: Callable[[Any], T], x: Any) -> Dict[str, T]:\n    assert isinstance(x, dict)\n    return { k: f(v) for (k, v) in x.items() }\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef to_enum(c: Type[EnumT], x: Any) -> EnumT:\n    assert isinstance(x, c)\n    return x.value\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\nclass Kind(Enum):\n    ONE_TWO = \"one-two\"\n    THREE_FOUR = \"three \\\"four\\\"\"\n    THE_5 = \"5\"\n    CLASS = \"class\"\n\n\nclass MaybeKind(Enum):\n    A = \"a\"\n    B = \"b\"\n\n\nclass Parent(BaseModel):\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: Dict[str, 'Child']\n    choice: Union[int, 'Child', str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: List['Child']\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n    anything: Any\n    count: Optional[int]\n    flag: Optional[bool]\n    maybe_child: Optional['Child']\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    nothing: None\n    opt_name: Optional[str]\n    parent_self: Optional['Parent']\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Parent':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        parent_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return Parent(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, parent_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.parent_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent_self)\n        return result\n\n\nclass Child(BaseModel):\n    \"\"\"A child.\"\"\"\n\n    x: float\n    \"\"\"One line.\"\"\"\n\n    parent: Optional[Parent]\n    sibling: Optional['Child']\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Child':\n        assert isinstance(obj, dict)\n        x = from_float(obj[\"x\"])\n        parent = from_union([Parent.from_dict, from_none], obj.get(\"parent\"))\n        sibling = from_union([Child.from_dict, from_none], obj[\"sibling\"])\n        return Child(x, parent, sibling)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"x\"] = to_float(self.x)\n        if self.parent is not None:\n            result[\"parent\"] = from_union([lambda x: to_class(Parent, x), from_none], self.parent)\n        result[\"sibling\"] = from_union([lambda x: to_class(Child, x), from_none], self.sibling)\n        return result\n\n\nclass TopLevel(BaseModel):\n    \"\"\"The top level.\n    It has \\\"\\\"\\\"quotes\\\"\\\"\\\" and a \\\\ backslash.\n    \"\"\"\n    at: datetime.time\n    children: Dict[str, Child]\n    choice: Union[int, Child, str]\n    day: datetime.date\n    id: UUID\n    kind: Kind\n    list: List[Child]\n    name: str\n    \"\"\"The name.\"\"\"\n\n    number: Union[float, int]\n    ratio: float\n    small: int\n    tags: List[str]\n    when: datetime.datetime\n    anything: Any\n    count: Optional[int]\n    flag: Optional[bool]\n    maybe_child: Optional[Child]\n    maybe_choice: Optional[Union[int, str]]\n    maybe_kind: Optional[MaybeKind]\n    nothing: None\n    opt_name: Optional[str]\n    top_level_self: Optional[Parent]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevel':\n        assert isinstance(obj, dict)\n        at = from_time(obj[\"at\"])\n        children = from_dict(Child.from_dict, obj[\"children\"])\n        choice = from_union([from_int, Child.from_dict, from_str], obj[\"choice\"])\n        day = from_date(obj[\"day\"])\n        id = UUID(obj[\"id\"])\n        kind = Kind(obj[\"kind\"])\n        list = from_list(Child.from_dict, obj[\"list\"])\n        name = from_str(obj[\"name\"])\n        assert name is None or 1 <= len(cast(str, obj[\"name\"]))\n        assert name is None or len(cast(str, obj[\"name\"])) <= 3\n        assert name is None or re.search(\"^[a-z\\\"]+$\", cast(str, obj[\"name\"]))\n        number = from_union([from_int, from_float], obj[\"number\"])\n        ratio = from_float(obj[\"ratio\"])\n        assert ratio is None or 0.5 <= ratio\n        assert ratio is None or ratio <= 1e+21\n        small = from_int(obj[\"small\"])\n        assert small is None or -5 <= small\n        assert small is None or small <= 100\n        tags = from_list(from_str, obj[\"tags\"])\n        assert tags is None or 1 <= len(tags)\n        assert tags is None or len(tags) <= 4\n        when = from_datetime(obj[\"when\"])\n        anything = obj[\"anything\"]\n        count = from_union([from_none, lambda x: int(from_str(x))], obj.get(\"count\"))\n        flag = from_union([from_none, lambda x: from_stringified_bool(from_str(x))], obj.get(\"flag\"))\n        maybe_child = from_union([Child.from_dict, from_none], obj[\"maybeChild\"])\n        maybe_choice = from_union([from_int, from_none, from_str], obj[\"maybeChoice\"])\n        maybe_kind = from_union([from_none, MaybeKind], obj[\"maybeKind\"])\n        nothing = from_none(obj[\"nothing\"])\n        opt_name = from_union([from_str, from_none], obj.get(\"optName\"))\n        assert opt_name is None or 2 <= len(cast(str, obj.get(\"optName\")))\n        top_level_self = from_union([Parent.from_dict, from_none], obj.get(\"self\"))\n        return TopLevel(at, children, choice, day, id, kind, list, name, number, ratio, small, tags, when, anything, count, flag, maybe_child, maybe_choice, maybe_kind, nothing, opt_name, top_level_self)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = self.at.isoformat()\n        result[\"children\"] = from_dict(lambda x: to_class(Child, x), self.children)\n        result[\"choice\"] = from_union([from_int, lambda x: to_class(Child, x), from_str], self.choice)\n        result[\"day\"] = self.day.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"kind\"] = to_enum(Kind, self.kind)\n        result[\"list\"] = from_list(lambda x: to_class(Child, x), self.list)\n        result[\"name\"] = from_str(self.name)\n        result[\"number\"] = from_union([from_int, to_float], self.number)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"small\"] = from_int(self.small)\n        result[\"tags\"] = from_list(from_str, self.tags)\n        result[\"when\"] = self.when.isoformat()\n        result[\"anything\"] = self.anything\n        if self.count is not None:\n            result[\"count\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.count)\n        if self.flag is not None:\n            result[\"flag\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(bool, x))(x)).lower())(x))], self.flag)\n        result[\"maybeChild\"] = from_union([lambda x: to_class(Child, x), from_none], self.maybe_child)\n        result[\"maybeChoice\"] = from_union([from_int, from_none, from_str], self.maybe_choice)\n        result[\"maybeKind\"] = from_union([from_none, lambda x: to_enum(MaybeKind, x)], self.maybe_kind)\n        result[\"nothing\"] = from_none(self.nothing)\n        if self.opt_name is not None:\n            result[\"optName\"] = from_union([from_str, from_none], self.opt_name)\n        if self.top_level_self is not None:\n            result[\"self\"] = from_union([lambda x: to_class(Parent, x), from_none], self.top_level_self)\n        return result\n\n\nclass Mode(Enum):\n    ON = \"on\"\n    OFF = \"off\"\n\n\ndef top_level_from_dict(s: Any) -> TopLevel:\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x: TopLevel) -> Any:\n    return to_class(TopLevel, x)\n\n\ndef mode_from_dict(s: Any) -> Mode:\n    return Mode(s)\n\n\ndef mode_to_dict(x: Mode) -> Any:\n    return to_enum(Mode, x)\n\n\ndef choice_from_dict(s: Any) -> Optional[Union[int, str]]:\n    return from_union([from_int, from_none, from_str], s)\n\n\ndef choice_to_dict(x: Optional[Union[int, str]]) -> Any:\n    return from_union([from_int, from_none, from_str], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "python-schema"
+}
