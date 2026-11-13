@@ -5,11 +5,13 @@
 //! cargo xtask diff [opts] -- <args> run the TypeScript CLI and ours side by side and compare
 //! cargo xtask bench [options]      time ours against the TypeScript CLI (see `bench --help`)
 //! cargo xtask golden [ref-dir]     re-record tests/golden from the TypeScript reference
+//! cargo xtask streaming-fuzz [opts] compare inference from tallies with the reference
 //! ```
 
 mod bench;
 mod diff;
 mod parity;
+mod streaming;
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
@@ -25,6 +27,9 @@ tasks:
   golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
                      (default ref-dir: $QUICKTYPE_REFERENCE, else ../quicktype
                      or ../../quicktype)
+  streaming-fuzz [options]
+                     generated inputs through inference from running tallies and from
+                     the compressed form; outputs must be identical (--help)
 ";
 
 fn workspace_root() -> PathBuf {
@@ -65,6 +70,14 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             bench::run(&root, rest)
+        }
+        Some("streaming-fuzz") => {
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help") {
+                print!("{}", streaming::USAGE);
+                return ExitCode::SUCCESS;
+            }
+            streaming::run(&root, rest)
         }
         Some("golden") => Command::new(root.join("xtask/golden/record.sh"))
             .args(args)

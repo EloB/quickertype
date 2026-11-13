@@ -1,6 +1,7 @@
 //! `CompressedJSONFromString.parseSync(input)`: `JSON.parse(input)`, then
 //! `process` the value in `Object.getOwnPropertyNames` order, without
-//! building the value.
+//! building the value, into any [`JsonSink`]: a [`CompressedJson`] or the
+//! running tallies ([`parse_string_into`](super::parse_string_into)).
 //!
 //! The text is read in two passes:
 //!
@@ -29,7 +30,8 @@
 //!    `"__proto__"` for an object with two.
 //!
 //! On a syntax error, the message is that of
-//! [`quicktype_js_compat::json::parse`], the port of V8's parser. Should
+//! [`quicktype_js_compat::json::parse`], the port of V8's parser
+//! ([`parse_string_value_into`](super::parse_string_value_into)). Should
 //! that parser accept a text this reader rejects, the value it returns is
 //! processed instead: the grammar is V8's either way.
 //!
@@ -50,10 +52,12 @@
 use std::hash::BuildHasher as _;
 
 use hashbrown::HashTable;
-use quicktype_js_compat::json::{self as js_json, is_array_index};
+use quicktype_js_compat::json::is_array_index;
 
-use super::{CompressedJson, NO_INDEX, ParseError, Strings, Value};
-use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
+use super::{
+    CompressedJson, JsonSink, NO_INDEX, ParseError, Strings, Value, parse_string_value_into,
+};
+use crate::messages::{QuickTypeError, Result};
 use crate::support::fast_hash::{BuildHasher, HashMap};
 
 /// Limits on what [`CompressedJson::read_string_sample`] reads; a sample
@@ -209,8 +213,9 @@ impl Keys {
 
 /// What the reader keeps between samples: the key table, the serial of
 /// the last object (see the module documentation), and the last tape.
+/// Every [`JsonSink`] holds one.
 #[derive(Default)]
-pub(super) struct StringReaderState {
+pub(crate) struct StringReaderState {
     keys: Keys,
     /// The serial of the last object opened.
     serial: u32,
@@ -239,7 +244,7 @@ impl StringReaderState {
     }
 
     /// The text of key `id`.
-    pub(super) fn key_text(&self, id: u32) -> &str {
+    pub(crate) fn key_text(&self, id: u32) -> &str {
         self.keys.get(id)
     }
 
@@ -396,12 +401,6 @@ struct Recorder<'t> {
     small_integers_fit: bool,
 }
 
-/// Whether `s` is an ASCII integer literal (an optional `-`, digits).
-fn is_plain_integer(s: &str) -> bool {
-    let digits = s.strip_prefix('-').unwrap_or(s);
-    !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())
-}
-
 /// A key that is an array index, as a number.
 fn array_index(key: &str) -> Option<u32> {
     if is_array_index(key) {
@@ -412,21 +411,13 @@ fn array_index(key: &str) -> Option<u32> {
 }
 
 impl<'t> Recorder<'t> {
-    fn new(cjson: &mut CompressedJson, text: &'t str, limits: StringSampleLimits) -> Self {
-        let small_integers_fit = match &cjson.supported_integer_range {
-            None => true,
-            Some(range) => {
-                is_plain_integer(range.min())
-                    && is_plain_integer(range.max())
-                    && cjson.integer_string_fits("-999999999999999")
-                    && cjson.integer_string_fits("999999999999999")
-            }
-        };
+    fn new<S: JsonSink>(sink: &mut S, text: &'t str, limits: StringSampleLimits) -> Self {
+        let small_integers_fit = sink.small_integers_fit();
         Recorder {
             text,
             bytes: text.as_bytes(),
             pos: 0,
-            nodes: std::mem::take(&mut cjson.string_reader.spare_nodes),
+            nodes: std::mem::take(&mut sink.string_reader().spare_nodes),
             decoded: String::new(),
             key: String::new(),
             limits,
@@ -467,7 +458,7 @@ impl<'t> Recorder<'t> {
     }
 
     /// Records the sample.
-    fn record(&mut self, cjson: &mut CompressedJson) -> Result<(), Stop> {
+    fn record<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), Stop> {
         let mut stack: Vec<Open> = Vec::new();
         'value: loop {
             match self.next_token() {
@@ -481,14 +472,14 @@ impl<'t> Recorder<'t> {
                     } else {
                         let mut object = OpenObject {
                             node,
-                            serial: cjson.string_reader.next_serial(),
+                            serial: sink.string_reader().next_serial(),
                             has_proto: false,
                             last_index: None,
                             has_name: false,
                             reordered: false,
                             members: 0,
                         };
-                        self.member_key(cjson, &mut object)?;
+                        self.member_key(sink, &mut object)?;
                         stack.push(Open::Object(object));
                         continue 'value;
                     }
@@ -517,7 +508,7 @@ impl<'t> Recorder<'t> {
                     };
                 }
                 Some(b'-' | b'0'..=b'9') => {
-                    let kind = self.number(cjson)?;
+                    let kind = self.number(sink)?;
                     self.push(kind, 0, 0);
                 }
                 Some(b't') => self.literal(b"true", Kind::True)?,
@@ -553,7 +544,7 @@ impl<'t> Recorder<'t> {
                     Some(Open::Object(object)) => match self.next_token() {
                         Some(b',') => {
                             self.pos += 1;
-                            self.member_key(cjson, object)?;
+                            self.member_key(sink, object)?;
                             continue 'value;
                         }
                         Some(b'}') => {
@@ -571,9 +562,9 @@ impl<'t> Recorder<'t> {
 
     /// A member's key and the `:` after it; whitespace before the key has
     /// not been skipped yet.
-    fn member_key(
+    fn member_key<S: JsonSink>(
         &mut self,
-        cjson: &mut CompressedJson,
+        sink: &mut S,
         object: &mut OpenObject,
     ) -> Result<(), Stop> {
         if self.next_token() != Some(b'"') {
@@ -584,11 +575,11 @@ impl<'t> Recorder<'t> {
         let index = match self.string(true)? {
             Some((a, b)) => {
                 let key = &self.text[a as usize..(a + b) as usize];
-                self.check_key(cjson, object, key)
+                self.check_key(sink, object, key)
             }
             None => {
                 let key = std::mem::take(&mut self.key);
-                let index = self.check_key(cjson, object, &key);
+                let index = self.check_key(sink, object, &key);
                 self.key = key;
                 index
             }
@@ -603,8 +594,9 @@ impl<'t> Recorder<'t> {
 
     /// The id of `key` in the key table; notes whether it makes `object`
     /// reordered.
-    fn check_key(&self, cjson: &mut CompressedJson, object: &mut OpenObject, key: &str) -> u32 {
-        let index = cjson.string_reader.keys.read(object.members, key);
+    fn check_key<S: JsonSink>(&self, sink: &mut S, object: &mut OpenObject, key: &str) -> u32 {
+        let reader = sink.string_reader();
+        let index = reader.keys.read(object.members, key);
         object.members += 1;
         if object.reordered {
             return index;
@@ -613,7 +605,7 @@ impl<'t> Recorder<'t> {
             object.reordered = object.has_proto;
             object.has_proto = true;
         } else {
-            let stamp = cjson.string_reader.stamp(index, object.serial);
+            let stamp = reader.stamp(index, object.serial);
             object.reordered = stamp == object.serial
                 || (stamp > object.serial && self.has_key(object.node, index));
         }
@@ -809,7 +801,7 @@ impl<'t> Recorder<'t> {
 
     /// `ParseJsonNumber()` and `parsedNumberIsDouble` of the result: the
     /// cursor is on `-` or a digit.
-    fn number(&mut self, cjson: &CompressedJson) -> Result<Kind, Stop> {
+    fn number<S: JsonSink>(&mut self, sink: &S) -> Result<Kind, Stop> {
         let (text, bytes) = (self.text, self.bytes);
         let digit = |pos: usize| bytes.get(pos).is_some_and(u8::is_ascii_digit);
         let start = self.pos;
@@ -858,11 +850,11 @@ impl<'t> Recorder<'t> {
             // An integer below 1e15 is exact as a double, and its literal
             // (JSON has no leading zeros; `-0` compares as zero) is what
             // `toFixed(0)` gives.
-            !(self.small_integers_fit || cjson.integer_string_fits(literal))
+            !(self.small_integers_fit || sink.integer_string_fits(literal))
         } else {
             // Correctly rounded like V8's `StringToDouble`; `1e400` is ∞.
             let n: f64 = literal.parse().map_err(|_| Stop::Syntax)?;
-            cjson.parsed_number_is_double(n)
+            sink.parsed_number_is_double(n)
         };
         Ok(if is_double {
             Kind::Double
@@ -912,7 +904,7 @@ impl Tape<'_> {
     /// array-index keys ascending, then the other keys where they first
     /// appeared, each with its last value (`CreateDataProperty` for each
     /// member in source order).
-    fn js_order(&self, cjson: &CompressedJson, node: usize) -> Vec<(u32, usize)> {
+    fn js_order<S: JsonSink>(&self, sink: &mut S, node: usize) -> Vec<(u32, usize)> {
         let end = self.nodes[node].a as usize;
         let mut members: Vec<(Option<u32>, u32, usize)> = Vec::new();
         let mut positions: HashMap<u32, usize> = HashMap::default();
@@ -925,7 +917,7 @@ impl Tape<'_> {
                 Some(&position) => members[position].2 = value,
                 None => {
                     positions.insert(key, members.len());
-                    let text = cjson.string_reader.key_text(key);
+                    let text = sink.string_reader().key_text(key);
                     members.push((array_index(text), key, value));
                 }
             }
@@ -942,27 +934,28 @@ impl Tape<'_> {
     }
 
     /// Commits the sample, as `process(json)` and `finish()` do.
-    fn commit(&self, cjson: &mut CompressedJson) -> Result<Value> {
+    fn commit<S: JsonSink>(&self, sink: &mut S) -> Result<S::Root> {
         let mut frames: Vec<Frame> = Vec::new();
         let mut at = 0;
         loop {
             let node = self.nodes[at];
             match node.kind {
-                Kind::Null => cjson.commit_null()?,
-                Kind::False => cjson.commit_boolean(false)?,
-                Kind::True => cjson.commit_boolean(true)?,
-                Kind::Integer => cjson.commit_number(false)?,
-                Kind::Double => cjson.commit_number(true)?,
+                Kind::Null => sink.commit_null()?,
+                Kind::False => sink.commit_boolean(false)?,
+                Kind::True => sink.commit_boolean(true)?,
+                Kind::Integer => sink.commit_number(false)?,
+                Kind::Double => sink.commit_number(true)?,
                 Kind::Text => {
-                    cjson.commit_string(&self.text[node.a as usize..(node.a + node.b) as usize])?
+                    sink.commit_string(&self.text[node.a as usize..(node.a + node.b) as usize])?
                 }
-                Kind::Decoded => cjson
-                    .commit_string(&self.decoded[node.a as usize..(node.a + node.b) as usize])?,
+                Kind::Decoded => {
+                    sink.commit_string(&self.decoded[node.a as usize..(node.a + node.b) as usize])?
+                }
                 Kind::Object => {
-                    cjson.push_object_context();
+                    sink.push_object_context()?;
                     frames.push(if node.b != 0 {
                         Frame::Reordered {
-                            members: self.js_order(cjson, at),
+                            members: self.js_order(sink, at),
                             next: 0,
                         }
                     } else {
@@ -974,7 +967,7 @@ impl Tape<'_> {
                     });
                 }
                 Kind::Array => {
-                    cjson.push_array_context();
+                    sink.push_array_context()?;
                     frames.push(Frame::InOrder {
                         next: at + 1,
                         end: node.a as usize,
@@ -987,7 +980,7 @@ impl Tape<'_> {
             // The next value to commit.
             loop {
                 let Some(frame) = frames.last_mut() else {
-                    return cjson.finish();
+                    return sink.finish();
                 };
                 match frame {
                     Frame::InOrder { next, end, object } => {
@@ -995,14 +988,14 @@ impl Tape<'_> {
                             let object = *object;
                             frames.pop();
                             if object {
-                                cjson.finish_object()?;
+                                sink.finish_object()?;
                             } else {
-                                cjson.finish_array()?;
+                                sink.finish_array()?;
                             }
                             continue;
                         }
                         if *object {
-                            cjson.set_property_key_read(self.nodes[*next].a)?;
+                            sink.set_property_key_read(self.nodes[*next].a)?;
                             *next += 1;
                         }
                         at = *next;
@@ -1012,11 +1005,11 @@ impl Tape<'_> {
                     Frame::Reordered { members, next } => {
                         let Some(&(key, value)) = members.get(*next) else {
                             frames.pop();
-                            cjson.finish_object()?;
+                            sink.finish_object()?;
                             continue;
                         };
                         *next += 1;
-                        cjson.set_property_key_read(key)?;
+                        sink.set_property_key_read(key)?;
                         at = value;
                         break;
                     }
@@ -1033,51 +1026,43 @@ impl CompressedJson {
         text: &str,
         limits: StringSampleLimits,
     ) -> Result<Value, ReadStringError> {
-        if u32::try_from(text.len()).is_err() {
-            // Too long for the tape's offsets: read the value whole.
-            return self
-                .parse_string_value(text)
-                .map_err(ReadStringError::Parse);
-        }
-        self.string_reader.reserve_serials(text.len());
-        let mut recorder = Recorder::new(self, text, limits);
-        let recorded = recorder.record(self);
-        let Recorder { nodes, decoded, .. } = recorder;
-        let result = match recorded {
-            Ok(()) => {
-                let tape = Tape {
-                    text,
-                    nodes: &nodes,
-                    decoded: &decoded,
-                };
-                let committed = tape.commit(self);
-                if committed.is_err() {
-                    self.reset_partial_sample();
-                }
-                committed.map_err(|e| ReadStringError::Parse(ParseError::Quicktype(e)))
-            }
-            Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
-            Err(Stop::Syntax) => {
-                // V8's message, from the port of its parser.
-                self.parse_string_value(text)
-                    .map_err(ReadStringError::Parse)
-            }
-        };
-        self.string_reader.finish_sample(nodes);
-        result
+        read_string_sample_into(self, text, limits)
     }
+}
 
-    /// `JSON.parse(text)` with the port of V8's parser, then `process` the
-    /// value.
-    fn parse_string_value(&mut self, text: &str) -> Result<Value, ParseError> {
-        let json = js_json::parse(text)
-            .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
-        let result = self.process(&json).and_then(|()| self.finish());
-        if result.is_err() {
-            self.reset_partial_sample();
-        }
-        Ok(result?)
+/// [`CompressedJson::read_string_sample`] into any [`JsonSink`].
+pub(crate) fn read_string_sample_into<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+    limits: StringSampleLimits,
+) -> Result<S::Root, ReadStringError> {
+    if u32::try_from(text.len()).is_err() {
+        // Too long for the tape's offsets: read the value whole.
+        return parse_string_value_into(sink, text).map_err(ReadStringError::Parse);
     }
+    sink.string_reader().reserve_serials(text.len());
+    let mut recorder = Recorder::new(sink, text, limits);
+    let recorded = recorder.record(sink);
+    let Recorder { nodes, decoded, .. } = recorder;
+    let result = match recorded {
+        Ok(()) => {
+            let tape = Tape {
+                text,
+                nodes: &nodes,
+                decoded: &decoded,
+            };
+            let committed = tape.commit(sink);
+            if committed.is_err() {
+                sink.reset_partial_sample();
+            }
+            committed.map_err(|e| ReadStringError::Parse(ParseError::Quicktype(e)))
+        }
+        Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
+        // V8's message, from the port of its parser.
+        Err(Stop::Syntax) => parse_string_value_into(sink, text).map_err(ReadStringError::Parse),
+    };
+    sink.string_reader().finish_sample(nodes);
+    result
 }
 
 #[cfg(test)]

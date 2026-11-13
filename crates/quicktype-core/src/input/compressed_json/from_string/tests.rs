@@ -61,7 +61,7 @@ fn same(samples: &[&str], range: Option<IntegerRange>, handle_refs: bool) {
     let mut whole = reader(range, handle_refs);
     for sample in samples {
         let a = fast.parse_string(sample);
-        let b = whole.parse_string_value(sample);
+        let b = parse_string_value_into(&mut whole, sample);
         match (&a, &b) {
             (Ok(x), Ok(y)) => {
                 assert_eq!(x, y, "root of {sample:?}");

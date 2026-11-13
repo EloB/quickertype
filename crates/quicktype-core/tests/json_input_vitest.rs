@@ -322,29 +322,35 @@ fn input_data_keeps_one_input_per_kind() {
 }
 
 /// The JavaScript facade's path: tables and encoded top-levels exported
-/// from one input and imported into another give the same graph.
+/// from one input and imported into another give the same graph, which is
+/// also the graph of the same sources inferred from running tallies.
 #[test]
 fn compressed_tables_round_trip() {
-    let mut input = typescript_input();
     let samples = [
         r#"{"d":"2020-01-01","u":"http://h/p.png","e":["x","y","x"],"n":{"k":[1,2.5,null]}}"#,
         r#""2021-02-03""#,
     ];
-    input
-        .add_source_sync(JsonSourceData {
-            name: "First".to_owned(),
-            samples: samples.iter().map(|&s| s.into()).collect(),
-            description: Some("described".to_owned()),
-        })
-        .expect("valid");
-    input
-        .add_source_sync(JsonSourceData {
-            name: "Second".to_owned(),
-            samples: vec!["[true]".into()],
-            description: None,
-        })
-        .expect("valid");
-    let (tables, top_levels) = input.to_compressed();
+    let with_sources = |tallies: bool| {
+        let mut input = typescript_input();
+        input.set_tally_inference(tallies).expect("no sources yet");
+        input
+            .add_source_sync(JsonSourceData {
+                name: "First".to_owned(),
+                samples: samples.iter().map(|&s| s.into()).collect(),
+                description: Some("described".to_owned()),
+            })
+            .expect("valid");
+        input
+            .add_source_sync(JsonSourceData {
+                name: "Second".to_owned(),
+                samples: vec!["[true]".into()],
+                description: None,
+            })
+            .expect("valid");
+        input
+    };
+    let input = with_sources(false);
+    let (tables, top_levels) = input.to_compressed().expect("compressed samples");
     let imported = JsonInput::from_compressed(
         &tables,
         false,
@@ -352,6 +358,18 @@ fn compressed_tables_round_trip() {
         top_levels,
     )
     .expect("valid tables");
+    // Running tallies keep no samples to export.
+    let tallied = with_sources(true);
+    assert_eq!(
+        tallied
+            .to_compressed()
+            .map(|_| ())
+            .unwrap_err()
+            .user_message(),
+        "Internal error: JsonInput::to_compressed needs the samples in compressed form, which \
+         an input inferring from running tallies does not keep: call \
+         set_tally_inference(false) before adding sources"
+    );
 
     let print = |input: JsonInput| {
         let mut input_data = InputData::new();
@@ -361,5 +379,7 @@ fn compressed_tables_round_trip() {
             .graph_text()
             .expect("print")
     };
-    assert_eq!(print(imported), print(input));
+    let expected = print(input);
+    assert_eq!(print(imported), expected);
+    assert_eq!(print(tallied), expected);
 }

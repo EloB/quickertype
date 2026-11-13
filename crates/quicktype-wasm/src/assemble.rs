@@ -295,12 +295,14 @@ mod tests {
         }
     }
 
-    /// A JSON input the way the facade sends it: built by a `JsonInput` and
-    /// exported as tables.
+    /// A JSON input the way the facade sends it: built by a `JsonInput` that
+    /// keeps the samples in compressed form (as the facade's JavaScript
+    /// `CompressedJSON` does) and exported as tables.
     fn json_input(name: &str, samples: &[&str]) -> InputRequest {
         let lang = get_target_language("ts").unwrap();
         let mut input =
             quicktype_core::json_input_for_target_language(lang, true, &RendererOptions::new());
+        input.set_tally_inference(false).unwrap();
         input
             .add_source_sync(JsonSourceData {
                 name: name.to_owned(),
@@ -308,7 +310,7 @@ mod tests {
                 description: None,
             })
             .unwrap();
-        let (tables, top_levels) = input.to_compressed();
+        let (tables, top_levels) = input.to_compressed().unwrap();
         InputRequest::Json {
             handle_refs: true,
             date_time: DateTimeKind::Default,
