@@ -13,6 +13,9 @@ use std::process::{Command, Output, Stdio};
 
 const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
 
+/// The separator Node's `path.join` uses: `path.win32`'s on Windows.
+const SEP: char = if cfg!(windows) { '\\' } else { '/' };
+
 fn inputs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/inputs")
 }
@@ -118,9 +121,10 @@ fn a_missing_output_directory_is_node_s_error() {
         None,
     );
     assert_eq!(output.status.code(), Some(1));
+    // `path.join(path.dirname(out), filename)`: `\` on Windows.
     assert_eq!(
         stderr(&output),
-        "Error: ENOENT: no such file or directory, open 'missing-dir/TopLevel.rs'.\n"
+        format!("Error: ENOENT: no such file or directory, open 'missing-dir{SEP}TopLevel.rs'.\n")
     );
 }
 
@@ -191,9 +195,12 @@ fn directories_cannot_mix_json_with_schemas() {
     fs::write(data.join("Mixed/b.schema"), "{}").unwrap();
     let output = quicktype_in(&dir, &["--lang", "rust", "data"], None);
     assert_eq!(output.status.code(), Some(1));
+    // `path.join(dataDir, x)`: `\` on Windows.
     assert_eq!(
         stderr(&output),
-        "Error: Cannot mix JSON samples with JSON Schems, GraphQL, or TypeScript in input subdirectory data/Mixed.\n"
+        format!(
+            "Error: Cannot mix JSON samples with JSON Schems, GraphQL, or TypeScript in input subdirectory data{SEP}Mixed.\n"
+        )
     );
 }
 
