@@ -975,3 +975,20 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod deep_tests {
+    use super::*;
+
+    #[test]
+    fn deep_documents_parse_and_drop() {
+        let depth = 200_000;
+        let source = format!("{{{}b{}}}", "a{".repeat(depth), "}".repeat(depth));
+        let document = parse(&source).unwrap();
+        drop(document);
+        let source = format!("{{{}b{}}}", "... on T {".repeat(depth), "}".repeat(depth));
+        drop(parse(&source).unwrap());
+        let source = format!("{{a(x:{}{})}}", "[".repeat(depth), "]".repeat(depth));
+        assert!(parse(&source).is_ok());
+    }
+}

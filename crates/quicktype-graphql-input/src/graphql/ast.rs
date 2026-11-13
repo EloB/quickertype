@@ -80,6 +80,27 @@ pub struct SelectionSet {
     pub selections: Vec<Selection>,
 }
 
+/// Dropping a selection set never recurses (the derived drop glue would,
+/// once per nesting level), so the arbitrarily deep documents the parser
+/// accepts cannot overflow the stack.
+impl Drop for SelectionSet {
+    fn drop(&mut self) {
+        let mut pending = std::mem::take(&mut self.selections);
+        while let Some(selection) = pending.pop() {
+            let nested = match selection {
+                Selection::Field(mut field) => field.selection_set.take(),
+                Selection::InlineFragment(mut fragment) => {
+                    Some(std::mem::take(&mut fragment.selection_set))
+                }
+                Selection::FragmentSpread(_) => None,
+            };
+            if let Some(mut set) = nested {
+                pending.append(&mut set.selections);
+            }
+        }
+    }
+}
+
 /// `SelectionNode`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Selection {

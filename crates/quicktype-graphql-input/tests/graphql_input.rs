@@ -219,3 +219,49 @@ fn parser_matches_graphql_js() {
             .join("\n")
     );
 }
+
+/// Far deeper than Node's stack allows (see `docs/PARITY.md`, Known gaps):
+/// nested selection sets and `ofType` chains build without overflowing the
+/// native stack, on a test thread's small stack.
+#[test]
+fn deep_queries_and_schemas_do_not_overflow() {
+    let depth = 50_000;
+    let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
+        .expect("the basic schema");
+    let query = format!(
+        "{{ viewer {}{{ name }}{} }}",
+        "{ best ".repeat(depth),
+        " }".repeat(depth)
+    );
+    let mut input = GraphQlInput::new();
+    input.add_source_sync(GraphQlSourceData {
+        name: "Deep".to_owned(),
+        schema: parse_json(&schema_text, "GraphQL schema", None).unwrap(),
+        query,
+    });
+    let mut builder =
+        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+    input.add_types_sync(&mut builder).unwrap();
+    assert!(builder.len() > 2 * depth);
+
+    // `[[[...Int...]]]` as nested `ofType`s.
+    let mut wrapped = String::from(r#"{"kind": "SCALAR", "name": "Int"}"#);
+    for _ in 0..depth {
+        wrapped = format!(r#"{{"kind": "LIST", "ofType": {wrapped}}}"#);
+    }
+    let schema = format!(
+        r#"{{"data": {{"__schema": {{"queryType": {{"name": "Q"}}, "mutationType": null, "types": [
+            {{"kind": "OBJECT", "name": "Q", "fields": [{{"name": "a", "args": [], "type": {wrapped}}}]}},
+            {{"kind": "SCALAR", "name": "Int"}}]}}}}}}"#
+    );
+    let mut input = GraphQlInput::new();
+    input.add_source_sync(GraphQlSourceData {
+        name: "Lists".to_owned(),
+        schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
+        query: "{ a }".to_owned(),
+    });
+    let mut builder =
+        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+    input.add_types_sync(&mut builder).unwrap();
+    assert!(builder.len() > 2 * depth);
+}
