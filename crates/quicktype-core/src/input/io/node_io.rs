@@ -229,21 +229,43 @@ fn resolve_symbolic_link(io: &dyn Io, file_path: &str) -> std::result::Result<St
     Ok(posix_join(&posix_dirname(file_path), &link_path))
 }
 
-/// Where `readableFromFileOrURL` found the data.
-enum Source {
+/// What `readableFromFileOrURL` opened (TS: a stream not read yet).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Readable {
+    /// A URL's body, fetched when the URL was opened.
     Text(String),
+    /// Standard input (`-`).
     Stdin,
+    /// A file, after symbolic links were resolved.
     File(String),
 }
 
-/// `readableFromFileOrURL(fileOrURL, httpHeaders)`.
-async fn readable_from_file_or_url(
+impl Readable {
+    /// Reads the whole source as text (TS: consuming the stream, e.g.
+    /// with `getStream`). Failures are Node's error text.
+    pub async fn read(self, io: &dyn Io) -> std::result::Result<String, IoError> {
+        match self {
+            Readable::Text(text) => Ok(text),
+            Readable::Stdin => io.read_stdin().await,
+            Readable::File(path) => io.read_file(&path).await,
+        }
+    }
+}
+
+/// `readableFromFileOrURL(fileOrURL, httpHeaders)`: opens a file, a
+/// `file://` URI, a URL (fetching it) or standard input (`-`), without
+/// reading it, as the CLI opens its sources before it parses them.
+///
+/// Errors: `MiscReadError` (`Cannot read from file or URL x: <Node
+/// error>`), or `DriverInputFileDoesNotExist` if the path does not exist
+/// after symbolic links are resolved.
+pub async fn readable_from_file_or_url(
     io: &dyn Io,
     file_or_url: &str,
     http_headers: &[String],
-) -> Result<Source> {
+) -> Result<Readable> {
     let mut file_or_url = file_or_url.to_owned();
-    let attempt: std::result::Result<Option<Source>, String> = async {
+    let attempt: std::result::Result<Option<Readable>, String> = async {
         if file_or_url.starts_with("file://") {
             file_or_url = file_path_from_file_uri(&file_or_url);
         } else if is_url(&file_or_url) {
@@ -262,17 +284,17 @@ async fn readable_from_file_or_url(
                     "TypeError: Cannot read properties of null (reading 'getReader')".to_owned(),
                 );
             };
-            return Ok(Some(Source::Text(
+            return Ok(Some(Readable::Text(
                 String::from_utf8_lossy(&body).into_owned(),
             )));
         }
         if io.is_node() {
             if file_or_url == "-" {
-                return Ok(Some(Source::Stdin));
+                return Ok(Some(Readable::Stdin));
             }
             let file_path = resolve_symbolic_link(io, &file_or_url)?;
             if io.exists(&file_path) {
-                return Ok(Some(Source::File(file_path)));
+                return Ok(Some(Readable::File(file_path)));
             }
         }
         Ok(None)
@@ -300,12 +322,8 @@ pub async fn read_from_file_or_url(
     file_or_url: &str,
     http_headers: &[String],
 ) -> Result<String> {
-    let read = match readable_from_file_or_url(io, file_or_url, http_headers).await? {
-        Source::Text(text) => return Ok(text),
-        Source::Stdin => io.read_stdin().await,
-        Source::File(path) => io.read_file(&path).await,
-    };
-    match read {
+    let readable = readable_from_file_or_url(io, file_or_url, http_headers).await?;
+    match readable.read(io).await {
         Ok(text) => Ok(text),
         Err(message) => misc_read_error(file_or_url, message),
     }
