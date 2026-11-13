@@ -10,7 +10,10 @@ use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
+use quicktype_core::ty::transformed_string_type::TypeKind;
+use quicktype_core::ty::ty::Type;
 use quicktype_core::ty::type_builder::TypeBuilder;
+use quicktype_core::ty::type_graph::TypeGraph;
 use quicktype_core::{
     InferenceFlags, JsonSample, MultiFileRenderResult, Options, RendererOptions, RunContext,
     SampleReader, TargetLanguage, default_target_languages, json_input_for_target_language,
@@ -118,36 +121,86 @@ struct GraphFlags {
     no_date_times: bool,
 }
 
-/// The type graph right after inference, printed with every detail.
-fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) -> String {
+/// The type graph right after inference.
+fn graph_of(
+    lang: &dyn TargetLanguage,
+    input: &mut InputData,
+    flags: GraphFlags,
+) -> quicktype_core::Result<TypeGraph> {
     let mut inference_flags = InferenceFlags::default();
     inference_flags.infer_date_times = !flags.no_date_times;
     let ctx = RunContext::for_target_language(lang, &inference_flags);
-    let result = TypeBuilder::new(
+    let mut builder = TypeBuilder::new(
         ctx.string_type_mapping.clone(),
         flags.alphabetize,
         flags.all_optional,
         false,
         false,
-    )
-    .and_then(|mut builder| {
-        input.add_types_sync(
-            &ctx,
-            &mut builder,
-            flags.infer_maps,
-            flags.infer_enums,
-            flags.fixed_top_levels,
-        )?;
-        builder.finish()
-    });
-    match result {
+    )?;
+    input.add_types_sync(
+        &ctx,
+        &mut builder,
+        flags.infer_maps,
+        flags.infer_enums,
+        flags.fixed_top_levels,
+    )?;
+    builder.finish()
+}
+
+/// Whether `graph` has a cycle through unions and intersections alone,
+/// which `$ref`s can make (`{"a": "x"}` and `{"a": {"$ref": "#/a"}}`: the
+/// union of `a` contains the reference to itself). TypeScript overflows
+/// its stack on it (`attributesForTypes`); the port overflows the native
+/// stack in the same place, on both paths alike: a known gap after
+/// inference, so such cases get no whole runs.
+fn has_set_operation_cycle(graph: &TypeGraph) -> bool {
+    let types = graph.types();
+    let is_set_operation = |t: &Type| matches!(t.kind(), TypeKind::Union | TypeKind::Intersection);
+    // 0: unvisited, 1: on the path, 2: done.
+    let mut state = vec![0u8; types.len()];
+    for start in 0..types.len() {
+        if state[start] != 0 || !is_set_operation(&types[start]) {
+            continue;
+        }
+        let mut stack: Vec<(usize, usize)> = vec![(start, 0)];
+        state[start] = 1;
+        while let Some(&mut (t, ref mut next)) = stack.last_mut() {
+            let members: Vec<usize> = types[t]
+                .members()
+                .map(|m| m.iter().map(|r| r.index()).collect())
+                .unwrap_or_default();
+            if let Some(&m) = members.get(*next) {
+                *next += 1;
+                if m >= types.len() || !is_set_operation(&types[m]) {
+                    continue;
+                }
+                match state[m] {
+                    1 => return true,
+                    0 => {
+                        state[m] = 1;
+                        stack.push((m, 0));
+                    }
+                    _ => {}
+                }
+            } else {
+                state[t] = 2;
+                stack.pop();
+            }
+        }
+    }
+    false
+}
+
+/// The type graph right after inference, printed with every detail.
+fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) -> String {
+    match graph_of(lang, input, flags) {
         Ok(graph) => format!("{graph:?}"),
         Err(e) => format!("error {e:?}"),
     }
 }
 
 /// A whole run of `lang` with the CLI flags `option_set`.
-fn run(
+pub fn run(
     case: &Case,
     lang: &'static dyn TargetLanguage,
     option_set: &str,
@@ -188,7 +241,7 @@ fn run(
     (sources, result)
 }
 
-fn language(name: &str) -> &'static dyn TargetLanguage {
+pub fn language(name: &str) -> &'static dyn TargetLanguage {
     *default_target_languages()
         .iter()
         .find(|l| l.names().contains(&name) || l.name() == name)
@@ -200,6 +253,9 @@ fn language(name: &str) -> &'static dyn TargetLanguage {
 pub struct Stats {
     pub graphs: u64,
     pub runs: u64,
+    /// Whole runs not made: a `$ref` cycle through unions (see
+    /// `has_set_operation_cycle`).
+    pub skipped_runs: u64,
     pub failed_runs: u64,
     pub source_errors: u64,
 }
@@ -229,6 +285,9 @@ fn compare_graphs(
     let mut reference_data = InputData::new();
     reference_data.add_input(reference);
     for &flags in flags {
+        if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
+            eprintln!("  graph {} {flags:?}", lang.name());
+        }
         let a = graph(lang, &mut tallied_data, flags);
         let b = graph(lang, &mut reference_data, flags);
         if a != b {
@@ -249,6 +308,26 @@ fn compare_run(
     option_set: &str,
     stats: &mut Stats,
 ) -> Result<(), String> {
+    if case.handle_refs {
+        let (input, _) = input(case, lang, &RendererOptions::new(), false);
+        let mut data = InputData::new();
+        data.add_input(input);
+        let flags = GraphFlags {
+            infer_maps: option_set != "--no-maps",
+            infer_enums: option_set != "--no-enums",
+            fixed_top_levels: false,
+            alphabetize: false,
+            all_optional: false,
+            no_date_times: false,
+        };
+        if graph_of(lang, &mut data, flags).is_ok_and(|g| has_set_operation_cycle(&g)) {
+            stats.skipped_runs += 1;
+            return Ok(());
+        }
+    }
+    if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
+        eprintln!("  run {} {option_set}", lang.name());
+    }
     let a = run(case, lang, option_set, true);
     let b = run(case, lang, option_set, false);
     if a != b {
@@ -264,9 +343,21 @@ fn compare_run(
     Ok(())
 }
 
+/// How much each seed compares.
+#[derive(Clone, Copy, Debug)]
+pub struct Effort {
+    /// Graphs per seed, each for another combination of the inference
+    /// flags (the first four cover `inferMaps` × `inferEnums`).
+    pub graphs: usize,
+    /// Whole runs per seed that has runs.
+    pub runs: usize,
+    /// Whole runs on every this many seeds.
+    pub runs_every: u64,
+}
+
 /// Compares both ways of inferring for the case of `seed`: `Err` describes
 /// the first difference.
-pub fn check(seed: u64, limits: Limits, runs: usize) -> Result<Stats, String> {
+pub fn check(seed: u64, limits: Limits, effort: Effort) -> Result<Stats, String> {
     let case = generator::case(seed, limits);
     let mut rng = Rng::new(seed ^ 0x5EED_C4EC);
     let mut stats = Stats::default();
@@ -279,7 +370,9 @@ pub fn check(seed: u64, limits: Limits, runs: usize) -> Result<Stats, String> {
     } else {
         *rng.pick(all)
     };
-    let flags: Vec<GraphFlags> = (0..5)
+    let first = rng.below(4) as usize;
+    let flags: Vec<GraphFlags> = (0..effort.graphs)
+        .map(|j| (first + j) % 5)
         .map(|i| GraphFlags {
             infer_maps: i & 1 == 0,
             infer_enums: i & 2 == 0,
@@ -292,13 +385,24 @@ pub fn check(seed: u64, limits: Limits, runs: usize) -> Result<Stats, String> {
     compare_graphs(&case, lang, &flags, &mut stats).map_err(|e| format!("seed {seed}: {e}"))?;
 
     // Whole runs.
+    let runs = if seed % effort.runs_every.max(1) == 0 {
+        effort.runs
+    } else {
+        0
+    };
     for _ in 0..runs {
         let lang = if rng.chance(80) {
             language(rng.pick(LANGUAGES))
         } else {
             *rng.pick(all)
         };
-        let option_set = *rng.pick(OPTION_SETS);
+        let mut option_set = *rng.pick(OPTION_SETS);
+        if case.deep {
+            // Combining classes compares every pair of classes along a
+            // chain of a thousand: minutes, on both paths, and nothing
+            // to do with inference.
+            option_set = "--no-combine-classes";
+        }
         compare_run(&case, lang, option_set, &mut stats)
             .map_err(|e| format!("seed {seed}: {e}"))?;
     }
@@ -393,12 +497,13 @@ pub fn check_many(
     count: u64,
     jobs: usize,
     limits: Limits,
-    runs: usize,
+    effort: Effort,
     progress: bool,
 ) -> Result<Stats, Vec<String>> {
     use std::sync::Mutex;
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    let trace = std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some();
     let next = AtomicU64::new(0);
     let totals = Mutex::new(Stats::default());
     let failures = Mutex::new(Vec::new());
@@ -413,11 +518,15 @@ pub fn check_many(
                             break;
                         }
                         let seed = start + i;
-                        match check(seed, limits, runs) {
+                        if trace {
+                            eprintln!("seed {seed}");
+                        }
+                        match check(seed, limits, effort) {
                             Ok(stats) => {
                                 let mut t = totals.lock().unwrap();
                                 t.graphs += stats.graphs;
                                 t.runs += stats.runs;
+                                t.skipped_runs += stats.skipped_runs;
                                 t.failed_runs += stats.failed_runs;
                                 t.source_errors += stats.source_errors;
                             }

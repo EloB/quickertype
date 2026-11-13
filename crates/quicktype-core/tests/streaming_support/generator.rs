@@ -717,6 +717,8 @@ pub struct Case {
     pub sources: Vec<Source>,
     /// `--no-ignore-json-refs`-like: strings under `$ref` are references.
     pub handle_refs: bool,
+    /// Whether a sample is nested around the depth limit or beyond.
+    pub deep: bool,
 }
 
 /// A whole sample of `shape`.
@@ -808,6 +810,7 @@ pub fn case(seed: u64, limits: Limits) -> Case {
     let top_levels = rng.range(1, 3);
     let mut sources = Vec::new();
     let text_samples = rng.chance(25);
+    let mut deep = false;
     for t in 0..top_levels {
         let name = (*rng.pick(&["TopLevel", "Root", "Data", "élan", "a b", "2x"])).to_owned()
             + &t.to_string();
@@ -831,6 +834,7 @@ pub fn case(seed: u64, limits: Limits) -> Case {
                     shape.vary(&mut rng, &limits)
                 };
                 let mut text = if rng.below(1000) < limits.deep_permille {
+                    deep = true;
                     deep_sample(&mut rng)
                 } else {
                     sample_text(&mut rng, &sample_shape, limits)
@@ -865,6 +869,7 @@ pub fn case(seed: u64, limits: Limits) -> Case {
     Case {
         sources,
         handle_refs: rng.chance(20),
+        deep,
     }
 }
 

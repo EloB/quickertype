@@ -7,7 +7,10 @@
 //! `tallies_infer_what_the_compressed_form_infers` checks a few thousand
 //! seeds; `cargo xtask streaming-fuzz` runs the ignored `fuzz` test over
 //! millions (`QUICKTYPE_STREAMING_SEEDS`, `QUICKTYPE_STREAMING_START`,
-//! `QUICKTYPE_STREAMING_JOBS`, `QUICKTYPE_STREAMING_RUNS`), and the
+//! `QUICKTYPE_STREAMING_JOBS`; per seed `QUICKTYPE_STREAMING_GRAPHS`
+//! graphs and `QUICKTYPE_STREAMING_RUNS` whole runs on every
+//! `QUICKTYPE_STREAMING_RUNS_EVERY`th seed; `QUICKTYPE_STREAMING_TRACE`
+//! prints each seed as it starts), and the
 //! ignored `dump_documents` writes generated documents for comparing both
 //! CLIs with the TypeScript one (`QUICKTYPE_STREAMING_DUMP`).
 
@@ -15,8 +18,8 @@ mod streaming_support;
 
 use std::path::PathBuf;
 
-use streaming_support::check_many;
 use streaming_support::generator::{self, Case, Encoding, Limits, Sample, Source};
+use streaming_support::{Effort, check_many};
 
 const LIMITS: Limits = Limits {
     lone_surrogates: true,
@@ -24,6 +27,14 @@ const LIMITS: Limits = Limits {
     big_maps: true,
     max_bytes: 16_000,
     deep_permille: 3,
+};
+
+/// For the few thousand seeds of `cargo test` (unoptimized): fewer samples
+/// nested near the depth limit, whose rewrites after inference are slow on
+/// both paths; `deep_nesting` covers those depths on its own.
+const CI_LIMITS: Limits = Limits {
+    deep_permille: 1,
+    ..LIMITS
 };
 
 fn env_u64(name: &str, default: u64) -> u64 {
@@ -40,17 +51,22 @@ fn jobs() -> usize {
     ) as usize
 }
 
-fn check_seeds(default_count: u64, progress: bool) {
+fn check_seeds(default_count: u64, limits: Limits, default_effort: Effort, progress: bool) {
     let start = env_u64("QUICKTYPE_STREAMING_START", 0);
     let count = env_u64("QUICKTYPE_STREAMING_SEEDS", default_count);
-    let runs = env_u64("QUICKTYPE_STREAMING_RUNS", 1) as usize;
+    let effort = Effort {
+        graphs: env_u64("QUICKTYPE_STREAMING_GRAPHS", default_effort.graphs as u64) as usize,
+        runs: env_u64("QUICKTYPE_STREAMING_RUNS", default_effort.runs as u64) as usize,
+        runs_every: env_u64("QUICKTYPE_STREAMING_RUNS_EVERY", default_effort.runs_every),
+    };
     let begun = std::time::Instant::now();
-    match check_many(start, count, jobs(), LIMITS, runs, progress) {
+    match check_many(start, count, jobs(), limits, effort, progress) {
         Ok(stats) => eprintln!(
-            "{count} seeds from {start}: 0 differences ({} graphs, {} runs of which {} failed alike, {} source errors alike) in {:.1?}",
+            "{count} seeds from {start}: 0 differences ({} graphs, {} runs of which {} failed alike, {} runs skipped for a $ref cycle through a union, {} source errors alike) in {:.1?}",
             stats.graphs,
             stats.runs,
             stats.failed_runs,
+            stats.skipped_runs,
             stats.source_errors,
             begun.elapsed()
         ),
@@ -60,7 +76,12 @@ fn check_seeds(default_count: u64, progress: bool) {
 
 #[test]
 fn tallies_infer_what_the_compressed_form_infers() {
-    check_seeds(3_000, false);
+    let effort = Effort {
+        graphs: 5,
+        runs: 1,
+        runs_every: 1,
+    };
+    check_seeds(3_000, CI_LIMITS, effort, false);
 }
 
 /// The long run (`cargo xtask streaming-fuzz`).
@@ -68,7 +89,12 @@ fn tallies_infer_what_the_compressed_form_infers() {
 #[ignore]
 fn fuzz() {
     std::panic::set_hook(Box::new(|_| {}));
-    check_seeds(100_000, true);
+    let effort = Effort {
+        graphs: 2,
+        runs: 1,
+        runs_every: 10,
+    };
+    check_seeds(100_000, LIMITS, effort, true);
 }
 
 /// Writes `QUICKTYPE_STREAMING_SEEDS` generated documents to the
@@ -91,6 +117,7 @@ fn dump_documents() {
 fn case(handle_refs: bool, sources: &[(&str, &[&str])], encoding: Encoding) -> Case {
     Case {
         handle_refs,
+        deep: false,
         sources: sources
             .iter()
             .map(|(name, samples)| Source {
@@ -239,9 +266,10 @@ fn deep_nesting_on_cli_stack() {
             );
         }
     }
-    for depth in [20_000, 1_000_000] {
-        let doc = nested(depth, 0, "");
+    for (depth, style) in [(20_000, 0), (1_000_000, 0), (100_000, 1), (100_000, 2)] {
+        let doc = nested(depth, style, if style == 0 { "" } else { "1" });
         for encoding in [Encoding::Stream, Encoding::Reader(4096), Encoding::Text] {
+            eprintln!("depth {depth}, style {style}, {encoding:?}");
             let deep = case(false, &[("Deep", &[doc.as_str()])], encoding);
             streaming_support::check_light(&deep)
                 .unwrap_or_else(|e| panic!("depth {depth}, {encoding:?}: {e}"));
@@ -250,5 +278,61 @@ fn deep_nesting_on_cli_stack() {
                 "depth {depth}, {encoding:?}"
             );
         }
+    }
+}
+
+/// Lists the seeds from `QUICKTYPE_STREAMING_START` whose cases are nested
+/// around the depth limit or beyond, or handle references (to look into a
+/// seed without running it); with `QUICKTYPE_STREAMING_SHOW`, prints each
+/// case whole.
+#[test]
+#[ignore]
+fn list_cases() {
+    let start = env_u64("QUICKTYPE_STREAMING_START", 0);
+    let count = env_u64("QUICKTYPE_STREAMING_SEEDS", 1_000);
+    for seed in start..start + count {
+        let case = generator::case(seed, LIMITS);
+        let bytes: usize = case
+            .sources
+            .iter()
+            .flat_map(|s| &s.samples)
+            .map(|s| s.text.len())
+            .sum();
+        if std::env::var_os("QUICKTYPE_STREAMING_SHOW").is_some() {
+            eprintln!("seed {seed}: {case:#?}");
+        } else if case.deep || case.handle_refs {
+            eprintln!(
+                "seed {seed}: deep {}, refs {}, {} sources, {bytes} bytes",
+                case.deep,
+                case.handle_refs,
+                case.sources.len()
+            );
+        }
+    }
+}
+
+/// One whole run of the case of seed `QUICKTYPE_STREAMING_START` with
+/// `QUICKTYPE_STREAMING_LANG` and the CLI flags `QUICKTYPE_STREAMING_OPTIONS`,
+/// from tallies unless `QUICKTYPE_INFERENCE=compressed-json` (to look into
+/// a seed).
+#[test]
+#[ignore]
+fn one_run() {
+    let seed = env_u64("QUICKTYPE_STREAMING_START", 0);
+    let lang = std::env::var("QUICKTYPE_STREAMING_LANG").unwrap_or_else(|_| "typescript".into());
+    let options = std::env::var("QUICKTYPE_STREAMING_OPTIONS").unwrap_or_default();
+    let tallies = std::env::var_os("QUICKTYPE_INFERENCE").is_none_or(|v| v != "compressed-json");
+    let case = generator::case(seed, LIMITS);
+    let (sources, result) = streaming_support::on_cli_stack(|| {
+        streaming_support::run(&case, streaming_support::language(&lang), &options, tallies)
+    });
+    eprintln!("sources: {sources:?}");
+    match result {
+        Ok(files) => {
+            for (name, file) in files {
+                eprintln!("== {name}\n{}", file.lines.join("\n"));
+            }
+        }
+        Err(e) => eprintln!("error: {e}"),
     }
 }

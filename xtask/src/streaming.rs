@@ -16,12 +16,18 @@ Generates JSON inputs from consecutive seeds and checks, for each, that
 inference from running tallies and from the compressed form give the same
 add_source results, the same type graphs (every inference flag
 combination) and the same output of a whole run (a language and an option
-set picked by the seed). Runs in release mode, in process.
+set picked by the seed, on every tenth seed by default). Runs optimized,
+in process (built in target/streaming-fuzz, without LTO).
 
   --seeds <n>    how many seeds (default 1000000; `_` separators allowed)
   --start <n>    the first seed (default 0)
   -j <n>         threads (default: number of cores)
-  --runs <n>     whole runs per seed (default 1)
+  --graphs <n>   type graphs compared per seed, each for other inference
+                 flags (default 2; up to 5)
+  --runs <n>     whole runs per seed that has runs (default 1)
+  --runs-every <n>
+                 whole runs on every <n>th seed (default 10)
+  --trace        print each seed as it starts (to find one that crashes)
   --dump <dir>   instead, write <n> generated documents (default 2000) to
                  <dir> as <seed>.json, for `cargo xtask diff --each <dir>`
 
@@ -36,6 +42,9 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let mut start = "0".to_owned();
     let mut jobs: Option<String> = None;
     let mut runs = "1".to_owned();
+    let mut graphs = "2".to_owned();
+    let mut runs_every = "10".to_owned();
+    let mut trace = false;
     let mut dump: Option<String> = None;
     let mut iter = args.into_iter();
     while let Some(arg) = iter.next() {
@@ -45,6 +54,9 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             "--start" => start = value()?,
             "-j" | "--jobs" => jobs = Some(value()?),
             "--runs" => runs = value()?,
+            "--graphs" => graphs = value()?,
+            "--runs-every" => runs_every = value()?,
+            "--trace" => trace = true,
             "--dump" => dump = Some(value()?),
             other => return Err(format!("unknown option {other}\n\n{USAGE}")),
         }
@@ -58,6 +70,12 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let mut command = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned()));
     command
         .current_dir(root)
+        // Optimized, but without the release profile's fat LTO, which
+        // makes the build several times slower for little run time; in
+        // a target directory of its own, so the release CLI stays built.
+        .env("CARGO_TARGET_DIR", root.join("target/streaming-fuzz"))
+        .env("CARGO_PROFILE_RELEASE_LTO", "false")
+        .env("CARGO_PROFILE_RELEASE_CODEGEN_UNITS", "16")
         .args([
             "test",
             "--release",
@@ -76,7 +94,12 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             seeds.as_deref().unwrap_or(default_seeds),
         )
         .env("QUICKTYPE_STREAMING_START", &start)
-        .env("QUICKTYPE_STREAMING_RUNS", &runs);
+        .env("QUICKTYPE_STREAMING_RUNS", &runs)
+        .env("QUICKTYPE_STREAMING_GRAPHS", &graphs)
+        .env("QUICKTYPE_STREAMING_RUNS_EVERY", &runs_every);
+    if trace {
+        command.env("QUICKTYPE_STREAMING_TRACE", "1");
+    }
     if let Some(jobs) = jobs {
         command.env("QUICKTYPE_STREAMING_JOBS", jobs);
     }

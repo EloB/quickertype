@@ -400,9 +400,25 @@ objects, alternating) and 20,000 and a million levels (as bytes, through
 a reader and as text): the same results on both paths, the `RangeError`
 from exactly 1,000 levels on.
 
-- `cargo test` checks 3,000 seeds.
-- `cargo xtask streaming-fuzz --seeds 1_000_000` checks a million in
-  release mode (`--start`, `-j`, `--runs` for more).
+- `cargo test` checks 3,000 seeds, each with five graphs and a whole
+  run.
+
+Two kinds of whole run are left out, both for problems after inference
+that are the same on both paths. A case with a sample nested near the
+depth limit runs with `--no-combine-classes` (combining classes compares
+every pair of classes along a chain of a thousand: minutes). A case whose
+graph has a cycle through unions and intersections alone (a `$ref` to a
+place whose union contains the reference, `{"a": "x"}` then `{"a":
+{"$ref": "#/a"}}`) gets no whole run: TypeScript fails with `RangeError:
+Maximum call stack size exceeded` in `attributesForTypes`, and the port's
+`attributes_for_types` recursion is not guarded yet, so it overflows the
+native stack (a fix is on the fuzzing branches). The graphs of both kinds
+of case are still compared.
+- `cargo xtask streaming-fuzz --seeds 1_000_000` checks a million,
+  optimized, with two graphs per seed (other inference flags for each)
+  and a whole run on every tenth seed by default (`--graphs`, `--runs`,
+  `--runs-every`, `--start`, `-j`; `--trace` prints each seed as it
+  starts, to find one that crashes).
 - `cargo xtask streaming-fuzz --dump <dir> --seeds 2000` writes generated
   documents for `cargo xtask diff --each <dir> -- <args>`, which compares
   our CLI with the TypeScript CLI, guarding against a bug both Rust paths
