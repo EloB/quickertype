@@ -113,9 +113,35 @@ async function handle(request) {
     return { type: "result", id: request.id, ms: times[times.length - 1], times, inputTimes, first, ...reply };
 }
 
+/** A result for a request the worker could not handle at all. */
+function failure(request, e) {
+    const message = `The worker could not handle this run: ${String(e?.message ?? e)}`;
+    return { type: "result", id: request?.id, ok: false, error: { message }, times: [], inputTimes: [] };
+}
+
+// One request at a time, in order. Whatever goes wrong with one (outside
+// quicktype's own errors, which handle() reports) is that request's result,
+// and the next request is still handled.
 let queue = Promise.resolve();
 self.onmessage = (event) => {
-    queue = queue.then(async () => self.postMessage(await handle(event.data)));
+    const request = event.data;
+    queue = queue.then(async () => {
+        let reply;
+        try {
+            reply = await handle(request);
+        } catch (e) {
+            reply = failure(request, e);
+        }
+
+        try {
+            self.postMessage(reply);
+        } catch (e) {
+            // E.g. a DataCloneError.
+            self.postMessage(failure(request, e));
+        }
+    }).catch(() => {
+        // Not even the failure could be posted; keep the queue going.
+    });
 };
 
 self.postMessage({ type: "ready", ...boot, readyMs: performance.now() });
