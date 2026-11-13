@@ -123,3 +123,26 @@ semantics were verified.
 | `wordwrap` 1.0.0 | hand port (`quicktype_js_compat::wordwrap`) | 407 texts at several widths compared to npm |
 | V8 `Array.prototype.sort` | port of `array-sort.tq` (`quicktype_js_compat::sort`) | 210 seeded comparator runs (consistent, fully inconsistent, noisy, run-shaped, NaN) up to 2,000 elements, 41 mixed number/string `<` tables and 60 default string sorts compared to Node 24 |
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
+
+## Known gaps
+
+Known divergences from JavaScript that no golden case exercises yet. Each
+names the fix it needs.
+
+- **`pow` on WASM (Phase 6 blocker).** `quicktype_js_compat::number::pow`
+  matches V8 natively because both call the platform `pow`. On `wasm32`
+  there is none: `f64::powf` is compiler-builtins' port of `libm`, which
+  disagrees with Node in the last bit on about 7% of inputs. Through
+  `markov_chain::evaluate` this can flip `InferMaps`' class-versus-map
+  decision for names near the threshold. Fix: a correctly rounded `pow` for
+  `wasm32` (marked `TODO(wasm)` in `number.rs`).
+- **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
+  surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
+  `String`s cannot. Wherever the TypeScript produces one, the port drops it:
+  `utf16::units_to_string`, `utf16::slice`/`substring`,
+  `json::gap_from_str`, and through them `strings::utf16_concat_map`,
+  `utf16_legalize_characters`, `combine_words` (via legalizers) and
+  `pluralize`. Lone surrogates in input JSON are not representable at all.
+  No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
+  API boundary (input strings, names, emitted string literals), with `&str`
+  only where text is known to be well-formed.

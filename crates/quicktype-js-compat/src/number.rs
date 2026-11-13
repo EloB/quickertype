@@ -106,8 +106,13 @@ fn shortest_digits(formatted: &str) -> (String, i32) {
 /// Never use the `libm` crate here: it disagrees with Node on about 7% of
 /// inputs.
 ///
-/// On `wasm32`, `powf` comes from compiler-builtins' libm port and can differ
-/// from Node in the last bit.
+/// # Warning: not exact on `wasm32`
+///
+/// On `wasm32` there is no platform `pow`: `f64::powf` is compiler-builtins'
+/// port of `libm`, which disagrees with Node in the last bit on about 7% of
+/// inputs. Through `MarkovChain.evaluate` that can flip `InferMaps`' class
+/// versus map decision near its threshold. A correctly rounded `pow` is a
+/// known gap (see `docs/PARITY.md`, "Known gaps").
 pub fn pow(x: f64, y: f64) -> f64 {
     if y.is_nan() || (y.is_infinite() && x.abs() == 1.0) {
         return f64::NAN;
@@ -118,7 +123,22 @@ pub fn pow(x: f64, y: f64) -> f64 {
     if y == 0.5 && x.is_sign_positive() {
         return x.sqrt();
     }
+    platform_pow(x, y)
+}
+
+/// The platform `pow`, as V8 calls it.
+#[cfg(not(target_arch = "wasm32"))]
+fn platform_pow(x: f64, y: f64) -> f64 {
     // Keep LLVM from constant-folding with its own pow implementation.
+    std::hint::black_box(x).powf(std::hint::black_box(y))
+}
+
+/// Not the platform `pow`: wasm32 has none, and this libm port differs from
+/// Node on about 7% of inputs.
+#[cfg(target_arch = "wasm32")]
+fn platform_pow(x: f64, y: f64) -> f64 {
+    // TODO(wasm): correctly rounded pow (e.g. a port of glibc's or CORE-MATH's
+    // pow) so that wasm32 matches Node; see "Known gaps" in docs/PARITY.md.
     std::hint::black_box(x).powf(std::hint::black_box(y))
 }
 
