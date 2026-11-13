@@ -33,4 +33,32 @@ mkdirSync(outDir, { recursive: true });
     writeFileSync(join(outDir, "chance.txt"), `${lines.join("\n")}\n`);
 }
 
+// 2. TypeNames.combinedName for sets of names (tab-separated, then the result).
+{
+    const { TypeNames } = require(join(core, "attributes/TypeNames.js"));
+    const sets = [
+        ["fooBar"],
+        ["fooBar", "foo_bar"],
+        ["userName", "userNames", "userNameList"],
+        ["billingAddress", "shippingAddress"],
+        ["ab", "cd"],
+        ["aaa", "aaaa"],
+        ["URLPath", "urlPath"],
+        ["HTTPServer", "HttpServer", "httpServerConfig"],
+        ["item", "items", "itemList"],
+        ["created_at", "updated_at"],
+        ["Pokemon", "PokemonEntry", "pokemons"],
+        ["x1", "x2", "x3"],
+        ["firstName", "lastName", "middleName"],
+        ["value", "Value", "VALUE"],
+        ["dataPoint", "data-point", "data point"],
+        ["ABCDef", "ABCdef"],
+        ["a1b2", "a1b3"],
+    ];
+    const lines = sets.map(
+        (names) => `${names.join("\t")}\t=\t${TypeNames.make(new Set(names), undefined, false).combinedName}`,
+    );
+    writeFileSync(join(outDir, "combined-names.txt"), `${lines.join("\n")}\n`);
+}
+
 console.log(`wrote fixtures to ${outDir}`);

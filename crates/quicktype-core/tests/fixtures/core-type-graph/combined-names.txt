@@ -1,0 +1,17 @@
+fooBar	=	fooBar
+fooBar	foo_bar	=	foo_bar
+userName	userNames	userNameList	=	user_name
+billingAddress	shippingAddress	=	ing_address
+ab	cd	=	ab
+aaa	aaaa	=	aaaaaa
+URLPath	urlPath	=	url_path
+HTTPServer	HttpServer	httpServerConfig	=	http_server
+item	items	itemList	=	item
+created_at	updated_at	=	ated_at
+Pokemon	PokemonEntry	pokemons	=	pokemon
+x1	x2	x3	=	x1
+firstName	lastName	middleName	=	_name
+value	Value	VALUE	=	value
+dataPoint	data-point	data point	=	data_point
+ABCDef	ABCdef	=	def
+a1b2	a1b3	=	a1_b
