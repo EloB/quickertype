@@ -44,9 +44,12 @@
 // Schema, an extension outside the chooser's filter, and a 26 MB file,
 // which the page posts to the workers unread (no main-thread task over
 // 200 ms, by a PerformanceObserver for long tasks). A file larger than a
-// browser's longest string (its size faked), one that cannot be read, a
-// dropped one, and one deleted before a worker read it each show why in the
-// output pane, name the file and its CLI command, and leave nothing running.
+// browser's longest string (its size faked), one that cannot be read, and a
+// dropped one each show why in the output pane and leave nothing running;
+// the input before stays the input, in the input pane, the command and
+// what is saved (typed text survives a 3 GB file dropped on it, the next
+// change runs it, and a reload brings it back). One deleted before a
+// worker read it says so for that engine.
 // A worker keeps a large file's text only while requests carry that file: it
 // lets it go once a sample is loaded.
 //
@@ -736,14 +739,37 @@ async function openFile(file, { failing = false, timeout = 60_000 } = {}) {
 }
 
 /**
- * The input, a file, could not be opened: the output pane says so (its
- * title, its message, and where to get the CLI, if `cli`); the input pane
- * names the file and the command under the output is the CLI's for it
- * (`command`); there is no request, nothing runs or waits, the output is not
- * shown as stale, and neither switching engine nor another language runs
- * anything (it says so again).
+ * What the input pane shows, and what is saved: the editor's text (null if
+ * it is hidden), the large input's name, size and status (null if there is
+ * none), the input's source, the command under the output, and the input
+ * kept in localStorage.
  */
-async function openFailed(what, { title, message, command, size, cli: withCli = false }) {
+const inputPane = () =>
+    page.evaluate(`({
+        editor: document.getElementById("input").hidden ? null : document.getElementById("input").value,
+        text: playground.state.text,
+        large: document.getElementById("large").hidden
+            ? null
+            : {
+                  name: document.getElementById("large-name").textContent,
+                  size: document.getElementById("large-size").textContent,
+                  status: document.getElementById("large-status").textContent,
+              },
+        source: playground.state.source,
+        command: playground.cli(),
+        saved: localStorage.getItem("quickertype.input"),
+    })`);
+
+/**
+ * A file could not be opened: the output pane says so (its title, its
+ * message, and where to get the CLI, if `cli`); the input before stays the
+ * input (`before`, from inputPane: in the editor or as the large file it
+ * was, the command for it, and what is saved), a large one without a status
+ * while the output is the error; there is no request, nothing runs or
+ * waits, the output is not shown as stale, and switching engine runs
+ * nothing.
+ */
+async function openFailed(what, { title, message, before, cli: withCli = false }) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const shownNow = await page.evaluate(`({
         status: document.body.dataset.status,
@@ -763,29 +789,15 @@ async function openFailed(what, { title, message, command, size, cli: withCli = 
         { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#readme" : null, request: true, busy: false, stale: false, running: false },
         `${what}: the page after it`,
     );
-    const input = () =>
-        page.evaluate(`({
-            name: document.getElementById("large").hidden ? null : document.getElementById("large-name").textContent,
-            size: document.getElementById("large-size").textContent,
-            status: document.getElementById("large-status").textContent,
-            edit: !document.getElementById("large-edit").hidden,
-            command: playground.cli(),
-        })`);
-    const expected = { name: command.split(" ").pop(), size, status: "Can't be opened in the browser: see the output.", edit: false, command };
-    assert.deepEqual(await input(), expected, `${what}: the input pane`);
+    const expected = before.large === null ? before : { ...before, large: { ...before.large, status: "" } };
+    assert.deepEqual(await inputPane(), expected, `${what}: the input before, in the input pane, the command and what is saved`);
     const engine = await page.evaluate("playground.engine");
     for (const other of [engine === "wasm" ? "ts" : "wasm", engine]) {
         const ran = await switchEngine(other, `${what}: a switch to ${other}`);
         assert.deepEqual(ran, { wasm: 0, ts: 0 }, `${what}: a switch to ${other} ran`);
     }
 
-    const before = await runCounts();
-    await select("lang", "go");
-    const after = await runCounts();
-    assert.deepEqual([after.wasm - before.wasm, after.ts - before.ts], [0, 0], `${what}: another language ran`);
-    assert.equal(await page.evaluate(`document.querySelector("#error .error-message")?.textContent`), shownNow.message, `${what}: another language`);
-    assert.deepEqual(await input(), { ...expected, command: command.replace("--lang typescript", "--lang go") }, `${what}: the input pane, in Go`);
-    await select("lang", "typescript");
+    assert.equal(await page.evaluate(`document.querySelector("#error .error-message")?.textContent`), shownNow.message, `${what}: after the switches`);
     return shownNow;
 }
 
@@ -1660,21 +1672,17 @@ try {
         };
     })()`);
     const tooLargeMessage = "This file is 3.0 GB. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.";
+    // The input before: rulings.json, a large file.
+    const largeBefore = await inputPane();
+    assert.equal(largeBefore.large?.name, "rulings.json");
     await openFile(chosen("huge.json", readInput("pokedex.json")), { failing: true });
-    await openFailed("a 3 GB file", {
-        title: "huge.json is too large for the browser",
-        message: tooLargeMessage,
-        command: "quicktype --lang typescript --top-level Huge huge.json",
-        size: "3.0 GB",
-        cli: true,
-    });
+    await openFailed("a 3 GB file", { title: "huge.json is too large for the browser", message: tooLargeMessage, before: largeBefore, cli: true });
     await page.screenshot("speed-file-too-large.png");
     await openFile(chosen("unreadable.json", readInput("pokedex.json")), { failing: true });
     await openFailed("a file that cannot be read", {
         title: "Could not read unreadable.json",
         message: "Could not read unreadable.json: RangeError: Invalid string length",
-        command: "quicktype --lang typescript --top-level Unreadable unreadable.json",
-        size: `${(readInput("pokedex.json").length / 1000).toFixed(1)} kB`,
+        before: largeBefore,
     });
     /** Drops a file `name` with `content` on the input side (as an expression for andRun). */
     const drop = (name, content) =>
@@ -1684,17 +1692,48 @@ try {
             document.getElementById("input-pane").dispatchEvent(new DragEvent("drop", { dataTransfer: data, bubbles: true, cancelable: true }));
         })()`;
     await andRun(drop("dropped-huge.json", "[1]"), "a dropped 3 GB file", `document.body.dataset.status === "error"`);
-    await openFailed("a dropped 3 GB file", {
-        title: "dropped-huge.json is too large for the browser",
-        message: tooLargeMessage,
-        command: "quicktype --lang typescript --top-level DroppedHuge dropped-huge.json",
-        size: "3.0 GB",
-        cli: true,
-    });
+    await openFailed("a dropped 3 GB file", { title: "dropped-huge.json is too large for the browser", message: tooLargeMessage, before: largeBefore, cli: true });
     chosen("dropped.json", readInput("pokedex.json"));
     await andRun(drop("dropped.json", readInput("pokedex.json").toString("utf8")), "a dropped file");
     await sameAsCli("a dropped file: dropped.json → TypeScript", "quicktype --lang typescript --top-level Dropped dropped.json");
-    console.log(`ok: a file too large for a browser, one that cannot be read, and one dropped: "${tooLargeMessage}"`);
+    console.log(`ok: a file too large for a browser, one that cannot be read, and one dropped: "${tooLargeMessage}"; the input before (rulings.json) stays the input`);
+
+    // Typed input survives a file that cannot be opened: it stays the input,
+    // in the editor and saved; the next change runs it, and a reload brings
+    // it back.
+    const typed = '{"typed": [1, 2, 3], "name": "Ann"}';
+    await andRun(
+        `(() => {
+            const input = document.getElementById("input");
+            input.value = ${JSON.stringify(typed)};
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        })()`,
+        "a run on typed input",
+        `${settled} && document.body.dataset.status === "done"`,
+    );
+    chosen("input.json", typed);
+    const typedCommand = await page.evaluate("playground.cli()");
+    assert.match(typedCommand, /^quicktype --lang typescript .* input\.json$/);
+    await sameAsCli("typed input", typedCommand);
+    const savedTyped = `JSON.parse(localStorage.getItem("quickertype.input") ?? "null")?.text === ${JSON.stringify(typed)}`;
+    await page.waitFor(savedTyped, "the typed input, saved");
+    const typedBefore = await inputPane();
+    assert.equal(typedBefore.editor, typed);
+    await andRun(drop("dropped-huge.json", "[1]"), "a 3 GB file dropped on typed input", `document.body.dataset.status === "error"`);
+    await openFailed("a 3 GB file dropped on typed input", {
+        title: "dropped-huge.json is too large for the browser",
+        message: tooLargeMessage,
+        before: typedBefore,
+        cli: true,
+    });
+    await select("lang", "go");
+    await sameAsCli("the typed input in Go, after a file that could not be opened", typedCommand.replace("--lang typescript", "--lang go"));
+    await select("lang", "typescript");
+    await page.navigate(`${url}${await hashNow()}`);
+    await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run after reloading");
+    assert.equal(await page.evaluate("document.getElementById('input').value"), typed, "the typed input after a reload");
+    await sameAsCli("the typed input after a reload", typedCommand);
+    console.log("ok: typed input survives a 3 GB file dropped on it: still in the editor and saved; the next change runs it, a reload brings it back");
 
     // A large file that is gone by the time a worker reads it: that engine
     // says it could not read it; the other, which read it before, keeps its

@@ -126,8 +126,6 @@ const state = {
     text: "",
     /** The file a large input is (a File), which the workers read; undefined for any other input. */
     file: undefined,
-    /** Why the input, a file, could not be opened ({ title, message, link? }); every run shows it. */
-    unopened: undefined,
     /** { type: "sample", id } | { type: "file", fileName, size, lastModified } | { type: "typed" } */
     source: { type: "typed" },
     /** The name from the sample or file name; used unless the user typed one. */
@@ -218,7 +216,7 @@ function writeHash() {
 
 function saveInput() {
     try {
-        if (state.file !== undefined || state.unopened !== undefined || state.text.length > LARGE) {
+        if (state.file !== undefined || state.text.length > LARGE) {
             localStorage.removeItem(storageKey);
         } else {
             const { kind, text, source, autoName } = state;
@@ -391,12 +389,9 @@ function renderCli() {
 }
 
 function showInput() {
-    const unopened = state.unopened !== undefined;
-    const large = unopened || ((state.file !== undefined || state.text.length > LARGE) && !state.largeInEditor);
+    const large = (state.file !== undefined || state.text.length > LARGE) && !state.largeInEditor;
     els.input.hidden = large;
     els.large.hidden = !large;
-    els.largeNote.hidden = unopened;
-    els.largeEdit.hidden = unopened;
     if (large) {
         els.largeName.textContent = inputFileName();
         els.largeSize.textContent = formatBytes(state.source.size ?? utf8Length(state.text));
@@ -411,17 +406,18 @@ function showInput() {
 /**
  * What happens to a large input, under its name (the editor does not show
  * it): reading it, running it (with the time so far), how long its run took,
- * or that it failed.
+ * or that it failed; nothing while another input that could not be loaded
+ * is what the output pane shows.
  */
 function renderInputStatus() {
     if (els.large.hidden) return;
     const { status, shown } = view;
     const name = engineNames[state.engine];
     let text = "";
-    if (state.unopened !== undefined) text = "Can't be opened in the browser: see the output.";
-    else if (view.reading !== undefined) text = "Reading…";
+    if (view.reading !== undefined) text = "Reading…";
     else if (status === "running") text = `Running on ${name}… ${formatMs(performance.now() - view.runningSince)}`;
-    else if (shown.gen === generation && shown.result !== undefined) {
+    // Not after another input failed to load (no request): the output is about that one.
+    else if (shown.gen === generation && shown.result !== undefined && view.request !== undefined) {
         const result = shown.result;
         if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${engineNames[shown.engine]} stopped with an error: see the output.`;
         else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
@@ -533,8 +529,6 @@ const typingDelay = () => Math.min(1000, 200 + state.text.length / 5000);
  * lane runs them one after the other). A newer run replaces it.
  */
 function run({ compare = false } = {}) {
-    // A file that could not be opened: no run, its error again.
-    if (state.unopened !== undefined) return Promise.resolve(inputFailed(state.unopened));
     clearTimeout(runTimer);
     const gen = ++generation;
     const req = request();
@@ -1104,7 +1098,6 @@ function setInput(text, source, kind, autoName, keepName = false, file = undefin
     view.reading = undefined;
     state.text = text;
     state.file = file;
-    state.unopened = undefined;
     state.source = source;
     state.largeInEditor = false;
     state.kind = kind;
@@ -1117,10 +1110,12 @@ function setInput(text, source, kind, autoName, keepName = false, file = undefin
 }
 
 /**
- * An input that could not be loaded: `error` ({ title, message, link? }) is
- * shown in the output pane. There is no current input then: what runs or
- * waits is for the input before, and switching engine runs nothing until
- * there is one. The input pane shows the input before.
+ * An input that could not be loaded (a sample, a file): `error` ({ title,
+ * message, link? }) is shown in the output pane. The input before stays
+ * the input: the input pane shows it, and it stays saved. There is no
+ * current request then: what runs or waits is dropped, and switching
+ * engine runs nothing until the next change (of the input or the options)
+ * runs one.
  */
 function inputFailed(error) {
     clearTimeout(runTimer);
@@ -1155,22 +1150,15 @@ async function loadSample(sample, keepName = false, compare = false) {
  * enough for the editor is read here; a larger one is posted to the workers
  * as it is, after a look at its first kilobyte (a JSON Schema?). A file too
  * large to read as text, or one that cannot be read, is an error in the
- * output pane.
+ * output pane (see inputFailed): the input before stays the input, in the
+ * editor and saved.
  */
 async function loadFile(file) {
     const { name, size, lastModified } = file;
     const source = { type: "file", fileName: name, size, lastModified };
     const schemaName = /\.schema(\.json)?$/i.test(name);
-    /** The file is the input, one that cannot be opened: the page names it (and the CLI command for it) and says why. */
-    const failed = (error) => {
-        setInput("", source, schemaName ? "schema" : "json", nameFromFile(name));
-        state.unopened = error;
-        saveInput();
-        showInput();
-        inputFailed(error);
-    };
     const large = tooLarge(name, size);
-    if (large !== undefined) return failed(large);
+    if (large !== undefined) return inputFailed(large);
 
     const ticket = ++opening;
     view.reading = { fileName: name, size };
@@ -1181,13 +1169,13 @@ async function loadFile(file) {
         if (size > LARGE) head = await file.slice(0, 1000).text();
         else text = await file.text();
     } catch (e) {
-        if (ticket === opening) failed(unreadable(name, e));
+        if (ticket === opening) inputFailed(unreadable(name, e));
         return;
     }
 
     // Another input came first.
     if (ticket !== opening) return;
-    if (text === "" && size > 0) return failed(unreadable(name, new Error("the browser returned no text")));
+    if (text === "" && size > 0) return inputFailed(unreadable(name, new Error("the browser returned no text")));
     const schema = schemaName || /"\$schema"\s*:/.test((head ?? text).slice(0, 1000));
     setInput(text ?? "", source, schema ? "schema" : "json", nameFromFile(name), false, text === undefined ? file : undefined);
     void run();
@@ -1285,7 +1273,6 @@ function bind() {
         view.reading = undefined;
         state.text = els.input.value;
         state.file = undefined;
-        state.unopened = undefined;
         if (state.source.type !== "typed") {
             state.source = { type: "typed" };
             els.sample.value = "";
