@@ -373,8 +373,10 @@ function genShape(rng, depth, pool) {
             break;
         }
         case "deep": {
-            // Long chains of nested arrays or single-property objects.
-            const levels = rng.range(5, 60);
+            // Long chains of nested arrays or single-property objects (at
+            // most 20: Kotlin's kotlinx renderer, in TypeScript as in the
+            // port, takes time exponential in the nesting of arrays of null).
+            const levels = rng.range(5, 20);
             let inner = genShape(rng, 0, pool);
             const asArray = rng.chance(0.5);
             const key = genKey(rng);
