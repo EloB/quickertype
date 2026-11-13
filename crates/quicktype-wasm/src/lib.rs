@@ -46,6 +46,8 @@
 //! which routes the engine's `console.log` output to the run that printed
 //! it.
 
+#[cfg(target_arch = "wasm32")]
+mod allocator;
 pub mod assemble;
 pub mod js;
 pub mod samples;
@@ -281,6 +283,17 @@ pub fn engine_version() -> String {
 #[wasm_bindgen(js_name = __pow)]
 pub fn pow_for_tests(x: f64, y: f64) -> f64 {
     quicktype_js_compat::number::pow(x, y)
+}
+
+/// How often the WebAssembly memory grew, for the facade's test that it
+/// grows geometrically ([`allocator`]); 0 outside WebAssembly.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __memoryGrowths)]
+pub fn memory_growths() -> u32 {
+    #[cfg(target_arch = "wasm32")]
+    return allocator::growths();
+    #[cfg(not(target_arch = "wasm32"))]
+    0
 }
 
 /// Panics, for the facade's test of what happens when the engine traps

@@ -388,3 +388,50 @@ test("a module that is not the engine is instantiated once, not on every run", (
     assert.deepEqual(JSON.parse(out), [1, 1, 0, 3, 0, true, [true, true, true]]);
 });
 
+
+// ---- Large outputs ------------------------------------------------------------
+
+/** A JSON sample of `n` distinct classes of eight properties each. */
+function manyClasses(n) {
+    const words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet"];
+    const sample = {};
+    for (let i = 0; i < n; i++) {
+        const properties = {};
+        for (let j = 0; j < 8; j++) {
+            properties[`${words[j]}${words[(i + j) % 10]}${i}`] = j % 3 === 0 ? "text" : j % 3 === 1 ? i : [true];
+        }
+
+        sample[`record${words[i % 10]}${i}`] = properties;
+    }
+
+    return JSON.stringify(sample);
+}
+
+// Rust's wasm32 allocator grew the memory 64 KiB at a time, and each
+// `memory.grow` costs V8 about half a millisecond (more past 2 GiB): runs
+// with outputs of millions of lines spent most of their time growing the
+// memory, more than linearly in the output's size (an 8-million-line PHP
+// file took 726 s against TypeScript's 126 s). The engine's allocator now
+// grows the memory geometrically (crates/quicktype-wasm/src/allocator.rs).
+test("a run with a large output grows the engine's memory a few times", { timeout: 300_000 }, async () => {
+    const options = { lang: "php", inferMaps: false, rendererOptions: { "with-get": true, "with-set": true } };
+    const run = () => {
+        const input = qt.jsonInputForTargetLanguage("php");
+        input.addSourceSync({ name: "Big", samples: [manyClasses(800)] });
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        return qt.quicktypeMultiFileSync({ ...options, inputData });
+    };
+    const glue = engine.engineSync();
+    const before = glue.__memoryGrowths();
+    const runsBefore = engineStats.wasm;
+    const actual = run();
+    assert.equal(engineStats.wasm, runsBefore + 1);
+    const lines = [...actual.values()].reduce((n, f) => n + f.lines.length, 0);
+    assert.ok(lines > 500_000, `${lines} lines`);
+    // Some 200 MB of memory: a few dozen growths, where 64 KiB steps take thousands.
+    const growths = glue.__memoryGrowths() - before;
+    assert.ok(growths < 60, `the memory grew ${growths} times`);
+    const expected = await tsMode(() => run());
+    assert.deepEqual([...actual], [...expected]);
+});
