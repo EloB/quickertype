@@ -44,13 +44,16 @@ in the port.
 - `compare.mjs`: summarizes results files and compares two of them.
 - `later-steps.mts`: the fixtures' later quicktype steps as a
   generation-only differential (below).
+- `roundtrip.test.mjs`: tests of the checks above
+  (`node --test xtask/roundtrip/roundtrip.test.mjs`).
 
 ## Usage
 
 ```sh
 # A patched copy of quicktype at the commit in tests/golden/REFERENCE.
 # --from copies an installed, built checkout (it is not modified); without
-# it, the script clones upstream, then runs npm ci and npm run build.
+# it, the script clones upstream, then runs npm ci and npm run build. On an
+# existing copy it only brings the patch up to date.
 xtask/roundtrip/roundtrip.sh prepare ../quicktype-roundtrip --from ../quicktype
 
 # Fixtures (names from test/fixtures.ts, comma-separated) with our binary.
@@ -62,10 +65,20 @@ xtask/roundtrip/roundtrip.sh run ../quicktype-roundtrip --quick --cpus 4 \
 xtask/roundtrip/roundtrip.sh run ../quicktype-roundtrip --ts --quick --cpus 4 \
     --results /tmp/ts.jsonl python,schema-python
 
-# Per-fixture counts and every test that fails only with ours. Exits 1 if
-# there is one.
-xtask/roundtrip/roundtrip.sh compare /tmp/ts.jsonl /tmp/ours.jsonl
+# Per-fixture counts and every test that fails only with ours.
+xtask/roundtrip/roundtrip.sh compare --fixtures python,schema-python \
+    /tmp/ts.jsonl /tmp/ours.jsonl
 ```
+
+`run` fails with the harness's exit status when the harness fails (a
+fixture's setup, an unknown fixture name, a crashed worker; a failing test
+does not count), and with 1 when no test ran. `compare` exits 1 when a test
+passes with TypeScript and fails or times out with ours, or ran with only
+one of them, and also when the results cannot show that: either file is
+empty, a fixture has no test that passes with TypeScript (as when its
+compiler is missing), or a fixture named with `--fixtures` has no results in
+either file. `--fixtures` takes the names as the results have them, not
+`run`'s groups such as `schema`.
 
 The golden corpus records only each fixture's first quicktype run. The
 later ones (JSON to JSON Schema and on to the language for

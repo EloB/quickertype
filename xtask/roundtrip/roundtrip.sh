@@ -6,7 +6,8 @@
 #   roundtrip.sh run <dir> [--bin <command> | --ts] [--results <file>]
 #                [--quick] [--cpus <n>] <fixture>[,<fixture>...] [-- <sample>...]
 #   roundtrip.sh steps <dir> [--bin <command>] [--jobs <n>]
-#   roundtrip.sh compare <ts-results.jsonl> <ours-results.jsonl>
+#   roundtrip.sh compare [--fixtures <fixture>[,<fixture>...]]
+#                <ts-results.jsonl> <ours-results.jsonl>
 #   roundtrip.sh summary <results.jsonl>...
 
 set -euo pipefail
@@ -26,6 +27,10 @@ usage() {
     exit 2
 }
 
+positive_integer() {
+    [[ "$2" =~ ^[1-9][0-9]*$ ]] || die "$1 needs a positive integer, not '$2'"
+}
+
 # The quicktype commit the port matches (tests/golden/REFERENCE).
 reference_commit() {
     sed -n 's/^quicktype_commit=//p' "$repo/tests/golden/REFERENCE"
@@ -35,10 +40,19 @@ apply_patch() {
     local dir="$1"
     if git -C "$dir" apply --reverse --check "$patch" 2>/dev/null; then
         echo "* harness patch already applied in $dir" >&2
-    else
-        git -C "$dir" apply "$patch"
-        echo "* applied harness patch to $dir" >&2
+        return
     fi
+    if ! git -C "$dir" apply --check "$patch" 2>/dev/null; then
+        # Most likely an older version of the patch: start again from the
+        # commit's version of the files it changes.
+        local files
+        files="$(git -C "$dir" apply --numstat "$patch" | cut -f3)"
+        echo "* restoring $(echo "$files" | tr '\n' ' ')in $dir" >&2
+        # shellcheck disable=SC2086 # one path per word
+        git -C "$dir" checkout HEAD -- $files
+    fi
+    git -C "$dir" apply "$patch"
+    echo "* applied harness patch to $dir" >&2
 }
 
 cmd_prepare() {
@@ -56,17 +70,29 @@ cmd_prepare() {
 
     if [ -e "$dir/test/fixtures.ts" ]; then
         echo "* $dir already exists; reusing it" >&2
-    elif [ -n "$from" ]; then
-        # A copy of a checkout that is already installed and built.  The
-        # checkout itself is never modified.  `cp -c` clones files on APFS.
-        [ -e "$from/dist/index.js" ] || die "$from is not built (npm ci && npm run build)"
-        mkdir -p "$(dirname "$dir")"
-        cp -Rc "$from" "$dir" 2>/dev/null || cp -R "$from" "$dir"
-        rm -rf "$dir/test/runs"
     else
-        git clone --quiet --filter=blob:none "$upstream" "$dir"
-        git -C "$dir" checkout --quiet --detach "$commit"
-        (cd "$dir" && npm ci --no-audit --no-fund && npm run build)
+        [ ! -e "$dir" ] || die "$dir exists but is not a quicktype checkout"
+        # Built in a sibling directory and renamed when complete, so that a
+        # failed copy, clone or build never leaves a half-made $dir behind.
+        local partial="$dir.partial"
+        rm -rf "$partial"
+        mkdir -p "$(dirname "$dir")"
+        if [ -n "$from" ]; then
+            # A copy of a checkout that is already installed and built.  The
+            # checkout itself is never modified.  `cp -c` clones files on
+            # APFS; elsewhere it fails, possibly after creating $partial.
+            [ -e "$from/dist/index.js" ] || die "$from is not built (npm ci && npm run build)"
+            if ! cp -Rc "$from" "$partial" 2>/dev/null; then
+                rm -rf "$partial"
+                cp -R "$from" "$partial"
+            fi
+            rm -rf "$partial/test/runs"
+        else
+            git clone --quiet --filter=blob:none "$upstream" "$partial"
+            git -C "$partial" checkout --quiet --detach "$commit"
+            (cd "$partial" && npm ci --no-audit --no-fund && npm run build)
+        fi
+        mv "$partial" "$dir"
     fi
 
     local head
@@ -86,7 +112,7 @@ cmd_run() {
             --ts) ts=1; shift ;;
             --results) results="$2"; shift 2 ;;
             --quick) quick=1; shift ;;
-            --cpus) cpus="$2"; shift 2 ;;
+            --cpus) positive_integer --cpus "$2"; cpus="$2"; shift 2 ;;
             --) shift; samples=("$@"); break ;;
             -*) die "unknown option $1" ;;
             *)
@@ -100,7 +126,7 @@ cmd_run() {
     [ -n "$dir" ] && [ -n "$fixtures" ] || usage
     dir="$(cd "$dir" && pwd)"
     git -C "$dir" apply --reverse --check "$patch" 2>/dev/null ||
-        die "$dir has no harness patch; run: $0 prepare $dir"
+        die "$dir has no harness patch, or an older one; run: $0 prepare $dir"
 
     if [ -n "$ts" ]; then
         bin="node $dir/dist/index.js"
@@ -115,18 +141,32 @@ cmd_run() {
     results="$(cd "$(dirname "$results")" && pwd)/$(basename "$results")"
     : > "$results"
 
-    # Sample paths are relative to the quicktype checkout.
+    # Sample paths are relative to the quicktype checkout.  With
+    # QUICKTYPE_RESULTS the harness records failing tests instead of exiting,
+    # so its exit status means it could not run them: an unknown fixture
+    # name, a failed fixture setup, a crashed worker.
     echo "* $fixtures with $bin -> $results" >&2
+    local status=0
     (
         cd "$dir"
         export QUICKTYPE_BIN="$bin" QUICKTYPE_RESULTS="$results" FIXTURE="$fixtures"
         # Every fixture the filter names, not only those `git diff` touches.
         export ALL_FIXTURES=1
+        # These make the fixtures only generate code, not test it.
+        unset ONLY_OUTPUT OUTPUT_SNAPSHOT_DIR
         if [ -n "$quick" ]; then export QUICKTEST=true; fi
         if [ -n "$cpus" ]; then export CPUs="$cpus"; fi
         npm run --silent test:fixtures -- ${samples[@]+"${samples[@]}"}
-    ) || true
-    node "$here/compare.mjs" summary "$results"
+    ) || status=$?
+    node "$here/compare.mjs" summary "$results" || true
+    if [ "$status" -ne 0 ]; then
+        echo "roundtrip: the fixture harness failed (exit status $status)" >&2
+        exit "$status"
+    fi
+    if [ ! -s "$results" ]; then
+        echo "roundtrip: no tests ran" >&2
+        exit 1
+    fi
 }
 
 # The fixtures' later steps as a generation-only differential against the
@@ -136,7 +176,7 @@ cmd_steps() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --bin) bin="$2"; shift 2 ;;
-            --jobs) jobs="$2"; shift 2 ;;
+            --jobs) positive_integer --jobs "$2"; jobs="$2"; shift 2 ;;
             -*) die "unknown option $1" ;;
             *) [ -z "$dir" ] || die "one directory only"; dir="$1"; shift ;;
         esac
@@ -144,7 +184,7 @@ cmd_steps() {
     [ -n "$dir" ] || usage
     dir="$(cd "$dir" && pwd)"
     git -C "$dir" apply --reverse --check "$patch" 2>/dev/null ||
-        die "$dir has no harness patch; run: $0 prepare $dir"
+        die "$dir has no harness patch, or an older one; run: $0 prepare $dir"
     if [ -z "$bin" ]; then
         (cd "$repo" && cargo build --release --quiet -p quickertype)
         bin="$repo/target/release/quicktype"
