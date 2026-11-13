@@ -1,0 +1,406 @@
+diff --git a/test/fixtures.ts b/test/fixtures.ts
+index 161d183f..dd62e5c2 100644
+--- a/test/fixtures.ts
++++ b/test/fixtures.ts
+@@ -361,7 +361,8 @@ abstract class LanguageFixture extends Fixture {
+     }
+ }
+ 
+-class JSONFixture extends LanguageFixture {
++// Exported for xtask/roundtrip/later-steps.mts in quickertype.
++export class JSONFixture extends LanguageFixture {
+     constructor(
+         language: languages.Language,
+         public name: string = language.name,
+@@ -587,7 +588,7 @@ class JSONFixture extends LanguageFixture {
+ // then generating code for Y from the code for X, making sure
+ // that the resulting code for Y accepts the JSON by running it
+ // on the original JSON.
+-class JSONToXToYFixture extends JSONFixture {
++export class JSONToXToYFixture extends JSONFixture {
+     private readonly runLanguage: languages.Language;
+ 
+     constructor(
+@@ -666,7 +667,7 @@ const dateTimeRecognizer = new DefaultDateTimeRecognizer();
+ // target code from that Schema.  The target code is then run on
+ // the original JSON.  Also generating a Schema from the Schema
+ // and testing that it's the same as the original Schema.
+-class JSONSchemaJSONFixture extends JSONToXToYFixture {
++export class JSONSchemaJSONFixture extends JSONToXToYFixture {
+     constructor(language: languages.Language) {
+         const skipJSON = [
+             "blns-object.json", // AJV refuses to even "compile" the schema we generate
+diff --git a/test/lib/multicore.ts b/test/lib/multicore.ts
+index 9bf60767..98ba322d 100644
+--- a/test/lib/multicore.ts
++++ b/test/lib/multicore.ts
+@@ -9,8 +9,14 @@ export interface ParallelArgs<Item, Result, Acc> {
+     workers: number;
+     setup: () => Promise<Acc>;
+     map: (item: Item, index: number) => Promise<Result>;
++    // Run the items in workers even if there is only one, and replace a
++    // worker that exits with REPLACE_WORKER_EXIT_CODE with a fresh one.
++    replaceWorkers?: boolean;
+ }
+ 
++// A worker exits with this code to be replaced (see `replaceWorkers`).
++export const REPLACE_WORKER_EXIT_CODE = 75;
++
+ function randomPick<T>(arr: T[]): T {
+     return arr[Math.floor(Math.random() * arr.length)];
+ }
+@@ -43,6 +49,10 @@ export async function inParallel<Item, Result, Acc>(
+         });
+ 
+         cluster.on("exit", (_worker, code, _signal) => {
++            if (args.replaceWorkers && code === REPLACE_WORKER_EXIT_CODE) {
++                cluster.fork({ worker: "replacement" });
++                return;
++            }
+             if (code && code !== 0) {
+                 // Kill workers and exit if any worker dies
+                 for (const w of Object.values(cluster.workers ?? {})) {
+@@ -55,7 +65,7 @@ export async function inParallel<Item, Result, Acc>(
+         });
+ 
+         console.error(`* Forking ${workers} workers ${guys(workers)}`);
+-        if (workers < 2) {
++        if (workers < 2 && !args.replaceWorkers) {
+             // We run everything on the master process if only one worker
+             for (const { item, i } of items) {
+                 await map(item, i);
+diff --git a/test/test.ts b/test/test.ts
+index f47f0836..5787c5d5 100755
+--- a/test/test.ts
++++ b/test/test.ts
+@@ -1,10 +1,13 @@
++import { spawnSync } from "node:child_process";
++import * as fs from "node:fs";
+ import * as os from "node:os";
+ import * as _ from "lodash";
+ 
+ import { affectedFixtures, divideParallelJobs } from "./buildkite";
+ import { type Fixture, allFixtures } from "./fixtures";
+-import { inParallel } from "./lib/multicore";
++import { REPLACE_WORKER_EXIT_CODE, inParallel } from "./lib/multicore";
+ import { type Sample, execAsync } from "./utils";
++import { defined } from "quicktype-core";
+ 
+ // biome-ignore lint/style/useExplicitLengthCheck: length is used as a value here, not a boolean
+ const CPUs = Number.parseInt(process.env.CPUs || "0", 10) || os.cpus().length;
+@@ -15,6 +18,111 @@ const CPUs = Number.parseInt(process.env.CPUs || "0", 10) || os.cpus().length;
+ 
+ export type WorkItem = { sample: Sample; fixtureName: string };
+ 
++// `QUICKTYPE_RESULTS=<file>` keeps going past failing tests and appends one
++// JSON line per test to <file>: fixture, sample, renderer options, status
++// (pass, fail, timeout or skip), duration and the failure.
++const RESULTS_FILE = process.env.QUICKTYPE_RESULTS;
++
++const { TimeoutError } = require("promise-timeout");
++
++// The fixtures' `timeout()` (MAX_TEST_RUNTIME_MS) rejects, as the
++// `error` of what `failWith` throws, but does not stop the test.
++function timedOut(e: unknown): boolean {
++    return (
++        e instanceof TimeoutError ||
++        (e !== null &&
++            typeof e === "object" &&
++            (e as { error?: unknown }).error instanceof TimeoutError)
++    );
++}
++
++// The processes this one started, and theirs.
++function descendants(): number[] {
++    const ps = spawnSync("ps", ["-A", "-o", "pid=,ppid="], {
++        encoding: "utf8",
++    });
++    const children = new Map<number, number[]>();
++    for (const line of (ps.stdout ?? "").split("\n")) {
++        const [pid, ppid] = line.trim().split(/\s+/).map(Number);
++        if (Number.isInteger(pid) && Number.isInteger(ppid)) {
++            children.set(ppid, [...(children.get(ppid) ?? []), pid]);
++        }
++    }
++    const result: number[] = [];
++    const queue = [process.pid];
++    for (let p = queue.pop(); p !== undefined; p = queue.pop()) {
++        for (const child of children.get(p) ?? []) {
++            result.push(child);
++            queue.push(child);
++        }
++    }
++    return result;
++}
++
++function describeError(e: unknown): unknown {
++    if (e instanceof Error) {
++        return `${e.name}: ${e.message}`;
++    }
++    if (Array.isArray(e)) {
++        return e.map(describeError);
++    }
++    if (e !== null && typeof e === "object") {
++        return _.mapValues(e as Record<string, unknown>, describeError);
++    }
++    return e;
++}
++
++async function runAndRecord(
++    fixture: Fixture,
++    sample: Sample,
++    index: number,
++    total: number,
++): Promise<void> {
++    const origin = process.cwd();
++    const shouldSkip = (
++        fixture as { shouldSkipTest?: (s: Sample) => boolean }
++    ).shouldSkipTest?.(sample);
++    const start = Date.now();
++    let status = shouldSkip === true ? "skip" : "pass";
++    let error: string | undefined;
++    try {
++        await fixture.runWithSample(sample, index, total);
++    } catch (e) {
++        status = timedOut(e) ? "timeout" : "fail";
++        error = JSON.stringify(describeError(e));
++        if (error !== undefined && error.length > 12000) {
++            error = `${error.slice(0, 12000)}...`;
++        }
++    } finally {
++        // A failure inside `inDir` leaves the run directory as the cwd.
++        process.chdir(origin);
++    }
++    fs.appendFileSync(
++        defined(RESULTS_FILE),
++        `${JSON.stringify({
++            fixture: fixture.name,
++            sample: sample.path,
++            options: sample.additionalRendererOptions,
++            status,
++            ms: Date.now() - start,
++            error,
++        })}\n`,
++    );
++    if (status === "timeout") {
++        // The test is still running, and would go on beside the next test
++        // in this worker (cwd, files, child processes).  End it: kill what
++        // it started and exit, and `inParallel` forks a fresh worker.
++        for (const pid of descendants()) {
++            try {
++                process.kill(pid, "SIGKILL");
++            } catch {
++                // Already gone.
++            }
++        }
++        process.exit(REPLACE_WORKER_EXIT_CODE);
++    }
++}
++
+ async function main(sources: string[]) {
+     let fixtures =
+         process.env.ALL_FIXTURES === undefined
+@@ -23,6 +131,14 @@ async function main(sources: string[]) {
+     const fixturesFromCmdline = process.env.FIXTURE;
+     if (fixturesFromCmdline) {
+         const fixtureNames = fixturesFromCmdline.split(",");
++        // With QUICKTYPE_RESULTS a name that selects nothing is an error,
++        // not a run that tests nothing.
++        const unknown = fixtureNames.filter(
++            (name) => !allFixtures.some((f) => f.runForName(name)),
++        );
++        if (RESULTS_FILE !== undefined && unknown.length > 0) {
++            throw new Error(`FIXTURE: no fixture is named ${unknown.join(", ")}`);
++        }
+         fixtures = _.filter(fixtures, (fixture) =>
+             _.some(fixtureNames, (name) => fixture.runForName(name)),
+         );
+@@ -59,6 +175,8 @@ async function main(sources: string[]) {
+     await inParallel({
+         queue: tests,
+         workers: CPUs,
++        // A test that times out ends its worker (runAndRecord).
++        replaceWorkers: RESULTS_FILE !== undefined,
+ 
+         setup: async () => {
+             console.error(
+@@ -75,6 +193,10 @@ async function main(sources: string[]) {
+ 
+         map: async ({ sample, fixtureName }: WorkItem, index) => {
+             const fixture = _.find(fixtures, { name: fixtureName }) as Fixture;
++            if (RESULTS_FILE !== undefined) {
++                await runAndRecord(fixture, sample, index, tests.length);
++                return;
++            }
+             try {
+                 await fixture.runWithSample(sample, index, tests.length);
+             } catch (e) {
+diff --git a/test/utils.ts b/test/utils.ts
+index 3a6d1f4b..3c9272ab 100644
+--- a/test/utils.ts
++++ b/test/utils.ts
+@@ -1,3 +1,4 @@
++import { spawnSync } from "node:child_process";
+ import * as fs from "node:fs";
+ import * as path from "node:path";
+ 
+@@ -5,7 +6,12 @@ import * as _ from "lodash";
+ import * as shell from "shelljs";
+ 
+ import { main as quicktype_, type CLIOptions } from "../src";
+-import type { RendererOptions } from "quicktype-core";
++import {
++    type LanguageName,
++    type RendererOptions,
++    defined,
++    languageNamed,
++} from "quicktype-core";
+ import type * as languages from "./languages";
+ import deepEquals from "./lib/deepEquals";
+ 
+@@ -51,6 +57,23 @@ export function callAndExpectFailure<T>(message: string, f: () => T): void {
+     failWith(message, { result });
+ }
+ 
++// With QUICKTYPE_RESULTS, a failed command's output goes into the results
++// file with the failure: the compiler's errors, the program's exception.
++function withOutput(
++    failure: { command: string; code: number },
++    stdout: string,
++    stderr: string,
++): Record<string, unknown> {
++    if (process.env.QUICKTYPE_RESULTS === undefined) {
++        return failure;
++    }
++    const shorten = (output: string) =>
++        output.length <= 2500
++            ? output
++            : `${output.slice(0, 1000)}\n...\n${output.slice(-1500)}`;
++    return { ...failure, stdout: shorten(stdout), stderr: shorten(stderr) };
++}
++
+ export function exec(
+     s: string,
+     env: NodeJS.ProcessEnv | undefined,
+@@ -63,10 +86,11 @@ export function exec(
+     const result = shell.exec(s, { silent: !DEBUG, env });
+ 
+     if (result.code !== 0) {
+-        const failureObj = {
+-            command: s,
+-            code: result.code,
+-        };
++        const failureObj = withOutput(
++            { command: s, code: result.code },
++            result.stdout,
++            result.stderr,
++        );
+         if (!printFailure) {
+             throw failureObj;
+         }
+@@ -88,7 +112,7 @@ export function execAsync(
+             if (code !== 0) {
+                 console.error(stdout);
+                 console.error(stderr);
+-                reject({ command: s, code });
++                reject(withOutput({ command: s, code }, stdout, stderr));
+             }
+             resolve({ stdout, code });
+         });
+@@ -129,7 +153,96 @@ export function mkdirs(dir: string): void {
+     }
+ }
+ 
++// `QUICKTYPE_BIN` runs a quicktype executable instead of the in-process
++// `main`, with the same options rendered as command-line arguments.  It is a
++// command line split on whitespace, e.g. `/path/to/quicktype` or
++// `node /path/to/quicktype/dist/index.js`.
++const QUICKTYPE_BIN = process.env.QUICKTYPE_BIN;
++
++// The `CLIOptions` the fixtures pass, and their command-line flags.
++const cliStringFlags: Record<string, string> = {
++    srcLang: "--src-lang",
++    lang: "--lang",
++    topLevel: "--top-level",
++    out: "--out",
++    graphqlSchema: "--graphql-schema",
++    telemetry: "--telemetry",
++    debug: "--debug",
++};
++const cliBooleanFlags: Record<string, string> = {
++    alphabetizeProperties: "--alphabetize-properties",
++    allPropertiesOptional: "--all-properties-optional",
++    quiet: "--quiet",
++};
++
++export function cliArgumentsFromOptions(opts: Partial<CLIOptions>): string[] {
++    const args: string[] = [];
++    for (const [key, value] of Object.entries(opts)) {
++        if (value === undefined || key === "src" || key === "rendererOptions") {
++            continue;
++        }
++        if (key in cliStringFlags) {
++            args.push(cliStringFlags[key], String(value));
++        } else if (key in cliBooleanFlags) {
++            if (value) args.push(cliBooleanFlags[key]);
++        } else {
++            throw new Error(`QUICKTYPE_BIN: unsupported CLI option ${key}`);
++        }
++    }
++
++    // In-process, `main` ignores renderer options the language doesn't
++    // have, and accepts "true"/"false" strings for boolean options.  On the
++    // command line a boolean option is `--name` or `--no-name`.
++    const definitions = languageNamed(
++        defined(opts.lang) as LanguageName,
++    ).optionDefinitions;
++    for (const [name, value] of Object.entries(opts.rendererOptions ?? {})) {
++        if (value === undefined) continue;
++        const definition = definitions.find((d) => d.name === name);
++        if (definition === undefined) {
++            console.error(
++                `QUICKTYPE_BIN: ${opts.lang} has no option ${name}; ignored`,
++            );
++            continue;
++        }
++        if (definition.optionType === "boolean") {
++            const on = value !== false && value !== "false" && !!value;
++            args.push(on ? `--${name}` : `--no-${name}`);
++        } else {
++            args.push(`--${name}`, String(value));
++        }
++    }
++
++    for (const src of opts.src ?? []) {
++        args.push(src);
++    }
++    return args;
++}
++
++function quicktypeBin(command: string, opts: Partial<CLIOptions>): void {
++    const [file, ...prefix] = command.trim().split(/\s+/);
++    const args = prefix.concat(cliArgumentsFromOptions(opts));
++    debug(`${command} ${args.join(" ")}`);
++    const result = spawnSync(file, args, {
++        env: process.env,
++        encoding: "utf8",
++        maxBuffer: 1024 * 1024 * 1024,
++    });
++    if (result.error !== undefined || result.status !== 0) {
++        throw new Error(
++            `${command} ${args.join(" ")} failed (status ${result.status}, signal ${result.signal}): ${result.error ?? ""}\n${result.stderr}`,
++        );
++    }
++    if (result.stdout.length > 0) {
++        process.stdout.write(result.stdout);
++    }
++}
++
+ export async function quicktype(opts: Partial<CLIOptions>) {
++    if (QUICKTYPE_BIN !== undefined && QUICKTYPE_BIN !== "") {
++        quicktypeBin(QUICKTYPE_BIN, opts);
++        return;
++    }
+     await time(async () => {
+         await quicktype_(opts);
+     });
