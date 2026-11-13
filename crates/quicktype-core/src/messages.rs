@@ -370,6 +370,8 @@ enum Inner {
         kind: ErrorKind,
         user_message: String,
         properties: Vec<(String, MessageValue)>,
+        /// Set for [`QuickTypeError::unsupported`].
+        unsupported: Option<String>,
     },
     JsException(JsException),
 }
@@ -389,7 +391,32 @@ impl QuickTypeError {
             kind,
             user_message,
             properties,
+            unsupported: None,
         }))
+    }
+
+    /// Something this port cannot do yet that the TypeScript quicktype can
+    /// (`feature`, e.g. `"C (cJSON) renderer"`): an `InternalError`
+    /// `The <feature> is not ported yet`, which a front end with another
+    /// engine at hand (the JavaScript facade, which falls back to
+    /// TypeScript) recognizes by [`unsupported_feature`](Self::unsupported_feature)
+    /// rather than by its text.
+    pub fn unsupported(feature: impl Into<String>) -> Self {
+        let feature = feature.into();
+        let mut error = QuickTypeError::internal(format!("The {feature} is not ported yet"));
+        if let Inner::Message { unsupported, .. } = &mut *error.0 {
+            *unsupported = Some(feature);
+        }
+        error
+    }
+
+    /// The feature, if this is an [`unsupported`](Self::unsupported)
+    /// error.
+    pub fn unsupported_feature(&self) -> Option<&str> {
+        match &*self.0 {
+            Inner::Message { unsupported, .. } => unsupported.as_deref(),
+            Inner::JsException(_) => None,
+        }
     }
 
     /// An `InternalError`, as thrown by `assert`, `panic` and friends.
@@ -479,12 +506,17 @@ impl fmt::Debug for QuickTypeError {
                 kind,
                 user_message,
                 properties,
-            } => f
-                .debug_struct("QuickTypeError")
-                .field("kind", kind)
-                .field("user_message", user_message)
-                .field("properties", properties)
-                .finish(),
+                unsupported,
+            } => {
+                let mut d = f.debug_struct("QuickTypeError");
+                d.field("kind", kind)
+                    .field("user_message", user_message)
+                    .field("properties", properties);
+                if let Some(feature) = unsupported {
+                    d.field("unsupported", feature);
+                }
+                d.finish()
+            }
             Inner::JsException(e) => f
                 .debug_struct("QuickTypeError")
                 .field("js_exception", e)
