@@ -328,8 +328,13 @@ the others name the fix they need.
   `EISDIR`; JSON samples, which are read as streams, fail with Node's
   stream error `EISDIR: illegal operation on a directory, read` instead), reports unreadable files (`EACCES`) as a `MiscReadError`
   where Node crashes with an unhandled stream error. On Windows, a symbolic
-  link's target is what libuv's `readlink` returns (`C:\x`, not Rust's
-  `\\?\C:\x`).
+  link's target is what libuv's `readlink` (Node 24.16's libuv 1.52.1)
+  returns for the target stored in the link (`\??\C:\x` → `C:\x`,
+  `\??\unc\s\x` → `\\s\x`, `\??\C:/x` and `\\?\C:\x` unchanged), reconstructed
+  from Rust's `read_link` (`node_link_target` in `input/io/node_io.rs`).
+  Not reproduced: WSL symbolic links and app execution aliases, which
+  `read_link` cannot read, and volume mount points, which Node does not
+  take for links.
 - **Stack depth.** Where Node's stack overflows, the JSON Schema input
   fails with the same `RangeError: Maximum call stack size exceeded` (the
   CLI prints `Error: Maximum call stack size exceeded.`). The thresholds are

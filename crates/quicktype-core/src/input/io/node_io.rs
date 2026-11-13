@@ -440,39 +440,81 @@ pub struct StdIo;
 mod std_io {
     use std::io::Read;
 
+    use quicktype_js_compat::verbatim_path::to_plain;
+
     #[cfg(not(feature = "http"))]
     use super::IoErrorKind;
     use super::{HttpResponse, Io, IoError, RequestInit, StdIo};
     use crate::input::io::LocalBoxFuture;
 
     /// The error of a failed file system call on `path`.
-    /// A symbolic link's target as `fs.readlinkSync` returns it. On Windows
-    /// NTFS stores absolute targets as `\\??\C:\x` or `\\??\UNC\server\share`;
-    /// Rust's `read_link` turns that prefix into `\\?\`, while libuv drops it
-    /// (`C:\x`, `\\server\share`).
+    fn node_error(e: &std::io::Error, syscall: &str, path: &str) -> IoError {
+        IoError::from_fs(e, syscall, Some(path))
+    }
+
+    /// A symbolic link's target as `fs.readlinkSync` returns it, from the
+    /// target `std::fs::read_link` returned. They differ only on Windows.
+    ///
+    /// There a link stores its target as a substitute name: a relative
+    /// target as written, an absolute one in the NT namespace (`\??\C:\x`,
+    /// `\??\UNC\server\share\x`), which `CreateSymbolicLinkW` makes of
+    /// `C:\x`, `\\server\share\x` and `\\?\C:\x` alike. libuv strips that
+    /// prefix by its own rule ([`libuv_readlink`]). `read_link` turns `\??\`
+    /// into `\\?\` and returns the plain form only when Windows reads it as
+    /// the same path ([`to_plain`]); a substitute name that already is
+    /// verbatim (`\\?\…`, written into the reparse point directly) it
+    /// returns unchanged, as libuv does. So a `\\?\` target that `read_link`
+    /// would have shortened was written verbatim, and any other one was
+    /// `\??\`.
+    ///
+    /// Junctions to a drive read the same way. Not reproduced: volume mount
+    /// points (junctions that libuv does not take for links), and WSL
+    /// symbolic links and app execution aliases (which libuv reads and
+    /// `read_link` does not).
     fn node_link_target(target: String) -> String {
         if !cfg!(windows) {
             return target;
         }
-        let Some(rest) = target.strip_prefix("\\\\?\\") else {
-            return target;
+        windows_link_target(target, |verbatim| to_plain(verbatim).is_some())
+    }
+
+    /// [`node_link_target`] on Windows; `std_shortens` tells whether
+    /// `read_link` returns a verbatim target in its plain form.
+    fn windows_link_target(target: String, std_shortens: impl Fn(&str) -> bool) -> String {
+        match target.strip_prefix(r"\\?\") {
+            Some(_) if std_shortens(&target) => target,
+            Some(rest) => libuv_readlink(format!(r"\??\{rest}")),
+            // `read_link` shortened `\??\C:\x` or `\??\UNC\server\x`, as
+            // libuv does (a drive that is not an ASCII letter does not
+            // exist), or the name had no prefix, or it kept `\??\` (a link
+            // marked relative).
+            None => libuv_readlink(target),
+        }
+    }
+
+    /// libuv's `fs__readlink_handle` (`src/win/fs.c`, libuv 1.52.1 in Node
+    /// 24.16) for the substitute name `name` of a symbolic link: the NT
+    /// prefix `\??\` is dropped before a drive (an ASCII letter and `:`,
+    /// then the end or `\` but not `/`), and becomes `\\` before `UNC\` in
+    /// any case (`\??\unc\server\share` → `\\server\share`). Any other name,
+    /// a verbatim `\\?\…` one included, is returned unchanged.
+    fn libuv_readlink(name: String) -> String {
+        let Some(rest) = name.strip_prefix(r"\??\") else {
+            return name;
         };
         let b = rest.as_bytes();
         if b.len() >= 2
             && b[0].is_ascii_alphabetic()
             && b[1] == b':'
-            && (b.len() == 2 || b[2] == b'\\' || b[2] == b'/')
+            && (b.len() == 2 || b[2] == b'\\')
         {
             return rest.to_owned();
         }
-        match rest.strip_prefix("UNC\\") {
-            Some(unc) => format!("\\\\{unc}"),
-            None => target,
+        if b.len() >= 4 && b[..3].eq_ignore_ascii_case(b"UNC") && b[3] == b'\\' {
+            // `\??\UNC\server` → `\\server`.
+            return format!(r"\{}", &rest[3..]);
         }
-    }
-
-    fn node_error(e: &std::io::Error, syscall: &str, path: &str) -> IoError {
-        IoError::from_fs(e, syscall, Some(path))
+        name
     }
 
     /// A reader whose errors wrap the [`IoError`] Node would report.
@@ -604,6 +646,74 @@ mod std_io {
             "fetching URLs needs the `http` feature of quicktype-core",
         ))
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::{libuv_readlink, windows_link_target};
+
+        /// Substitute names and what libuv's readlink returns for them.
+        #[test]
+        fn libuv_drops_the_nt_prefix_by_its_rule() {
+            for (name, node) in [
+                (r"\??\C:\x\a.json", r"C:\x\a.json"),
+                (r"\??\c:\x", r"c:\x"),
+                (r"\??\C:", "C:"),
+                (r"\??\C:\", r"C:\"),
+                // Only `\` after the drive, and only an ASCII letter.
+                (r"\??\C:/x", r"\??\C:/x"),
+                (r"\??\C:x", r"\??\C:x"),
+                (r"\??\1:\x", r"\??\1:\x"),
+                (r"\??\é:\x", r"\??\é:\x"),
+                // `UNC\` in any case.
+                (r"\??\UNC\server\share\x", r"\\server\share\x"),
+                (r"\??\unc\server\share", r"\\server\share"),
+                (r"\??\UnC\s", r"\\s"),
+                (r"\??\UNC\", r"\\"),
+                (r"\??\UNC", r"\??\UNC"),
+                (r"\??\UNCx\s", r"\??\UNCx\s"),
+                (r"\??\Volume{0}\x", r"\??\Volume{0}\x"),
+                // Verbatim, relative and plain names stay as they are.
+                (r"\\?\C:\x", r"\\?\C:\x"),
+                (r"\\?\UNC\server\share", r"\\?\UNC\server\share"),
+                (r"..\a.json", r"..\a.json"),
+                (r"C:\x", r"C:\x"),
+                (r"\??", r"\??"),
+            ] {
+                assert_eq!(libuv_readlink(name.to_owned()), node, "{name:?}");
+            }
+        }
+
+        /// What `read_link` returned, whether it would have shortened that
+        /// (a verbatim substitute name), and what Node returns.
+        #[test]
+        fn read_link_targets_as_node_reads_them() {
+            for (std_target, std_shortens, node) in [
+                // `\??\` shortened by `read_link`, as by libuv.
+                (r"C:\x\a.json", false, r"C:\x\a.json"),
+                (r"\\server\share\x", false, r"\\server\share\x"),
+                // `\??\` kept as `\\?\`: libuv's rule decides.
+                (r"\\?\C:\x\..\a.json", false, r"C:\x\..\a.json"),
+                (r"\\?\C:\x\a.", false, r"C:\x\a."),
+                (r"\\?\C:", false, "C:"),
+                (r"\\?\C:/x", false, r"\??\C:/x"),
+                (r"\\?\unc\server\share\x", false, r"\\server\share\x"),
+                (r"\\?\UNC\server\share\x\..", false, r"\\server\share\x\.."),
+                (r"\\?\Volume{0}\x", false, r"\??\Volume{0}\x"),
+                // A verbatim substitute name, unchanged by both.
+                (r"\\?\C:\x\a.json", true, r"\\?\C:\x\a.json"),
+                (r"\\?\UNC\server\share\x", true, r"\\?\UNC\server\share\x"),
+                // Relative targets, and `\??\` in a link marked relative.
+                (r"..\a.json", false, r"..\a.json"),
+                (r"\??\C:\x", false, r"C:\x"),
+            ] {
+                assert_eq!(
+                    windows_link_target(std_target.to_owned(), |_| std_shortens),
+                    node,
+                    "{std_target:?}"
+                );
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -727,6 +837,81 @@ mod tests {
             );
         }
         assert_eq!(read(dir.to_str().unwrap()).unwrap(), "");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Symbolic links whose targets `CreateSymbolicLinkW` stores in each
+    /// form, read with [`StdIo`] and, when `node` is on `PATH`, with Node's
+    /// `fs.readlinkSync`. On GitHub Actions both links and Node must be
+    /// available, so CI cannot pass by skipping.
+    #[cfg(all(windows, feature = "fs"))]
+    #[test]
+    fn windows_link_targets_match_node() {
+        let ci = std::env::var_os("GITHUB_ACTIONS").is_some();
+        let dir =
+            std::env::temp_dir().join(format!("quicktype-node-io-links-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.json"), "{}").unwrap();
+        let dir_str = dir.to_str().unwrap();
+        let file = format!(r"{dir_str}\a.json");
+        // Targets, and what `fs.readlinkSync` returns for them.
+        let cases = [
+            (file.clone(), file.clone()),
+            (format!(r"\\?\{file}"), file.clone()),
+            ("a.json".to_owned(), "a.json".to_owned()),
+            (
+                format!(r"\\?\{dir_str}\sub\..\a.json"),
+                format!(r"{dir_str}\sub\..\a.json"),
+            ),
+            (
+                format!(r"\\?\{}", file.replace('\\', "/")),
+                format!(r"\??\{}", file.replace('\\', "/")),
+            ),
+            (
+                r"\\?\unc\server\share\x.json".to_owned(),
+                r"\\server\share\x.json".to_owned(),
+            ),
+            (
+                r"\\server\share\x.json".to_owned(),
+                r"\\server\share\x.json".to_owned(),
+            ),
+        ];
+        let node = std::process::Command::new("node")
+            .arg("--version")
+            .output()
+            .is_ok_and(|o| o.status.success());
+        assert!(node || !ci, "node is not on PATH");
+        for (i, (target, expected)) in cases.iter().enumerate() {
+            let link = format!(r"{dir_str}\link{i}.json");
+            if let Err(e) = std::os::windows::fs::symlink_file(target, &link) {
+                assert!(!ci, "cannot create a symbolic link: {e}");
+                eprintln!("skipped: cannot create symbolic links ({e})");
+                break;
+            }
+            assert_eq!(&StdIo.read_link(&link).unwrap(), expected, "{target:?}");
+            if node {
+                let out = std::process::Command::new("node")
+                    .args([
+                        "-e",
+                        "process.stdout.write(require('fs').readlinkSync(process.argv[1]))",
+                        &link,
+                    ])
+                    .output()
+                    .unwrap();
+                assert!(out.status.success(), "{out:?}");
+                assert_eq!(
+                    &String::from_utf8(out.stdout).unwrap(),
+                    expected,
+                    "{target:?} (Node)"
+                );
+            }
+        }
+        if dir.join("link0.json").exists() {
+            let read = |p: &str| crate::input::io::block_on(read_from_file_or_url(&StdIo, p, &[]));
+            assert_eq!(read(&format!(r"{dir_str}\link0.json")).unwrap(), "{}");
+            assert_eq!(read(&format!(r"{dir_str}\link2.json")).unwrap(), "{}");
+        }
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

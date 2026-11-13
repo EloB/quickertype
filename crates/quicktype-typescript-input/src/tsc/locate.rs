@@ -72,59 +72,20 @@ fn is_script(path: &Path) -> bool {
 }
 
 /// `path` without the `\\?\` prefix that `fs::canonicalize` adds on Windows
-/// (`\\?\C:\x` → `C:\x`, `\\?\UNC\server\share\x` → `\\server\share\x`), as
-/// the `dunce` crate does, when the plain form means the same file: shorter
-/// than `MAX_PATH`, and no component that Windows would read differently
-/// without the prefix (a reserved device name, a trailing dot or space).
-/// Elsewhere, `path` itself.
+/// (`\\?\C:\x` → `C:\x`, `\\?\UNC\server\share\x` → `\\server\share\x`), when
+/// the plain form names the same file
+/// ([`quicktype_js_compat::verbatim_path::to_plain`], the rule Rust's
+/// `fs::read_link` uses). It is only used to find and run the compiler, so
+/// unlike `fs.readlink` in quicktype-core's `node_io` it need not match
+/// Node. Elsewhere, `path` itself.
 fn simplified(path: PathBuf) -> PathBuf {
-    #[cfg(windows)]
+    match path
+        .to_str()
+        .and_then(quicktype_js_compat::verbatim_path::to_plain)
     {
-        use std::path::{Component, Prefix};
-        let mut components = path.components();
-        let plain_root = match components.next() {
-            Some(Component::Prefix(prefix)) => match prefix.kind() {
-                Prefix::VerbatimDisk(drive) => format!("{}:\\", drive as char),
-                Prefix::VerbatimUNC(server, share) => format!(
-                    "\\\\{}\\{}\\",
-                    server.to_string_lossy(),
-                    share.to_string_lossy()
-                ),
-                _ => return path,
-            },
-            _ => return path,
-        };
-        let mut plain = PathBuf::from(plain_root);
-        for component in components {
-            match component {
-                Component::RootDir => {}
-                Component::Normal(name) => {
-                    let name = name.to_string_lossy();
-                    let stem = name
-                        .split('.')
-                        .next()
-                        .unwrap_or("")
-                        .trim_end()
-                        .to_uppercase();
-                    let reserved = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
-                        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
-                            && stem.len() == 4
-                            && stem.as_bytes()[3].is_ascii_digit());
-                    if reserved || name.ends_with('.') || name.ends_with(' ') {
-                        return path;
-                    }
-                    plain.push(&*name);
-                }
-                _ => return path,
-            }
-        }
-        if plain.as_os_str().len() >= 260 {
-            return path;
-        }
-        plain
+        Some(plain) => PathBuf::from(plain),
+        None => path,
     }
-    #[cfg(not(windows))]
-    path
 }
 
 /// Where an npm bin shim (`tsc.cmd`, what npm installs on Windows) in `dir`

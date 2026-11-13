@@ -333,6 +333,7 @@ Rust does not share, documented in its header. When to use which:
 | `uri` | the urijs 1.19.11 subset quicktype uses, `encodeURIComponent`, `decodeURIComponent` |
 | `yaml` | `YAML.parse` of npm `yaml` 2.9.0, on `saphyr-parser` events |
 | `path`, `path_posix`, `path_win32` | Node's `path`: `path.posix`, or `path.win32` on Windows, as Node picks by platform (vectors by `xtask/js-compat/gen-path-vectors.mjs`) |
+| `verbatim_path` | not JavaScript: the plain form of the `\\?\` paths Rust's standard library returns on Windows, by the standard library's own rule |
 
 The tests replay vectors recorded from Node
 (`crates/quicktype-js-compat/tests/vectors/`, by `xtask/js-compat/gen-vectors.mjs`

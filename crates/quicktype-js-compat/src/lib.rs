@@ -11,6 +11,8 @@
 //! Every module is tested differentially: `xtask/js-compat/gen-vectors.mjs`
 //! runs the JavaScript originals in Node and records test vectors under
 //! `tests/vectors/`, which the integration tests replay without Node.
+//! `verbatim_path` is the exception: it undoes what Rust's standard library
+//! does to Windows paths (`\\?\`), with the standard library's own rule.
 
 pub mod json;
 pub mod number;
@@ -24,6 +26,7 @@ mod unicode_table;
 pub mod uri;
 pub mod utf16;
 pub mod utf8;
+pub mod verbatim_path;
 pub mod whitespace;
 pub mod wordwrap;
 pub mod yaml;
