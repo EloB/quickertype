@@ -403,6 +403,84 @@ fn inputs_too_deep_for_node_fail_like_node() {
     }
 }
 
+#[test]
+fn graphql_inputs_too_deep_for_node_fail_like_node() {
+    // Before: a field type nested in 100,000 lists aborted the
+    // CLI (TypeScript overflows building the schema), 3,000 nested
+    // selection sets took minutes (graphql-js overflows parsing them), and
+    // a directory's deep schema, shared by its queries, overflowed while
+    // being copied.
+    let dir = work_dir("graphql-deep");
+    let basic = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema");
+    let mut schema: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&basic).unwrap()).unwrap();
+    let query_type = schema["data"]["__schema"]["types"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|t| t["name"] == "Query")
+        .unwrap();
+    query_type["fields"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({
+            "name": "deep", "description": null, "args": [], "type": "DEEP",
+            "isDeprecated": false, "deprecationReason": null
+        }));
+    let depth = 100_000;
+    let lists = format!(
+        "{}{}{}",
+        r#"{"kind":"LIST","name":null,"ofType":"#.repeat(depth),
+        r#"{"kind":"SCALAR","name":"String","ofType":null}"#,
+        "}".repeat(depth)
+    );
+    let deep_schema = schema.to_string().replace(r#""DEEP""#, &lists);
+    fs::write(dir.join("deep.gqlschema"), &deep_schema).unwrap();
+    fs::copy(&basic, dir.join("basic.gqlschema")).unwrap();
+    fs::write(dir.join("deep.graphql"), "{ deep }").unwrap();
+    let selections = 3_000;
+    let query = format!(
+        "{{ viewer {}name{} }}",
+        "{ best ".repeat(selections),
+        " }".repeat(selections)
+    );
+    fs::write(dir.join("nested.graphql"), query).unwrap();
+    let queries = dir.join("queries");
+    fs::create_dir(&queries).unwrap();
+    fs::write(queries.join("schema.gqlschema"), &deep_schema).unwrap();
+    fs::write(queries.join("a.graphql"), "{ viewer { name } }").unwrap();
+    fs::write(queries.join("b.graphql"), "{ viewer { age } }").unwrap();
+
+    let graphql = |schema: &str, query: &str| {
+        quicktype_in(
+            &dir,
+            &[
+                "--lang",
+                "go",
+                "--src-lang",
+                "graphql",
+                "--graphql-schema",
+                schema,
+                query,
+            ],
+            None,
+        )
+    };
+    for output in [
+        graphql("deep.gqlschema", "deep.graphql"),
+        graphql("basic.gqlschema", "nested.graphql"),
+        quicktype_in(&dir, &["--lang", "go", "queries"], None),
+    ] {
+        assert_eq!(output.status.code(), Some(1));
+        assert_eq!(stdout(&output), "");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n"
+        );
+    }
+}
+
 /// Runs `args` on TypeScript sources written to a fresh directory (the
 /// TypeScript input only accepts files below the working directory).
 /// `None` (with a note) without the TypeScript 7 compiler, or while the

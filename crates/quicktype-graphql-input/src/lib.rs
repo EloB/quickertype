@@ -161,6 +161,12 @@ impl TypesObject {
     }
 }
 
+/// How many list or non-null wrappers `makeType` unwraps (recursively)
+/// before Node's stack overflows: the quicktype CLI (Node 24) reads a field
+/// type nested in 7,459 `LIST`s and fails at 7,460 with `RangeError:
+/// Maximum call stack size exceeded`, also when no query selects the field.
+const MAKE_TYPE_MAX_DEPTH: usize = 7_459;
+
 /// `GQLSchemaFromJSON`: the introspection result as type objects.
 #[derive(Debug)]
 struct GqlSchema<'a> {
@@ -168,6 +174,8 @@ struct GqlSchema<'a> {
     types: TypesObject,
     query_type: GqlTypeRef,
     mutation_type: Option<GqlTypeRef>,
+    /// The wrappers [`make_type`](Self::make_type) is unwrapping.
+    wrapper_depth: usize,
 }
 
 impl<'a> GqlSchema<'a> {
@@ -178,6 +186,7 @@ impl<'a> GqlSchema<'a> {
             types: TypesObject::default(),
             query_type: GqlTypeRef::ObjectPrototype,
             mutation_type: None,
+            wrapper_depth: 0,
         };
         let data = JsVal::Json(json).get("data")?;
         let query_type_name = || data.get("__schema")?.get("queryType")?.get("name");
@@ -322,7 +331,13 @@ impl<'a> GqlSchema<'a> {
             }
             let kind = t.get("kind")?;
             t.get("description")?;
-            let of_type = self.make_type(of_type)?;
+            if self.wrapper_depth >= MAKE_TYPE_MAX_DEPTH {
+                return Err(stack_overflow());
+            }
+            self.wrapper_depth += 1;
+            let of_type = self.make_type(of_type);
+            self.wrapper_depth -= 1;
+            let of_type = of_type?;
             let mut wrapper = GqlType::new(kind, JsVal::Undefined);
             wrapper.of_type = Some(of_type);
             self.arena.push(wrapper);

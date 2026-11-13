@@ -186,7 +186,7 @@ semantics were verified.
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 | V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
-| `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()` |
+| `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()`; the depths at which the reference CLI's parser overflows Node's stack, per construct, are modeled (see "GraphQL input" in Known gaps) |
 
 ## Known gaps
 
@@ -369,8 +369,10 @@ the others name the fix they need.
   generation stages (inference, rewrites, rendering) recurse on the native
   stack; the CLI runs them on a thread with a 256 MB stack (`STACK_SIZE`
   in `crates/quicktype-cli/src/main.rs`), and inference and graph
-  rewriting, whose depth the input decides, are limited like Node's. See
-  "Very deeply nested JSON" and "Endless recursion over the type graph".
+  rewriting, whose depth the input decides, are limited like Node's. The
+  GraphQL parser and schema model Node's stack as well (see "GraphQL
+  input"). See "Very deeply nested JSON" and "Endless recursion over the
+  type graph".
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
   recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
@@ -387,13 +389,24 @@ the others name the fix they need.
     Through a field, both fail with V8's `RangeError: Maximum call stack
     size exceeded`.
   - Depth: graphql-js's recursive-descent parser overflows Node's stack
-    somewhere around 1,500 to 7,000 nested levels, depending on the
-    construct (Node 24, in process: 1,562 nested object values, 1,757
-    nested selection sets, 1,952 nested list values, 3,125 nested inline
-    fragments, 7,031 nested list types),
-    and the input's recursions over nested selection sets and `ofType`
-    chains have limits of their own. The port grows its stack on demand and
-    handles any depth.
+    somewhere around 1,300 to 6,300 nested levels, depending on the
+    construct. The port's parser models that stack (`Nesting` in
+    `graphql/parser.rs`): each construct costs a share, set so that what
+    the reference CLI parses (Node 24, `--src-lang graphql`) still fits and
+    one more level does not: 1,655 nested selection sets, 1,294 nested
+    object values and 1,627 nested list values in a field's argument,
+    6,338 nested list types in a variable definition, 1,629 nested inline
+    fragments (there it is TypeScript's input that overflows first). Mixed
+    nesting adds the costs up, which is approximate; Node's own limit
+    varies by one between runs. Deeper documents fail with `RangeError:
+    Maximum call stack size exceeded` (they used to parse, and then take
+    minutes or more in the input). `makeType` in the schema overflows
+    after 7,459 nested `ofType` wrappers, also on a field no query
+    selects; the port stops there too. The input's recursion over the
+    query (`makeIRTypeFromSelectionSet`, `makeIRTypeFromFieldNode`) grows
+    the native stack without a limit of its own; TypeScript fails deep
+    queries later, in graph rewriting (see "Endless recursion over the
+    type graph").
   - Names in the introspection JSON that are not strings (a number or
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them

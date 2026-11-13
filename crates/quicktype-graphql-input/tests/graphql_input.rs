@@ -20,7 +20,10 @@ use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_builder_utils::get_no_string_type_mapping;
 use quicktype_core::ty::type_graph::TypeGraph;
 use quicktype_core::ty::type_ref::TypeRef;
-use quicktype_core::{Input, QuickTypeError, Result, RunContext, parse_json};
+use quicktype_core::{
+    Input, InputData, Options, QuickTypeError, Result, RunContext, get_target_language, parse_json,
+    quicktype_multi_file_sync,
+};
 use quicktype_graphql_input::graphql::get_introspection_query;
 use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::json::{self, JsonValue};
@@ -220,14 +223,19 @@ fn parser_matches_graphql_js() {
     );
 }
 
-/// Far deeper than Node's stack allows (see `docs/PARITY.md`, Known gaps):
-/// nested selection sets and `ofType` chains build without overflowing the
-/// native stack, on a test thread's small stack.
+/// Deeper than Node's stack allows (see "Stack depth" in
+/// `docs/PARITY.md`), the input fails with V8's `RangeError` where
+/// TypeScript does, on a test thread's small stack: nested selection sets
+/// in the parser, `ofType` chains in `makeType` (7,459 wrappers still
+/// build) and, in the run, the graph rewriting that TypeScript overflows in
+/// at about 400 nested lists. Before, a chain of 100,000 list
+/// types aborted the CLI, 3,000 nested selection sets took it minutes.
 #[test]
-fn deep_queries_and_schemas_do_not_overflow() {
-    let depth = 50_000;
+fn deep_queries_and_schemas_fail_like_node() {
+    let overflow = ("RangeError", "Maximum call stack size exceeded");
     let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
         .expect("the basic schema");
+    let depth = 50_000;
     let query = format!(
         "{{ viewer {}{{ name }}{} }}",
         "{ best ".repeat(depth),
@@ -241,29 +249,46 @@ fn deep_queries_and_schemas_do_not_overflow() {
     });
     let mut builder =
         TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    input.add_types_sync(&mut builder).unwrap();
-    assert!(builder.len() > 2 * depth);
+    let e = input.add_types_sync(&mut builder).unwrap_err();
+    assert_eq!((error_class(&e), e.user_message()), overflow);
 
-    // `[[[...Int...]]]` as nested `ofType`s.
-    let mut wrapped = String::from(r#"{"kind": "SCALAR", "name": "Int"}"#);
-    for _ in 0..depth {
-        wrapped = format!(r#"{{"kind": "LIST", "ofType": {wrapped}}}"#);
+    // `[[[...Int...]]]` as `depth` nested `ofType`s.
+    let source = |depth: usize| {
+        let mut wrapped = String::from(r#"{"kind": "SCALAR", "name": "Int"}"#);
+        for _ in 0..depth {
+            wrapped = format!(r#"{{"kind": "LIST", "ofType": {wrapped}}}"#);
+        }
+        let schema = format!(
+            r#"{{"data": {{"__schema": {{"queryType": {{"name": "Q"}}, "mutationType": null, "types": [
+                {{"kind": "OBJECT", "name": "Q", "fields": [{{"name": "a", "args": [], "type": {wrapped}}}]}},
+                {{"kind": "SCALAR", "name": "Int"}}]}}}}}}"#
+        );
+        GraphQlSourceData {
+            name: "Lists".to_owned(),
+            schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
+            query: "{ a }".to_owned(),
+        }
+    };
+    let add_types = |depth| {
+        let mut input = GraphQlInput::new();
+        input.add_source_sync(source(depth));
+        let mut builder =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        input.add_types_sync(&mut builder).map(|()| builder.len())
+    };
+    assert!(add_types(7_459).unwrap() > 2 * 7_459);
+    for depth in [7_460, 100_000] {
+        let e = add_types(depth).unwrap_err();
+        assert_eq!((error_class(&e), e.user_message()), overflow);
     }
-    let schema = format!(
-        r#"{{"data": {{"__schema": {{"queryType": {{"name": "Q"}}, "mutationType": null, "types": [
-            {{"kind": "OBJECT", "name": "Q", "fields": [{{"name": "a", "args": [], "type": {wrapped}}}]}},
-            {{"kind": "SCALAR", "name": "Int"}}]}}}}}}"#
-    );
+
     let mut input = GraphQlInput::new();
-    input.add_source_sync(GraphQlSourceData {
-        name: "Lists".to_owned(),
-        schema: parse_json(&schema, "GraphQL schema", None).unwrap(),
-        query: "{ a }".to_owned(),
-    });
-    let mut builder =
-        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    input.add_types_sync(&mut builder).unwrap();
-    assert!(builder.len() > 2 * depth);
+    input.add_source_sync(source(7_459));
+    let mut input_data = InputData::new();
+    input_data.add_input(input);
+    let lang = get_target_language("go").unwrap();
+    let e = quicktype_multi_file_sync(Options::new(lang, input_data)).unwrap_err();
+    assert_eq!((error_class(&e), e.user_message()), overflow);
 }
 
 /// A chain of 40,000 fragments, each spreading the next, is expanded in
