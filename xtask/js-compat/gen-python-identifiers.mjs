@@ -18,6 +18,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 // NFKC follows the running Node's ICU data: only the reference's Node gives
@@ -30,9 +32,7 @@ if (referenceNode === undefined) {
 if (process.version !== referenceNode) {
     throw new Error(`run with Node ${referenceNode} (tests/golden/REFERENCE), not ${process.version}`);
 }
-const quicktypeDir = resolve(
-    process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"),
-);
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const coreRequire = createRequire(join(quicktypeDir, "packages/quicktype-core/dist/index.js"));
 const unicodePath = coreRequire.resolve("unicode-properties");
 const unicode = coreRequire("unicode-properties");

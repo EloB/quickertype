@@ -12,9 +12,10 @@
 //! [`TransformerData`] holds the kind-specific fields. Transformers refer to
 //! types by [`TypeRef`] only; whatever needs to look at a type (debug output,
 //! [`Transformer::reverse`]) takes a [`TypeLookup`], which both a frozen
-//! [`TypeGraph`] and a [`TypeBuilder`] (the graph under construction)
-//! implement. Child transformers are shared [`Rc`]s, so `areEqual`'s
-//! identity check (`a === b`) is a pointer comparison.
+//! [`TypeGraph`](crate::ty::type_graph::TypeGraph) and a [`TypeBuilder`]
+//! (the graph under construction) implement. Child transformers are shared
+//! [`Rc`]s, so `areEqual`'s identity check (`a === b`) is a pointer
+//! comparison.
 //!
 //! Hashing and equality are exact ports, quirks included: a
 //! [`StringMatch`](TransformerData::StringMatch) equals another one only if
@@ -37,40 +38,8 @@ use crate::support::collection_utils::{JsHash, add_hash_code, hash_string};
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
-use crate::ty::type_graph::TypeGraph;
-use crate::ty::type_ref::{TypeRef, assert_type_ref_graph};
-
-/// Read access to the types of a graph, frozen or under construction
-/// (`derefTypeRef` / `attributesForTypeRef` with a `TypeGraph` whose builder
-/// may still be running).
-pub trait TypeLookup {
-    /// The kind of the type `t`.
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind>;
-    /// The attributes of the type `t`.
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes>;
-}
-
-impl TypeLookup for TypeGraph {
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
-        self.kind(t)
-    }
-
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
-        self.attributes(t)
-    }
-}
-
-impl TypeLookup for TypeBuilder<'_> {
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
-        assert_type_ref_graph(t, self.serial())?;
-        Ok(self.type_at_index(t.index())?.kind())
-    }
-
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
-        assert_type_ref_graph(t, self.serial())?;
-        Ok(self.at_index(t.index())?.1)
-    }
-}
+pub use crate::ty::type_graph::TypeLookup;
+use crate::ty::type_ref::TypeRef;
 
 /// The seven optional cases of a
 /// [`DecodingChoice`](TransformerData::DecodingChoice), one per JSON value
@@ -236,7 +205,7 @@ fn are_equal(a: &Rc<Transformer>, b: &Rc<Transformer>) -> bool {
 /// `debugStringForType(t)`: the kind, and the kind of the transformation's
 /// final target if `t` has a transformation.
 fn debug_string_for_type(lookup: &dyn TypeLookup, t: TypeRef) -> Result<String> {
-    let target = lookup_follow_target_type(lookup, t)?;
+    let target = follow_target_type(lookup, t)?;
     let kind = lookup.lookup_kind(t)?;
     if target == t {
         return Ok(kind.as_str().to_owned());
@@ -1385,28 +1354,6 @@ pub fn make_transformation_attributes(transformation: Transformation) -> TypeAtt
 /// value (which the attribute module only knows as a trait object).
 pub fn downcast_transformation(xf: &dyn TransformationAttribute) -> Option<&Transformation> {
     xf.as_any().downcast_ref::<Transformation>()
-}
-
-/// `transformationForType(t)` over any [`TypeLookup`], including a graph
-/// still being built (the public version for frozen graphs is
-/// [`transformation_for_type`]).
-fn lookup_transformation_for_type(
-    lookup: &dyn TypeLookup,
-    t: TypeRef,
-) -> Result<Option<&dyn TransformationAttribute>> {
-    Ok(TransformationTypeAttributeKind
-        .try_get_in_attributes(lookup.lookup_attributes(t)?)
-        .map(|xf| xf.as_ref()))
-}
-
-/// `followTargetType(t)` over any [`TypeLookup`] (the public version for
-/// frozen graphs is [`follow_target_type`]).
-fn lookup_follow_target_type(lookup: &dyn TypeLookup, t: TypeRef) -> Result<TypeRef> {
-    let mut t = t;
-    while let Some(xf) = lookup_transformation_for_type(lookup, t)? {
-        t = xf.target_type();
-    }
-    Ok(t)
 }
 
 #[cfg(test)]

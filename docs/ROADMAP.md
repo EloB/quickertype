@@ -1,7 +1,7 @@
 # Roadmap
 
 Goal: a complete, byte-identical replica of quicktype (CLI and JS API) in
-Rust. Progress is measured by `cargo xtask parity` (10,132 golden cases) and,
+Rust. Progress is measured by `cargo xtask parity` (11,177 golden cases) and,
 for the JS API, by the differential suite.
 
 Each work package (WP) is one branch, reviewed before merge (see
@@ -20,11 +20,14 @@ parallel; phases are ordered by dependency.
   quicktype's concepts (`InputData`, `JsonInput`, `JsonSchemaInput`,
   `Options`, `quicktype()` → rendered files), with `Result`-based errors that
   carry quicktype's message names.
-- The CLI and the WASM bindings use **only** the public API (dogfooding), so
-  it is always complete.
-- I/O (schema `$ref`s, URL sources) goes through a pluggable trait: std file +
-  HTTP implementations behind cargo features for native builds; the WASM
-  build plugs in the JS facade's `fs` / `fetch`.
+- The CLI and the WASM bindings use the public API (dogfooding) plus
+  `quicktype_core::internal`; like any `Input` implementation, the WASM
+  bindings also reach into hidden modules (`ty`), see
+  [ARCHITECTURE.md](ARCHITECTURE.md#1-crates).
+- I/O (schema `$ref`s, URL sources) goes through a pluggable trait (`Io`):
+  std file + HTTP implementations behind cargo features for native builds.
+  The WASM build has no `Io`; it fetches schemas through the JS facade's
+  stores (`JsonSchemaStore::get`).
 - crates.io-ready: rustdoc with doctested examples, semver discipline.
 
 ## Phase 0 — Foundations
@@ -82,29 +85,43 @@ Cross-cutting items each language package must pick up:
   TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
   `false`.
 
-## Cleanup backlog (cross-branch follow-ups)
+## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`, two follow-ups left
 
-- Dedupe `transformers.rs`'s `lookup_*` helpers with
-  `attributes::type_attributes::{transformation_for_type, follow_target_type}`
-  (generic over `TypeLookup`).
-- Move the remaining per-language `intercalate` and JS number-formatting
-  copies to `support::collection_utils::array_intercalate` and
-  `quicktype_js_compat::number::to_string`; switch the Rust renderer to
-  `match_type_unsupported`.
-- Stale "not ported yet" comments (`input/inputs.rs`, `tests/run.rs`,
-  `tests/json_input_vitest.rs`, `tests/json_schema_vitest.rs`) and the
-  CLI's own `trim`/whitespace helpers in `js.rs`, which duplicate
-  `quicktype_js_compat::whitespace`.
-- `input/io/node_io.rs` says the WASM build implements `Io`; it implements
-  `JsonSchemaStore::get` through the facade's stores instead.
-- One name for the reference checkout's environment variable
-  (`QUICKTYPE_REF`, `QUICKTYPE_REFERENCE`, `QUICKTYPE_DIR` today), and a
-  recorder for `crates/quicktype-core/tests/data/target_languages.json`.
-- The clippy lints that `rust-version = "1.88"` turns on
-  (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
-  places in 30 files) are allowed in `[workspace.lints.clippy]` until the
-  open branches have merged. Then fix them (`cargo clippy --fix`) and
-  remove the two `allow`s.
+The branch also moved `acronymOption`/`convertersOption` into `support/`
+as in TypeScript, corrected module headers that named missing TS files,
+and made GraphQL input's linear-time test independent of machine load.
+
+- [x] Dedupe `transformers.rs`'s `lookup_*` helpers with
+      `attributes::type_attributes::{transformation_for_type, follow_target_type}`
+      (generic over `TypeLookup`, which lives next to `TypeGraph` and
+      `TypeBuilder` in `ty::type_graph`).
+- [x] Move the remaining per-language `intercalate` and JS number-formatting
+      copies to `support::collection_utils::array_intercalate` and
+      `quicktype_js_compat::number::to_string`; switch the Rust renderer to
+      `match_type_unsupported` (now every port of a TS `matchType` falls
+      back with it, and RENDERERS.md's cheat sheet says so).
+- [x] Stale "not ported yet" comments (`input/inputs.rs`, `tests/run.rs`,
+      `tests/json_input_vitest.rs`, `tests/json_schema_vitest.rs`, and the
+      skips they described in `tests/run.rs` and the CLI's `tests/cli.rs`)
+      and the CLI's own `trim`/whitespace helpers in `js.rs`, which
+      duplicate `quicktype_js_compat::whitespace`.
+- [x] `input/io/node_io.rs` says the WASM build implements `Io`; it
+      implements `JsonSchemaStore::get` through the facade's stores instead.
+- [x] One name for the reference checkout's environment variable:
+      `QUICKTYPE_REFERENCE` everywhere (`QUICKTYPE_REF` and `QUICKTYPE_DIR`
+      still work, with a warning; the recorders share
+      `xtask/reference.mjs`), and a recorder for
+      `crates/quicktype-core/tests/data/target_languages.json`
+      (`xtask/core-rendering/record-target-languages.mjs`, which reproduces
+      the committed file byte for byte).
+- [ ] `tests/json_input.rs` and `tests/json_input_vitest.rs` (quicktype-core)
+      keep their own `block_on`; `quicktype_core::internal::block_on` does
+      the same. Left to the branch that is changing JSON input.
+- [ ] The clippy lints that `rust-version = "1.88"` turns on
+      (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
+      places in 30 files) are allowed in `[workspace.lints.clippy]` until
+      the open branches have merged. Then fix them (`cargo clippy --fix`)
+      and remove the two `allow`s. From `feat/release-pipeline`.
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 

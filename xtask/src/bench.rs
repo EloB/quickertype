@@ -10,6 +10,14 @@
 //!
 //! The generated inputs (`generated-*.json`) are written to `target/bench`
 //! by a seeded generator, so every machine benchmarks the same bytes.
+//!
+//! `--json <file>` also writes the results as JSON (the playground's
+//! `site/data/benchmarks.json`, which `site/build.mjs` validates): the
+//! date, the machine, the commits measured, and every number of the report.
+//! The commit of a CLI built here is this checkout's HEAD; that of one
+//! given with `--bin` or `--baseline` is the HEAD of the work tree whose
+//! `target` directory holds it, if it was built after that commit, and
+//! otherwise null; `commits.<id>_source` says which.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -18,7 +26,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, UNIX_EPOCH};
 
 use crate::diff::find_reference;
 use crate::parity::{base_command, build_cli, find_cases, prepare_case, snapshot, step_command};
@@ -46,6 +54,12 @@ report (median and min wall time, peak RSS, speedup).
                          process (xtask/bench/in-process.mjs)
   -j <n>                 parallel jobs for --corpus (default: number of cores)
   --out <file>           also write the report to <file>
+  --json <file>          also write the results as JSON to <file>, with the
+                         date, the machine and the commits measured (the
+                         playground's site/data/benchmarks.json); a --bin or
+                         --baseline CLI's commit is its work tree's HEAD if it
+                         is in that work tree's target directory and newer
+                         than HEAD, else null, and the JSON says which
 ";
 
 struct Options {
@@ -60,6 +74,7 @@ struct Options {
     in_process: bool,
     jobs: usize,
     out: Option<PathBuf>,
+    json: Option<PathBuf>,
 }
 
 fn parse_options(args: Vec<String>) -> Result<Options, String> {
@@ -75,6 +90,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
         in_process: false,
         jobs: std::thread::available_parallelism().map_or(4, |n| n.get()),
         out: None,
+        json: None,
     };
     let split = |s: String| -> Vec<String> { s.split_whitespace().map(String::from).collect() };
     let mut args = args.into_iter();
@@ -94,6 +110,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
             "--in-process" => o.in_process = true,
             "-j" | "--jobs" => o.jobs = value()?.parse().map_err(|_| "bad -j")?,
             "--out" => o.out = Some(PathBuf::from(value()?)),
+            "--json" => o.json = Some(PathBuf::from(value()?)),
             _ => return Err(format!("unknown argument {a}\n\n{USAGE}")),
         }
     }
@@ -103,6 +120,8 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
 
 /// A command under test.
 struct Tool {
+    /// Its key in the JSON results: `typescript`, `baseline` or `rust`.
+    id: &'static str,
     label: &'static str,
     cmd: Vec<String>,
 }
@@ -721,51 +740,210 @@ fn shell_output(program: &str, args: &[&str]) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-fn machine_info(tools: &[Tool]) -> Vec<(String, String)> {
+/// One line of the machine's description: its JSON key, its label in the
+/// report, its value.
+struct MachineFact {
+    key: &'static str,
+    label: &'static str,
+    value: String,
+}
+
+/// The machine's description, for the report and the JSON: on macOS and
+/// Linux, always the CPU, the cores, the memory and the OS, each with a
+/// fallback where the system does not say (the CPU's architecture for its
+/// name, the threads the process may use for the cores).
+fn machine_info(tools: &[Tool]) -> Vec<MachineFact> {
     let mut info = vec![];
+    let mut fact = |key, label, value| info.push(MachineFact { key, label, value });
+    let arch = shell_output("uname", &["-m"]).unwrap_or_else(|| std::env::consts::ARCH.to_owned());
+    let parallelism = || {
+        std::thread::available_parallelism()
+            .ok()
+            .map(|n| n.get().to_string())
+    };
+    let kernel = || shell_output("uname", &["-sr"]);
     if cfg!(target_os = "macos") {
-        if let Some(cpu) = shell_output("sysctl", &["-n", "machdep.cpu.brand_string"]) {
-            info.push(("CPU".into(), cpu));
-        }
-        if let Some(n) = shell_output("sysctl", &["-n", "hw.ncpu"]) {
-            info.push(("Cores".into(), n));
+        let cpu = shell_output("sysctl", &["-n", "machdep.cpu.brand_string"]);
+        fact("cpu", "CPU", cpu.unwrap_or(arch));
+        if let Some(n) = shell_output("sysctl", &["-n", "hw.ncpu"]).or_else(parallelism) {
+            fact("cores", "Cores", n);
         }
         if let Some(bytes) =
             shell_output("sysctl", &["-n", "hw.memsize"]).and_then(|s| s.parse::<u64>().ok())
         {
-            info.push(("Memory".into(), format!("{} GiB", bytes >> 30)));
+            fact("memory", "Memory", gib(bytes));
         }
-        if let Some(v) = shell_output("sw_vers", &["-productVersion"]) {
-            info.push(("OS".into(), format!("macOS {v}")));
+        let os = shell_output("sw_vers", &["-productVersion"]).map(|v| format!("macOS {v}"));
+        fact(
+            "os",
+            "OS",
+            os.or_else(kernel).unwrap_or_else(|| "macOS".to_owned()),
+        );
+        // "{ 1.23 4.56 7.89 }"
+        if let Some(load) = shell_output("sysctl", &["-n", "vm.loadavg"]).and_then(|l| {
+            l.trim_matches(['{', '}', ' '])
+                .split_whitespace()
+                .next()
+                .map(String::from)
+        }) {
+            fact("load_average", "Load average (1 min, at the start)", load);
         }
     } else {
-        if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
-            if let Some(model) = cpuinfo.lines().find_map(|l| {
-                l.strip_prefix("model name")
-                    .and_then(|r| r.split(':').nth(1))
-            }) {
-                info.push(("CPU".into(), model.trim().to_owned()));
-            }
+        let cpu = fs::read_to_string("/proc/cpuinfo")
+            .ok()
+            .and_then(|cpuinfo| cpu_from_cpuinfo(&cpuinfo, &arch));
+        fact("cpu", "CPU", cpu.unwrap_or(arch));
+        if let Some(n) = shell_output("nproc", &[]).or_else(parallelism) {
+            fact("cores", "Cores", n);
         }
-        if let Some(n) = shell_output("nproc", &[]) {
-            info.push(("Cores".into(), n));
+        if let Some(memory) = fs::read_to_string("/proc/meminfo")
+            .ok()
+            .and_then(|meminfo| memory_from_meminfo(&meminfo))
+        {
+            fact("memory", "Memory", memory);
         }
-        if let Some(os) = shell_output("uname", &["-sr"]) {
-            info.push(("OS".into(), os));
+        fact(
+            "os",
+            "OS",
+            kernel().unwrap_or_else(|| std::env::consts::OS.to_owned()),
+        );
+        if let Some(load) = fs::read_to_string("/proc/loadavg")
+            .ok()
+            .and_then(|l| l.split_whitespace().next().map(String::from))
+        {
+            fact("load_average", "Load average (1 min, at the start)", load);
         }
     }
     if let Some(v) = shell_output("rustc", &["--version"]) {
-        info.push(("rustc".into(), v));
+        fact("rustc", "rustc", v);
     }
     if tools
         .iter()
         .any(|t| t.cmd.first().is_some_and(|c| c == "node"))
     {
         if let Some(v) = shell_output("node", &["--version"]) {
-            info.push(("Node.js".into(), v));
+            fact("node", "Node.js", v);
         }
     }
     info
+}
+
+/// Bytes in GiB, as the report shows memory: "64 GiB", "3.7 GiB".
+fn gib(bytes: u64) -> String {
+    let g = bytes as f64 / f64::from(1u32 << 30);
+    if g >= 10.0 || (g - g.round()).abs() < 0.05 {
+        format!("{g:.0} GiB")
+    } else {
+        format!("{g:.1} GiB")
+    }
+}
+
+/// The value of the first `key : value` line of /proc/cpuinfo whose key is
+/// `key`, if it is not empty.
+fn cpuinfo_value<'a>(cpuinfo: &'a str, key: &str) -> Option<&'a str> {
+    cpuinfo.lines().find_map(|line| {
+        let (k, v) = line.split_once(':')?;
+        Some(v.trim()).filter(|v| k.trim() == key && !v.is_empty())
+    })
+}
+
+/// The CPU's name from /proc/cpuinfo: its "model name" (x86, 32-bit ARM),
+/// else its "Hardware" (ARM boards and phones), else its "CPU part" with
+/// the architecture `arch` (64-bit ARM servers, which name nothing else).
+fn cpu_from_cpuinfo(cpuinfo: &str, arch: &str) -> Option<String> {
+    cpuinfo_value(cpuinfo, "model name")
+        .or_else(|| cpuinfo_value(cpuinfo, "Hardware"))
+        .map(String::from)
+        .or_else(|| {
+            cpuinfo_value(cpuinfo, "CPU part").map(|part| format!("{arch}, CPU part {part}"))
+        })
+}
+
+/// The memory from /proc/meminfo (`MemTotal:  65843876 kB`), in GiB.
+fn memory_from_meminfo(meminfo: &str) -> Option<String> {
+    let total = meminfo.lines().find_map(|l| l.strip_prefix("MemTotal:"))?;
+    let kib: u64 = total.trim().strip_suffix("kB")?.trim().parse().ok()?;
+    Some(gib(kib * 1024))
+}
+
+/// Where a CLI under test comes from, for the JSON results: the commit it
+/// was built from, as far as can be told.
+struct Provenance {
+    commit: Option<String>,
+    /// Whether its work tree had changes to tracked files; `None` if not known.
+    modified: Option<bool>,
+    /// How `commit` was found, or why it is not known.
+    source: String,
+}
+
+impl Provenance {
+    /// This checkout, which `build_cli` (or `cargo bench`) has just built.
+    fn built(root: &Path) -> Self {
+        Self {
+            commit: git_head(root),
+            modified: git_modified(root),
+            source: "this checkout, built by cargo xtask bench".to_owned(),
+        }
+    }
+
+    /// A CLI given with `flag` (`--bin`, `--baseline`) whose first word is
+    /// `program`: the HEAD of the git work tree whose `target` directory
+    /// holds the binary, if the binary is newer than that commit; otherwise
+    /// not known (it may have been built from anything).
+    fn given(program: &str, flag: &str) -> Self {
+        let unknown = |why: String| Self {
+            commit: None,
+            modified: None,
+            source: why,
+        };
+        let Some(binary) = find_program(program) else {
+            return unknown(format!("{flag} runs {program}, which was not found"));
+        };
+        let tree = binary
+            .parent()
+            .and_then(|dir| git_output(dir, &["rev-parse", "--show-toplevel"]))
+            .and_then(|top| fs::canonicalize(top).ok())
+            .filter(|top| binary.starts_with(top.join("target")));
+        let Some((tree, commit)) = tree.and_then(|t| git_head(&t).map(|c| (t, c))) else {
+            return unknown(format!(
+                "{flag} runs {}, which is not in the target directory of a git work tree",
+                binary.display()
+            ));
+        };
+        let built = fs::metadata(&binary).and_then(|m| m.modified()).ok();
+        let committed = git_output(&tree, &["log", "-1", "--format=%ct"])
+            .and_then(|s| s.parse().ok())
+            .map(|secs| UNIX_EPOCH + Duration::from_secs(secs));
+        if matches!((built, committed), (Some(built), Some(committed)) if built < committed) {
+            return unknown(format!(
+                "{flag} runs {}, which is older than the HEAD of {} ({commit}), so it was built from something else",
+                binary.display(),
+                tree.display()
+            ));
+        }
+        Self {
+            commit: Some(commit),
+            modified: git_modified(&tree),
+            source: format!(
+                "the HEAD of {}, whose target directory holds {flag}'s binary (built after that commit)",
+                tree.display()
+            ),
+        }
+    }
+}
+
+/// The file `program` runs: a path, or a name found on `PATH`.
+fn find_program(program: &str) -> Option<PathBuf> {
+    let path = Path::new(program);
+    let found = if path.components().count() > 1 {
+        Some(path.to_path_buf())
+    } else {
+        let paths = std::env::var_os("PATH")?;
+        std::env::split_paths(&paths)
+            .map(|dir| dir.join(program))
+            .find(|p| p.is_file())
+    };
+    found.and_then(|p| fs::canonicalize(p).ok())
 }
 
 fn ms(v: f64) -> String {
@@ -794,6 +972,10 @@ fn ratio(slow: f64, fast: f64) -> String {
 }
 
 pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
+    let invocation = std::iter::once("cargo xtask bench".to_owned())
+        .chain(args.iter().map(|a| shell_quote(a)))
+        .collect::<Vec<_>>()
+        .join(" ");
     let o = parse_options(args)?;
     // Found (or refused) up front, before minutes of other benchmarks.
     let in_process_checkout = if o.in_process && !o.no_ref {
@@ -806,19 +988,21 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         let cmd = match &o.reference {
             Some(cmd) => cmd.clone(),
             None => {
-                let script = find_reference(root).ok_or(
-                    "TypeScript CLI not found: set QUICKTYPE_REF, pass --ref, or use --no-ref",
+                let script = find_reference(root)?.ok_or(
+                    "TypeScript CLI not found: set QUICKTYPE_REFERENCE, pass --ref, or use --no-ref",
                 )?;
                 vec!["node".into(), script.to_string_lossy().into_owned()]
             }
         };
         tools.push(Tool {
+            id: "typescript",
             label: "TypeScript",
             cmd,
         });
     }
     if let Some(cmd) = &o.baseline {
         tools.push(Tool {
+            id: "baseline",
             label: "Rust (before)",
             cmd: cmd.clone(),
         });
@@ -827,7 +1011,24 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         Some(cmd) => cmd.clone(),
         None => build_cli(root)?,
     };
+    // The commits measured, before anything runs: our CLI's (built here, or
+    // --bin's), the baseline's, and this checkout's for --in-process, which
+    // builds it with cargo bench.
+    let program = |cmd: &[String]| cmd.first().map_or(String::new(), Clone::clone);
+    let mut provenance = vec![(
+        "quickertype",
+        if o.ours.is_some() {
+            Provenance::given(&program(&ours), "--bin")
+        } else {
+            Provenance::built(root)
+        },
+    )];
+    if let Some(cmd) = &o.baseline {
+        provenance.push(("baseline", Provenance::given(&program(cmd), "--baseline")));
+    }
+    let in_process_provenance = o.in_process.then(|| Provenance::built(root));
     tools.push(Tool {
+        id: "rust",
         label: if o.baseline.is_some() {
             "Rust (after)"
         } else {
@@ -835,6 +1036,10 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         },
         cmd: ours,
     });
+
+    // Before anything runs: the load average says how quiet the machine was.
+    let machine = machine_info(&tools);
+    let date = utc_date();
 
     let bench_dir = root.join("target/bench");
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
@@ -903,16 +1108,36 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
         in_process = run_in_process(root, o.iterations, in_process_checkout.as_deref())?;
     }
 
-    let report = render_report(&o, &tools, &rows, &corpus, &in_process);
+    let report = render_report(&o, &machine, &tools, &rows, &corpus, &in_process);
     print!("{report}");
     if let Some(path) = &o.out {
         fs::write(path, &report).map_err(|e| format!("{}: {e}", path.display()))?;
+    }
+    if let Some(path) = &o.json {
+        let results = Results {
+            date,
+            command: invocation,
+            machine: &machine,
+            iterations: o.iterations,
+            jobs: o.jobs,
+            tools: &tools,
+            provenance: &provenance,
+            rows: &rows,
+            corpus: &corpus,
+            in_process: &in_process,
+            in_process_provenance: in_process_provenance.as_ref(),
+        };
+        let json = json_results(root, &results);
+        let text = serde_json::to_string_pretty(&json).map_err(|e| e.to_string())?;
+        fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))?;
+        eprintln!("bench: wrote {}", path.display());
     }
     Ok(rows.iter().all(|(_, _, identical)| *identical))
 }
 
 fn render_report(
     o: &Options,
+    machine: &[MachineFact],
     tools: &[Tool],
     rows: &[(&Bench, Vec<Stats>, bool)],
     corpus: &[CorpusStats],
@@ -920,8 +1145,8 @@ fn render_report(
 ) -> String {
     let mut r = String::new();
     let _ = writeln!(r, "Machine:\n");
-    for (k, v) in machine_info(tools) {
-        let _ = writeln!(r, "- {k}: {v}");
+    for fact in machine {
+        let _ = writeln!(r, "- {}: {}", fact.label, fact.value);
     }
     let _ = writeln!(
         r,
@@ -1069,6 +1294,224 @@ fn render_report(
 }
 
 // ---------------------------------------------------------------------------
+// The JSON results (`--json`).
+
+/// Everything one run measured, for `json_results`.
+struct Results<'a> {
+    date: String,
+    command: String,
+    machine: &'a [MachineFact],
+    iterations: usize,
+    jobs: usize,
+    tools: &'a [Tool],
+    /// Where the Rust CLIs come from, by their key in `commits`
+    /// (`quickertype`, `baseline`).
+    provenance: &'a [(&'static str, Provenance)],
+    rows: &'a [(&'a Bench, Vec<Stats>, bool)],
+    corpus: &'a [CorpusStats],
+    in_process: &'a [InProcess],
+    /// The checkout the in-process benchmark built.
+    in_process_provenance: Option<&'a Provenance>,
+}
+
+/// A number as JSON, rounded to `digits` decimals (the measurements are not
+/// more precise than that, and the file stays readable).
+fn number(v: f64, digits: i32) -> serde_json::Value {
+    let scale = 10f64.powi(digits);
+    serde_json::Number::from_f64((v * scale).round() / scale)
+        .map_or(serde_json::Value::Null, serde_json::Value::Number)
+}
+
+/// Today's date in UTC, `YYYY-MM-DD` (Howard Hinnant's `civil_from_days`).
+fn utc_date() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let z = i64::try_from(secs / 86_400).unwrap_or(0) + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
+/// An argument as a shell would need it.
+fn shell_quote(arg: &str) -> String {
+    if !arg.is_empty()
+        && arg
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || "-_./=:,+@%".contains(c))
+    {
+        arg.to_owned()
+    } else {
+        format!("'{}'", arg.replace('\'', r"'\''"))
+    }
+}
+
+/// What `git -C <dir> <args>` prints (trimmed, possibly empty), if it succeeds.
+fn git_output(dir: &Path, args: &[&str]) -> Option<String> {
+    let out = Command::new("git")
+        .arg("-C")
+        .arg(dir)
+        .args(args)
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+}
+
+/// The commit checked out in `dir`, if it is a git work tree.
+fn git_head(dir: &Path) -> Option<String> {
+    git_output(dir, &["rev-parse", "HEAD"]).filter(|s| !s.is_empty())
+}
+
+/// Whether the work tree `dir` has changes to tracked files; `None` if it is not one.
+fn git_modified(dir: &Path) -> Option<bool> {
+    git_output(dir, &["status", "--porcelain", "--untracked-files=no"]).map(|s| !s.is_empty())
+}
+
+/// The quicktype commit the TypeScript CLI was built from: its checkout's
+/// HEAD if `node <checkout>/dist/index.js` is a git work tree, else the one
+/// `tests/golden/REFERENCE` names.
+fn quicktype_commit(root: &Path, tools: &[Tool]) -> Option<String> {
+    let checkout = tools
+        .iter()
+        .find(|t| t.id == "typescript")?
+        .cmd
+        .iter()
+        .map(PathBuf::from)
+        .find(|p| p.ends_with("dist/index.js"))
+        .and_then(|p| p.parent()?.parent().map(Path::to_path_buf));
+    checkout.as_deref().and_then(git_head).or_else(|| {
+        let reference = fs::read_to_string(root.join("tests/golden/REFERENCE")).ok()?;
+        reference
+            .lines()
+            .find_map(|l| l.trim().strip_prefix("quicktype_commit="))
+            .map(String::from)
+    })
+}
+
+fn json_results(root: &Path, r: &Results<'_>) -> serde_json::Value {
+    use serde_json::{Map, Value, json};
+
+    let machine: Map<String, Value> = r
+        .machine
+        .iter()
+        .map(|f| (f.key.to_owned(), Value::String(f.value.clone())))
+        .collect();
+    // `<id>`: the commit (null if not known), `<id>_modified`: whether its
+    // work tree had local changes (null if not known), `<id>_source`: how
+    // the commit was found, or why it is not known.
+    let mut commits = Map::new();
+    commits.insert(
+        "quicktype".to_owned(),
+        json!(quicktype_commit(root, r.tools)),
+    );
+    for (id, p) in r.provenance {
+        commits.insert((*id).to_owned(), json!(p.commit));
+        commits.insert(format!("{id}_modified"), json!(p.modified));
+        commits.insert(format!("{id}_source"), json!(p.source));
+    }
+    let tools: Map<String, Value> = r
+        .tools
+        .iter()
+        .map(|t| (t.id.to_owned(), json!({ "label": t.label })))
+        .collect();
+    let cli: Vec<Value> = r
+        .rows
+        .iter()
+        .map(|(b, stats, identical)| {
+            let results: Map<String, Value> = r
+                .tools
+                .iter()
+                .zip(stats)
+                .map(|(t, s)| {
+                    let rss = s
+                        .rss
+                        .map_or(Value::Null, |b| number(b as f64 / 1_048_576.0, 1));
+                    (
+                        t.id.to_owned(),
+                        json!({
+                            "median_ms": number(s.median, 3),
+                            "min_ms": number(s.min, 3),
+                            "peak_rss_mib": rss,
+                        }),
+                    )
+                })
+                .collect();
+            json!({
+                "group": b.group,
+                "name": b.name,
+                "identical": identical,
+                "results": results,
+            })
+        })
+        .collect();
+    let corpus = if r.corpus.is_empty() {
+        Value::Null
+    } else {
+        let results: Map<String, Value> = r
+            .tools
+            .iter()
+            .zip(r.corpus)
+            .map(|(t, c)| {
+                (
+                    t.id.to_owned(),
+                    json!({
+                        "steps": c.steps,
+                        "wall_s": number(c.wall.as_secs_f64(), 2),
+                        "cli_time_s": number(c.process.as_secs_f64(), 2),
+                        "unexpected_exits": c.failed_steps,
+                    }),
+                )
+            })
+            .collect();
+        json!({ "jobs": r.jobs, "results": results })
+    };
+    let in_process = r.in_process.first().map_or(Value::Null, |first| {
+        let results: Map<String, Value> = r
+            .in_process
+            .iter()
+            .map(|p| {
+                (
+                    p.id.to_owned(),
+                    json!({
+                        "label": p.label,
+                        "total_ms": number(p.total, 2),
+                        "total_min_ms": number(p.total_min, 2),
+                        "parse_ms": number(p.parse, 2),
+                        "engine_ms": number(p.engine, 2),
+                    }),
+                )
+            })
+            .collect();
+        // The Rust engine measured here is this checkout's, whatever --bin is.
+        let engine_commits = r.in_process_provenance.map_or(Value::Null, |p| {
+            json!({ "quickertype": p.commit, "quickertype_modified": p.modified })
+        });
+        json!({ "runs": first.runs, "iterations": r.iterations, "commits": engine_commits, "results": results })
+    });
+    json!({
+        "format": 1,
+        "date": r.date,
+        "command": r.command,
+        "machine": machine,
+        "commits": commits,
+        "iterations": r.iterations,
+        "tools": tools,
+        "cli": cli,
+        "corpus": corpus,
+        "in_process": in_process,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // In process.
 
 /// The TypeScript checkout for the in-process benchmark: `--ref-dir`, else
@@ -1083,7 +1526,7 @@ fn reference_checkout(root: &Path, o: &Options) -> Result<PathBuf, String> {
             .find(|p| p.ends_with("dist/index.js"))
             .and_then(|p| p.parent()?.parent().map(Path::to_path_buf)),
         (None, None) => {
-            find_reference(root).and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
+            find_reference(root)?.and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
         }
     };
     let checkout = checkout.ok_or(
@@ -1101,6 +1544,8 @@ fn reference_checkout(root: &Path, o: &Options) -> Result<PathBuf, String> {
 }
 
 struct InProcess {
+    /// Its key in the JSON results.
+    id: &'static str,
     label: &'static str,
     runs: u64,
     total: f64,
@@ -1110,7 +1555,11 @@ struct InProcess {
 }
 
 /// Reads the `--json` line the two in-process benchmarks print.
-fn parse_in_process(label: &'static str, stdout: &[u8]) -> Result<InProcess, String> {
+fn parse_in_process(
+    id: &'static str,
+    label: &'static str,
+    stdout: &[u8],
+) -> Result<InProcess, String> {
     let text = String::from_utf8_lossy(stdout);
     let line = text
         .lines()
@@ -1124,6 +1573,7 @@ fn parse_in_process(label: &'static str, stdout: &[u8]) -> Result<InProcess, Str
             .unwrap_or(f64::NAN)
     };
     Ok(InProcess {
+        id,
         label,
         runs: v
             .get("runs")
@@ -1155,14 +1605,19 @@ fn run_in_process(
         if !out.status.success() {
             return Err("xtask/bench/in-process.mjs failed".into());
         }
-        results.push(parse_in_process("TypeScript (warm Node)", &out.stdout)?);
+        results.push(parse_in_process(
+            "typescript",
+            "TypeScript (warm Node)",
+            &out.stdout,
+        )?);
     }
-    for (label, features) in [
+    for (id, label, features) in [
         (
+            "rust-system-allocator",
             "Rust (native, system allocator)",
             Some("--no-default-features"),
         ),
-        ("Rust (native, mimalloc)", None),
+        ("rust", "Rust (native, mimalloc)", None),
     ] {
         eprintln!("bench: in process, {label}");
         let mut command = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
@@ -1177,7 +1632,159 @@ fn run_in_process(
         if !out.status.success() {
             return Err("cargo bench --bench in_process failed".into());
         }
-        results.push(parse_in_process(label, &out.stdout)?);
+        results.push(parse_in_process(id, label, &out.stdout)?);
     }
     Ok(results)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// /proc/cpuinfo of an x86 cloud machine (two of its processors).
+    const XEON: &str = "processor\t: 0\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 85\n\
+        model name\t: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz\nstepping\t: 7\ncpu MHz\t\t: 2499.998\n\n\
+        processor\t: 1\nvendor_id\t: GenuineIntel\nmodel name\t: Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz\n";
+
+    /// /proc/cpuinfo of a 64-bit ARM server (AWS Graviton2): no model name, no Hardware.
+    const GRAVITON: &str = "processor\t: 0\nBogoMIPS\t: 243.75\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid\n\
+        CPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x3\nCPU part\t: 0xd0c\nCPU revision\t: 1\n";
+
+    /// /proc/cpuinfo of a Raspberry Pi 4 on a 64-bit kernel: Hardware, no model name.
+    const PI: &str = "processor\t: 0\nBogoMIPS\t: 108.00\nFeatures\t: fp asimd evtstrm crc32 cpuid\n\
+        CPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0xd08\nCPU revision\t: 3\n\n\
+        Hardware\t: BCM2835\nRevision\t: c03114\nSerial\t\t: 10000000abcdef01\nModel\t\t: Raspberry Pi 4 Model B Rev 1.4\n";
+
+    #[test]
+    fn the_cpu_is_named_from_proc_cpuinfo() {
+        assert_eq!(
+            cpu_from_cpuinfo(XEON, "x86_64").as_deref(),
+            Some("Intel(R) Xeon(R) Platinum 8259CL CPU @ 2.50GHz")
+        );
+        assert_eq!(cpu_from_cpuinfo(PI, "aarch64").as_deref(), Some("BCM2835"));
+        assert_eq!(
+            cpu_from_cpuinfo(GRAVITON, "aarch64").as_deref(),
+            Some("aarch64, CPU part 0xd0c")
+        );
+        // Nothing to name it by: the caller falls back to the architecture.
+        assert_eq!(cpu_from_cpuinfo("", "x86_64"), None);
+        assert_eq!(
+            cpu_from_cpuinfo("processor\t: 0\nmodel name\t:\n", "x86_64"),
+            None
+        );
+    }
+
+    #[test]
+    fn the_memory_is_read_from_proc_meminfo() {
+        let meminfo = "MemTotal:       65843876 kB\nMemFree:        12345678 kB\nMemAvailable:   40000000 kB\n";
+        assert_eq!(memory_from_meminfo(meminfo).as_deref(), Some("63 GiB"));
+        assert_eq!(
+            memory_from_meminfo("MemTotal:        3884152 kB\n").as_deref(),
+            Some("3.7 GiB")
+        );
+        assert_eq!(memory_from_meminfo("MemFree: 12 kB\n"), None);
+        assert_eq!(memory_from_meminfo("MemTotal: lots\n"), None);
+        // macOS's hw.memsize, in bytes.
+        assert_eq!(gib(64 << 30), "64 GiB");
+        assert_eq!(gib(8 << 30), "8 GiB");
+    }
+
+    fn git(dir: &Path, args: &[&str]) {
+        let status = Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args([
+                "-c",
+                "user.name=xtask",
+                "-c",
+                "user.email=xtask@example.com",
+            ])
+            .args([
+                "-c",
+                "commit.gpgsign=false",
+                "-c",
+                "core.hooksPath=/dev/null",
+            ])
+            .args(args)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?}");
+    }
+
+    #[test]
+    fn a_given_cli_is_its_work_trees_head_only_if_built_after_it() {
+        let tree = std::env::temp_dir().join(format!("xtask-bench-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tree);
+        fs::create_dir_all(tree.join("target/release")).unwrap();
+        fs::write(tree.join("README"), "x").unwrap();
+        fs::write(tree.join(".gitignore"), "target/\n").unwrap();
+        git(&tree, &["init", "-q"]);
+        git(&tree, &["add", "."]);
+        git(&tree, &["commit", "-q", "-m", "x"]);
+        let head = git_head(&tree).unwrap();
+        let binary = tree.join("target/release/quicktype");
+        fs::write(&binary, "").unwrap();
+        let program = binary.to_string_lossy().into_owned();
+
+        let given = Provenance::given(&program, "--bin");
+        assert_eq!(
+            given.commit.as_deref(),
+            Some(head.as_str()),
+            "{}",
+            given.source
+        );
+        assert_eq!(given.modified, Some(false));
+        assert!(given.source.starts_with("the HEAD of "), "{}", given.source);
+        fs::write(tree.join("README"), "changed").unwrap();
+        assert_eq!(Provenance::given(&program, "--bin").modified, Some(true));
+
+        // Built before HEAD: from something else.
+        fs::File::options()
+            .write(true)
+            .open(&binary)
+            .unwrap()
+            .set_modified(std::time::SystemTime::now() - Duration::from_secs(86_400))
+            .unwrap();
+        let stale = Provenance::given(&program, "--baseline");
+        assert_eq!((stale.commit, stale.modified), (None, None));
+        assert!(
+            stale.source.starts_with("--baseline runs "),
+            "{}",
+            stale.source
+        );
+        assert!(
+            stale.source.contains("older than the HEAD"),
+            "{}",
+            stale.source
+        );
+
+        // In the work tree, but not in its target directory.
+        let elsewhere = tree.join("quicktype");
+        fs::write(&elsewhere, "").unwrap();
+        let outside = Provenance::given(&elsewhere.to_string_lossy(), "--bin");
+        assert_eq!(outside.commit, None);
+        assert!(
+            outside.source.contains("not in the target directory"),
+            "{}",
+            outside.source
+        );
+
+        let missing = Provenance::given(&tree.join("nowhere").to_string_lossy(), "--bin");
+        assert_eq!(missing.commit, None);
+        assert!(
+            missing.source.ends_with("which was not found"),
+            "{}",
+            missing.source
+        );
+
+        // Built here: this checkout's HEAD.
+        let built = Provenance::built(&tree);
+        assert_eq!(
+            (built.commit.as_deref(), built.modified),
+            (Some(head.as_str()), Some(true))
+        );
+        let _ = fs::remove_dir_all(&tree);
+    }
 }

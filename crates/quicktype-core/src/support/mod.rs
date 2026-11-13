@@ -1,4 +1,5 @@
-//! Port of `packages/quicktype-core/src/support/index.ts`.
+//! The modules of `packages/quicktype-core/src/support/`, one per TypeScript
+//! file (the directory has no `index.ts`).
 
 pub mod acronyms;
 pub mod acronyms_const;

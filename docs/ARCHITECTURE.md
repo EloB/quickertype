@@ -378,6 +378,15 @@ Loading in browsers and bundlers and the remaining differences are in the
 
 No Rust test needs Node; Node and a built quicktype checkout are needed to
 record fixtures and for `cargo xtask diff`. The npm tests run under Node.
+Each tool takes the checkout as a path argument where it has one, else from
+`$QUICKTYPE_REFERENCE`, else uses the first built one of `../quicktype` and
+`../../quicktype` next to this repository (the second finds it from a
+worktree). The xtask tools (`diff`, `bench`, `golden` and the recorders in
+`xtask/*/`, through [`xtask/reference.mjs`](../xtask/reference.mjs)) look in
+that order, and between `$QUICKTYPE_REFERENCE` and the directories they still
+read its old names `QUICKTYPE_REF` and `QUICKTYPE_DIR`, with a one-line
+warning. `QUICKTYPE_REFERENCE=self` only applies to the npm differential
+suite (see below); the xtask tools reject it.
 
 | Layer | Lives in | Run with | Recorded by |
 |---|---|---|---|
@@ -456,7 +465,7 @@ have no such header.
 
 | Upstream adds | Rust |
 |---|---|
-| A target language | `crates/quicktype-core/src/language/<lang>/` (`language.rs`, the renderer, and `utils.rs`/`constants.rs` where TS has them), declared in `language/mod.rs` and listed in `ALL` (`language/all.rs`) in TS order; follow [RENDERERS.md](RENDERERS.md). `crates/quicktype-core/tests/data/target_languages.json` pins each language's metadata and options (`tests/target_languages.rs`). |
+| A target language | `crates/quicktype-core/src/language/<lang>/` (`language.rs`, the renderer, and `utils.rs`/`constants.rs` where TS has them), declared in `language/mod.rs` and listed in `ALL` (`language/all.rs`) in TS order; follow [RENDERERS.md](RENDERERS.md). `crates/quicktype-core/tests/data/target_languages.json` pins each language's metadata and options (`tests/target_languages.rs`); re-record it with `xtask/core-rendering/record-target-languages.mjs`. |
 | A renderer option | a `static` option in the language's `language.rs`, added to its option slice in TS declaration order and read in that order by the renderer's options `parse`. The CLI and `--help` get it from `cli_option_definitions`. |
 | A global CLI option | a `GlobalOption` variant and its `definition` (name, type, help text) in `crates/quicktype-cli/src/cli_options.rs`, plus a `CliOptions` field |
 | An inference flag | `INFERENCE_FLAGS` and `InferenceFlags` in `crates/quicktype-core/src/inference.rs`, and its `--no-*` `GlobalOption` |

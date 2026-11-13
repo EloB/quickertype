@@ -12,6 +12,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::recursion::guard;
 use crate::support::strings::{
@@ -21,7 +22,7 @@ use crate::support::strings::{
 use crate::support::support::{console_error, console_warn};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::find_member;
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::JUST_SCHEMA;
 
@@ -197,14 +198,14 @@ impl<'a> TypeScriptZodRenderer<'a> {
                 None => String::new(),
                 Some(min) => format!(
                     ".refine(value => Array.from(value).length >= {})",
-                    js_number(min)
+                    number::to_string(min)
                 ),
             },
             match max {
                 None => String::new(),
                 Some(max) => format!(
                     ".refine(value => Array.from(value).length <= {})",
-                    js_number(max)
+                    number::to_string(max)
                 ),
             }
         ])
@@ -221,11 +222,11 @@ impl<'a> TypeScriptZodRenderer<'a> {
             if integer { ".int()" } else { "" },
             match min {
                 None => Source::from(""),
-                Some(min) => sl![".min(", js_number(min), ")"],
+                Some(min) => sl![".min(", number::to_string(min), ")"],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![".max(", js_number(max), ")"],
+                Some(max) => sl![".max(", number::to_string(max), ")"],
             }
         ])
     }
@@ -262,7 +263,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
                         array_source.extend([
                             ".min(".into(),
-                            js_number(min_items).into(),
+                            number::to_string(min_items).into(),
                             ")".into(),
                         ]);
                     }
@@ -270,7 +271,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     if let Some(max_items) = max_items {
                         array_source.extend([
                             ".max(".into(),
-                            js_number(max_items).into(),
+                            number::to_string(max_items).into(),
                             ")".into(),
                         ]);
                     }
@@ -297,14 +298,11 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     }
                     children.sort_by_key(|&(r, _)| r);
 
-                    let mut parts: Vec<Source> = vec!["z.union([".into()];
-                    for (i, &(_, member)) in children.iter().enumerate() {
-                        if i > 0 {
-                            parts.push(", ".into());
-                        }
+                    let mut schemas: Vec<Source> = Vec::new();
+                    for &(_, member) in &children {
                         let schema = self.type_map_type_for(member, false)?;
                         let member_kind = graph.kind(member)?;
-                        parts.push(
+                        schemas.push(
                             if member_kind == TypeKind::BoolString
                                 && find_member(graph, t, TypeKind::Bool)?.is_some()
                             {
@@ -318,15 +316,14 @@ impl<'a> TypeScriptZodRenderer<'a> {
                             },
                         );
                     }
-                    parts.push("])".into());
-                    Source::Sequence(parts)
+                    sl!["z.union([", array_intercalate(", ".into(), schemas), "])"]
                 }
                 TypeKind::DateTime => "z.string().pipe(z.coerce.date())".into(),
                 TypeKind::Uuid => "z.string().uuid()".into(),
                 TypeKind::BoolString => "z.enum([\"true\", \"false\"])".into(),
                 TypeKind::IntegerString => "z.string().regex(/^-?\\d+$/)".into(),
                 k if k.is_transformed_string_type_kind() => "z.string()".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             };
 
             if required {
@@ -369,18 +366,15 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     ">"
                 ],
                 TypeKind::Union => {
-                    let mut parts: Vec<Source> = Vec::new();
-                    for (i, c) in graph.children(t)?.into_iter().enumerate() {
-                        if i > 0 {
-                            parts.push(" | ".into());
-                        }
-                        parts.push(self.underlying_type_for(c)?);
+                    let mut children: Vec<Source> = Vec::new();
+                    for c in graph.children(t)? {
+                        children.push(self.underlying_type_for(c)?);
                     }
-                    Source::Sequence(parts)
+                    array_intercalate(" | ".into(), children).into()
                 }
                 TypeKind::DateTime => "Date".into(),
                 k if k.is_transformed_string_type_kind() => "string".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

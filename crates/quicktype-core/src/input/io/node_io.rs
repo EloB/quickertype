@@ -10,8 +10,10 @@
 //!   and with the `http` feature fetches URLs like Node's `fetch` (see
 //!   `input/io/fetch.rs`, on `ureq` with rustls). The native CLI and Rust
 //!   programs use it.
-//! - The WebAssembly build implements [`Io`] with the JavaScript host's
-//!   `fs` and `fetch`.
+//! - The WebAssembly build has no [`Io`]: quicktype-wasm's `HostSchemaStore`
+//!   implements [`JsonSchemaStore::get`](crate::input::json_schema_store::JsonSchemaStore::get)
+//!   with the npm facade's JavaScript store, which reads files and URLs
+//!   itself.
 //!
 //! Errors are reported as Node formats them, because quicktype puts
 //! `exceptionToString(e)` into its messages: `Error: ENOENT: no such file or

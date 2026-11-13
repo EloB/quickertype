@@ -4,19 +4,20 @@
 //
 // usage: node xtask/js-compat/gen-unicode.mjs [path/to/quicktype]
 //
-// The default reference checkout is $QUICKTYPE_DIR, else ../quicktype next to
-// this repository. The table maps every code point 0..=0x10FFFF to the
-// general category `getCategory` returns, as sorted runs.
+// The default reference checkout is $QUICKTYPE_REFERENCE, else ../quicktype
+// next to this repository (xtask/reference.mjs). The table maps every code
+// point 0..=0x10FFFF to the general category `getCategory` returns, as
+// sorted runs.
 
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktypeDir = resolve(
-    process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"),
-);
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const coreRequire = createRequire(join(quicktypeDir, "packages/quicktype-core/dist/index.js"));
 const unicodePath = coreRequire.resolve("unicode-properties");
 const unicode = coreRequire("unicode-properties");

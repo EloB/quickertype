@@ -64,10 +64,12 @@ same results by construction:
 - `JSONSchemaInput`s with extra attribute producers;
 - option values outside what quicktype's options read (a number for a string
   option, `"toString"` for an enum option, a `Name` in `leadingComments`, …);
-- GraphQL input (`quicktype-graphql-input`, not ported yet);
-- languages whose renderer the engine does not have yet: the engine says
-  so (`supportsLanguage`, and an `{ unsupported }` outcome should a run
-  hit a missing feature midway), never with an error;
+- GraphQL input (`quicktype-graphql-input`: the Rust port of it is not
+  part of the engine yet);
+- a language whose renderer the engine does not have (every built-in
+  language has one): the engine says so (`supportsLanguage`, and an
+  `{ unsupported }` outcome should a run hit a missing feature midway),
+  never with an error;
 - strings that are not well-formed UTF-16 (lone surrogates, which
   `JSON.parse` accepts), anywhere in the run, and store documents with
   them, circular ones or ones too large to flatten.

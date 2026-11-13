@@ -1,8 +1,9 @@
 //! Checks the language registry against metadata dumped from the TypeScript
-//! reference (`tests/data/target_languages.json`, produced from
+//! reference (`tests/data/target_languages.json`, recorded from
 //! `defaultTargetLanguages` of quicktype-core at the commit in
-//! `tests/golden/REFERENCE`): names, display names, extensions and every
-//! renderer option declaration, including the CLI expansions.
+//! `tests/golden/REFERENCE` by `xtask/core-rendering/record-target-languages.mjs`):
+//! names, display names, extensions and every renderer option declaration,
+//! including the CLI expansions.
 
 use quicktype_core::language::all::default_target_languages;
 use quicktype_core::renderer_options::{OptionKind, OptionValue};

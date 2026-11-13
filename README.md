@@ -14,7 +14,10 @@ A Rust port of [quicktype](https://github.com/glideapps/quicktype) with a single
 
 Playground: <https://elob.github.io/quickertype/>, quicktype's API on the
 WebAssembly engine in your browser, with a side-by-side run on the TypeScript
-engine.
+engine. Its output matches quicktype at commit
+[`c39af7d`](https://github.com/glideapps/quicktype/commit/c39af7d303b025280e2668a1b2d29913093593c9)
+(September 8, 2026), which is newer than the v26.0.0 release behind
+`npx quicktype` and app.quicktype.io, so some output differs from those.
 
 Exactness isn't a slogan here; it's tested. Every one of the 11,177 cases in
 `tests/golden` is a recorded run of the TypeScript quicktype CLI, and
@@ -127,6 +130,11 @@ cargo xtask diff --each tests/inputs/json/samples -- --lang rust --just-types
 cargo xtask bench
 cargo xtask bench --corpus --in-process
 ```
+
+The tools that need the reference (`diff`, `bench`, `golden`, the recorders
+in `xtask/*/` and the npm differential tests) find the built quicktype
+checkout through `$QUICKTYPE_REFERENCE`, else as `../quicktype` or
+`../../quicktype` (from a worktree) next to this repository.
 
 Validate the corpus itself against the TypeScript implementation (every case
 must pass):
