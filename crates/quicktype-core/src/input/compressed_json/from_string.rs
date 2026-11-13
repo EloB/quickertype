@@ -27,7 +27,11 @@
 //!    A key is interned in the string table as `commitValue` interns it,
 //!    after its value (so the string table is TypeScript's, string for
 //!    string), and only for the members `JSON.parse` keeps: one
-//!    `"__proto__"` for an object with two.
+//!    `"__proto__"` for an object with two. TypeScript's `process`
+//!    recurses once per value and overflows Node's stack past
+//!    [`PROCESS_MAX_DEPTH`] nested values; this pass fails there with the
+//!    same `RangeError`, having committed what `process` commits before
+//!    (see "Very deeply nested JSON" in `docs/PARITY.md`).
 //!
 //! On a syntax error, the message is that of
 //! [`quicktype_js_compat::json::parse`], the port of V8's parser
@@ -55,10 +59,12 @@ use hashbrown::HashTable;
 use quicktype_js_compat::json::is_array_index;
 
 use super::{
-    CompressedJson, JsonSink, NO_INDEX, ParseError, Strings, Value, parse_string_value_into,
+    CompressedJson, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
+    parse_string_value_into,
 };
 use crate::messages::{QuickTypeError, Result};
 use crate::support::fast_hash::{BuildHasher, HashMap};
+use crate::support::recursion::stack_overflow;
 
 /// Limits on what [`CompressedJson::read_string_sample`] reads; a sample
 /// beyond them is not read at all ([`ReadStringError::Declined`]).
@@ -933,11 +939,18 @@ impl Tape<'_> {
             .collect()
     }
 
-    /// Commits the sample, as `process(json)` and `finish()` do.
+    /// Commits the sample, as `process(json)` and `finish()` do: past
+    /// [`PROCESS_MAX_DEPTH`] nested values, `process` overflows Node's
+    /// stack, and so does this, at the same value, after committing what
+    /// `process` commits before it.
     fn commit<S: JsonSink>(&self, sink: &mut S) -> Result<S::Root> {
         let mut frames: Vec<Frame> = Vec::new();
         let mut at = 0;
         loop {
+            // The value at `at` is `frames.len() + 1` deep.
+            if frames.len() >= PROCESS_MAX_DEPTH {
+                return Err(stack_overflow());
+            }
             let node = self.nodes[at];
             match node.kind {
                 Kind::Null => sink.commit_null()?,

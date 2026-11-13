@@ -304,10 +304,14 @@ the others name the fix they need.
     first and overflows at the 4,579th nested value (counting the sample
     itself; Node 24, fresh process), which it reports as the sample's
     parse error (`Syntax error in input JSON <name>: Maximum call stack
-    size exceeded`). The port's `process`, which feeds both the
-    compressed JSON and the running tallies, fails the same way past depth
-    4,578 (`PROCESS_MAX_DEPTH` in `input/compressed_json.rs`). Samples
-    between 1,000 and 4,578 levels deep reach inference and fail there.
+    size exceeded`). The port's `JSON.parse`-semantics reader, which
+    feeds both the compressed JSON and the running tallies, fails the
+    same way past depth 4,578 (`PROCESS_MAX_DEPTH` in
+    `input/compressed_json.rs`): the one-pass reader
+    (`input/compressed_json/from_string.rs`) when it commits the value at
+    that depth, after the values `process` commits before it, and the
+    port of `process` it falls back on. Samples between 1,000 and 4,578
+    levels deep reach inference and fail there.
   `crates/quicktype-core/tests/deep_json.rs` and the CLI's
   `inputs_too_deep_for_node_fail_like_node` pin these rules end to end.
 - **Endless recursion over the type graph.** On a graph that cycles

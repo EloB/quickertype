@@ -547,24 +547,71 @@ fn limits() {
     ));
 }
 
-/// Objects nested a million levels deep are read without recursion, and a
-/// large reordered object without quadratic work.
+/// Objects nested a million levels deep are read without recursion (and
+/// fail as `process` does), and a large reordered object without
+/// quadratic work.
 #[test]
 fn deep_and_wide() {
     let n = 1_000_000;
     let mut deep = r#"{"a":"#.repeat(n);
     deep.push('1');
     deep.push_str(&"}".repeat(n));
-    assert!(matches!(
+    assert_eq!(
         reader(None, false).parse_string(&deep),
-        Ok(Value::Object(_))
-    ));
+        Err(ParseError::Quicktype(stack_overflow()))
+    );
     let wide: String = (0..200_000)
         .rev()
         .map(|i| format!(r#""{i}": {{"{i}": {i}, "k": {i}}}"#))
         .collect::<Vec<_>>()
         .join(",");
     same(&[&format!("{{{wide}}}")], None, false);
+}
+
+/// `process` overflows Node's stack at its 4,579th nested value: the
+/// reader fails at the same value, with the same error, after committing
+/// the same values before it (strings interned, objects and arrays that
+/// ended), with or without limits; a syntax error anywhere comes first.
+#[test]
+fn as_deep_as_process_goes() {
+    let m = PROCESS_MAX_DEPTH;
+    let arrays = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
+    let nested = |n: usize, inner: &str| {
+        format!(
+            r#"[{{"k": "v", "n": [1]}}, "s", {}{inner}{}, {{"after": "x"}}]"#,
+            r#"{"a":["#.repeat(n),
+            "]}".repeat(n)
+        )
+    };
+    // `nested(n, …)`: the innermost value is 2n + 2 deep.
+    let deepest = (m - 2) / 2;
+    let samples = [
+        arrays(m),
+        arrays(m + 1),
+        nested(deepest, "1"),
+        nested(deepest, "[]"),
+        nested(deepest, "[1]"),
+        nested(deepest + 1, r#""deep""#),
+        format!("{} x", arrays(m + 1)),
+        format!("[{}", arrays(m + 1)),
+        r#"{"later": ["strings"]}"#.to_owned(),
+    ];
+    let texts: Vec<&str> = samples.iter().map(String::as_str).collect();
+    same(&texts, None, false);
+    let mut r = reader(None, false);
+    let outcomes: Vec<bool> = texts.iter().map(|t| r.parse_string(t).is_ok()).collect();
+    assert_eq!(
+        outcomes,
+        [true, false, true, true, false, false, false, false, true]
+    );
+    assert_eq!(
+        r.parse_string(&arrays(m + 1)),
+        Err(ParseError::Quicktype(stack_overflow()))
+    );
+    // What `process` committed before it overflowed stays in the tables,
+    // as in TypeScript.
+    let strings = r.to_tables(&[]).0.strings;
+    assert!(strings.starts_with(&["v".into(), "k".into(), "n".into(), "s".into()]));
 }
 
 /// The eight-bytes-at-a-time scan stops exactly where the byte-wise one
