@@ -89,7 +89,12 @@ Each case runs in up to three modes (`--modes`, chosen per seed):
   directory holding the same input files (one top-level: its samples as
   files; several: a directory of `<name>.json`); exit code, stdout, stderr
   and written files are compared. This covers the native-only code: argument
-  parsing, the Rust stream-json reader, file output.
+  parsing, the Rust stream-json reader, file output. A case runs here only
+  if every file it writes has a name that Windows, macOS and Linux can all
+  hold (`file-names.mjs`: no `: * ? " < > |` or control characters, no
+  device names such as `CON` or `nul.json`, NFC, no two equal but for
+  case), since a recorded case is checked out on all three; `record.mjs`
+  refuses a case whose output files are not named so.
 
 - **chain** (JSON and Postman cases, `--chain-rate`, default 15%): the
   reference turns the case into a JSON Schema (target language `schema`),
