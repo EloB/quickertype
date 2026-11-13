@@ -16,6 +16,26 @@ fn panic(message: String) -> QuickTypeError {
     QuickTypeError::internal(message)
 }
 
+/// The deepest value `JSON.stringify` writes here before Node's stack
+/// overflows: the reference CLI (Node 24) writes a result nested 5,987
+/// values deep (counting the result itself) and throws `RangeError:
+/// Maximum call stack size exceeded` at 5,988.
+const STRINGIFY_MAX_DEPTH: usize = 5_987;
+
+/// `JSON.stringify(value, null, gap)`, or V8's `RangeError` where it
+/// overflows Node's stack. (Without the limit, a response nested a
+/// million levels deep took the indented text, quadratic in the depth,
+/// all the memory there was.)
+fn stringify(value: &JsonValue, gap: Option<&str>) -> Result<String, QuickTypeError> {
+    if json::depth(value) > STRINGIFY_MAX_DEPTH {
+        return Err(QuickTypeError::js_exception(
+            JsErrorName::RangeError,
+            "Maximum call stack size exceeded",
+        ));
+    }
+    Ok(json::stringify(value, gap))
+}
+
 /// `headerRegExp.exec(str)` with `/^([^:]+):\s*(.*)$/`: the name (up to
 /// the first colon, not empty) and the value (after any whitespace, to the
 /// end, without line terminators).
@@ -99,16 +119,16 @@ pub async fn introspect_server(
     {
         return Err(panic(format!(
             "Errors in introspection query result: {}",
-            json::stringify(errors, None)
+            stringify(errors, None)?
         )));
     }
     if !get(&result, "data")?.is_some_and(json::is_truthy) {
         return Err(panic(format!(
             "No introspection query result data found, server responded with: {}",
-            json::stringify(&result, None)
+            stringify(&result, None)?
         )));
     }
-    Ok(json::stringify(&result, Some("  ")))
+    stringify(&result, Some("  "))
 }
 
 #[cfg(test)]
@@ -133,7 +153,8 @@ mod tests {
 
     /// Serves one request on a free port with a 200 JSON `response`;
     /// returns the port and where the request arrives.
-    fn serve_once(response: &'static str) -> (u16, mpsc::Receiver<ReceivedRequest>) {
+    fn serve_once(response: impl Into<String>) -> (u16, mpsc::Receiver<ReceivedRequest>) {
+        let response = response.into();
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let (sender, receiver) = mpsc::channel();
@@ -211,6 +232,53 @@ mod tests {
             panic!("a query");
         };
         assert!(query.contains("__schema"));
+    }
+
+    /// Where Node's `JSON.stringify` overflows its stack, with the result
+    /// or its errors (a million levels used to run out of memory). On a
+    /// thread with the CLI's stack: writing 5,987 levels recurses.
+    #[test]
+    fn deep_results_overflow_like_node() {
+        std::thread::Builder::new()
+            .stack_size(256 << 20)
+            .spawn(deep_results_overflow_like_node_on_a_large_stack)
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    fn deep_results_overflow_like_node_on_a_large_stack() {
+        let introspect = |response: String| {
+            let (port, _received) = serve_once(response);
+            block_on(introspect_server(
+                &StdIo,
+                &format!("http://127.0.0.1:{port}/graphql"),
+                "POST",
+                &[],
+            ))
+            .map(|text| text.len())
+            .map_err(|e| e.to_string())
+        };
+        let nested =
+            |key: &str, n: usize| format!(r#"{{"{key}":{}1{}}}"#, "[".repeat(n), "]".repeat(n));
+        // 5,987 levels: the result, 5,985 arrays and the number in them.
+        assert!(introspect(nested("data", 5_985)).is_ok());
+        // Only the errors are written: 5,986 arrays and the number.
+        assert!(
+            introspect(nested("errors", 5_986))
+                .unwrap_err()
+                .starts_with("Internal error: Errors in introspection query result: [[")
+        );
+        for response in [
+            nested("data", 5_986),
+            nested("errors", 5_987),
+            nested("data", 1_000_000),
+        ] {
+            assert_eq!(
+                introspect(response),
+                Err("Maximum call stack size exceeded".to_owned())
+            );
+        }
     }
 
     #[test]

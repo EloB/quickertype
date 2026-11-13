@@ -406,7 +406,11 @@ the others name the fix they need.
     query (`makeIRTypeFromSelectionSet`, `makeIRTypeFromFieldNode`) grows
     the native stack without a limit of its own; TypeScript fails deep
     queries later, in graph rewriting (see "Endless recursion over the
-    type graph").
+    type graph"). `--graphql-introspect` writes the server's result with
+    `JSON.stringify`, which overflows past 5,987 nested values (the result
+    or its `errors` counted from the top, Node 24); the port fails at the
+    same depth with the `RangeError` (a response nested a million levels
+    deep used to run the port out of memory).
   - Names in the introspection JSON that are not strings (a number or
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them

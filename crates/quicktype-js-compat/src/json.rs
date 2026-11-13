@@ -303,6 +303,22 @@ pub fn is_truthy_number(x: f64) -> bool {
     x != 0.0 && !x.is_nan()
 }
 
+/// How deeply `value` nests: 1 for a scalar or an empty array or object,
+/// one more for each level of arrays and objects. Iterative.
+pub fn depth(value: &JsonValue) -> usize {
+    let mut deepest = 0;
+    let mut pending = vec![(value, 1)];
+    while let Some((value, depth)) = pending.pop() {
+        deepest = deepest.max(depth);
+        match value {
+            JsonValue::Array(items) => pending.extend(items.iter().map(|v| (v, depth + 1))),
+            JsonValue::Object(map) => pending.extend(map.values().map(|v| (v, depth + 1))),
+            _ => {}
+        }
+    }
+    deepest
+}
+
 /// `!!value`: JavaScript truthiness. `null`, `false`, `0`, `-0`, `NaN` and
 /// `""` are falsy; arrays and objects (even empty ones) are truthy.
 pub fn is_truthy(value: &JsonValue) -> bool {
@@ -433,6 +449,18 @@ pub(crate) fn array_index(key: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn depth_counts_levels() {
+        let depth_of = |text: &str| depth(&parse(text).unwrap());
+        assert_eq!(depth_of("1"), 1);
+        assert_eq!(depth_of("[]"), 1);
+        assert_eq!(depth_of("{}"), 1);
+        assert_eq!(depth_of("[1]"), 2);
+        assert_eq!(depth_of(r#"[1, {"a": [[]], "b": 2}, []]"#), 4);
+        let n = 1_000_000;
+        assert_eq!(depth_of(&format!("{}{}", "[".repeat(n), "]".repeat(n))), n);
+    }
 
     #[test]
     fn clones_keep_order_and_never_recurse() {
