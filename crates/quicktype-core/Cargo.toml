@@ -18,6 +18,7 @@ http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
 [dependencies]
 indexmap.workspace = true
 quicktype-js-compat.workspace = true
+regex.workspace = true
 stacker.workspace = true
 ureq = { workspace = true, optional = true }
 url = { workspace = true, optional = true }

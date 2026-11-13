@@ -123,7 +123,7 @@ impl<'a> CirceRenderer<'a> {
     fn renamed_properties(&mut self, c: TypeRef) -> Result<Vec<(Name, String)>> {
         let mut renamed = Vec::new();
         self.for_each_class_property(c, BlankLinePosition::None, |_, name, json_name, _, _| {
-            if property_name_needs_mapping(json_name) {
+            if property_name_needs_mapping(json_name)? {
                 renamed.push((name, json_name.to_owned()));
             }
             Ok(())

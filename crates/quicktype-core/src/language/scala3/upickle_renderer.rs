@@ -163,7 +163,7 @@ impl<'a> Scala3RendererFamily<'a> for UpickleRenderer<'a> {
 
     /// `@upickle.implicits.key(...)` for a JSON name the field can't have.
     fn emit_property_annotation(&mut self, _name: Name, json_name: &str) -> Result<()> {
-        if property_name_needs_mapping(json_name) {
+        if property_name_needs_mapping(json_name)? {
             self.emit_line(format!(
                 "@upickle.implicits.key(\"{}\")",
                 utf16_string_escape(json_name)

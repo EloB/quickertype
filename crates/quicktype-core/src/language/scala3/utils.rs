@@ -3,14 +3,18 @@
 //! Scala identifier styling, backtick quoting and the union member order of
 //! the decoders.
 
-use quicktype_js_compat::unicode::{self, GeneralCategory};
-use quicktype_js_compat::whitespace;
+use std::sync::LazyLock;
 
+use quicktype_js_compat::whitespace;
+use regex::Regex;
+
+use crate::messages::Result;
 use crate::naming::{Namer, fun_prefix_namer};
 use crate::support::strings::{
     all_lower_word_style, all_upper_word_style, combine_words, first_upper_word_style, is_digit,
     is_letter_or_underscore, is_numeric, legalize_characters, split_into_words,
 };
+use crate::support::support::panic;
 use crate::ty::transformed_string_type::TypeKind;
 
 use super::constants::{FORBIDDEN_PROPERTY_NAMES, INVALID_SYMBOLS, KEYWORDS};
@@ -52,41 +56,26 @@ pub fn backticked_name(name: &str) -> String {
     }
 }
 
-fn is_letter_category(c: GeneralCategory) -> bool {
-    use GeneralCategory::*;
-    matches!(c, Lu | Ll | Lt | Lm | Lo)
-}
-
-fn is_mark_or_number_category(c: GeneralCategory) -> bool {
-    use GeneralCategory::*;
-    matches!(c, Mn | Mc | Me | Nd | Nl | No)
-}
+/// `/^[\p{L}_$][\p{L}\p{M}\p{N}_$]*$/u`.
+///
+/// V8 evaluates `\p{...}` with its own, current Unicode data, so this uses
+/// the `regex` crate's (current) tables rather than `unicode-properties`'
+/// Unicode 12.0 ones (see `docs/PARITY.md`, Known gaps).
+static PLAIN_IDENTIFIER: LazyLock<std::result::Result<Regex, regex::Error>> =
+    LazyLock::new(|| Regex::new(r"\A[\p{L}_$][\p{L}\p{M}\p{N}_$]*\z"));
 
 /// `/^[\p{L}_$][\p{L}\p{M}\p{N}_$]*$/u.test(s)`.
-///
-/// The categories come from `unicode-properties` (Unicode 12.0), where V8
-/// uses its own, newer Unicode version; they differ only for characters
-/// assigned since.
-fn is_plain_identifier(s: &str) -> bool {
-    let mut chars = s.chars();
-    let Some(first) = chars.next() else {
-        return false;
-    };
-    let category = |c: char| unicode::get_category(u32::from(c));
-    let start_ok = first == '_' || first == '$' || is_letter_category(category(first));
-    start_ok
-        && chars.all(|c| {
-            c == '_'
-                || c == '$'
-                || is_letter_category(category(c))
-                || is_mark_or_number_category(category(c))
-        })
+fn is_plain_identifier(s: &str) -> Result<bool> {
+    match &*PLAIN_IDENTIFIER {
+        Ok(regex) => Ok(regex.is_match(s)),
+        Err(e) => panic(format!("Invalid identifier regex: {e}")),
+    }
 }
 
 /// `propertyNameNeedsMapping(jsonName)`: whether a property's JSON name
 /// can't be the Scala field name itself (even in backticks), so the
 /// renderer uses its styled name and maps it to the JSON name.
-pub fn property_name_needs_mapping(json_name: &str) -> bool {
+pub fn property_name_needs_mapping(json_name: &str) -> Result<bool> {
     let rendered = backticked_name(json_name);
     let can_be_backticked = rendered.starts_with('`')
         && rendered.ends_with('`')
@@ -100,9 +89,9 @@ pub fn property_name_needs_mapping(json_name: &str) -> bool {
                 || code_point == 0x2029
         });
 
-    json_name == "_"
-        || (!is_plain_identifier(json_name) && !can_be_backticked)
-        || FORBIDDEN_PROPERTY_NAMES.contains(&json_name)
+    Ok(json_name == "_"
+        || (!is_plain_identifier(json_name)? && !can_be_backticked)
+        || FORBIDDEN_PROPERTY_NAMES.contains(&json_name))
 }
 
 /// `wrapOption(s, optional)`.
@@ -228,15 +217,18 @@ mod tests {
 
     #[test]
     fn maps_property_names_like_typescript() {
-        assert!(!property_name_needs_mapping("foo"));
-        assert!(!property_name_needs_mapping("a b"));
-        assert!(!property_name_needs_mapping("ünïcode"));
-        assert!(property_name_needs_mapping("_"));
-        assert!(property_name_needs_mapping("a`b"));
-        assert!(property_name_needs_mapping("a\\b"));
-        assert!(property_name_needs_mapping("a\nb"));
-        assert!(property_name_needs_mapping("toString"));
-        assert!(property_name_needs_mapping(""));
+        assert!(!property_name_needs_mapping("foo").unwrap());
+        assert!(!property_name_needs_mapping("a b").unwrap());
+        assert!(!property_name_needs_mapping("ünïcode").unwrap());
+        assert!(property_name_needs_mapping("_").unwrap());
+        assert!(property_name_needs_mapping("a`b").unwrap());
+        assert!(property_name_needs_mapping("a\\b").unwrap());
+        assert!(property_name_needs_mapping("a\nb").unwrap());
+        assert!(property_name_needs_mapping("toString").unwrap());
+        assert!(property_name_needs_mapping("").unwrap());
+        // Assigned after Unicode 12 (a letter and a mark), as V8 knows them.
+        assert!(!property_name_needs_mapping("\u{31350}").unwrap());
+        assert!(!property_name_needs_mapping("x\u{1E4EC}").unwrap());
     }
 
     #[test]

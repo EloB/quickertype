@@ -389,7 +389,7 @@ pub mod scala3_methods {
                 }
 
                 r.emit_property_annotation(name, json_name)?;
-                let field_name: Source = if property_name_needs_mapping(json_name) {
+                let field_name: Source = if property_name_needs_mapping(json_name)? {
                     name.into()
                 } else {
                     backticked_name(json_name).into()

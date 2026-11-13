@@ -262,3 +262,10 @@ the others name the fix they need.
   exit 2 as not implemented. Style names that are other properties of the
   chalk object (`level`, `toString`, …) fail with JS `TypeError`s in the
   original; the port reports them as `Unknown Chalk style`.
+- **Unicode version of `\p{...}` regexes.** The Scala 3 renderer's
+  `propertyNameNeedsMapping` tests a JSON name with
+  `/^[\p{L}_$][\p{L}\p{M}\p{N}_$]*$/u`, which V8 evaluates with Node's
+  current Unicode data. The port uses the `regex` crate, whose tables follow
+  its own (current) Unicode version; the two can still disagree for
+  characters assigned in a Unicode version only one of them has. Naming
+  (`unicode-properties`, Unicode 12.0) is unaffected.
