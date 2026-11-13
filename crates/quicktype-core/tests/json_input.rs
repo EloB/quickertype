@@ -9,8 +9,9 @@
 //! `--debug print-graph`) plus the properties of every class, or the
 //! error. This test rebuilds every graph with
 //! the Rust port and compares the prints byte for byte. It also replays the
-//! recorded date/time recognizer answers, URI attributes and the inference
-//! hooks of every target language. Node is not needed.
+//! recorded date/time recognizer answers, URI attributes, Postman
+//! collection sources and the inference hooks of every target language.
+//! Node is not needed.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -28,6 +29,7 @@ use quicktype_core::inference::{INFERENCE_FLAGS, InferenceFlags};
 use quicktype_core::input::compressed_json::{CompressedJson, CompressedJsonFromString};
 use quicktype_core::input::compressed_json_from_stream::CompressedJsonFromStream;
 use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
+use quicktype_core::input::postman_collection::sources_from_postman_collection;
 use quicktype_core::language::all::{default_target_languages, language_named};
 use quicktype_core::language::kotlin::utils::KotlinDateTimeRecognizer;
 use quicktype_core::language::swift::utils::SwiftDateTimeRecognizer;
@@ -520,4 +522,30 @@ fn language_inference_hooks_match_reference() {
             );
         }
     }
+}
+
+#[test]
+fn postman_collections_match_reference() {
+    let mut failures = Vec::new();
+    for vector in load("postman.json").as_array().expect("vectors") {
+        let input = vector["input"].as_str().expect("input");
+        let actual = match sources_from_postman_collection(input, Some("collection.json")) {
+            Err(e) => serde_json::json!({ "input": input, "error": e.user_message() }),
+            Ok(result) => serde_json::json!({
+                "input": input,
+                "sources": result.sources.iter().map(|s| {
+                    let mut source = serde_json::json!({ "name": s.name, "samples": s.samples });
+                    if let Some(description) = &s.description {
+                        source["description"] = description.clone().into();
+                    }
+                    source
+                }).collect::<Vec<_>>(),
+                "description": result.description,
+            }),
+        };
+        if &actual != vector {
+            failures.push(format!("expected {vector}\n  actual {actual}"));
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
 }

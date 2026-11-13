@@ -165,3 +165,41 @@ export const uriInputs = [
     "http://a/b.ﬀ", "http://a/b%20c.png", "http://a/b?c=d.png", "http://a:65535/b.c", "http://a:65536/b.c",
     "ftp://user:pass@host:21/file.txt", "http://a/b\u2028c.d", "http://a/b.c\u2028",
 ];
+
+// Postman collections for sourcesFromPostmanCollection. Only JSON texts:
+// the YAML fallback of parseJSON is not ported yet (TODO(parse-json)).
+const request = (name, extra = {}) => ({ name, response: [{ body: '{"a":1}' }], ...extra });
+export const postmanInputs = [
+    "null", "1", '"x"', "[]", "[1, {}]", "{}", '{"item": 1}', '{"item": []}', '{"item": [null]}',
+    '{"item": [1, "x", [], {}]}', "﻿{}",
+    JSON.stringify(request("plain")),
+    JSON.stringify(request("invalid bodies", { response: [{ body: "nope" }, { body: 1 }, {}, [], 2, { body: "[1]" }] })),
+    JSON.stringify(request("no valid bodies", { response: [{ body: "{" }] })),
+    JSON.stringify({ name: "null response", response: [null] }),
+    JSON.stringify({ name: 5, response: [{ body: "1" }] }),
+    JSON.stringify({ name: "no array", response: { body: "1" } }),
+    JSON.stringify(request("get", { request: { method: "GET", url: { raw: "http://h/p?q" }, description: "desc" } })),
+    JSON.stringify(request("url string", { request: { method: "POST", url: "http://h" } })),
+    JSON.stringify(request("url null", { request: { method: "POST", url: null } })),
+    JSON.stringify(request("url null no method", { request: { url: null } })),
+    JSON.stringify(request("url array", { request: { method: "GET", url: ["raw"] } })),
+    JSON.stringify(request("raw types", { request: { method: 1.5e21, url: { raw: [1, null, [2, [3]], { x: 1 }, true] } } })),
+    JSON.stringify(request("method null", { request: { method: null, url: { raw: null } } })),
+    JSON.stringify(request("request array", { request: ["GET"] })),
+    JSON.stringify(request("request falsy", { request: "" })),
+    JSON.stringify(request("description not string", { request: { description: 5 } })),
+    JSON.stringify({
+        info: { description: "  top  \n" },
+        item: [
+            { info: { description: "folder" }, item: [request("a"), request("b", { response: [{ body: "2" }, { body: "true" }] })] },
+            request("a", { request: { description: "later a" } }),
+            { item: [], info: { description: 7 } },
+            { item: [request("c")], info: ["description"] },
+            { item: [request("d")], info: { description: "" } },
+        ],
+        name: "the collection",
+        response: [{ body: "{}" }],
+    }),
+    JSON.stringify({ info: { description: " ﻿ " }, item: [request("x")] }),
+    JSON.stringify({ item: [{ item: [{ item: [request("deep")] }], info: { description: "mid" } }], info: { description: "root" } }),
+];

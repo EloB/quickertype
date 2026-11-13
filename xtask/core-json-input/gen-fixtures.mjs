@@ -29,6 +29,7 @@
 //   edge.json           the edge cases with their expected output
 //   recognizers.json    date/time recognizer answers (default, Kotlin, Swift)
 //   uri-attributes.json uriInferenceAttributesProducer results
+//   postman.json        sourcesFromPostmanCollection results
 //   language-hooks.json the inference hooks of every target language
 //
 // crates/quicktype-core/tests/json_input.rs replays them without Node.
@@ -39,7 +40,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { edgeCases, recognizerInputs, uriInputs } from "./cases.mjs";
+import { edgeCases, postmanInputs, recognizerInputs, uriInputs } from "./cases.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const quicktype = resolve(process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"));
@@ -56,6 +57,7 @@ const { KotlinDateTimeRecognizer } = core("language/Kotlin/utils.js");
 const { SwiftDateTimeRecognizer } = core("language/Swift/utils.js");
 const { uriInferenceAttributesProducer } = core("attributes/URIAttributes.js");
 const { inferenceFlagNames, inferenceFlags } = core("Inference.js");
+const { sourcesFromPostmanCollection } = core("input/PostmanCollection.js");
 const { CompressedJSONFromStream } = require(join(quicktype, "dist/CompressedJSONFromStream.js"));
 const fs = require("node:fs");
 
@@ -236,6 +238,17 @@ async function main() {
         return { input, attributes: value === undefined ? null : [[...value[0]], [...value[1]]] };
     });
     writeFileSync(join(out, "uri-attributes.json"), `${JSON.stringify(uriVectors, null, 1)}\n`);
+
+    // Postman collections.
+    const postman = postmanInputs.map((input) => {
+        try {
+            const { sources, description } = sourcesFromPostmanCollection(input, "collection.json");
+            return { input, sources, description: description ?? null };
+        } catch (e) {
+            return { input, error: e.message };
+        }
+    });
+    writeFileSync(join(out, "postman.json"), `${JSON.stringify(postman, null, 1)}\n`);
 
     // Inference hooks of every language.
     const optionSets = [
