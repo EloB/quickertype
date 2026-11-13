@@ -8,11 +8,11 @@
 //!    recorded as a *tape*: one node per value and per key, in source
 //!    order. A string node points into the text (or, if it has escapes,
 //!    into a buffer of decoded strings), a number node is already
-//!    classified (`parsedNumberIsDouble`), a key node holds the key
-//!    interned, and an object or array node knows where its content ends.
-//!    Nothing is committed in this pass, so a syntax error leaves the
-//!    compressed form as it was (only keys have been interned, which no
-//!    value refers to).
+//!    classified (`parsedNumberIsDouble`), a key node holds the key's id
+//!    in the reader's own key table (not the string table), and an object
+//!    or array node knows where its content ends. Nothing is committed in
+//!    this pass, so a sample that is not JSON, or that is declined,
+//!    leaves the compressed form as it was.
 //! 2. **Commit.** The tape is replayed into the builder, as `process` walks
 //!    the value `JSON.parse` returns: an object's members in JavaScript
 //!    own-property order, which is source order unless the object has a
@@ -23,27 +23,38 @@
 //!    would (array-index keys first, ascending; then the others where they
 //!    first appeared; a repeated key takes its last value), and the values
 //!    a later duplicate replaced are never committed, as in TypeScript.
+//!    A key is interned in the string table as `commitValue` interns it,
+//!    after its value (so the string table is TypeScript's, string for
+//!    string), and only for the members `JSON.parse` keeps: one
+//!    `"__proto__"` for an object with two.
 //!
 //! On a syntax error, the message is that of
 //! [`quicktype_js_compat::json::parse`], the port of V8's parser. Should
 //! that parser accept a text this reader rejects, the value it returns is
 //! processed instead: the grammar is V8's either way.
 //!
-//! Duplicate keys are found without a set per object: every interned
-//! string has a *stamp*, the serial number of the last object that had it
-//! as a key, and objects are numbered as they open. A key whose stamp is
-//! the object's own serial is a duplicate; one with a smaller stamp is new
-//! to the object (an object that started earlier and is still open cannot
+//! Duplicate keys are found without a set per object: every key of the
+//! key table has a *stamp*, the serial number of the last object that had
+//! it, and objects are numbered as they open. A key whose stamp is the
+//! object's own serial is a duplicate; one with a smaller stamp is new to
+//! the object (an object that started earlier and is still open cannot
 //! add keys while this one is open); one with a larger stamp was used by a
 //! nested object in between, and only then are the object's earlier keys
-//! compared. `"__proto__"`, which is interned anew every time, is tracked
-//! per object.
+//! compared. `"__proto__"`, which TypeScript interns anew every time, is
+//! not in the key table ([`PROTO`]) and is tracked per object.
+//!
+//! After a sample, the tape and the key table are kept for the next one
+//! only while they are small ([`KEEP_NODES`], [`KEEP_KEYS`]); a large
+//! sample's are freed.
 
+use std::hash::BuildHasher as _;
+
+use hashbrown::HashTable;
 use quicktype_js_compat::json::{self as js_json, is_array_index};
 
-use super::{CompressedJson, ParseError, Value};
+use super::{CompressedJson, NO_INDEX, ParseError, Strings, Value};
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{BuildHasher, HashMap};
 
 /// Limits on what [`CompressedJson::read_string_sample`] reads; a sample
 /// beyond them is not read at all ([`ReadStringError::Declined`]).
@@ -89,34 +100,130 @@ pub enum Decline {
     LoneSurrogate,
 }
 
-/// What the reader keeps between samples: the key stamps (see the module
-/// documentation) and buffers worth reusing.
-#[derive(Debug, Default)]
-pub(super) struct StringReaderState {
-    /// By string index: the serial of the last object with that key.
+/// The object keys the reader has read, by key id: the first pass finds
+/// duplicates with them, and the second interns each in the string table
+/// the first time a value under it is committed.
+#[derive(Default)]
+struct Keys {
+    /// The texts, back to back.
+    text: String,
+    /// By key id: where its text is in `text`.
+    spans: Vec<(u32, u32)>,
+    /// Key ids, hashed by text.
+    index: HashTable<u32>,
+    hasher: BuildHasher,
+    /// By key id: its index in the string table, or [`NO_INDEX`] until a
+    /// value under it is committed.
+    interned: Vec<u32>,
+    /// By key id: the serial of the last object with that key.
     stamps: Vec<u32>,
+    /// By position in an object: the id of the last key read there.
+    /// Objects of one shape (an array of records) have the same key at the
+    /// same position, which is then found without hashing it.
+    cache: Vec<u32>,
+}
+
+/// The key id of `"__proto__"`, which is not in [`Keys`]: TypeScript
+/// interns it anew every time (its string index is a plain object).
+const PROTO: u32 = u32::MAX;
+
+/// How many positions [`Keys::cache`] remembers keys at.
+const KEY_CACHE: usize = 64;
+
+/// Tapes of up to this many nodes (48 KiB) are kept for the next sample.
+const KEEP_NODES: usize = 1 << 12;
+
+/// The key table is kept for the next sample while it has at most this
+/// many keys, of at most [`KEEP_KEY_BYTES`] of text.
+const KEEP_KEYS: usize = 1 << 12;
+const KEEP_KEY_BYTES: usize = 1 << 16;
+
+impl Keys {
+    fn get(&self, id: u32) -> &str {
+        if id == PROTO {
+            return "__proto__";
+        }
+        let (start, len) = self.spans[id as usize];
+        &self.text[start as usize..(start + len) as usize]
+    }
+
+    /// The id of `key`, read at member position `position`: the key read
+    /// last at that position, if it is the same text, else looked up (and
+    /// added).
+    fn read(&mut self, position: usize, key: &str) -> u32 {
+        if key == "__proto__" {
+            return PROTO;
+        }
+        if let Some(&id) = self.cache.get(position)
+            && id != PROTO
+            && (id as usize) < self.spans.len()
+            && self.get(id) == key
+        {
+            return id;
+        }
+        let hash = self.hasher.hash_one(key);
+        let found = {
+            let Keys {
+                text, spans, index, ..
+            } = &*self;
+            index
+                .find(hash, |&id| {
+                    let (start, len) = spans[id as usize];
+                    &text[start as usize..(start + len) as usize] == key
+                })
+                .copied()
+        };
+        let id = match found {
+            Some(id) => id,
+            None => self.add(key, hash),
+        };
+        if position < KEY_CACHE {
+            if position >= self.cache.len() {
+                self.cache.resize(position + 1, PROTO);
+            }
+            self.cache[position] = id;
+        }
+        id
+    }
+
+    fn add(&mut self, key: &str, hash: u64) -> u32 {
+        let id = self.spans.len() as u32;
+        self.spans.push((self.text.len() as u32, key.len() as u32));
+        self.text.push_str(key);
+        self.interned.push(NO_INDEX);
+        self.stamps.push(0);
+        let Keys {
+            text,
+            spans,
+            index,
+            hasher,
+            ..
+        } = self;
+        index.insert_unique(hash, id, |&id| {
+            let (start, len) = spans[id as usize];
+            hasher.hash_one(&text[start as usize..(start + len) as usize])
+        });
+        id
+    }
+}
+
+/// What the reader keeps between samples: the key table, the serial of
+/// the last object (see the module documentation), and the last tape.
+#[derive(Default)]
+pub(super) struct StringReaderState {
+    keys: Keys,
     /// The serial of the last object opened.
     serial: u32,
     /// The tape of the last sample, emptied, if it was small.
     spare_nodes: Vec<Node>,
-    /// By position in an object: the string index of the last key read
-    /// there. Objects of one shape (an array of records) have the same key
-    /// at the same position, which is then found without hashing it.
-    key_cache: Vec<u32>,
 }
-
-/// How many positions [`StringReaderState::key_cache`] remembers keys at.
-const KEY_CACHE: usize = 64;
-
-/// Tapes up to this many nodes are kept for the next sample.
-const SPARE_NODES: usize = 1 << 16;
 
 impl StringReaderState {
     /// Numbers objects from 1 again if a sample of `len` bytes (at most
     /// `len / 2` objects) could run out of serials.
     fn reserve_serials(&mut self, len: usize) {
         if u64::from(self.serial) + len as u64 / 2 + 1 >= u64::from(u32::MAX) {
-            self.stamps.fill(0);
+            self.keys.stamps.fill(0);
             self.serial = 0;
         }
     }
@@ -128,11 +235,45 @@ impl StringReaderState {
 
     /// Stamps `key` with `serial` and returns its previous stamp.
     fn stamp(&mut self, key: u32, serial: u32) -> u32 {
-        let index = key as usize;
-        if index >= self.stamps.len() {
-            self.stamps.resize(index + 1, 0);
+        std::mem::replace(&mut self.keys.stamps[key as usize], serial)
+    }
+
+    /// The text of key `id`.
+    pub(super) fn key_text(&self, id: u32) -> &str {
+        self.keys.get(id)
+    }
+
+    /// `makeString(key)` for key `id`: its index in `strings`, interned the
+    /// first time (`"__proto__"` every time).
+    pub(super) fn intern_key(&mut self, id: u32, strings: &mut Strings) -> u32 {
+        if id == PROTO {
+            return strings.intern("__proto__");
         }
-        std::mem::replace(&mut self.stamps[index], serial)
+        let Keys {
+            text,
+            spans,
+            interned,
+            ..
+        } = &mut self.keys;
+        let index = &mut interned[id as usize];
+        if *index == NO_INDEX {
+            let (start, len) = spans[id as usize];
+            *index = strings.intern(&text[start as usize..(start + len) as usize]);
+        }
+        *index
+    }
+
+    /// After a sample: keeps its tape and the key table for the next one
+    /// only if they are small.
+    fn finish_sample(&mut self, mut nodes: Vec<Node>) {
+        if nodes.capacity() <= KEEP_NODES {
+            nodes.clear();
+            self.spare_nodes = nodes;
+        }
+        if self.keys.spans.len() > KEEP_KEYS || self.keys.text.len() > KEEP_KEY_BYTES {
+            self.keys = Keys::default();
+            self.serial = 0;
+        }
     }
 }
 
@@ -150,7 +291,7 @@ enum Kind {
     Text,
     /// A string with escapes, decoded: `a..a + b` in the decoded buffer.
     Decoded,
-    /// An object key, interned as string `a`.
+    /// An object key: key `a` of the key table, or [`PROTO`].
     Key,
     /// An object; its content (keys and values) ends before node `a`; `b`
     /// is 1 if it is reordered.
@@ -206,31 +347,6 @@ const STRING_STOP: [bool; 256] = {
     table[b'\\' as usize] = true;
     table
 };
-
-/// `internString(key)` for the key at member position `position`: the key
-/// read last at that position, if it is the same text, else interned (and
-/// remembered there).
-fn intern_key(cjson: &mut CompressedJson, position: usize, key: &str) -> u32 {
-    // "__proto__" is interned anew every time.
-    if key == "__proto__" {
-        return cjson.strings.intern(key);
-    }
-    let cached = cjson.string_reader.key_cache.get(position).copied();
-    if let Some(index) = cached
-        && cjson.strings.get(index as usize) == Some(key)
-    {
-        return index;
-    }
-    let index = cjson.strings.intern(key);
-    let cache = &mut cjson.string_reader.key_cache;
-    if position < KEY_CACHE {
-        if position >= cache.len() {
-            cache.resize(position + 1, u32::MAX);
-        }
-        cache[position] = index;
-    }
-    index
-}
 
 /// Whether a byte of `word` is `"`, `\\` or a control character.
 fn has_string_stop(word: u64) -> bool {
@@ -485,14 +601,15 @@ impl<'t> Recorder<'t> {
         Ok(())
     }
 
-    /// Interns `key` and notes whether it makes `object` reordered.
+    /// The id of `key` in the key table; notes whether it makes `object`
+    /// reordered.
     fn check_key(&self, cjson: &mut CompressedJson, object: &mut OpenObject, key: &str) -> u32 {
-        let index = intern_key(cjson, object.members, key);
+        let index = cjson.string_reader.keys.read(object.members, key);
         object.members += 1;
         if object.reordered {
             return index;
         }
-        if key == "__proto__" {
+        if index == PROTO {
             object.reordered = object.has_proto;
             object.has_proto = true;
         } else {
@@ -795,20 +912,20 @@ impl Tape<'_> {
     /// array-index keys ascending, then the other keys where they first
     /// appeared, each with its last value (`CreateDataProperty` for each
     /// member in source order).
-    fn js_order(&self, cjson: &CompressedJson, node: usize) -> Result<Vec<(u32, usize)>> {
+    fn js_order(&self, cjson: &CompressedJson, node: usize) -> Vec<(u32, usize)> {
         let end = self.nodes[node].a as usize;
         let mut members: Vec<(Option<u32>, u32, usize)> = Vec::new();
-        let mut positions: HashMap<&str, usize> = HashMap::default();
+        let mut positions: HashMap<u32, usize> = HashMap::default();
         let mut i = node + 1;
         while i < end {
             let key = self.nodes[i].a;
             let value = i + 1;
             i = self.after(value);
-            let text = cjson.string_at(key)?;
-            match positions.get(text) {
+            match positions.get(&key) {
                 Some(&position) => members[position].2 = value,
                 None => {
-                    positions.insert(text, members.len());
+                    positions.insert(key, members.len());
+                    let text = cjson.string_reader.key_text(key);
                     members.push((array_index(text), key, value));
                 }
             }
@@ -818,10 +935,10 @@ impl Tape<'_> {
             Some(n) => (0, n),
             None => (1, 0),
         });
-        Ok(members
+        members
             .into_iter()
             .map(|(_, key, value)| (key, value))
-            .collect())
+            .collect()
     }
 
     /// Commits the sample, as `process(json)` and `finish()` do.
@@ -845,7 +962,7 @@ impl Tape<'_> {
                     cjson.push_object_context();
                     frames.push(if node.b != 0 {
                         Frame::Reordered {
-                            members: self.js_order(cjson, at)?,
+                            members: self.js_order(cjson, at),
                             next: 0,
                         }
                     } else {
@@ -885,7 +1002,7 @@ impl Tape<'_> {
                             continue;
                         }
                         if *object {
-                            cjson.set_property_key_index(self.nodes[*next].a)?;
+                            cjson.set_property_key_read(self.nodes[*next].a)?;
                             *next += 1;
                         }
                         at = *next;
@@ -899,7 +1016,7 @@ impl Tape<'_> {
                             continue;
                         };
                         *next += 1;
-                        cjson.set_property_key_index(key)?;
+                        cjson.set_property_key_read(key)?;
                         at = value;
                         break;
                     }
@@ -946,11 +1063,7 @@ impl CompressedJson {
                     .map_err(ReadStringError::Parse)
             }
         };
-        if nodes.capacity() <= SPARE_NODES {
-            let mut nodes = nodes;
-            nodes.clear();
-            self.string_reader.spare_nodes = nodes;
-        }
+        self.string_reader.finish_sample(nodes);
         result
     }
 

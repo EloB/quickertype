@@ -1,6 +1,7 @@
 //! The one-pass reader against reading the value whole (the port of V8's
 //! `JSON.parse`, then `process`): the same root values, the same objects
-//! and arrays in the same order, the same strings, and the same errors.
+//! and arrays in the same order, the same string table, and the same
+//! errors; and both against the tables TypeScript builds.
 
 use std::fmt::Write as _;
 
@@ -63,18 +64,102 @@ fn same(samples: &[&str], range: Option<IntegerRange>, handle_refs: bool) {
         let b = whole.parse_string_value(sample);
         match (&a, &b) {
             (Ok(x), Ok(y)) => {
-                // Strings are interned in another order (keys first), so
-                // only their texts compare.
-                if !matches!(x, Value::InternedString(_) | Value::TransformedString(_)) {
-                    assert_eq!(x, y, "root of {sample:?}");
-                }
+                assert_eq!(x, y, "root of {sample:?}");
                 assert_eq!(dump(&fast, *x), dump(&whole, *y), "value of {sample:?}");
             }
             (Err(x), Err(y)) => assert_eq!(x, y, "error of {sample:?}"),
             _ => panic!("{sample:?}: {a:?} against {b:?}"),
         }
-        assert_eq!(fast.counts(), whole.counts(), "tables after {sample:?}");
+        assert_eq!(
+            fast.table_counts(),
+            whole.table_counts(),
+            "tables after {sample:?}"
+        );
     }
+    // Strings included, in the same order.
+    assert_eq!(fast.to_tables(&[]), whole.to_tables(&[]));
+}
+
+/// The tables and root values (`None` for an error) TypeScript's
+/// `CompressedJSONFromString` has after `parseSync` of each sample.
+fn typescript_tables(
+    samples: &[&str],
+    strings: &[&str],
+    objects: &[&[i32]],
+    arrays: &[&[i32]],
+    roots: &[Option<i32>],
+) {
+    let mut r = reader(Some(INT64_RANGE.clone()), false);
+    let values: Vec<Option<Value>> = samples.iter().map(|s| r.parse_string(s).ok()).collect();
+    let present: Vec<Value> = values.iter().flatten().copied().collect();
+    let (tables, encoded) = r.to_tables(&present);
+    let mut encoded = encoded.into_iter();
+    let encoded_roots: Vec<Option<i32>> = values
+        .iter()
+        .map(|v| v.and_then(|_| encoded.next()))
+        .collect();
+    assert_eq!(tables.strings, strings, "strings of {samples:?}");
+    let runs = |flat: &[i32], offsets: &[u32]| -> Vec<Vec<i32>> {
+        (0..offsets.len())
+            .map(|i| {
+                let end = offsets.get(i + 1).map_or(flat.len(), |&e| e as usize);
+                flat[offsets[i] as usize..end].to_vec()
+            })
+            .collect()
+    };
+    assert_eq!(runs(&tables.objects, &tables.object_offsets), objects);
+    assert_eq!(runs(&tables.arrays, &tables.array_offsets), arrays);
+    assert_eq!(encoded_roots, roots);
+}
+
+/// Recorded from quicktype's TypeScript (`QUICKTYPE_ENGINE=ts`): a key is
+/// interned after its value, only for the members `JSON.parse` keeps, and
+/// a string format interns its kind's name; nothing of a sample that is
+/// not JSON is interned.
+#[test]
+fn string_tables_are_typescripts() {
+    typescript_tables(
+        &[r#"{"__proto__":1,"__proto__":2}"#],
+        &["__proto__"],
+        &[&[6, 4]],
+        &[],
+        &[Some(8)],
+    );
+    typescript_tables(
+        &[r#"{"a": {"b": 1}, "c": "2020-01-01", "d": ["x", "a"]}"#],
+        &["b", "a", "date", "c", "x", "d"],
+        &[&[6, 4], &[22, 8, 54, 42, 86, 9]],
+        &[&[70, 22]],
+        &[Some(24)],
+    );
+    typescript_tables(
+        &[r#"{"key1": [1, {"key2": "#, r#"{"k": "v"}"#],
+        &["v", "k"],
+        &[&[22, 6]],
+        &[],
+        &[None, Some(8)],
+    );
+    typescript_tables(
+        &[r#"{"b": 1, "2": {"q": "date"}, "a": "2020-01-01", "1": [4], "b": "x"}"#],
+        &["1", "date", "q", "2", "x", "b", "a"],
+        &[&[38, 22], &[6, 9, 54, 8, 86, 70, 102, 26]],
+        &[&[4]],
+        &[Some(24)],
+    );
+    typescript_tables(
+        &[r#"{"__proto__": {"__proto__": 1}, "x": {"__proto__": [2], "__proto__": 3}}"#],
+        &["__proto__", "__proto__", "__proto__", "x"],
+        &[&[6, 4], &[38, 4], &[22, 8, 54, 24]],
+        &[],
+        &[Some(40)],
+    );
+    typescript_tables(
+        &[r#"{"x": "y", "y": "x", "$ref": "x"}"#],
+        &["y", "x", "$ref"],
+        &[&[22, 6, 6, 22, 38, 22]],
+        &[],
+        &[Some(8)],
+    );
 }
 
 #[test]
@@ -382,12 +467,44 @@ fn random_documents_and_mutations() {
 fn syntax_errors_commit_nothing() {
     let mut r = reader(Some(INT64_RANGE.clone()), false);
     r.parse_string(r#"[{"a": [1]}]"#).unwrap();
-    let before = r.counts();
+    let before = r.table_counts();
     for bad in [r#"[{"a": [1]}, {"b": 2}"#, r#"{"c": [[], {}] x"#] {
         assert!(r.parse_string(bad).is_err());
-        assert_eq!(r.counts(), before);
+        assert_eq!(r.table_counts(), before);
     }
     assert_eq!(r.parse_string("[{}]").unwrap(), Value::Array(2));
+    assert_eq!(r.to_tables(&[]).0.strings, ["a"]);
+}
+
+/// The tape and the key table of a large sample are not kept; those of a
+/// small one are, and are reused.
+#[test]
+fn large_buffers_are_not_kept() {
+    let mut r = reader(None, false);
+    let records: Vec<String> = (0..10_000)
+        .map(|i| format!(r#"{{"key{i}": [{i}, {{"k": "v"}}]}}"#))
+        .collect();
+    r.parse_string(&format!("[{}]", records.join(","))).unwrap();
+    assert!(r.string_reader.spare_nodes.capacity() <= KEEP_NODES);
+    assert!(r.string_reader.keys.spans.is_empty());
+    assert_eq!(r.string_reader.serial, 0);
+    r.parse_string(r#"{"a": {"b": 1}}"#).unwrap();
+    assert!(r.string_reader.spare_nodes.capacity() > 0);
+    assert_eq!(r.string_reader.keys.spans.len(), 2);
+    // Keys of a declined sample are no more than read: a later sample
+    // interns them where TypeScript does.
+    let limits = StringSampleLimits {
+        max_depth: Some(2),
+        lone_surrogates: false,
+    };
+    assert!(
+        r.read_string_sample(r#"{"c": {"d": [1]}}"#, limits)
+            .is_err()
+    );
+    let strings = r.to_tables(&[]).0.strings;
+    assert_eq!(strings.len(), 10_004);
+    assert_eq!(strings[..3], ["v", "k", "key0"]);
+    assert_eq!(strings[10_002..], ["b", "a"]);
 }
 
 #[test]
@@ -402,7 +519,7 @@ fn limits() {
         r.read_string_sample("[[{}, 1]]", limits),
         Ok(Value::Array(4))
     );
-    let before = r.counts();
+    let before = r.table_counts();
     for (text, decline) in [
         ("[[[[1]]]]", Decline::TooDeep),
         ("[[[{}]]]", Decline::TooDeep),
@@ -418,7 +535,7 @@ fn limits() {
             Err(ReadStringError::Declined(decline)),
             "{text}"
         );
-        assert_eq!(r.counts(), before, "{text}");
+        assert_eq!(r.table_counts(), before, "{text}");
     }
     assert_eq!(
         r.read_string_sample(r#"["😀"]"#, limits),
