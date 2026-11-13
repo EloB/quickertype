@@ -178,26 +178,60 @@ impl Gatherer<'_> {
     }
 
     /// `processType(ancestor, t, alternativeSuffix)`.
+    ///
+    /// The TypeScript recursion is run with an explicit stack, so deeply
+    /// nested inputs cannot overflow the native stack: `Enter` is the start
+    /// of a call, `Visit` the rest of it, after the call for the
+    /// transformation target returned. Children are pushed in reverse, so
+    /// they are processed in order, each with its whole subtree.
     fn process_type(
         &mut self,
         ancestor: Option<TypeRef>,
         t: TypeRef,
-        alternative_suffix: Option<&str>,
+        alternative_suffix: Option<&'static str>,
     ) -> Result<()> {
-        let names = defined(self.names_for_type.get(&t).cloned())?;
-
-        if !self.pairs_processed.entry(ancestor).or_default().insert(t) {
-            return Ok(());
+        enum Step {
+            Enter(Option<TypeRef>, TypeRef, Option<&'static str>),
+            Visit(Option<TypeRef>, TypeRef, Option<&'static str>, NameSet),
         }
-
-        if let Some(transformation) = transformation_for_type(self.graph, t)? {
-            self.process_type(ancestor, transformation.target_type(), alternative_suffix)?;
+        let mut stack = vec![Step::Enter(ancestor, t, alternative_suffix)];
+        while let Some(step) = stack.pop() {
+            match step {
+                Step::Enter(ancestor, t, suffix) => {
+                    let names = defined(self.names_for_type.get(&t).cloned())?;
+                    if !self.pairs_processed.entry(ancestor).or_default().insert(t) {
+                        continue;
+                    }
+                    stack.push(Step::Visit(ancestor, t, suffix, names));
+                    if let Some(transformation) = transformation_for_type(self.graph, t)? {
+                        stack.push(Step::Enter(ancestor, transformation.target_type(), suffix));
+                    }
+                }
+                Step::Visit(ancestor, t, suffix, names) => {
+                    self.add_type_alternatives(ancestor, t, suffix, &names)?;
+                    let children = self.children_to_process(ancestor, t)?;
+                    for (a, c, s) in children.into_iter().rev() {
+                        stack.push(Step::Enter(a, c, s));
+                    }
+                }
+            }
         }
+        Ok(())
+    }
 
+    /// The part of `processType` that adds `t`'s ancestor and direct
+    /// alternatives.
+    fn add_type_alternatives(
+        &mut self,
+        ancestor: Option<TypeRef>,
+        t: TypeRef,
+        alternative_suffix: Option<&str>,
+        names: &NameSet,
+    ) -> Result<()> {
         let kind = self.graph.kind(t)?;
         let mut ancestor_alternatives = self.ancestor_alternatives_for_type.get(&t).cloned();
         let mut direct_alternatives = self.direct_alternatives_for_type.get(&t).cloned();
-        match &names {
+        match names {
             None => {
                 ancestor_alternatives = Some(None);
                 direct_alternatives = Some(None);
@@ -246,12 +280,23 @@ impl Gatherer<'_> {
         if let Some(d) = direct_alternatives {
             self.direct_alternatives_for_type.insert(t, d);
         }
+        Ok(())
+    }
 
+    /// The recursive calls of `processType` for `t`'s children, in order:
+    /// `(ancestor, child, alternativeSuffix)`.
+    #[allow(clippy::type_complexity)]
+    fn children_to_process(
+        &self,
+        ancestor: Option<TypeRef>,
+        t: TypeRef,
+    ) -> Result<Vec<(Option<TypeRef>, TypeRef, Option<&'static str>)>> {
+        let mut children = Vec::new();
         let ty = self.graph.type_at(t)?;
         if ty.is_object_type() {
             let properties = ty.sorted_property_refs()?;
             for (_, property) in &properties {
-                self.process_type(Some(t), property.type_ref, None)?;
+                children.push((Some(t), property.type_ref, None));
             }
             if let Some(values) = ty.additional_properties()? {
                 let ancestor_for_values = if properties.is_empty() {
@@ -259,28 +304,27 @@ impl Gatherer<'_> {
                 } else {
                     Some(t)
                 };
-                self.process_type(ancestor_for_values, values, Some("value"))?;
+                children.push((ancestor_for_values, values, Some("value")));
             }
         } else {
-            match kind {
-                TypeKind::Array => self.process_type(ancestor, ty.items()?, Some("element"))?,
+            match ty.kind() {
+                TypeKind::Array => children.push((ancestor, ty.items()?, Some("element"))),
                 TypeKind::Union => {
-                    let members = members_sorted_by_kind(self.graph, t)?;
                     let union_has_given_name = NamesTypeAttributeKind
                         .try_get_in_attributes(self.graph.attributes(t)?)
                         .is_some_and(|n| !n.are_inferred());
                     let union_is_ancestor =
                         union_has_given_name || nullable_from_union(self.graph, t)?.is_none();
                     let ancestor_for_members = if union_is_ancestor { Some(t) } else { ancestor };
-                    for member in members {
-                        self.process_type(ancestor_for_members, member, None)?;
+                    for member in members_sorted_by_kind(self.graph, t)? {
+                        children.push((ancestor_for_members, member, None));
                     }
                 }
                 TypeKind::Intersection => return panic("Unknown type intersection"),
                 _ => {}
             }
         }
-        Ok(())
+        Ok(children)
     }
 }
 
@@ -434,4 +478,96 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
         graph.set_attribute_value(NamesTypeAttributeKind, t, new_names)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use indexmap::IndexMap;
+
+    use super::*;
+    use crate::attributes::string_types::StringTypes;
+    use crate::attributes::type_attributes::TypeAttributes;
+    use crate::attributes::type_names::make_names_type_attributes;
+    use crate::ty::ty::ClassProperty;
+    use crate::ty::type_builder::TypeBuilder;
+    use crate::ty::type_builder_utils::get_no_string_type_mapping;
+
+    fn names_of(graph: &TypeGraph, t: TypeRef) -> Vec<String> {
+        NamesTypeAttributeKind
+            .try_get_in_attributes(graph.attributes(t).unwrap())
+            .unwrap()
+            .proposed_names()
+            .unwrap()
+            .into_iter()
+            .collect()
+    }
+
+    #[test]
+    fn singularizes_with_pluralize_directly() {
+        let mut b =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        let s = b
+            .get_string_type(
+                TypeAttributes::new(),
+                Some(StringTypes::unrestricted()),
+                None,
+            )
+            .unwrap();
+        let inner = b
+            .get_class_type(
+                TypeAttributes::new(),
+                [("flavor".to_owned(), ClassProperty::new(s, false))]
+                    .into_iter()
+                    .collect(),
+                None,
+            )
+            .unwrap();
+        let array = b
+            .get_array_type(TypeAttributes::new(), inner, None)
+            .unwrap();
+        let top: IndexMap<String, ClassProperty> =
+            [("cookies".to_owned(), ClassProperty::new(array, false))]
+                .into_iter()
+                .collect();
+        let top = b
+            .get_class_type(make_names_type_attributes("TopLevel", false), top, None)
+            .unwrap();
+        b.add_top_level("TopLevel", top).unwrap();
+        let mut graph = b.finish().unwrap();
+        gather_names(&mut graph, true, false).unwrap();
+        assert_eq!(
+            names_of(&graph, inner),
+            [
+                "cooky",
+                "cooky_element",
+                "cooky_class",
+                "TopLevel_cooky",
+                "TopLevel_cooky_class"
+            ]
+        );
+        assert_eq!(names_of(&graph, top), ["TopLevel", "TopLevel_class"]);
+    }
+
+    #[test]
+    fn deep_nesting_does_not_overflow_the_stack() {
+        let mut b =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        let mut t = b
+            .get_primitive_type(TypeKind::Integer, TypeAttributes::new(), None)
+            .unwrap();
+        for _ in 0..20_000 {
+            t = b.get_array_type(TypeAttributes::new(), t, None).unwrap();
+        }
+        b.add_top_level("TopLevel", t).unwrap();
+        let mut graph = b.finish().unwrap();
+        // Runs on the 2 MiB stack of a test thread.
+        gather_names(&mut graph, true, false).unwrap();
+        assert_eq!(names_of(&graph, t)[0], "TopLevel");
+        let breakers =
+            crate::declaration_ir::cycle_breaker_types_for_graph(&graph, &|_| Ok(false), &|_| {
+                Ok(true)
+            })
+            .unwrap();
+        assert!(breakers.is_empty());
+    }
 }

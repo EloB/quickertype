@@ -95,6 +95,9 @@ pub fn cycle_breaker_types_for_graph(
     while let Some(root) = queue.pop() {
         let mut frames: Vec<Frame> = Vec::new();
         let mut path: Vec<TypeRef> = Vec::new();
+        // How often each type is on `path`, to skip the search when it isn't.
+        let mut on_path: std::collections::HashMap<TypeRef, usize> =
+            std::collections::HashMap::new();
         let mut to_visit = Some(root);
         loop {
             if let Some(t) = to_visit.take() {
@@ -103,7 +106,11 @@ pub fn cycle_breaker_types_for_graph(
                     if is_implicit_cycle_breaker(t)? {
                         queue.extend(graph.children(t)?);
                         visited.insert(t);
-                    } else if let Some(breaker) = find_breaker(t, &path, can_break_cycles)? {
+                    } else if let Some(breaker) = if on_path.contains_key(&t) {
+                        find_breaker(t, &path, can_break_cycles)?
+                    } else {
+                        None
+                    } {
                         cycle_breaker_types.insert(breaker);
                     } else {
                         frames.push(Frame {
@@ -112,6 +119,7 @@ pub fn cycle_breaker_types_for_graph(
                             next: 0,
                         });
                         path.push(t);
+                        *on_path.entry(t).or_insert(0) += 1;
                     }
                 }
             }
@@ -124,7 +132,14 @@ pub fn cycle_breaker_types_for_graph(
             } else {
                 visited.insert(frame.t);
                 frames.pop();
-                path.pop();
+                if let Some(t) = path.pop() {
+                    if let Some(count) = on_path.get_mut(&t) {
+                        *count -= 1;
+                        if *count == 0 {
+                            on_path.remove(&t);
+                        }
+                    }
+                }
             }
         }
         assert(path.is_empty(), "Assertion failed")?;
