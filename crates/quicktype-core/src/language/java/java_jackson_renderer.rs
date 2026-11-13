@@ -16,7 +16,7 @@ use super::java_renderer::{
     JavaOptions, JavaRenderer, JavaState, UnionField, base_emit_class_attributes,
     base_imports_for_type, java_hooks,
 };
-use super::language::DateTimeProviderKind;
+use super::language::DateTimeProviderOption;
 use super::utils::string_escape;
 
 /// TS `JacksonRenderer`.
@@ -136,7 +136,7 @@ impl<'a> JacksonRenderer<'a> {
         let converter_classname = self.java.converter_classname;
         self.start_file(converter_classname.into())?;
         let lombok = self.java.options.lombok;
-        let java8 = self.java.options.date_time_provider == DateTimeProviderKind::Java8;
+        let java8 = self.java.options.date_time_provider == DateTimeProviderOption::Java8;
         let lines: Vec<Source> = vec![
             "To use this code, add the following Maven dependency to your project:".into(),
             "".into(),

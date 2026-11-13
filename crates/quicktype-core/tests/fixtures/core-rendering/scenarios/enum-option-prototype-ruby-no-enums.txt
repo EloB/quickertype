@@ -1,0 +1,9 @@
+# An `Object.prototype` member as Ruby `strictness` (see
+# enum-option-prototype-ruby) without enums: the render succeeds, with the
+# member's source text in the `Types` module.
+input json TopLevel {"name": "x", "count": 1, "ratio": 1.5, "flag": true, "maybe": null, "dict": {"a": 1}}
+pipeline {"lang": "ruby"}
+
+render ruby {"rendererOptions": {"strictness": "toString"}}
+render ruby {"rendererOptions": {"strictness": "constructor"}}
+render ruby {"rendererOptions": {"strictness": "__proto__"}}

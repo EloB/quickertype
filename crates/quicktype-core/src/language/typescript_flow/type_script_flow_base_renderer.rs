@@ -575,8 +575,9 @@ pub mod typescript_flow_base_hooks {
     ) -> Result<Option<Namer>> {
         if r.ts_flow_options().nice_property_names {
             let acronym_style = r.ts_flow_options().js.acronym_style;
+            let errors = r.core().name_style_errors().clone();
             return Ok(Some(fun_prefix_namer("properties", move |s| {
-                name_style(acronym_style, s, false)
+                errors.name_or(name_style(acronym_style, s, false), s)
             })));
         }
 

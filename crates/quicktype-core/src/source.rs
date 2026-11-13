@@ -30,7 +30,8 @@ use quicktype_js_compat::utf16;
 use crate::annotation::AnnotationData;
 use crate::messages::Result;
 use crate::naming::{Name, Names};
-use crate::support::support::{assert, defined, panic};
+use crate::renderer_options::{EnumValue, PrototypeMember};
+use crate::support::support::{assert, assert_never, defined, panic};
 
 /// A function applied to the serialized text of a [`Source::Modified`].
 pub type Modifier = Rc<dyn Fn(&str) -> String>;
@@ -57,6 +58,12 @@ pub enum Source {
     /// `modified`: the serialized single line of the source, passed through
     /// the modifier.
     Modified(Modifier, Box<Source>),
+    /// A value that is no `Sourcelike` at all, which `sourcelikeToSource`
+    /// passes through as it is: the `Object.prototype` member an enum option
+    /// can yield (see [`PrototypeMember`]) where a renderer emits the
+    /// option's string value. Serializing it, or measuring it in a table,
+    /// fails with `assertNever`'s `Unexpected object <String(value)>`.
+    Unexpected(PrototypeMember),
 }
 
 impl fmt::Debug for Source {
@@ -69,6 +76,7 @@ impl fmt::Debug for Source {
             Source::Annotated(a, s) => f.debug_tuple("Annotated").field(a).field(s).finish(),
             Source::Name(n) => f.debug_tuple("Name").field(n).finish(),
             Source::Modified(_, s) => f.debug_tuple("Modified").field(s).finish(),
+            Source::Unexpected(m) => f.debug_tuple("Unexpected").field(m).finish(),
         }
     }
 }
@@ -109,6 +117,24 @@ impl From<&Name> for Source {
     }
 }
 
+impl From<PrototypeMember> for Source {
+    fn from(m: PrototypeMember) -> Self {
+        Source::Unexpected(m)
+    }
+}
+
+impl From<EnumValue> for Source {
+    /// The value of an enum option whose values are their own names (cJSON
+    /// `integer-size`, C# `any-type`), emitted as it is: the name, or the
+    /// `Object.prototype` member, which fails to serialize.
+    fn from(v: EnumValue) -> Self {
+        match v {
+            EnumValue::Declared(name) => Source::Text(name.to_owned()),
+            EnumValue::Prototype(member) => Source::Unexpected(member),
+        }
+    }
+}
+
 impl From<Vec<Source>> for Source {
     fn from(v: Vec<Source>) -> Self {
         Source::Sequence(v)
@@ -137,7 +163,7 @@ impl Source {
     /// renderers find by walking a gathered `Sourcelike` tree).
     pub fn for_each_name(&self, f: &mut dyn FnMut(Name)) {
         match self {
-            Source::Text(_) | Source::Newline(_) => {}
+            Source::Text(_) | Source::Newline(_) | Source::Unexpected(_) => {}
             Source::Sequence(s) => s.iter().for_each(|x| x.for_each_name(f)),
             Source::Table(t) => t.iter().flatten().for_each(|x| x.for_each_name(f)),
             Source::Annotated(_, s) | Source::Modified(_, s) => s.for_each_name(f),
@@ -256,6 +282,7 @@ fn source_line_length(source: &Source, names: &Names) -> Result<usize> {
             let lines = serialize_render_result(source, names, "")?.lines;
             Ok(utf16::len(&lines.join("\n")))
         }
+        Source::Unexpected(m) => assert_never(m),
     }
 }
 
@@ -343,6 +370,7 @@ impl Serializer<'_> {
                 assert(serialized.len() == 1, "Cannot modify more than one line.")?;
                 self.current_line.push_str(&modifier(&serialized[0]));
             }
+            Source::Unexpected(m) => return assert_never(m),
         }
         Ok(())
     }
@@ -476,6 +504,27 @@ mod tests {
         serialize_render_result(source, &Names::new(), "  ")
             .unwrap()
             .lines
+    }
+
+    #[test]
+    fn unexpected_values_fail_to_serialize() {
+        let names = Names::new();
+        let member = PrototypeMember::ToString;
+        let err = serialize_render_result(&sl!["x ", member], &names, "  ").unwrap_err();
+        assert_eq!(
+            err.user_message(),
+            "Internal error: Unexpected object function toString() { [native code] }"
+        );
+        // In a table the width is measured first, also of later rows.
+        let table = Source::Table(vec![
+            vec!["a".into(), "b".into()],
+            vec![PrototypeMember::Proto.into()],
+        ]);
+        let err = serialize_render_result(&table, &names, "  ").unwrap_err();
+        assert_eq!(
+            err.user_message(),
+            "Internal error: Unexpected object [object Object]"
+        );
     }
 
     #[test]

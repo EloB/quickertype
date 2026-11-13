@@ -1,0 +1,10 @@
+# An `Object.prototype` member as `acronym-style` in the JavaScript family
+# (see enum-option-prototype-js-family) where no name has an acronym:
+# `acronyms` is never called, so the render succeeds.
+input json TopLevel {"plain": {"value": 2}, "other": [{"kind": "a"}]}
+pipeline {"lang": "typescript"}
+
+render javascript {"rendererOptions": {"acronym-style": "toString"}}
+render typescript {"rendererOptions": {"acronym-style": "__proto__"}}
+render flow {"rendererOptions": {"acronym-style": "constructor", "nice-property-names": true}}
+render javascript-prop-types {"rendererOptions": {"acronym-style": "valueOf"}}

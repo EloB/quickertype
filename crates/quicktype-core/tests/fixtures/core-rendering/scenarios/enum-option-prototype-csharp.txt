@@ -1,0 +1,24 @@
+# Enum option values that name `Object.prototype` members (`toString`,
+# `constructor`, `__proto__`, ...): TS `getEnumValue` checks `name in
+# values`, so they pass, and the renderer gets the inherited function (or
+# `Object.prototype` for `__proto__`). In C#, boolean-valued options take it
+# as truthy, `features` has none of its fields, `csharp-version` compares
+# as NaN, and `framework`, `any-type` and `base-class` fail where the value
+# is switched on or emitted.
+input schema TopLevel {"type": "object", "properties": {"name": {"type": "string"}, "count": {"type": "integer"}, "ratio": {"type": "number"}, "color": {"enum": ["red", "green"]}, "when": {"type": "string", "format": "date-time"}, "list": {"type": "array", "items": {"type": "string"}}, "mixed": {"oneOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "anything": {}, "self": {"$ref": "#"}}, "required": ["name", "count"]}
+pipeline {"lang": "csharp"}
+
+render csharp {"rendererOptions": {"array-type": "toString"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "array-type": "constructor", "density": "valueOf", "number-type": "hasOwnProperty"}}
+render csharp {"rendererOptions": {"density": "__proto__", "number-type": "__lookupGetter__"}}
+render csharp {"rendererOptions": {"csharp-version": "toString"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "__proto__"}}
+render csharp {"rendererOptions": {"features": "toString"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "features": "isPrototypeOf"}}
+render csharp {"rendererOptions": {"framework": "toString"}}
+render csharp {"rendererOptions": {"framework": "__proto__"}}
+render csharp {"rendererOptions": {"framework": "constructor", "csharp-version": "7"}}
+render csharp {"rendererOptions": {"any-type": "valueOf"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "any-type": "__proto__"}}
+render csharp {"rendererOptions": {"base-class": "toString"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "base-class": "__proto__", "just-types": true}}

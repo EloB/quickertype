@@ -1,0 +1,8 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as Scala 3
+# `framework`: `assertNever` unless `--just-types` comes first, where it
+# is `!== "Upickle"`.
+input json TopLevel {"name": "x", "maybe": null, "items": [{"id": 1, "note": null}, {"id": 2, "note": "y"}]}
+pipeline {"lang": "scala3"}
+
+render scala3 {"rendererOptions": {"framework": "toString"}}
+render scala3 {"rendererOptions": {"framework": "__proto__", "just-types": true}}

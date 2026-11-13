@@ -1,0 +1,10 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as Java
+# options: `array-type` is truthy (`List<T>`), `datetime-provider` takes the
+# `switch`'s default (Java 8) but is not `=== "java8"` (no jsr310 line in
+# the Maven comment), and `acronymStyle(value)` is `undefined`, so
+# `javaNameStyle`'s default parameter (the Pascal style) applies.
+input json TopLevel {"myUrl": "x", "when": "2020-01-01T00:00:00Z", "day": "2020-01-01", "items": [{"jsonId": 1}]}
+pipeline {"lang": "java"}
+
+render java {"filename": "TopLevel.java", "rendererOptions": {"array-type": "toString", "datetime-provider": "constructor", "acronym-style": "__proto__"}}
+render java {"filename": "TopLevel.java", "rendererOptions": {"datetime-provider": "valueOf", "just-types": true, "array-type": "__proto__"}}

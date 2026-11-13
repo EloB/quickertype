@@ -19,7 +19,7 @@ use indexmap::IndexSet;
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::AcronymStyleOptions;
 use crate::support::recursion::guard;
 use crate::support::support::panic;
@@ -50,12 +50,17 @@ impl KotlinOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
         let framework = match FRAMEWORK.get_enum_value(values)? {
-            "klaxon" => Framework::Klaxon,
-            "kotlinx" => Framework::KotlinX,
-            _ => Framework::Jackson,
+            EnumValue::Declared("klaxon") => Framework::Klaxon,
+            EnumValue::Declared("kotlinx") => Framework::KotlinX,
+            EnumValue::Declared(_) => Framework::Jackson,
+            EnumValue::Prototype(member) => Framework::Other(member),
         };
-        let acronym_style = AcronymStyleOptions::from_value(ACRONYM_STYLE.get_enum_value(values)?)
-            .unwrap_or(AcronymStyleOptions::Pascal);
+        // An `Object.prototype` member selects no style (`undefined`), so
+        // `kotlinNameStyle`'s default parameter, `allUpperWordStyle` (the
+        // Pascal style), takes its place.
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?)
+                .unwrap_or(AcronymStyleOptions::Pascal);
         Ok(KotlinOptions {
             just_types,
             framework,

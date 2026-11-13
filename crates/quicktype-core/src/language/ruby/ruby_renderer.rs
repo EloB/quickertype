@@ -14,7 +14,7 @@ use crate::attributes::constraints::{
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::declaration_ir::DeclarationKind;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::snake_case;
@@ -48,10 +48,11 @@ impl RubyOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
         let strictness = match STRICTNESS.get_enum_value(values)? {
-            "strict" => Strictness::Strict,
-            "coercible" => Strictness::Coercible,
-            "none" => Strictness::None,
-            other => return panic(format!("Unknown strictness {other}")),
+            EnumValue::Declared("strict") => Strictness::Strict,
+            EnumValue::Declared("coercible") => Strictness::Coercible,
+            EnumValue::Declared("none") => Strictness::None,
+            EnumValue::Declared(other) => return panic(format!("Unknown strictness {other}")),
+            EnumValue::Prototype(member) => Strictness::Other(member),
         };
         Ok(RubyOptions {
             just_types,
@@ -843,7 +844,8 @@ impl<'a> RubyRenderer<'a> {
                     ]);
                     Ok(())
                 })?;
-                let mut value = vec![" = ".into(), prefix.into(), "String.enum(".into()];
+                // The value itself, not a template literal.
+                let mut value = vec![" = ".into(), strictness.to_source(), "String.enum(".into()];
                 value.extend(cases);
                 value.push(")".into());
                 declarations.push(vec![sl![enum_name], Source::Sequence(value)]);

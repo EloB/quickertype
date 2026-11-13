@@ -16,7 +16,7 @@
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use indexmap::IndexMap;
@@ -36,6 +36,10 @@ pub enum Framework {
     Circe,
     /// `upickle`.
     Upickle,
+    /// An `Object.prototype` member: `makeRenderer`'s `switch` falls
+    /// through to `assertNever` (unless `--just-types` comes first), and it
+    /// is `!== "Upickle"`.
+    Other(crate::renderer_options::PrototypeMember),
 }
 
 /// The option values of the Scala 3 renderers (TS
@@ -56,8 +60,9 @@ impl Scala3Options {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
         let framework = match FRAMEWORK.get_enum_value(values)? {
-            "upickle" => Framework::Upickle,
-            _ => Framework::Circe,
+            EnumValue::Declared("upickle") => Framework::Upickle,
+            EnumValue::Declared(_) => Framework::Circe,
+            EnumValue::Prototype(member) => Framework::Other(member),
         };
         let package_name = PACKAGE_NAME.get_value(values).into_owned();
         Ok(Scala3Options {

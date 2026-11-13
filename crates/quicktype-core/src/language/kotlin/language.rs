@@ -138,6 +138,7 @@ impl TargetLanguage for KotlinTargetLanguage {
                 given_output_filename,
                 alphabetize_properties,
             ),
+            Framework::Other(member) => crate::support::support::assert_never(member),
         }
     }
 }
@@ -151,4 +152,7 @@ pub enum Framework {
     Klaxon,
     /// `"kotlinx"`: kotlinx.serialization.
     KotlinX,
+    /// An `Object.prototype` member: `makeRenderer`'s `switch` falls
+    /// through to `assertNever` (unless `--just-types` comes first).
+    Other(crate::renderer_options::PrototypeMember),
 }

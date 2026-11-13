@@ -1,0 +1,282 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      4,
+      false
+     ],
+     [
+      "count",
+      3,
+      false
+     ],
+     [
+      "tags",
+      7,
+      false
+     ],
+     [
+      "nested",
+      5,
+      false
+     ],
+     [
+      "choice",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     3,
+     4
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "deep",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 4
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "toString",
+    "include-location": "constructor",
+    "code-format": "__proto__",
+    "wstring": "valueOf",
+    "const-style": "hasOwnProperty"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     TopLevel data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) TopLevel);\n\n#pragma once\n\n#include <variant>\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n#include <codecvt>\n#include <locale>\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<std::optional<T>> {\n        static void to_json(json & j, const std::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::optional<T> from_json(const json & j) {\n            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    template<typename T>\n    struct tag {};\n\n    template<typename fromType, typename toType>\n    class Utf16_Utf8 {\n        private:\n        template<typename TF, typename TT>\n        static toType convert(tag<std::shared_ptr<TF> >, tag<std::shared_ptr<TT> >, fromType ptr) {\n            if (ptr == nullptr) return std::unique_ptr<TT>(); else return std::unique_ptr<TT>(new TT(Utf16_Utf8<TF,TT>::convert(*ptr)));\n        }\n\n        template<typename TF, typename TT>\n        static toType convert(tag<std::vector<TF> >, tag<std::vector<TT> >, fromType v) {\n            auto it = v.begin();\n            auto newVector = std::vector<TT>();\n            while (it != v.end()) {\n                newVector.push_back(Utf16_Utf8<TF,TT>::convert(*it));\n                it++;\n            }\n            return newVector;\n        }\n\n        template<typename KF, typename VF, typename KT, typename VT>\n        static toType convert(tag<std::map<KF,VF> >, tag<std::map<KT,VT> >, fromType m) {\n            auto it = m.begin();\n            auto newMap = std::map<KT, VT>();\n            while (it != m.end()) {\n                newMap.insert(std::pair<KT, VT>(Utf16_Utf8<KF, KT>::convert(it->first), Utf16_Utf8<VF, VT>::convert(it->second)));\n                it++;\n            }\n            return newMap;\n        }\n\n        template<typename TF, typename TT>\n        static fromType convert(tag<TF>, tag<TT>, fromType from) {\n            return from;\n        }\n\n        static std::wstring convert(tag<std::string>, tag<std::wstring>, std::string str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.from_bytes(str.data());\n        }\n\n        static std::string convert(tag<std::wstring>, tag<std::string>, std::wstring str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.to_bytes(str.data());\n        }\n\n        public:\n        static toType convert(fromType in) {\n            return convert(tag<fromType>(), tag<toType>(), in);\n        }\n    };\n\n    template<typename T>\n    std::wstring wdump(const T& j) {\n        std::ostringstream s;\n        s << j;\n        return Utf16_Utf8<std::string, std::wstring>::convert(s.str()); \n    }\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n\n    using Choice = std::variant<int64_t, std::wstring>;\n\n    class Nested {\n        public:\n        Nested() = default;\n        virtual ~Nested() = default;\n\n        private:\n        nlohmann::json deep;\n\n        public:\n        const nlohmann::json & get_deep() const { return deep; }\n        nlohmann::json & get_mutable_deep() { return deep; }\n        void set_deep(const nlohmann::json & value) { this->deep = value; }\n    };\n\n    class TopLevel {\n        public:\n        TopLevel() = default;\n        virtual ~TopLevel() = default;\n\n        private:\n        std::wstring name;\n        int64_t count;\n        std::vector<std::wstring> tags;\n        Nested nested;\n        std::vector<Choice> choice;\n\n        public:\n        const std::wstring & get_name() const { return name; }\n        std::wstring & get_mutable_name() { return name; }\n        void set_name(const std::wstring & value) { this->name = value; }\n\n        const int64_t & get_count() const { return count; }\n        int64_t & get_mutable_count() { return count; }\n        void set_count(const int64_t & value) { this->count = value; }\n\n        const std::vector<std::wstring> & get_tags() const { return tags; }\n        std::vector<std::wstring> & get_mutable_tags() { return tags; }\n        void set_tags(const std::vector<std::wstring> & value) { this->tags = value; }\n\n        const Nested & get_nested() const { return nested; }\n        Nested & get_mutable_nested() { return nested; }\n        void set_nested(const Nested & value) { this->nested = value; }\n\n        const std::vector<Choice> & get_choice() const { return choice; }\n        std::vector<Choice> & get_mutable_choice() { return choice; }\n        void set_choice(const std::vector<Choice> & value) { this->choice = value; }\n    };\n}\n\nnamespace quicktype {\nvoid from_json(const json & j, Nested & x);\nvoid to_json(json & j, const Nested & x);\n\nvoid from_json(const json & j, TopLevel & x);\nvoid to_json(json & j, const TopLevel & x);\n}\nnamespace nlohmann {\ntemplate <>\nstruct adl_serializer<std::variant<int64_t, std::wstring>> {\n    static void from_json(const json & j, std::variant<int64_t, std::wstring> & x);\n    static void to_json(json & j, const std::variant<int64_t, std::wstring> & x);\n};\n}\nnamespace quicktype {\n    inline void from_json(const json & j, Nested& x) {\n        if (!j.is_object()) throw std::runtime_error(\"Expected object\");\n        x.set_deep(get_untyped(j, Utf16_Utf8<std::wstring, std::string>::convert(L\"deep\")));\n    }\n\n    inline void to_json(json & j, const Nested & x) {\n        j = json::object();\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"deep\")] = x.get_deep();\n    }\n\n    inline void from_json(const json & j, TopLevel& x) {\n        if (!j.is_object()) throw std::runtime_error(\"Expected object\");\n        x.set_name(Utf16_Utf8<std::string, std::wstring>::convert(j.at(Utf16_Utf8<std::wstring, std::string>::convert(L\"name\")).get<std::string>()));\n        if (j.find(\"count\") != j.end() && !j.at(\"count\").is_number_integer()) throw std::runtime_error(\"Expected integer\");\n        x.set_count(j.at(Utf16_Utf8<std::wstring, std::string>::convert(L\"count\")).get<int64_t>());\n        x.set_tags(Utf16_Utf8<std::vector<std::string>, std::vector<std::wstring>>::convert(j.at(Utf16_Utf8<std::wstring, std::string>::convert(L\"tags\")).get<std::vector<std::string>>()));\n        x.set_nested(j.at(Utf16_Utf8<std::wstring, std::string>::convert(L\"nested\")).get<Nested>());\n        x.set_choice(j.at(Utf16_Utf8<std::wstring, std::string>::convert(L\"choice\")).get<std::vector<Choice>>());\n    }\n\n    inline void to_json(json & j, const TopLevel & x) {\n        j = json::object();\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"name\")] = Utf16_Utf8<std::wstring, std::string>::convert(x.get_name());\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"count\")] = x.get_count();\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"tags\")] = Utf16_Utf8<std::vector<std::wstring>, std::vector<std::string>>::convert(x.get_tags());\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"nested\")] = x.get_nested();\n        j[Utf16_Utf8<std::wstring, std::string>::convert(L\"choice\")] = x.get_choice();\n    }\n}\nnamespace nlohmann {\n    inline void adl_serializer<std::variant<int64_t, std::wstring>>::from_json(const json & j, std::variant<int64_t, std::wstring> & x) {\n        if (j.is_number_integer())\n            x = j.get<int64_t>();\n        else if (j.is_string())\n            x = quicktype::Utf16_Utf8<std::string, std::wstring>::convert(j.get<std::string>());\n        else throw std::runtime_error(\"Could not deserialise!\");\n    }\n\n    inline void adl_serializer<std::variant<int64_t, std::wstring>>::to_json(json & j, const std::variant<int64_t, std::wstring> & x) {\n        switch (x.index()) {\n            case 0:\n                j = std::get<int64_t>(x);\n                break;\n            case 1:\n                j = quicktype::Utf16_Utf8<std::wstring, std::string>::convert(std::get<std::wstring>(x));\n                break;\n            default: throw std::runtime_error(\"Input JSON does not conform to schema!\");\n        }\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       163,
+       0,
+       163,
+       22
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       166,
+       14,
+       166,
+       28
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       167,
+       0,
+       167,
+       22
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       168,
+       28,
+       168,
+       42
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "code-format": "toString",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.hpp",
+     "text": "#pragma once\n\n#include <variant>\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\nusing Choice = std::variant<int64_t, std::string>;\n\nclass Nested {\n    public:\n    Nested() = default;\n    virtual ~Nested() = default;\n\n    private:\n    nlohmann::json deep;\n\n    public:\n    const nlohmann::json & get_deep() const { return deep; }\n    nlohmann::json & get_mutable_deep() { return deep; }\n    void set_deep(const nlohmann::json & value) { this->deep = value; }\n};\n\nclass TopLevel {\n    public:\n    TopLevel() = default;\n    virtual ~TopLevel() = default;\n\n    private:\n    std::string name;\n    int64_t count;\n    std::vector<std::string> tags;\n    Nested nested;\n    std::vector<Choice> choice;\n\n    public:\n    const std::string & get_name() const { return name; }\n    std::string & get_mutable_name() { return name; }\n    void set_name(const std::string & value) { this->name = value; }\n\n    const int64_t & get_count() const { return count; }\n    int64_t & get_mutable_count() { return count; }\n    void set_count(const int64_t & value) { this->count = value; }\n\n    const std::vector<std::string> & get_tags() const { return tags; }\n    std::vector<std::string> & get_mutable_tags() { return tags; }\n    void set_tags(const std::vector<std::string> & value) { this->tags = value; }\n\n    const Nested & get_nested() const { return nested; }\n    Nested & get_mutable_nested() { return nested; }\n    void set_nested(const Nested & value) { this->nested = value; }\n\n    const std::vector<Choice> & get_choice() const { return choice; }\n    std::vector<Choice> & get_mutable_choice() { return choice; }\n    void set_choice(const std::vector<Choice> & value) { this->choice = value; }\n};\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       16,
+       0,
+       16,
+       18
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       19,
+       10,
+       19,
+       24
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       20,
+       0,
+       20,
+       18
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       21,
+       24,
+       21,
+       38
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "type-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object function toString() { [native code] }",
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "member-style": "__proto__"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object [object Object]",
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "enumerator-style": "constructor",
+    "member-style": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object function valueOf() { [native code] }",
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "TopLevel.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "type-style": "toString",
+    "enumerator-style": "bogus"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Unknown value bogus for option enumerator-style",
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-cplusplus"
+}

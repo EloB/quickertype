@@ -5,6 +5,7 @@
 //! [`renderer_options::converters_option`](crate::renderer_options::converters_option),
 //! re-exported here.
 
+use crate::renderer_options::EnumValue;
 pub use crate::renderer_options::converters_option;
 
 /// `ConvertersOptions`: which converters to generate.
@@ -25,13 +26,14 @@ impl ConvertersOptions {
         }
     }
 
-    /// The value for an option value name returned by
-    /// [`EnumOption::get_enum_value`](crate::renderer_options::EnumOption::get_enum_value).
-    pub fn from_name(name: &str) -> Option<Self> {
-        match name {
-            "all-objects" => Some(ConvertersOptions::AllObjects),
-            "top-level" => Some(ConvertersOptions::TopLevel),
-            _ => None,
+    /// The converters an option value selects, as the renderers'
+    /// `switch (converters)` reads it: `AllObjects` for `all-objects`, the
+    /// default branch (top-level converters) for anything else, an
+    /// `Object.prototype` member included.
+    pub fn from_enum_value(value: EnumValue) -> Self {
+        match value {
+            EnumValue::Declared("all-objects") => ConvertersOptions::AllObjects,
+            _ => ConvertersOptions::TopLevel,
         }
     }
 }
@@ -43,9 +45,14 @@ mod tests {
     #[test]
     fn round_trips_option_values() {
         for v in [ConvertersOptions::AllObjects, ConvertersOptions::TopLevel] {
-            assert_eq!(ConvertersOptions::from_name(v.as_str()), Some(v));
+            let value = EnumValue::Declared(v.as_str());
+            assert_eq!(ConvertersOptions::from_enum_value(value), v);
         }
         assert_eq!(converters_option().default_value, "top-level");
-        assert_eq!(ConvertersOptions::from_name("toString"), None);
+        let member = EnumValue::Prototype(crate::renderer_options::PrototypeMember::ToString);
+        assert_eq!(
+            ConvertersOptions::from_enum_value(member),
+            ConvertersOptions::TopLevel
+        );
     }
 }

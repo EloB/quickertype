@@ -1,0 +1,220 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "myUrl",
+      4,
+      false
+     ],
+     [
+      "count",
+      1,
+      false
+     ],
+     [
+      "items",
+      2,
+      false
+     ],
+     [
+      "maybe",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 3
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "jsonId",
+      1,
+      false
+     ],
+     [
+      "kind",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "access-level": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nfunction toString() { [native code] } struct TopLevel: Codable {\n    function toString() { [native code] } let myURL: String\n    function toString() { [native code] } let count: Int\n    function toString() { [native code] } let items: [Item]\n    function toString() { [native code] } let maybe: JSONNull?\n\n    function toString() { [native code] } enum CodingKeys: String, CodingKey {\n        case myURL = \"myUrl\"\n        case count = \"count\"\n        case items = \"items\"\n        case maybe = \"maybe\"\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nfunction toString() { [native code] } extension TopLevel {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(TopLevel.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        myURL: String? = nil,\n        count: Int? = nil,\n        items: [Item]? = nil,\n        maybe: JSONNull?? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            myURL: myURL ?? self.myURL,\n            count: count ?? self.count,\n            items: items ?? self.items,\n            maybe: maybe ?? self.maybe\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Item\nfunction toString() { [native code] } struct Item: Codable {\n    function toString() { [native code] } let jsonID: Int\n    function toString() { [native code] } let kind: String\n\n    function toString() { [native code] } enum CodingKeys: String, CodingKey {\n        case jsonID = \"jsonId\"\n        case kind = \"kind\"\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\nfunction toString() { [native code] } extension Item {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(Item.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        jsonID: Int? = nil,\n        kind: String? = nil\n    ) -> Item {\n        return Item(\n            jsonID: jsonID ?? self.jsonID,\n            kind: kind ?? self.kind\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\nfunction toString() { [native code] } class JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       12,
+       53,
+       12,
+       62
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       44,
+       15,
+       44,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "access-level": "__proto__",
+    "struct-or-class": "constructor",
+    "density": "valueOf",
+    "protocol": "hasOwnProperty",
+    "acronym-style": "toLocaleString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\n[object Object] class TopLevel: Codable {\n    [object Object] let myURL: String\n    [object Object] let count: Int\n    [object Object] let items: [Item]\n    [object Object] let maybe: JSONNull?\n\n    [object Object] enum CodingKeys: String, CodingKey {\n        case myURL = \"myUrl\"\n        case count, items, maybe\n    }\n\n    [object Object] init(myURL: String, count: Int, items: [Item], maybe: JSONNull?) {\n        self.myURL = myURL\n        self.count = count\n        self.items = items\n        self.maybe = maybe\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\n[object Object] extension TopLevel {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(TopLevel.self, from: data)\n        self.init(myURL: me.myURL, count: me.count, items: me.items, maybe: me.maybe)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        myURL: String? = nil,\n        count: Int? = nil,\n        items: [Item]? = nil,\n        maybe: JSONNull?? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            myURL: myURL ?? self.myURL,\n            count: count ?? self.count,\n            items: items ?? self.items,\n            maybe: maybe ?? self.maybe\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Item\n[object Object] class Item: Codable {\n    [object Object] let jsonID: Int\n    [object Object] let kind: String\n\n    [object Object] enum CodingKeys: String, CodingKey {\n        case jsonID = \"jsonId\"\n        case kind\n    }\n\n    [object Object] init(jsonID: Int, kind: String) {\n        self.jsonID = jsonID\n        self.kind = kind\n    }\n}\n\n// MARK: Item convenience initializers and mutators\n\n[object Object] extension Item {\n    convenience init(data: Data) throws {\n        let me = try newJSONDecoder().decode(Item.self, from: data)\n        self.init(jsonID: me.jsonID, kind: me.kind)\n    }\n\n    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    convenience init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        jsonID: Int? = nil,\n        kind: String? = nil\n    ) -> Item {\n        return Item(\n            jsonID: jsonID ?? self.jsonID,\n            kind: kind ?? self.kind\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n\n// MARK: - Encode/decode helpers\n\n[object Object] class JSONNull: Codable, Hashable {\n\n    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {\n        return true\n    }\n\n    public func hash(into hasher: inout Hasher) {\n        hasher.combine(0)\n    }\n\n    public init() {}\n\n    public required init(from decoder: Decoder) throws {\n        let container = try decoder.singleValueContainer()\n        if !container.decodeNil() {\n            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: \"Wrong type for JSONNull\"))\n        }\n    }\n\n    public func encode(to encoder: Encoder) throws {\n        var container = encoder.singleValueContainer()\n        try container.encodeNil()\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       12,
+       31,
+       12,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       19,
+       74,
+       19,
+       83
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       50,
+       15,
+       50,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "access-level": "constructor",
+    "just-types": true,
+    "struct-or-class": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nfunction Object() { [native code] } class TopLevel {\n    function Object() { [native code] } let myURL: String\n    function Object() { [native code] } let count: Int\n    function Object() { [native code] } let items: [Item]\n    function Object() { [native code] } let maybe: NSNull\n\n    function Object() { [native code] } init(myURL: String, count: Int, items: [Item], maybe: NSNull) {\n        self.myURL = myURL\n        self.count = count\n        self.items = items\n        self.maybe = maybe\n    }\n}\n\n// MARK: - Item\nfunction Object() { [native code] } class Item {\n    function Object() { [native code] } let jsonID: Int\n    function Object() { [native code] } let kind: String\n\n    function Object() { [native code] } init(jsonID: Int, kind: String) {\n        self.jsonID = jsonID\n        self.kind = kind\n    }\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       12,
+       51,
+       12,
+       57
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       14,
+       94,
+       14,
+       100
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-swift"
+}

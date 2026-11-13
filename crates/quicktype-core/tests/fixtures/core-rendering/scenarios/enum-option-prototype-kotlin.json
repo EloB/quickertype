@@ -1,0 +1,140 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "myUrl",
+      4,
+      false
+     ],
+     [
+      "items",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "jsonId",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object function toString() { [native code] }",
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "__proto__",
+    "just-types": true,
+    "acronym-style": "constructor"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\ndata class TopLevel (\n    val myURL: String,\n    val items: List<Item>\n)\n\ndata class Item (\n    val jsonID: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon",
+    "acronym-style": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val topLevel = TopLevel.fromJson(jsonString)\n\npackage quicktype\n\nimport com.beust.klaxon.*\n\nprivate val klaxon = Klaxon()\n\ndata class TopLevel (\n    @Json(name = \"myUrl\")\n    val myURL: String,\n\n    val items: List<Item>\n) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<TopLevel>(json)\n    }\n}\n\ndata class Item (\n    @Json(name = \"jsonId\")\n    val jsonID: Long\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-kotlin"
+}
