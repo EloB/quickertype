@@ -1,0 +1,4343 @@
+{
+ "node": "v24.16.0",
+ "paths": [
+  {
+   "path": "",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "",
+   "extname": "",
+   "normalize": "."
+  },
+  {
+   "path": "a",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "a",
+   "extname": "",
+   "normalize": "a"
+  },
+  {
+   "path": "a\\b",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b"
+  },
+  {
+   "path": "a/b",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b"
+  },
+  {
+   "path": "a\\b\\",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b\\"
+  },
+  {
+   "path": "a/b/",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b\\"
+  },
+  {
+   "path": "a\\\\b",
+   "isAbsolute": false,
+   "dirname": "a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b"
+  },
+  {
+   "path": "..",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "..",
+   "extname": "",
+   "normalize": ".."
+  },
+  {
+   "path": "..\\a",
+   "isAbsolute": false,
+   "dirname": "..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "..\\a"
+  },
+  {
+   "path": "a\\..\\..\\b",
+   "isAbsolute": false,
+   "dirname": "a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "..\\b"
+  },
+  {
+   "path": ".\\a\\.\\b",
+   "isAbsolute": false,
+   "dirname": ".\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a\\b"
+  },
+  {
+   "path": "a.json",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "a.json"
+  },
+  {
+   "path": "a.b.json",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "a.b.json"
+  },
+  {
+   "path": "dir\\file.schema.json",
+   "isAbsolute": false,
+   "dirname": "dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "dir\\file.schema.json"
+  },
+  {
+   "path": ".hidden",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": ".hidden"
+  },
+  {
+   "path": "..\\..",
+   "isAbsolute": false,
+   "dirname": "..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "..\\.."
+  },
+  {
+   "path": "a\\.",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "a"
+  },
+  {
+   "path": "a\\..",
+   "isAbsolute": false,
+   "dirname": "a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "."
+  },
+  {
+   "path": "x.",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "x."
+  },
+  {
+   "path": "x..",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "x.."
+  },
+  {
+   "path": "...",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "..."
+  },
+  {
+   "path": "a b\\c d.ts",
+   "isAbsolute": false,
+   "dirname": "a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "a b\\c d.ts"
+  },
+  {
+   "path": "CON",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "CON"
+  },
+  {
+   "path": "con:",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "con:",
+   "extname": "",
+   "normalize": ".\\con:."
+  },
+  {
+   "path": "CON:x",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": ".\\CON:x"
+  },
+  {
+   "path": "COM1:\\x",
+   "isAbsolute": false,
+   "dirname": "COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": ".\\COM1:x"
+  },
+  {
+   "path": "LPT¹:",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": ".\\LPT¹:."
+  },
+  {
+   "path": "nul.txt",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "nul.txt"
+  },
+  {
+   "path": "a:b",
+   "isAbsolute": false,
+   "dirname": "a:",
+   "basename": "b",
+   "extname": "",
+   "normalize": "a:b"
+  },
+  {
+   "path": "x\\y:",
+   "isAbsolute": false,
+   "dirname": "x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": ".\\x\\y:"
+  },
+  {
+   "path": "x:\\y",
+   "isAbsolute": true,
+   "dirname": "x:\\",
+   "basename": "y",
+   "extname": "",
+   "normalize": "x:\\y"
+  },
+  {
+   "path": "😀\\é.json",
+   "isAbsolute": false,
+   "dirname": "😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "😀\\é.json"
+  },
+  {
+   "path": "CON😀",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "CON😀"
+  },
+  {
+   "path": "C:",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "",
+   "extname": "",
+   "normalize": "C:."
+  },
+  {
+   "path": "C:a",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "a",
+   "extname": "",
+   "normalize": "C:a"
+  },
+  {
+   "path": "C:a\\b",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b"
+  },
+  {
+   "path": "C:a/b",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b"
+  },
+  {
+   "path": "C:a\\b\\",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b\\"
+  },
+  {
+   "path": "C:a/b/",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b\\"
+  },
+  {
+   "path": "C:a\\\\b",
+   "isAbsolute": false,
+   "dirname": "C:a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b"
+  },
+  {
+   "path": "C:..",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:.."
+  },
+  {
+   "path": "C:..\\a",
+   "isAbsolute": false,
+   "dirname": "C:..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "C:..\\a"
+  },
+  {
+   "path": "C:a\\..\\..\\b",
+   "isAbsolute": false,
+   "dirname": "C:a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:..\\b"
+  },
+  {
+   "path": "C:.\\a\\.\\b",
+   "isAbsolute": false,
+   "dirname": "C:.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:a\\b"
+  },
+  {
+   "path": "C:a.json",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "C:a.json"
+  },
+  {
+   "path": "C:a.b.json",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "C:a.b.json"
+  },
+  {
+   "path": "C:dir\\file.schema.json",
+   "isAbsolute": false,
+   "dirname": "C:dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "C:dir\\file.schema.json"
+  },
+  {
+   "path": "C:.hidden",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "C:.hidden"
+  },
+  {
+   "path": "C:..\\..",
+   "isAbsolute": false,
+   "dirname": "C:..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:..\\.."
+  },
+  {
+   "path": "C:a\\.",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "C:a"
+  },
+  {
+   "path": "C:a\\..",
+   "isAbsolute": false,
+   "dirname": "C:a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:."
+  },
+  {
+   "path": "C:x.",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "C:x."
+  },
+  {
+   "path": "C:x..",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "C:x.."
+  },
+  {
+   "path": "C:...",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "C:..."
+  },
+  {
+   "path": "C:a b\\c d.ts",
+   "isAbsolute": false,
+   "dirname": "C:a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "C:a b\\c d.ts"
+  },
+  {
+   "path": "C:CON",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "C:CON"
+  },
+  {
+   "path": "C:con:",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "C:con:"
+  },
+  {
+   "path": "C:CON:x",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "C:CON:x"
+  },
+  {
+   "path": "C:COM1:\\x",
+   "isAbsolute": false,
+   "dirname": "C:COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "C:COM1:\\x"
+  },
+  {
+   "path": "C:LPT¹:",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "C:LPT¹:"
+  },
+  {
+   "path": "C:nul.txt",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "C:nul.txt"
+  },
+  {
+   "path": "C:a:b",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "C:a:b"
+  },
+  {
+   "path": "C:x\\y:",
+   "isAbsolute": false,
+   "dirname": "C:x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "C:x\\y:"
+  },
+  {
+   "path": "C:x:\\y",
+   "isAbsolute": false,
+   "dirname": "C:x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "C:x:\\y"
+  },
+  {
+   "path": "C:😀\\é.json",
+   "isAbsolute": false,
+   "dirname": "C:😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "C:😀\\é.json"
+  },
+  {
+   "path": "C:CON😀",
+   "isAbsolute": false,
+   "dirname": "C:",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "C:CON😀"
+  },
+  {
+   "path": "C:\\",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "",
+   "extname": "",
+   "normalize": "C:\\"
+  },
+  {
+   "path": "C:\\a",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "a",
+   "extname": "",
+   "normalize": "C:\\a"
+  },
+  {
+   "path": "C:\\a\\b",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b"
+  },
+  {
+   "path": "C:\\a/b",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b"
+  },
+  {
+   "path": "C:\\a\\b\\",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b\\"
+  },
+  {
+   "path": "C:\\a/b/",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b\\"
+  },
+  {
+   "path": "C:\\a\\\\b",
+   "isAbsolute": true,
+   "dirname": "C:\\a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b"
+  },
+  {
+   "path": "C:\\..",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:\\"
+  },
+  {
+   "path": "C:\\..\\a",
+   "isAbsolute": true,
+   "dirname": "C:\\..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "C:\\a"
+  },
+  {
+   "path": "C:\\a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "C:\\a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\b"
+  },
+  {
+   "path": "C:\\.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "C:\\.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "C:\\a\\b"
+  },
+  {
+   "path": "C:\\a.json",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "C:\\a.json"
+  },
+  {
+   "path": "C:\\a.b.json",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "C:\\a.b.json"
+  },
+  {
+   "path": "C:\\dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "C:\\dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "C:\\dir\\file.schema.json"
+  },
+  {
+   "path": "C:\\.hidden",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "C:\\.hidden"
+  },
+  {
+   "path": "C:\\..\\..",
+   "isAbsolute": true,
+   "dirname": "C:\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:\\"
+  },
+  {
+   "path": "C:\\a\\.",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "C:\\a"
+  },
+  {
+   "path": "C:\\a\\..",
+   "isAbsolute": true,
+   "dirname": "C:\\a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "C:\\"
+  },
+  {
+   "path": "C:\\x.",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "C:\\x."
+  },
+  {
+   "path": "C:\\x..",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "C:\\x.."
+  },
+  {
+   "path": "C:\\...",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "C:\\..."
+  },
+  {
+   "path": "C:\\a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "C:\\a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "C:\\a b\\c d.ts"
+  },
+  {
+   "path": "C:\\CON",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "C:\\CON"
+  },
+  {
+   "path": "C:\\con:",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "C:\\con:"
+  },
+  {
+   "path": "C:\\CON:x",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "C:\\CON:x"
+  },
+  {
+   "path": "C:\\COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "C:\\COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "C:\\COM1:\\x"
+  },
+  {
+   "path": "C:\\LPT¹:",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "C:\\LPT¹:"
+  },
+  {
+   "path": "C:\\nul.txt",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "C:\\nul.txt"
+  },
+  {
+   "path": "C:\\a:b",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "C:\\a:b"
+  },
+  {
+   "path": "C:\\x\\y:",
+   "isAbsolute": true,
+   "dirname": "C:\\x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "C:\\x\\y:"
+  },
+  {
+   "path": "C:\\x:\\y",
+   "isAbsolute": true,
+   "dirname": "C:\\x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "C:\\x:\\y"
+  },
+  {
+   "path": "C:\\😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "C:\\😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "C:\\😀\\é.json"
+  },
+  {
+   "path": "C:\\CON😀",
+   "isAbsolute": true,
+   "dirname": "C:\\",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "C:\\CON😀"
+  },
+  {
+   "path": "c:/",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "",
+   "extname": "",
+   "normalize": "c:\\"
+  },
+  {
+   "path": "c:/a",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "a",
+   "extname": "",
+   "normalize": "c:\\a"
+  },
+  {
+   "path": "c:/a\\b",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b"
+  },
+  {
+   "path": "c:/a/b",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b"
+  },
+  {
+   "path": "c:/a\\b\\",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b\\"
+  },
+  {
+   "path": "c:/a/b/",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b\\"
+  },
+  {
+   "path": "c:/a\\\\b",
+   "isAbsolute": true,
+   "dirname": "c:/a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b"
+  },
+  {
+   "path": "c:/..",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "..",
+   "extname": "",
+   "normalize": "c:\\"
+  },
+  {
+   "path": "c:/..\\a",
+   "isAbsolute": true,
+   "dirname": "c:/..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "c:\\a"
+  },
+  {
+   "path": "c:/a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "c:/a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\b"
+  },
+  {
+   "path": "c:/.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "c:/.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "c:\\a\\b"
+  },
+  {
+   "path": "c:/a.json",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "c:\\a.json"
+  },
+  {
+   "path": "c:/a.b.json",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "c:\\a.b.json"
+  },
+  {
+   "path": "c:/dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "c:/dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "c:\\dir\\file.schema.json"
+  },
+  {
+   "path": "c:/.hidden",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "c:\\.hidden"
+  },
+  {
+   "path": "c:/..\\..",
+   "isAbsolute": true,
+   "dirname": "c:/..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "c:\\"
+  },
+  {
+   "path": "c:/a\\.",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "c:\\a"
+  },
+  {
+   "path": "c:/a\\..",
+   "isAbsolute": true,
+   "dirname": "c:/a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "c:\\"
+  },
+  {
+   "path": "c:/x.",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "c:\\x."
+  },
+  {
+   "path": "c:/x..",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "c:\\x.."
+  },
+  {
+   "path": "c:/...",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "c:\\..."
+  },
+  {
+   "path": "c:/a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "c:/a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "c:\\a b\\c d.ts"
+  },
+  {
+   "path": "c:/CON",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "c:\\CON"
+  },
+  {
+   "path": "c:/con:",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "c:\\con:"
+  },
+  {
+   "path": "c:/CON:x",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "c:\\CON:x"
+  },
+  {
+   "path": "c:/COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "c:/COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "c:\\COM1:\\x"
+  },
+  {
+   "path": "c:/LPT¹:",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "c:\\LPT¹:"
+  },
+  {
+   "path": "c:/nul.txt",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "c:\\nul.txt"
+  },
+  {
+   "path": "c:/a:b",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "c:\\a:b"
+  },
+  {
+   "path": "c:/x\\y:",
+   "isAbsolute": true,
+   "dirname": "c:/x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "c:\\x\\y:"
+  },
+  {
+   "path": "c:/x:\\y",
+   "isAbsolute": true,
+   "dirname": "c:/x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "c:\\x:\\y"
+  },
+  {
+   "path": "c:/😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "c:/😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "c:\\😀\\é.json"
+  },
+  {
+   "path": "c:/CON😀",
+   "isAbsolute": true,
+   "dirname": "c:/",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "c:\\CON😀"
+  },
+  {
+   "path": "\\",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "\\a",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "\\a\\b",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "\\a/b",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "\\a\\b\\",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b\\"
+  },
+  {
+   "path": "\\a/b/",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b\\"
+  },
+  {
+   "path": "\\a\\\\b",
+   "isAbsolute": true,
+   "dirname": "\\a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "\\..",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "\\..\\a",
+   "isAbsolute": true,
+   "dirname": "\\..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "\\a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "\\a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\b"
+  },
+  {
+   "path": "\\.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "\\.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "\\a.json",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "\\a.json"
+  },
+  {
+   "path": "\\a.b.json",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "\\a.b.json"
+  },
+  {
+   "path": "\\dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "\\dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\dir\\file.schema.json"
+  },
+  {
+   "path": "\\.hidden",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "\\.hidden"
+  },
+  {
+   "path": "\\..\\..",
+   "isAbsolute": true,
+   "dirname": "\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "\\a\\.",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "\\a\\..",
+   "isAbsolute": true,
+   "dirname": "\\a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "\\x.",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "\\x."
+  },
+  {
+   "path": "\\x..",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\x.."
+  },
+  {
+   "path": "\\...",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "\\..."
+  },
+  {
+   "path": "\\a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "\\a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\a b\\c d.ts"
+  },
+  {
+   "path": "\\CON",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "\\CON"
+  },
+  {
+   "path": "\\con:",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "\\con:"
+  },
+  {
+   "path": "\\CON:x",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "\\CON:x"
+  },
+  {
+   "path": "\\COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\COM1:\\x"
+  },
+  {
+   "path": "\\LPT¹:",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "\\LPT¹:"
+  },
+  {
+   "path": "\\nul.txt",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "\\nul.txt"
+  },
+  {
+   "path": "\\a:b",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "\\a:b"
+  },
+  {
+   "path": "\\x\\y:",
+   "isAbsolute": true,
+   "dirname": "\\x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\x\\y:"
+  },
+  {
+   "path": "\\x:\\y",
+   "isAbsolute": true,
+   "dirname": "\\x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\x:\\y"
+  },
+  {
+   "path": "\\😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "\\😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\😀\\é.json"
+  },
+  {
+   "path": "\\CON😀",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "\\CON😀"
+  },
+  {
+   "path": "/",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "/a",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "/a\\b",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "/a/b",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "/a\\b\\",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b\\"
+  },
+  {
+   "path": "/a/b/",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b\\"
+  },
+  {
+   "path": "/a\\\\b",
+   "isAbsolute": true,
+   "dirname": "/a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "/..",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "/..\\a",
+   "isAbsolute": true,
+   "dirname": "/..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "/a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "/a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\b"
+  },
+  {
+   "path": "/.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "/.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\a\\b"
+  },
+  {
+   "path": "/a.json",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "\\a.json"
+  },
+  {
+   "path": "/a.b.json",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "\\a.b.json"
+  },
+  {
+   "path": "/dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "/dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\dir\\file.schema.json"
+  },
+  {
+   "path": "/.hidden",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "\\.hidden"
+  },
+  {
+   "path": "/..\\..",
+   "isAbsolute": true,
+   "dirname": "/..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "/a\\.",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "/a\\..",
+   "isAbsolute": true,
+   "dirname": "/a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "/x.",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "\\x."
+  },
+  {
+   "path": "/x..",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\x.."
+  },
+  {
+   "path": "/...",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "\\..."
+  },
+  {
+   "path": "/a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "/a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\a b\\c d.ts"
+  },
+  {
+   "path": "/CON",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "\\CON"
+  },
+  {
+   "path": "/con:",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "\\con:"
+  },
+  {
+   "path": "/CON:x",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "\\CON:x"
+  },
+  {
+   "path": "/COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "/COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\COM1:\\x"
+  },
+  {
+   "path": "/LPT¹:",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "\\LPT¹:"
+  },
+  {
+   "path": "/nul.txt",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "\\nul.txt"
+  },
+  {
+   "path": "/a:b",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "\\a:b"
+  },
+  {
+   "path": "/x\\y:",
+   "isAbsolute": true,
+   "dirname": "/x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\x\\y:"
+  },
+  {
+   "path": "/x:\\y",
+   "isAbsolute": true,
+   "dirname": "/x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\x:\\y"
+  },
+  {
+   "path": "/😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "/😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\😀\\é.json"
+  },
+  {
+   "path": "/CON😀",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "\\CON😀"
+  },
+  {
+   "path": "\\\\server\\share",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share",
+   "basename": "share",
+   "extname": "",
+   "normalize": "\\\\server\\share\\"
+  },
+  {
+   "path": "\\\\server\\sharea",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea",
+   "basename": "sharea",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\"
+  },
+  {
+   "path": "\\\\server\\sharea\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b"
+  },
+  {
+   "path": "\\\\server\\sharea/b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b"
+  },
+  {
+   "path": "\\\\server\\sharea\\b\\",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b\\"
+  },
+  {
+   "path": "\\\\server\\sharea/b/",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b\\"
+  },
+  {
+   "path": "\\\\server\\sharea\\\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b"
+  },
+  {
+   "path": "\\\\server\\share..",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share..",
+   "basename": "share..",
+   "extname": ".",
+   "normalize": "\\\\server\\share..\\"
+  },
+  {
+   "path": "\\\\server\\share..\\a",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share..\\",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\server\\share..\\a"
+  },
+  {
+   "path": "\\\\server\\sharea\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\b"
+  },
+  {
+   "path": "\\\\server\\share.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share.\\a\\b"
+  },
+  {
+   "path": "\\\\server\\sharea.json",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea.json",
+   "basename": "sharea.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\sharea.json\\"
+  },
+  {
+   "path": "\\\\server\\sharea.b.json",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea.b.json",
+   "basename": "sharea.b.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\sharea.b.json\\"
+  },
+  {
+   "path": "\\\\server\\sharedir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharedir\\",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\sharedir\\file.schema.json"
+  },
+  {
+   "path": "\\\\server\\share.hidden",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share.hidden",
+   "basename": "share.hidden",
+   "extname": ".hidden",
+   "normalize": "\\\\server\\share.hidden\\"
+  },
+  {
+   "path": "\\\\server\\share..\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share..\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server\\share..\\"
+  },
+  {
+   "path": "\\\\server\\sharea\\.",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\"
+  },
+  {
+   "path": "\\\\server\\sharea\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server\\sharea\\"
+  },
+  {
+   "path": "\\\\server\\sharex.",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharex.",
+   "basename": "sharex.",
+   "extname": ".",
+   "normalize": "\\\\server\\sharex.\\"
+  },
+  {
+   "path": "\\\\server\\sharex..",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharex..",
+   "basename": "sharex..",
+   "extname": ".",
+   "normalize": "\\\\server\\sharex..\\"
+  },
+  {
+   "path": "\\\\server\\share...",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share...",
+   "basename": "share...",
+   "extname": ".",
+   "normalize": "\\\\server\\share...\\"
+  },
+  {
+   "path": "\\\\server\\sharea b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea b\\",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\server\\sharea b\\c d.ts"
+  },
+  {
+   "path": "\\\\server\\shareCON",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\shareCON",
+   "basename": "shareCON",
+   "extname": "",
+   "normalize": "\\\\server\\shareCON\\"
+  },
+  {
+   "path": "\\\\server\\sharecon:",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharecon:",
+   "basename": "sharecon:",
+   "extname": "",
+   "normalize": "\\\\server\\sharecon:\\"
+  },
+  {
+   "path": "\\\\server\\shareCON:x",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\shareCON:x",
+   "basename": "shareCON:x",
+   "extname": "",
+   "normalize": "\\\\server\\shareCON:x\\"
+  },
+  {
+   "path": "\\\\server\\shareCOM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\shareCOM1:\\",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\server\\shareCOM1:\\x"
+  },
+  {
+   "path": "\\\\server\\shareLPT¹:",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\shareLPT¹:",
+   "basename": "shareLPT¹:",
+   "extname": "",
+   "normalize": "\\\\server\\shareLPT¹:\\"
+  },
+  {
+   "path": "\\\\server\\sharenul.txt",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharenul.txt",
+   "basename": "sharenul.txt",
+   "extname": ".txt",
+   "normalize": "\\\\server\\sharenul.txt\\"
+  },
+  {
+   "path": "\\\\server\\sharea:b",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharea:b",
+   "basename": "sharea:b",
+   "extname": "",
+   "normalize": "\\\\server\\sharea:b\\"
+  },
+  {
+   "path": "\\\\server\\sharex\\y:",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharex\\",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\server\\sharex\\y:"
+  },
+  {
+   "path": "\\\\server\\sharex:\\y",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\sharex:\\",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\server\\sharex:\\y"
+  },
+  {
+   "path": "\\\\server\\share😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\share😀\\",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\share😀\\é.json"
+  },
+  {
+   "path": "\\\\server\\shareCON😀",
+   "isAbsolute": true,
+   "dirname": "\\\\server\\shareCON😀",
+   "basename": "shareCON😀",
+   "extname": "",
+   "normalize": "\\\\server\\shareCON😀\\"
+  },
+  {
+   "path": "//server/share/",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "share",
+   "extname": "",
+   "normalize": "\\\\server\\share\\"
+  },
+  {
+   "path": "//server/share/a",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a"
+  },
+  {
+   "path": "//server/share/a\\b",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b"
+  },
+  {
+   "path": "//server/share/a/b",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b"
+  },
+  {
+   "path": "//server/share/a\\b\\",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b\\"
+  },
+  {
+   "path": "//server/share/a/b/",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b\\"
+  },
+  {
+   "path": "//server/share/a\\\\b",
+   "isAbsolute": true,
+   "dirname": "//server/share/a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b"
+  },
+  {
+   "path": "//server/share/..",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server\\share\\"
+  },
+  {
+   "path": "//server/share/..\\a",
+   "isAbsolute": true,
+   "dirname": "//server/share/..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a"
+  },
+  {
+   "path": "//server/share/a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "//server/share/a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\b"
+  },
+  {
+   "path": "//server/share/.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "//server/share/.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a\\b"
+  },
+  {
+   "path": "//server/share/a.json",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\share\\a.json"
+  },
+  {
+   "path": "//server/share/a.b.json",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\share\\a.b.json"
+  },
+  {
+   "path": "//server/share/dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "//server/share/dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\share\\dir\\file.schema.json"
+  },
+  {
+   "path": "//server/share/.hidden",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "\\\\server\\share\\.hidden"
+  },
+  {
+   "path": "//server/share/..\\..",
+   "isAbsolute": true,
+   "dirname": "//server/share/..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server\\share\\"
+  },
+  {
+   "path": "//server/share/a\\.",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a"
+  },
+  {
+   "path": "//server/share/a\\..",
+   "isAbsolute": true,
+   "dirname": "//server/share/a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server\\share\\"
+  },
+  {
+   "path": "//server/share/x.",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "\\\\server\\share\\x."
+  },
+  {
+   "path": "//server/share/x..",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\\\server\\share\\x.."
+  },
+  {
+   "path": "//server/share/...",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "\\\\server\\share\\..."
+  },
+  {
+   "path": "//server/share/a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "//server/share/a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\server\\share\\a b\\c d.ts"
+  },
+  {
+   "path": "//server/share/CON",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "\\\\server\\share\\CON"
+  },
+  {
+   "path": "//server/share/con:",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "\\\\server\\share\\con:"
+  },
+  {
+   "path": "//server/share/CON:x",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "\\\\server\\share\\CON:x"
+  },
+  {
+   "path": "//server/share/COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "//server/share/COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\server\\share\\COM1:\\x"
+  },
+  {
+   "path": "//server/share/LPT¹:",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "\\\\server\\share\\LPT¹:"
+  },
+  {
+   "path": "//server/share/nul.txt",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "\\\\server\\share\\nul.txt"
+  },
+  {
+   "path": "//server/share/a:b",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "\\\\server\\share\\a:b"
+  },
+  {
+   "path": "//server/share/x\\y:",
+   "isAbsolute": true,
+   "dirname": "//server/share/x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\server\\share\\x\\y:"
+  },
+  {
+   "path": "//server/share/x:\\y",
+   "isAbsolute": true,
+   "dirname": "//server/share/x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\server\\share\\x:\\y"
+  },
+  {
+   "path": "//server/share/😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "//server/share/😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\server\\share\\😀\\é.json"
+  },
+  {
+   "path": "//server/share/CON😀",
+   "isAbsolute": true,
+   "dirname": "//server/share/",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "\\\\server\\share\\CON😀"
+  },
+  {
+   "path": "\\\\?\\C:\\",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "C:",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\"
+  },
+  {
+   "path": "\\\\?\\C:\\a",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b"
+  },
+  {
+   "path": "\\\\?\\C:\\a/b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\b\\",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b\\"
+  },
+  {
+   "path": "\\\\?\\C:\\a/b/",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b\\"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b"
+  },
+  {
+   "path": "\\\\?\\C:\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\?\\"
+  },
+  {
+   "path": "\\\\?\\C:\\..\\a",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\?\\a"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\b"
+  },
+  {
+   "path": "\\\\?\\C:\\.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a\\b"
+  },
+  {
+   "path": "\\\\?\\C:\\a.json",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "\\\\?\\C:\\a.json"
+  },
+  {
+   "path": "\\\\?\\C:\\a.b.json",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "\\\\?\\C:\\a.b.json"
+  },
+  {
+   "path": "\\\\?\\C:\\dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\dir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\?\\C:\\dir\\file.schema.json"
+  },
+  {
+   "path": "\\\\?\\C:\\.hidden",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\.hidden"
+  },
+  {
+   "path": "\\\\?\\C:\\..\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\?\\"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\.",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a"
+  },
+  {
+   "path": "\\\\?\\C:\\a\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\?\\C:"
+  },
+  {
+   "path": "\\\\?\\C:\\x.",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "\\\\?\\C:\\x."
+  },
+  {
+   "path": "\\\\?\\C:\\x..",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\\\?\\C:\\x.."
+  },
+  {
+   "path": "\\\\?\\C:\\...",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "\\\\?\\C:\\..."
+  },
+  {
+   "path": "\\\\?\\C:\\a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\a b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\?\\C:\\a b\\c d.ts"
+  },
+  {
+   "path": "\\\\?\\C:\\CON",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\CON"
+  },
+  {
+   "path": "\\\\?\\C:\\con:",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\con:"
+  },
+  {
+   "path": "\\\\?\\C:\\CON:x",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\CON:x"
+  },
+  {
+   "path": "\\\\?\\C:\\COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\COM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\COM1:\\x"
+  },
+  {
+   "path": "\\\\?\\C:\\LPT¹:",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\LPT¹:"
+  },
+  {
+   "path": "\\\\?\\C:\\nul.txt",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "\\\\?\\C:\\nul.txt"
+  },
+  {
+   "path": "\\\\?\\C:\\a:b",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\a:b"
+  },
+  {
+   "path": "\\\\?\\C:\\x\\y:",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\x",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\x\\y:"
+  },
+  {
+   "path": "\\\\?\\C:\\x:\\y",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\x:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\x:\\y"
+  },
+  {
+   "path": "\\\\?\\C:\\😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\?\\C:\\😀\\é.json"
+  },
+  {
+   "path": "\\\\?\\C:\\CON😀",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\C:\\",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "\\\\?\\C:\\CON😀"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0",
+   "basename": "PHYSICALDRIVE0",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a",
+   "basename": "PHYSICALDRIVE0a",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a\\b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a/b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a\\b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\b\\",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a\\b\\"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a/b/",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a\\b\\"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a\\b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0..",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0..",
+   "basename": "PHYSICALDRIVE0..",
+   "extname": ".",
+   "normalize": "\\\\.\\PHYSICALDRIVE0.."
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0..\\a",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0..\\",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0..\\a"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0.\\a\\b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a.json",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a.json",
+   "basename": "PHYSICALDRIVE0a.json",
+   "extname": ".json",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a.json"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a.b.json",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a.b.json",
+   "basename": "PHYSICALDRIVE0a.b.json",
+   "extname": ".json",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a.b.json"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0dir\\",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\.\\PHYSICALDRIVE0dir\\file.schema.json"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0.hidden",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0.hidden",
+   "basename": "PHYSICALDRIVE0.hidden",
+   "extname": ".hidden",
+   "normalize": "\\\\.\\PHYSICALDRIVE0.hidden"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0..\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0..\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\.\\"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\.",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a\\",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\.\\"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0x.",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0x.",
+   "basename": "PHYSICALDRIVE0x.",
+   "extname": ".",
+   "normalize": "\\\\.\\PHYSICALDRIVE0x."
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0x..",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0x..",
+   "basename": "PHYSICALDRIVE0x..",
+   "extname": ".",
+   "normalize": "\\\\.\\PHYSICALDRIVE0x.."
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0...",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0...",
+   "basename": "PHYSICALDRIVE0...",
+   "extname": ".",
+   "normalize": "\\\\.\\PHYSICALDRIVE0..."
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a b\\",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a b\\c d.ts"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0CON",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0CON",
+   "basename": "PHYSICALDRIVE0CON",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0CON"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0con:",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0con:",
+   "basename": "PHYSICALDRIVE0con:",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0con:"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0CON:x",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0CON:x",
+   "basename": "PHYSICALDRIVE0CON:x",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0CON:x"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0COM1:\\",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0COM1:\\x"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0LPT¹:",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0LPT¹:",
+   "basename": "PHYSICALDRIVE0LPT¹:",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0LPT¹:"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0nul.txt",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0nul.txt",
+   "basename": "PHYSICALDRIVE0nul.txt",
+   "extname": ".txt",
+   "normalize": "\\\\.\\PHYSICALDRIVE0nul.txt"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0a:b",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0a:b",
+   "basename": "PHYSICALDRIVE0a:b",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0a:b"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0x\\y:",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0x\\",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0x\\y:"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0x:\\y",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0x:\\",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0x:\\y"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0😀\\",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\.\\PHYSICALDRIVE0😀\\é.json"
+  },
+  {
+   "path": "\\\\.\\PHYSICALDRIVE0CON😀",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\PHYSICALDRIVE0CON😀",
+   "basename": "PHYSICALDRIVE0CON😀",
+   "extname": "",
+   "normalize": "\\\\.\\PHYSICALDRIVE0CON😀"
+  },
+  {
+   "path": "\\\\server",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "server",
+   "extname": "",
+   "normalize": "\\server"
+  },
+  {
+   "path": "\\\\servera",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servera",
+   "extname": "",
+   "normalize": "\\servera"
+  },
+  {
+   "path": "\\\\servera\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\b\\"
+  },
+  {
+   "path": "\\\\servera/b",
+   "isAbsolute": true,
+   "dirname": "\\\\servera/b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\b\\"
+  },
+  {
+   "path": "\\\\servera\\b\\",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\b\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\b\\"
+  },
+  {
+   "path": "\\\\servera/b/",
+   "isAbsolute": true,
+   "dirname": "\\\\servera/b/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\b\\"
+  },
+  {
+   "path": "\\\\servera\\\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\\\b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\b\\"
+  },
+  {
+   "path": "\\\\server..",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "server..",
+   "extname": ".",
+   "normalize": "\\server.."
+  },
+  {
+   "path": "\\\\server..\\a",
+   "isAbsolute": true,
+   "dirname": "\\\\server..\\a",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\server..\\a\\"
+  },
+  {
+   "path": "\\\\servera\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\servera\\..\\b"
+  },
+  {
+   "path": "\\\\server.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "\\\\server.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\server.\\a\\b"
+  },
+  {
+   "path": "\\\\servera.json",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servera.json",
+   "extname": ".json",
+   "normalize": "\\servera.json"
+  },
+  {
+   "path": "\\\\servera.b.json",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servera.b.json",
+   "extname": ".json",
+   "normalize": "\\servera.b.json"
+  },
+  {
+   "path": "\\\\serverdir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "\\\\serverdir\\file.schema.json",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\serverdir\\file.schema.json\\"
+  },
+  {
+   "path": "\\\\server.hidden",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "server.hidden",
+   "extname": ".hidden",
+   "normalize": "\\server.hidden"
+  },
+  {
+   "path": "\\\\server..\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\server..\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\server..\\..\\"
+  },
+  {
+   "path": "\\\\servera\\.",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\.",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\servera\\.\\"
+  },
+  {
+   "path": "\\\\servera\\..",
+   "isAbsolute": true,
+   "dirname": "\\\\servera\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\servera\\..\\"
+  },
+  {
+   "path": "\\\\serverx.",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverx.",
+   "extname": ".",
+   "normalize": "\\serverx."
+  },
+  {
+   "path": "\\\\serverx..",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverx..",
+   "extname": ".",
+   "normalize": "\\serverx.."
+  },
+  {
+   "path": "\\\\server...",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "server...",
+   "extname": ".",
+   "normalize": "\\server..."
+  },
+  {
+   "path": "\\\\servera b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "\\\\servera b\\c d.ts",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\servera b\\c d.ts\\"
+  },
+  {
+   "path": "\\\\serverCON",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverCON",
+   "extname": "",
+   "normalize": "\\serverCON"
+  },
+  {
+   "path": "\\\\servercon:",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servercon:",
+   "extname": "",
+   "normalize": "\\servercon:"
+  },
+  {
+   "path": "\\\\serverCON:x",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverCON:x",
+   "extname": "",
+   "normalize": "\\serverCON:x"
+  },
+  {
+   "path": "\\\\serverCOM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\\\serverCOM1:\\x",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\serverCOM1:\\x\\"
+  },
+  {
+   "path": "\\\\serverLPT¹:",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverLPT¹:",
+   "extname": "",
+   "normalize": "\\serverLPT¹:"
+  },
+  {
+   "path": "\\\\servernul.txt",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servernul.txt",
+   "extname": ".txt",
+   "normalize": "\\servernul.txt"
+  },
+  {
+   "path": "\\\\servera:b",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "servera:b",
+   "extname": "",
+   "normalize": "\\servera:b"
+  },
+  {
+   "path": "\\\\serverx\\y:",
+   "isAbsolute": true,
+   "dirname": "\\\\serverx\\y:",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\serverx\\y:\\"
+  },
+  {
+   "path": "\\\\serverx:\\y",
+   "isAbsolute": true,
+   "dirname": "\\\\serverx:\\y",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\serverx:\\y\\"
+  },
+  {
+   "path": "\\\\server😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "\\\\server😀\\é.json",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\server😀\\é.json\\"
+  },
+  {
+   "path": "\\\\serverCON😀",
+   "isAbsolute": true,
+   "dirname": "\\",
+   "basename": "serverCON😀",
+   "extname": "",
+   "normalize": "\\serverCON😀"
+  },
+  {
+   "path": "//",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "//a",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\a"
+  },
+  {
+   "path": "//a\\b",
+   "isAbsolute": true,
+   "dirname": "//a\\b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\b\\"
+  },
+  {
+   "path": "//a/b",
+   "isAbsolute": true,
+   "dirname": "//a/b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\b\\"
+  },
+  {
+   "path": "//a\\b\\",
+   "isAbsolute": true,
+   "dirname": "//a\\b\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\b\\"
+  },
+  {
+   "path": "//a/b/",
+   "isAbsolute": true,
+   "dirname": "//a/b/",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\b\\"
+  },
+  {
+   "path": "//a\\\\b",
+   "isAbsolute": true,
+   "dirname": "//a\\\\b",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\b\\"
+  },
+  {
+   "path": "//..",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "//..\\a",
+   "isAbsolute": true,
+   "dirname": "//..\\a",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\\\..\\a\\"
+  },
+  {
+   "path": "//a\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "//a\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\a\\..\\b"
+  },
+  {
+   "path": "//.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "//.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\\\.\\a\\b"
+  },
+  {
+   "path": "//a.json",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "\\a.json"
+  },
+  {
+   "path": "//a.b.json",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a.b.json",
+   "extname": ".json",
+   "normalize": "\\a.b.json"
+  },
+  {
+   "path": "//dir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "//dir\\file.schema.json",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\\\dir\\file.schema.json\\"
+  },
+  {
+   "path": "//.hidden",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": ".hidden",
+   "extname": "",
+   "normalize": "\\.hidden"
+  },
+  {
+   "path": "//..\\..",
+   "isAbsolute": true,
+   "dirname": "//..\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\..\\..\\"
+  },
+  {
+   "path": "//a\\.",
+   "isAbsolute": true,
+   "dirname": "//a\\.",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\\\a\\.\\"
+  },
+  {
+   "path": "//a\\..",
+   "isAbsolute": true,
+   "dirname": "//a\\..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\\\a\\..\\"
+  },
+  {
+   "path": "//x.",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "x.",
+   "extname": ".",
+   "normalize": "\\x."
+  },
+  {
+   "path": "//x..",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\x.."
+  },
+  {
+   "path": "//...",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "...",
+   "extname": ".",
+   "normalize": "\\..."
+  },
+  {
+   "path": "//a b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "//a b\\c d.ts",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\\\a b\\c d.ts\\"
+  },
+  {
+   "path": "//CON",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON",
+   "extname": "",
+   "normalize": "\\CON"
+  },
+  {
+   "path": "//con:",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "con:",
+   "extname": "",
+   "normalize": "\\con:"
+  },
+  {
+   "path": "//CON:x",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON:x",
+   "extname": "",
+   "normalize": "\\CON:x"
+  },
+  {
+   "path": "//COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "//COM1:\\x",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\COM1:\\x\\"
+  },
+  {
+   "path": "//LPT¹:",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "LPT¹:",
+   "extname": "",
+   "normalize": "\\LPT¹:"
+  },
+  {
+   "path": "//nul.txt",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "nul.txt",
+   "extname": ".txt",
+   "normalize": "\\nul.txt"
+  },
+  {
+   "path": "//a:b",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "a:b",
+   "extname": "",
+   "normalize": "\\a:b"
+  },
+  {
+   "path": "//x\\y:",
+   "isAbsolute": true,
+   "dirname": "//x\\y:",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\\\x\\y:\\"
+  },
+  {
+   "path": "//x:\\y",
+   "isAbsolute": true,
+   "dirname": "//x:\\y",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\\\x:\\y\\"
+  },
+  {
+   "path": "//😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "//😀\\é.json",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\\\😀\\é.json\\"
+  },
+  {
+   "path": "//CON😀",
+   "isAbsolute": true,
+   "dirname": "/",
+   "basename": "CON😀",
+   "extname": "",
+   "normalize": "\\CON😀"
+  },
+  {
+   "path": "///x",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\x"
+  },
+  {
+   "path": "///xa",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xa",
+   "extname": "",
+   "normalize": "\\xa"
+  },
+  {
+   "path": "///xa\\b",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\xa\\b"
+  },
+  {
+   "path": "///xa/b",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\xa\\b"
+  },
+  {
+   "path": "///xa\\b\\",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\xa\\b\\"
+  },
+  {
+   "path": "///xa/b/",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\xa\\b\\"
+  },
+  {
+   "path": "///xa\\\\b",
+   "isAbsolute": true,
+   "dirname": "///xa\\",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\xa\\b"
+  },
+  {
+   "path": "///x..",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "x..",
+   "extname": ".",
+   "normalize": "\\x.."
+  },
+  {
+   "path": "///x..\\a",
+   "isAbsolute": true,
+   "dirname": "///x..",
+   "basename": "a",
+   "extname": "",
+   "normalize": "\\x..\\a"
+  },
+  {
+   "path": "///xa\\..\\..\\b",
+   "isAbsolute": true,
+   "dirname": "///xa\\..\\..",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\b"
+  },
+  {
+   "path": "///x.\\a\\.\\b",
+   "isAbsolute": true,
+   "dirname": "///x.\\a\\.",
+   "basename": "b",
+   "extname": "",
+   "normalize": "\\x.\\a\\b"
+  },
+  {
+   "path": "///xa.json",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xa.json",
+   "extname": ".json",
+   "normalize": "\\xa.json"
+  },
+  {
+   "path": "///xa.b.json",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xa.b.json",
+   "extname": ".json",
+   "normalize": "\\xa.b.json"
+  },
+  {
+   "path": "///xdir\\file.schema.json",
+   "isAbsolute": true,
+   "dirname": "///xdir",
+   "basename": "file.schema.json",
+   "extname": ".json",
+   "normalize": "\\xdir\\file.schema.json"
+  },
+  {
+   "path": "///x.hidden",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "x.hidden",
+   "extname": ".hidden",
+   "normalize": "\\x.hidden"
+  },
+  {
+   "path": "///x..\\..",
+   "isAbsolute": true,
+   "dirname": "///x..",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "///xa\\.",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": ".",
+   "extname": "",
+   "normalize": "\\xa"
+  },
+  {
+   "path": "///xa\\..",
+   "isAbsolute": true,
+   "dirname": "///xa",
+   "basename": "..",
+   "extname": "",
+   "normalize": "\\"
+  },
+  {
+   "path": "///xx.",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xx.",
+   "extname": ".",
+   "normalize": "\\xx."
+  },
+  {
+   "path": "///xx..",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xx..",
+   "extname": ".",
+   "normalize": "\\xx.."
+  },
+  {
+   "path": "///x...",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "x...",
+   "extname": ".",
+   "normalize": "\\x..."
+  },
+  {
+   "path": "///xa b\\c d.ts",
+   "isAbsolute": true,
+   "dirname": "///xa b",
+   "basename": "c d.ts",
+   "extname": ".ts",
+   "normalize": "\\xa b\\c d.ts"
+  },
+  {
+   "path": "///xCON",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xCON",
+   "extname": "",
+   "normalize": "\\xCON"
+  },
+  {
+   "path": "///xcon:",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xcon:",
+   "extname": "",
+   "normalize": "\\xcon:"
+  },
+  {
+   "path": "///xCON:x",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xCON:x",
+   "extname": "",
+   "normalize": "\\xCON:x"
+  },
+  {
+   "path": "///xCOM1:\\x",
+   "isAbsolute": true,
+   "dirname": "///xCOM1:",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\xCOM1:\\x"
+  },
+  {
+   "path": "///xLPT¹:",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xLPT¹:",
+   "extname": "",
+   "normalize": "\\xLPT¹:"
+  },
+  {
+   "path": "///xnul.txt",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xnul.txt",
+   "extname": ".txt",
+   "normalize": "\\xnul.txt"
+  },
+  {
+   "path": "///xa:b",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xa:b",
+   "extname": "",
+   "normalize": "\\xa:b"
+  },
+  {
+   "path": "///xx\\y:",
+   "isAbsolute": true,
+   "dirname": "///xx",
+   "basename": "y:",
+   "extname": "",
+   "normalize": "\\xx\\y:"
+  },
+  {
+   "path": "///xx:\\y",
+   "isAbsolute": true,
+   "dirname": "///xx:",
+   "basename": "y",
+   "extname": "",
+   "normalize": "\\xx:\\y"
+  },
+  {
+   "path": "///x😀\\é.json",
+   "isAbsolute": true,
+   "dirname": "///x😀",
+   "basename": "é.json",
+   "extname": ".json",
+   "normalize": "\\x😀\\é.json"
+  },
+  {
+   "path": "///xCON😀",
+   "isAbsolute": true,
+   "dirname": "//",
+   "basename": "xCON😀",
+   "extname": "",
+   "normalize": "\\xCON😀"
+  },
+  {
+   "path": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\x\\a.json",
+   "isAbsolute": true,
+   "dirname": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\x",
+   "basename": "a.json",
+   "extname": ".json",
+   "normalize": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\x\\a.json"
+  },
+  {
+   "path": "D:\\a\\q\\crates\\quicktype-cli/../../tests/inputs\\json/samples\\simple-object.json",
+   "isAbsolute": true,
+   "dirname": "D:\\a\\q\\crates\\quicktype-cli/../../tests/inputs\\json/samples",
+   "basename": "simple-object.json",
+   "extname": ".json",
+   "normalize": "D:\\a\\q\\tests\\inputs\\json\\samples\\simple-object.json"
+  },
+  {
+   "path": "file.json",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "file.json",
+   "extname": ".json",
+   "normalize": "file.json"
+  },
+  {
+   "path": ".",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": ".",
+   "extname": "",
+   "normalize": "."
+  },
+  {
+   "path": "C",
+   "isAbsolute": false,
+   "dirname": ".",
+   "basename": "C",
+   "extname": "",
+   "normalize": "C"
+  },
+  {
+   "path": "C:x\\y",
+   "isAbsolute": false,
+   "dirname": "C:x",
+   "basename": "y",
+   "extname": "",
+   "normalize": "C:x\\y"
+  },
+  {
+   "path": "\\\\.\\COM1:\\x",
+   "isAbsolute": true,
+   "dirname": "\\\\.\\COM1:\\",
+   "basename": "x",
+   "extname": "",
+   "normalize": "\\\\?\\COM1:\\x"
+  },
+  {
+   "path": "\\\\?\\CON:",
+   "isAbsolute": true,
+   "dirname": "\\\\?\\CON:",
+   "basename": "CON:",
+   "extname": "",
+   "normalize": "\\\\?\\CON:\\"
+  }
+ ],
+ "joins": [
+  {
+   "args": [
+    "",
+    ""
+   ],
+   "join": "."
+  },
+  {
+   "args": [
+    "",
+    "a.json"
+   ],
+   "join": "a.json"
+  },
+  {
+   "args": [
+    "",
+    "..\\b.json"
+   ],
+   "join": "..\\b.json"
+  },
+  {
+   "args": [
+    "",
+    "../../c"
+   ],
+   "join": "..\\..\\c"
+  },
+  {
+   "args": [
+    "",
+    "\\abs"
+   ],
+   "join": "\\abs"
+  },
+  {
+   "args": [
+    "",
+    "C:\\other"
+   ],
+   "join": "C:\\other"
+  },
+  {
+   "args": [
+    "",
+    "sub\\..\\d"
+   ],
+   "join": "d"
+  },
+  {
+   "args": [
+    "",
+    "CON:"
+   ],
+   "join": "CON:"
+  },
+  {
+   "args": [
+    "",
+    "share"
+   ],
+   "join": "share"
+  },
+  {
+   "args": [
+    "",
+    "x:"
+   ],
+   "join": "x:."
+  },
+  {
+   "args": [
+    "C:\\dir",
+    ""
+   ],
+   "join": "C:\\dir"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "a.json"
+   ],
+   "join": "C:\\dir\\a.json"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "..\\b.json"
+   ],
+   "join": "C:\\b.json"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "../../c"
+   ],
+   "join": "C:\\c"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "\\abs"
+   ],
+   "join": "C:\\dir\\abs"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "C:\\other"
+   ],
+   "join": "C:\\dir\\C:\\other"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "sub\\..\\d"
+   ],
+   "join": "C:\\dir\\d"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "CON:"
+   ],
+   "join": "C:\\dir\\CON:"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "share"
+   ],
+   "join": "C:\\dir\\share"
+  },
+  {
+   "args": [
+    "C:\\dir",
+    "x:"
+   ],
+   "join": "C:\\dir\\x:"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    ""
+   ],
+   "join": "C:\\dir\\"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "a.json"
+   ],
+   "join": "C:\\dir\\a.json"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "..\\b.json"
+   ],
+   "join": "C:\\b.json"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "../../c"
+   ],
+   "join": "C:\\c"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "\\abs"
+   ],
+   "join": "C:\\dir\\abs"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "C:\\other"
+   ],
+   "join": "C:\\dir\\C:\\other"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "sub\\..\\d"
+   ],
+   "join": "C:\\dir\\d"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "CON:"
+   ],
+   "join": "C:\\dir\\\\CON:"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "share"
+   ],
+   "join": "C:\\dir\\share"
+  },
+  {
+   "args": [
+    "C:\\dir\\",
+    "x:"
+   ],
+   "join": "C:\\dir\\x:"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    ""
+   ],
+   "join": "c:\\dir\\sub"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "a.json"
+   ],
+   "join": "c:\\dir\\sub\\a.json"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "..\\b.json"
+   ],
+   "join": "c:\\dir\\b.json"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "../../c"
+   ],
+   "join": "c:\\c"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "\\abs"
+   ],
+   "join": "c:\\dir\\sub\\abs"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "C:\\other"
+   ],
+   "join": "c:\\dir\\sub\\C:\\other"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "sub\\..\\d"
+   ],
+   "join": "c:\\dir\\sub\\d"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "CON:"
+   ],
+   "join": "c:\\dir\\sub\\CON:"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "share"
+   ],
+   "join": "c:\\dir\\sub\\share"
+  },
+  {
+   "args": [
+    "c:/dir/sub",
+    "x:"
+   ],
+   "join": "c:\\dir\\sub\\x:"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    ""
+   ],
+   "join": "\\\\server\\share\\"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "a.json"
+   ],
+   "join": "\\\\server\\share\\a.json"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "..\\b.json"
+   ],
+   "join": "\\\\server\\share\\b.json"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "../../c"
+   ],
+   "join": "\\\\server\\share\\c"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "\\abs"
+   ],
+   "join": "\\\\server\\share\\abs"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "C:\\other"
+   ],
+   "join": "\\\\server\\share\\C:\\other"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "sub\\..\\d"
+   ],
+   "join": "\\\\server\\share\\d"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "CON:"
+   ],
+   "join": "\\\\server\\share\\CON:"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "share"
+   ],
+   "join": "\\\\server\\share\\share"
+  },
+  {
+   "args": [
+    "\\\\server\\share",
+    "x:"
+   ],
+   "join": "\\\\server\\share\\x:"
+  },
+  {
+   "args": [
+    "//server",
+    ""
+   ],
+   "join": "\\server"
+  },
+  {
+   "args": [
+    "//server",
+    "a.json"
+   ],
+   "join": "\\\\server\\a.json\\"
+  },
+  {
+   "args": [
+    "//server",
+    "..\\b.json"
+   ],
+   "join": "\\\\server\\..\\b.json"
+  },
+  {
+   "args": [
+    "//server",
+    "../../c"
+   ],
+   "join": "\\\\server\\..\\c"
+  },
+  {
+   "args": [
+    "//server",
+    "\\abs"
+   ],
+   "join": "\\\\server\\abs\\"
+  },
+  {
+   "args": [
+    "//server",
+    "C:\\other"
+   ],
+   "join": "\\\\server\\C:\\other"
+  },
+  {
+   "args": [
+    "//server",
+    "sub\\..\\d"
+   ],
+   "join": "\\\\server\\sub\\d"
+  },
+  {
+   "args": [
+    "//server",
+    "CON:"
+   ],
+   "join": "\\\\server\\CON:"
+  },
+  {
+   "args": [
+    "//server",
+    "share"
+   ],
+   "join": "\\\\server\\share\\"
+  },
+  {
+   "args": [
+    "//server",
+    "x:"
+   ],
+   "join": "\\\\server\\x:\\"
+  },
+  {
+   "args": [
+    "\\",
+    ""
+   ],
+   "join": "\\"
+  },
+  {
+   "args": [
+    "\\",
+    "a.json"
+   ],
+   "join": "\\a.json"
+  },
+  {
+   "args": [
+    "\\",
+    "..\\b.json"
+   ],
+   "join": "\\b.json"
+  },
+  {
+   "args": [
+    "\\",
+    "../../c"
+   ],
+   "join": "\\c"
+  },
+  {
+   "args": [
+    "\\",
+    "\\abs"
+   ],
+   "join": "\\abs"
+  },
+  {
+   "args": [
+    "\\",
+    "C:\\other"
+   ],
+   "join": "\\C:\\other"
+  },
+  {
+   "args": [
+    "\\",
+    "sub\\..\\d"
+   ],
+   "join": "\\d"
+  },
+  {
+   "args": [
+    "\\",
+    "CON:"
+   ],
+   "join": "\\CON:"
+  },
+  {
+   "args": [
+    "\\",
+    "share"
+   ],
+   "join": "\\share"
+  },
+  {
+   "args": [
+    "\\",
+    "x:"
+   ],
+   "join": "\\x:"
+  },
+  {
+   "args": [
+    "\\\\",
+    ""
+   ],
+   "join": "\\"
+  },
+  {
+   "args": [
+    "\\\\",
+    "a.json"
+   ],
+   "join": "\\a.json"
+  },
+  {
+   "args": [
+    "\\\\",
+    "..\\b.json"
+   ],
+   "join": "\\b.json"
+  },
+  {
+   "args": [
+    "\\\\",
+    "../../c"
+   ],
+   "join": "\\c"
+  },
+  {
+   "args": [
+    "\\\\",
+    "\\abs"
+   ],
+   "join": "\\abs"
+  },
+  {
+   "args": [
+    "\\\\",
+    "C:\\other"
+   ],
+   "join": "\\C:\\other"
+  },
+  {
+   "args": [
+    "\\\\",
+    "sub\\..\\d"
+   ],
+   "join": "\\d"
+  },
+  {
+   "args": [
+    "\\\\",
+    "CON:"
+   ],
+   "join": "\\CON:"
+  },
+  {
+   "args": [
+    "\\\\",
+    "share"
+   ],
+   "join": "\\share"
+  },
+  {
+   "args": [
+    "\\\\",
+    "x:"
+   ],
+   "join": "\\x:"
+  },
+  {
+   "args": [
+    "dir",
+    ""
+   ],
+   "join": "dir"
+  },
+  {
+   "args": [
+    "dir",
+    "a.json"
+   ],
+   "join": "dir\\a.json"
+  },
+  {
+   "args": [
+    "dir",
+    "..\\b.json"
+   ],
+   "join": "b.json"
+  },
+  {
+   "args": [
+    "dir",
+    "../../c"
+   ],
+   "join": "..\\c"
+  },
+  {
+   "args": [
+    "dir",
+    "\\abs"
+   ],
+   "join": "dir\\abs"
+  },
+  {
+   "args": [
+    "dir",
+    "C:\\other"
+   ],
+   "join": ".\\dir\\C:\\other"
+  },
+  {
+   "args": [
+    "dir",
+    "sub\\..\\d"
+   ],
+   "join": "dir\\d"
+  },
+  {
+   "args": [
+    "dir",
+    "CON:"
+   ],
+   "join": "dir\\CON:"
+  },
+  {
+   "args": [
+    "dir",
+    "share"
+   ],
+   "join": "dir\\share"
+  },
+  {
+   "args": [
+    "dir",
+    "x:"
+   ],
+   "join": ".\\dir\\x:"
+  },
+  {
+   "args": [
+    "..",
+    ""
+   ],
+   "join": ".."
+  },
+  {
+   "args": [
+    "..",
+    "a.json"
+   ],
+   "join": "..\\a.json"
+  },
+  {
+   "args": [
+    "..",
+    "..\\b.json"
+   ],
+   "join": "..\\..\\b.json"
+  },
+  {
+   "args": [
+    "..",
+    "../../c"
+   ],
+   "join": "..\\..\\..\\c"
+  },
+  {
+   "args": [
+    "..",
+    "\\abs"
+   ],
+   "join": "..\\abs"
+  },
+  {
+   "args": [
+    "..",
+    "C:\\other"
+   ],
+   "join": ".\\..\\C:\\other"
+  },
+  {
+   "args": [
+    "..",
+    "sub\\..\\d"
+   ],
+   "join": "..\\d"
+  },
+  {
+   "args": [
+    "..",
+    "CON:"
+   ],
+   "join": "..\\CON:"
+  },
+  {
+   "args": [
+    "..",
+    "share"
+   ],
+   "join": "..\\share"
+  },
+  {
+   "args": [
+    "..",
+    "x:"
+   ],
+   "join": ".\\..\\x:"
+  },
+  {
+   "args": [
+    "C:",
+    ""
+   ],
+   "join": "C:."
+  },
+  {
+   "args": [
+    "C:",
+    "a.json"
+   ],
+   "join": "C:\\a.json"
+  },
+  {
+   "args": [
+    "C:",
+    "..\\b.json"
+   ],
+   "join": "C:\\b.json"
+  },
+  {
+   "args": [
+    "C:",
+    "../../c"
+   ],
+   "join": "C:\\c"
+  },
+  {
+   "args": [
+    "C:",
+    "\\abs"
+   ],
+   "join": "C:\\abs"
+  },
+  {
+   "args": [
+    "C:",
+    "C:\\other"
+   ],
+   "join": "C:\\C:\\other"
+  },
+  {
+   "args": [
+    "C:",
+    "sub\\..\\d"
+   ],
+   "join": "C:\\d"
+  },
+  {
+   "args": [
+    "C:",
+    "CON:"
+   ],
+   "join": "C:\\CON:"
+  },
+  {
+   "args": [
+    "C:",
+    "share"
+   ],
+   "join": "C:\\share"
+  },
+  {
+   "args": [
+    "C:",
+    "x:"
+   ],
+   "join": "C:\\x:"
+  },
+  {
+   "args": [
+    "/x",
+    ""
+   ],
+   "join": "\\x"
+  },
+  {
+   "args": [
+    "/x",
+    "a.json"
+   ],
+   "join": "\\x\\a.json"
+  },
+  {
+   "args": [
+    "/x",
+    "..\\b.json"
+   ],
+   "join": "\\b.json"
+  },
+  {
+   "args": [
+    "/x",
+    "../../c"
+   ],
+   "join": "\\c"
+  },
+  {
+   "args": [
+    "/x",
+    "\\abs"
+   ],
+   "join": "\\x\\abs"
+  },
+  {
+   "args": [
+    "/x",
+    "C:\\other"
+   ],
+   "join": "\\x\\C:\\other"
+  },
+  {
+   "args": [
+    "/x",
+    "sub\\..\\d"
+   ],
+   "join": "\\x\\d"
+  },
+  {
+   "args": [
+    "/x",
+    "CON:"
+   ],
+   "join": "\\x\\CON:"
+  },
+  {
+   "args": [
+    "/x",
+    "share"
+   ],
+   "join": "\\x\\share"
+  },
+  {
+   "args": [
+    "/x",
+    "x:"
+   ],
+   "join": "\\x\\x:"
+  }
+ ]
+}

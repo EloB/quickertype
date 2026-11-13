@@ -1,15 +1,28 @@
 [package]
-name = "quicktype-typescript-input"
+name = "quickertype-typescript-input"
 description = "TypeScript input for quicktype, via the TypeScript 7 native type checker"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
 authors.workspace = true
+keywords = ["quicktype", "typescript", "json-schema", "codegen"]
+categories = ["development-tools", "parser-implementations"]
+include = ["/src/", "/LICENSE", "/NOTICE"]
+
+[package.metadata.dist]
+# dist builds installers for the `quickertype` CLI only; this crate is
+# published to crates.io by .github/workflows/publish-crates.yml.
+dist = false
+
+[lib]
+name = "quicktype_typescript_input"
 
 [dependencies]
-quicktype-js-compat.workspace = true
+quickertype-js-compat.workspace = true
 stacker.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -1,0 +1,15 @@
+quickertype-core
+
+quicktype's quicktype-core API with a WebAssembly engine compiled from a Rust
+port of quicktype (https://github.com/EloB/quickertype).
+
+The JavaScript in dist/ is compiled from quicktype's
+packages/quicktype-core/src (https://github.com/glideapps/quicktype), at the
+commit in src/native/UPSTREAM.json of the repository, unmodified except
+Run.ts, plus this package's src/native. quicktype is
+Copyright (c) 2017-present Glide Apps and the quicktype contributors,
+licensed under the Apache License, Version 2.0.
+
+The WebAssembly engine (dist/native/wasm) is compiled from the Rust port in
+https://github.com/EloB/quickertype, licensed under the Apache License,
+Version 2.0, like quicktype.

@@ -1,0 +1,266 @@
+# Checks that the secrets the Release workflow publishes with work, before
+# the first tag (docs/RELEASING.md): HOMEBREW_TAP_TOKEN, NPM_TOKEN and, if
+# set, CARGO_REGISTRY_TOKEN. Read-only: it publishes nothing to npm or
+# crates.io, writes nothing to the Homebrew tap and never prints a secret.
+#
+#   gh workflow run release-preflight.yml
+name: Release preflight
+
+on:
+  workflow_dispatch:
+  # Also when a pull request from this repository changes this file, so the
+  # checks are tested before they reach main (GitHub only dispatches
+  # workflows it has seen run, or that are on the default branch).
+  pull_request:
+    paths: [.github/workflows/release-preflight.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  # The Release workflow's publish-homebrew-formula job checks out the tap
+  # with HOMEBREW_TAP_TOKEN and pushes a commit to its default branch.
+  homebrew-tap:
+    name: HOMEBREW_TAP_TOKEN can push to the tap
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      TAP: EloB/homebrew-tap
+      FORMULA: quickertype
+    steps:
+      - name: The secret is set
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::error::The HOMEBREW_TAP_TOKEN repository secret is not set (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+      # `permissions` is the token owner's role on the tap; for a
+      # fine-grained token, what the token itself may do is checked by the
+      # push dry-run below.
+      - name: The token can read the tap and has push permission
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if ! repo=$(gh api "repos/$TAP" 2>/dev/null); then
+            echo "::error::HOMEBREW_TAP_TOKEN cannot read $TAP: it is expired or revoked, or (fine-grained token) $TAP is not among its repositories."
+            exit 1
+          fi
+          echo "$TAP: default branch $(jq -r .default_branch <<<"$repo"), permissions $(jq -c .permissions <<<"$repo")"
+          if [ "$(jq -r .permissions.push <<<"$repo")" != true ]; then
+            echo "::error::HOMEBREW_TAP_TOKEN has no push permission on $TAP: give it Contents read and write (fine-grained) or the repo scope (classic)."
+            exit 1
+          fi
+      # What the publish job does, without writing: the same checkout, then
+      # `git push --dry-run`, which authenticates for push (git-receive-pack)
+      # but sends nothing.
+      - name: Check out the tap with the token
+        uses: actions/checkout@v6
+        with:
+          repository: EloB/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          persist-credentials: true
+          path: tap
+      - name: The token can push (git push --dry-run)
+        working-directory: tap
+        run: |
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          if ! git push --dry-run origin "HEAD:refs/heads/$branch"; then
+            echo "::error::HOMEBREW_TAP_TOKEN cannot push to $TAP: give it Contents read and write on $TAP (fine-grained) or the repo scope (classic)."
+            exit 1
+          fi
+          if [ -e "Formula/$FORMULA.rb" ]; then
+            echo "Formula/$FORMULA.rb exists; the release will replace it."
+          else
+            echo "Formula/$FORMULA.rb does not exist yet; the first release adds it."
+          fi
+
+  # The Release workflow publishes two npm packages with
+  # NODE_AUTH_TOKEN=NPM_TOKEN and actions/setup-node's .npmrc: the generated
+  # `quickertype` installer (dist's publish-npm job, Node 20) and
+  # `quickertype-core` (publish-npm-core.yml).
+  npm:
+    name: NPM_TOKEN can publish quickertype and quickertype-core
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      PACKAGES: quickertype quickertype-core
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: The secret is set
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::The NPM_TOKEN repository secret is not set (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+      - name: The token authenticates (npm whoami)
+        run: |
+          if ! user=$(npm whoami 2>/dev/null); then
+            echo "::error::NPM_TOKEN does not authenticate with registry.npmjs.org: it is expired, revoked or mistyped."
+            exit 1
+          fi
+          echo "Authenticated as $user."
+          echo "NPM_USER=$user" >> "$GITHUB_ENV"
+      - name: The package names are unclaimed or owned by that user
+        run: |
+          failed=0
+          for package in $PACKAGES; do
+            if npm view "$package" name > /dev/null 2> view.err; then
+              owners=$(npm owner ls "$package")
+              echo "$package exists; owners:"
+              echo "$owners"
+              if ! grep -q "^$NPM_USER " <<<"$owners"; then
+                echo "::error::$package is already on npm and $NPM_USER is not one of its owners."
+                failed=1
+              fi
+            elif grep -q E404 view.err; then
+              echo "$package is unclaimed; the first release creates it, owned by $NPM_USER."
+            else
+              cat view.err
+              echo "::error::Could not look up $package on npm."
+              failed=1
+            fi
+          done
+          exit $failed
+      - name: Packages with these names pass npm publish --dry-run
+        run: |
+          for package in $PACKAGES; do
+            dir=$(mktemp -d)
+            cat > "$dir/package.json" <<EOF
+          {
+            "name": "$package",
+            "version": "0.1.0",
+            "description": "Release preflight: never published",
+            "license": "Apache-2.0",
+            "main": "index.js"
+          }
+          EOF
+            echo "module.exports = {};" > "$dir/index.js"
+            (cd "$dir" && npm publish --dry-run --access public)
+          done
+      # `npm publish --dry-run` does not send the token, but npm lists the
+      # account's granular tokens, each abbreviated as `npm_abcd...wxyz`;
+      # find this one by that form and check what publishing needs: not
+      # revoked or expired, write permission, and Bypass 2FA (without it
+      # `npm publish` from CI fails with EOTP). Only those fields are printed.
+      - name: The token may publish (npm token list)
+        run: |
+          if ! npm token list --json > tokens.json 2> tokens.err; then
+            echo "::warning::npm token list is not available with this token ($(grep -m1 -oE 'code E[0-9A-Z]+' tokens.err || echo 'no error code')), so its permissions cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
+            exit 0
+          fi
+          match=""
+          for i in $(seq 0 $(( $(jq length tokens.json) - 1 ))); do
+            abbreviated=$(jq -r ".[$i].token // \"\"" tokens.json)
+            prefix=${abbreviated%%...*}
+            suffix=${abbreviated##*...}
+            if [ "$prefix" != "$abbreviated" ] && [ -n "$prefix" ] && [ -n "$suffix" ] &&
+              [ "${NODE_AUTH_TOKEN#"$prefix"}" != "$NODE_AUTH_TOKEN" ] &&
+              [ "${NODE_AUTH_TOKEN%"$suffix"}" != "$NODE_AUTH_TOKEN" ]; then
+              match=$i
+            fi
+          done
+          if [ -z "$match" ]; then
+            echo "Tokens npm lists (field names; the abbreviated token's shape only):"
+            jq -c 'map({fields: keys, token: ((.token // "") | gsub("[A-Za-z0-9]"; "x"))})' tokens.json
+            echo "::warning::NPM_TOKEN is not among the $(jq length tokens.json) tokens npm lists for $NPM_USER, so its permissions cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
+            exit 0
+          fi
+          token=$(jq ".[$match]" tokens.json)
+          jq '{bypass_2fa, expiry, revoked, readonly, permissions}' <<<"$token"
+          failed=0
+          if [ "$(jq -r '.revoked // false' <<<"$token")" != false ]; then
+            echo "::error::NPM_TOKEN is revoked."
+            failed=1
+          fi
+          expiry=$(jq -r '.expiry // empty' <<<"$token")
+          if [ -n "$expiry" ]; then
+            if [ "$(date -d "$expiry" +%s)" -le "$(date +%s)" ]; then
+              echo "::error::NPM_TOKEN expired on $expiry."
+              failed=1
+            elif [ "$(date -d "$expiry" +%s)" -le "$(date -d '+14 days' +%s)" ]; then
+              echo "::warning::NPM_TOKEN expires on $expiry: renew it before releasing after that."
+            else
+              echo "NPM_TOKEN expires on $expiry."
+            fi
+          fi
+          if [ "$(jq -r '.bypass_2fa // false' <<<"$token")" != true ]; then
+            echo "::error::NPM_TOKEN does not bypass 2FA, so npm publish from CI fails with EOTP: create a granular token with Bypass 2FA."
+            failed=1
+          else
+            echo "NPM_TOKEN bypasses 2FA."
+          fi
+          if jq -e '.permissions | tostring | test("stage"; "i")' <<<"$token" > /dev/null; then
+            echo "::error::NPM_TOKEN is a stage-only token, which cannot npm publish: create one with Read and write for packages."
+            failed=1
+          elif [ "$(jq -r '.readonly // false' <<<"$token")" = true ]; then
+            echo "::error::NPM_TOKEN is read-only: create a granular token with Read and write for packages."
+            failed=1
+          elif ! jq -e '.permissions | tostring | test("write"; "i")' <<<"$token" > /dev/null; then
+            echo "::warning::NPM_TOKEN's permissions above do not mention write: check on npmjs.com that it has Read and write (not stage only) for packages."
+          else
+            echo "NPM_TOKEN has write permission."
+          fi
+          exit $failed
+
+  # publish-crates.yml publishes with CARGO_REGISTRY_TOKEN when it is set,
+  # otherwise with crates.io trusted publishing (which needs each crate to
+  # exist and be configured on crates.io first).
+  crates-io:
+    name: CARGO_REGISTRY_TOKEN authenticates with crates.io
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      CRATES: quickertype-js-compat quickertype-core quickertype-graphql-input quickertype-typescript-input quickertype
+      # crates.io asks API clients for a User-Agent that identifies them.
+      USER_AGENT: "release-preflight (https://github.com/${{ github.repository }})"
+    steps:
+      - name: The token authenticates (GET /api/v1/me)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [ -z "$CARGO_REGISTRY_TOKEN" ]; then
+            echo "::notice::CARGO_REGISTRY_TOKEN is not set: publish-crates.yml will use trusted publishing, which works only for crates that already exist on crates.io and have it configured."
+            exit 0
+          fi
+          # /api/v1/me answers only browser sessions, but it checks the token
+          # first: a valid one gets "can only be performed on the crates.io
+          # website", an unknown, expired or revoked one "authentication failed".
+          detail=$(curl -sS -A "$USER_AGENT" -H "Authorization: $CARGO_REGISTRY_TOKEN" https://crates.io/api/v1/me |
+            jq -r '.errors[0].detail // "signed in"')
+          echo "crates.io: $detail"
+          case "$detail" in
+            *"can only be performed on the crates.io website"*)
+              echo "CARGO_REGISTRY_TOKEN authenticates with crates.io." ;;
+            *"authentication failed"* | *"does not match the format"*)
+              echo "::error::CARGO_REGISTRY_TOKEN does not authenticate with crates.io: it is expired, revoked or mistyped."
+              exit 1 ;;
+            *)
+              echo "::error::Unexpected answer from crates.io: $detail"
+              exit 1 ;;
+          esac
+      - name: The crate names are unclaimed or owned by the repository owner
+        run: |
+          failed=0
+          for crate in $CRATES; do
+            status=$(curl -sS -A "$USER_AGENT" -o crate.json -w '%{http_code}' "https://crates.io/api/v1/crates/$crate")
+            if [ "$status" = 404 ]; then
+              echo "$crate is unclaimed; the first release creates it."
+            elif [ "$status" = 200 ]; then
+              owners=$(curl -sS -A "$USER_AGENT" "https://crates.io/api/v1/crates/$crate/owners" | jq -r '[.users[].login] | join(" ")')
+              echo "$crate exists; owners: $owners"
+              if ! grep -qiw "$GITHUB_REPOSITORY_OWNER" <<<"$owners"; then
+                echo "::error::$crate is already on crates.io and $GITHUB_REPOSITORY_OWNER is not one of its owners."
+                failed=1
+              fi
+            else
+              echo "::error::Could not look up $crate on crates.io (HTTP $status)."
+              failed=1
+            fi
+          done
+          exit $failed

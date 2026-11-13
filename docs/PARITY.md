@@ -187,6 +187,7 @@ semantics were verified.
 | V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
 | `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()` |
+| Node's `path` (`path.posix`, and `path.win32` on Windows; Node 24.16: `isAbsolute`, `dirname`, `basename`, `extname`, `normalize`, `join`) | `quicktype_js_compat::path_posix` and `path_win32`, ports of `lib/path.js`; `quicktype_js_compat::path` is one or the other by platform, as `require("path")` is, for the CLI (file names, `--out`) and `NodeIO` (symbolic links) | `xtask/js-compat/gen-path-vectors.mjs`: 437 drive, UNC, device, relative and reserved-name paths through the five `path.win32` functions and 120 joins, and 643 paths and 120 joins through `path.posix`, identical to Node (`tests/path.rs`) |
 
 ## Known gaps
 
@@ -326,8 +327,14 @@ the others name the fix they need.
   Node does on macOS, where the corpus was recorded; Linux Node reports
   `EISDIR`; JSON samples, which are read as streams, fail with Node's
   stream error `EISDIR: illegal operation on a directory, read` instead), reports unreadable files (`EACCES`) as a `MiscReadError`
-  where Node crashes with an unhandled stream error, and resolves symbolic
-  links with POSIX path rules on every platform.
+  where Node crashes with an unhandled stream error. On Windows, a symbolic
+  link's target is what libuv's `readlink` (Node 24.16's libuv 1.52.1)
+  returns for the target stored in the link (`\??\C:\x` → `C:\x`,
+  `\??\unc\s\x` → `\\s\x`, `\??\C:/x` and `\\?\C:\x` unchanged), reconstructed
+  from Rust's `read_link` (`node_link_target` in `input/io/node_io.rs`).
+  Not reproduced: WSL symbolic links and app execution aliases, which
+  `read_link` cannot read, and volume mount points, which Node does not
+  take for links.
 - **Stack depth.** Where Node's stack overflows, the JSON Schema input
   fails with the same `RangeError: Maximum call stack size exceeded` (the
   CLI prints `Error: Maximum call stack size exceeded.`). The thresholds are
