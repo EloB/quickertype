@@ -1,0 +1,47 @@
+# ResolveIntersections: objects merge properties (intersecting their types),
+# numbers intersect to integer, and of several arrays the first one's items
+# are dropped (TypeScript quirk: allOf [integer[], string[]] is string[]).
+builder prov
+prim i integer
+prim d double
+str s unrestricted
+prim b bool
+prim nul null
+obj o1 x:i,y?:s - n=O1 desc=first
+obj o2 y?:s,z:b - n=O2 desc=second
+inter objs o1,o2 n=Objects
+union iu i,s n=IntOrString
+union du d,b n=DoubleOrBool
+inter nums iu,du n=Numbers
+arr ai i
+arr as s
+inter arrs ai,as n=Arrays
+arr ab b
+inter arrs3 ai,as,ab n=ThreeArrays
+cls top o:objs,n:nums,a:arrs,a3:arrs3 n=Top
+top Top top
+finish printonrewrite
+print
+resolve debug
+flatten
+gc
+print
+
+# Additional properties: kept if every member has them, otherwise dropped
+# and the attributes are lost.
+builder prov
+prim i integer
+str s unrestricted
+prim any any
+obj m1 a:i s n=M1
+obj m2 b:s any n=M2
+inter both m1,m2 n=Both
+obj m3 c:i - n=M3
+inter some m1,m3 n=Some
+cls top b:both,s:some n=Top
+top Top top
+finish
+resolve debug
+print
+resolve  # string & integer of property c is impossible: an empty union
+print

@@ -1,0 +1,279 @@
+(forwarding intersections: false)
+
+# make-transformations
+reconstituting 19
+reconstituted 19 as 0
+reconstituting 0
+reconstituted 0 as 1
+replacing set 15 as 2
+  replacing set 5 as 5
+  replaced set 5 as 5
+replaced set 15 as 2
+reconstituting 16
+reconstituted 16 as 8
+reconstituting 2
+reconstituted 2 as 6
+replacing set 6 as 9
+replaced set 6 as 9
+replacing set 8 as 11
+replaced set 8 as 11
+replacing set 9 as 13
+replaced set 9 as 13
+replacing set 10 as 15
+replaced set 10 as 15
+reconstituting 11
+reconstituted 11 as 17
+reconstituting 3
+reconstituted 3 as 18
+reconstituting 12
+reconstituted 12 as 19
+replacing set 13 as 20
+  reconstituting 4
+  reconstituted 4 as 10
+replaced set 13 as 20
+replacing set 14 as 22
+  reconstituting 7
+  reconstituted 7 as 23
+replaced set 14 as 22
+replacing set 18 as 25
+  reconstituting 17
+  reconstituted 17 as 26
+  reconstituting 1
+  reconstituted 1 as 27
+replaced set 18 as 25
+0: class Top | children 1,2,8,6,5,9,11,13,15,17,19,20,22,25 | 19 | given Top ()
+1: integer IntString | 0,5 | given IntString ()
+2: array | children 3,4,5,7 | transformation
+3: any
+4: array | children 3
+5: string | children 6,1 | transformation | unrestricted
+6: string | unrestricted | 2
+7: array | children 5 | 15
+8: array | children 1 | 16
+9: string | children 6,10 | transformation | unrestricted
+10: bool | 4,6
+11: string | children 6,12 | transformation | unrestricted
+12: enum Color | 8 | given Color ()
+13: integer | children 1,14 | transformation
+14: integer Ranged | 9 | 1-10 | given Ranged ()
+15: string | children 6,16 | transformation | unrestricted
+16: string Short | 10 | 2-5 | given Short () | unrestricted
+17: union NullableInt | children 1,18 | 11 | given NullableInt ()
+18: null | 3
+19: union NullableRanged | children 13,18 | 12 | given NullableRanged ()
+20: any | children 3,18,1,10,6,21 | transformation
+21: union Mixed | children 10,1,18,6 | 13 | given Mixed ()
+22: any | children 3,6,23,11,1,15,24 | transformation | 5
+23: date-time | 7
+24: union Strings | children 23,1,11,15 | 14 | given Strings ()
+25: any | children 3,27,6,1,26,28 | transformation | 5
+26: class C | children 1 | 17 | given C ()
+27: double | 1
+28: union WithClass | children 26,27,1 | 18 | given WithClass ()
+
+# GC
+0: class Top | children 1,2,8,5,4,9,11,13,15,17,19,20,22,25 | 19 | given Top ()
+1: integer IntString | 0,5 | given IntString ()
+2: array | children 7,6,4,3 | transformation
+3: array | children 4 | 15
+4: string | children 5,1 | transformation | unrestricted
+5: string | unrestricted | 2
+6: array | children 7
+7: any
+8: array | children 1 | 16
+9: string | children 5,10 | transformation | unrestricted
+10: bool | 4,6
+11: string | children 5,12 | transformation | unrestricted
+12: enum Color | 8 | given Color ()
+13: integer | children 1,14 | transformation
+14: integer Ranged | 9 | 1-10 | given Ranged ()
+15: string | children 5,16 | transformation | unrestricted
+16: string Short | 10 | 2-5 | given Short () | unrestricted
+17: union NullableInt | children 1,18 | 11 | given NullableInt ()
+18: null | 3
+19: union NullableRanged | children 13,18 | 12 | given NullableRanged ()
+20: any | children 7,18,1,10,5,21 | transformation
+21: union Mixed | children 10,1,18,5 | 13 | given Mixed ()
+22: any | children 7,5,24,11,1,15,23 | transformation | 5
+23: union Strings | children 24,1,11,15 | 14 | given Strings ()
+24: date-time | 7
+25: any | children 7,28,5,1,27,26 | transformation | 5
+26: union WithClass | children 27,28,1 | 18 | given WithClass ()
+27: class C | children 1 | 17 | given C ()
+28: double | 1
+0: class Top | children 1,2,8,5,4,9,11,13,15,17,19,20,22,25 | 19 | given Top ()
+1: integer IntString | 0,5 | given IntString ()
+2: array | children 7,6,4,3 | transformation
+3: array | children 4 | 15
+4: string | children 5,1 | transformation | unrestricted
+5: string | unrestricted | 2
+6: array | children 7
+7: any
+8: array | children 1 | 16
+9: string | children 5,10 | transformation | unrestricted
+10: bool | 4,6
+11: string | children 5,12 | transformation | unrestricted
+12: enum Color | 8 | given Color ()
+13: integer | children 1,14 | transformation
+14: integer Ranged | 9 | 1-10 | given Ranged ()
+15: string | children 5,16 | transformation | unrestricted
+16: string Short | 10 | 2-5 | given Short () | unrestricted
+17: union NullableInt | children 1,18 | 11 | given NullableInt ()
+18: null | 3
+19: union NullableRanged | children 13,18 | 12 | given NullableRanged ()
+20: any | children 7,18,1,10,5,21 | transformation
+21: union Mixed | children 10,1,18,5 | 13 | given Mixed ()
+22: any | children 7,5,24,11,1,15,23 | transformation | 5
+23: union Strings | children 24,1,11,15 | 14 | given Strings ()
+24: date-time | 7
+25: any | children 7,28,5,1,27,26 | transformation | 5
+26: union WithClass | children 27,28,1 | 18 | given WithClass ()
+27: class C | children 1 | 17 | given C ()
+28: double | 1
+xf 1: none
+xf 2:
+array -> decode-array
+  any -> decode
+-> array
+reverse:
+array -> encode-array
+  string (integer) -> encode
+-> array
+canFail false nodes 2 reverse canFail false nodes 2
+xf 4:
+string -> decode
+  string -> parse-string
+-> integer
+reverse:
+integer -> stringify
+  string -> encode
+-> string
+canFail false nodes 2 reverse canFail false nodes 2
+xf 9:
+string -> decode
+  string -> parse-string
+-> bool
+reverse:
+bool -> stringify
+  string -> encode
+-> string
+canFail false nodes 2 reverse canFail false nodes 2
+xf 11:
+string -> decode
+  string -> choice
+    string -> string-match - case: red
+      string -> string-producer - result: red
+    string -> string-match - case: green
+      string -> string-producer - result: green
+-> enum
+reverse:
+enum -> choice
+  enum -> string-match - case: red
+    string -> string-producer - result: red
+      string -> encode
+  enum -> string-match - case: green
+    string -> string-producer - result: green
+      string -> encode
+-> string
+canFail false nodes 6 reverse canFail true nodes 7
+xf 13:
+integer -> decode
+  integer -> min-max-value-check
+-> integer
+reverse:
+integer -> min-max-value-check
+  integer -> encode
+-> integer
+canFail false nodes 2 reverse canFail true nodes 2
+xf 15:
+string -> decode
+  string -> min-max-length-check
+-> string
+reverse:
+string -> min-max-length-check
+  string -> encode
+-> string
+canFail false nodes 2 reverse canFail true nodes 2
+xf 20:
+any -> decoding-choice
+  null -> decode
+    null -> union-instantiation
+  integer -> decode
+    integer -> union-instantiation
+  bool -> decode
+    bool -> union-instantiation
+  string -> decode
+    string -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: null
+    null -> encode
+  union -> union-member-match - member: integer
+    integer -> encode
+  union -> union-member-match - member: bool
+    bool -> encode
+  union -> union-member-match - member: string
+    string -> encode
+-> any
+canFail false nodes 9 reverse canFail true nodes 9
+xf 22:
+any -> decoding-choice
+  string -> decode
+    string -> choice
+      string -> parse-string
+        date-time -> union-instantiation
+      string -> choice
+        string -> string-match - case: red
+          string -> string-producer - result: red
+            string (enum) -> union-instantiation
+        string -> string-match - case: green
+          string -> string-producer - result: green
+            string (enum) -> union-instantiation
+      string -> parse-string
+        integer -> union-instantiation
+      string -> min-max-length-check
+        string (string) -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: date-time
+    date-time -> stringify
+      string -> encode
+  union -> union-member-match - member: string (enum)
+    string (enum) -> choice
+      string (enum) -> string-match - case: red
+        string -> string-producer - result: red
+          string -> encode
+      string (enum) -> string-match - case: green
+        string -> string-producer - result: green
+          string -> encode
+  union -> union-member-match - member: integer
+    integer -> stringify
+      string -> encode
+  union -> union-member-match - member: string (string)
+    string (string) -> min-max-length-check
+      string -> encode
+-> any
+canFail false nodes 16 reverse canFail true nodes 18
+xf 25:
+any -> decoding-choice
+  double -> decode
+    double -> union-instantiation
+  string -> decode
+    string -> parse-string
+      integer -> union-instantiation
+  class -> decode
+    class -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: double
+    double -> encode
+  union -> union-member-match - member: integer
+    integer -> stringify
+      string -> encode
+  union -> union-member-match - member: class
+    class -> encode
+-> any
+canFail false nodes 8 reverse canFail true nodes 8

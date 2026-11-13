@@ -76,6 +76,12 @@ same files:
 | L7 | Swift, Objective-C, Dart | 5.0k / 1,025 |
 | L8 | Haskell, Scala 3, Smithy4s, PHP | 4.9k / 1,235 |
 
+Cross-cutting items each language package must pick up:
+
+- `TargetLanguage::supports_full_object_type()` returns `true` for
+  TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
+  `false`.
+
 ## Phase 5 — Remaining inputs
 
 GraphQL (`quicktype-graphql-input`), Postman collections, URL sources and

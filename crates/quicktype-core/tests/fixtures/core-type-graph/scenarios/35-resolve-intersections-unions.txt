@@ -1,0 +1,43 @@
+# Intersections of unions: members that are canonical unions are resolved,
+# non-canonical ones wait for union flattening (done = false), and the
+# resolve/flatten loop of Run finishes the job.
+builder
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+obj o1 a:i - n=O1
+obj o2 b:s - n=O2
+union u1 o1,nul n=U1
+union u2 o2,nul,s n=U2
+inter x u1,u2 n=X
+union nc i,d n=NC
+uunion nonc n=NonCanonical
+members nonc nc,s
+inter y nonc,s n=Y
+arr ax x
+cls top x:x,y:y,ax:ax n=Top
+top Top top
+finish
+query canonical 6
+resolve debug
+print
+flatten
+print
+resolve
+print
+flatten
+print
+gc
+print
+
+# Classes can't be intersected.
+builder
+prim i integer
+cls c a:i n=C
+cls e b:i n=E
+inter x c,e n=X
+cls top x:x n=Top
+top Top top
+finish
+resolve

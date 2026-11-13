@@ -2,15 +2,18 @@
 
 Node scripts that record the reference implementation's behavior for the
 type graph port (`crates/quicktype-core/src/{ty,attributes}`,
-`graph_rewriting.rs`, `union_builder.rs`, `unify_classes.rs`). They need a
-built quicktype checkout (`npm ci && npm run build`); the Rust tests only read
-the committed fixtures and never need Node.
+`graph_rewriting.rs`, `union_builder.rs`, `unify_classes.rs`) and the
+rewrite pipeline (`rewrites/*`, `transformers.rs`,
+`make_transformations.rs`). They need a built quicktype checkout
+(`npm ci && npm run build`); the Rust tests only read the committed fixtures
+and never need Node.
 
 | Script | Writes |
 |---|---|
 | `gen-chance-data.mjs <quicktype>` | `crates/quicktype-core/src/support/chance_data.rs` (the word lists of `Chance.ts`) |
 | `gen-fixtures.mjs <quicktype>` | `tests/fixtures/core-type-graph/chance.txt` (random name sequence), `combined-names.txt` |
 | `run-scenarios.mjs <quicktype>` | `tests/fixtures/core-type-graph/scenarios/*.expected` |
+| `gen-infer-maps-scenario.mjs <quicktype>` | `scenarios/40-infer-maps-threshold.txt` (stdout; names near InferMaps' Markov limit) |
 
 ```sh
 node xtask/core-type-graph/run-scenarios.mjs ../quicktype
@@ -27,6 +30,18 @@ headers, `--debug print-reconstitution` traces, errors).
 `crates/quicktype-core/tests/type_graph_scenarios.rs` interprets the same
 program with the Rust port and compares the output byte for byte. To cover a
 new behavior, add a `.txt` scenario and regenerate the `.expected` files.
+
+Scenarios `01`–`25` cover the type graph itself; `30` and up run the
+rewrite passes one at a time (`flatten`, `resolve`, `replaceobj`,
+`combine`, `infermaps`, `expand`, `flattenstrings`, `maketx`, plus `xf` to
+print a transformation and its reverse) and, in `48`/`49`, in the order
+`Run.processGraph` uses them. The reference behavior they pin down includes
+its quirks: the first array of an intersection losing its items, the
+inverted `StringMatchTransformer.equals`, the doubled fixed-point rewrite
+consuming the random name generator, and InferMaps' Markov threshold (`40`,
+generated). `maketx csharp`/`python` use the real C# and Python
+`needsTransformerForType` on the TypeScript side; the Rust interpreter has
+equivalent ports of those two predicates until the language ports land.
 
 ## Diffing a whole run against the reference
 

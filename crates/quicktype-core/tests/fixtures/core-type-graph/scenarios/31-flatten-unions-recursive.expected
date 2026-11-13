@@ -1,0 +1,81 @@
+(forwarding intersections: false)
+0: string | unrestricted
+1: union U1 | children 4,2 | given U1 ()
+2: union | children 4,3
+3: map | children 1
+4: class A | children 0 | given A ()
+5: class Top | children 1 | given Top ()
+reconstituting 5
+reconstituted 5 as 0
+replacing set 1,2 as 1
+replaced set 1,2 as 1
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 3 as 1
+reconstituted 3 as 1
+reconstituting 2 as 2
+reconstituted 2 as 2
+reconstituting 4 as 3
+reconstituted 4 as 3
+(flatten done: true)
+0: class Top | children 1 | given Top ()
+1: map A | children 2 | given A ()
+2: union U1 | children 1,3 | distance 1 U1 ()
+3: string | unrestricted
+0: class Top | children 1 | given Top ()
+1: map A | children 2 | given A ()
+2: union U1 | children 1,3 | distance 1 U1 ()
+3: string | unrestricted
+(forwarding intersections: false)
+reconstituting 6
+reconstituted 6 as 0
+replacing set 5 as 1
+  reconstituting 0
+  reconstituted 0 as 2
+replaced set 5 as 1
+(flatten done: true)
+0: class Top | children 1 | given Top ()
+1: object MCO | children 2,3 | given MCO ()
+2: integer
+3: union | children 2,4
+4: string | unrestricted
+(forwarding intersections: false)
+(flatten done: true)
+0: class Top | children 1 | given Top ()
+1: map MC | children 2 | given MC ()
+2: integer
+(forwarding intersections: false)
+reconstituting 6
+reconstituted 6 as 0
+replacing set 5 as 1
+replaced set 5 as 1
+(flatten done: true)
+0: class Top | children 1 | given Top ()
+1: union Arrays | children 5,6 | given Arrays ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
+5: array | children 2
+6: null
+(forwarding intersections: false)
+reconstituting 7
+reconstituted 7 as 0
+reconstituting 6
+reconstituted 6 as 1
+replacing set 2,3 as 2
+  reconstituting 0
+  reconstituted 0 as 3
+  reconstituting 1
+  reconstituted 1 as 4
+replaced set 2,3 as 2
+(flatten done: true)
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class u1 | children 4,3,2 | distance 1 U1,A,B ()
+3: string | unrestricted
+4: integer
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class u1 | children 3,4,2 | distance 1 U1,A,B ()
+3: integer
+4: string | unrestricted

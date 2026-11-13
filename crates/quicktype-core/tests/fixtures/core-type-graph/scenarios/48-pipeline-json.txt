@@ -1,0 +1,43 @@
+# Run.processGraph for a JSON-like graph and C# (provenance checked, as with
+# --debug provenance): replace object type, flatten, combine classes (+
+# cleanup), infer maps until unchanged, expand strings (infer), flatten,
+# none to any, fixed point, make transformations, flatten, GC.
+builder prov alpha stm=date:date-time,time:date-time,date-time,uuid,uri,integer-string,bool-string
+prim i integer
+prim d double
+prim nul null
+prim b bool
+prim none none
+str color cases=red:6,green:5,blue:4 n=Color
+str color2 cases=red:3,green:2 n=Color
+str ids cases=/uuid n=Id
+str when cases=/date-time n=When
+str count cases=/integer-string n=Count
+str name cases=Ann:1,Bob:1,Cy:1 n=Name
+union ni i,nul n=Age
+cls p1 age:ni,color:color,id:ids,name:name,when:when n=Person
+cls p2 age:d,color:color2,id:ids,name:name n=Person
+cls p3 age:i,color:color,id:ids,name:name,when:when,extra:b n=Person
+cls p4 age:i,color:color,id:ids,name:name,nick:name n=Boss
+arr people p1
+union pp p2,p3 n=Friend
+arr friends pp
+cls scores xqzvw:i,kwjhq:i,pfgtz:i,qqxzk:i n=Scores
+arr empty none
+cls top people:people,boss:p4,friends:friends,scores:scores,count:count,empty:empty n=Top
+top Top top
+finish printonrewrite
+replaceobj
+flatten conflate
+combine alpha conflate
+combine alpha same
+infermaps conflate
+infermaps conflate
+expand infer
+flatten conflate
+nonetoany
+fixedpoint
+maketx csharp
+flatten conflate
+gc alpha
+print

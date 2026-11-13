@@ -1,0 +1,30 @@
+# StringMatchTransformer.equals is inverted (equal iff the cases differ)
+# while its hash includes the case. Two identical unions transform to two
+# identical transformations: without an enum they are equal and the second
+# `any` is deduplicated (a forwarding intersection, then removed); with a
+# one-case enum the StringMatch makes them unequal, so both stay.
+builder stm=none
+prim i integer
+str s unrestricted
+prim b bool
+uunion u1 n=Plain1
+members u1 i,s,b
+uunion u2 n=Plain2
+members u2 i,s,b
+enum e only n=E
+uunion u3 n=Enum1
+members u3 e,i
+uunion u4 n=Enum2
+members u4 e,i
+enum e2 x,y n=E2
+uunion u5 n=TwoCases1
+members u5 e2,b
+uunion u6 n=TwoCases2
+members u6 e2,b
+cls top a:u1,b:u2,c:u3,d:u4,e:u5,f:u6 n=Top
+top Top top
+finish printonrewrite
+maketx csharp
+fixedpoint
+gc
+print
