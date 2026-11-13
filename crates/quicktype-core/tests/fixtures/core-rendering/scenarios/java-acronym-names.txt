@@ -1,0 +1,11 @@
+# Port of quicktype's test/unit/java-acronym-names.test.ts: Java enum
+# constants keep acronyms ("SPA") upper case for every --acronym-style; the
+# identifier must be MULTI_SPA_IN_GROUP_REJECTED (checked in
+# tests/render_java_kotlin.rs).
+input schema TopLevel {"$schema": "http://json-schema.org/draft-06/schema#", "type": "object", "properties": {"messageCode": {"type": "string", "enum": ["MULTI_SPA_IN_GROUP_REJECTED"]}}, "required": ["messageCode"]}
+pipeline {"lang": "java"}
+
+render java {"rendererOptions": {"acronym-style": "original"}}
+render java {"rendererOptions": {"acronym-style": "pascal"}}
+render java {"rendererOptions": {"acronym-style": "camel"}}
+render java {"rendererOptions": {"acronym-style": "lowerCase"}}
