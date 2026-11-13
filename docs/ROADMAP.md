@@ -60,7 +60,7 @@ the rewrite pipeline and the Rust renderer end to end: the first
 golden-corpus passes for generated code. Then Go as the second pilot
 (aligned tables, `DependencyName`, GraphQL).
 
-## Phase 4 — Language fan-out (parallel)
+## Phase 4 — Language fan-out (parallel) — ✅ all languages except C done; C in progress
 
 Eight packages along base-class families (research 04), so no two edit the
 same files:
@@ -88,13 +88,13 @@ Cross-cutting items each language package must pick up:
   `attributes::type_attributes::{transformation_for_type, follow_target_type}`
   (generic over `TypeLookup`).
 
-## Phase 5 — Remaining inputs
+## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 
 GraphQL (`quicktype-graphql-input`, with a port of graphql-js's parser) and
 `--graphql-introspect` — ✅ done (`feat/graphql-input`); Postman
 collections, URL sources.
 
-## Phase 5b — TypeScript input (via the TypeScript 7 native compiler) — ✅ schema generation done; CLI wiring in Phase 3
+## Phase 5b — TypeScript input (via the TypeScript 7 native compiler) — ✅ done (wired into the CLI)
 
 `--src-lang typescript` needs a real type checker. Route: drive the
 TypeScript 7 native compiler's type-checker API (MessagePack over stdio to
@@ -105,7 +105,7 @@ Schema enters the normal pipeline. Parity with the reference (which runs
 cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 (TypeScript as an *output* language is just another renderer.)
 
-## Phase 6 — JavaScript API and distribution — ✅ JS API done (npm CLI distribution pending) — 🚧 JS API done (npm/quicktype-core)
+## Phase 6 — JavaScript API and distribution — ✅ JS API done; npm distribution of the native CLI pending
 
 - The JS API runs on WebAssembly in both Node.js and browsers, behind
   quicktype's own TypeScript API as a thin facade:
@@ -137,7 +137,7 @@ cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 - [ ] `quicktype-graphql-input` on the engine (after Phase 5's GraphQL input)
 - [ ] npm distribution of the native CLI (per-platform binary packages)
 
-## Phase 7 — Performance
+## Phase 7 — Performance — 🚧 in progress
 
 Benchmarks against the TypeScript implementation (startup, small and large
 inputs, the full corpus), profiling, and optimization without changing output.
