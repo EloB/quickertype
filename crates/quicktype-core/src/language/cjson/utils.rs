@@ -11,7 +11,9 @@ use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_ref::TypeRef;
 
 /// `legalizeName`: drops everything but ASCII letters, digits and
-/// underscores.
+/// underscores. TS defines the same function again in `CPlusPlus/utils.ts`
+/// ([`crate::language::cplusplus::utils::legalize_name`]); the copy is kept
+/// so each module mirrors its TS file.
 pub fn legalize_name(s: &str) -> String {
     legalize_characters(s, |cp| is_ascii(cp) && is_letter_or_underscore_or_digit(cp))
 }

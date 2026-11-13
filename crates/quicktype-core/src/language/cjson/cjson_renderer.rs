@@ -436,8 +436,11 @@ impl<'a> CJsonRenderer<'a> {
             BlankLinePosition::Leading,
             |r, t| r.is_unnamed_top_level(t),
             |r, t, name, _| {
-                let includes = r.includes.clone();
-                r.emit_top_level(t, name, &includes)
+                // `emit_top_level` only reads the list (named types fill it).
+                let includes = std::mem::take(&mut r.includes);
+                let result = r.emit_top_level(t, name, &includes);
+                r.includes = includes;
+                result
             },
         )?;
         Ok(())
