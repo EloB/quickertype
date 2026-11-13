@@ -15,7 +15,7 @@ use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::{number, whitespace};
 
 use super::inputs::JsonSourceData;
-use crate::messages::{ErrorKind, QuickTypeError, Result};
+use crate::messages::{ErrorKind, JsErrorName, QuickTypeError, Result};
 
 /// The result of [`sources_from_postman_collection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -71,13 +71,8 @@ fn parse_json(text: &str, description: &str, address: &str) -> Result<JsonValue>
 
 /// A JavaScript `TypeError` that escapes the TypeScript: the CLI prints its
 /// message as is (`Error: <message>.`).
-// TODO(js-exception): use messages.rs' variant for runtime exceptions
-// (constructor `TypeError`) once it lands, instead of an internal error
-// with a replaced user message.
 fn type_error(message: String) -> QuickTypeError {
-    let mut error = QuickTypeError::internal(message.clone());
-    error.set_user_message(message);
-    error
+    QuickTypeError::js_exception(JsErrorName::TypeError, message)
 }
 
 /// The deepest nesting of `processCollection` calls the reference CLI
@@ -93,7 +88,7 @@ const MAX_STRING_ARRAY_DEPTH: usize = 2_830;
 
 /// The `RangeError` Node throws when its stack runs out.
 fn stack_overflow() -> QuickTypeError {
-    type_error("Maximum call stack size exceeded".to_owned())
+    QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded")
 }
 
 /// `obj[key]` for a JSON value that is an object (`typeof obj ===

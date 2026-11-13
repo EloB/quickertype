@@ -88,7 +88,6 @@ Cross-cutting items each language package must pick up:
   and `quicktype-typescript-input`'s `js.rs::parse_json` with
   `quicktype_js_compat::json::parse` once `feat/core-json-input` and
   `feat/core-json-schema-input` are both on `main`.
-- Switch `TODO(js-exception)` sites (JSON input) to `JsException`.
 - Dedupe `transformers.rs`'s `lookup_*` helpers with
   `attributes::type_attributes::{transformation_for_type, follow_target_type}`
   (generic over `TypeLookup`).
