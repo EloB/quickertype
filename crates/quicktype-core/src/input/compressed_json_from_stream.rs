@@ -34,7 +34,7 @@ use std::io::Read;
 
 use quicktype_js_compat::utf8;
 
-use super::compressed_json::{CompressedJson, ParseError, Value};
+use super::compressed_json::{CompressedJson, JsonSink, ParseError, Value};
 use crate::input::io::node_io::IoError;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 
@@ -63,12 +63,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        // In memory: decode once (borrowing valid UTF-8) and tokenize it
-        // as one window.
-        match utf8::decode(sample) {
-            Cow::Borrowed(text) => self.tokenize(Tokenizer::in_memory(text)),
-            Cow::Owned(text) => self.tokenize(Tokenizer::in_memory(text)),
-        }
+        parse_stream_into(self, sample)
     }
 
     /// [`parse_stream`](Self::parse_stream) on a byte stream, read chunk
@@ -77,34 +72,65 @@ impl CompressedJson {
     /// error wraps an [`IoError`], that is the exception reported (its
     /// name and message), otherwise an `Error` with the error's text.
     pub fn parse_stream_reader(&mut self, reader: &mut dyn Read) -> Result<Value, ParseError> {
-        self.parse_stream_chunked(reader, CHUNK_SIZE)
+        parse_stream_reader_into(self, reader)
     }
 
+    #[cfg(test)]
     fn parse_stream_chunked(
         &mut self,
         reader: &mut dyn Read,
         chunk_size: usize,
     ) -> Result<Value, ParseError> {
-        self.tokenize(Tokenizer::streaming(reader, chunk_size))
+        parse_stream_chunked_into(self, reader, chunk_size)
     }
+}
 
-    fn tokenize<W: Window>(
-        &mut self,
-        mut tokenizer: Tokenizer<'_, W>,
-    ) -> Result<Value, ParseError> {
-        let result = tokenizer.run(self);
-        let read_error = tokenizer.read_error.take();
-        // A failed read looks like the end of the input to the parser; the
-        // read error is what is reported.
-        let result = match read_error {
-            Some(e) => Err(e),
-            None => result,
-        };
-        if result.is_err() {
-            self.reset_partial_sample();
-        }
-        result
+/// [`CompressedJson::parse_stream`] into any [`JsonSink`].
+pub(crate) fn parse_stream_into<S: JsonSink>(
+    sink: &mut S,
+    sample: &[u8],
+) -> Result<S::Root, ParseError> {
+    // In memory: decode once (borrowing valid UTF-8) and tokenize it
+    // as one window.
+    match utf8::decode(sample) {
+        Cow::Borrowed(text) => tokenize(sink, Tokenizer::in_memory(text)),
+        Cow::Owned(text) => tokenize(sink, Tokenizer::in_memory(text)),
     }
+}
+
+/// [`CompressedJson::parse_stream_reader`] into any [`JsonSink`].
+pub(crate) fn parse_stream_reader_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+) -> Result<S::Root, ParseError> {
+    parse_stream_chunked_into(sink, reader, CHUNK_SIZE)
+}
+
+/// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
+pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
+    sink: &mut S,
+    reader: &mut dyn Read,
+    chunk_size: usize,
+) -> Result<S::Root, ParseError> {
+    tokenize(sink, Tokenizer::streaming(reader, chunk_size))
+}
+
+fn tokenize<S: JsonSink, W: Window>(
+    sink: &mut S,
+    mut tokenizer: Tokenizer<'_, W>,
+) -> Result<S::Root, ParseError> {
+    let result = tokenizer.run(sink);
+    let read_error = tokenizer.read_error.take();
+    // A failed read looks like the end of the input to the parser; the
+    // read error is what is reported.
+    let result = match read_error {
+        Some(e) => Err(e),
+        None => result,
+    };
+    if result.is_err() {
+        sink.reset_partial_sample();
+    }
+    result
 }
 
 /// The parser's `expect` states. The number states are folded into
@@ -387,7 +413,7 @@ impl<W: Window> Tokenizer<'_, W> {
         }
     }
 
-    fn run(&mut self, cjson: &mut CompressedJson) -> Result<Value, ParseError> {
+    fn run<S: JsonSink>(&mut self, sink: &mut S) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Value;
         let mut stack: Vec<Parent> = Vec::new();
         loop {
@@ -403,21 +429,21 @@ impl<W: Window> Tokenizer<'_, W> {
                             self.index += 1;
                             match self.string()? {
                                 Token::Range(start, end) => {
-                                    cjson.commit_string(&self.text()[start..end])?;
+                                    sink.commit_string(&self.text()[start..end])?;
                                 }
-                                Token::Owned(s) => cjson.commit_string(&s)?,
+                                Token::Owned(s) => sink.commit_string(&s)?,
                             }
                             expect = Self::after_value(&stack);
                         }
                         b'{' => {
                             self.index += 1;
-                            cjson.push_object_context();
+                            sink.push_object_context()?;
                             stack.push(Parent::Object);
                             expect = Expect::Key1;
                         }
                         b'[' => {
                             self.index += 1;
-                            cjson.push_array_context();
+                            sink.push_array_context()?;
                             stack.push(Parent::Array);
                             expect = Expect::Value1;
                         }
@@ -428,16 +454,16 @@ impl<W: Window> Tokenizer<'_, W> {
                                 ));
                             }
                             self.index += 1;
-                            cjson.finish_array()?;
+                            sink.finish_array()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
                         b'-' | b'0'..=b'9' => {
-                            self.number(cjson)?;
+                            self.number(sink)?;
                             expect = Self::after_value(&stack);
                         }
                         b't' | b'f' | b'n' => {
-                            self.literal(cjson)?;
+                            self.literal(sink)?;
                             expect = Self::after_value(&stack);
                         }
                         _ => return Err(syntax("Parser cannot parse input: expected a value")),
@@ -450,9 +476,9 @@ impl<W: Window> Tokenizer<'_, W> {
                             self.index += 1;
                             match self.string()? {
                                 Token::Range(start, end) => {
-                                    cjson.set_property_key(&self.text()[start..end])?;
+                                    sink.set_property_key(&self.text()[start..end])?;
                                 }
-                                Token::Owned(key) => cjson.set_property_key(&key)?,
+                                Token::Owned(key) => sink.set_property_key(&key)?,
                             }
                             expect = Expect::Colon;
                         }
@@ -463,7 +489,7 @@ impl<W: Window> Tokenizer<'_, W> {
                                 ));
                             }
                             self.index += 1;
-                            cjson.finish_object()?;
+                            sink.finish_object()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
@@ -492,13 +518,13 @@ impl<W: Window> Tokenizer<'_, W> {
                         }
                         Some(b']') if in_array => {
                             self.index += 1;
-                            cjson.finish_array()?;
+                            sink.finish_array()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
                         Some(b'}') if !in_array => {
                             self.index += 1;
-                            cjson.finish_object()?;
+                            sink.finish_object()?;
                             stack.pop();
                             expect = Self::after_value(&stack);
                         }
@@ -518,7 +544,7 @@ impl<W: Window> Tokenizer<'_, W> {
                         return Err(syntax("Parser cannot parse input: unexpected characters"));
                     }
                     // The `end` event.
-                    return Ok(cjson.finish()?);
+                    return Ok(sink.finish()?);
                 }
             }
         }
@@ -603,7 +629,7 @@ impl<W: Window> Tokenizer<'_, W> {
     }
 
     /// `true`, `false` or `null`: `true\b|false\b|null\b` must match.
-    fn literal(&mut self, cjson: &mut CompressedJson) -> Result<(), ParseError> {
+    fn literal<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), ParseError> {
         let (word, value): (&[u8], Option<bool>) = match self.peek() {
             Some(b't') => (b"true", Some(true)),
             Some(b'f') => (b"false", Some(false)),
@@ -618,8 +644,8 @@ impl<W: Window> Tokenizer<'_, W> {
         }
         self.index += word.len();
         match value {
-            Some(b) => cjson.commit_boolean(b)?,
-            None => cjson.commit_null()?,
+            Some(b) => sink.commit_boolean(b)?,
+            None => sink.commit_null()?,
         }
         Ok(())
     }
@@ -632,7 +658,7 @@ impl<W: Window> Tokenizer<'_, W> {
     /// `handleStartNumber` / `handleNumberChunk` / `handleEndNumber`. The
     /// number is a double iff a chunk contains `.`, `e` or `E`, or the
     /// integer literal does not fit the target's integer range.
-    fn number(&mut self, cjson: &mut CompressedJson) -> Result<(), ParseError> {
+    fn number<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), ParseError> {
         let start = self.index;
         if self.peek() == Some(b'-') {
             self.index += 1;
@@ -682,8 +708,8 @@ impl<W: Window> Tokenizer<'_, W> {
             }
             self.skip(|b| b.is_ascii_digit());
         }
-        let is_double = is_double || !cjson.integer_string_fits(&self.text()[start..self.index]);
-        cjson.commit_number(is_double)?;
+        let is_double = is_double || !sink.integer_string_fits(&self.text()[start..self.index]);
+        sink.commit_number(is_double)?;
         Ok(())
     }
 }

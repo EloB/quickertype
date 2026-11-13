@@ -30,6 +30,13 @@ findings per area, with file and line references.
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
   over many inputs. Use it for anything outside the corpus.
+- **JSON inference from running tallies:** `crates/quicktype-core/tests/streaming_inference.rs`
+  runs seeded generated inputs through inference from running tallies
+  and from `CompressedJSON` (the reference) and requires the same
+  `add_source` results, type graphs after inference and whole runs;
+  `cargo xtask streaming-fuzz` runs millions of seeds and dumps documents
+  for `cargo xtask diff --each` against the TypeScript CLI. See
+  [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md).
 - **GraphQL input:** `xtask/graphql-input/run-graphql-inputs.mjs` records
   the reference `GraphQLInput`'s type graph right after input (or its
   error) for every query in `tests/inputs/graphql`, hand-written queries,

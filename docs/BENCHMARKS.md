@@ -228,15 +228,9 @@ Where the 5.76 GiB peak of the 2.6 GB record file goes (the RSS reaches
 The attribute-set share was measured by an experiment that kept only the
 first set per kind (not a valid change: it alters output in general):
 the peak dropped by 2.1 GB on the record file and by 3.0 GB on the
-text-heavy file. Next steps, not done here:
-
-1. Keep one copy of repeated attribute sets in the union accumulators
-   where combining them is idempotent (string types without cases, URI
-   attributes): up to the 2–3 GB above.
-2. Object entries of 12 bytes (the key is always an interned string): a
-   further 0.5 GiB on the record file.
-3. Streaming type inference (inferring while parsing), a separate
-   decision.
+text-heavy file. Phase 8a then removed all three parts on the CLI's path
+by inferring from running tallies; see
+[Streaming inference](#streaming-inference-phase-8a).
 
 To reproduce: build the 2.6 GB file from the benchmark's generated input
 and measure with `/usr/bin/time -l` (delete the file afterwards):
@@ -247,6 +241,98 @@ python3 -c 'd = open("target/bench/generated-large.json", "rb").read().rstrip()
 open("target/bench/huge.json", "wb").write(b"[" + b",\n".join([d] * 60) + b"]")'
 /usr/bin/time -l target/release/quicktype target/bench/huge.json -l ts -o out.ts
 rm target/bench/huge.json
+```
+
+## Streaming inference (Phase 8a)
+
+JSON types are inferred from running tallies instead of from a
+`CompressedJSON` copy of every sample (see
+[STREAMING-INFERENCE.md](STREAMING-INFERENCE.md)): while the reader
+streams, each place in the samples counts what inference reads (kinds in
+first-seen order, string cases with counts, the other strings' combined
+attributes, object and key counts), and nothing else is kept. Output is
+byte-identical (`cargo xtask parity`, the differential harness, the
+TypeScript CLI on 2,000 generated documents, and both inputs below).
+
+"Before" is `e41fe731d` (main when the branch started), "after" this
+branch, both `cargo build --release -p quickertype`, `--lang ts -o
+/dev/null`, measured with `/usr/bin/time -l` in interleaved rounds. The
+machine was heavily shared while these were taken (load average 130–180
+on 12 cores, from other work), so wall times are several times the quiet
+numbers above and vary a lot; CPU time (user + system) and peak RSS are
+the stable figures.
+
+| Input | Before: wall, CPU, peak RSS | After: wall, CPU, peak RSS |
+|---|---:|---:|
+| generated (40 MB): wall median of 16, CPU median of 9 | 2.93 s, 0.53 s, 150.1 MiB | 1.97 s, 0.39 s, 82.4 MiB |
+| 60 × generated (40 MB) in one array, 2.6 GB: wall median of 3, CPU of 1 | 169 s, 31.4 s, 5.0–5.8 GiB | 111 s, 21.5 s, 73–82 MiB |
+
+Peak memory on the 2.6 GB input drops from 5.0–5.8 GiB to 82 MiB, the
+same as for the 40 MB input it repeats: the tallies grow with what is
+distinct, not with the size.
+
+The review of the branch then removed the largest transient part:
+inferring the `preferences` map gathered its 209,519 keys' places into an
+index map with a one-element list per key (~15–20 MiB); the objects of a
+single place now use the place's tally as it is. Measured as above
+(`/usr/bin/time -l`, the branch before and after the review's fixes, same
+build settings, on the shared machine, at a load average between 13 and
+about 40 on 12 cores; output identical):
+
+| Input | Before the fixes: CPU, peak RSS | After: CPU, peak RSS |
+|---|---:|---:|
+| generated (40 MB), 10 interleaved runs each | 0.25 s, 82.4 MiB | 0.24 s, 62.0 MiB |
+| 60 × generated (40 MB), 2.6 GB, one run each | 15.5 s, 82.0 MiB | 14.3 s, 59.7 MiB |
+
+What is left at the peak, for both inputs (sizes estimated from the
+structures):
+
+| Part | Size |
+|---|---:|
+| `preferences`, a map of 209,519 distinct random keys: a node and a key count per key, the key text once | ~20 MiB |
+| String cases of 11 places (141,000 distinct: e-mail addresses, streets, ZIP codes, SKUs, ...) with their counts, the text once | ~10 MiB |
+| The process, the reading window, the type graph, rendering | the rest |
+
+Before, the peak was the `CompressedJSON` tables (2.4 GiB), one
+string-attribute set per string value in the union accumulators
+(~1.9 GiB) and the per-property value lists (~1.4 GiB); none of them
+exist on the new path. CPU time drops by a quarter to a third: tokenizing is
+unchanged, but nothing is stored per value, and inference touches each
+place once instead of each value.
+
+Text samples (`JsonSample::String`, the JavaScript API's `JSON.parse`
+semantics) are parsed whole, as `JSON.parse` does, and the parsed value
+is emitted straight into the tallies, so parsing costs more and inference
+less. Before the review's fixes they were also built into the compressed
+form, kept, and walked into the tallies a second time. The in-process
+benchmark (112 runs per iteration, `QUICKTYPE_INFERENCE=compressed-json`
+for the reference path; built without LTO; medians of seven interleaved
+rounds of 10 iterations, wall time per iteration and CPU time of the
+whole process, at a load average of 13–25 on 12 cores, so these are far
+below the first measurements, taken at 130–180):
+
+| Inference from | Total | Parse | Engine | Process CPU |
+|---|---:|---:|---:|---:|
+| Running tallies | 150 ms | 64 ms | 86 ms | 1.64 s |
+| Running tallies, before the review's fixes | 165 ms | 76 ms | 89 ms | 1.82 s |
+| `CompressedJSON` (the reference) | 164 ms | 54 ms | 110 ms | 1.81 s |
+
+The parse phase alone (`--parse-only`, 31 iterations, CPU time of the
+process, median of five): 1.94 s from tallies, 2.30 s before the review's
+fixes, 1.61 s on the reference path. (The first measurements, at a load
+average of 130–180, had the parse phase at 419 ms from tallies and 320 ms
+on the reference path, wall time per iteration.)
+
+To reproduce, as in [Memory on large inputs](#memory-on-large-inputs),
+with `target/before/quicktype` built from `e41fe731d`:
+
+```sh
+for bin in target/before/quicktype target/release/quicktype; do
+  /usr/bin/time -l $bin target/bench/huge.json -l ts -o /dev/null
+done
+QUICKTYPE_INFERENCE=compressed-json target/release/quicktype ...   # the reference path, same binary
+cargo bench -p quickertype --bench in_process --no-run   # prints the benchmark binary
+/usr/bin/time -l <benchmark binary> --parse-only -n 30   # the parse phase's CPU time
 ```
 
 ## Profiling
