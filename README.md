@@ -31,28 +31,43 @@ code) byte for byte.
 
 ## Install
 
-Prebuilt binaries for macOS, Linux and Windows are on the
+The CLI: prebuilt binaries for macOS, Linux and Windows are on the
 [releases page](https://github.com/EloB/quickertype/releases), with
 installers:
 
 ```sh
 brew install EloB/tap/quickertype      # Homebrew (macOS, Linux)
 npm install -g quickertype             # npm
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quicktype-cli-installer.sh | sh
+cargo install quickertype              # from source, with Cargo
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.sh | sh
 ```
 
 On Windows, run the MSI from the releases page, or:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quicktype-cli-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.ps1 | iex"
 ```
 
 Each installs a binary named `quicktype`, the same name as the TypeScript
 quicktype's, so install one or the other (see
 [docs/RELEASING.md](docs/RELEASING.md#the-quicktype-name)).
 `quicktype --version` reports the quicktype version it reproduces (24.0.0);
-the port has its own version, in [CHANGELOG.md](CHANGELOG.md).
-[docs/RELEASING.md](docs/RELEASING.md) describes how releases are made.
+the project has its own version, in [CHANGELOG.md](CHANGELOG.md).
+
+The libraries:
+
+- **JavaScript:** [`quickertype-core`](https://www.npmjs.com/package/quickertype-core)
+  on npm, a drop-in replacement for quicktype's `quicktype-core` (change the
+  import), see [npm/quicktype-core](npm/quicktype-core/README.md).
+- **Rust:** [`quickertype-core`](https://crates.io/crates/quickertype-core)
+  on crates.io (`use quicktype_core::…`), with
+  `quickertype-graphql-input`, `quickertype-typescript-input` and
+  `quickertype-js-compat`.
+
+The packages are published as quickertype-\*, so they never collide with
+quicktype's own; the directories and Rust library names keep quicktype-\*.
+[docs/RELEASING.md](docs/RELEASING.md) lists every name and describes how
+releases are made.
 
 ## Layout
 

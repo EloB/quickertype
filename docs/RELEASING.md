@@ -1,43 +1,69 @@
 # Releasing
 
-Releases of the `quicktype` CLI are built and published by
-[dist](https://axodotdev.github.io/cargo-dist/book/) (version pinned in
-[`dist-workspace.toml`](../dist-workspace.toml)). Pushing a tag such as
-`v0.1.0` runs [`.github/workflows/release.yml`](../.github/workflows/release.yml),
-which builds every target, creates the GitHub Release and publishes the
-Homebrew formula and the npm package. Only `quicktype-cli` is released; the
-other crates and `npm/quicktype-core` are not.
+Pushing a version tag such as `v0.1.0` runs
+[`.github/workflows/release.yml`](../.github/workflows/release.yml), which
+[dist](https://axodotdev.github.io/cargo-dist/book/) generates (version
+pinned in [`dist-workspace.toml`](../dist-workspace.toml)). It builds the
+`quickertype` CLI for every target and creates the GitHub Release. Then it
+publishes the Homebrew formula, the `quickertype` npm installer, the crates
+on crates.io ([`publish-crates.yml`](../.github/workflows/publish-crates.yml))
+and the `quickertype-core` npm package
+([`publish-npm-core.yml`](../.github/workflows/publish-npm-core.yml)).
 
-## Versions
+## Names and versions
 
-- **The port's version** is `version` in `[workspace.package]` of
-  [`Cargo.toml`](../Cargo.toml), shared by every crate. It follows semver
-  on its own, starting at 0.1.0, and the release tag is `v` plus it.
+The project publishes under the name quickertype, so it does not collide
+with quicktype's own packages:
+
+| Directory | Package | Library (import) name |
+|---|---|---|
+| `crates/quicktype-cli` | `quickertype` (crates.io; binary `quicktype`) | |
+| `crates/quicktype-core` | `quickertype-core` (crates.io) | `quicktype_core` |
+| `crates/quicktype-js-compat` | `quickertype-js-compat` (crates.io) | `quicktype_js_compat` |
+| `crates/quicktype-graphql-input` | `quickertype-graphql-input` (crates.io) | `quicktype_graphql_input` |
+| `crates/quicktype-typescript-input` | `quickertype-typescript-input` (crates.io) | `quicktype_typescript_input` |
+| `npm/quicktype-core` | `quickertype-core` (npm) | `require("quickertype-core")` |
+| `crates/quicktype-wasm`, `xtask` | not published | |
+
+`cargo -p` takes the package name: `cargo build -p quickertype`,
+`cargo test -p quickertype-core`.
+
+- **The project's version** is `version` in `[workspace.package]` of
+  [`Cargo.toml`](../Cargo.toml), shared by every crate. It follows semver on
+  its own, starting at 0.1.0, and the release tag is `v` plus it. Two other
+  places must match it, and the publish jobs fail (also on pull requests)
+  when they do not: the `version` of the four path dependencies in
+  `[workspace.dependencies]`, and `version` in
+  [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json)
+  (and its `package-lock.json`).
 - **quicktype's version** is what `quicktype --version` prints
   (`quicktype version 24.0.0`): `QUICKTYPE_VERSION` in
   [`crates/quicktype-cli/src/main.rs`](../crates/quicktype-cli/src/main.rs).
   It is part of byte-for-byte parity (the `cli-version` golden cases), so it
   changes only when the corpus is re-recorded against a new quicktype
   ([ARCHITECTURE.md](ARCHITECTURE.md), section 6), never for a release.
-- The WebAssembly engine's `engineVersion()` returns the port's version;
-  [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json) is
-  quicktype's own API package and keeps quicktype's version.
+- The WebAssembly engine's `engineVersion()` returns the project's version;
+  the facade only uses it to check that a module is this engine.
 
 ## What a release publishes
 
 | Where | What | Users install with |
 |---|---|---|
-| GitHub Release `vX.Y.Z` on EloB/quickertype | `quicktype-cli-<target>.tar.xz` (`.zip` on Windows), each with a `.sha256`; `sha256.sum`; `source.tar.gz`; the installers below; `dist-manifest.json`. The notes are the version's section of [`CHANGELOG.md`](../CHANGELOG.md), the title its heading. | download and unpack |
-| the same release | `quicktype-cli-installer.sh` | `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quicktype-cli-installer.sh \| sh` |
-| the same release | `quicktype-cli-installer.ps1` | `powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quicktype-cli-installer.ps1 \| iex"` |
-| the same release | `quicktype-cli-x86_64-pc-windows-msvc.msi`: installs to `C:\Program Files\quicktype-cli\bin` and adds it to `PATH` | run the MSI |
+| GitHub Release `vX.Y.Z` on EloB/quickertype | `quickertype-<target>.tar.xz` (`.zip` on Windows), each with a `.sha256`; `sha256.sum`; `source.tar.gz`; the installers below; `dist-manifest.json`. The notes are the version's section of [`CHANGELOG.md`](../CHANGELOG.md), the title its heading. | download and unpack |
+| the same release | `quickertype-installer.sh` | `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.sh \| sh` |
+| the same release | `quickertype-installer.ps1` | `powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/releases/latest/download/quickertype-installer.ps1 \| iex"` |
+| the same release | `quickertype-x86_64-pc-windows-msvc.msi`: installs to `C:\Program Files\quickertype\bin` and adds it to `PATH` | run the MSI |
 | [EloB/homebrew-tap](https://github.com/EloB/homebrew-tap) | `Formula/quickertype.rb` (macOS and Linux), committed by the release | `brew install EloB/tap/quickertype` |
-| [npm](https://www.npmjs.com/package/quickertype) | the package `quickertype`, which downloads the matching archive from the GitHub Release when it is installed | `npm install -g quickertype` or `npx quickertype` |
+| npm: [`quickertype`](https://www.npmjs.com/package/quickertype) | the CLI's installer package, which downloads the matching archive from the GitHub Release when it is installed | `npm install -g quickertype` or `npx quickertype` |
+| npm: [`quickertype-core`](https://www.npmjs.com/package/quickertype-core) | quicktype's `quicktype-core` API on the WebAssembly engine, with provenance | `npm install quickertype-core` |
+| crates.io: [`quickertype`](https://crates.io/crates/quickertype) and the four library crates | the sources, built by Cargo on install | `cargo install quickertype`, or `quickertype-core = "0.1"` as a dependency |
 
-Every one of them installs one binary, `quicktype`. The shell and
-PowerShell installers put it in `$CARGO_HOME/bin` (`~/.cargo/bin` by
-default). Each archive holds the binary, `README.md`, `LICENSE`,
-`CHANGELOG.md` and `NOTICE`.
+Every CLI install gives one binary, `quicktype`. The shell and PowerShell
+installers and `cargo install` put it in `$CARGO_HOME/bin` (`~/.cargo/bin`
+by default). Each archive holds the binary, `README.md`, `LICENSE`,
+`CHANGELOG.md` and `NOTICE`; each crate and `quickertype-core` also ship
+`LICENSE` and `NOTICE` (the copies in the crate directories and in
+`npm/quicktype-core` must stay equal to the ones at the root).
 
 Targets (`targets` in `dist-workspace.toml`):
 
@@ -51,7 +77,7 @@ Targets (`targets` in `dist-workspace.toml`):
 | `x86_64-pc-windows-msvc` | Windows Server 2022 | also the MSI |
 
 A version with a prerelease suffix (`v0.2.0-rc.1`) makes a GitHub
-prerelease and skips Homebrew and npm.
+prerelease and skips Homebrew, npm and crates.io.
 
 ## The `quicktype` name
 
@@ -67,41 +93,73 @@ this CLI is a drop-in replacement. Installed side by side, the two collide:
 - **npm:** the `quicktype` package's bin is also `quicktype`.
   `npm install -g quickertype` then fails with `EEXIST`; uninstall the other
   one first (`npm uninstall -g quicktype`). npm has no way to declare the
-  conflict.
-- **Shell, PowerShell and MSI installs:** whichever `quicktype` comes first
-  on `PATH` runs. `quicktype --version` prints the same text for both;
-  `which -a quicktype` (or `where quicktype` on Windows) shows which is
-  which.
+  conflict. (`quickertype-core` is a library and has no bin.)
+- **Shell, PowerShell, MSI and `cargo install`:** whichever `quicktype`
+  comes first on `PATH` runs. `quicktype --version` prints the same text for
+  both; `which -a quicktype` (or `where quicktype` on Windows) shows which
+  is which.
 
-## Secrets
+## Secrets and one-time setup
 
-Set once, in the repository's Settings → Secrets and variables → Actions,
-with exactly these names (release.yml reads `secrets.HOMEBREW_TAP_TOKEN` and
-`secrets.NPM_TOKEN`):
+Repository secrets (Settings → Secrets and variables → Actions), with
+exactly these names:
 
-- **`HOMEBREW_TAP_TOKEN`**: a fine-grained personal access token, resource
-  owner EloB, repository access only EloB/homebrew-tap, with the repository
-  permission **Contents: Read and write** (Metadata: Read comes with it). A
-  classic token with the `repo` scope works too. The
-  `publish-homebrew-formula` job checks the tap out with it and pushes one
+- **`HOMEBREW_TAP_TOKEN`** (read by dist's `publish-homebrew-formula` job): a
+  fine-grained personal access token, resource owner EloB, repository access
+  only EloB/homebrew-tap, with the repository permission **Contents: Read
+  and write** (Metadata: Read comes with it). A classic token with the
+  `repo` scope works too. The job checks the tap out with it and pushes one
   commit per release.
-- **`NPM_TOKEN`**: an npm granular access token (npm no longer issues
-  classic "automation" tokens) with **Read and write** for packages (All
-  packages until `quickertype` exists; it can be narrowed to `quickertype`
-  after the first publish) and **Bypass 2FA**, which is off by default:
-  without it, the `publish-npm` job's `npm publish` fails with `EOTP`. A
-  "stage only" token does not work: dist's job runs `npm publish`, not
-  `npm stage publish`.
+- **`NPM_TOKEN`** (read by dist's `publish-npm` job for `quickertype` and by
+  `publish-npm-core.yml` for `quickertype-core`): an npm granular access
+  token (npm no longer issues classic "automation" tokens) with **Read and
+  write** for packages (All packages until both packages exist; afterwards
+  it can be narrowed to `quickertype` and `quickertype-core`) and **Bypass
+  2FA**, which is off by default: without it `npm publish` fails with
+  `EOTP`. A "stage only" token does not work, because the jobs run
+  `npm publish`, not `npm stage publish`.
+- **`CARGO_REGISTRY_TOKEN`** (read by `publish-crates.yml`): a crates.io API
+  token for the first release. crates.io's trusted publishing can only be
+  configured for crates that already exist, so the first publish needs a
+  token:
+  1. Sign in to [crates.io](https://crates.io) with the GitHub account that
+     should own the crates (EloB), and verify the email address under
+     Account Settings: crates.io refuses to publish without one.
+  2. Account Settings → API Tokens → New Token: a name, an expiry, the
+     scopes **publish-new** and **publish-update**, and the crate pattern
+     **`quickertype*`**.
+  3. `gh secret set CARGO_REGISTRY_TOKEN --repo EloB/quickertype` and paste
+     it.
+
+`GITHUB_TOKEN` needs nothing: release.yml asks for `contents: write` to
+create the release, and the custom publish jobs for `id-token: write`.
+
+**After the first release**, replace the long-lived tokens where the
+registries allow it:
+
+- **crates.io trusted publishing:** for each of the five crates, crates.io →
+  the crate → Settings → Trusted Publishing → Add → GitHub: owner `EloB`,
+  repository `quickertype`, workflow filename **`release.yml`** (crates.io
+  checks the workflow that started the run, and `publish-crates.yml` runs
+  as part of `release.yml`), no environment. Then delete the
+  `CARGO_REGISTRY_TOKEN` secret and revoke the token: without the secret,
+  `publish-crates.yml` authenticates with
+  [`rust-lang/crates-io-auth-action`](https://github.com/rust-lang/crates-io-auth-action).
+- **npm trusted publishing:** on npmjs.com, each package → Settings →
+  Trusted Publisher → GitHub Actions: user `EloB`, repository
+  `quickertype`, workflow filename **`release.yml`** (npm also checks the
+  calling workflow). `publish-npm-core.yml` runs npm 11 with
+  `id-token: write`, so `quickertype-core` then publishes without
+  `NPM_TOKEN`. dist's generated `publish-npm` job (Node 20, no
+  `id-token`) still needs the token for `quickertype`, until dist supports
+  trusted publishing or that package moves to a custom publish job; only
+  then can `NPM_TOKEN` be deleted.
 
 Tokens expire: renew them before a release and run the preflight below.
 npm has announced that publishing directly with a granular token ends in
 January 2027 (see npm's
-[About access tokens](https://docs.npmjs.com/about-access-tokens)); by then
-the npm job needs trusted publishing or staged publishing, which dist 0.34.0
-does not generate, so check dist's changelog for support before that.
-
-`GITHUB_TOKEN` needs nothing: release.yml asks for `contents: write` to
-create the release.
+[About access tokens](https://docs.npmjs.com/about-access-tokens)); from
+then on the npm packages need trusted publishing.
 
 ## Release preflight
 
@@ -114,21 +172,32 @@ gh workflow run release-preflight.yml        # on main; add --ref <branch> for a
 gh run watch "$(gh run list --workflow release-preflight.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-It checks that `HOMEBREW_TAP_TOKEN` can read EloB/homebrew-tap and push to
-it (`git push --dry-run` after the same checkout the release does), and
-that `NPM_TOKEN` authenticates (`npm whoami`), that `quickertype` is
-unclaimed or owned by that npm user, that a package of that name passes
-`npm publish --dry-run`, and, where npm lists the token, that it is not
-read-only. Every missing permission fails with its own message. What it
-cannot see is whether the npm token bypasses 2FA: check that on npmjs.com.
-It also runs on pull requests from this repository that change it.
+It checks that:
+
+- `HOMEBREW_TAP_TOKEN` can read EloB/homebrew-tap and push to it
+  (`git push --dry-run` after the same checkout the release does);
+- `NPM_TOKEN` authenticates (`npm whoami`), that `quickertype` and
+  `quickertype-core` are unclaimed or owned by that npm user, that packages
+  with those names pass `npm publish --dry-run`, and, where npm lists the
+  token, that it is not read-only;
+- `CARGO_REGISTRY_TOKEN`, if set, authenticates with crates.io, and that
+  the five crate names are unclaimed or owned by the repository owner.
+
+Every missing permission fails with its own message. What it cannot see
+without publishing: whether the npm token bypasses 2FA and which scopes the
+crates.io token has (check both on the registries' websites). It also runs
+on pull requests from this repository that change it.
 
 ## Cutting a release
 
-1. Start from a green `main`: CI and the Release workflow's pull-request
-   builds (below) pass.
-2. On a branch, set the new `version` in `[workspace.package]` of
-   `Cargo.toml` and run `cargo build` to update `Cargo.lock`.
+1. Start from a green `main`: CI, the Release workflow's pull-request
+   builds and the publish dry runs (below) pass.
+2. On a branch, set the new version in `[workspace.package]` **and** in the
+   four path dependencies of `[workspace.dependencies]` in `Cargo.toml`,
+   run `cargo build` to update `Cargo.lock`, and set it in
+   `npm/quicktype-core` with
+   `npm version X.Y.Z --no-git-tag-version` (package.json and
+   package-lock.json).
 3. In `CHANGELOG.md`, move what is under `## [Unreleased]` into a new
    `## [X.Y.Z] - YYYY-MM-DD` section (the release date) and update the link
    definitions at the bottom. The version in the heading must equal the
@@ -153,35 +222,43 @@ It also runs on pull requests from this repository that change it.
 
 6. Follow the Release workflow (`gh run watch`). Its jobs: `plan`,
    `build-local-artifacts` (one per target, the MSI on Windows),
-   `build-global-artifacts` (installers, formula, npm package, checksums),
-   `host` (uploads everything and creates the GitHub Release),
-   `publish-homebrew-formula` and `publish-npm`, then `announce`.
+   `build-global-artifacts` (installers, formula, npm installer package,
+   checksums), `host` (uploads everything and creates the GitHub Release),
+   then in parallel `publish-homebrew-formula`, `publish-npm`,
+   `custom-publish-crates` and `custom-publish-npm-core`, then `announce`.
 7. Try an install or two (`brew install EloB/tap/quickertype`,
-   `npx quickertype --version`).
+   `npx quickertype --version`, `cargo install quickertype`).
 
-For **0.1.0** the version and the changelog section are already in place:
-set the date in the `## [0.1.0]` heading to the release day if it differs,
-run the preflight, then tag `v0.1.0` (steps 4 to 7).
+For **0.1.0** the versions and the changelog section are already in place:
+set up the secrets, run the preflight, set the date in the `## [0.1.0]`
+heading to the release day if it differs, then tag `v0.1.0` (steps 4 to 7).
 
 If a publish job fails after `host`, the GitHub Release already exists: fix
 the cause (usually a token) and re-run the failed jobs
-(`gh run rerun <run-id> --failed`). If a build fails, nothing was
+(`gh run rerun <run-id> --failed`). Every publish job skips what is already
+published (a crate version on crates.io, a package version on npm), so a
+re-run after a partial failure is safe. If a build fails, nothing was
 published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 `git tag -d vX.Y.Z`), fix it on `main` and tag again.
 
 ## Dry runs
 
-- **Every pull request** runs the Release workflow in upload mode
-  (`pr-run-mode = "upload"`): `plan`, all `build-local-artifacts` jobs
-  (the MSI included) and `build-global-artifacts`, without `host`, the
-  publish jobs or `announce`. The artifacts are attached to the run:
+- **Every pull request** runs:
+  - the Release workflow in upload mode (`pr-run-mode = "upload"`): `plan`,
+    all `build-local-artifacts` jobs (the MSI included) and
+    `build-global-artifacts`, without `host`, the publish jobs or
+    `announce`. The artifacts are attached to the run:
 
-  ```sh
-  gh run list --workflow Release --branch <branch> --limit 1
-  gh run download <run-id> --name artifacts-build-local-aarch64-apple-darwin
-  gh run download <run-id> --name artifacts-build-global   # installers, formula, npm package
-  ```
+    ```sh
+    gh run list --workflow Release --branch <branch> --limit 1
+    gh run download <run-id> --name artifacts-build-local-aarch64-apple-darwin
+    gh run download <run-id> --name artifacts-build-global   # installers, formula, npm package
+    ```
 
+  - `publish-crates.yml` as `cargo publish --dry-run` of all five crates
+    (each compiled from its `.crate`, as crates.io would);
+  - `publish-npm-core.yml` up to `npm publish --dry-run` (build, tests,
+    `npm pack --dry-run`).
 - **Locally**, with dist installed (`cargo install cargo-dist --locked
   --version <cargo-dist-version>`):
 
@@ -189,6 +266,9 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
   dist plan                     # the plan CI makes
   dist build                    # the archive for this machine, in target/distrib/
   dist generate --check         # release.yml and wix/main.wxs match the config
+  cargo publish --dry-run -p quickertype-js-compat -p quickertype-core \
+    -p quickertype-graphql-input -p quickertype-typescript-input -p quickertype
+  (cd npm/quicktype-core && npm run build && npm test && npm pack --dry-run)
   ```
 
   The MSI needs Windows and the WiX v3 toolset, so only CI builds it.
@@ -198,14 +278,23 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 
 - `release.yml` and `crates/quicktype-cli/wix/main.wxs` are generated:
   never edit them. Change [`dist-workspace.toml`](../dist-workspace.toml)
-  (workspace settings) or `[package.metadata.dist]` in
+  (workspace settings, publish jobs and their permissions) or
+  `[package.metadata.dist]` in
   [`crates/quicktype-cli/Cargo.toml`](../crates/quicktype-cli/Cargo.toml)
   (formula and npm package names), then run `dist generate` and commit the
   result. CI's `dist` job fails when they are out of date
-  (`dist generate --check`).
+  (`dist generate --check`). `publish-crates.yml`, `publish-npm-core.yml`
+  and `release-preflight.yml` are ordinary workflows; dist's release.yml
+  calls the first two as custom publish jobs (with the plan as input and
+  the repository's secrets).
 - dist builds with `[profile.dist]`, which is exactly `release`, and with
-  `precise-builds` (`cargo build --package quicktype-cli`), so a released
-  binary is the one `cargo build --release -p quicktype-cli` makes.
+  `precise-builds` (`cargo build --package quickertype`), so a released
+  binary is the one `cargo build --release -p quickertype` makes.
+- A new crate in the workspace: give it `dist = false`, the crates.io
+  metadata the others have (description, keywords, categories, `include`,
+  `LICENSE` and `NOTICE`), a `version` on its path dependency, and add it
+  to `CRATES` in `publish-crates.yml` and the preflight, after its
+  dependencies.
 - `[package.metadata.wix]`'s GUIDs identify the MSI product across
   versions: never change them.
 - To upgrade dist: install the new version, run `dist init --yes` (it

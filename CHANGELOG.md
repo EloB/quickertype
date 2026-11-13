@@ -39,9 +39,20 @@ and installers.
   aarch64 with glibc, x86_64 with musl) and Windows (x86_64), as archives
   with SHA-256 checksums, shell and PowerShell installers, a Homebrew
   formula (`brew install EloB/tap/quickertype`), an npm package
-  (`npm install -g quickertype`) and an MSI. Each of these installs a
-  binary named `quicktype`, which conflicts with the TypeScript quicktype's,
-  see [docs/RELEASING.md](https://github.com/EloB/quickertype/blob/main/docs/RELEASING.md#the-quicktype-name).
+  (`npm install -g quickertype`), an MSI, and the `quickertype` crate
+  (`cargo install quickertype`). Each of these installs a binary named
+  `quicktype`, which conflicts with the TypeScript quicktype's, see
+  [docs/RELEASING.md](https://github.com/EloB/quickertype/blob/main/docs/RELEASING.md#the-quicktype-name).
+- **The JavaScript API on npm** as
+  [`quickertype-core`](https://www.npmjs.com/package/quickertype-core):
+  quicktype's `quicktype-core` API with the engine compiled to WebAssembly,
+  a drop-in replacement (change the import), for Node.js 20+ and browsers.
+- **The Rust API on crates.io** as
+  [`quickertype-core`](https://crates.io/crates/quickertype-core) (imported
+  as `quicktype_core`), with `quickertype-js-compat`,
+  `quickertype-graphql-input` and `quickertype-typescript-input`.
+- **Windows** builds and tests in CI. File names on Windows follow Node's
+  `path.win32`, as the TypeScript CLI's do there.
 
 ### Known issues
 
