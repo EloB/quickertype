@@ -368,3 +368,11 @@ Notes:
 - The corpus run replays every step of every case in `tests/golden` with
   as many jobs as cores and does not check outputs (`cargo xtask parity`
   does). TypeScript's wall time there is CPU-bound on 12 cores.
+- `--json` writes what the playground's benchmarks page shows
+  (`site/data/benchmarks.json`), which `site/build.mjs` checks first. The
+  commit of a `--bin` or `--baseline` CLI is the HEAD of the work tree
+  whose `target` directory holds it, if it was built after that commit,
+  and null otherwise; `commits.<id>_source` says which. Why a CLI's corpus
+  runs exited unexpectedly is added by hand when the snapshot is made, as
+  `corpus.results.<id>.unexpected_exits_note` (a sentence); without one,
+  the page shows the number as a warning.
