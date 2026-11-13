@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"\":{\"type\":\"string\",\"title\":\"\"},\"continue\":{\"type\":\"string\",\"title\":\"continue\"},\"null\":{\"type\":\"string\",\"title\":\"null\"},\"undefined\":{\"type\":\"string\",\"title\":\"undefined\"},\"x\":{\"type\":\"string\",\"title\":\"x\"},\"x y\":{\"type\":\"string\",\"title\":\"x y\"},\"x\\\"\":{\"type\":\"string\",\"title\":\"x\\\"\"},\"x'\":{\"type\":\"string\",\"title\":\"x'\"},\"{}\":{\"type\":\"string\",\"title\":\"{}\"}},\"additionalProperties\":false,\"propertyOrder\":[\"\",\"continue\",\"null\",\"undefined\",\"x\",\"x y\",\"x\\\"\",\"x'\",\"{}\"],\"required\":[\"\",\"continue\",\"null\",\"undefined\",\"x\",\"x y\",\"x\\\"\",\"x'\",\"{}\"],\"quicktypePropertyOrder\":[\"\",\"continue\",\"null\",\"undefined\",\"x\",\"x y\",\"x\\\"\",\"x'\",\"{}\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TestEnum\":{\"title\":\"TestEnum\",\"type\":\"string\",\"enum\":[\"000\",\"001\",\"002\"],\"qt-accessors\":{\"000\":\"Foo\",\"001\":\"Bar\",\"002\":\"Baz\"}}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

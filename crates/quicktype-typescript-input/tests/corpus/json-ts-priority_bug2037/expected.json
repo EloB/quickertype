@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"mission_specs\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/MissionSpec\"},\"propertyOrder\":[],\"title\":\"mission_specs\"}},\"additionalProperties\":false,\"propertyOrder\":[\"mission_specs\"],\"required\":[\"mission_specs\"],\"quicktypePropertyOrder\":[\"mission_specs\"]},\"MissionSpec\":{\"title\":\"MissionSpec\",\"type\":\"object\",\"properties\":{\"objectives\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/Objective\"},\"propertyOrder\":[],\"title\":\"objectives\"}},\"additionalProperties\":false,\"propertyOrder\":[\"objectives\"],\"required\":[\"objectives\"],\"quicktypePropertyOrder\":[\"objectives\"]},\"Objective\":{\"title\":\"Objective\",\"type\":\"object\",\"properties\":{\"rewards\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":true},\"propertyOrder\":[],\"title\":\"rewards\"}},\"additionalProperties\":false,\"propertyOrder\":[\"rewards\"],\"required\":[\"rewards\"],\"quicktypePropertyOrder\":[\"rewards\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

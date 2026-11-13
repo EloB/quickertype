@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Obj\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"},\"b\":{\"type\":\"number\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]},\"Arr\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"},\"b\":{\"type\":\"number\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\"]}},\"Str\":{\"type\":\"string\"},\"Un\":{\"title\":\"Un\",\"anyOf\":[{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"},\"b\":{\"type\":\"number\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\"]},{\"type\":\"null\"}]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"   spaces are separators  too  \":{\"type\":\"boolean\",\"title\":\"   spaces are separators  too  \"},\"JSONString\":{\"type\":\"string\",\"title\":\"JSONString\"},\"PrettyEasyToo\":{\"type\":\"boolean\",\"title\":\"PrettyEasyToo\"},\"ZSR_HH_DEMO3_DELMATNR\":{\"type\":\"boolean\",\"title\":\"ZSR_HH_DEMO3_DELMATNR\"},\"anEasyOne\":{\"type\":\"number\",\"title\":\"anEasyOne\"},\"isMNISTLetter\":{\"type\":\"boolean\",\"title\":\"isMNISTLetter\"},\"should_know_that_id_is_an_initialism\":{\"type\":\"string\",\"title\":\"should_know_that_id_is_an_initialism\"}},\"additionalProperties\":false,\"propertyOrder\":[\"   spaces are separators  too  \",\"JSONString\",\"PrettyEasyToo\",\"ZSR_HH_DEMO3_DELMATNR\",\"anEasyOne\",\"isMNISTLetter\",\"should_know_that_id_is_an_initialism\"],\"required\":[\"   spaces are separators  too  \",\"JSONString\",\"PrettyEasyToo\",\"ZSR_HH_DEMO3_DELMATNR\",\"anEasyOne\",\"isMNISTLetter\",\"should_know_that_id_is_an_initialism\"],\"quicktypePropertyOrder\":[\"   spaces are separators  too  \",\"JSONString\",\"PrettyEasyToo\",\"ZSR_HH_DEMO3_DELMATNR\",\"anEasyOne\",\"isMNISTLetter\",\"should_know_that_id_is_an_initialism\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

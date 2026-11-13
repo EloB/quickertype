@@ -1,0 +1,72 @@
+export interface TopLevel {
+    count:    number;
+    facets:   object;
+    limit:    number;
+    next:     string;
+    offset:   number;
+    previous: boolean;
+    results:  Result[];
+}
+
+export interface Result {
+    acronym:                     null | string;
+    activity_consult_committees: string;
+    activity_eu_legislative:     string;
+    activity_expert_groups:      string;
+    activity_high_level_groups:  string;
+    activity_industry_forums:    string;
+    activity_inter_groups:       string;
+    activity_other:              null | string;
+    activity_relevant_comm:      string;
+    be_office_country?:          string;
+    be_office_lat?:              number | null;
+    be_office_lon?:              number | null;
+    be_office_phone?:            string;
+    be_office_post_code?:        null | string;
+    be_office_postbox?:          null | string;
+    be_office_street?:           string;
+    be_office_town?:             string;
+    code_of_conduct:             string;
+    contact_country:             number;
+    created_at:                  Date;
+    entity:                      string;
+    goals:                       string;
+    head:                        string;
+    head_office_country:         string;
+    head_office_lat:             number | null;
+    head_office_lon:             number | null;
+    head_office_phone:           string;
+    head_office_post_code:       null | string;
+    head_office_postbox:         null | string;
+    head_office_street:          string;
+    head_office_town:            string;
+    id:                          string;
+    identification_code:         string;
+    info_members:                string;
+    last_update_date:            Date;
+    legal:                       string;
+    legal_status:                string;
+    main_category:               number;
+    main_category_title:         string;
+    members:                     number;
+    members_100:                 number | null;
+    members_25:                  number | null;
+    members_50:                  number | null;
+    members_75:                  number | null;
+    members_fte:                 number;
+    name:                        string;
+    native_name:                 null;
+    networking:                  null | string;
+    number_of_natural_persons:   number | null;
+    other_code_of_conduct:       null | string;
+    registration_date:           Date;
+    status:                      Status;
+    structure_members:           string;
+    sub_category:                number;
+    sub_category_title:          string;
+    updated_at:                  Date;
+    uri:                         string;
+    web_site_url:                null | string;
+}
+
+export type Status = "active" | "inactive";

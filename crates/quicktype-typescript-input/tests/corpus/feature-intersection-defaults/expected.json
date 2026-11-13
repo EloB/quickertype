@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"a\"],\"required\":[\"a\"],\"quicktypePropertyOrder\":[\"a\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"b\":{\"type\":\"string\",\"title\":\"b\",\"default\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\"],\"required\":[\"b\"],\"quicktypePropertyOrder\":[\"b\"]},\"AB\":{\"title\":\"AB\",\"additionalProperties\":false,\"properties\":{}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"ab\":{\"$ref\":\"#/definitions/AB\",\"title\":\"ab\"}},\"additionalProperties\":false,\"propertyOrder\":[\"ab\"],\"required\":[\"ab\"],\"quicktypePropertyOrder\":[\"ab\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

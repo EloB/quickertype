@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"states\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/StateElement\"},\"title\":\"states\"}},\"additionalProperties\":false,\"propertyOrder\":[\"states\"],\"required\":[\"states\"],\"quicktypePropertyOrder\":[\"states\"]},\"StateElement\":{\"title\":\"StateElement\",\"type\":\"object\",\"properties\":{\"state\":{\"$ref\":\"#/definitions/StateState\",\"title\":\"state\"}},\"additionalProperties\":false,\"propertyOrder\":[\"state\"],\"required\":[\"state\"],\"quicktypePropertyOrder\":[\"state\"]},\"StateState\":{\"title\":\"StateState\",\"type\":\"object\",\"properties\":{\"state_id\":{\"type\":\"string\",\"title\":\"state_id\"},\"state_name\":{\"type\":\"string\",\"title\":\"state_name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"state_id\",\"state_name\"],\"required\":[\"state_id\",\"state_name\"],\"quicktypePropertyOrder\":[\"state_id\",\"state_name\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

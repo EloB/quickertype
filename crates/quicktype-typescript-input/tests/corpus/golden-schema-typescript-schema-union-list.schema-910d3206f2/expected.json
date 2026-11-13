@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"list\":{\"$ref\":\"#/definitions/UnionList\",\"title\":\"list\"}},\"additionalProperties\":false,\"propertyOrder\":[\"list\"],\"required\":[\"list\"],\"quicktypePropertyOrder\":[\"list\"]},\"UnionListClass\":{\"title\":\"UnionListClass\",\"type\":\"object\",\"properties\":{\"next\":{\"$ref\":\"#/definitions/UnionList\",\"title\":\"next\"}},\"additionalProperties\":false,\"propertyOrder\":[\"next\"],\"required\":[\"next\"],\"quicktypePropertyOrder\":[\"next\"]},\"UnionList\":{\"title\":\"UnionList\",\"anyOf\":[{\"$ref\":\"#/definitions/UnionListClass\"},{\"type\":\"number\"}]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/TopLevelElement\"}},\"TopLevelElement\":{\"title\":\"TopLevelElement\",\"type\":\"object\",\"properties\":{\"age\":{\"type\":\"number\",\"title\":\"age\"},\"country\":{\"type\":\"string\",\"const\":\"United States\",\"title\":\"country\"},\"females\":{\"type\":\"number\",\"title\":\"females\"},\"males\":{\"type\":\"number\",\"title\":\"males\"},\"total\":{\"type\":\"number\",\"title\":\"total\"},\"year\":{\"type\":\"number\",\"title\":\"year\"}},\"additionalProperties\":false,\"propertyOrder\":[\"age\",\"country\",\"females\",\"males\",\"total\",\"year\"],\"required\":[\"age\",\"country\",\"females\",\"males\",\"total\",\"year\"],\"quicktypePropertyOrder\":[\"age\",\"country\",\"females\",\"males\",\"total\",\"year\"]},\"Country\":{\"type\":\"string\",\"const\":\"United States\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

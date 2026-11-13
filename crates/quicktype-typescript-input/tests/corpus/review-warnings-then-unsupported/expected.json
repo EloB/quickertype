@@ -1,0 +1,11 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\"},\"b\":{\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ],
+  "warnings": [
+    "initializer is expression for property a",
+    "unknown initializer for property b: () => {}"
+  ]
+}

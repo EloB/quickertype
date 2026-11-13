@@ -1,0 +1,10 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Z\":{\"title\":\"Z\",\"type\":\"object\",\"properties\":{\"z\":{\"type\":\"number\",\"title\":\"z\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"z\"],\"required\":[\"z\"],\"quicktypePropertyOrder\":[\"z\"]},\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"a\"],\"required\":[\"a\"],\"quicktypePropertyOrder\":[\"a\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"u\":{\"anyOf\":[{\"$ref\":\"#/definitions/Z\"},{\"$ref\":\"#/definitions/A\"}],\"title\":\"u\"},\"v\":{\"anyOf\":[{\"$ref\":\"#/definitions/A\"},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Z\"}}],\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"u\",\"v\"],\"required\":[\"u\"],\"quicktypePropertyOrder\":[\"u\",\"v\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ],
+  "warnings": [
+    "initializer is expression for property u"
+  ]
+}

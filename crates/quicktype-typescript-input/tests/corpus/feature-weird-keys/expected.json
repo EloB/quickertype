@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"0\":{\"type\":\"number\",\"title\":\"0\"},\"2\":{\"type\":\"boolean\",\"title\":\"2\"},\"10\":{\"type\":\"number\",\"title\":\"10\"},\"01\":{\"type\":\"string\",\"title\":\"01\"},\"a b\":{\"type\":\"string\",\"title\":\"a b\"},\"ü\":{\"type\":\"string\",\"title\":\"ü\"},\"😀\":{\"type\":\"number\",\"title\":\"😀\"}},\"additionalProperties\":false,\"propertyOrder\":[\"__proto__\",\"0\",\"10\",\"2\",\"01\",\"a b\",\"ü\",\"😀\"],\"required\":[\"0\",\"01\",\"10\",\"2\",\"a b\",\"ü\",\"😀\"],\"quicktypePropertyOrder\":[\"__proto__\",\"0\",\"10\",\"2\",\"01\",\"a b\",\"ü\",\"😀\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

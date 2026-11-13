@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Keys\":{\"title\":\"Keys\",\"enum\":[\"a\",\"b\"],\"type\":\"string\"},\"Mapped\":{\"title\":\"Mapped\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\"},\"b\":{\"type\":\"number\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]},\"MappedOpt\":{\"title\":\"MappedOpt\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"},\"b\":{\"type\":\"string\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"m\":{\"$ref\":\"#/definitions/Mapped\",\"title\":\"m\"},\"o\":{\"$ref\":\"#/definitions/MappedOpt\",\"title\":\"o\"}},\"additionalProperties\":false,\"propertyOrder\":[\"m\",\"o\"],\"required\":[\"m\",\"o\"],\"quicktypePropertyOrder\":[\"m\",\"o\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

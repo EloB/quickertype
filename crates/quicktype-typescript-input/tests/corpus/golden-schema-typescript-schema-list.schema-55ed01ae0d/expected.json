@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"description\":\"A recursive class type\",\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"next\":{\"description\":\"A recursive class type\",\"$ref\":\"#/definitions/TopLevel\",\"title\":\"next\"}},\"propertyOrder\":[\"next\"],\"quicktypePropertyOrder\":[\"next\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

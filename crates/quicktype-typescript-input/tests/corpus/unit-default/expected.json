@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Person\":{\"title\":\"Person\",\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"name\"],\"required\":[\"name\"],\"quicktypePropertyOrder\":[\"name\"]},\"default\":{\"$ref\":\"#/definitions/Person\"}}}",
+  "name": "Person",
+  "uris": [
+    "#/definitions/"
+  ]
+}

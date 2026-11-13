@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\"],\"required\":[\"a\"],\"quicktypePropertyOrder\":[\"a\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"b\":{\"type\":\"number\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\"],\"required\":[\"b\"],\"quicktypePropertyOrder\":[\"b\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"u\":{\"anyOf\":[{\"$ref\":\"#/definitions/A\"},{\"$ref\":\"#/definitions/B\"},{\"type\":\"null\"}],\"title\":\"u\"},\"v\":{\"anyOf\":[{\"type\":\"array\",\"items\":{\"type\":\"string\"}},{\"$ref\":\"#/definitions/A\"}],\"title\":\"v\"},\"w\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"$ref\":\"#/definitions/A\"},{\"$ref\":\"#/definitions/B\"}]},\"title\":\"w\"}},\"additionalProperties\":false,\"propertyOrder\":[\"u\",\"v\",\"w\"],\"required\":[\"u\",\"w\"],\"quicktypePropertyOrder\":[\"u\",\"v\",\"w\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

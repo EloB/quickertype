@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"base\":{\"type\":\"string\",\"title\":\"base\"},\"date\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"date\"},\"rates\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"number\"},\"propertyOrder\":[],\"title\":\"rates\"}},\"additionalProperties\":false,\"propertyOrder\":[\"base\",\"date\",\"rates\"],\"required\":[\"base\",\"date\",\"rates\"],\"quicktypePropertyOrder\":[\"base\",\"date\",\"rates\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

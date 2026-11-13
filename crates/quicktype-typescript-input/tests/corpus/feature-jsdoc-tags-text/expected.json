@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"description\":\"Top doc.\",\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"description\":\"Overridden desc\",\"type\":\"string\",\"title\":\"a\"},\"b\":{\"default\":{\"x\":1},\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"title\":\"b\"},\"c\":{\"examples\":[1,2],\"type\":\"number\",\"title\":\"c\"},\"d\":{\"$comment\":\"hi\",\"type\":\"string\",\"title\":\"d\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\"],\"required\":[\"a\",\"b\",\"c\",\"d\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

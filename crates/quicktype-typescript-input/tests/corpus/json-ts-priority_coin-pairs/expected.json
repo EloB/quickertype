@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"pairs\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/Pair\"},\"propertyOrder\":[],\"title\":\"pairs\"},\"server_time\":{\"type\":\"number\",\"title\":\"server_time\"}},\"additionalProperties\":false,\"propertyOrder\":[\"pairs\",\"server_time\"],\"required\":[\"pairs\",\"server_time\"],\"quicktypePropertyOrder\":[\"pairs\",\"server_time\"]},\"Pair\":{\"title\":\"Pair\",\"type\":\"object\",\"properties\":{\"decimal_places\":{\"type\":\"number\",\"title\":\"decimal_places\"},\"fee\":{\"type\":\"number\",\"title\":\"fee\"},\"hidden\":{\"type\":\"number\",\"title\":\"hidden\"},\"max_amount\":{\"type\":\"number\",\"title\":\"max_amount\"},\"max_price\":{\"type\":\"number\",\"title\":\"max_price\"},\"min_amount\":{\"type\":\"number\",\"title\":\"min_amount\"},\"min_price\":{\"type\":\"number\",\"title\":\"min_price\"},\"min_total\":{\"type\":\"number\",\"title\":\"min_total\"}},\"additionalProperties\":false,\"propertyOrder\":[\"decimal_places\",\"fee\",\"hidden\",\"max_amount\",\"max_price\",\"min_amount\",\"min_price\",\"min_total\"],\"required\":[\"decimal_places\",\"fee\",\"hidden\",\"max_amount\",\"max_price\",\"min_amount\",\"min_price\",\"min_total\"],\"quicktypePropertyOrder\":[\"decimal_places\",\"fee\",\"hidden\",\"max_amount\",\"max_price\",\"min_amount\",\"min_price\",\"min_total\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

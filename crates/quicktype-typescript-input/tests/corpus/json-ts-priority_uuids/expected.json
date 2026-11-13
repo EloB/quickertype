@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"booleanValue\":{\"type\":\"boolean\",\"title\":\"booleanValue\"},\"doubleValue\":{\"type\":\"number\",\"title\":\"doubleValue\"},\"intValue\":{\"type\":\"number\",\"title\":\"intValue\"},\"stringValue\":{\"type\":\"string\",\"title\":\"stringValue\"},\"uuidValue\":{\"type\":\"string\",\"title\":\"uuidValue\"},\"uuidValues\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"uuidValues\"}},\"additionalProperties\":false,\"propertyOrder\":[\"booleanValue\",\"doubleValue\",\"intValue\",\"stringValue\",\"uuidValue\",\"uuidValues\"],\"required\":[\"booleanValue\",\"doubleValue\",\"intValue\",\"stringValue\",\"uuidValue\",\"uuidValues\"],\"quicktypePropertyOrder\":[\"booleanValue\",\"doubleValue\",\"intValue\",\"stringValue\",\"uuidValue\",\"uuidValues\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

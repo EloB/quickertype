@@ -87,7 +87,7 @@ Cross-cutting items each language package must pick up:
 GraphQL (`quicktype-graphql-input`), Postman collections, URL sources and
 `--graphql-introspect`.
 
-## Phase 5b — TypeScript input (via the TypeScript 7 native compiler)
+## Phase 5b — TypeScript input (via the TypeScript 7 native compiler) — ✅ schema generation done; CLI wiring in Phase 3
 
 `--src-lang typescript` needs a real type checker. Route: drive the
 TypeScript 7 native compiler's type-checker API (MessagePack over stdio to

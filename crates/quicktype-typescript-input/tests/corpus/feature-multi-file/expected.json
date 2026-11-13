@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\"]},\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"c\":{\"type\":\"string\",\"title\":\"c\"}},\"additionalProperties\":false,\"propertyOrder\":[\"c\"],\"required\":[\"c\"],\"quicktypePropertyOrder\":[\"c\"]},\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"#/definitions/B\",\"title\":\"b\"},\"a\":{\"type\":\"string\",\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\",\"a\"],\"required\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"b\",\"a\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

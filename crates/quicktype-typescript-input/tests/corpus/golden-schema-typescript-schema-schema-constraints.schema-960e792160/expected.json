@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"minMaxLength\":{\"type\":\"string\",\"title\":\"minMaxLength\"},\"percent\":{\"type\":\"number\",\"title\":\"percent\"}},\"propertyOrder\":[\"minMaxLength\",\"percent\"],\"required\":[\"minMaxLength\",\"percent\"],\"quicktypePropertyOrder\":[\"minMaxLength\",\"percent\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

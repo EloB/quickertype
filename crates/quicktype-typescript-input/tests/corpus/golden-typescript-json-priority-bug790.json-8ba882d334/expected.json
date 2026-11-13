@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"children_data\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/TopLevel\"},\"title\":\"children_data\"},\"id\":{\"type\":\"number\",\"title\":\"id\"},\"is_active\":{\"type\":\"boolean\",\"title\":\"is_active\"},\"level\":{\"type\":\"number\",\"title\":\"level\"},\"name\":{\"type\":\"string\",\"title\":\"name\"},\"parent_id\":{\"type\":\"number\",\"title\":\"parent_id\"},\"position\":{\"type\":\"number\",\"title\":\"position\"},\"product_count\":{\"type\":\"number\",\"title\":\"product_count\"}},\"additionalProperties\":false,\"propertyOrder\":[\"children_data\",\"id\",\"is_active\",\"level\",\"name\",\"parent_id\",\"position\",\"product_count\"],\"required\":[\"children_data\",\"id\",\"is_active\",\"level\",\"name\",\"parent_id\",\"position\",\"product_count\"],\"quicktypePropertyOrder\":[\"children_data\",\"id\",\"is_active\",\"level\",\"name\",\"parent_id\",\"position\",\"product_count\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

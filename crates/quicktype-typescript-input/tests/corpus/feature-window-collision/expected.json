@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Window\":{\"title\":\"Window\",\"type\":\"object\",\"properties\":{\"w\":{\"type\":\"string\",\"title\":\"w\"}},\"additionalProperties\":false,\"propertyOrder\":[\"w\"],\"required\":[\"w\"],\"quicktypePropertyOrder\":[\"w\"]},\"Event\":{\"title\":\"Event\",\"type\":\"object\",\"properties\":{\"e\":{\"type\":\"number\",\"title\":\"e\"}},\"additionalProperties\":false,\"propertyOrder\":[\"e\"],\"required\":[\"e\"],\"quicktypePropertyOrder\":[\"e\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"w\":{\"$ref\":\"#/definitions/Window\",\"title\":\"w\"},\"e\":{\"$ref\":\"#/definitions/Event\",\"title\":\"e\"}},\"additionalProperties\":false,\"propertyOrder\":[\"w\",\"e\"],\"required\":[\"e\",\"w\"],\"quicktypePropertyOrder\":[\"w\",\"e\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

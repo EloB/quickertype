@@ -166,6 +166,13 @@ the others name the fix they need.
   input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
+- **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
+  native compiler where the reference runs TypeScript 5.9 and
+  typescript-json-schema, and emulates TS 5.9's union member order by
+  replaying its type creation order. The differential corpus matches in
+  full, but the replay is not the checker; `docs/research/07` §10 lists the
+  cases that can still differ. Without a TypeScript 7.0.2 compiler the
+  input fails with an install hint, which the reference cannot do.
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or
   stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
   trace on stderr and exit code 1. The Rust CLI prints

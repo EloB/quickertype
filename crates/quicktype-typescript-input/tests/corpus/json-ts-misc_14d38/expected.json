@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"headers\":{\"$ref\":\"#/definitions/Headers\",\"title\":\"headers\"}},\"additionalProperties\":false,\"propertyOrder\":[\"headers\"],\"required\":[\"headers\"],\"quicktypePropertyOrder\":[\"headers\"]},\"Headers\":{\"title\":\"Headers\",\"type\":\"object\",\"properties\":{\"Accept-Encoding\":{\"type\":\"string\",\"title\":\"Accept-Encoding\"},\"Connection\":{\"type\":\"string\",\"title\":\"Connection\"},\"Host\":{\"type\":\"string\",\"title\":\"Host\"},\"User-Agent\":{\"type\":\"string\",\"title\":\"User-Agent\"}},\"additionalProperties\":false,\"propertyOrder\":[\"Accept-Encoding\",\"Connection\",\"Host\",\"User-Agent\"],\"required\":[\"Accept-Encoding\",\"Connection\",\"Host\",\"User-Agent\"],\"quicktypePropertyOrder\":[\"Accept-Encoding\",\"Connection\",\"Host\",\"User-Agent\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

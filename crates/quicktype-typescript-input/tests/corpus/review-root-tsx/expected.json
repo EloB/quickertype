@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Props\":{\"title\":\"Props\",\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\",\"title\":\"title\"},\"count\":{\"type\":\"number\",\"title\":\"count\"}},\"additionalProperties\":false,\"propertyOrder\":[\"title\",\"count\"],\"required\":[\"title\"],\"quicktypePropertyOrder\":[\"title\",\"count\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

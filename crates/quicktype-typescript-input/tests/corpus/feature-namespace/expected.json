@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"NS.Inner\":{\"title\":\"NS.Inner\",\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\"]},\"NS.E\":{\"type\":\"string\",\"const\":\"a\",\"qt-accessors\":{\"a\":\"A\"}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"i\":{\"$ref\":\"#/definitions/NS.Inner\",\"title\":\"i\"},\"e\":{\"type\":\"string\",\"const\":\"a\",\"title\":\"e\"}},\"additionalProperties\":false,\"propertyOrder\":[\"i\",\"e\"],\"required\":[\"e\",\"i\"],\"quicktypePropertyOrder\":[\"i\",\"e\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

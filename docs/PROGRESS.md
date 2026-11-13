@@ -4,6 +4,13 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- Merged `feat/typescript-input`: TypeScript input without Node, via the
+  TypeScript 7 native compiler's `tsc --api` protocol. 474/474 recorded
+  cases produce the reference JSON Schema byte for byte (~10x faster per
+  case than the reference CLI). Wiring into the CLI comes with Phase 3.
+- Merged `feat/core-pipeline`: all rewrite passes, MakeTransformations and
+  Transformers; 47 differential scenarios match byte for byte.
+
 - **Phase 1 done.** Merged `feat/cli`, `feat/js-compat`,
   `feat/core-type-graph` (each reviewed; all findings fixed or documented
   under "Known gaps" in `docs/PARITY.md`). ~26k lines of Rust. Parity:
