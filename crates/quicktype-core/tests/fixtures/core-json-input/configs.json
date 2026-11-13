@@ -1,0 +1,51 @@
+[
+  {
+    "name": "stream-typescript",
+    "reader": "stream",
+    "lang": "typescript",
+    "alphabetize": true,
+    "provenance": true
+  },
+  {
+    "name": "api-typescript",
+    "reader": "api",
+    "lang": "typescript",
+    "alphabetize": false,
+    "provenance": false
+  },
+  {
+    "name": "stream-schema",
+    "reader": "stream",
+    "lang": "schema",
+    "alphabetize": false,
+    "provenance": false
+  },
+  {
+    "name": "api-csharp",
+    "reader": "api",
+    "lang": "csharp",
+    "alphabetize": true,
+    "provenance": true
+  },
+  {
+    "name": "stream-kotlin",
+    "reader": "stream",
+    "lang": "kotlin",
+    "alphabetize": false,
+    "provenance": false
+  },
+  {
+    "name": "api-swift",
+    "reader": "api",
+    "lang": "swift",
+    "alphabetize": false,
+    "provenance": false
+  },
+  {
+    "name": "stream-python",
+    "reader": "stream",
+    "lang": "python",
+    "alphabetize": false,
+    "provenance": true
+  }
+]

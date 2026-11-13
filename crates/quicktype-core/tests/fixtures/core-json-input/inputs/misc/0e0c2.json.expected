@@ -1,0 +1,322 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: null | 2
+3: string | 3 | 15 enums: World War Z 2 (1), ...
+4: string | 4 | 2 enums: en (14), ...
+5: string | 5 | enum with no cases,date
+6: string | 6 | 2 enums: en (15), ...
+7: string | 7 | 16 enums: World War Z 2 (2), ...
+8: string | 8 | 11 enums:  (8), ...
+9: string | 9 | 1 enums:  (20), ...
+10: string | 10 | unrestricted
+11: class | children 10,8,0,6,9,7 | 11
+12: array | children 11 | 12
+13: none | 13
+14: array | children 13 | 14
+15: union | children 14,2 | 15
+16: string | 16 | enum with no cases,uri
+17: string | 17 | 2 enums: #0 (3), ...
+18: string | 18 | 2 enums: Teaser (3), ...
+19: string | 19 | 1 enums: en (4), ...
+20: class | children 18,19,17,16 | 20
+21: array | children 20 | 21
+22: string | 22 | enum with no cases,uri
+23: string | 23 | 2 enums: Poster (24), ...
+24: class | children 0,22,23 | 24
+25: array | children 24 | 25
+26: string | 26 | 4 enums: Marvel Universe (6), ...
+27: string | 27 | 4 enums: marvel-universe (6), ...
+28: array | children 0 | 28
+29: class | children 0,28,26,27 | 29
+30: array | children 29 | 30
+31: class | children 0 | 31
+32: bool | 32
+33: class | children 32 | 33
+34: class | children 0,30,12,33,25,4,5,15,3,21,31 | 34
+35: array | children 34 | 35
+36: class TopLevel | children 0,1,2,35 | 36 | given TopLevel ()
+props 11: "cast":10, "director":8, "id":0, "language":6, "storyline":10, "tagline":9, "title":7
+props 20: "kind":18, "language":19, "source":17, "url":16
+props 24: "favs":0, "id":0, "thumbnail":22, "type":23, "url":22
+props 29: "id":0, "movies":28, "name":26, "slug":27
+props 31: "avg":0, "score":0, "total":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "active_screens":0, "collections":30, "details":12, "duration":0, "fav_movie":33, "id":0, "images":25, "language":4, "release_date":5, "stars":0, "tags":15, "title":3, "videos":21, "vote_score":31, "watches":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### api-typescript
+0: integer
+1: string | enum with no cases,uri
+2: null
+3: string | 15 enums: World War Z 2 (1), ...
+4: string | 2 enums: en (14), ...
+5: string | enum with no cases,date
+6: string | 2 enums: en (15), ...
+7: string | 16 enums: World War Z 2 (2), ...
+8: string | 11 enums:  (8), ...
+9: string | 1 enums:  (20), ...
+10: string | unrestricted
+11: class | children 10,8,0,6,9,7
+12: array | children 11
+13: none
+14: array | children 13
+15: union | children 14,2
+16: string | enum with no cases,uri
+17: string | 2 enums: #0 (3), ...
+18: string | 2 enums: Teaser (3), ...
+19: string | 1 enums: en (4), ...
+20: class | children 18,19,17,16
+21: array | children 20
+22: string | enum with no cases,uri
+23: string | 2 enums: Poster (24), ...
+24: class | children 0,22,23
+25: array | children 24
+26: string | 4 enums: Marvel Universe (6), ...
+27: string | 4 enums: marvel-universe (6), ...
+28: array | children 0
+29: class | children 0,28,26,27
+30: array | children 29
+31: class | children 0
+32: bool
+33: class | children 32
+34: class | children 0,30,12,33,25,4,5,15,3,21,31
+35: array | children 34
+36: class TopLevel | children 0,1,2,35 | given TopLevel ()
+props 11: "id":0, "language":6, "title":7, "director":8, "tagline":9, "cast":10, "storyline":10
+props 20: "url":16, "source":17, "kind":18, "language":19
+props 24: "id":0, "url":22, "type":23, "thumbnail":22, "favs":0
+props 29: "id":0, "name":26, "slug":27, "movies":28
+props 31: "total":0, "avg":0, "score":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "id":0, "title":3, "language":4, "release_date":5, "details":12, "tags":15, "videos":21, "images":25, "collections":30, "watches":0, "duration":0, "active_screens":0, "vote_score":31, "fav_movie":33, "stars":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### stream-schema
+0: integer
+1: string | enum with no cases,uri
+2: null
+3: string | 15 enums: World War Z 2 (1), ...
+4: string | 2 enums: en (14), ...
+5: string | enum with no cases,date
+6: string | 2 enums: en (15), ...
+7: string | 16 enums: World War Z 2 (2), ...
+8: string | 11 enums:  (8), ...
+9: string | 1 enums:  (20), ...
+10: string | unrestricted
+11: class | children 10,8,0,6,9,7
+12: array | children 11
+13: none
+14: array | children 13
+15: union | children 14,2
+16: string | enum with no cases,uri
+17: string | 2 enums: #0 (3), ...
+18: string | 2 enums: Teaser (3), ...
+19: string | 1 enums: en (4), ...
+20: class | children 18,19,17,16
+21: array | children 20
+22: string | enum with no cases,uri
+23: string | 2 enums: Poster (24), ...
+24: class | children 0,22,23
+25: array | children 24
+26: string | 4 enums: Marvel Universe (6), ...
+27: string | 4 enums: marvel-universe (6), ...
+28: array | children 0
+29: class | children 0,28,26,27
+30: array | children 29
+31: class | children 0
+32: bool
+33: class | children 32
+34: class | children 0,30,12,33,25,4,5,15,3,21,31
+35: array | children 34
+36: class TopLevel | children 0,1,2,35 | given TopLevel ()
+props 11: "id":0, "language":6, "title":7, "director":8, "tagline":9, "cast":10, "storyline":10
+props 20: "url":16, "source":17, "kind":18, "language":19
+props 24: "id":0, "url":22, "type":23, "thumbnail":22, "favs":0
+props 29: "id":0, "name":26, "slug":27, "movies":28
+props 31: "total":0, "avg":0, "score":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "id":0, "title":3, "language":4, "release_date":5, "details":12, "tags":15, "videos":21, "images":25, "collections":30, "watches":0, "duration":0, "active_screens":0, "vote_score":31, "fav_movie":33, "stars":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### api-csharp
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: null | 2
+3: string | 3 | 15 enums: World War Z 2 (1), ...
+4: string | 4 | 2 enums: en (14), ...
+5: string | 5 | enum with no cases,date
+6: string | 6 | 2 enums: en (15), ...
+7: string | 7 | 16 enums: World War Z 2 (2), ...
+8: string | 8 | 11 enums:  (8), ...
+9: string | 9 | 1 enums:  (20), ...
+10: string | 10 | unrestricted
+11: class | children 10,8,0,6,9,7 | 11
+12: array | children 11 | 12
+13: none | 13
+14: array | children 13 | 14
+15: union | children 14,2 | 15
+16: string | 16 | enum with no cases,uri
+17: string | 17 | 2 enums: #0 (3), ...
+18: string | 18 | 2 enums: Teaser (3), ...
+19: string | 19 | 1 enums: en (4), ...
+20: class | children 18,19,17,16 | 20
+21: array | children 20 | 21
+22: string | 22 | enum with no cases,uri
+23: string | 23 | 2 enums: Poster (24), ...
+24: class | children 0,22,23 | 24
+25: array | children 24 | 25
+26: string | 26 | 4 enums: Marvel Universe (6), ...
+27: string | 27 | 4 enums: marvel-universe (6), ...
+28: array | children 0 | 28
+29: class | children 0,28,26,27 | 29
+30: array | children 29 | 30
+31: class | children 0 | 31
+32: bool | 32
+33: class | children 32 | 33
+34: class | children 0,30,12,33,25,4,5,15,3,21,31 | 34
+35: array | children 34 | 35
+36: class TopLevel | children 0,1,2,35 | 36 | given TopLevel ()
+props 11: "cast":10, "director":8, "id":0, "language":6, "storyline":10, "tagline":9, "title":7
+props 20: "kind":18, "language":19, "source":17, "url":16
+props 24: "favs":0, "id":0, "thumbnail":22, "type":23, "url":22
+props 29: "id":0, "movies":28, "name":26, "slug":27
+props 31: "avg":0, "score":0, "total":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "active_screens":0, "collections":30, "details":12, "duration":0, "fav_movie":33, "id":0, "images":25, "language":4, "release_date":5, "stars":0, "tags":15, "title":3, "videos":21, "vote_score":31, "watches":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### stream-kotlin
+0: integer
+1: string | enum with no cases,uri
+2: null
+3: string | 15 enums: World War Z 2 (1), ...
+4: string | 2 enums: en (14), ...
+5: string | enum with no cases,date
+6: string | 2 enums: en (15), ...
+7: string | 16 enums: World War Z 2 (2), ...
+8: string | 11 enums:  (8), ...
+9: string | 1 enums:  (20), ...
+10: string | unrestricted
+11: class | children 10,8,0,6,9,7
+12: array | children 11
+13: none
+14: array | children 13
+15: union | children 14,2
+16: string | enum with no cases,uri
+17: string | 2 enums: #0 (3), ...
+18: string | 2 enums: Teaser (3), ...
+19: string | 1 enums: en (4), ...
+20: class | children 18,19,17,16
+21: array | children 20
+22: string | enum with no cases,uri
+23: string | 2 enums: Poster (24), ...
+24: class | children 0,22,23
+25: array | children 24
+26: string | 4 enums: Marvel Universe (6), ...
+27: string | 4 enums: marvel-universe (6), ...
+28: array | children 0
+29: class | children 0,28,26,27
+30: array | children 29
+31: class | children 0
+32: bool
+33: class | children 32
+34: class | children 0,30,12,33,25,4,5,15,3,21,31
+35: array | children 34
+36: class TopLevel | children 0,1,2,35 | given TopLevel ()
+props 11: "id":0, "language":6, "title":7, "director":8, "tagline":9, "cast":10, "storyline":10
+props 20: "url":16, "source":17, "kind":18, "language":19
+props 24: "id":0, "url":22, "type":23, "thumbnail":22, "favs":0
+props 29: "id":0, "name":26, "slug":27, "movies":28
+props 31: "total":0, "avg":0, "score":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "id":0, "title":3, "language":4, "release_date":5, "details":12, "tags":15, "videos":21, "images":25, "collections":30, "watches":0, "duration":0, "active_screens":0, "vote_score":31, "fav_movie":33, "stars":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### api-swift
+0: integer
+1: string | enum with no cases,uri
+2: null
+3: string | 15 enums: World War Z 2 (1), ...
+4: string | 2 enums: en (14), ...
+5: string | enum with no cases,date
+6: string | 2 enums: en (15), ...
+7: string | 16 enums: World War Z 2 (2), ...
+8: string | 11 enums:  (8), ...
+9: string | 1 enums:  (20), ...
+10: string | unrestricted
+11: class | children 10,8,0,6,9,7
+12: array | children 11
+13: none
+14: array | children 13
+15: union | children 14,2
+16: string | enum with no cases,uri
+17: string | 2 enums: #0 (3), ...
+18: string | 2 enums: Teaser (3), ...
+19: string | 1 enums: en (4), ...
+20: class | children 18,19,17,16
+21: array | children 20
+22: string | enum with no cases,uri
+23: string | 2 enums: Poster (24), ...
+24: class | children 0,22,23
+25: array | children 24
+26: string | 4 enums: Marvel Universe (6), ...
+27: string | 4 enums: marvel-universe (6), ...
+28: array | children 0
+29: class | children 0,28,26,27
+30: array | children 29
+31: class | children 0
+32: bool
+33: class | children 32
+34: class | children 0,30,12,33,25,4,5,15,3,21,31
+35: array | children 34
+36: class TopLevel | children 0,1,2,35 | given TopLevel ()
+props 11: "id":0, "language":6, "title":7, "director":8, "tagline":9, "cast":10, "storyline":10
+props 20: "url":16, "source":17, "kind":18, "language":19
+props 24: "id":0, "url":22, "type":23, "thumbnail":22, "favs":0
+props 29: "id":0, "name":26, "slug":27, "movies":28
+props 31: "total":0, "avg":0, "score":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "id":0, "title":3, "language":4, "release_date":5, "details":12, "tags":15, "videos":21, "images":25, "collections":30, "watches":0, "duration":0, "active_screens":0, "vote_score":31, "fav_movie":33, "stars":0
+props 36: "count":0, "next":1, "previous":2, "results":35
+### stream-python
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: null | 2
+3: string | 3 | 15 enums: World War Z 2 (1), ...
+4: string | 4 | 2 enums: en (14), ...
+5: string | 5 | enum with no cases,date
+6: string | 6 | 2 enums: en (15), ...
+7: string | 7 | 16 enums: World War Z 2 (2), ...
+8: string | 8 | 11 enums:  (8), ...
+9: string | 9 | 1 enums:  (20), ...
+10: string | 10 | unrestricted
+11: class | children 10,8,0,6,9,7 | 11
+12: array | children 11 | 12
+13: none | 13
+14: array | children 13 | 14
+15: union | children 14,2 | 15
+16: string | 16 | enum with no cases,uri
+17: string | 17 | 2 enums: #0 (3), ...
+18: string | 18 | 2 enums: Teaser (3), ...
+19: string | 19 | 1 enums: en (4), ...
+20: class | children 18,19,17,16 | 20
+21: array | children 20 | 21
+22: string | 22 | enum with no cases,uri
+23: string | 23 | 2 enums: Poster (24), ...
+24: class | children 0,22,23 | 24
+25: array | children 24 | 25
+26: string | 26 | 4 enums: Marvel Universe (6), ...
+27: string | 27 | 4 enums: marvel-universe (6), ...
+28: array | children 0 | 28
+29: class | children 0,28,26,27 | 29
+30: array | children 29 | 30
+31: class | children 0 | 31
+32: bool | 32
+33: class | children 32 | 33
+34: class | children 0,30,12,33,25,4,5,15,3,21,31 | 34
+35: array | children 34 | 35
+36: class TopLevel | children 0,1,2,35 | 36 | given TopLevel ()
+props 11: "id":0, "language":6, "title":7, "director":8, "tagline":9, "cast":10, "storyline":10
+props 20: "url":16, "source":17, "kind":18, "language":19
+props 24: "id":0, "url":22, "type":23, "thumbnail":22, "favs":0
+props 29: "id":0, "name":26, "slug":27, "movies":28
+props 31: "total":0, "avg":0, "score":0
+props 33: "follow":32, "star":32, "watched":32
+props 34: "id":0, "title":3, "language":4, "release_date":5, "details":12, "tags":15, "videos":21, "images":25, "collections":30, "watches":0, "duration":0, "active_screens":0, "vote_score":31, "fav_movie":33, "stars":0
+props 36: "count":0, "next":1, "previous":2, "results":35

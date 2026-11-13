@@ -1,0 +1,84 @@
+### stream-typescript
+0: integer | 0
+1: bool | 1
+2: null | 2
+3: string | 3 | 1 enums: object (1), ...
+4: class | children 3 | 4
+5: string | 5 | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### api-typescript
+0: integer
+1: bool
+2: null
+3: string | 1 enums: object (1), ...
+4: class | children 3
+5: string | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### stream-schema
+0: integer
+1: bool
+2: null
+3: string | 1 enums: object (1), ...
+4: class | children 3
+5: string | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### api-csharp
+0: integer | 0
+1: bool | 1
+2: null | 2
+3: string | 3 | 1 enums: object (1), ...
+4: class | children 3 | 4
+5: string | 5 | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### stream-kotlin
+0: integer
+1: bool
+2: null
+3: string | 1 enums: object (1), ...
+4: class | children 3
+5: string | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### api-swift
+0: integer
+1: bool
+2: null
+3: string | 1 enums: object (1), ...
+4: class | children 3
+5: string | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7
+### stream-python
+0: integer | 0
+1: bool | 1
+2: null | 2
+3: string | 3 | 1 enums: object (1), ...
+4: class | children 3 | 4
+5: string | 5 | 1 enums: two (1), ...
+6: union | children 1,4,0,2,5 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "nested":3
+props 8: "mixed":7

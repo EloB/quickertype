@@ -1,0 +1,56 @@
+### stream-typescript
+0: integer | 0
+1: null | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### api-typescript
+0: integer
+1: null
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### stream-schema
+0: integer
+1: null
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### api-csharp
+0: integer | 0
+1: null | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### stream-kotlin
+0: integer
+1: null
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### api-swift
+0: integer
+1: null
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3
+### stream-python
+0: integer | 0
+1: null | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "age":0, "name":1
+props 4: "results":3

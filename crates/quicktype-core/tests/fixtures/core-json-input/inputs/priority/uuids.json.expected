@@ -1,0 +1,63 @@
+### stream-typescript
+0: string | 0 | 1 enums: mapleFlavor (1), ...
+1: string | 1 | enum with no cases,uuid
+2: array | children 1 | 2
+3: double | 3
+4: integer | 4
+5: bool | 5
+6: class TopLevel | children 5,3,4,0,1,2 | 6 | given TopLevel ()
+props 6: "booleanValue":5, "doubleValue":3, "intValue":4, "stringValue":0, "uuidValue":1, "uuidValues":2
+### api-typescript
+0: string | 1 enums: mapleFlavor (1), ...
+1: string | enum with no cases,uuid
+2: array | children 1
+3: double
+4: integer
+5: bool
+6: class TopLevel | children 5,3,4,0,1,2 | given TopLevel ()
+props 6: "stringValue":0, "uuidValue":1, "uuidValues":2, "doubleValue":3, "intValue":4, "booleanValue":5
+### stream-schema
+0: string | 1 enums: mapleFlavor (1), ...
+1: string | enum with no cases,uuid
+2: array | children 1
+3: double
+4: integer
+5: bool
+6: class TopLevel | children 5,3,4,0,1,2 | given TopLevel ()
+props 6: "stringValue":0, "uuidValue":1, "uuidValues":2, "doubleValue":3, "intValue":4, "booleanValue":5
+### api-csharp
+0: string | 0 | 1 enums: mapleFlavor (1), ...
+1: string | 1 | enum with no cases,uuid
+2: array | children 1 | 2
+3: double | 3
+4: integer | 4
+5: bool | 5
+6: class TopLevel | children 5,3,4,0,1,2 | 6 | given TopLevel ()
+props 6: "booleanValue":5, "doubleValue":3, "intValue":4, "stringValue":0, "uuidValue":1, "uuidValues":2
+### stream-kotlin
+0: string | 1 enums: mapleFlavor (1), ...
+1: string | enum with no cases,uuid
+2: array | children 1
+3: double
+4: integer
+5: bool
+6: class TopLevel | children 5,3,4,0,1,2 | given TopLevel ()
+props 6: "stringValue":0, "uuidValue":1, "uuidValues":2, "doubleValue":3, "intValue":4, "booleanValue":5
+### api-swift
+0: string | 1 enums: mapleFlavor (1), ...
+1: string | enum with no cases,uuid
+2: array | children 1
+3: double
+4: integer
+5: bool
+6: class TopLevel | children 5,3,4,0,1,2 | given TopLevel ()
+props 6: "stringValue":0, "uuidValue":1, "uuidValues":2, "doubleValue":3, "intValue":4, "booleanValue":5
+### stream-python
+0: string | 0 | 1 enums: mapleFlavor (1), ...
+1: string | 1 | enum with no cases,uuid
+2: array | children 1 | 2
+3: double | 3
+4: integer | 4
+5: bool | 5
+6: class TopLevel | children 5,3,4,0,1,2 | 6 | given TopLevel ()
+props 6: "stringValue":0, "uuidValue":1, "uuidValues":2, "doubleValue":3, "intValue":4, "booleanValue":5

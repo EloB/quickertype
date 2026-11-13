@@ -1,0 +1,91 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums:  (175), ...,uri
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | enum with no cases,date-time
+5: union | children 3,4 | 5
+6: bool | 6
+7: string | 7 | 305 enums: Constance, Angela (1), ...
+8: string | 8 | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8 | 9
+10: array TopLevel | children 9 | 10 | given TopLevel ()
+props 9: "BirthDate":5, "BirthDateIsProtected":6, "GenderTypeID":0, "Notes":2, "ParliamentaryName":7, "PersonID":0, "PhotoURL":1, "PreferredName":8
+### api-typescript
+0: integer
+1: string | 1 enums:  (175), ...,uri
+2: string | unrestricted
+3: null
+4: string | enum with no cases,date-time
+5: union | children 3,4
+6: bool
+7: string | 305 enums: Constance, Angela (1), ...
+8: string | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8
+10: array TopLevel | children 9 | given TopLevel ()
+props 9: "PersonID":0, "PhotoURL":1, "Notes":2, "BirthDate":5, "BirthDateIsProtected":6, "ParliamentaryName":7, "PreferredName":8, "GenderTypeID":0
+### stream-schema
+0: integer
+1: string | 1 enums:  (175), ...,uri
+2: string | unrestricted
+3: null
+4: string | enum with no cases,date-time
+5: union | children 3,4
+6: bool
+7: string | 305 enums: Constance, Angela (1), ...
+8: string | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8
+10: array TopLevel | children 9 | given TopLevel ()
+props 9: "PersonID":0, "PhotoURL":1, "Notes":2, "BirthDate":5, "BirthDateIsProtected":6, "ParliamentaryName":7, "PreferredName":8, "GenderTypeID":0
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums:  (175), ...,uri
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | enum with no cases,date-time
+5: union | children 3,4 | 5
+6: bool | 6
+7: string | 7 | 305 enums: Constance, Angela (1), ...
+8: string | 8 | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8 | 9
+10: array TopLevel | children 9 | 10 | given TopLevel ()
+props 9: "BirthDate":5, "BirthDateIsProtected":6, "GenderTypeID":0, "Notes":2, "ParliamentaryName":7, "PersonID":0, "PhotoURL":1, "PreferredName":8
+### stream-kotlin
+0: integer
+1: string | 1 enums:  (175), ...,uri
+2: string | unrestricted
+3: null
+4: string | enum with no cases,date-time
+5: union | children 3,4
+6: bool
+7: string | 305 enums: Constance, Angela (1), ...
+8: string | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8
+10: array TopLevel | children 9 | given TopLevel ()
+props 9: "PersonID":0, "PhotoURL":1, "Notes":2, "BirthDate":5, "BirthDateIsProtected":6, "ParliamentaryName":7, "PreferredName":8, "GenderTypeID":0
+### api-swift
+0: integer
+1: string | 1 enums:  (175), ...,uri
+2: string | unrestricted
+3: null
+4: string | enum with no cases,date-time
+5: union | children 3,4
+6: bool
+7: string | 305 enums: Constance, Angela (1), ...
+8: string | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8
+10: array TopLevel | children 9 | given TopLevel ()
+props 9: "PersonID":0, "PhotoURL":1, "Notes":2, "BirthDate":5, "BirthDateIsProtected":6, "ParliamentaryName":7, "PreferredName":8, "GenderTypeID":0
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums:  (175), ...,uri
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | enum with no cases,date-time
+5: union | children 3,4 | 5
+6: bool | 6
+7: string | 7 | 305 enums: Constance, Angela (1), ...
+8: string | 8 | 183 enums: Angela (1), ...
+9: class | children 5,6,0,2,7,1,8 | 9
+10: array TopLevel | children 9 | 10 | given TopLevel ()
+props 9: "PersonID":0, "PhotoURL":1, "Notes":2, "BirthDate":5, "BirthDateIsProtected":6, "ParliamentaryName":7, "PreferredName":8, "GenderTypeID":0

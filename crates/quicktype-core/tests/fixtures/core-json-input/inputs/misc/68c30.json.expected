@@ -1,0 +1,161 @@
+### stream-typescript
+0: integer | 0
+1: bool | 1
+2: string | 2 | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 3 | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1 | 4
+5: string | 5 | unrestricted
+6: class | children 4,5,0 | 6
+7: array | children 6 | 7
+8: string | 8 | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 | 9 enums: 35.187.13.131 (1), ...
+10: string | 10 | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 11 | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1 | 12
+13: array | children 12 | 13
+14: class | children 1,8,7,0,13,9 | 14
+15: array | children 14 | 15
+16: class TopLevel | children 15 | 16 | given TopLevel ()
+props 4: "addr":2, "n":0, "script":3, "spent":1, "tx_index":0, "type":0, "value":0
+props 6: "prev_out":4, "script":5, "sequence":0
+props 12: "addr":10, "n":0, "script":11, "spent":1, "tx_index":0, "type":0, "value":0
+props 14: "double_spend":1, "hash":8, "inputs":7, "lock_time":0, "out":13, "relayed_by":9, "size":0, "time":0, "tx_index":0, "ver":0, "vin_sz":0, "vout_sz":0
+props 16: "txs":15
+### api-typescript
+0: integer
+1: bool
+2: string | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1
+5: string | unrestricted
+6: class | children 4,5,0
+7: array | children 6
+8: string | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 enums: 35.187.13.131 (1), ...
+10: string | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1
+13: array | children 12
+14: class | children 1,8,7,0,13,9
+15: array | children 14
+16: class TopLevel | children 15 | given TopLevel ()
+props 4: "spent":1, "tx_index":0, "type":0, "addr":2, "value":0, "n":0, "script":3
+props 6: "sequence":0, "prev_out":4, "script":5
+props 12: "spent":1, "tx_index":0, "type":0, "addr":10, "value":0, "n":0, "script":11
+props 14: "lock_time":0, "ver":0, "size":0, "inputs":7, "double_spend":1, "time":0, "tx_index":0, "vin_sz":0, "hash":8, "vout_sz":0, "relayed_by":9, "out":13
+props 16: "txs":15
+### stream-schema
+0: integer
+1: bool
+2: string | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1
+5: string | unrestricted
+6: class | children 4,5,0
+7: array | children 6
+8: string | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 enums: 35.187.13.131 (1), ...
+10: string | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1
+13: array | children 12
+14: class | children 1,8,7,0,13,9
+15: array | children 14
+16: class TopLevel | children 15 | given TopLevel ()
+props 4: "spent":1, "tx_index":0, "type":0, "addr":2, "value":0, "n":0, "script":3
+props 6: "sequence":0, "prev_out":4, "script":5
+props 12: "spent":1, "tx_index":0, "type":0, "addr":10, "value":0, "n":0, "script":11
+props 14: "lock_time":0, "ver":0, "size":0, "inputs":7, "double_spend":1, "time":0, "tx_index":0, "vin_sz":0, "hash":8, "vout_sz":0, "relayed_by":9, "out":13
+props 16: "txs":15
+### api-csharp
+0: integer | 0
+1: bool | 1
+2: string | 2 | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 3 | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1 | 4
+5: string | 5 | unrestricted
+6: class | children 4,5,0 | 6
+7: array | children 6 | 7
+8: string | 8 | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 | 9 enums: 35.187.13.131 (1), ...
+10: string | 10 | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 11 | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1 | 12
+13: array | children 12 | 13
+14: class | children 1,8,7,0,13,9 | 14
+15: array | children 14 | 15
+16: class TopLevel | children 15 | 16 | given TopLevel ()
+props 4: "addr":2, "n":0, "script":3, "spent":1, "tx_index":0, "type":0, "value":0
+props 6: "prev_out":4, "script":5, "sequence":0
+props 12: "addr":10, "n":0, "script":11, "spent":1, "tx_index":0, "type":0, "value":0
+props 14: "double_spend":1, "hash":8, "inputs":7, "lock_time":0, "out":13, "relayed_by":9, "size":0, "time":0, "tx_index":0, "ver":0, "vin_sz":0, "vout_sz":0
+props 16: "txs":15
+### stream-kotlin
+0: integer
+1: bool
+2: string | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1
+5: string | unrestricted
+6: class | children 4,5,0
+7: array | children 6
+8: string | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 enums: 35.187.13.131 (1), ...
+10: string | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1
+13: array | children 12
+14: class | children 1,8,7,0,13,9
+15: array | children 14
+16: class TopLevel | children 15 | given TopLevel ()
+props 4: "spent":1, "tx_index":0, "type":0, "addr":2, "value":0, "n":0, "script":3
+props 6: "sequence":0, "prev_out":4, "script":5
+props 12: "spent":1, "tx_index":0, "type":0, "addr":10, "value":0, "n":0, "script":11
+props 14: "lock_time":0, "ver":0, "size":0, "inputs":7, "double_spend":1, "time":0, "tx_index":0, "vin_sz":0, "hash":8, "vout_sz":0, "relayed_by":9, "out":13
+props 16: "txs":15
+### api-swift
+0: integer
+1: bool
+2: string | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1
+5: string | unrestricted
+6: class | children 4,5,0
+7: array | children 6
+8: string | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 enums: 35.187.13.131 (1), ...
+10: string | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1
+13: array | children 12
+14: class | children 1,8,7,0,13,9
+15: array | children 14
+16: class TopLevel | children 15 | given TopLevel ()
+props 4: "spent":1, "tx_index":0, "type":0, "addr":2, "value":0, "n":0, "script":3
+props 6: "sequence":0, "prev_out":4, "script":5
+props 12: "spent":1, "tx_index":0, "type":0, "addr":10, "value":0, "n":0, "script":11
+props 14: "lock_time":0, "ver":0, "size":0, "inputs":7, "double_spend":1, "time":0, "tx_index":0, "vin_sz":0, "hash":8, "vout_sz":0, "relayed_by":9, "out":13
+props 16: "txs":15
+### stream-python
+0: integer | 0
+1: bool | 1
+2: string | 2 | 9 enums: 1GQmweAj7Lqwzs4eD8u6DjGA8da2kaG93S (2), ...
+3: string | 3 | 9 enums: 76a914a908f83a4c1267f168cb0d7c393f054e79e710c388ac (2), ...
+4: class | children 2,0,3,1 | 4
+5: string | 5 | unrestricted
+6: class | children 4,5,0 | 6
+7: array | children 6 | 7
+8: string | 8 | 10 enums: c5e997fae9a2f92fe747dc581e456127c265ccfc5b671f24afae96f7d10de1b1 (1), ...
+9: string | 9 | 9 enums: 35.187.13.131 (1), ...
+10: string | 10 | 17 enums: 1JBvuTKwYJUSGdk7o6LVxxg5EpvJPBmn8G (1), ...
+11: string | 11 | 17 enums: 76a914bc8b4b886f2af51266e1ccdedd610a639b10527688ac (1), ...
+12: class | children 10,0,11,1 | 12
+13: array | children 12 | 13
+14: class | children 1,8,7,0,13,9 | 14
+15: array | children 14 | 15
+16: class TopLevel | children 15 | 16 | given TopLevel ()
+props 4: "spent":1, "tx_index":0, "type":0, "addr":2, "value":0, "n":0, "script":3
+props 6: "sequence":0, "prev_out":4, "script":5
+props 12: "spent":1, "tx_index":0, "type":0, "addr":10, "value":0, "n":0, "script":11
+props 14: "lock_time":0, "ver":0, "size":0, "inputs":7, "double_spend":1, "time":0, "tx_index":0, "vin_sz":0, "hash":8, "vout_sz":0, "relayed_by":9, "out":13
+props 16: "txs":15

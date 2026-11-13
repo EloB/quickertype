@@ -1,0 +1,56 @@
+### stream-typescript
+0: string | 0 | enum with no cases,date
+1: integer | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### api-typescript
+0: string | enum with no cases,date
+1: integer
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### stream-schema
+0: string | enum with no cases,date
+1: integer
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### api-csharp
+0: string | 0 | enum with no cases,date
+1: integer | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### stream-kotlin
+0: string | enum with no cases,date
+1: integer
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### api-swift
+0: string | enum with no cases,date
+1: integer
+2: class | children 0,1
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3
+### stream-python
+0: string | 0 | enum with no cases,date
+1: integer | 1
+2: class | children 0,1 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "date":0, "population":1
+props 4: "total_population":3

@@ -1,0 +1,49 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | unrestricted
+2: string | 2 | 1 enums:  (141), ...
+3: class | children 0,1,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### api-typescript
+0: integer
+1: string | unrestricted
+2: string | 1 enums:  (141), ...
+3: class | children 0,1,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### stream-schema
+0: integer
+1: string | unrestricted
+2: string | 1 enums:  (141), ...
+3: class | children 0,1,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### api-csharp
+0: integer | 0
+1: string | 1 | unrestricted
+2: string | 2 | 1 enums:  (141), ...
+3: class | children 0,1,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### stream-kotlin
+0: integer
+1: string | unrestricted
+2: string | 1 enums:  (141), ...
+3: class | children 0,1,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### api-swift
+0: integer
+1: string | unrestricted
+2: string | 1 enums:  (141), ...
+3: class | children 0,1,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2
+### stream-python
+0: integer | 0
+1: string | 1 | unrestricted
+2: string | 2 | 1 enums:  (141), ...
+3: class | children 0,1,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "ID":0, "Name":1, "Notes":2

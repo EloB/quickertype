@@ -1,0 +1,189 @@
+### stream-typescript
+0: string | 0 | 5 enums: ECL-2.0 (1), ...
+1: string | 1 | 4 enums: ECL-2.0 (1), ...
+2: string | 2 | 1 enums: SPDX (4), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 2 enums: OSI Page (5), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none | 10
+11: array | children 10 | 11
+12: null | 12
+13: string | 13 | 2 enums: special-purpose (5), ...
+14: array | children 13 | 14
+15: string | 15 | 2 enums: text/html (5), ...
+16: string | 16 | 2 enums: HTML (5), ...
+17: string | 17 | enum with no cases,uri
+18: class | children 15,16,17 | 18
+19: array | children 18 | 19
+20: class | children 0,4,14,8,9,11,12,19 | 20
+21: array TopLevel | children 20 | 21 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "keywords":14, "links":8, "name":9, "other_names":11, "superseded_by":12, "text":19
+### api-typescript
+0: string | 5 enums: ECL-2.0 (1), ...
+1: string | 4 enums: ECL-2.0 (1), ...
+2: string | 1 enums: SPDX (4), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 2 enums: OSI Page (5), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none
+11: array | children 10
+12: null
+13: string | 2 enums: special-purpose (5), ...
+14: array | children 13
+15: string | 2 enums: text/html (5), ...
+16: string | 2 enums: HTML (5), ...
+17: string | enum with no cases,uri
+18: class | children 15,16,17
+19: array | children 18
+20: class | children 0,4,14,8,9,11,12,19
+21: array TopLevel | children 20 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "links":8, "name":9, "other_names":11, "superseded_by":12, "keywords":14, "text":19
+### stream-schema
+0: string | 5 enums: ECL-2.0 (1), ...
+1: string | 4 enums: ECL-2.0 (1), ...
+2: string | 1 enums: SPDX (4), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 2 enums: OSI Page (5), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none
+11: array | children 10
+12: null
+13: string | 2 enums: special-purpose (5), ...
+14: array | children 13
+15: string | 2 enums: text/html (5), ...
+16: string | 2 enums: HTML (5), ...
+17: string | enum with no cases,uri
+18: class | children 15,16,17
+19: array | children 18
+20: class | children 0,4,14,8,9,11,12,19
+21: array TopLevel | children 20 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "links":8, "name":9, "other_names":11, "superseded_by":12, "keywords":14, "text":19
+### api-csharp
+0: string | 0 | 5 enums: ECL-2.0 (1), ...
+1: string | 1 | 4 enums: ECL-2.0 (1), ...
+2: string | 2 | 1 enums: SPDX (4), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 2 enums: OSI Page (5), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none | 10
+11: array | children 10 | 11
+12: null | 12
+13: string | 13 | 2 enums: special-purpose (5), ...
+14: array | children 13 | 14
+15: string | 15 | 2 enums: text/html (5), ...
+16: string | 16 | 2 enums: HTML (5), ...
+17: string | 17 | enum with no cases,uri
+18: class | children 15,16,17 | 18
+19: array | children 18 | 19
+20: class | children 0,4,14,8,9,11,12,19 | 20
+21: array TopLevel | children 20 | 21 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "keywords":14, "links":8, "name":9, "other_names":11, "superseded_by":12, "text":19
+### stream-kotlin
+0: string | 5 enums: ECL-2.0 (1), ...
+1: string | 4 enums: ECL-2.0 (1), ...
+2: string | 1 enums: SPDX (4), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 2 enums: OSI Page (5), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none
+11: array | children 10
+12: null
+13: string | 2 enums: special-purpose (5), ...
+14: array | children 13
+15: string | 2 enums: text/html (5), ...
+16: string | 2 enums: HTML (5), ...
+17: string | enum with no cases,uri
+18: class | children 15,16,17
+19: array | children 18
+20: class | children 0,4,14,8,9,11,12,19
+21: array TopLevel | children 20 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "links":8, "name":9, "other_names":11, "superseded_by":12, "keywords":14, "text":19
+### api-swift
+0: string | 5 enums: ECL-2.0 (1), ...
+1: string | 4 enums: ECL-2.0 (1), ...
+2: string | 1 enums: SPDX (4), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 2 enums: OSI Page (5), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none
+11: array | children 10
+12: null
+13: string | 2 enums: special-purpose (5), ...
+14: array | children 13
+15: string | 2 enums: text/html (5), ...
+16: string | 2 enums: HTML (5), ...
+17: string | enum with no cases,uri
+18: class | children 15,16,17
+19: array | children 18
+20: class | children 0,4,14,8,9,11,12,19
+21: array TopLevel | children 20 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "links":8, "name":9, "other_names":11, "superseded_by":12, "keywords":14, "text":19
+### stream-python
+0: string | 0 | 5 enums: ECL-2.0 (1), ...
+1: string | 1 | 4 enums: ECL-2.0 (1), ...
+2: string | 2 | 1 enums: SPDX (4), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 2 enums: OSI Page (5), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Educational Community License, Version 2.0 (1), ...
+10: none | 10
+11: array | children 10 | 11
+12: null | 12
+13: string | 13 | 2 enums: special-purpose (5), ...
+14: array | children 13 | 14
+15: string | 15 | 2 enums: text/html (5), ...
+16: string | 16 | 2 enums: HTML (5), ...
+17: string | 17 | enum with no cases,uri
+18: class | children 15,16,17 | 18
+19: array | children 18 | 19
+20: class | children 0,4,14,8,9,11,12,19 | 20
+21: array TopLevel | children 20 | 21 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 18: "media_type":15, "title":16, "url":17
+props 20: "id":0, "identifiers":4, "links":8, "name":9, "other_names":11, "superseded_by":12, "keywords":14, "text":19

@@ -1,0 +1,106 @@
+### stream-typescript
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: union | children 0,3 | 4
+5: string | 5 | enum with no cases,date-time
+6: string | 6 | enum with no cases,uri
+7: class | children 5,0,2,4,6 | 7
+8: array | children 7 | 8
+9: bool | 9
+10: class TopLevel | children 0,1,9,8 | 10 | given TopLevel ()
+props 1: 
+props 7: "created_at":5, "id":0, "items":0, "name":2, "parent":4, "updated_at":5, "uri":6
+props 10: "count":0, "facets":1, "limit":0, "next":9, "offset":0, "previous":9, "results":8
+### api-typescript
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: union | children 0,3
+5: string | enum with no cases,date-time
+6: string | enum with no cases,uri
+7: class | children 5,0,2,4,6
+8: array | children 7
+9: bool
+10: class TopLevel | children 0,1,9,8 | given TopLevel ()
+props 1: 
+props 7: "name":2, "parent":4, "items":0, "created_at":5, "updated_at":5, "uri":6, "id":0
+props 10: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":9
+### stream-schema
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: union | children 0,3
+5: string | enum with no cases,date-time
+6: string | enum with no cases,uri
+7: class | children 5,0,2,4,6
+8: array | children 7
+9: bool
+10: class TopLevel | children 0,1,9,8 | given TopLevel ()
+props 1: 
+props 7: "name":2, "parent":4, "items":0, "created_at":5, "updated_at":5, "uri":6, "id":0
+props 10: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":9
+### api-csharp
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: union | children 0,3 | 4
+5: string | 5 | enum with no cases,date-time
+6: string | 6 | enum with no cases,uri
+7: class | children 5,0,2,4,6 | 7
+8: array | children 7 | 8
+9: bool | 9
+10: class TopLevel | children 0,1,9,8 | 10 | given TopLevel ()
+props 1: 
+props 7: "created_at":5, "id":0, "items":0, "name":2, "parent":4, "updated_at":5, "uri":6
+props 10: "count":0, "facets":1, "limit":0, "next":9, "offset":0, "previous":9, "results":8
+### stream-kotlin
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: union | children 0,3
+5: string | 3 enums: 2015-04-24T01:46:51.534790Z (1), ...,date-time
+6: string | 3 enums: 2015-06-20T23:45:21.341540Z (1), ...,date-time
+7: string | enum with no cases,uri
+8: class | children 5,0,2,4,6,7
+9: array | children 8
+10: bool
+11: class TopLevel | children 0,1,10,9 | given TopLevel ()
+props 1: 
+props 8: "name":2, "parent":4, "items":0, "created_at":5, "updated_at":6, "uri":7, "id":0
+props 11: "count":0, "facets":1, "results":9, "next":10, "limit":0, "offset":0, "previous":10
+### api-swift
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: union | children 0,3
+5: string | enum with no cases,date-time
+6: string | enum with no cases,uri
+7: class | children 5,0,2,4,6
+8: array | children 7
+9: bool
+10: class TopLevel | children 0,1,9,8 | given TopLevel ()
+props 1: 
+props 7: "name":2, "parent":4, "items":0, "created_at":5, "updated_at":5, "uri":6, "id":0
+props 10: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":9
+### stream-python
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: union | children 0,3 | 4
+5: string | 5 | enum with no cases,date-time
+6: string | 6 | enum with no cases,uri
+7: class | children 5,0,2,4,6 | 7
+8: array | children 7 | 8
+9: bool | 9
+10: class TopLevel | children 0,1,9,8 | 10 | given TopLevel ()
+props 1: 
+props 7: "name":2, "parent":4, "items":0, "created_at":5, "updated_at":5, "uri":6, "id":0
+props 10: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":9

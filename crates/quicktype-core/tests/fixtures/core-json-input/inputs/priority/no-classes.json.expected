@@ -1,0 +1,14 @@
+### stream-typescript
+0: integer TopLevel | 0 | given TopLevel ()
+### api-typescript
+0: integer TopLevel | given TopLevel ()
+### stream-schema
+0: integer TopLevel | given TopLevel ()
+### api-csharp
+0: integer TopLevel | 0 | given TopLevel ()
+### stream-kotlin
+0: integer TopLevel | given TopLevel ()
+### api-swift
+0: integer TopLevel | given TopLevel ()
+### stream-python
+0: integer TopLevel | 0 | given TopLevel ()

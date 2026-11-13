@@ -1,0 +1,77 @@
+### stream-typescript
+0: string | 0 | 2 enums: one (5), ...
+1: class | children 0 | 1
+2: array | children 1 | 2
+3: string | 3 | 1 enums: three (10), ...
+4: class | children 3 | 4
+5: array | children 4 | 5
+6: class TopLevel | children 5,2 | 6 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "bar":5, "foo":2
+### api-typescript
+0: string | 2 enums: one (5), ...
+1: class | children 0
+2: array | children 1
+3: string | 1 enums: three (10), ...
+4: class | children 3
+5: array | children 4
+6: class TopLevel | children 5,2 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "foo":2, "bar":5
+### stream-schema
+0: string | 2 enums: one (5), ...
+1: class | children 0
+2: array | children 1
+3: string | 1 enums: three (10), ...
+4: class | children 3
+5: array | children 4
+6: class TopLevel | children 5,2 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "foo":2, "bar":5
+### api-csharp
+0: string | 0 | 2 enums: one (5), ...
+1: class | children 0 | 1
+2: array | children 1 | 2
+3: string | 3 | 1 enums: three (10), ...
+4: class | children 3 | 4
+5: array | children 4 | 5
+6: class TopLevel | children 5,2 | 6 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "bar":5, "foo":2
+### stream-kotlin
+0: string | 2 enums: one (5), ...
+1: class | children 0
+2: array | children 1
+3: string | 1 enums: three (10), ...
+4: class | children 3
+5: array | children 4
+6: class TopLevel | children 5,2 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "foo":2, "bar":5
+### api-swift
+0: string | 2 enums: one (5), ...
+1: class | children 0
+2: array | children 1
+3: string | 1 enums: three (10), ...
+4: class | children 3
+5: array | children 4
+6: class TopLevel | children 5,2 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "foo":2, "bar":5
+### stream-python
+0: string | 0 | 2 enums: one (5), ...
+1: class | children 0 | 1
+2: array | children 1 | 2
+3: string | 3 | 1 enums: three (10), ...
+4: class | children 3 | 4
+5: array | children 4 | 5
+6: class TopLevel | children 5,2 | 6 | given TopLevel ()
+props 1: "x":0
+props 4: "x":3
+props 6: "foo":2, "bar":5

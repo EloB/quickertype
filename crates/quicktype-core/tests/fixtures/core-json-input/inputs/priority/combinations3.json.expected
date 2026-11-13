@@ -1,0 +1,1169 @@
+### stream-typescript
+0: bool | 0
+1: null | 1
+2: class | children 1 | 2
+3: union | children 0,2 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: array | children 5 | 6
+7: class | children 5 | 7
+8: union | children 6,7 | 8
+9: array | children 8 | 9
+10: double | 10
+11: class | children 1 | 11
+12: string | 12 | 1 enums: prematureness (1), ...
+13: union | children 11,10,12 | 13
+14: array | children 13 | 14
+15: class | children 1 | 15
+16: union | children 0,15,5 | 16
+17: array | children 16 | 17
+18: array | children 1 | 18
+19: union | children 18,5 | 19
+20: array | children 19 | 20
+21: string | 21 | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1 | 22
+23: union | children 22,5 | 23
+24: array | children 23 | 24
+25: string | 25 | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0 | 26
+27: array | children 26 | 27
+28: string | 28 | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1 | 29
+30: union | children 29,10 | 30
+31: array | children 30 | 31
+32: union | children 18,0 | 32
+33: array | children 32 | 33
+34: string | 34 | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0 | 35
+36: union | children 18,35 | 36
+37: array | children 36 | 37
+38: string | 38 | 1 enums: flying (1), ...
+39: union | children 18,10,38 | 39
+40: array | children 39 | 40
+41: union | children 18,10,1 | 41
+42: array | children 41 | 42
+43: string | 43 | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1 | 44
+45: union | children 44,1 | 45
+46: array | children 45 | 46
+47: union | children 6,10,1 | 47
+48: array | children 47 | 48
+49: union | children 18,0,5 | 49
+50: array | children 49 | 50
+51: union | children 5,1 | 51
+52: array | children 51 | 52
+53: union | children 52,1 | 53
+54: array | children 53 | 54
+55: union | children 18,10 | 55
+56: array | children 55 | 56
+57: string | 57 | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1 | 58
+59: array | children 58 | 59
+60: union | children 0,5 | 60
+61: array | children 60 | 61
+62: union | children 18,0,10 | 62
+63: array | children 62 | 63
+64: class | children 1 | 64
+65: union | children 18,64,1 | 65
+66: array | children 65 | 66
+67: class | children 1 | 67
+68: union | children 67,10,1 | 68
+69: array | children 68 | 69
+70: class | children 5,1 | 70
+71: union | children 70,10 | 71
+72: array | children 71 | 72
+73: class | children 5 | 73
+74: string | 74 | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74 | 75
+76: array | children 75 | 76
+77: union | children 0,10,1 | 77
+78: array | children 77 | 78
+79: array | children 0 | 79
+80: string | 80 | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1 | 81
+82: union | children 81,10 | 82
+83: array | children 82 | 83
+84: string | 84 | 1 enums: looplet (1), ...
+85: union | children 10,1,84 | 85
+86: array | children 85 | 86
+87: string | 87 | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1 | 88
+89: union | children 18,88 | 89
+90: array | children 89 | 90
+91: union | children 0,5,1 | 91
+92: array | children 91 | 92
+93: class | children 5 | 93
+94: union | children 93,5 | 94
+95: array | children 94 | 95
+96: class | children 5 | 96
+97: union | children 96,10 | 97
+98: array | children 97 | 98
+99: string | 99 | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0 | 100
+101: union | children 100,1 | 101
+102: array | children 101 | 102
+103: string | 103 | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1 | 104
+105: union | children 0,104 | 105
+106: array | children 105 | 106
+107: class | children 5 | 107
+108: union | children 6,107,1 | 108
+109: array | children 108 | 109
+110: class | children 1 | 110
+111: union | children 110,5,1 | 111
+112: array | children 111 | 112
+113: string | 113 | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1 | 114
+115: string | 115 | 1 enums: swapper (1), ...
+116: union | children 18,114,115 | 116
+117: array | children 116 | 117
+118: class | children 1 | 118
+119: string | 119 | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119 | 120
+121: array | children 120 | 121
+122: string | 122 | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1 | 123
+124: union | children 18,0,123 | 124
+125: array | children 124 | 125
+126: string | 126 | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1 | 127
+128: union | children 6,127,5 | 128
+129: array | children 128 | 129
+130: class | children 5,1 | 130
+131: array | children 130 | 131
+132: string | 132 | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1 | 133
+134: union | children 6,0,133 | 134
+135: array | children 134 | 135
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | 136 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "catharticalness"?:10, "disdiapason"?:21, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "homocerc"?:0, "ichthyophagan"?:5, "implacable"?:5, "nonbookish"?:1, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Alicant"?:5, "Bakuninist"?:1, "Chirotherium"?:5, "Dimitry"?:5, "antiatonement"?:1, "anticorrosive"?:5, "aphidozer"?:1, "be"?:5, "catharticalness"?:10, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "disdiapason"?:25, "edifying"?:1, "ethmoiditis"?:5, "gastralgy"?:1, "goatherd"?:5, "hammerdress"?:5, "hangfire"?:1, "homocerc"?:0, "lacunosity"?:5, "longiloquence"?:1, "mameliere"?:5, "motherless"?:1, "nonbookish"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "oafishly"?:5, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "saccharulmic"?:5, "scowlful"?:5, "secluded"?:1, "slackage"?:1, "sphaeridial"?:5, "spondulics"?:1, "subsecive"?:5, "swellmobsman"?:1, "trachyglossate"?:5, "trialogue"?:1, "unassuaged"?:5, "ungross"?:1, "unjudiciously"?:1
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "blaspheme"?:1, "catharticalness"?:10, "celiosalpingectomy"?:1, "consummativeness"?:1, "disdiapason"?:34, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "homocerc"?:0, "intuitionalism"?:1, "lophiostomate"?:1, "nonbookish"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Asha"?:5, "Caraipa"?:1, "Pristipomidae"?:1, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "cystopyelitis"?:1, "diallelus"?:1, "epistilbite"?:5, "eryngo"?:1, "extracalicular"?:5, "glyptotheca"?:1, "gonaduct"?:1, "hawkbill"?:5, "humerometacarpal"?:1, "idiometer"?:1, "inolith"?:5, "labially"?:1, "latitudinous"?:1, "nonswearer"?:5, "omnivalence"?:1, "orphancy"?:5, "outshow"?:1, "penitencer"?:5, "periaortic"?:5, "pilula"?:1, "plumply"?:1, "poritoid"?:5, "potbellied"?:5, "quadribasic"?:1, "recriminator"?:5, "sulfamyl"?:1, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "catharticalness"?:10, "decardinalize"?:5, "discouragement"?:5, "disdiapason"?:80, "doitrified"?:5, "hexaspermous"?:5, "homocerc"?:0, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "nonbookish"?:1, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Carbonarism"?:1, "Chirotherium"?:5, "Koniga"?:1, "Micky"?:1, "catharticalness"?:10, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "disdiapason"?:99, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "homocerc"?:0, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "nonbookish"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Asterochiton"?:5, "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "ameliorate"?:5, "anchorite"?:1, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "endobronchially"?:1, "flitting"?:1, "gastrointestinal"?:5, "immoment"?:1, "itchweed"?:5, "lass"?:5, "liken"?:1, "merchantly"?:5, "microphysics"?:1, "nonclosure"?:5, "nonreality"?:1, "overfloridness"?:5, "overhotly"?:1, "oversend"?:5, "perigynium"?:1, "protopepsia"?:5, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "synadelphite"?:5, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "trumpetry"?:5, "truster"?:5, "undecorative"?:1, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### api-typescript
+0: bool
+1: null
+2: class | children 1
+3: union | children 0,2
+4: array | children 3
+5: integer
+6: array | children 5
+7: class | children 5
+8: union | children 6,7
+9: array | children 8
+10: double
+11: class | children 1
+12: string | 1 enums: prematureness (1), ...
+13: union | children 11,10,12
+14: array | children 13
+15: class | children 1
+16: union | children 0,15,5
+17: array | children 16
+18: array | children 1
+19: union | children 18,5
+20: array | children 19
+21: string | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1
+23: union | children 22,5
+24: array | children 23
+25: string | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0
+27: array | children 26
+28: string | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1
+30: union | children 29,10
+31: array | children 30
+32: union | children 18,0
+33: array | children 32
+34: string | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0
+36: union | children 18,35
+37: array | children 36
+38: string | 1 enums: flying (1), ...
+39: union | children 18,10,38
+40: array | children 39
+41: union | children 18,10,1
+42: array | children 41
+43: string | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1
+45: union | children 44,1
+46: array | children 45
+47: union | children 6,10,1
+48: array | children 47
+49: union | children 18,0,5
+50: array | children 49
+51: union | children 5,1
+52: array | children 51
+53: union | children 52,1
+54: array | children 53
+55: union | children 18,10
+56: array | children 55
+57: string | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1
+59: array | children 58
+60: union | children 0,5
+61: array | children 60
+62: union | children 18,0,10
+63: array | children 62
+64: class | children 1
+65: union | children 18,64,1
+66: array | children 65
+67: class | children 1
+68: union | children 67,10,1
+69: array | children 68
+70: class | children 5,1
+71: union | children 70,10
+72: array | children 71
+73: class | children 5
+74: string | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74
+76: array | children 75
+77: union | children 0,10,1
+78: array | children 77
+79: array | children 0
+80: string | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1
+82: union | children 81,10
+83: array | children 82
+84: string | 1 enums: looplet (1), ...
+85: union | children 10,1,84
+86: array | children 85
+87: string | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1
+89: union | children 18,88
+90: array | children 89
+91: union | children 0,5,1
+92: array | children 91
+93: class | children 5
+94: union | children 93,5
+95: array | children 94
+96: class | children 5
+97: union | children 96,10
+98: array | children 97
+99: string | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0
+101: union | children 100,1
+102: array | children 101
+103: string | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1
+105: union | children 0,104
+106: array | children 105
+107: class | children 5
+108: union | children 6,107,1
+109: array | children 108
+110: class | children 1
+111: union | children 110,5,1
+112: array | children 111
+113: string | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1
+115: string | 1 enums: swapper (1), ...
+116: union | children 18,114,115
+117: array | children 116
+118: class | children 1
+119: string | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119
+121: array | children 120
+122: string | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1
+124: union | children 18,0,123
+125: array | children 124
+126: string | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1
+128: union | children 6,127,5
+129: array | children 128
+130: class | children 5,1
+131: array | children 130
+132: string | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1
+134: union | children 6,0,133
+135: array | children 134
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:21, "homocerc"?:0, "nonbookish"?:1, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "ichthyophagan"?:5, "implacable"?:5, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:25, "homocerc"?:0, "nonbookish"?:1, "Bakuninist"?:1, "antiatonement"?:1, "aphidozer"?:1, "edifying"?:1, "gastralgy"?:1, "hangfire"?:1, "longiloquence"?:1, "motherless"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "secluded"?:1, "slackage"?:1, "spondulics"?:1, "swellmobsman"?:1, "trialogue"?:1, "ungross"?:1, "unjudiciously"?:1, "Alicant"?:5, "Dimitry"?:5, "anticorrosive"?:5, "be"?:5, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "ethmoiditis"?:5, "goatherd"?:5, "hammerdress"?:5, "lacunosity"?:5, "mameliere"?:5, "oafishly"?:5, "saccharulmic"?:5, "scowlful"?:5, "sphaeridial"?:5, "subsecive"?:5, "trachyglossate"?:5, "unassuaged"?:5
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:34, "homocerc"?:0, "nonbookish"?:1, "blaspheme"?:1, "celiosalpingectomy"?:1, "consummativeness"?:1, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "intuitionalism"?:1, "lophiostomate"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Caraipa"?:1, "Pristipomidae"?:1, "cystopyelitis"?:1, "diallelus"?:1, "eryngo"?:1, "glyptotheca"?:1, "gonaduct"?:1, "humerometacarpal"?:1, "idiometer"?:1, "labially"?:1, "latitudinous"?:1, "omnivalence"?:1, "outshow"?:1, "pilula"?:1, "plumply"?:1, "quadribasic"?:1, "sulfamyl"?:1, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "Asha"?:5, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "epistilbite"?:5, "extracalicular"?:5, "hawkbill"?:5, "inolith"?:5, "nonswearer"?:5, "orphancy"?:5, "penitencer"?:5, "periaortic"?:5, "poritoid"?:5, "potbellied"?:5, "recriminator"?:5, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:80, "homocerc"?:0, "nonbookish"?:1, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "decardinalize"?:5, "discouragement"?:5, "doitrified"?:5, "hexaspermous"?:5, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:99, "homocerc"?:0, "nonbookish"?:1, "Carbonarism"?:1, "Koniga"?:1, "Micky"?:1, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "anchorite"?:1, "endobronchially"?:1, "flitting"?:1, "immoment"?:1, "liken"?:1, "microphysics"?:1, "nonreality"?:1, "overhotly"?:1, "perigynium"?:1, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "undecorative"?:1, "Asterochiton"?:5, "ameliorate"?:5, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "gastrointestinal"?:5, "itchweed"?:5, "lass"?:5, "merchantly"?:5, "nonclosure"?:5, "overfloridness"?:5, "oversend"?:5, "protopepsia"?:5, "synadelphite"?:5, "trumpetry"?:5, "truster"?:5, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### stream-schema
+0: bool
+1: null
+2: class | children 1
+3: union | children 0,2
+4: array | children 3
+5: integer
+6: array | children 5
+7: class | children 5
+8: union | children 6,7
+9: array | children 8
+10: double
+11: class | children 1
+12: string | 1 enums: prematureness (1), ...
+13: union | children 11,10,12
+14: array | children 13
+15: class | children 1
+16: union | children 0,15,5
+17: array | children 16
+18: array | children 1
+19: union | children 18,5
+20: array | children 19
+21: string | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1
+23: union | children 22,5
+24: array | children 23
+25: string | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0
+27: array | children 26
+28: string | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1
+30: union | children 29,10
+31: array | children 30
+32: union | children 18,0
+33: array | children 32
+34: string | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0
+36: union | children 18,35
+37: array | children 36
+38: string | 1 enums: flying (1), ...
+39: union | children 18,10,38
+40: array | children 39
+41: union | children 18,10,1
+42: array | children 41
+43: string | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1
+45: union | children 44,1
+46: array | children 45
+47: union | children 6,10,1
+48: array | children 47
+49: union | children 18,0,5
+50: array | children 49
+51: union | children 5,1
+52: array | children 51
+53: union | children 52,1
+54: array | children 53
+55: union | children 18,10
+56: array | children 55
+57: string | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1
+59: array | children 58
+60: union | children 0,5
+61: array | children 60
+62: union | children 18,0,10
+63: array | children 62
+64: class | children 1
+65: union | children 18,64,1
+66: array | children 65
+67: class | children 1
+68: union | children 67,10,1
+69: array | children 68
+70: class | children 5,1
+71: union | children 70,10
+72: array | children 71
+73: class | children 5
+74: string | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74
+76: array | children 75
+77: union | children 0,10,1
+78: array | children 77
+79: array | children 0
+80: string | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1
+82: union | children 81,10
+83: array | children 82
+84: string | 1 enums: looplet (1), ...
+85: union | children 10,1,84
+86: array | children 85
+87: string | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1
+89: union | children 18,88
+90: array | children 89
+91: union | children 0,5,1
+92: array | children 91
+93: class | children 5
+94: union | children 93,5
+95: array | children 94
+96: class | children 5
+97: union | children 96,10
+98: array | children 97
+99: string | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0
+101: union | children 100,1
+102: array | children 101
+103: string | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1
+105: union | children 0,104
+106: array | children 105
+107: class | children 5
+108: union | children 6,107,1
+109: array | children 108
+110: class | children 1
+111: union | children 110,5,1
+112: array | children 111
+113: string | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1
+115: string | 1 enums: swapper (1), ...
+116: union | children 18,114,115
+117: array | children 116
+118: class | children 1
+119: string | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119
+121: array | children 120
+122: string | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1
+124: union | children 18,0,123
+125: array | children 124
+126: string | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1
+128: union | children 6,127,5
+129: array | children 128
+130: class | children 5,1
+131: array | children 130
+132: string | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1
+134: union | children 6,0,133
+135: array | children 134
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:21, "homocerc"?:0, "nonbookish"?:1, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "ichthyophagan"?:5, "implacable"?:5, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:25, "homocerc"?:0, "nonbookish"?:1, "Bakuninist"?:1, "antiatonement"?:1, "aphidozer"?:1, "edifying"?:1, "gastralgy"?:1, "hangfire"?:1, "longiloquence"?:1, "motherless"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "secluded"?:1, "slackage"?:1, "spondulics"?:1, "swellmobsman"?:1, "trialogue"?:1, "ungross"?:1, "unjudiciously"?:1, "Alicant"?:5, "Dimitry"?:5, "anticorrosive"?:5, "be"?:5, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "ethmoiditis"?:5, "goatherd"?:5, "hammerdress"?:5, "lacunosity"?:5, "mameliere"?:5, "oafishly"?:5, "saccharulmic"?:5, "scowlful"?:5, "sphaeridial"?:5, "subsecive"?:5, "trachyglossate"?:5, "unassuaged"?:5
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:34, "homocerc"?:0, "nonbookish"?:1, "blaspheme"?:1, "celiosalpingectomy"?:1, "consummativeness"?:1, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "intuitionalism"?:1, "lophiostomate"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Caraipa"?:1, "Pristipomidae"?:1, "cystopyelitis"?:1, "diallelus"?:1, "eryngo"?:1, "glyptotheca"?:1, "gonaduct"?:1, "humerometacarpal"?:1, "idiometer"?:1, "labially"?:1, "latitudinous"?:1, "omnivalence"?:1, "outshow"?:1, "pilula"?:1, "plumply"?:1, "quadribasic"?:1, "sulfamyl"?:1, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "Asha"?:5, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "epistilbite"?:5, "extracalicular"?:5, "hawkbill"?:5, "inolith"?:5, "nonswearer"?:5, "orphancy"?:5, "penitencer"?:5, "periaortic"?:5, "poritoid"?:5, "potbellied"?:5, "recriminator"?:5, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:80, "homocerc"?:0, "nonbookish"?:1, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "decardinalize"?:5, "discouragement"?:5, "doitrified"?:5, "hexaspermous"?:5, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:99, "homocerc"?:0, "nonbookish"?:1, "Carbonarism"?:1, "Koniga"?:1, "Micky"?:1, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "anchorite"?:1, "endobronchially"?:1, "flitting"?:1, "immoment"?:1, "liken"?:1, "microphysics"?:1, "nonreality"?:1, "overhotly"?:1, "perigynium"?:1, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "undecorative"?:1, "Asterochiton"?:5, "ameliorate"?:5, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "gastrointestinal"?:5, "itchweed"?:5, "lass"?:5, "merchantly"?:5, "nonclosure"?:5, "overfloridness"?:5, "oversend"?:5, "protopepsia"?:5, "synadelphite"?:5, "trumpetry"?:5, "truster"?:5, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### api-csharp
+0: bool | 0
+1: null | 1
+2: class | children 1 | 2
+3: union | children 0,2 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: array | children 5 | 6
+7: class | children 5 | 7
+8: union | children 6,7 | 8
+9: array | children 8 | 9
+10: double | 10
+11: class | children 1 | 11
+12: string | 12 | 1 enums: prematureness (1), ...
+13: union | children 11,10,12 | 13
+14: array | children 13 | 14
+15: class | children 1 | 15
+16: union | children 0,15,5 | 16
+17: array | children 16 | 17
+18: array | children 1 | 18
+19: union | children 18,5 | 19
+20: array | children 19 | 20
+21: string | 21 | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1 | 22
+23: union | children 22,5 | 23
+24: array | children 23 | 24
+25: string | 25 | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0 | 26
+27: array | children 26 | 27
+28: string | 28 | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1 | 29
+30: union | children 29,10 | 30
+31: array | children 30 | 31
+32: union | children 18,0 | 32
+33: array | children 32 | 33
+34: string | 34 | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0 | 35
+36: union | children 18,35 | 36
+37: array | children 36 | 37
+38: string | 38 | 1 enums: flying (1), ...
+39: union | children 18,10,38 | 39
+40: array | children 39 | 40
+41: union | children 18,10,1 | 41
+42: array | children 41 | 42
+43: string | 43 | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1 | 44
+45: union | children 44,1 | 45
+46: array | children 45 | 46
+47: union | children 6,10,1 | 47
+48: array | children 47 | 48
+49: union | children 18,0,5 | 49
+50: array | children 49 | 50
+51: union | children 5,1 | 51
+52: array | children 51 | 52
+53: union | children 52,1 | 53
+54: array | children 53 | 54
+55: union | children 18,10 | 55
+56: array | children 55 | 56
+57: string | 57 | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1 | 58
+59: array | children 58 | 59
+60: union | children 0,5 | 60
+61: array | children 60 | 61
+62: union | children 18,0,10 | 62
+63: array | children 62 | 63
+64: class | children 1 | 64
+65: union | children 18,64,1 | 65
+66: array | children 65 | 66
+67: class | children 1 | 67
+68: union | children 67,10,1 | 68
+69: array | children 68 | 69
+70: class | children 5,1 | 70
+71: union | children 70,10 | 71
+72: array | children 71 | 72
+73: class | children 5 | 73
+74: string | 74 | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74 | 75
+76: array | children 75 | 76
+77: union | children 0,10,1 | 77
+78: array | children 77 | 78
+79: array | children 0 | 79
+80: string | 80 | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1 | 81
+82: union | children 81,10 | 82
+83: array | children 82 | 83
+84: string | 84 | 1 enums: looplet (1), ...
+85: union | children 10,1,84 | 85
+86: array | children 85 | 86
+87: string | 87 | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1 | 88
+89: union | children 18,88 | 89
+90: array | children 89 | 90
+91: union | children 0,5,1 | 91
+92: array | children 91 | 92
+93: class | children 5 | 93
+94: union | children 93,5 | 94
+95: array | children 94 | 95
+96: class | children 5 | 96
+97: union | children 96,10 | 97
+98: array | children 97 | 98
+99: string | 99 | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0 | 100
+101: union | children 100,1 | 101
+102: array | children 101 | 102
+103: string | 103 | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1 | 104
+105: union | children 0,104 | 105
+106: array | children 105 | 106
+107: class | children 5 | 107
+108: union | children 6,107,1 | 108
+109: array | children 108 | 109
+110: class | children 1 | 110
+111: union | children 110,5,1 | 111
+112: array | children 111 | 112
+113: string | 113 | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1 | 114
+115: string | 115 | 1 enums: swapper (1), ...
+116: union | children 18,114,115 | 116
+117: array | children 116 | 117
+118: class | children 1 | 118
+119: string | 119 | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119 | 120
+121: array | children 120 | 121
+122: string | 122 | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1 | 123
+124: union | children 18,0,123 | 124
+125: array | children 124 | 125
+126: string | 126 | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1 | 127
+128: union | children 6,127,5 | 128
+129: array | children 128 | 129
+130: class | children 5,1 | 130
+131: array | children 130 | 131
+132: string | 132 | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1 | 133
+134: union | children 6,0,133 | 134
+135: array | children 134 | 135
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | 136 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "catharticalness"?:10, "disdiapason"?:21, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "homocerc"?:0, "ichthyophagan"?:5, "implacable"?:5, "nonbookish"?:1, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Alicant"?:5, "Bakuninist"?:1, "Chirotherium"?:5, "Dimitry"?:5, "antiatonement"?:1, "anticorrosive"?:5, "aphidozer"?:1, "be"?:5, "catharticalness"?:10, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "disdiapason"?:25, "edifying"?:1, "ethmoiditis"?:5, "gastralgy"?:1, "goatherd"?:5, "hammerdress"?:5, "hangfire"?:1, "homocerc"?:0, "lacunosity"?:5, "longiloquence"?:1, "mameliere"?:5, "motherless"?:1, "nonbookish"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "oafishly"?:5, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "saccharulmic"?:5, "scowlful"?:5, "secluded"?:1, "slackage"?:1, "sphaeridial"?:5, "spondulics"?:1, "subsecive"?:5, "swellmobsman"?:1, "trachyglossate"?:5, "trialogue"?:1, "unassuaged"?:5, "ungross"?:1, "unjudiciously"?:1
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "blaspheme"?:1, "catharticalness"?:10, "celiosalpingectomy"?:1, "consummativeness"?:1, "disdiapason"?:34, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "homocerc"?:0, "intuitionalism"?:1, "lophiostomate"?:1, "nonbookish"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Asha"?:5, "Caraipa"?:1, "Pristipomidae"?:1, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "cystopyelitis"?:1, "diallelus"?:1, "epistilbite"?:5, "eryngo"?:1, "extracalicular"?:5, "glyptotheca"?:1, "gonaduct"?:1, "hawkbill"?:5, "humerometacarpal"?:1, "idiometer"?:1, "inolith"?:5, "labially"?:1, "latitudinous"?:1, "nonswearer"?:5, "omnivalence"?:1, "orphancy"?:5, "outshow"?:1, "penitencer"?:5, "periaortic"?:5, "pilula"?:1, "plumply"?:1, "poritoid"?:5, "potbellied"?:5, "quadribasic"?:1, "recriminator"?:5, "sulfamyl"?:1, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "catharticalness"?:10, "decardinalize"?:5, "discouragement"?:5, "disdiapason"?:80, "doitrified"?:5, "hexaspermous"?:5, "homocerc"?:0, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "nonbookish"?:1, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Carbonarism"?:1, "Chirotherium"?:5, "Koniga"?:1, "Micky"?:1, "catharticalness"?:10, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "disdiapason"?:99, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "homocerc"?:0, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "nonbookish"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Asterochiton"?:5, "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "ameliorate"?:5, "anchorite"?:1, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "endobronchially"?:1, "flitting"?:1, "gastrointestinal"?:5, "immoment"?:1, "itchweed"?:5, "lass"?:5, "liken"?:1, "merchantly"?:5, "microphysics"?:1, "nonclosure"?:5, "nonreality"?:1, "overfloridness"?:5, "overhotly"?:1, "oversend"?:5, "perigynium"?:1, "protopepsia"?:5, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "synadelphite"?:5, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "trumpetry"?:5, "truster"?:5, "undecorative"?:1, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### stream-kotlin
+0: bool
+1: null
+2: class | children 1
+3: union | children 0,2
+4: array | children 3
+5: integer
+6: array | children 5
+7: class | children 5
+8: union | children 6,7
+9: array | children 8
+10: double
+11: class | children 1
+12: string | 1 enums: prematureness (1), ...
+13: union | children 11,10,12
+14: array | children 13
+15: class | children 1
+16: union | children 0,15,5
+17: array | children 16
+18: array | children 1
+19: union | children 18,5
+20: array | children 19
+21: string | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1
+23: union | children 22,5
+24: array | children 23
+25: string | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0
+27: array | children 26
+28: string | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1
+30: union | children 29,10
+31: array | children 30
+32: union | children 18,0
+33: array | children 32
+34: string | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0
+36: union | children 18,35
+37: array | children 36
+38: string | 1 enums: flying (1), ...
+39: union | children 18,10,38
+40: array | children 39
+41: union | children 18,10,1
+42: array | children 41
+43: string | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1
+45: union | children 44,1
+46: array | children 45
+47: union | children 6,10,1
+48: array | children 47
+49: union | children 18,0,5
+50: array | children 49
+51: union | children 5,1
+52: array | children 51
+53: union | children 52,1
+54: array | children 53
+55: union | children 18,10
+56: array | children 55
+57: string | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1
+59: array | children 58
+60: union | children 0,5
+61: array | children 60
+62: union | children 18,0,10
+63: array | children 62
+64: class | children 1
+65: union | children 18,64,1
+66: array | children 65
+67: class | children 1
+68: union | children 67,10,1
+69: array | children 68
+70: class | children 5,1
+71: union | children 70,10
+72: array | children 71
+73: class | children 5
+74: string | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74
+76: array | children 75
+77: union | children 0,10,1
+78: array | children 77
+79: array | children 0
+80: string | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1
+82: union | children 81,10
+83: array | children 82
+84: string | 1 enums: looplet (1), ...
+85: union | children 10,1,84
+86: array | children 85
+87: string | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1
+89: union | children 18,88
+90: array | children 89
+91: union | children 0,5,1
+92: array | children 91
+93: class | children 5
+94: union | children 93,5
+95: array | children 94
+96: class | children 5
+97: union | children 96,10
+98: array | children 97
+99: string | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0
+101: union | children 100,1
+102: array | children 101
+103: string | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1
+105: union | children 0,104
+106: array | children 105
+107: class | children 5
+108: union | children 6,107,1
+109: array | children 108
+110: class | children 1
+111: union | children 110,5,1
+112: array | children 111
+113: string | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1
+115: string | 1 enums: swapper (1), ...
+116: union | children 18,114,115
+117: array | children 116
+118: class | children 1
+119: string | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119
+121: array | children 120
+122: string | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1
+124: union | children 18,0,123
+125: array | children 124
+126: string | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1
+128: union | children 6,127,5
+129: array | children 128
+130: class | children 5,1
+131: array | children 130
+132: string | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1
+134: union | children 6,0,133
+135: array | children 134
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:21, "homocerc"?:0, "nonbookish"?:1, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "ichthyophagan"?:5, "implacable"?:5, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:25, "homocerc"?:0, "nonbookish"?:1, "Bakuninist"?:1, "antiatonement"?:1, "aphidozer"?:1, "edifying"?:1, "gastralgy"?:1, "hangfire"?:1, "longiloquence"?:1, "motherless"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "secluded"?:1, "slackage"?:1, "spondulics"?:1, "swellmobsman"?:1, "trialogue"?:1, "ungross"?:1, "unjudiciously"?:1, "Alicant"?:5, "Dimitry"?:5, "anticorrosive"?:5, "be"?:5, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "ethmoiditis"?:5, "goatherd"?:5, "hammerdress"?:5, "lacunosity"?:5, "mameliere"?:5, "oafishly"?:5, "saccharulmic"?:5, "scowlful"?:5, "sphaeridial"?:5, "subsecive"?:5, "trachyglossate"?:5, "unassuaged"?:5
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:34, "homocerc"?:0, "nonbookish"?:1, "blaspheme"?:1, "celiosalpingectomy"?:1, "consummativeness"?:1, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "intuitionalism"?:1, "lophiostomate"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Caraipa"?:1, "Pristipomidae"?:1, "cystopyelitis"?:1, "diallelus"?:1, "eryngo"?:1, "glyptotheca"?:1, "gonaduct"?:1, "humerometacarpal"?:1, "idiometer"?:1, "labially"?:1, "latitudinous"?:1, "omnivalence"?:1, "outshow"?:1, "pilula"?:1, "plumply"?:1, "quadribasic"?:1, "sulfamyl"?:1, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "Asha"?:5, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "epistilbite"?:5, "extracalicular"?:5, "hawkbill"?:5, "inolith"?:5, "nonswearer"?:5, "orphancy"?:5, "penitencer"?:5, "periaortic"?:5, "poritoid"?:5, "potbellied"?:5, "recriminator"?:5, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:80, "homocerc"?:0, "nonbookish"?:1, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "decardinalize"?:5, "discouragement"?:5, "doitrified"?:5, "hexaspermous"?:5, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:99, "homocerc"?:0, "nonbookish"?:1, "Carbonarism"?:1, "Koniga"?:1, "Micky"?:1, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "anchorite"?:1, "endobronchially"?:1, "flitting"?:1, "immoment"?:1, "liken"?:1, "microphysics"?:1, "nonreality"?:1, "overhotly"?:1, "perigynium"?:1, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "undecorative"?:1, "Asterochiton"?:5, "ameliorate"?:5, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "gastrointestinal"?:5, "itchweed"?:5, "lass"?:5, "merchantly"?:5, "nonclosure"?:5, "overfloridness"?:5, "oversend"?:5, "protopepsia"?:5, "synadelphite"?:5, "trumpetry"?:5, "truster"?:5, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### api-swift
+0: bool
+1: null
+2: class | children 1
+3: union | children 0,2
+4: array | children 3
+5: integer
+6: array | children 5
+7: class | children 5
+8: union | children 6,7
+9: array | children 8
+10: double
+11: class | children 1
+12: string | 1 enums: prematureness (1), ...
+13: union | children 11,10,12
+14: array | children 13
+15: class | children 1
+16: union | children 0,15,5
+17: array | children 16
+18: array | children 1
+19: union | children 18,5
+20: array | children 19
+21: string | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1
+23: union | children 22,5
+24: array | children 23
+25: string | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0
+27: array | children 26
+28: string | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1
+30: union | children 29,10
+31: array | children 30
+32: union | children 18,0
+33: array | children 32
+34: string | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0
+36: union | children 18,35
+37: array | children 36
+38: string | 1 enums: flying (1), ...
+39: union | children 18,10,38
+40: array | children 39
+41: union | children 18,10,1
+42: array | children 41
+43: string | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1
+45: union | children 44,1
+46: array | children 45
+47: union | children 6,10,1
+48: array | children 47
+49: union | children 18,0,5
+50: array | children 49
+51: union | children 5,1
+52: array | children 51
+53: union | children 52,1
+54: array | children 53
+55: union | children 18,10
+56: array | children 55
+57: string | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1
+59: array | children 58
+60: union | children 0,5
+61: array | children 60
+62: union | children 18,0,10
+63: array | children 62
+64: class | children 1
+65: union | children 18,64,1
+66: array | children 65
+67: class | children 1
+68: union | children 67,10,1
+69: array | children 68
+70: class | children 5,1
+71: union | children 70,10
+72: array | children 71
+73: class | children 5
+74: string | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74
+76: array | children 75
+77: union | children 0,10,1
+78: array | children 77
+79: array | children 0
+80: string | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1
+82: union | children 81,10
+83: array | children 82
+84: string | 1 enums: looplet (1), ...
+85: union | children 10,1,84
+86: array | children 85
+87: string | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1
+89: union | children 18,88
+90: array | children 89
+91: union | children 0,5,1
+92: array | children 91
+93: class | children 5
+94: union | children 93,5
+95: array | children 94
+96: class | children 5
+97: union | children 96,10
+98: array | children 97
+99: string | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0
+101: union | children 100,1
+102: array | children 101
+103: string | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1
+105: union | children 0,104
+106: array | children 105
+107: class | children 5
+108: union | children 6,107,1
+109: array | children 108
+110: class | children 1
+111: union | children 110,5,1
+112: array | children 111
+113: string | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1
+115: string | 1 enums: swapper (1), ...
+116: union | children 18,114,115
+117: array | children 116
+118: class | children 1
+119: string | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119
+121: array | children 120
+122: string | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1
+124: union | children 18,0,123
+125: array | children 124
+126: string | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1
+128: union | children 6,127,5
+129: array | children 128
+130: class | children 5,1
+131: array | children 130
+132: string | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1
+134: union | children 6,0,133
+135: array | children 134
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:21, "homocerc"?:0, "nonbookish"?:1, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "ichthyophagan"?:5, "implacable"?:5, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:25, "homocerc"?:0, "nonbookish"?:1, "Bakuninist"?:1, "antiatonement"?:1, "aphidozer"?:1, "edifying"?:1, "gastralgy"?:1, "hangfire"?:1, "longiloquence"?:1, "motherless"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "secluded"?:1, "slackage"?:1, "spondulics"?:1, "swellmobsman"?:1, "trialogue"?:1, "ungross"?:1, "unjudiciously"?:1, "Alicant"?:5, "Dimitry"?:5, "anticorrosive"?:5, "be"?:5, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "ethmoiditis"?:5, "goatherd"?:5, "hammerdress"?:5, "lacunosity"?:5, "mameliere"?:5, "oafishly"?:5, "saccharulmic"?:5, "scowlful"?:5, "sphaeridial"?:5, "subsecive"?:5, "trachyglossate"?:5, "unassuaged"?:5
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:34, "homocerc"?:0, "nonbookish"?:1, "blaspheme"?:1, "celiosalpingectomy"?:1, "consummativeness"?:1, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "intuitionalism"?:1, "lophiostomate"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Caraipa"?:1, "Pristipomidae"?:1, "cystopyelitis"?:1, "diallelus"?:1, "eryngo"?:1, "glyptotheca"?:1, "gonaduct"?:1, "humerometacarpal"?:1, "idiometer"?:1, "labially"?:1, "latitudinous"?:1, "omnivalence"?:1, "outshow"?:1, "pilula"?:1, "plumply"?:1, "quadribasic"?:1, "sulfamyl"?:1, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "Asha"?:5, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "epistilbite"?:5, "extracalicular"?:5, "hawkbill"?:5, "inolith"?:5, "nonswearer"?:5, "orphancy"?:5, "penitencer"?:5, "periaortic"?:5, "poritoid"?:5, "potbellied"?:5, "recriminator"?:5, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:80, "homocerc"?:0, "nonbookish"?:1, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "decardinalize"?:5, "discouragement"?:5, "doitrified"?:5, "hexaspermous"?:5, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:99, "homocerc"?:0, "nonbookish"?:1, "Carbonarism"?:1, "Koniga"?:1, "Micky"?:1, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "anchorite"?:1, "endobronchially"?:1, "flitting"?:1, "immoment"?:1, "liken"?:1, "microphysics"?:1, "nonreality"?:1, "overhotly"?:1, "perigynium"?:1, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "undecorative"?:1, "Asterochiton"?:5, "ameliorate"?:5, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "gastrointestinal"?:5, "itchweed"?:5, "lass"?:5, "merchantly"?:5, "nonclosure"?:5, "overfloridness"?:5, "oversend"?:5, "protopepsia"?:5, "synadelphite"?:5, "trumpetry"?:5, "truster"?:5, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135
+### stream-python
+0: bool | 0
+1: null | 1
+2: class | children 1 | 2
+3: union | children 0,2 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: array | children 5 | 6
+7: class | children 5 | 7
+8: union | children 6,7 | 8
+9: array | children 8 | 9
+10: double | 10
+11: class | children 1 | 11
+12: string | 12 | 1 enums: prematureness (1), ...
+13: union | children 11,10,12 | 13
+14: array | children 13 | 14
+15: class | children 1 | 15
+16: union | children 0,15,5 | 16
+17: array | children 16 | 17
+18: array | children 1 | 18
+19: union | children 18,5 | 19
+20: array | children 19 | 20
+21: string | 21 | 1 enums: gonal (1), ...
+22: class | children 5,10,21,0,1 | 22
+23: union | children 22,5 | 23
+24: array | children 23 | 24
+25: string | 25 | 1 enums: crocket (1), ...
+26: class | children 5,1,10,25,0 | 26
+27: array | children 26 | 27
+28: string | 28 | 1 enums: dentistical (1), ...
+29: class | children 5,10,28,0,1 | 29
+30: union | children 29,10 | 30
+31: array | children 30 | 31
+32: union | children 18,0 | 32
+33: array | children 32 | 33
+34: string | 34 | 1 enums: Africanoid (1), ...
+35: class | children 5,1,10,34,0 | 35
+36: union | children 18,35 | 36
+37: array | children 36 | 37
+38: string | 38 | 1 enums: flying (1), ...
+39: union | children 18,10,38 | 39
+40: array | children 39 | 40
+41: union | children 18,10,1 | 41
+42: array | children 41 | 42
+43: string | 43 | 1 enums: trachydolerite (1), ...
+44: class | children 5,10,43,0,1 | 44
+45: union | children 44,1 | 45
+46: array | children 45 | 46
+47: union | children 6,10,1 | 47
+48: array | children 47 | 48
+49: union | children 18,0,5 | 49
+50: array | children 49 | 50
+51: union | children 5,1 | 51
+52: array | children 51 | 52
+53: union | children 52,1 | 53
+54: array | children 53 | 54
+55: union | children 18,10 | 55
+56: array | children 55 | 56
+57: string | 57 | 5 enums: Corriedale (1), ...
+58: class | children 57,10,5,0,1 | 58
+59: array | children 58 | 59
+60: union | children 0,5 | 60
+61: array | children 60 | 61
+62: union | children 18,0,10 | 62
+63: array | children 62 | 63
+64: class | children 1 | 64
+65: union | children 18,64,1 | 65
+66: array | children 65 | 66
+67: class | children 1 | 67
+68: union | children 67,10,1 | 68
+69: array | children 68 | 69
+70: class | children 5,1 | 70
+71: union | children 70,10 | 71
+72: array | children 71 | 72
+73: class | children 5 | 73
+74: string | 74 | 1 enums: seborrhagia (1), ...
+75: union | children 73,5,74 | 75
+76: array | children 75 | 76
+77: union | children 0,10,1 | 77
+78: array | children 77 | 78
+79: array | children 0 | 79
+80: string | 80 | 1 enums: pneumatonomy (1), ...
+81: class | children 5,10,80,0,1 | 81
+82: union | children 81,10 | 82
+83: array | children 82 | 83
+84: string | 84 | 1 enums: looplet (1), ...
+85: union | children 10,1,84 | 85
+86: array | children 85 | 86
+87: string | 87 | 1 enums: deuced (1), ...
+88: class | children 5,10,87,0,1 | 88
+89: union | children 18,88 | 89
+90: array | children 89 | 90
+91: union | children 0,5,1 | 91
+92: array | children 91 | 92
+93: class | children 5 | 93
+94: union | children 93,5 | 94
+95: array | children 94 | 95
+96: class | children 5 | 96
+97: union | children 96,10 | 97
+98: array | children 97 | 98
+99: string | 99 | 1 enums: hormonopoietic (1), ...
+100: class | children 1,5,10,99,0 | 100
+101: union | children 100,1 | 101
+102: array | children 101 | 102
+103: string | 103 | 1 enums: lufbery (1), ...
+104: class | children 5,10,103,0,1 | 104
+105: union | children 0,104 | 105
+106: array | children 105 | 106
+107: class | children 5 | 107
+108: union | children 6,107,1 | 108
+109: array | children 108 | 109
+110: class | children 1 | 110
+111: union | children 110,5,1 | 111
+112: array | children 111 | 112
+113: string | 113 | 1 enums: overfeed (1), ...
+114: class | children 5,10,113,0,1 | 114
+115: string | 115 | 1 enums: swapper (1), ...
+116: union | children 18,114,115 | 116
+117: array | children 116 | 117
+118: class | children 1 | 118
+119: string | 119 | 1 enums: pantomorphia (1), ...
+120: union | children 18,118,119 | 120
+121: array | children 120 | 121
+122: string | 122 | 1 enums: misconjecture (1), ...
+123: class | children 5,10,122,0,1 | 123
+124: union | children 18,0,123 | 124
+125: array | children 124 | 125
+126: string | 126 | 1 enums: dodlet (1), ...
+127: class | children 5,10,126,0,1 | 127
+128: union | children 6,127,5 | 128
+129: array | children 128 | 129
+130: class | children 5,1 | 130
+131: array | children 130 | 131
+132: string | 132 | 1 enums: cossas (1), ...
+133: class | children 5,10,132,0,1 | 133
+134: union | children 6,0,133 | 134
+135: array | children 134 | 135
+136: class TopLevel | children 4,9,14,17,20,24,27,31,33,37,40,42,46,48,50,54,56,59,61,63,66,69,72,76,78,79,83,86,90,92,95,98,102,106,109,112,117,121,125,129,131,135 | 136 | given TopLevel ()
+props 2: "Olea":1, "adipsy":1, "auxiliator":1, "benda":1, "benjamin":1, "brandling":1, "epicurishly":1, "eremochaetous":1, "marten":1, "monocline":1, "palgat":1, "pennyworth":1, "pioury":1, "pragmatistic":1, "stylelessness":1, "systematical":1, "thready":1, "uncontemporary":1, "uncouched":1, "uninhabitedness":1
+props 7: "Fundulus":5, "Nachitoch":5, "Yurucarean":5, "alluviate":5, "autocracy":5, "autofecundation":5, "autographer":5, "cerussite":5, "desiliconization":5, "exceptionary":5, "hypothesizer":5, "inducible":5, "luke":5, "mappy":5, "nibong":5, "prevision":5, "scind":5, "spoilage":5, "syne":5, "trichomic":5
+props 11: "Prodenia":1, "acclaimer":1, "achree":1, "base":1, "conundrumize":1, "degerminator":1, "describable":1, "exasperatedly":1, "heroine":1, "indazin":1, "luteous":1, "papular":1, "pritch":1, "seege":1, "shopgirl":1, "tragedietta":1, "unsparse":1, "uplook":1, "vermiformis":1, "whafabout":1
+props 15: "Amyraldism":1, "acropoleis":1, "aminate":1, "bipenniform":1, "bugre":1, "calycule":1, "caoutchouc":1, "disprover":1, "fitroot":1, "fulgently":1, "kickup":1, "laevoversion":1, "moter":1, "objectivity":1, "posterity":1, "postnuptial":1, "precedentary":1, "saddling":1, "subcurrent":1, "unrecriminative":1
+props 22: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:21, "homocerc"?:0, "nonbookish"?:1, "Chlorioninae"?:5, "Corvinae"?:5, "Crassina"?:5, "Thysanocarpus"?:5, "exiguity"?:5, "farcist"?:5, "holographical"?:5, "ichthyophagan"?:5, "implacable"?:5, "outshiner"?:5, "overweather"?:5, "protonegroid"?:5, "shallowish"?:5, "snoke"?:5, "snout"?:5, "surveillance"?:5, "threshingtime"?:5, "unsignificantly"?:5, "unsnap"?:5, "vendible"?:5
+props 26: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:25, "homocerc"?:0, "nonbookish"?:1, "Bakuninist"?:1, "antiatonement"?:1, "aphidozer"?:1, "edifying"?:1, "gastralgy"?:1, "hangfire"?:1, "longiloquence"?:1, "motherless"?:1, "noncorrodible"?:1, "nonsensicality"?:1, "pfund"?:1, "preadvisory"?:1, "retroflexed"?:1, "secluded"?:1, "slackage"?:1, "spondulics"?:1, "swellmobsman"?:1, "trialogue"?:1, "ungross"?:1, "unjudiciously"?:1, "Alicant"?:5, "Dimitry"?:5, "anticorrosive"?:5, "be"?:5, "chub"?:5, "cuprosilicon"?:5, "curtailedly"?:5, "dellenite"?:5, "ethmoiditis"?:5, "goatherd"?:5, "hammerdress"?:5, "lacunosity"?:5, "mameliere"?:5, "oafishly"?:5, "saccharulmic"?:5, "scowlful"?:5, "sphaeridial"?:5, "subsecive"?:5, "trachyglossate"?:5, "unassuaged"?:5
+props 29: "Chirotherium":5, "catharticalness":10, "disdiapason":28, "homocerc":0, "nonbookish":1
+props 35: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:34, "homocerc"?:0, "nonbookish"?:1, "blaspheme"?:1, "celiosalpingectomy"?:1, "consummativeness"?:1, "egestive"?:1, "enchylema"?:1, "gasconade"?:1, "holidayer"?:1, "intuitionalism"?:1, "lophiostomate"?:1, "nonvolition"?:1, "palatableness"?:1, "pimpery"?:1, "previolation"?:1, "reconveyance"?:1, "registership"?:1, "rhyacolite"?:1, "smithereens"?:1, "superedification"?:1, "trust"?:1, "whitestone"?:1
+props 44: "Chirotherium":5, "catharticalness":10, "disdiapason":43, "homocerc":0, "nonbookish":1
+props 58: "estevin":57, "jolterhead":10, "sauternes":5, "sparsely":0, "unrequested":1
+props 64: "Chimakum":1, "Fin":1, "beholdable":1, "brotuliform":1, "doodler":1, "emulsin":1, "flourishing":1, "flueless":1, "furtively":1, "gritter":1, "interwish":1, "monoxylic":1, "myristic":1, "nightwear":1, "peruser":1, "theoastrological":1, "thumby":1, "tingitid":1, "trailless":1, "unpocketed":1
+props 67: "Castoroides":1, "Czechoslovak":1, "Lingulidae":1, "adroitly":1, "bridehood":1, "diagenesis":1, "dihexahedron":1, "dopester":1, "eumerism":1, "flyness":1, "fouler":1, "laudanosine":1, "minutary":1, "mitra":1, "opisthorchiasis":1, "pensively":1, "pubigerous":1, "rebellious":1, "recodify":1, "unpaced":1
+props 70: "Caraipa"?:1, "Pristipomidae"?:1, "cystopyelitis"?:1, "diallelus"?:1, "eryngo"?:1, "glyptotheca"?:1, "gonaduct"?:1, "humerometacarpal"?:1, "idiometer"?:1, "labially"?:1, "latitudinous"?:1, "omnivalence"?:1, "outshow"?:1, "pilula"?:1, "plumply"?:1, "quadribasic"?:1, "sulfamyl"?:1, "uploom"?:1, "vasodilatation"?:1, "wonderworthy"?:1, "Asha"?:5, "altruistically"?:5, "cheeser"?:5, "correlative"?:5, "epistilbite"?:5, "extracalicular"?:5, "hawkbill"?:5, "inolith"?:5, "nonswearer"?:5, "orphancy"?:5, "penitencer"?:5, "periaortic"?:5, "poritoid"?:5, "potbellied"?:5, "recriminator"?:5, "tasker"?:5, "technicism"?:5, "thioantimonate"?:5, "unmutual"?:5, "workship"?:5
+props 73: "Apotactici":5, "Calvinistical":5, "Nematelminthes":5, "Saracen":5, "barbeiro":5, "benzodiazine":5, "cheesemongerly":5, "counterdrive":5, "equivelocity":5, "excursional":5, "hyperadiposis":5, "jotation":5, "monotriglyphic":5, "mulletry":5, "neomenian":5, "overhand":5, "prerecommendation":5, "statant":5, "univerbal":5, "yeomanette":5
+props 81: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:80, "homocerc"?:0, "nonbookish"?:1, "Zipper"?:5, "alada"?:5, "amphistomous"?:5, "boysenberry"?:5, "decardinalize"?:5, "discouragement"?:5, "doitrified"?:5, "hexaspermous"?:5, "insinking"?:5, "loathfulness"?:5, "miasmatical"?:5, "neurofibril"?:5, "phonendoscope"?:5, "pilferment"?:5, "predismissory"?:5, "preinscription"?:5, "quotative"?:5, "sienna"?:5, "thorax"?:5, "yachting"?:5
+props 88: "Chirotherium":5, "catharticalness":10, "disdiapason":87, "homocerc":0, "nonbookish":1
+props 93: "Plumiera":5, "aganglionic":5, "dorsalgia":5, "epigastraeum":5, "fireroom":5, "flatworm":5, "lunation":5, "mulloid":5, "nonsinusoidal":5, "pneumatological":5, "promulgation":5, "rhapsodist":5, "simuler":5, "sociogeny":5, "thumbscrew":5, "transgressively":5, "transmaterial":5, "tribarred":5, "unrespectable":5, "untwineable":5
+props 96: "Jagannatha":5, "Malesherbia":5, "actinochemistry":5, "amor":5, "behavioristically":5, "calculist":5, "confessable":5, "dissimilate":5, "epinaos":5, "excluding":5, "heterogenous":5, "hypocephalus":5, "louty":5, "precloacal":5, "probabiliorist":5, "proscholastic":5, "spermalist":5, "tellural":5, "thyroidean":5, "wraw":5
+props 100: "Chirotherium"?:5, "catharticalness"?:10, "disdiapason"?:99, "homocerc"?:0, "nonbookish"?:1, "Carbonarism"?:1, "Koniga"?:1, "Micky"?:1, "cineolic"?:1, "cobbly"?:1, "conchyliferous"?:1, "congregation"?:1, "enterotomy"?:1, "entophytal"?:1, "fewtrils"?:1, "herem"?:1, "meticulosity"?:1, "mismarriage"?:1, "neurotrophic"?:1, "persuasively"?:1, "replaceable"?:1, "silex"?:1, "taillight"?:1, "unjealous"?:1, "visitorial"?:1
+props 104: "Chirotherium":5, "catharticalness":10, "disdiapason":103, "homocerc":0, "nonbookish":1
+props 107: "Caryophyllaceae":5, "Dol":5, "Orcinus":5, "Pedioecetes":5, "Phoebean":5, "calculiform":5, "commeasure":5, "counterthought":5, "gnatproof":5, "intermorainic":5, "matriarchic":5, "mesitylene":5, "neurophysiological":5, "predisorderly":5, "psychiatrical":5, "puericulture":5, "pyrogenic":5, "rapinic":5, "tetracerous":5, "wombed":5
+props 110: "Euchorda":1, "Yoruba":1, "arciform":1, "cresolin":1, "disheartener":1, "disproportionable":1, "ferryway":1, "filamentiferous":1, "flemish":1, "forgainst":1, "grainering":1, "irrevoluble":1, "kindredship":1, "pinguitudinous":1, "simpletonic":1, "singsong":1, "submergement":1, "supraoesophagal":1, "thrashel":1, "tyremesis":1
+props 114: "Chirotherium":5, "catharticalness":10, "disdiapason":113, "homocerc":0, "nonbookish":1
+props 118: "Dolphus":1, "Ficus":1, "Gemaric":1, "Phaet":1, "azorubine":1, "choroiditis":1, "coagulatory":1, "cyclorama":1, "duckhearted":1, "jugation":1, "myoliposis":1, "nonnomination":1, "palay":1, "pentactinal":1, "piquant":1, "registration":1, "remancipation":1, "scutatiform":1, "theodolite":1, "underward":1
+props 123: "Chirotherium":5, "catharticalness":10, "disdiapason":122, "homocerc":0, "nonbookish":1
+props 127: "Chirotherium":5, "catharticalness":10, "disdiapason":126, "homocerc":0, "nonbookish":1
+props 130: "Debby"?:1, "Jovianly"?:1, "Phylloceras"?:1, "anchorite"?:1, "endobronchially"?:1, "flitting"?:1, "immoment"?:1, "liken"?:1, "microphysics"?:1, "nonreality"?:1, "overhotly"?:1, "perigynium"?:1, "quiescence"?:1, "regimenal"?:1, "shakers"?:1, "symbolicly"?:1, "telecinematography"?:1, "temperish"?:1, "topknotted"?:1, "undecorative"?:1, "Asterochiton"?:5, "ameliorate"?:5, "assessorial"?:5, "birthland"?:5, "claudicate"?:5, "daubing"?:5, "dray"?:5, "gastrointestinal"?:5, "itchweed"?:5, "lass"?:5, "merchantly"?:5, "nonclosure"?:5, "overfloridness"?:5, "oversend"?:5, "protopepsia"?:5, "synadelphite"?:5, "trumpetry"?:5, "truster"?:5, "undifferential"?:5, "waterfinder"?:5
+props 133: "Chirotherium":5, "catharticalness":10, "disdiapason":132, "homocerc":0, "nonbookish":1
+props 136: "juror":4, "kongoni":9, "ladronism":14, "landlubberly":17, "listener":20, "lupus":24, "maslin":27, "monazite":31, "monoliteral":33, "monotheistically":37, "montage":40, "moralness":42, "mowra":46, "mulishly":48, "myoscope":50, "nach":54, "neuromastic":56, "noncontributing":59, "nonnervous":61, "nonvaluation":63, "occupationalist":66, "outrival":69, "paleographically":72, "pamphletwise":76, "pediatrics":78, "perceptive":79, "piaculum":83, "piccadilly":86, "piffler":90, "pithful":92, "placuntitis":95, "plectopterous":98, "pneumocele":102, "poliorcetic":106, "poormaster":109, "potwhisky":112, "practicalizer":117, "prefreshman":121, "prehensility":125, "prevoidance":129, "probant":131, "protext":135

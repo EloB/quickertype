@@ -1,0 +1,91 @@
+### stream-typescript
+0: string | 0 | enum with no cases,integer-string
+1: string | 1 | 6 enums: physics (110), ...
+2: string | 2 | unrestricted
+3: string | 3 | 834 enums: Thouless (1), ...
+4: class | children 2,0,3 | 4
+5: array | children 4 | 5
+6: class | children 1,5,2,0 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "firstname":2, "id":0, "motivation"?:2, "share":0, "surname":3
+props 6: "category":1, "laureates":5, "overallMotivation"?:2, "year":0
+props 8: "prizes":7
+### api-typescript
+0: string | enum with no cases,integer-string
+1: string | 6 enums: physics (110), ...
+2: string | unrestricted
+3: string | 834 enums: Thouless (1), ...
+4: class | children 2,0,3
+5: array | children 4
+6: class | children 1,5,2,0
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "id":0, "firstname":2, "surname":3, "motivation"?:2, "share":0
+props 6: "year":0, "category":1, "laureates":5, "overallMotivation"?:2
+props 8: "prizes":7
+### stream-schema
+0: string | enum with no cases,integer-string
+1: string | 6 enums: physics (110), ...
+2: string | unrestricted
+3: string | 834 enums: Thouless (1), ...
+4: class | children 2,0,3
+5: array | children 4
+6: class | children 1,5,2,0
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "id":0, "firstname":2, "surname":3, "motivation"?:2, "share":0
+props 6: "year":0, "category":1, "laureates":5, "overallMotivation"?:2
+props 8: "prizes":7
+### api-csharp
+0: string | 0 | enum with no cases,integer-string
+1: string | 1 | 6 enums: physics (110), ...
+2: string | 2 | unrestricted
+3: string | 3 | 834 enums: Thouless (1), ...
+4: class | children 2,0,3 | 4
+5: array | children 4 | 5
+6: class | children 1,5,2,0 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "firstname":2, "id":0, "motivation"?:2, "share":0, "surname":3
+props 6: "category":1, "laureates":5, "overallMotivation"?:2, "year":0
+props 8: "prizes":7
+### stream-kotlin
+0: string | enum with no cases,integer-string
+1: string | 6 enums: physics (110), ...
+2: string | unrestricted
+3: string | 834 enums: Thouless (1), ...
+4: class | children 2,0,3
+5: array | children 4
+6: class | children 1,5,2,0
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "id":0, "firstname":2, "surname":3, "motivation"?:2, "share":0
+props 6: "year":0, "category":1, "laureates":5, "overallMotivation"?:2
+props 8: "prizes":7
+### api-swift
+0: string | enum with no cases,integer-string
+1: string | 6 enums: physics (110), ...
+2: string | unrestricted
+3: string | 834 enums: Thouless (1), ...
+4: class | children 2,0,3
+5: array | children 4
+6: class | children 1,5,2,0
+7: array | children 6
+8: class TopLevel | children 7 | given TopLevel ()
+props 4: "id":0, "firstname":2, "surname":3, "motivation"?:2, "share":0
+props 6: "year":0, "category":1, "laureates":5, "overallMotivation"?:2
+props 8: "prizes":7
+### stream-python
+0: string | 0 | enum with no cases,integer-string
+1: string | 1 | 6 enums: physics (110), ...
+2: string | 2 | unrestricted
+3: string | 3 | 834 enums: Thouless (1), ...
+4: class | children 2,0,3 | 4
+5: array | children 4 | 5
+6: class | children 1,5,2,0 | 6
+7: array | children 6 | 7
+8: class TopLevel | children 7 | 8 | given TopLevel ()
+props 4: "id":0, "firstname":2, "surname":3, "motivation"?:2, "share":0
+props 6: "year":0, "category":1, "laureates":5, "overallMotivation"?:2
+props 8: "prizes":7

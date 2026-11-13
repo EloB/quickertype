@@ -1,0 +1,56 @@
+### stream-typescript
+0: string | 0 | 155 enums: Alsace, then Germany (1), ...
+1: string | 1 | 88 enums: DE (15), ...
+2: class | children 1,0 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "code":1, "name":0
+props 4: "countries":3
+### api-typescript
+0: string | 155 enums: Alsace, then Germany (1), ...
+1: string | 88 enums: DE (15), ...
+2: class | children 1,0
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "name":0, "code":1
+props 4: "countries":3
+### stream-schema
+0: string | 155 enums: Alsace, then Germany (1), ...
+1: string | 88 enums: DE (15), ...
+2: class | children 1,0
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "name":0, "code":1
+props 4: "countries":3
+### api-csharp
+0: string | 0 | 155 enums: Alsace, then Germany (1), ...
+1: string | 1 | 88 enums: DE (15), ...
+2: class | children 1,0 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "code":1, "name":0
+props 4: "countries":3
+### stream-kotlin
+0: string | 155 enums: Alsace, then Germany (1), ...
+1: string | 88 enums: DE (15), ...
+2: class | children 1,0
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "name":0, "code":1
+props 4: "countries":3
+### api-swift
+0: string | 155 enums: Alsace, then Germany (1), ...
+1: string | 88 enums: DE (15), ...
+2: class | children 1,0
+3: array | children 2
+4: class TopLevel | children 3 | given TopLevel ()
+props 2: "name":0, "code":1
+props 4: "countries":3
+### stream-python
+0: string | 0 | 155 enums: Alsace, then Germany (1), ...
+1: string | 1 | 88 enums: DE (15), ...
+2: class | children 1,0 | 2
+3: array | children 2 | 3
+4: class TopLevel | children 3 | 4 | given TopLevel ()
+props 2: "name":0, "code":1
+props 4: "countries":3

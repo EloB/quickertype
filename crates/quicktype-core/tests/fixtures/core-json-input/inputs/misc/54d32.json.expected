@@ -1,0 +1,113 @@
+### stream-typescript
+0: integer | 0
+1: class | 1
+2: string | 2 | 2 enums: inactive (32), ...
+3: string | 3 | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 6 | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2 | 7
+8: array | children 7 | 8
+9: string | 9 | enum with no cases,uri
+10: bool | 10
+11: class TopLevel | children 0,1,9,10,8 | 11 | given TopLevel ()
+props 1: 
+props 7: "created_at":4, "id":6, "person_id":3, "representative_id":5, "status":2, "updated_at":4
+props 11: "count":0, "facets":1, "limit":0, "next":9, "offset":0, "previous":10, "results":8
+### api-typescript
+0: integer
+1: class
+2: string | 2 enums: inactive (32), ...
+3: string | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | enum with no cases,date-time
+5: string | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2
+8: array | children 7
+9: string | enum with no cases,uri
+10: bool
+11: class TopLevel | children 0,1,9,10,8 | given TopLevel ()
+props 1: 
+props 7: "status":2, "person_id":3, "created_at":4, "representative_id":5, "id":6, "updated_at":4
+props 11: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":10
+### stream-schema
+0: integer
+1: class
+2: string | 2 enums: inactive (32), ...
+3: string | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | enum with no cases,date-time
+5: string | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2
+8: array | children 7
+9: string | enum with no cases,uri
+10: bool
+11: class TopLevel | children 0,1,9,10,8 | given TopLevel ()
+props 1: 
+props 7: "status":2, "person_id":3, "created_at":4, "representative_id":5, "id":6, "updated_at":4
+props 11: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":10
+### api-csharp
+0: integer | 0
+1: class | 1
+2: string | 2 | 2 enums: inactive (32), ...
+3: string | 3 | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 6 | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2 | 7
+8: array | children 7 | 8
+9: string | 9 | enum with no cases,uri
+10: bool | 10
+11: class TopLevel | children 0,1,9,10,8 | 11 | given TopLevel ()
+props 1: 
+props 7: "created_at":4, "id":6, "person_id":3, "representative_id":5, "status":2, "updated_at":4
+props 11: "count":0, "facets":1, "limit":0, "next":9, "offset":0, "previous":10, "results":8
+### stream-kotlin
+0: integer
+1: class
+2: string | 2 enums: inactive (32), ...
+3: string | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | 7 enums: 2016-03-03T01:06:14.224390Z (1), ...,date-time
+5: string | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: string | 6 enums: 2015-08-04T22:58:00.958720Z (1), ...,date-time
+8: class | children 4,6,3,5,2,7
+9: array | children 8
+10: string | enum with no cases,uri
+11: bool
+12: class TopLevel | children 0,1,10,11,9 | given TopLevel ()
+props 1: 
+props 8: "status":2, "person_id":3, "created_at":4, "representative_id":5, "id":6, "updated_at":7
+props 12: "count":0, "facets":1, "results":9, "next":10, "limit":0, "offset":0, "previous":11
+### api-swift
+0: integer
+1: class
+2: string | 2 enums: inactive (32), ...
+3: string | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | enum with no cases,date-time
+5: string | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2
+8: array | children 7
+9: string | enum with no cases,uri
+10: bool
+11: class TopLevel | children 0,1,9,10,8 | given TopLevel ()
+props 1: 
+props 7: "status":2, "person_id":3, "created_at":4, "representative_id":5, "id":6, "updated_at":4
+props 11: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":10
+### stream-python
+0: integer | 0
+1: class | 1
+2: string | 2 | 2 enums: inactive (32), ...
+3: string | 3 | 50 enums: 92887cb8ec924bd98c1f9605f9723d7e (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | 49 enums: e466f4977a294886b1aeedd3c21eafcd (1), ...
+6: string | 6 | 50 enums: ffff9201e61b4aeeb9270ce86f44c7d3 (1), ...
+7: class | children 4,6,3,5,2 | 7
+8: array | children 7 | 8
+9: string | 9 | enum with no cases,uri
+10: bool | 10
+11: class TopLevel | children 0,1,9,10,8 | 11 | given TopLevel ()
+props 1: 
+props 7: "status":2, "person_id":3, "created_at":4, "representative_id":5, "id":6, "updated_at":4
+props 11: "count":0, "facets":1, "results":8, "next":9, "limit":0, "offset":0, "previous":10

@@ -1,0 +1,546 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: class | children 0,1 | 2
+3: class | children 2 | 3
+4: array | children 3 | 4
+5: class | children 4,0,1 | 5
+6: string | 6 | 1 enums: 10.99 (1), ...
+7: string | 7 | 1 enums: 0.0 (1), ...
+8: string | 8 | 1 enums: xml (1), ...
+9: string | 9 | enum with no cases,uri
+10: class | children 8,9 | 10
+11: class | children 10 | 11
+12: array | children 11 | 12
+13: class | children 12,0,7 | 13
+14: class | children 13 | 14
+15: string | 15 | 1 enums: xml (1), ...
+16: class | children 15,9 | 16
+17: class | children 16 | 17
+18: array | children 17 | 18
+19: class | children 18 | 19
+20: bool | 20
+21: string | 21 | 1 enums: 10.99 (1), ...
+22: string | 22 | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 23 | 2 enums: product (1), ...
+24: class | children 23,9 | 24
+25: class | children 24 | 25
+26: array | children 25 | 26
+27: string | 27 | 1 enums: BRL (1), ...
+28: class | children 27 | 28
+29: class | children 0,28,20,26,6,21,22,14,19,5 | 29
+30: class | children 29 | 30
+31: array | children 30 | 31
+32: string | 32 | 1 enums: all (1), ...
+33: class | children 0 | 33
+34: string | 34 | 1 enums:  (1), ...
+35: string | 35 | 1 enums: dateTime (1), ...
+36: class | children 35,9,34 | 36
+37: class | children 0,33,20,36 | 37
+38: string | 38 | 1 enums: v1 (1), ...
+39: string | 39 | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 40 | 1 enums: success (1), ...
+41: string | 41 | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41 | 42
+43: string | 43 | enum with no cases,uri
+44: class | children 43 | 44
+45: string | 45 | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 46 | 2 enums: category (1), ...
+47: string | 47 | enum with no cases,uri
+48: class | children 46,47 | 48
+49: class | children 48 | 49
+50: array | children 49 | 50
+51: class | children 20,0,50,45,44 | 51
+52: class TopLevel | children 51,42,32,0,31,20 | 52 | given TopLevel ()
+props 2: "height":0, "url":1, "width":0
+props 3: "formats":2
+props 5: "formats":4, "height":0, "url":1, "width":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "links":12, "numcomments":0, "rating":7
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "categoryid":0, "currency":28, "eco":20, "fulldescription":20, "hasmetasearch":20, "id":0, "links":26, "numoffers":0, "pricemax":6, "pricemin":21, "productname":22, "quantity":0, "rating":14, "specification":19, "thumbnail":5, "totalsellers":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "localpart":35, "namespaceuri":9, "prefix":34
+props 37: "day":0, "eonandyear":33, "hour":0, "millisecond":0, "minute":0, "month":0, "second":0, "timezone":0, "valid":20, "xmlschematype":36, "year":0
+props 42: "applicationid":39, "applicationversion":38, "code":0, "date":37, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "concatenatecategoryname":20, "hasoffer":20, "id":0, "isfinal":20, "links":50, "name":45, "parentcategoryid":0, "thumbnail":44
+props 52: "category":51, "details":42, "match":32, "page":0, "product":31, "schk":20, "totallooseoffers":0, "totalpages":0, "totalresultsavailable":0, "totalresultsreturned":0
+### api-typescript
+0: integer
+1: string | enum with no cases,uri
+2: class | children 0,1
+3: class | children 2
+4: array | children 3
+5: class | children 4,0,1
+6: string | 1 enums: 10.99 (1), ...
+7: string | 1 enums: 0.0 (1), ...
+8: string | 1 enums: xml (1), ...
+9: string | enum with no cases,uri
+10: class | children 8,9
+11: class | children 10
+12: array | children 11
+13: class | children 12,0,7
+14: class | children 13
+15: string | 1 enums: xml (1), ...
+16: class | children 15,9
+17: class | children 16
+18: array | children 17
+19: class | children 18
+20: bool
+21: string | 1 enums: 10.99 (1), ...
+22: string | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 2 enums: product (1), ...
+24: class | children 23,9
+25: class | children 24
+26: array | children 25
+27: string | 1 enums: BRL (1), ...
+28: class | children 27
+29: class | children 0,28,20,26,6,21,22,14,19,5
+30: class | children 29
+31: array | children 30
+32: string | 1 enums: all (1), ...
+33: class | children 0
+34: string | 1 enums:  (1), ...
+35: string | 1 enums: dateTime (1), ...
+36: class | children 35,9,34
+37: class | children 0,33,20,36
+38: string | 1 enums: v1 (1), ...
+39: string | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 1 enums: success (1), ...
+41: string | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41
+43: string | enum with no cases,uri
+44: class | children 43
+45: string | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 2 enums: category (1), ...
+47: string | enum with no cases,uri
+48: class | children 46,47
+49: class | children 48
+50: array | children 49
+51: class | children 20,0,50,45,44
+52: class TopLevel | children 51,42,32,0,31,20 | given TopLevel ()
+props 2: "width":0, "url":1, "height":0
+props 3: "formats":2
+props 5: "formats":4, "width":0, "url":1, "height":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "rating":7, "links":12, "numcomments":0
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "thumbnail":5, "pricemax":6, "quantity":0, "rating":14, "specification":19, "hasmetasearch":20, "pricemin":21, "eco":20, "numoffers":0, "totalsellers":0, "productname":22, "links":26, "fulldescription":20, "currency":28, "id":0, "categoryid":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "prefix":34, "localpart":35, "namespaceuri":9
+props 37: "valid":20, "eonandyear":33, "hour":0, "month":0, "year":0, "timezone":0, "millisecond":0, "xmlschematype":36, "day":0, "minute":0, "second":0
+props 42: "date":37, "code":0, "applicationversion":38, "applicationid":39, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "hasoffer":20, "thumbnail":44, "concatenatecategoryname":20, "parentcategoryid":0, "isfinal":20, "name":45, "links":50, "id":0
+props 52: "product":31, "totallooseoffers":0, "schk":20, "match":32, "details":42, "page":0, "totalpages":0, "totalresultsreturned":0, "totalresultsavailable":0, "category":51
+### stream-schema
+0: integer
+1: string | enum with no cases,uri
+2: class | children 0,1
+3: class | children 2
+4: array | children 3
+5: class | children 4,0,1
+6: string | 1 enums: 10.99 (1), ...
+7: string | 1 enums: 0.0 (1), ...
+8: string | 1 enums: xml (1), ...
+9: string | enum with no cases,uri
+10: class | children 8,9
+11: class | children 10
+12: array | children 11
+13: class | children 12,0,7
+14: class | children 13
+15: string | 1 enums: xml (1), ...
+16: class | children 15,9
+17: class | children 16
+18: array | children 17
+19: class | children 18
+20: bool
+21: string | 1 enums: 10.99 (1), ...
+22: string | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 2 enums: product (1), ...
+24: class | children 23,9
+25: class | children 24
+26: array | children 25
+27: string | 1 enums: BRL (1), ...
+28: class | children 27
+29: class | children 0,28,20,26,6,21,22,14,19,5
+30: class | children 29
+31: array | children 30
+32: string | 1 enums: all (1), ...
+33: class | children 0
+34: string | 1 enums:  (1), ...
+35: string | 1 enums: dateTime (1), ...
+36: class | children 35,9,34
+37: class | children 0,33,20,36
+38: string | 1 enums: v1 (1), ...
+39: string | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 1 enums: success (1), ...
+41: string | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41
+43: string | enum with no cases,uri
+44: class | children 43
+45: string | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 2 enums: category (1), ...
+47: string | enum with no cases,uri
+48: class | children 46,47
+49: class | children 48
+50: array | children 49
+51: class | children 20,0,50,45,44
+52: class TopLevel | children 51,42,32,0,31,20 | given TopLevel ()
+props 2: "width":0, "url":1, "height":0
+props 3: "formats":2
+props 5: "formats":4, "width":0, "url":1, "height":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "rating":7, "links":12, "numcomments":0
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "thumbnail":5, "pricemax":6, "quantity":0, "rating":14, "specification":19, "hasmetasearch":20, "pricemin":21, "eco":20, "numoffers":0, "totalsellers":0, "productname":22, "links":26, "fulldescription":20, "currency":28, "id":0, "categoryid":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "prefix":34, "localpart":35, "namespaceuri":9
+props 37: "valid":20, "eonandyear":33, "hour":0, "month":0, "year":0, "timezone":0, "millisecond":0, "xmlschematype":36, "day":0, "minute":0, "second":0
+props 42: "date":37, "code":0, "applicationversion":38, "applicationid":39, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "hasoffer":20, "thumbnail":44, "concatenatecategoryname":20, "parentcategoryid":0, "isfinal":20, "name":45, "links":50, "id":0
+props 52: "product":31, "totallooseoffers":0, "schk":20, "match":32, "details":42, "page":0, "totalpages":0, "totalresultsreturned":0, "totalresultsavailable":0, "category":51
+### api-csharp
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: class | children 0,1 | 2
+3: class | children 2 | 3
+4: array | children 3 | 4
+5: class | children 4,0,1 | 5
+6: string | 6 | 1 enums: 10.99 (1), ...
+7: string | 7 | 1 enums: 0.0 (1), ...
+8: string | 8 | 1 enums: xml (1), ...
+9: string | 9 | enum with no cases,uri
+10: class | children 8,9 | 10
+11: class | children 10 | 11
+12: array | children 11 | 12
+13: class | children 12,0,7 | 13
+14: class | children 13 | 14
+15: string | 15 | 1 enums: xml (1), ...
+16: class | children 15,9 | 16
+17: class | children 16 | 17
+18: array | children 17 | 18
+19: class | children 18 | 19
+20: bool | 20
+21: string | 21 | 1 enums: 10.99 (1), ...
+22: string | 22 | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 23 | 2 enums: product (1), ...
+24: class | children 23,9 | 24
+25: class | children 24 | 25
+26: array | children 25 | 26
+27: string | 27 | 1 enums: BRL (1), ...
+28: class | children 27 | 28
+29: class | children 0,28,20,26,6,21,22,14,19,5 | 29
+30: class | children 29 | 30
+31: array | children 30 | 31
+32: string | 32 | 1 enums: all (1), ...
+33: class | children 0 | 33
+34: string | 34 | 1 enums:  (1), ...
+35: string | 35 | 1 enums: dateTime (1), ...
+36: class | children 35,9,34 | 36
+37: class | children 0,33,20,36 | 37
+38: string | 38 | 1 enums: v1 (1), ...
+39: string | 39 | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 40 | 1 enums: success (1), ...
+41: string | 41 | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41 | 42
+43: string | 43 | enum with no cases,uri
+44: class | children 43 | 44
+45: string | 45 | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 46 | 2 enums: category (1), ...
+47: string | 47 | enum with no cases,uri
+48: class | children 46,47 | 48
+49: class | children 48 | 49
+50: array | children 49 | 50
+51: class | children 20,0,50,45,44 | 51
+52: class TopLevel | children 51,42,32,0,31,20 | 52 | given TopLevel ()
+props 2: "height":0, "url":1, "width":0
+props 3: "formats":2
+props 5: "formats":4, "height":0, "url":1, "width":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "links":12, "numcomments":0, "rating":7
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "categoryid":0, "currency":28, "eco":20, "fulldescription":20, "hasmetasearch":20, "id":0, "links":26, "numoffers":0, "pricemax":6, "pricemin":21, "productname":22, "quantity":0, "rating":14, "specification":19, "thumbnail":5, "totalsellers":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "localpart":35, "namespaceuri":9, "prefix":34
+props 37: "day":0, "eonandyear":33, "hour":0, "millisecond":0, "minute":0, "month":0, "second":0, "timezone":0, "valid":20, "xmlschematype":36, "year":0
+props 42: "applicationid":39, "applicationversion":38, "code":0, "date":37, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "concatenatecategoryname":20, "hasoffer":20, "id":0, "isfinal":20, "links":50, "name":45, "parentcategoryid":0, "thumbnail":44
+props 52: "category":51, "details":42, "match":32, "page":0, "product":31, "schk":20, "totallooseoffers":0, "totalpages":0, "totalresultsavailable":0, "totalresultsreturned":0
+### stream-kotlin
+0: integer
+1: string | enum with no cases,uri
+2: class | children 0,1
+3: class | children 2
+4: array | children 3
+5: class | children 4,0,1
+6: string | 1 enums: 10.99 (1), ...
+7: string | 1 enums: 0.0 (1), ...
+8: string | 1 enums: xml (1), ...
+9: string | enum with no cases,uri
+10: class | children 8,9
+11: class | children 10
+12: array | children 11
+13: class | children 12,0,7
+14: class | children 13
+15: string | 1 enums: xml (1), ...
+16: class | children 15,9
+17: class | children 16
+18: array | children 17
+19: class | children 18
+20: bool
+21: string | 1 enums: 10.99 (1), ...
+22: string | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 2 enums: product (1), ...
+24: class | children 23,9
+25: class | children 24
+26: array | children 25
+27: string | 1 enums: BRL (1), ...
+28: class | children 27
+29: class | children 0,28,20,26,6,21,22,14,19,5
+30: class | children 29
+31: array | children 30
+32: string | 1 enums: all (1), ...
+33: class | children 0
+34: string | 1 enums:  (1), ...
+35: string | 1 enums: dateTime (1), ...
+36: class | children 35,9,34
+37: class | children 0,33,20,36
+38: string | 1 enums: v1 (1), ...
+39: string | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 1 enums: success (1), ...
+41: string | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41
+43: string | enum with no cases,uri
+44: class | children 43
+45: string | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 2 enums: category (1), ...
+47: string | enum with no cases,uri
+48: class | children 46,47
+49: class | children 48
+50: array | children 49
+51: class | children 20,0,50,45,44
+52: class TopLevel | children 51,42,32,0,31,20 | given TopLevel ()
+props 2: "width":0, "url":1, "height":0
+props 3: "formats":2
+props 5: "formats":4, "width":0, "url":1, "height":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "rating":7, "links":12, "numcomments":0
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "thumbnail":5, "pricemax":6, "quantity":0, "rating":14, "specification":19, "hasmetasearch":20, "pricemin":21, "eco":20, "numoffers":0, "totalsellers":0, "productname":22, "links":26, "fulldescription":20, "currency":28, "id":0, "categoryid":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "prefix":34, "localpart":35, "namespaceuri":9
+props 37: "valid":20, "eonandyear":33, "hour":0, "month":0, "year":0, "timezone":0, "millisecond":0, "xmlschematype":36, "day":0, "minute":0, "second":0
+props 42: "date":37, "code":0, "applicationversion":38, "applicationid":39, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "hasoffer":20, "thumbnail":44, "concatenatecategoryname":20, "parentcategoryid":0, "isfinal":20, "name":45, "links":50, "id":0
+props 52: "product":31, "totallooseoffers":0, "schk":20, "match":32, "details":42, "page":0, "totalpages":0, "totalresultsreturned":0, "totalresultsavailable":0, "category":51
+### api-swift
+0: integer
+1: string | enum with no cases,uri
+2: class | children 0,1
+3: class | children 2
+4: array | children 3
+5: class | children 4,0,1
+6: string | 1 enums: 10.99 (1), ...
+7: string | 1 enums: 0.0 (1), ...
+8: string | 1 enums: xml (1), ...
+9: string | enum with no cases,uri
+10: class | children 8,9
+11: class | children 10
+12: array | children 11
+13: class | children 12,0,7
+14: class | children 13
+15: string | 1 enums: xml (1), ...
+16: class | children 15,9
+17: class | children 16
+18: array | children 17
+19: class | children 18
+20: bool
+21: string | 1 enums: 10.99 (1), ...
+22: string | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 2 enums: product (1), ...
+24: class | children 23,9
+25: class | children 24
+26: array | children 25
+27: string | 1 enums: BRL (1), ...
+28: class | children 27
+29: class | children 0,28,20,26,6,21,22,14,19,5
+30: class | children 29
+31: array | children 30
+32: string | 1 enums: all (1), ...
+33: class | children 0
+34: string | 1 enums:  (1), ...
+35: string | 1 enums: dateTime (1), ...
+36: class | children 35,9,34
+37: class | children 0,33,20,36
+38: string | 1 enums: v1 (1), ...
+39: string | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 1 enums: success (1), ...
+41: string | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41
+43: string | enum with no cases,uri
+44: class | children 43
+45: string | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 2 enums: category (1), ...
+47: string | enum with no cases,uri
+48: class | children 46,47
+49: class | children 48
+50: array | children 49
+51: class | children 20,0,50,45,44
+52: class TopLevel | children 51,42,32,0,31,20 | given TopLevel ()
+props 2: "width":0, "url":1, "height":0
+props 3: "formats":2
+props 5: "formats":4, "width":0, "url":1, "height":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "rating":7, "links":12, "numcomments":0
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "thumbnail":5, "pricemax":6, "quantity":0, "rating":14, "specification":19, "hasmetasearch":20, "pricemin":21, "eco":20, "numoffers":0, "totalsellers":0, "productname":22, "links":26, "fulldescription":20, "currency":28, "id":0, "categoryid":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "prefix":34, "localpart":35, "namespaceuri":9
+props 37: "valid":20, "eonandyear":33, "hour":0, "month":0, "year":0, "timezone":0, "millisecond":0, "xmlschematype":36, "day":0, "minute":0, "second":0
+props 42: "date":37, "code":0, "applicationversion":38, "applicationid":39, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "hasoffer":20, "thumbnail":44, "concatenatecategoryname":20, "parentcategoryid":0, "isfinal":20, "name":45, "links":50, "id":0
+props 52: "product":31, "totallooseoffers":0, "schk":20, "match":32, "details":42, "page":0, "totalpages":0, "totalresultsreturned":0, "totalresultsavailable":0, "category":51
+### stream-python
+0: integer | 0
+1: string | 1 | enum with no cases,uri
+2: class | children 0,1 | 2
+3: class | children 2 | 3
+4: array | children 3 | 4
+5: class | children 4,0,1 | 5
+6: string | 6 | 1 enums: 10.99 (1), ...
+7: string | 7 | 1 enums: 0.0 (1), ...
+8: string | 8 | 1 enums: xml (1), ...
+9: string | 9 | enum with no cases,uri
+10: class | children 8,9 | 10
+11: class | children 10 | 11
+12: array | children 11 | 12
+13: class | children 12,0,7 | 13
+14: class | children 13 | 14
+15: string | 15 | 1 enums: xml (1), ...
+16: class | children 15,9 | 16
+17: class | children 16 | 17
+18: array | children 17 | 18
+19: class | children 18 | 19
+20: bool | 20
+21: string | 21 | 1 enums: 10.99 (1), ...
+22: string | 22 | 1 enums: Shampoo Ox Proteins ReconstruÃ§Ã£o Profunda 240 ml (1), ...
+23: string | 23 | 2 enums: product (1), ...
+24: class | children 23,9 | 24
+25: class | children 24 | 25
+26: array | children 25 | 26
+27: string | 27 | 1 enums: BRL (1), ...
+28: class | children 27 | 28
+29: class | children 0,28,20,26,6,21,22,14,19,5 | 29
+30: class | children 29 | 30
+31: array | children 30 | 31
+32: string | 32 | 1 enums: all (1), ...
+33: class | children 0 | 33
+34: string | 34 | 1 enums:  (1), ...
+35: string | 35 | 1 enums: dateTime (1), ...
+36: class | children 35,9,34 | 36
+37: class | children 0,33,20,36 | 37
+38: string | 38 | 1 enums: v1 (1), ...
+39: string | 39 | 1 enums: 6c576951474461767662453d (1), ...
+40: string | 40 | 1 enums: success (1), ...
+41: string | 41 | 1 enums: success (1), ...
+42: class | children 39,38,0,37,40,41 | 42
+43: string | 43 | enum with no cases,uri
+44: class | children 43 | 44
+45: string | 45 | 1 enums: Shampoo para Cabelo (1), ...
+46: string | 46 | 2 enums: category (1), ...
+47: string | 47 | enum with no cases,uri
+48: class | children 46,47 | 48
+49: class | children 48 | 49
+50: array | children 49 | 50
+51: class | children 20,0,50,45,44 | 51
+52: class TopLevel | children 51,42,32,0,31,20 | 52 | given TopLevel ()
+props 2: "width":0, "url":1, "height":0
+props 3: "formats":2
+props 5: "formats":4, "width":0, "url":1, "height":0
+props 10: "type":8, "url":9
+props 11: "link":10
+props 13: "rating":7, "links":12, "numcomments":0
+props 14: "useraveragerating":13
+props 16: "type":15, "url":9
+props 17: "link":16
+props 19: "links":18
+props 24: "type":23, "url":9
+props 25: "link":24
+props 28: "abbreviation":27
+props 29: "thumbnail":5, "pricemax":6, "quantity":0, "rating":14, "specification":19, "hasmetasearch":20, "pricemin":21, "eco":20, "numoffers":0, "totalsellers":0, "productname":22, "links":26, "fulldescription":20, "currency":28, "id":0, "categoryid":0
+props 30: "product":29
+props 33: "lowestsetbit":0
+props 36: "prefix":34, "localpart":35, "namespaceuri":9
+props 37: "valid":20, "eonandyear":33, "hour":0, "month":0, "year":0, "timezone":0, "millisecond":0, "xmlschematype":36, "day":0, "minute":0, "second":0
+props 42: "date":37, "code":0, "applicationversion":38, "applicationid":39, "elapsedtime":0, "message":40, "status":41
+props 44: "url":43
+props 48: "type":46, "url":47
+props 49: "link":48
+props 51: "hasoffer":20, "thumbnail":44, "concatenatecategoryname":20, "parentcategoryid":0, "isfinal":20, "name":45, "links":50, "id":0
+props 52: "product":31, "totallooseoffers":0, "schk":20, "match":32, "details":42, "page":0, "totalpages":0, "totalresultsreturned":0, "totalresultsavailable":0, "category":51
