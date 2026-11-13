@@ -948,3 +948,22 @@ func marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, 
 	}
 	return nil, errors.New("Union must not be null")
 }"#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn js_to_string_is_javascripts_string_of_a_sourcelike() {
+        assert_eq!(js_to_string(&"time.Time".into()), "time.Time");
+        assert_eq!(js_to_string(&sl!["*", "time.Time"]), "*,time.Time");
+        // Nested arrays flatten, so an optional slice is not "[],time.Time".
+        assert_eq!(
+            js_to_string(&sl!["*", sl!["[]", "time.Time"]]),
+            "*,[],time.Time"
+        );
+        assert_eq!(js_to_string(&sl![]), "");
+        let annotated = maybe_annotated(true, any_type_issue_annotation(), "interface{}");
+        assert_eq!(js_to_string(&sl!["*", annotated]), "*,[object Object]");
+    }
+}
