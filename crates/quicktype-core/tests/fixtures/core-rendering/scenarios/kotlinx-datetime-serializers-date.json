@@ -1,0 +1,76 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "date",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "date",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "date"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json     = Json { allowStructuredMapKeys = true }\n// val topLevel = json.parse(TopLevel.serializer(), jsonString)\n\n@file:UseSerializers(LocalDateSerializer::class)\n\npackage quicktype\n\nimport java.time.LocalDate\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\n@Serializable\ndata class TopLevel (\n    val date: LocalDate\n)\n\nobject LocalDateSerializer : KSerializer<LocalDate> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"LocalDate\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: LocalDate) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(value))\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlinx-datetime-serializers-date"
+}

@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/kotlin-klaxon-empty-object-map.test.ts
+# (issue #2881); the assertions are in tests/render_java_kotlin.rs.
+# Plain classes and maps of non-empty objects are not annotated.
+input json TopLevel {"plain":{"x":1},"widgets":{"1":{"x":1},"4":{"x":2}}}
+pipeline {"lang": "kotlin"}
+
+render kotlin {"rendererOptions": {"framework": "klaxon"}}

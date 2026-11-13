@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/kotlinx-datetime-serializers.test.ts; the
+# assertions are in tests/render_java_kotlin.rs.
+# Emits no serializer machinery without date/time types.
+input schema TopLevel {"$schema": "http://json-schema.org/draft-06/schema#", "type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}
+pipeline {"lang": "kotlin"}
+
+render kotlin {"rendererOptions": {"framework": "kotlinx"}}

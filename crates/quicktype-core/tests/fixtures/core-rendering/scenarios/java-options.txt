@@ -1,0 +1,28 @@
+# The Java renderers with each of their options, on a schema with every
+# kind of property, union and date-time type (the corpus has few cases for
+# --just-types and --lombok).
+input schema TopLevel {"$schema": "http://json-schema.org/draft-07/schema#", "title": "TopLevel", "description": "The kitchen sink.\nSecond line.", "type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "created": {"type": "string", "format": "date-time", "description": "When it was made."}, "day": {"type": "string", "format": "date"}, "at": {"type": "string", "format": "time"}, "maybeCreated": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]}, "maybeDay": {"anyOf": [{"type": "string", "format": "date"}, {"type": "null"}]}, "maybeAt": {"anyOf": [{"type": "string", "format": "time"}, {"type": "null"}]}, "": {"type": "integer"}, "isActive": {"type": "boolean"}, "fooBar": {"type": "string"}, "foo_bar": {"type": "number"}, "userURL": {"type": "string"}, "numbers": {"anyOf": [{"type": "integer"}, {"type": "number"}, {"type": "boolean"}, {"type": "null"}]}, "onlyDouble": {"anyOf": [{"type": "number"}, {"type": "string"}]}, "stringish": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "string", "format": "date"}, {"type": "string", "format": "time"}, {"type": "string", "format": "uuid"}, {"type": "integer"}]}, "withEnum": {"anyOf": [{"enum": ["red", "green"]}, {"type": "integer"}, {"type": "null"}]}, "withString": {"anyOf": [{"type": "string"}, {"type": "array", "items": {"type": "integer"}}]}, "withObject": {"anyOf": [{"$ref": "#/definitions/Point"}, {"type": "boolean"}, {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}]}, "withMap": {"anyOf": [{"type": "object", "additionalProperties": {"type": "integer"}}, {"type": "string"}]}, "nested": {"type": "array", "items": {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]}}}, "points": {"type": "array", "items": {"$ref": "#/definitions/Point"}}, "byName": {"type": "object", "additionalProperties": {"$ref": "#/definitions/Point"}}, "empty": {"$ref": "#/definitions/Empty"}, "emptyMap": {"type": "object", "additionalProperties": {"$ref": "#/definitions/Empty"}}, "kind": {"enum": ["first-kind", "SECOND", "third_kind", "$dollar", "with \"quote\""], "description": "The kind."}, "anything": {}, "nothing": {"type": "null"}, "dates": {"type": "array", "items": {"type": "string", "format": "date-time"}}, "uuids": {"type": "object", "additionalProperties": {"type": "string", "format": "uuid"}}}, "required": ["id", "created", "day", "at", "", "isActive", "kind", "points", "stringish"], "definitions": {"Point": {"type": "object", "description": "A point.", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "label": {"type": "string"}}, "required": ["x", "y"]}, "Empty": {"type": "object", "properties": {}, "additionalProperties": false}}}
+input schema Labels {"type": "array", "items": {"type": "string"}}
+input schema Status {"enum": ["on", "off"]}
+pipeline {"lang": "java"}
+
+render java {}
+render java {"rendererOptions": {"just-types": true}}
+render java {"rendererOptions": {"lombok": true}}
+render java {"rendererOptions": {"lombok": true, "lombok-copy-annotations": false}}
+render java {"rendererOptions": {"lombok": true, "datetime-provider": "legacy"}}
+render java {"rendererOptions": {"lombok": true, "just-types": true}}
+render java {"rendererOptions": {"datetime-provider": "legacy"}}
+render java {"rendererOptions": {"datetime-provider": "legacy", "just-types": true}}
+render java {"rendererOptions": {"array-type": "array"}}
+render java {"rendererOptions": {"array-type": "array", "datetime-provider": "legacy", "lombok": true}}
+render java {"rendererOptions": {"package": "com.example.models"}}
+render java {"rendererOptions": {"acronym-style": "camel"}}
+render java {"rendererOptions": {"acronym-style": "lowerCase"}}
+render java {"rendererOptions": {"acronym-style": "original"}}
+render java {"alphabetize": true}
+render java {"indentation": "\t"}
+render java {"leadingComments": ["Leading comment", {"lines": ["line one", "line two"]}]}
+render java {"rendererOptions": {"just-types": true}, "leadingComments": ["Only in the first file"]}
+render java {"rendererOptions": {"datetime-provider": "nope"}}
+render java {"rendererOptions": {"array-type": "set"}}

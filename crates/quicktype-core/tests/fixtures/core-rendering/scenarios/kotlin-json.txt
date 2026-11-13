@@ -1,0 +1,8 @@
+# Kotlin from JSON samples, inferred with Kotlin's date-time recognizer.
+input json TopLevel {"name": "x", "when": "2018-08-14T02:45:50Z", "day": "2016-02-29", "notDay": "2015-02-29", "at": "02:45:50+05:30", "zeroOffset": "2018-08-14T02:45:50+00:00", "items": [{"id": 1, "value": "a"}, {"id": "two", "value": null}], "mixed": [1, "a", true, null, 2.5, {"k": 1}], "matrix": [[1, "a"], [2, null]], "byKey": {"a": {"v": 1}, "b": {"v": 2}}, "empty": {}}
+pipeline {"lang": "kotlin"}
+
+render kotlin {}
+render kotlin {"rendererOptions": {"framework": "klaxon"}}
+render kotlin {"rendererOptions": {"framework": "kotlinx"}}
+render kotlin {"rendererOptions": {"just-types": true}}

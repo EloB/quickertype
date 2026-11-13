@@ -1,0 +1,384 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Ints"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Count"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Names"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 3
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Title"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Table"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 5
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Ratio"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Bag"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 7
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Bag"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 8
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Flag"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    }
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "When"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Color"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "red",
+     "green",
+     "light blue"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     1,
+     13,
+     14,
+     3
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "items": 5
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Point"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "Ints",
+    0
+   ],
+   [
+    "Names",
+    2
+   ],
+   [
+    "Table",
+    4
+   ],
+   [
+    "Bag",
+    6
+   ],
+   [
+    "Count",
+    1
+   ],
+   [
+    "Ratio",
+    5
+   ],
+   [
+    "Title",
+    3
+   ],
+   [
+    "Flag",
+    9
+   ],
+   [
+    "When",
+    10
+   ],
+   [
+    "Color",
+    11
+   ],
+   [
+    "Either",
+    12
+   ],
+   [
+    "Point",
+    15
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install jackson-module-kotlin and do:\n//\n//   val ints = Ints.fromJson(jsonString)\n//   val names = Names.fromJson(jsonString)\n//   val table = Table.fromJson(jsonString)\n//   val bag = Bag.fromJson(jsonString)\n//   val count = Count.fromJson(jsonString)\n//   val ratio = Ratio.fromJson(jsonString)\n//   val title = Title.fromJson(jsonString)\n//   val flag = Flag.fromJson(jsonString)\n//   val when = When.fromJson(jsonString)\n//   val color = Color.fromJson(jsonString)\n//   val either = Either.fromJson(jsonString)\n//   val point = Point.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\n\nimport com.fasterxml.jackson.annotation.*\nimport com.fasterxml.jackson.core.*\nimport com.fasterxml.jackson.databind.*\nimport com.fasterxml.jackson.databind.deser.std.StdDeserializer\nimport com.fasterxml.jackson.databind.module.SimpleModule\nimport com.fasterxml.jackson.databind.node.*\nimport com.fasterxml.jackson.databind.ser.std.StdSerializer\nimport com.fasterxml.jackson.module.kotlin.*\n\n\n@Suppress(\"UNCHECKED_CAST\")\nprivate fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {\n    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {\n            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))\n    })\n    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {\n            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())\n            override fun getNullValue(ctxt: DeserializationContext) = if (isUnion) fromJson(NullNode.instance) else null\n    })\n})\n\nval mapper = jacksonObjectMapper().apply {\n    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == \"empty\") \"\" else name }\n    setSerializationInclusion(JsonInclude.Include.NON_NULL)\n    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)\n    convert(OffsetDateTime::class, { OffsetDateTime.parse(it.asText()) }, { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    convert(Color::class,          { Color.fromValue(it.asText()) },      { ObjectMapper().writeValueAsString(it.value) })\n    convert(Either::class,         { Either.fromJson(it) },               { it.toJson() }, true)\n}\n\nclass Ints(elements: Collection<Long> = emptyList()) : ArrayList<Long>(elements) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<Ints>(json)\n    }\n}\nclass Names(elements: Collection<String> = emptyList()) : ArrayList<String>(elements) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<Names>(json)\n    }\n}\nclass Table(elements: Map<String, Double>) : HashMap<String, Double>(elements) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<Table>(json)\n    }\n}\nclass Bag(elements: Map<String, Map<String, Any?>>) : HashMap<String, Map<String, Any?>>(elements) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<Bag>(json)\n    }\n}\ntypealias Count = Long\ntypealias Ratio = Double\ntypealias Title = String\ntypealias Flag = Boolean\ntypealias When = OffsetDateTime\n\nenum class Color(val value: String) {\n    Red(\"red\"),\n    Green(\"green\"),\n    LightBlue(\"light blue\");\n\n    companion object {\n        fun fromValue(value: String): Color = when (value) {\n            \"red\"        -> Red\n            \"green\"      -> Green\n            \"light blue\" -> LightBlue\n            else         -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Either {\n    class DoubleArrayValue(val value: List<Double>) : Either()\n    class IntegerValue(val value: Long)             : Either()\n    class StringValue(val value: String)            : Either()\n    class NullValue()                               : Either()\n\n    fun toJson(): String = mapper.writeValueAsString(when (this) {\n        is DoubleArrayValue -> this.value\n        is IntegerValue     -> this.value\n        is StringValue      -> this.value\n        is NullValue        -> null\n    })\n\n    companion object {\n        fun fromJson(jn: JsonNode): Either = when (jn) {\n            is ArrayNode            -> DoubleArrayValue(mapper.convertValue(jn))\n            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))\n            is TextNode             -> StringValue(mapper.convertValue(jn))\n            is NullNode             -> NullValue()\n            else                    -> throw IllegalArgumentException()\n        }\n    }\n}\n\ndata class Point (\n    @get:JsonProperty(required=true)@field:JsonProperty(required=true)\n    val x: Double\n) {\n    fun toJson() = mapper.writeValueAsString(this)\n\n    companion object {\n        fun fromJson(json: String) = mapper.readValue<Point>(json)\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "klaxon"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install Klaxon and do:\n//\n//   val ints = Ints.fromJson(jsonString)\n//   val names = Names.fromJson(jsonString)\n//   val table = Table.fromJson(jsonString)\n//   val bag = Bag.fromJson(jsonString)\n//   val count = Count.fromJson(jsonString)\n//   val ratio = Ratio.fromJson(jsonString)\n//   val title = Title.fromJson(jsonString)\n//   val flag = Flag.fromJson(jsonString)\n//   val when = When.fromJson(jsonString)\n//   val color = Color.fromJson(jsonString)\n//   val either = Either.fromJson(jsonString)\n//   val point = Point.fromJson(jsonString)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\n\nimport com.beust.klaxon.*\n\nprivate fun <T> Klaxon.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonValue) -> T, toJson: (T) -> String, isUnion: Boolean = false) =\n    this.converter(object: Converter {\n        @Suppress(\"UNCHECKED_CAST\")\n        override fun toJson(value: Any)        = toJson(value as T)\n        override fun fromJson(jv: JsonValue)   = fromJson(jv) as Any\n        override fun canConvert(cls: Class<*>) = cls == k.java || (isUnion && cls.superclass == k.java)\n    })\n\nprivate val klaxon = Klaxon()\n    .convert(OffsetDateTime::class, { OffsetDateTime.parse(it.string!!) }, { \"\\\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\\\"\" })\n    .convert(Color::class,          { Color.fromValue(it.string!!) },      { Klaxon().toJsonString(it.value) })\n    .convert(Either::class,         { Either.fromJson(it) },               { it.toJson() }, true)\n\nclass Ints(elements: Collection<Long>) : ArrayList<Long>(elements) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = Ints(klaxon.parseArray<Any>(json)!!.map { when (it) { is Int -> it.toLong(); is Long -> it; else -> throw IllegalArgumentException() } })\n    }\n}\nclass Names(elements: Collection<String>) : ArrayList<String>(elements) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = Names(klaxon.parseArray<String>(json)!!)\n    }\n}\nclass Table(elements: Map<String, Double>) : HashMap<String, Double>(elements) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = Table (\n            klaxon.parseJsonObject(java.io.StringReader(json)) as Map<String, Double>\n        )\n    }\n}\nclass Bag(elements: Map<String, Map<String, Any?>>) : HashMap<String, Map<String, Any?>>(elements) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = Bag (\n            klaxon.parseJsonObject(java.io.StringReader(json)) as Map<String, Map<String, Any?>>\n        )\n    }\n}\ndata class Count(val value: Long) {\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = Count(json.toLong())\n    }\n}\ndata class Ratio(val value: Double) {\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = Ratio(json.toDouble())\n    }\n}\ndata class Title(val value: String) {\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = Title(klaxon.parseArray<String>(\"[${json}]\")!![0])\n    }\n}\ndata class Flag(val value: Boolean) {\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = Flag(klaxon.parseArray<Boolean>(\"[${json}]\")!![0])\n    }\n}\ndata class When(val value: OffsetDateTime) {\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = When(klaxon.parseArray<OffsetDateTime>(\"[${json}]\")!![0])\n    }\n}\n\nenum class Color(val value: String) {\n    Red(\"red\"),\n    Green(\"green\"),\n    LightBlue(\"light blue\");\n\n    public fun toJson() = klaxon.toJsonString(value)\n\n    companion object {\n        public fun fromJson(json: String) = fromValue(klaxon.parseArray<String>(\"[${json}]\")!![0])\n\n        public fun fromValue(value: String): Color = when (value) {\n            \"red\"        -> Red\n            \"green\"      -> Green\n            \"light blue\" -> LightBlue\n            else         -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Either {\n    class DoubleArrayValue(val value: List<Double>) : Either()\n    class IntegerValue(val value: Long)             : Either()\n    class StringValue(val value: String)            : Either()\n    class NullValue()                               : Either()\n\n    public fun toJson(): String = klaxon.toJsonString(when (this) {\n        is DoubleArrayValue -> this.value\n        is IntegerValue     -> this.value\n        is StringValue      -> this.value\n        is NullValue        -> \"null\"\n    })\n\n    companion object {\n        public fun fromJson(json: String): Either = fromJson(JsonValue(Parser().parse(StringBuilder(json)), null, null, klaxon))\n\n        public fun fromJson(jv: JsonValue): Either = when (jv.inside) {\n            is JsonArray<*> -> DoubleArrayValue(jv.array?.let { klaxon.parseFromJsonArray<Double>(it) }!!)\n            is Int, is Long -> IntegerValue((jv.int?.toLong() ?: jv.longValue)!!)\n            is String       -> StringValue(jv.string!!)\n            null            -> NullValue()\n            else            -> throw IllegalArgumentException()\n        }\n    }\n}\n\ndata class Point (\n    val x: Double\n) {\n    public fun toJson() = klaxon.toJsonString(this)\n\n    companion object {\n        public fun fromJson(json: String) = klaxon.parse<Point>(json)\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "kotlinx"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse the JSON, install kotlin's serialization plugin and do:\n//\n// val json   = Json { allowStructuredMapKeys = true }\n// val ints   = json.parse(Ints.serializer(), jsonString)\n// val names  = json.parse(Names.serializer(), jsonString)\n// val table  = json.parse(Table.serializer(), jsonString)\n// val bag    = json.parse(Bag.serializer(), jsonString)\n// val count  = json.parse(Count.serializer(), jsonString)\n// val ratio  = json.parse(Ratio.serializer(), jsonString)\n// val title  = json.parse(Title.serializer(), jsonString)\n// val flag   = json.parse(Flag.serializer(), jsonString)\n// val when   = json.parse(When.serializer(), jsonString)\n// val color  = json.parse(Color.serializer(), jsonString)\n// val either = json.parse(Either.serializer(), jsonString)\n// val point  = json.parse(Point.serializer(), jsonString)\n\n@file:UseSerializers(OffsetDateTimeSerializer::class)\n\npackage quicktype\n\nimport java.time.OffsetDateTime\n\nimport kotlinx.serialization.*\nimport kotlinx.serialization.json.*\nimport kotlinx.serialization.descriptors.*\nimport kotlinx.serialization.encoding.*\n\ntypealias Ints = List<Long>\ntypealias Names = List<String>\ntypealias Table = HashMap<String, Double>\ntypealias Bag = JsonObject\ntypealias Count = Long\ntypealias Ratio = Double\ntypealias Title = String\ntypealias Flag = Boolean\ntypealias When = OffsetDateTime\n\n@Serializable\nenum class Color(val value: String) {\n    @SerialName(\"red\") Red(\"red\"),\n    @SerialName(\"green\") Green(\"green\"),\n    @SerialName(\"light blue\") LightBlue(\"light blue\");\n}\n\ntypealias Either = JsonElement\n\n@Serializable\ndata class Point (\n    val x: Double\n)\n\nobject OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {\n    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(\"OffsetDateTime\", PrimitiveKind.STRING)\n    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())\n    override fun serialize(encoder: Encoder, value: OffsetDateTime) {\n        encoder.encodeString(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport java.time.OffsetDateTime\n\ntypealias Ints = ArrayList<Long>\ntypealias Names = ArrayList<String>\ntypealias Table = HashMap<String, Double>\ntypealias Bag = HashMap<String, Map<String, Any?>>\ntypealias Count = Long\ntypealias Ratio = Double\ntypealias Title = String\ntypealias Flag = Boolean\ntypealias When = OffsetDateTime\n\nenum class Color(val value: String) {\n    Red(\"red\"),\n    Green(\"green\"),\n    LightBlue(\"light blue\");\n\n    companion object {\n        fun fromValue(value: String): Color = when (value) {\n            \"red\"        -> Red\n            \"green\"      -> Green\n            \"light blue\" -> LightBlue\n            else         -> throw IllegalArgumentException()\n        }\n    }\n}\n\nsealed class Either {\n    class DoubleArrayValue(val value: List<Double>) : Either()\n    class IntegerValue(val value: Long)             : Either()\n    class StringValue(val value: String)            : Either()\n    class NullValue()                               : Either()\n}\n\ndata class Point (\n    val x: Double\n)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "kotlin-top-levels"
+}
