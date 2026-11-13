@@ -73,7 +73,9 @@ The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
   import.meta.url)`, which bundlers with asset support (Vite, webpack 5,
   Parcel) emit as an asset. `quicktype()` waits for it;
   `quicktypeMultiFileSync` uses the engine once it is ready and the TypeScript
-  engine until then.
+  engine until then. With the TypeScript engine forced (`"ts"`, set before
+  the import), nothing is fetched or compiled; should the mode change later,
+  the first run that may use the engine loads it.
 - **Bundlers without asset support** (esbuild, an iife bundle): set
   `globalThis[Symbol.for("quicktype-core.wasmModule")]` to a
   `WebAssembly.Module` (or the file's bytes) before the first run:
@@ -84,7 +86,10 @@ The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
       await WebAssembly.compileStreaming(response);
   ```
 
-If the engine cannot be loaded, every run uses the TypeScript engine.
+If the engine cannot be loaded (the file cannot be fetched, the module does
+not compile, or it does not instantiate as this engine), every run uses the
+TypeScript engine. Loading is not tried again on each run, unless a different
+module is supplied.
 
 ## Building and testing
 

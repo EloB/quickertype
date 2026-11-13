@@ -22,7 +22,14 @@ import type {
 } from "../TargetLanguage.js";
 
 import { type EncodedRun, Unencodable, encodeRun, encodeValue } from "./encode.js";
-import { discardEngine, engineAsync, engineLoadError, engineSync, isDiscarded } from "./engine.js";
+import {
+    discardEngine,
+    engineAsync,
+    engineLoadError,
+    engineMode,
+    engineSync,
+    isDiscarded,
+} from "./engine.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -56,23 +63,6 @@ function declined(feature: string): undefined {
 }
 
 const supportedLanguages = new WeakMap<WasmGlue, Map<string, boolean>>();
-
-const engineKey = Symbol.for("quicktype-core.engine");
-
-/**
- * `QUICKTYPE_ENGINE` (or `globalThis[Symbol.for("quicktype-core.engine")]`):
- * `ts` runs everything on the TypeScript engine; `wasm` uses the
- * WebAssembly engine for every eligible run and fails if it cannot be
- * loaded; anything else uses it when it can be loaded.
- */
-function engineMode(): "ts" | "wasm" | "auto" {
-    let mode = (globalThis as any)[engineKey];
-    if (mode === undefined && typeof process !== "undefined") {
-        mode = process.env?.QUICKTYPE_ENGINE;
-    }
-
-    return mode === "ts" || mode === "wasm" ? mode : "auto";
-}
 
 type InputSchemaStoreClass = new (
     inputs: Map<string, string>,
