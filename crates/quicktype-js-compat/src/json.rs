@@ -31,7 +31,10 @@ use crate::number;
 pub mod parse;
 
 /// A JSON value. Objects keep their keys in insertion order.
-#[derive(Debug, PartialEq)]
+///
+/// `Clone`, `Drop`, `PartialEq` and `Debug` are written out, without
+/// recursion, so that the arbitrarily deep values [`parse()`] accepts cannot
+/// overflow the stack.
 pub enum JsonValue {
     /// `null`.
     Null,
@@ -144,6 +147,170 @@ impl Clone for JsonValue {
             }
         }
         done.unwrap_or(JsonValue::Null)
+    }
+}
+
+/// The derived equality (numbers as `f64`, so `NaN` is unequal to itself;
+/// objects equal with the same entries in any order, as `IndexMap`'s), but
+/// iterative.
+impl PartialEq for JsonValue {
+    fn eq(&self, other: &Self) -> bool {
+        let mut pending = vec![(self, other)];
+        while let Some(pair) = pending.pop() {
+            match pair {
+                (JsonValue::Null, JsonValue::Null) => {}
+                (JsonValue::Bool(a), JsonValue::Bool(b)) if a == b => {}
+                (JsonValue::Number(a), JsonValue::Number(b)) if a == b => {}
+                (JsonValue::String(a), JsonValue::String(b)) if a == b => {}
+                (JsonValue::Array(a), JsonValue::Array(b)) if a.len() == b.len() => {
+                    pending.extend(a.iter().zip(b));
+                }
+                (JsonValue::Object(a), JsonValue::Object(b)) if a.len() == b.len() => {
+                    for (key, value) in a {
+                        let Some(other) = b.get(key) else {
+                            return false;
+                        };
+                        pending.push((value, other));
+                    }
+                }
+                _ => return false,
+            }
+        }
+        true
+    }
+}
+
+/// How deeply [`JsonValue`]'s `Debug` output goes: non-empty arrays and
+/// objects nested deeper are elided as `Array([..])` and `Object({..})`.
+const DEBUG_MAX_DEPTH: usize = 100;
+
+/// The derived format (`Array([Number(1.0), Null])`, or indented with
+/// `{:#?}`), written without recursing, down to [`DEBUG_MAX_DEPTH`]
+/// levels: deeper collections are elided (indented output of a deep value
+/// would be quadratic in its depth).
+impl fmt::Debug for JsonValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        /// What is left to write, last first.
+        enum Step<'a> {
+            /// A value, at a depth (1 for the outermost) and an
+            /// indentation level (for `{:#?}`).
+            Value(&'a JsonValue, usize, usize),
+            /// An object key and the `": "` after it.
+            Key(&'a str),
+            Text(&'static str),
+            /// `{:#?}`: a line break, then the indentation of a level.
+            Line(usize),
+        }
+
+        /// A line break and the indentation of `level`.
+        fn line(f: &mut fmt::Formatter<'_>, level: usize) -> fmt::Result {
+            f.write_str("\n")?;
+            for _ in 0..level {
+                f.write_str("    ")?;
+            }
+            Ok(())
+        }
+
+        let pretty = f.alternate();
+        let mut steps = vec![Step::Value(self, 1, 0)];
+        while let Some(step) = steps.pop() {
+            let (value, depth, level) = match step {
+                Step::Value(value, depth, level) => (value, depth, level),
+                Step::Key(key) => {
+                    fmt::Debug::fmt(key, f)?;
+                    f.write_str(": ")?;
+                    continue;
+                }
+                Step::Text(text) => {
+                    f.write_str(text)?;
+                    continue;
+                }
+                Step::Line(level) => {
+                    line(f, level)?;
+                    continue;
+                }
+            };
+            let (name, open, close, entries): (_, _, _, Vec<(Option<&str>, &JsonValue)>) =
+                match value {
+                    JsonValue::Null => {
+                        f.write_str("Null")?;
+                        continue;
+                    }
+                    JsonValue::Array(items) if depth > DEBUG_MAX_DEPTH && !items.is_empty() => {
+                        f.write_str("Array([..])")?;
+                        continue;
+                    }
+                    JsonValue::Object(map) if depth > DEBUG_MAX_DEPTH && !map.is_empty() => {
+                        f.write_str("Object({..})")?;
+                        continue;
+                    }
+                    JsonValue::Array(items) => {
+                        ("Array", "[", "]", items.iter().map(|v| (None, v)).collect())
+                    }
+                    JsonValue::Object(map) => (
+                        "Object",
+                        "{",
+                        "}",
+                        map.iter().map(|(k, v)| (Some(k.as_str()), v)).collect(),
+                    ),
+                    leaf => {
+                        // `Name(leaf)`, or indented `Name(\n    leaf,\n)`.
+                        let name = match leaf {
+                            JsonValue::Bool(_) => "Bool",
+                            JsonValue::Number(_) => "Number",
+                            _ => "String",
+                        };
+                        f.write_str(name)?;
+                        f.write_str("(")?;
+                        if pretty {
+                            line(f, level + 1)?;
+                        }
+                        match leaf {
+                            JsonValue::Bool(b) => fmt::Debug::fmt(b, f)?,
+                            JsonValue::Number(n) => fmt::Debug::fmt(n, f)?,
+                            JsonValue::String(s) => fmt::Debug::fmt(s, f)?,
+                            _ => {}
+                        }
+                        if pretty {
+                            f.write_str(",")?;
+                            line(f, level)?;
+                        }
+                        f.write_str(")")?;
+                        continue;
+                    }
+                };
+            // `Name([a, b])`, or indented
+            // `Name(\n    [\n        a,\n        b,\n    ],\n)`; pushed in
+            // reverse.
+            f.write_str(name)?;
+            f.write_str("(")?;
+            if pretty {
+                steps.extend([Step::Text(")"), Step::Line(level), Step::Text(",")]);
+                steps.push(Step::Text(close));
+                if !entries.is_empty() {
+                    steps.push(Step::Line(level + 1));
+                }
+                for (key, value) in entries.into_iter().rev() {
+                    steps.push(Step::Text(","));
+                    steps.push(Step::Value(value, depth + 1, level + 2));
+                    steps.extend(key.map(Step::Key));
+                    steps.push(Step::Line(level + 2));
+                }
+                steps.push(Step::Text(open));
+                steps.push(Step::Line(level + 1));
+            } else {
+                steps.extend([Step::Text(")"), Step::Text(close)]);
+                for (i, (key, value)) in entries.into_iter().enumerate().rev() {
+                    steps.push(Step::Value(value, depth + 1, level));
+                    steps.extend(key.map(Step::Key));
+                    if i > 0 {
+                        steps.push(Step::Text(", "));
+                    }
+                }
+                steps.push(Step::Text(open));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -489,6 +656,118 @@ mod tests {
         }
         assert_eq!(levels, 2 * depth);
         assert_eq!(*copy, JsonValue::Number(1.0));
+    }
+
+    /// `JsonValue` as the derived `Debug` writes it.
+    #[derive(Debug)]
+    #[allow(dead_code)] // Read by `Debug` only.
+    enum Derived {
+        Null,
+        Bool(bool),
+        Number(f64),
+        String(String),
+        Array(Vec<Derived>),
+        Object(IndexMap<String, Derived>),
+    }
+
+    impl Derived {
+        fn of(value: &JsonValue) -> Derived {
+            match value {
+                JsonValue::Null => Derived::Null,
+                JsonValue::Bool(b) => Derived::Bool(*b),
+                JsonValue::Number(n) => Derived::Number(*n),
+                JsonValue::String(s) => Derived::String(s.clone()),
+                JsonValue::Array(items) => Derived::Array(items.iter().map(Derived::of).collect()),
+                JsonValue::Object(map) => Derived::Object(
+                    map.iter()
+                        .map(|(k, v)| (k.clone(), Derived::of(v)))
+                        .collect(),
+                ),
+            }
+        }
+    }
+
+    /// A million levels of `[{"a": …}]` around `1`.
+    fn million_levels() -> JsonValue {
+        let depth = 1_000_000;
+        parse(&format!(
+            "{}1{}",
+            r#"[{"a":"#.repeat(depth),
+            "}]".repeat(depth)
+        ))
+        .unwrap()
+    }
+
+    #[test]
+    fn equality_and_debug_never_recurse() {
+        // On the test thread's small stack.
+        let deep = million_levels();
+        let copy = deep.clone();
+        assert!(deep == copy);
+        let mut other = million_levels();
+        let mut innermost = &mut other;
+        loop {
+            innermost = match innermost {
+                JsonValue::Array(items) => &mut items[0],
+                JsonValue::Object(map) => map.get_index_mut(0).unwrap().1,
+                leaf => break *leaf = JsonValue::Number(2.0),
+            };
+        }
+        assert!(deep != other);
+
+        let compact = format!("{deep:?}");
+        let elided = "Array([Object({\"a\": ".repeat(50) + "Array([..])" + &"})])".repeat(50);
+        assert_eq!(compact, elided);
+        let pretty = format!("{deep:#?}");
+        assert!(
+            pretty.starts_with("Array(\n    [\n        Object(\n"),
+            "{pretty:.40}"
+        );
+        assert!(pretty.contains("Array([..])"));
+    }
+
+    #[test]
+    fn equality_is_the_derived_one() {
+        let v = |text: &str| parse(text).unwrap();
+        assert_eq!(
+            v(r#"{"a": 1, "b": [true, null]}"#),
+            v(r#"{"b": [true, null], "a": 1}"#)
+        );
+        assert_ne!(v(r#"{"a": 1}"#), v(r#"{"a": 1, "b": 1}"#));
+        assert_ne!(v(r#"{"a": 1, "c": 1}"#), v(r#"{"a": 1, "b": 1}"#));
+        assert_ne!(v("[1, 2]"), v("[2, 1]"));
+        assert_ne!(v("[1]"), v("[1, 1]"));
+        assert_ne!(v("[]"), v("{}"));
+        assert_ne!(v("0"), v("false"));
+        assert_ne!(v(r#""""#), v("null"));
+        assert_eq!(v("-0"), v("0"));
+        assert_ne!(JsonValue::Number(f64::NAN), JsonValue::Number(f64::NAN));
+    }
+
+    #[test]
+    fn debug_is_the_derived_format() {
+        for text in [
+            "null",
+            "true",
+            "-0.5",
+            r#""a\"b\n""#,
+            "[]",
+            "{}",
+            "[[]]",
+            r#"[1, null, "x", [false, {}], {"k\n": [2]}]"#,
+            r#"{"a": {"b": [1, {"c": null}]}, "": [[], [[3]]]}"#,
+        ] {
+            let value = parse(text).unwrap();
+            let derived = Derived::of(&value);
+            assert_eq!(format!("{value:?}"), format!("{derived:?}"), "{text}");
+            assert_eq!(format!("{value:#?}"), format!("{derived:#?}"), "{text}");
+        }
+        // Down to the elided depth.
+        let deep = parse(&format!("{}{}", "[".repeat(100), "]".repeat(100))).unwrap();
+        assert_eq!(format!("{deep:#?}"), format!("{:#?}", Derived::of(&deep)));
+        let deeper = parse(&format!("{}{}", "[".repeat(102), "]".repeat(102))).unwrap();
+        let elided = "Array([".repeat(100) + "Array([..])" + &"])".repeat(100);
+        assert_eq!(format!("{deeper:?}"), elided);
     }
 
     #[test]
