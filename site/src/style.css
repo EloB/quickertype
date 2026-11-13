@@ -370,6 +370,18 @@ body[data-input="large"][data-panel="inline"] .panes {
     flex: none;
 }
 
+/* Too narrow for the input's controls on one row: the sample and Open file fill the second. */
+@container input (width < 440px) {
+    #input-pane .head-actions {
+        flex: 1 1 100%;
+    }
+
+    #sample {
+        flex: 1;
+        max-width: none;
+    }
+}
+
 @container input (width < 540px) {
     .drop-hint {
         display: none;
@@ -1470,10 +1482,6 @@ button.close::before {
 
     .engines span {
         padding: 4px 8px;
-    }
-
-    #sample {
-        max-width: 150px;
     }
 
     .lane {
