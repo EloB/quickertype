@@ -73,7 +73,9 @@ export async function measure(sides, inputs, { lang = "typescript", warmup = 3, 
         const runs = warmup + n;
         sides.forEach((side, k) => {
             if (side.ts) return;
-            if (side.stats.wasm - before[k].wasm !== runs || side.stats.samplesRead - before[k].samplesRead !== runs) {
+            // (Builds from before the engine read JSON samples count none.)
+            const samplesRead = side.stats.samplesRead === undefined ? runs : side.stats.samplesRead - before[k].samplesRead;
+            if (side.stats.wasm - before[k].wasm !== runs || samplesRead !== runs) {
                 throw new Error(`${name}: not every run of ${side.name} read its sample and ran on WebAssembly`);
             }
         });
