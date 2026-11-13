@@ -323,7 +323,8 @@ const view = {
     request: undefined,
     wasm: undefined, // the WebAssembly worker's result
     ts: undefined, // the TypeScript worker's result, "running", or undefined
-    bench: undefined, // { wasm, ts } results of a warm measurement, or "running"
+    /** A warm measurement of the result shown: { wasm, ts }, each a result, "running" or undefined. */
+    bench: undefined,
     files: [],
     tab: 0,
     runningSince: 0,
@@ -332,11 +333,18 @@ const view = {
     /** The run whose WebAssembly (and, comparing, TypeScript) result is shown. */
     settled: 0,
     settledTs: 0,
+    /** How many TypeScript results have been shown (for tests). */
+    comparisons: 0,
 };
 
 let generation = 0;
 let runTimer;
 let ticker;
+/**
+ * The latest run (or comparison), settled once its results are shown.
+ * A measurement waits for it, so that it never replaces a run's request.
+ */
+let currentRun = Promise.resolve();
 
 function request() {
     return {
@@ -356,9 +364,14 @@ function schedule(delay) {
 /** Debounce for typing: longer for longer inputs. */
 const typingDelay = () => Math.min(1000, 200 + state.text.length / 5000);
 
-async function run() {
+/** Runs the input on WebAssembly, and comparing, then on TypeScript. A newer run replaces it. */
+function run() {
     clearTimeout(runTimer);
-    const gen = ++generation;
+    currentRun = runGeneration(++generation);
+    return currentRun;
+}
+
+async function runGeneration(gen) {
     const req = request();
     view.request = req;
     view.bench = undefined;
@@ -375,42 +388,78 @@ async function run() {
 
     setRunning(true);
     const wasm = await engines.wasm.run(req);
-    if (wasm === undefined || gen !== generation) return;
+    // A newer run is under way and shows its own result.
+    if (gen !== generation) return;
+    if (wasm === undefined) {
+        // Replaced by a request that is not a newer run. Nothing should do
+        // that (a measurement waits for runs), but never leave the page
+        // saying "Running" for good: run again.
+        schedule(0);
+        return;
+    }
+
     view.wasm = wasm;
     view.shown = { lang: languageNamed(req.lang), name: req.name };
     view.settled = gen;
     view.status = "done";
-    view.ts = state.compare ? "running" : undefined;
+    view.ts = undefined;
     if (wasm.ok) showFiles(wasm.files);
     setRunning(false);
-    render();
-    if (!state.compare) return;
+    if (state.compare) await compare(gen, req);
+    else render();
+}
 
+/** Runs the request whose WebAssembly result is shown on the TypeScript engine too. */
+async function compare(gen, req) {
+    view.ts = "running";
+    render();
     const ts = await engines.ts.run(req);
-    if (ts === undefined || gen !== generation) return;
+    if (ts === undefined || gen !== generation || !state.compare) return;
     view.ts = ts;
     view.settledTs = gen;
+    view.comparisons++;
     render();
 }
 
+/**
+ * Measures warm runs of what the page shows: after the run in progress, if
+ * any, so that the numbers belong to the result on screen. A newer run
+ * cancels the measurement (it replaces `view.bench`).
+ */
 async function measure() {
-    const gen = generation;
-    const req = view.request;
-    if (req === undefined) return;
-    view.bench = "running";
+    const bench = { wasm: "running", ts: undefined };
+    view.bench = bench;
     render();
-    const bench = { warmup: 1, repeat: 5 };
-    const wasm = await engines.wasm.run({ ...req, ...bench });
-    if (wasm === undefined || gen !== generation) return;
-    let ts;
-    if (state.compare) {
-        view.bench = { wasm, ts: "running" };
-        render();
-        ts = await engines.ts.run({ ...req, ...bench });
-        if (ts === undefined || gen !== generation) return;
+    for (let pending = currentRun; ; pending = currentRun) {
+        await pending;
+        if (pending === currentRun) break;
     }
 
-    view.bench = { wasm, ts };
+    const current = () => view.bench === bench;
+    const giveUp = () => {
+        if (current()) {
+            view.bench = undefined;
+            render();
+        }
+    };
+    if (!current()) return;
+    if (view.status !== "done" || !view.wasm?.ok) return giveUp();
+
+    const req = view.request;
+    const repeat = { warmup: 1, repeat: 5 };
+    const wasm = await engines.wasm.run({ ...req, ...repeat });
+    if (!current()) return;
+    if (wasm === undefined || !wasm.ok) return giveUp();
+    bench.wasm = wasm;
+    if (state.compare) {
+        bench.ts = "running";
+        render();
+        const ts = await engines.ts.run({ ...req, ...repeat });
+        if (!current()) return;
+        if (ts === undefined) return giveUp();
+        bench.ts = ts;
+    }
+
     render();
 }
 
@@ -456,6 +505,9 @@ function renderTabs() {
         .join("");
 }
 
+/** What the code pane holds: which result's files, and which of them. */
+let drawn = { files: undefined, tab: -1 };
+
 function renderCode() {
     const result = view.wasm;
     const showError = view.status !== "empty" && result !== undefined && !result.ok;
@@ -472,8 +524,9 @@ function renderCode() {
         els.error.innerHTML = `<p class="error-title">quicktype stopped with an error</p><pre class="error-message">${escapeHtml(result.error.message)}</pre>${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
     }
 
-    if (file !== undefined && els.code.dataset.key !== `${generation}:${view.tab}`) {
-        els.code.dataset.key = `${generation}:${view.tab}`;
+    // Drawn again only for another result (a new files array) or another tab.
+    if (file !== undefined && (drawn.files !== view.files || drawn.tab !== view.tab)) {
+        drawn = { files: view.files, tab: view.tab };
         const html = highlight(file.text, view.shown.lang.names[0]);
         if (html === undefined) els.code.textContent = file.text;
         else els.code.innerHTML = html;
@@ -623,13 +676,13 @@ function renderMeter() {
         return;
     }
 
-    const measured = bench !== undefined && bench !== "running" && bench.wasm !== undefined;
-    const benchTs = measured && bench.ts !== "running" ? bench.ts : undefined;
+    const measured = bench !== undefined && typeof bench.wasm === "object";
+    const benchTs = measured && typeof bench.ts === "object" ? bench.ts : undefined;
     const showTs = state.compare;
     const timeOf = measured ? (r) => median(r.times) : (r) => r.ms;
     const phases = (r) => phasesOf(r, measured);
     const wasmShown = measured ? bench.wasm : wasm;
-    const tsShown = measured ? (bench.ts ?? undefined) : ts;
+    const tsShown = measured ? bench.ts : ts;
     const times = [wasmShown, tsShown].filter((r) => r !== undefined && r !== "running").map(timeOf);
     const scale = Math.max(...times, 0);
     const noteFor = (r) => {
@@ -663,7 +716,7 @@ function renderMeter() {
 
     document.body.dataset.compare = compareState;
 
-    const busy = bench === "running" || (measured && bench.ts === "running");
+    const busy = bench !== undefined && (bench.wasm === "running" || bench.ts === "running");
     const fine = [];
     if (showTs) fine.push("Reading the input is quicktype's TypeScript code on both sides (the lighter part of each bar).");
     if (!measured && (wasm.first || (ts !== undefined && ts !== "running" && ts.first))) {
@@ -778,12 +831,20 @@ function bind() {
     els.compare.addEventListener("change", () => {
         state.compare = els.compare.checked;
         writeHash();
-        if (state.compare) {
-            void engines.ts.start();
-            void run();
-        } else {
+        // A measurement was of the other setting.
+        view.bench = undefined;
+        if (!state.compare) {
             view.ts = undefined;
-            view.bench = undefined;
+            render();
+            return;
+        }
+
+        void engines.ts.start();
+        if (view.settled === generation && view.status === "done") {
+            // The WebAssembly result is current: only the TypeScript side runs.
+            currentRun = compare(generation, view.request);
+        } else {
+            // A run is under way (it compares when it is done) or nothing is shown.
             render();
         }
     });
