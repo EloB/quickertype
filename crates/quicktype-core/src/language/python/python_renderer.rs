@@ -95,13 +95,14 @@ impl PythonOptions {
                 builtin_generics: true,
                 union_operators: false,
             },
-            _ => PythonFeatures {
+            "3.10" => PythonFeatures {
                 type_hints: true,
                 typing_type: true,
                 data_classes: true,
                 builtin_generics: true,
                 union_operators: true,
             },
+            other => return panic(format!("Unknown python-version {other}")),
         };
         Ok(PythonOptions {
             features,
@@ -243,6 +244,7 @@ pub trait PythonRenderer<'a>: ConvenienceRenderer<'a> {
     python_renderer_methods!([declare python_methods]);
 }
 
+// TODO: use array_intercalate
 /// `arrayIntercalate(separator, items)`.
 pub(crate) fn intercalate(separator: &str, items: Vec<Source>) -> Source {
     let mut result = Vec::with_capacity(items.len() * 2);

@@ -18,6 +18,7 @@ use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::snake_case;
+use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{
     NullRemovalSort, is_nullable, nullable_from_union, remove_null_from_union,
@@ -26,7 +27,7 @@ use crate::ty::type_utils::{
 use super::constants::GLOBALS;
 use super::language::{JUST_TYPES, NAMESPACE, STRICTNESS};
 use super::utils::{
-    Strictness, forbidden_for_object_properties, member_name_style, simple_name_style,
+    FORBIDDEN_FOR_OBJECT_PROPERTIES, Strictness, member_name_style, simple_name_style,
     string_escape,
 };
 
@@ -47,9 +48,10 @@ impl RubyOptions {
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
         let strictness = match STRICTNESS.get_enum_value(values)? {
+            "strict" => Strictness::Strict,
             "coercible" => Strictness::Coercible,
             "none" => Strictness::None,
-            _ => Strictness::Strict,
+            other => return panic(format!("Unknown strictness {other}")),
         };
         Ok(RubyOptions {
             just_types,
@@ -460,6 +462,7 @@ impl<'a> RubyRenderer<'a> {
     }
 
     /// `emitBlock(source, emit)`: `source`, the indented body and `end`.
+    /// (`ElixirRenderer` has its own copy, as in TypeScript.)
     fn emit_block(
         &mut self,
         source: impl Into<Source>,
@@ -956,9 +959,9 @@ impl<'a> ConvenienceRenderer<'a> for RubyRenderer<'a> {
         _class_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
         Ok(ForbiddenWordsInfo {
-            names: forbidden_for_object_properties()
-                .into_iter()
-                .map(Into::into)
+            names: FORBIDDEN_FOR_OBJECT_PROPERTIES
+                .iter()
+                .map(|n| n.as_str().into())
                 .collect(),
             include_global_forbidden: true,
         })
@@ -970,9 +973,9 @@ impl<'a> ConvenienceRenderer<'a> for RubyRenderer<'a> {
         _union_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
         Ok(ForbiddenWordsInfo {
-            names: forbidden_for_object_properties()
-                .into_iter()
-                .map(Into::into)
+            names: FORBIDDEN_FOR_OBJECT_PROPERTIES
+                .iter()
+                .map(|n| n.as_str().into())
                 .collect(),
             include_global_forbidden: true,
         })

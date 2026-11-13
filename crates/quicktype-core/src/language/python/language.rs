@@ -7,6 +7,7 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, RendererOptions,
 };
 use crate::support::integer_range::IntegerRange;
+use crate::support::recursion::guard;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
@@ -102,19 +103,23 @@ impl TargetLanguage for PythonTargetLanguage {
     /// TS `needsTransformerForType`: a union if any member needs one,
     /// otherwise stringified integers and booleans.
     fn needs_transformer_for_type(&self, graph: &TypeGraph, t: TypeRef) -> Result<bool> {
-        let ty = graph.type_at(t)?;
-        if ty.is_union() {
-            for &member in ty.members()? {
-                if self.needs_transformer_for_type(graph, member)? {
-                    return Ok(true);
+        // Recurses into union members; guarded like every recursion over
+        // the type graph (docs/RENDERERS.md).
+        guard(|| {
+            let ty = graph.type_at(t)?;
+            if ty.is_union() {
+                for &member in ty.members()? {
+                    if self.needs_transformer_for_type(graph, member)? {
+                        return Ok(true);
+                    }
                 }
+                return Ok(false);
             }
-            return Ok(false);
-        }
-        Ok(matches!(
-            ty.kind(),
-            TypeKind::IntegerString | TypeKind::BoolString
-        ))
+            Ok(matches!(
+                ty.kind(),
+                TypeKind::IntegerString | TypeKind::BoolString
+            ))
+        })
     }
 
     // End of inference hooks.

@@ -61,11 +61,6 @@ impl std::fmt::Debug for ElixirRenderer<'_> {
     }
 }
 
-/// `${n}` of a JavaScript number.
-fn js_number(n: f64) -> String {
-    number::to_string(n)
-}
-
 /// `json\n|> Jason.decode!()\n|> from_map()`, indented with tabs in the
 /// TypeScript template.
 const FROM_JSON_BODY: &str = "json\n\t\t\t|> Jason.decode!()\n\t\t\t|> from_map()";
@@ -208,8 +203,14 @@ impl<'a> ElixirRenderer<'a> {
             min_max_value_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
         let range_guard = format!(
             "{}{}",
-            min_value.map_or(String::new(), |v| format!(" and value >= {}", js_number(v))),
-            max_value.map_or(String::new(), |v| format!(" and value <= {}", js_number(v))),
+            min_value.map_or(String::new(), |v| format!(
+                " and value >= {}",
+                number::to_string(v)
+            )),
+            max_value.map_or(String::new(), |v| format!(
+                " and value <= {}",
+                number::to_string(v)
+            )),
         );
         let items_guard = |t: TypeRef| -> Result<String> {
             let (min, max) = min_max_items_for_type(graph, t)?.map_or((None, None), |c| (c.0, c.1));
@@ -217,11 +218,11 @@ impl<'a> ElixirRenderer<'a> {
                 "{}{}",
                 min.map_or(String::new(), |v| format!(
                     " and length(value) >= {}",
-                    js_number(v)
+                    number::to_string(v)
                 )),
                 max.map_or(String::new(), |v| format!(
                     " and length(value) <= {}",
-                    js_number(v)
+                    number::to_string(v)
                 )),
             ))
         };
@@ -231,10 +232,10 @@ impl<'a> ElixirRenderer<'a> {
         let length = "length(String.codepoints(value))";
         let mut constraints: Vec<String> = Vec::new();
         if let Some(min_length) = min_length {
-            constraints.push(format!("{length} >= {}", js_number(min_length)));
+            constraints.push(format!("{length} >= {}", number::to_string(min_length)));
         }
         if let Some(max_length) = max_length {
-            constraints.push(format!("{length} <= {}", js_number(max_length)));
+            constraints.push(format!("{length} <= {}", number::to_string(max_length)));
         }
         if let Some(pattern) = &pattern {
             constraints.push(format!(
@@ -343,9 +344,8 @@ impl<'a> ElixirRenderer<'a> {
             TypeKind::String => encode("(value) when is_binary(value), do: value"),
             TypeKind::Array => encode("(value) when is_list(value), do: value"),
             TypeKind::Class => {
-                // The required properties are collected but unused, as in
-                // TypeScript.
-                self.for_each_class_property(t, BlankLinePosition::None, |_, _, _, _, _| Ok(()))?;
+                // TypeScript collects the required properties here but never
+                // uses them.
                 let struct_pattern = if self.defined_classes.contains(&t) {
                     sl!["%", self.name_for_named_type_with_namespace(t)?, "{}"]
                 } else {
@@ -815,6 +815,7 @@ impl<'a> ElixirRenderer<'a> {
     }
 
     /// `emitBlock(source, emit)`: `source`, the indented body and `end`.
+    /// (`RubyRenderer` has its own copy, as in TypeScript.)
     fn emit_block(
         &mut self,
         source: impl Into<Source>,

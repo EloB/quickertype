@@ -2,6 +2,9 @@
 //!
 //! Elixir identifier styling (on code points, with the `unicode-properties`
 //! categories) and string escaping.
+//!
+//! The escaping and naming helpers are copies of `Ruby/utils.ts`'s in the
+//! TypeScript, so they duplicate `ruby::utils` here too.
 
 use quicktype_js_compat::unicode::{self, GeneralCategory};
 

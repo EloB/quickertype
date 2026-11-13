@@ -2,6 +2,11 @@
 //!
 //! Ruby identifier styling (on code points, with the `unicode-properties`
 //! categories), string escaping and the names properties may not take.
+//!
+//! `Elixir/utils.ts` has its own copies of the escaping and naming helpers,
+//! so `elixir::utils` duplicates them as the TypeScript does.
+
+use std::sync::LazyLock;
 
 use indexmap::IndexSet;
 use quicktype_js_compat::unicode::{self, GeneralCategory};
@@ -37,8 +42,9 @@ impl Strictness {
 }
 
 /// `forbiddenForObjectProperties`: the keywords, the reserved properties
-/// and `_1` to `_9`, without duplicates.
-pub fn forbidden_for_object_properties() -> Vec<String> {
+/// and `_1` to `_9`, without duplicates (built once, like the module-level
+/// TypeScript constant).
+pub static FORBIDDEN_FOR_OBJECT_PROPERTIES: LazyLock<Vec<String>> = LazyLock::new(|| {
     let names: IndexSet<String> = KEYWORDS
         .iter()
         .chain(RESERVED_PROPERTIES.iter())
@@ -46,7 +52,7 @@ pub fn forbidden_for_object_properties() -> Vec<String> {
         .chain((1..=9).map(|i| format!("_{i}")))
         .collect();
     names.into_iter().collect()
-}
+});
 
 /// `unicodeEscape(codePoint)`: `\u{X}` with as many hex digits as needed.
 fn unicode_escape(code_point: u32) -> String {

@@ -17,7 +17,6 @@ use crate::attributes::constraints::{
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, TOP_LEVEL_NAME_ORDER};
 use crate::source::{MultiWord, multi_word, paren_if_needed, single_word};
-use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
@@ -1063,50 +1062,7 @@ impl<'a> JsonPythonRenderer<'a> {
         Ok(())
     }
 
-    /// `emitDefaultLeadingComments()`: the usage comment. (Never called in
-    /// TypeScript either.)
-    #[allow(dead_code)]
-    fn emit_default_leading_comments(&mut self) -> Result<()> {
-        self.ensure_blank_line();
-        let options = CommentOptions::default();
-        if self.have_dateutil {
-            let lines: Vec<Source> = [
-                "This code parses date/times, so please",
-                "",
-                "    pip install python-dateutil",
-                "",
-            ]
-            .into_iter()
-            .map(Source::from)
-            .collect();
-            self.emit_comment_lines(&lines, &options)?;
-        }
-
-        let lines: Vec<Source> = [
-            "To use this code, make sure you",
-            "",
-            "    import json",
-            "",
-            "and then, to convert JSON from a string, do",
-            "",
-        ]
-        .into_iter()
-        .map(Source::from)
-        .collect();
-        self.emit_comment_lines(&lines, &options)?;
-        self.for_each_top_level(BlankLinePosition::None, |r, _, name, _| {
-            let names = *defined(r.top_level_converter_names.get(&name))?;
-            let start = r.comment_line_start();
-            r.emit_line_parts(vec![
-                start.into(),
-                "    result = ".into(),
-                names.from_dict.into(),
-                "(json.loads(json_string))".into(),
-            ]);
-            Ok(())
-        })?;
-        Ok(())
-    }
+    // `emitDefaultLeadingComments()` is not ported: TypeScript never calls it.
 }
 
 /// The methods TS `JSONPythonRenderer` overrides on top of

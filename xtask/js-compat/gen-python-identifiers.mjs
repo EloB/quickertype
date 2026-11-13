@@ -8,17 +8,28 @@
 //
 // Both predicates normalize the unit with JavaScript's
 // `String.prototype.normalize("NFKC")` (the ICU data of the running Node,
-// which must be the one the golden corpus was recorded with) and classify the
+// which must be the Node version tests/golden/REFERENCE records) and classify the
 // result with the npm package `unicode-properties` 1.4.1, exactly as
 // quicktype-core resolves it. Rust has neither, so the port looks the answers
 // up in this table. The functions below are copies of the TypeScript ones.
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+// NFKC follows the running Node's ICU data: only the reference's Node gives
+// the reference's answers.
+const reference = readFileSync(join(repoRoot, "tests/golden/REFERENCE"), "utf8");
+const referenceNode = /^node=(.*)$/m.exec(reference)?.[1]?.trim();
+if (referenceNode === undefined) {
+    throw new Error("tests/golden/REFERENCE records no node= version");
+}
+if (process.version !== referenceNode) {
+    throw new Error(`run with Node ${referenceNode} (tests/golden/REFERENCE), not ${process.version}`);
+}
 const quicktypeDir = resolve(
     process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"),
 );
