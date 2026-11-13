@@ -49,6 +49,18 @@ use quicktype_core::ty::type_utils::{
 };
 use quicktype_core::unify_classes::{unify_types, union_builder_for_unification};
 
+use quicktype_core::attributes::constraints::{min_max_length_for_type, min_max_value_for_type};
+use quicktype_core::make_transformations::make_transformations;
+use quicktype_core::rewrites::combine_classes::combine_classes;
+use quicktype_core::rewrites::expand_strings::{EnumInference, expand_strings};
+use quicktype_core::rewrites::flatten_strings::flatten_strings;
+use quicktype_core::rewrites::flatten_unions::flatten_unions;
+use quicktype_core::rewrites::infer_maps::infer_maps;
+use quicktype_core::rewrites::replace_object_type::replace_object_type;
+use quicktype_core::rewrites::resolve_intersections::resolve_intersections;
+use quicktype_core::transformers::{downcast_transformation, transformation_for_type};
+use quicktype_core::ty::type_utils::nullable_from_union;
+
 fn err(message: impl Into<String>) -> QuickTypeError {
     QuickTypeError::internal(message)
 }
@@ -62,10 +74,96 @@ fn parse_min_max(v: &str) -> MinMaxConstraint {
     MinMaxConstraint(parse_number(lo), parse_number(hi))
 }
 
+/// `needTransformerForType` of the C# renderer (`language/CSharp/utils.ts`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CSharpNeed {
+    Automatic,
+    Manual,
+    Nullable,
+    None,
+}
+
+fn csharp_need_transformer_for_type(graph: &TypeGraph, t: TypeRef) -> Result<CSharpNeed> {
+    let ty = graph.type_at(t)?;
+    Ok(match ty.kind() {
+        TypeKind::Union => match nullable_from_union(graph, t)? {
+            None => CSharpNeed::Automatic,
+            Some(n) => {
+                if csharp_need_transformer_for_type(graph, n)? == CSharpNeed::Manual {
+                    CSharpNeed::Nullable
+                } else {
+                    CSharpNeed::None
+                }
+            }
+        },
+        TypeKind::Array => match csharp_need_transformer_for_type(graph, ty.items()?)? {
+            CSharpNeed::Manual | CSharpNeed::Nullable => CSharpNeed::Automatic,
+            _ => CSharpNeed::None,
+        },
+        TypeKind::Enum => CSharpNeed::Automatic,
+        TypeKind::Double | TypeKind::Integer => {
+            if min_max_value_for_type(graph, t)?.is_some() {
+                CSharpNeed::Manual
+            } else {
+                CSharpNeed::None
+            }
+        }
+        TypeKind::IntegerString | TypeKind::BoolString => CSharpNeed::Manual,
+        TypeKind::String => {
+            if min_max_length_for_type(graph, t)?.is_some() {
+                CSharpNeed::Manual
+            } else {
+                CSharpNeed::None
+            }
+        }
+        _ => CSharpNeed::None,
+    })
+}
+
+/// `PythonTargetLanguage.needsTransformerForType`.
+fn python_needs_transformer_for_type(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
+    let ty = graph.type_at(t)?;
+    if ty.is_union() {
+        for &m in ty.members()? {
+            if python_needs_transformer_for_type(graph, m)? {
+                return Ok(true);
+            }
+        }
+        return Ok(false);
+    }
+    Ok(matches!(
+        ty.kind(),
+        TypeKind::IntegerString | TypeKind::BoolString
+    ))
+}
+
+/// The `stm=` flag: `none` (every transformed kind to itself, the
+/// default), `string` (empty mapping) or a list of `kind[:mapped]`.
+fn parse_string_type_mapping(args: &[&str]) -> Result<StringTypeMapping> {
+    let Some(spec) = args.iter().find_map(|a| a.strip_prefix("stm=")) else {
+        return Ok(get_no_string_type_mapping());
+    };
+    match spec {
+        "none" => Ok(get_no_string_type_mapping()),
+        "string" => Ok(StringTypeMapping::new()),
+        _ => {
+            let mut mapping = StringTypeMapping::new();
+            for entry in spec.split(',') {
+                let (k, v) = entry.split_once(':').unwrap_or((entry, entry));
+                let k = TypeKind::from_str(k).ok_or_else(|| err(format!("bad kind {k}")))?;
+                let v = TypeKind::from_str(v).ok_or_else(|| err(format!("bad kind {v}")))?;
+                mapping.set(k, v);
+            }
+            Ok(mapping)
+        }
+    }
+}
+
 struct Interpreter {
     vars: HashMap<String, TypeRef>,
     builder: Option<TypeBuilder<'static>>,
     graph: Option<TypeGraph>,
+    stm: StringTypeMapping,
     out: Rc<RefCell<Vec<String>>>,
 }
 
@@ -178,13 +276,9 @@ impl Interpreter {
         };
         match cmd {
             "builder" => {
-                let stm = if flag("stm=string") {
-                    StringTypeMapping::new()
-                } else {
-                    get_no_string_type_mapping()
-                };
+                self.stm = parse_string_type_mapping(args)?;
                 self.builder = Some(TypeBuilder::new(
-                    stm,
+                    self.stm.clone(),
                     flag("alpha"),
                     flag("allopt"),
                     flag("prov"),
@@ -207,15 +301,30 @@ impl Interpreter {
                 let st = if spec == "unrestricted" {
                     StringTypes::unrestricted()
                 } else {
-                    let cases: IndexMap<String, u64> = spec
-                        .trim_start_matches("cases=")
-                        .split(',')
-                        .map(|c| {
-                            let (k, n) = c.split_once(':').unwrap_or((c, "1"));
-                            (k.to_owned(), n.parse().unwrap_or(1))
-                        })
-                        .collect();
-                    StringTypes::new(Some(cases), IndexSet::new())?
+                    let spec = spec.trim_start_matches("cases=");
+                    let (cases_spec, kinds_spec) = match spec.split_once('/') {
+                        Some((c, k)) => (c, Some(k)),
+                        None => (spec, None),
+                    };
+                    let cases: IndexMap<String, u64> = if cases_spec.is_empty() {
+                        IndexMap::new()
+                    } else {
+                        cases_spec
+                            .split(',')
+                            .map(|c| {
+                                let (k, n) = c.split_once(':').unwrap_or((c, "1"));
+                                (k.to_owned(), n.parse().unwrap_or(1))
+                            })
+                            .collect()
+                    };
+                    let kinds: IndexSet<TypeKind> = match kinds_spec {
+                        None => IndexSet::new(),
+                        Some(list) => list
+                            .split(',')
+                            .map(|k| TypeKind::from_str(k).ok_or_else(|| err("bad kind")))
+                            .collect::<Result<_>>()?,
+                    };
+                    StringTypes::new(Some(cases), kinds)?
                 };
                 let r = self.builder()?.get_string_type(a, Some(st), fwd)?;
                 self.vars.insert(arg(0)?.to_owned(), r);
@@ -421,6 +530,108 @@ impl Interpreter {
                 )?;
                 self.set_graph(g, "remap");
             }
+            "flatten" => {
+                let (g, done) = flatten_unions(
+                    self.graph()?,
+                    &self.stm,
+                    flag("conflate"),
+                    flag("objects"),
+                    debug,
+                )?;
+                self.set_graph(g, "flatten");
+                self.out
+                    .borrow_mut()
+                    .push(format!("(flatten done: {done})"));
+            }
+            "resolve" => {
+                let (g, done) = resolve_intersections(self.graph()?, &self.stm, debug)?;
+                self.set_graph(g, "resolve");
+                self.out
+                    .borrow_mut()
+                    .push(format!("(resolve done: {done})"));
+            }
+            "replaceobj" => {
+                let g = replace_object_type(self.graph()?, &self.stm, false, flag("full"), debug)?;
+                self.set_graph(g, "replaceobj");
+            }
+            "combine" => {
+                let g = combine_classes(
+                    self.graph()?,
+                    &self.stm,
+                    flag("alpha"),
+                    flag("conflate"),
+                    flag("same"),
+                    debug,
+                )?;
+                self.set_graph(g, "combine");
+            }
+            "infermaps" => {
+                let g = infer_maps(self.graph()?, &self.stm, flag("conflate"), debug)?;
+                self.set_graph(g, "infermaps");
+            }
+            "expand" => {
+                let inference = match arg(0)? {
+                    "all" => EnumInference::All,
+                    "infer" => EnumInference::Infer,
+                    "none" => EnumInference::None,
+                    other => return Err(err(format!("bad enum inference {other}"))),
+                };
+                let g = expand_strings(self.graph()?, &self.stm, debug, inference)?;
+                self.set_graph(g, "expand");
+            }
+            "flattenstrings" => {
+                let g = flatten_strings(self.graph()?, &self.stm, debug)?;
+                self.set_graph(g, "flattenstrings");
+            }
+            "maketx" => {
+                let language = arg(0)?;
+                let kinds: Vec<TypeKind> = match language.strip_prefix("kinds=") {
+                    Some(list) => list
+                        .split(',')
+                        .map(|k| TypeKind::from_str(k).ok_or_else(|| err(format!("bad kind {k}"))))
+                        .collect::<Result<_>>()?,
+                    None => Vec::new(),
+                };
+                let needs = |graph: &TypeGraph, t: TypeRef| -> Result<bool> {
+                    match language {
+                        "csharp" => Ok(!matches!(
+                            csharp_need_transformer_for_type(graph, t)?,
+                            CSharpNeed::None | CSharpNeed::Nullable
+                        )),
+                        "python" => python_needs_transformer_for_type(graph, t),
+                        _ if language.starts_with("kinds=") => Ok(kinds.contains(&graph.kind(t)?)),
+                        _ => Err(err(format!("unknown language {language}"))),
+                    }
+                };
+                let g =
+                    make_transformations(self.graph()?, &self.stm, &needs, debug, flag("debugtx"))?;
+                self.set_graph(g, "maketx");
+            }
+            "xf" => {
+                let graph = self.graph()?;
+                let i: usize = arg(0)?.parse().map_err(|_| err("bad index"))?;
+                let t = graph
+                    .all_types_unordered()
+                    .nth(i)
+                    .ok_or_else(|| err("index out of range"))?;
+                let attribute = transformation_for_type(graph, t)?;
+                let Some(xf) = attribute.as_deref().and_then(downcast_transformation) else {
+                    self.out.borrow_mut().push(format!("xf {i}: none"));
+                    return Ok(());
+                };
+                self.out.borrow_mut().push(format!("xf {i}:"));
+                xf.debug_print(graph)?;
+                let reverse = xf.reverse(graph)?;
+                self.out.borrow_mut().push("reverse:".to_owned());
+                reverse.debug_print(graph)?;
+                self.out.borrow_mut().push(format!(
+                    "canFail {} nodes {} reverse canFail {} nodes {}",
+                    xf.transformer().can_fail(),
+                    xf.transformer().get_number_of_nodes(),
+                    reverse.transformer().can_fail(),
+                    reverse.transformer().get_number_of_nodes()
+                ));
+            }
             "query" => {
                 let result = self.query(args)?;
                 self.out
@@ -502,6 +713,13 @@ impl Interpreter {
                 let null_text = null_type.map_or_else(|| "-".to_owned(), |t| t.index().to_string());
                 format!("{null_text} | {}", indexes(&mut rest.into_iter()))
             }
+            "cases" => graph
+                .type_at(at(arg(1)?)?)?
+                .cases()?
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(","),
             "reachable" => directly_reachable_single_named_type(graph, at(arg(1)?)?)?
                 .map_or_else(|| "-".to_owned(), |t| t.index().to_string()),
             other => return Err(err(format!("unknown query {other}"))),
@@ -520,6 +738,7 @@ fn run_scenario(text: &str) -> String {
         vars: HashMap::new(),
         builder: None,
         graph: None,
+        stm: get_no_string_type_mapping(),
         out: Rc::clone(&out),
     };
     for raw_line in text.lines() {

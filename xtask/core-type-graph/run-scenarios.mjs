@@ -10,11 +10,15 @@
 // Scenario language (one command per line, `#` starts a comment, tokens are
 // separated by spaces). Variables name type refs of the builder.
 //
-//   builder [prov] [alpha] [allopt] [stm=none|string]  new TypeBuilder; stm=none (the default)
-//                                         maps every transformed kind to itself, stm=string to string
+//   builder [prov] [alpha] [allopt] [stm=none|string|K[:V],...]  new TypeBuilder; stm=none (the
+//                                         default) maps every transformed kind to itself, stm=string
+//                                         to string, a list maps each K to V (or itself), others to
+//                                         string. The passes below use the same mapping.
 //   reserve V                             V = reserveTypeRef()
 //   prim V kind ATTRS                     getPrimitiveType(kind, attrs, fwd)
-//   str V unrestricted|cases=a:1,b:2 ATTRS getStringType(attrs, stringTypes, fwd)
+//   str V unrestricted|cases=a:1,b:2[/K,K] ATTRS
+//                                         getStringType(attrs, stringTypes, fwd); the cases may
+//                                         be empty, `/K,K` adds transformed string kinds
 //   enum V a,b,c ATTRS                    getEnumType(attrs, cases, fwd)
 //   arr V ITEMS ATTRS / uarr V ATTRS      getArrayType / getUniqueArrayType
 //   items V ITEMS                         setArrayItems
@@ -37,11 +41,25 @@
 //                                         graph, `1,2;3,4`) is replaced by unifyTypes of its
 //                                         types, like CombineClasses
 //   remap 3>1,4>2 [debug]                 remap
+//   flatten [conflate] [objects] [debug]  flattenUnions; prints whether it is done
+//   resolve [debug]                       resolveIntersections; prints whether it is done
+//   replaceobj [full] [debug]             replaceObjectType (full: leaveFullObjects)
+//   combine [alpha] [conflate] [same] [debug]
+//                                         combineClasses (same: onlyWithSameProperties)
+//   infermaps [conflate] [debug]          inferMaps
+//   expand all|infer|none [debug]         expandStrings
+//   flattenstrings [debug]                flattenStrings
+//   maketx csharp|python|kinds=K,K [debugtx] [debug]
+//                                         makeTransformations with C#'s or Python's
+//                                         needsTransformerForType, or one that is true for the
+//                                         given kinds; debugtx prints the transformations
+//   xf I                                  prints type I's transformation, its reverse, and
+//                                         their canFail and node counts
 //   query WHAT ARGS                       prints a helper's result for types of the current
 //                                         graph (by index): recmembers I,J [union|intersect],
 //                                         groups I,J,K, compatible I J [conflate],
 //                                         canonical I, nullable I, named, parents I,
-//                                         nonnull I, reachable I
+//                                         nonnull I, reachable I, cases I (enum cases)
 //
 // PROPS = name:V,name?:V (optional with ?), MEMBERS = V,V (`-` for none). ATTRS are any of
 // n=Name (given name), in=Name (inferred name), sing=Name (given name,
@@ -87,6 +105,16 @@ const {
     directlyReachableSingleNamedType,
 } = load("Type/TypeUtils.js");
 const { unifyTypes, unionBuilderForUnification } = load("UnifyClasses.js");
+const { flattenUnions } = load("rewrites/FlattenUnions.js");
+const { resolveIntersections } = load("rewrites/ResolveIntersections.js");
+const { replaceObjectType } = load("rewrites/ReplaceObjectType.js");
+const { combineClasses } = load("rewrites/CombineClasses.js");
+const { inferMaps } = load("rewrites/InferMaps.js");
+const { expandStrings } = load("rewrites/ExpandStrings.js");
+const { flattenStrings } = load("rewrites/FlattenStrings.js");
+const { makeTransformations } = load("MakeTransformations.js");
+const { transformationForType } = load("Transformers.js");
+const { languageNamed } = load("language/All.js");
 
 const scenarioDir = join(
     dirname(fileURLToPath(import.meta.url)),
@@ -218,6 +246,8 @@ function query(graph, args) {
             const [nullType, rest] = removeNullFromUnion(at(args[1]), true);
             return `${nullType === null ? "-" : nullType.index} | ${indexes(rest)}`;
         }
+        case "cases":
+            return Array.from(at(args[1]).cases).join(",");
         case "reachable": {
             const t = directlyReachableSingleNamedType(at(args[1]));
             return t === undefined ? "-" : String(t.index);
@@ -225,6 +255,39 @@ function query(graph, args) {
         default:
             throw new Error(`unknown query ${args[0]}`);
     }
+}
+
+function parseStringTypeMapping(flags) {
+    const spec = Array.from(flags).find((f) => f.startsWith("stm="));
+    if (spec === undefined || spec === "stm=none") return getNoStringTypeMapping();
+    if (spec === "stm=string") return new Map();
+    return new Map(
+        spec
+            .slice("stm=".length)
+            .split(",")
+            .map((e) => {
+                const [k, v] = e.split(":");
+                return [k, v ?? k];
+            }),
+    );
+}
+
+function targetLanguageFor(spec) {
+    if (spec === "csharp" || spec === "python") return languageNamed(spec);
+    if (spec.startsWith("kinds=")) {
+        const kinds = new Set(spec.slice("kinds=".length).split(","));
+        return { needsTransformerForType: (t) => kinds.has(t.kind) };
+    }
+    throw new Error(`unknown language ${spec}`);
+}
+
+function runContext(stm, flags) {
+    return {
+        stringTypeMapping: stm,
+        debugPrintReconstitution: flags.has("debug"),
+        debugPrintTransformations: flags.has("debugtx"),
+        time: (_name, f) => f(),
+    };
 }
 
 function runScenario(text) {
@@ -236,6 +299,7 @@ function runScenario(text) {
         const vars = new Map();
         let builder;
         let graph;
+        let stm = getNoStringTypeMapping();
         for (const rawLine of text.split("\n")) {
             const line = rawLine.replace(/#.*$/, "").trim();
             if (line === "") continue;
@@ -248,7 +312,7 @@ function runScenario(text) {
             };
             switch (cmd) {
                 case "builder": {
-                    const stm = flags.has("stm=string") ? new Map() : getNoStringTypeMapping();
+                    stm = parseStringTypeMapping(flags);
                     const prov = flags.has("prov");
                     builder = new TypeBuilder(stm, flags.has("alpha"), flags.has("allopt"), prov, false);
                     builder.typeGraph = new TypeGraph(builder, 0, prov);
@@ -267,16 +331,17 @@ function runScenario(text) {
                     let st;
                     if (args[1] === "unrestricted") st = StringTypes.unrestricted;
                     else {
+                        const [casesSpec, kindsSpec] = args[1].slice("cases=".length).split("/");
                         const cases = new Map(
-                            args[1]
-                                .slice("cases=".length)
-                                .split(",")
-                                .map((c) => {
-                                    const [k, n] = c.split(":");
-                                    return [k, Number(n)];
-                                }),
+                            casesSpec === ""
+                                ? []
+                                : casesSpec.split(",").map((c) => {
+                                      const [k, n] = c.split(":");
+                                      return [k, Number(n)];
+                                  }),
                         );
-                        st = new StringTypes(cases, new Set());
+                        const kinds = kindsSpec === undefined ? [] : kindsSpec.split(",");
+                        st = new StringTypes(cases, new Set(kinds));
                     }
                     vars.set(args[0], builder.getStringType(a, st, fwd));
                     break;
@@ -418,6 +483,73 @@ function runScenario(text) {
                         }),
                     );
                     set(graph.remap("remap", getNoStringTypeMapping(), false, map, debug), "remap");
+                    break;
+                }
+                case "flatten": {
+                    const [g, done] = flattenUnions(
+                        graph,
+                        stm,
+                        flags.has("conflate"),
+                        flags.has("objects"),
+                        debug,
+                    );
+                    set(g, "flatten");
+                    out.push(`(flatten done: ${done})`);
+                    break;
+                }
+                case "resolve": {
+                    const [g, done] = resolveIntersections(graph, stm, debug);
+                    set(g, "resolve");
+                    out.push(`(resolve done: ${done})`);
+                    break;
+                }
+                case "replaceobj":
+                    set(replaceObjectType(graph, stm, false, flags.has("full"), debug), "replaceobj");
+                    break;
+                case "combine":
+                    set(
+                        combineClasses(
+                            runContext(stm, flags),
+                            graph,
+                            flags.has("alpha"),
+                            flags.has("conflate"),
+                            flags.has("same"),
+                            debug,
+                        ),
+                        "combine",
+                    );
+                    break;
+                case "infermaps":
+                    set(inferMaps(graph, stm, flags.has("conflate"), debug), "infermaps");
+                    break;
+                case "expand":
+                    set(expandStrings(runContext(stm, flags), graph, args[0]), "expand");
+                    break;
+                case "flattenstrings":
+                    set(flattenStrings(graph, stm, debug), "flattenstrings");
+                    break;
+                case "maketx":
+                    set(
+                        makeTransformations(runContext(stm, flags), graph, targetLanguageFor(args[0])),
+                        "maketx",
+                    );
+                    break;
+                case "xf": {
+                    const t = Array.from(graph.allTypesUnordered())[Number(args[0])];
+                    const xf = transformationForType(t);
+                    if (xf === undefined) {
+                        out.push(`xf ${args[0]}: none`);
+                        break;
+                    }
+                    out.push(`xf ${args[0]}:`);
+                    xf.debugPrint();
+                    const reverse = xf.reverse;
+                    out.push("reverse:");
+                    reverse.debugPrint();
+                    out.push(
+                        `canFail ${xf.transformer.canFail} nodes ${xf.transformer.getNumberOfNodes()}` +
+                            ` reverse canFail ${reverse.transformer.canFail} nodes ${reverse.transformer.getNumberOfNodes()}`,
+                    );
                     break;
                 }
                 case "query":
