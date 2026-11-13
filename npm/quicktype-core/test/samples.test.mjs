@@ -564,3 +564,32 @@ test("the engine drops the samples of inputs that are gone", () => {
     const out = execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" });
     assert.deepEqual(JSON.parse(out), [30, 3, 2]);
 });
+
+// ---- Memory and limits (the second code review) ------------------------------
+
+// Running out of memory in the middle of a read traps the instance. The
+// other inputs' tables are then taken from its memory, which only works
+// if the read held no borrow of the engine's table of inputs (a borrow
+// that a trap never releases).
+test("an instance that traps while it reads a sample still gives the other inputs' tables", async () => {
+    const old = nativeSamples.setKeptTexts(0);
+    try {
+        const bSamples = ['{"b": [1, {"c": "x"}]}', "[2]"];
+        const expectedA = await inMode("ts", async () => inside(await addAll("rust", plainGroups)));
+        const expectedB = await inMode("ts", async () => inside(await addAll("rust", [["B", bSamples]])));
+        const a = await addAll("rust", plainGroups);
+        const glue = engine.engineSync();
+        glue.jsonRead = (id, text) => glue.__jsonReadTrapForTests(id, text);
+        const before = { ...engineStats };
+        const b = await addAll("rust", [["B", bSamples]]);
+        assert.ok(engine.isDiscarded(glue));
+        assert.match(engineStats.lastFailure, /RuntimeError|unreachable/);
+        assert.equal(engineStats.samplesRead, before.samplesRead);
+        // A's samples were not kept: its tables come from the failed
+        // instance's memory.
+        assert.deepEqual(inside(a), expectedA);
+        assert.deepEqual(inside(b), expectedB);
+    } finally {
+        nativeSamples.setKeptTexts(old);
+    }
+});

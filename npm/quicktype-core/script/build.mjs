@@ -134,6 +134,7 @@ const glueExports = [
     "__pendingRuns",
     "__jsonCount",
     "__jsonLeases",
+    "__jsonReadTrapForTests",
     "__memoryGrowths",
     "__memoryPages",
     "__heapBytes",

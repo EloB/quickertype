@@ -41,6 +41,7 @@ export interface WasmGlue {
     jsonRelease(lease: number): void;
     __jsonCount(): number;
     __jsonLeases(): number;
+    __jsonReadTrapForTests(id: number, text: string): number;
     __memoryGrowths(): number;
     __memoryPages(): number;
     __heapBytes(): number;

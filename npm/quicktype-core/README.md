@@ -166,7 +166,10 @@ while an input's add up to at most 4 Mi code units: if an instance fails,
 those are read again by TypeScript the next time anything needs the
 tables, and a larger input's tables are taken from the failed instance's
 memory, which a panic, running out of memory or a stack overflow leaves
-readable (should even that fail, every use of the tables throws). A run
+readable (should even that fail, every use of the tables throws). No read
+holds the engine's table of inputs while it reads, so an instance that
+runs out of memory in the middle of a sample still has every other
+input's tables; the input it was reading has only its kept samples. A run
 whose samples were read by another instance than the one it would run on
 goes to the TypeScript engine. Hosts without `FinalizationRegistry` read
 every sample with TypeScript.

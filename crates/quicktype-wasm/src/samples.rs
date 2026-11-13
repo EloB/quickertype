@@ -21,6 +21,12 @@
 //! may drop it ([`json_drop`]), and its id is never reused for another
 //! (see [`crate::slots`]). While a run holds a compressed form, no sample
 //! is added to it.
+//!
+//! No borrow of the tables here spans a read: [`json_read`] takes the
+//! compressed form out for it. Should the instance trap during a read (run
+//! out of memory), the other inputs' tables can still be exported from its
+//! memory ([`json_export`]), which is how the facade recovers them; the
+//! input being read is lost with the read.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -59,7 +65,9 @@ pub const DECLINED: i32 = -1;
 
 /// A JavaScript `CompressedJSON`'s samples.
 struct Samples {
-    cjson: Rc<CompressedJson>,
+    /// `None` while [`json_read`] reads a sample into it (and for good if
+    /// the instance trapped meanwhile).
+    cjson: Option<Rc<CompressedJson>>,
     /// The tables after the last sample [`json_read`] returned a value for:
     /// what the JavaScript tables are. A sample it declined after reading
     /// it (a string root) may have added to the compressed form.
@@ -97,7 +105,7 @@ pub fn json_create(
         _ => None,
     };
     let samples = Samples {
-        cjson: Rc::new(CompressedJson::new(recognizer, handle_refs, range)),
+        cjson: Some(Rc::new(CompressedJson::new(recognizer, handle_refs, range))),
         committed: TableCounts::default(),
         closed: false,
     };
@@ -111,37 +119,70 @@ pub fn json_create(
 /// [`DECLINED`].
 #[wasm_bindgen(js_name = jsonRead)]
 pub fn json_read(id: f64, text: &str) -> i32 {
+    read_with(id, |cjson| cjson.read_string_sample(text, LIMITS))
+}
+
+/// [`json_read`] with `read` reading the sample. The compressed form is
+/// taken out of [`SAMPLES`] for the read, so that no borrow spans it.
+fn read_with(
+    id: f64,
+    read: impl FnOnce(&mut CompressedJson) -> Result<Value, ReadStringError>,
+) -> i32 {
+    let taken = SAMPLES.with(|all| {
+        let mut all = all.borrow_mut();
+        let samples = all.get_mut(id)?;
+        // In use by a run (which keeps the samples it was encoded with).
+        if samples.closed || Rc::get_mut(samples.cjson.as_mut()?).is_none() {
+            return None;
+        }
+        samples.cjson.take()
+    });
+    let Some(mut held) = taken else {
+        return DECLINED;
+    };
+    let Some(cjson) = Rc::get_mut(&mut held) else {
+        return DECLINED;
+    };
+    // Whether the compressed form went past what TypeScript's tables
+    // would be (see `Samples::closed`).
+    let (result, closed) = match read(cjson) {
+        Ok(value) => match root_value(cjson, value) {
+            Some(root) => (root, false),
+            // A string root.
+            None => (DECLINED, true),
+        },
+        // Nothing was committed.
+        Err(ReadStringError::Parse(ParseError::Js(_))) => (INVALID, false),
+        Err(ReadStringError::Declined(_)) => (DECLINED, false),
+        // The commit failed part way.
+        Err(ReadStringError::Parse(_)) => (DECLINED, true),
+    };
+    let counts = cjson.table_counts();
     SAMPLES.with(|all| {
+        // Still there: no JavaScript ran during the read.
         let mut all = all.borrow_mut();
         let Some(samples) = all.get_mut(id) else {
-            return DECLINED;
+            return;
         };
-        if samples.closed {
-            return DECLINED;
+        if result > 0 {
+            samples.committed = counts;
         }
-        // In use by a run (which keeps the samples it was encoded with).
-        let Some(cjson) = Rc::get_mut(&mut samples.cjson) else {
-            return DECLINED;
-        };
-        match cjson.read_string_sample(text, LIMITS) {
-            Ok(value) => match root_value(cjson, value) {
-                Some(root) => {
-                    samples.committed = cjson.table_counts();
-                    root
-                }
-                None => {
-                    samples.closed = true;
-                    DECLINED
-                }
-            },
-            Err(ReadStringError::Parse(ParseError::Js(_))) => INVALID,
-            Err(ReadStringError::Declined(_)) => DECLINED,
-            Err(ReadStringError::Parse(_)) => {
-                // The commit failed part way.
-                samples.closed = true;
-                DECLINED
-            }
-        }
+        samples.closed = closed;
+        samples.cjson = Some(held);
+    });
+    result
+}
+
+/// Reads `text` into compressed form `id` and panics before the read
+/// returns, as an instance that runs out of memory while it reads does
+/// (it traps): for the facade's test that the other inputs' tables can
+/// still be had from the instance.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __jsonReadTrapForTests)]
+pub fn json_read_trap_for_tests(id: f64, text: &str) -> i32 {
+    read_with(id, |cjson| {
+        let _ = cjson.read_string_sample(text, LIMITS);
+        std::panic::panic_any("quicktype-wasm test panic while reading a sample")
     })
 }
 
@@ -162,9 +203,9 @@ pub fn json_drop(id: f64) {
 pub fn json_export(id: f64) -> JsValue {
     // Not borrowed while the tables are built.
     let Some((cjson, committed)) = SAMPLES.with(|all| {
-        all.borrow()
-            .get(id)
-            .map(|samples| (Rc::clone(&samples.cjson), samples.committed))
+        let all = all.borrow();
+        let samples = all.get(id)?;
+        Some((Rc::clone(samples.cjson.as_ref()?), samples.committed))
     }) else {
         return JsValue::UNDEFINED;
     };
@@ -202,9 +243,8 @@ pub fn json_export(id: f64) -> JsValue {
 #[wasm_bindgen(js_name = jsonAcquire)]
 pub fn json_acquire(id: f64) -> Option<f64> {
     let cjson = SAMPLES.with(|all| {
-        all.borrow()
-            .get(id)
-            .map(|samples| Rc::clone(&samples.cjson))
+        let all = all.borrow();
+        Some(Rc::clone(all.get(id)?.cjson.as_ref()?))
     })?;
     LEASES.with(|leases| leases.borrow_mut().insert(cjson).ok())
 }
@@ -256,6 +296,10 @@ mod tests {
 
     fn create(date_time: &str, min: Option<&str>, max: Option<&str>) -> f64 {
         json_create(date_time, false, min.map(Into::into), max.map(Into::into)).unwrap()
+    }
+
+    fn form(id: f64) -> Rc<CompressedJson> {
+        SAMPLES.with(|all| Rc::clone(all.borrow().get(id).unwrap().cjson.as_ref().unwrap()))
     }
 
     #[test]
@@ -317,12 +361,11 @@ mod tests {
     #[test]
     fn committed_tables() {
         let id = create("default", None, None);
-        let cjson = |id| SAMPLES.with(|all| Rc::clone(&all.borrow().get(id).unwrap().cjson));
         assert!(json_read(id, r#"{"a": "2020-01-01", "b": ["x"]}"#) > 0);
         assert_eq!(json_read(id, r#""not a root here""#), DECLINED);
-        let all = cjson(id).to_tables(&[]).0;
+        let all = form(id).to_tables(&[]).0;
         let committed = SAMPLES.with(|s| s.borrow().get(id).unwrap().committed);
-        let exported = cjson(id).joined_tables_up_to(committed);
+        let exported = form(id).joined_tables_up_to(committed);
         assert_eq!(exported.strings, "dateaxb");
         assert_eq!(exported.string_lengths, [4, 1, 1, 1]);
         assert_eq!(all.strings.len(), 5);
@@ -331,5 +374,37 @@ mod tests {
         assert_eq!(exported.arrays, all.arrays);
         assert_eq!(exported.array_offsets, all.array_offsets);
         json_drop(id);
+    }
+
+    /// No borrow of the tables spans a read: should the read trap (in
+    /// WebAssembly, a panic aborts without unwinding), the other inputs
+    /// can still be exported and leased.
+    #[test]
+    fn a_read_holds_no_borrow() {
+        let a = create("default", None, None);
+        assert!(json_read(a, r#"{"a": [1]}"#) > 0);
+        let b = create("default", None, None);
+        let free = || {
+            SAMPLES.with(|s| s.try_borrow_mut().is_ok())
+                && LEASES.with(|l| l.try_borrow_mut().is_ok())
+        };
+        assert!(
+            read_with(b, |cjson| {
+                assert!(free());
+                cjson.read_string_sample("[2]", LIMITS)
+            }) > 0
+        );
+        let trapped = std::panic::catch_unwind(|| json_read_trap_for_tests(b, r#"{"b": "x"}"#));
+        assert!(trapped.is_err());
+        // The input being read is lost with the read; the others are not.
+        assert!(SAMPLES.with(|s| s.borrow().get(b).unwrap().cjson.is_none()));
+        assert_eq!(json_read(b, "[3]"), DECLINED);
+        assert!(json_acquire(b).is_none());
+        assert_eq!(form(a).to_tables(&[]).0.strings, ["a"]);
+        let lease = json_acquire(a).unwrap();
+        json_release(lease);
+        assert!(json_read(a, "[4]") > 0);
+        json_drop(a);
+        json_drop(b);
     }
 }
