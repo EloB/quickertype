@@ -68,7 +68,10 @@ pub trait TargetLanguage: Sync {
     ///
     /// Implementations construct their renderer and hand it to
     /// [`render_with`](crate::convenience_renderer::render_with). The
-    /// default reports that the language's renderer is not ported yet.
+    /// default reports that the language's renderer is not ported yet,
+    /// after resolving the options like every `makeRenderer` does first
+    /// (`getOptionValues`), so an unknown option value is reported as in
+    /// TypeScript.
     fn render(
         &self,
         render_context: crate::renderer::RenderContext<'_>,
@@ -78,10 +81,10 @@ pub trait TargetLanguage: Sync {
     ) -> crate::messages::Result<crate::renderer::RenderResult> {
         let _ = (
             render_context,
-            renderer_options,
             given_output_filename,
             alphabetize_properties,
         );
+        crate::renderer_options::get_option_values(self.options(), renderer_options)?;
         crate::support::support::panic(format!(
             "The {} renderer is not ported yet",
             self.display_name()

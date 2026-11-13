@@ -10,9 +10,9 @@ use indexmap::{IndexMap, IndexSet};
 use crate::attributes::type_attributes::CombinationKind;
 use crate::graph_rewriting::make_replacer;
 use crate::messages::Result;
+use crate::run::RunContext;
 use crate::support::support::{assert, panic};
 use crate::ty::ty::{ClassProperty, set_operation_cases_equal, structurally_compatible};
-use crate::ty::type_builder_utils::StringTypeMapping;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 use crate::ty::type_utils::{combine_type_attributes_of_types, non_null_type_cases};
@@ -184,18 +184,21 @@ fn find_similarity_cliques(
 /// `combineClasses(ctx, graph, alphabetizeProperties, conflateNumbers,
 /// onlyWithSameProperties, debugPrintReconstitution)`.
 ///
-/// `string_type_mapping` is the run context's `stringTypeMapping` (the
-/// context is otherwise only used for timing). Returns `None` (TypeScript:
-/// the same graph) if no classes are combined.
+/// From the run context `ctx` it takes the `stringTypeMapping`, and it
+/// reports the time finding the cliques took (`  find similarity
+/// cliques`). Returns `None` (TypeScript: the same graph) if no classes
+/// are combined.
 pub fn combine_classes(
+    ctx: &RunContext,
     graph: &TypeGraph,
-    string_type_mapping: &StringTypeMapping,
     alphabetize_properties: bool,
     conflate_numbers: bool,
     only_with_same_properties: bool,
     debug_print_reconstitution: bool,
 ) -> Result<Option<TypeGraph>> {
-    let cliques = find_similarity_cliques(graph, only_with_same_properties, false)?;
+    let cliques = ctx.time_result("  find similarity cliques", || {
+        find_similarity_cliques(graph, only_with_same_properties, false)
+    })?;
 
     let replacer = make_replacer(move |clique, builder, forwarding_ref| {
         assert(!clique.is_empty(), "Clique can't be empty")?;
@@ -217,7 +220,7 @@ pub fn combine_classes(
 
     graph.rewrite(
         "combine classes",
-        string_type_mapping,
+        &ctx.string_type_mapping,
         alphabetize_properties,
         cliques,
         debug_print_reconstitution,

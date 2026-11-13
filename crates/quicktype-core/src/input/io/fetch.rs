@@ -33,7 +33,8 @@ use std::time::Duration;
 use indexmap::IndexMap;
 use url::Url;
 
-use crate::input::io::node_io::{HttpResponse, IoError};
+use crate::input::io::node_io::{HttpResponse, IoError, IoErrorKind};
+use crate::messages::JsErrorName;
 
 /// The ports fetch refuses to connect to (`badPorts` of the Fetch
 /// standard).
@@ -54,7 +55,15 @@ const REDIRECT_STATUS: [u16; 5] = [301, 302, 303, 307, 308];
 /// The most redirects fetch follows.
 const MAX_REDIRECTS: usize = 20;
 
-const FETCH_FAILED: &str = "TypeError: fetch failed";
+/// undici's `TypeError: fetch failed`.
+fn fetch_failed() -> IoError {
+    type_error("fetch failed")
+}
+
+/// A `TypeError` from building or sending the request.
+fn type_error(message: impl Into<String>) -> IoError {
+    IoError::new(IoErrorKind::Network, JsErrorName::TypeError, message)
+}
 
 fn agent() -> &'static ureq::Agent {
     static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
@@ -77,9 +86,9 @@ type HeaderList = IndexMap<String, (String, String)>;
 fn check_byte_string(s: &str) -> Result<(), IoError> {
     for (index, unit) in s.encode_utf16().enumerate() {
         if unit > 255 {
-            return Err(format!(
-                "TypeError: Cannot convert argument to a ByteString because the character at index {index} has a value of {unit} which is greater than 255."
-            ));
+            return Err(type_error(format!(
+                "Cannot convert argument to a ByteString because the character at index {index} has a value of {unit} which is greater than 255."
+            )));
         }
     }
     Ok(())
@@ -100,17 +109,17 @@ fn header_list(headers: &[(String, String)]) -> Result<HeaderList, IoError> {
     for (name, value) in headers {
         let value = value.trim_matches(is_http_whitespace);
         if name.is_empty() || !name.chars().all(is_token_char) {
-            return Err(format!(
-                "TypeError: Headers.append: \"{name}\" is an invalid header name."
-            ));
+            return Err(type_error(format!(
+                "Headers.append: \"{name}\" is an invalid header name."
+            )));
         }
         if value.starts_with(['\t', ' '])
             || value.ends_with(['\t', ' '])
             || value.contains(['\0', '\n', '\r'])
         {
-            return Err(format!(
-                "TypeError: Headers.append: \"{value}\" is an invalid header value."
-            ));
+            return Err(type_error(format!(
+                "Headers.append: \"{value}\" is an invalid header value."
+            )));
         }
         let key = name.to_ascii_lowercase();
         match list.get_mut(&key) {
@@ -160,21 +169,21 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
         check_byte_string(value)?;
     }
     let mut url =
-        Url::parse(input).map_err(|_| format!("TypeError: Failed to parse URL from {input}"))?;
+        Url::parse(input).map_err(|_| type_error(format!("Failed to parse URL from {input}")))?;
     if !url.username().is_empty() || url.password().is_some() {
-        return Err(format!(
-            "TypeError: Request cannot be constructed from a URL that includes credentials: {input}"
-        ));
+        return Err(type_error(format!(
+            "Request cannot be constructed from a URL that includes credentials: {input}"
+        )));
     }
     let mut list = header_list(headers)?;
 
     let mut redirects = 0;
     loop {
         if !matches!(url.scheme(), "http" | "https") {
-            return Err(FETCH_FAILED.to_owned());
+            return Err(fetch_failed());
         }
         if url.port().is_some_and(|port| BAD_PORTS.contains(&port)) {
-            return Err(FETCH_FAILED.to_owned());
+            return Err(fetch_failed());
         }
         let mut sent = list.clone();
         add_default_headers(&mut sent, &url);
@@ -184,16 +193,16 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
         }
         let response = match request.call() {
             Ok(response) | Err(ureq::Error::Status(_, response)) => response,
-            Err(ureq::Error::Transport(_)) => return Err(FETCH_FAILED.to_owned()),
+            Err(ureq::Error::Transport(_)) => return Err(fetch_failed()),
         };
         let status = response.status();
 
         if REDIRECT_STATUS.contains(&status)
             && let Some(location) = response.header("location")
         {
-            let next = url.join(location).map_err(|_| FETCH_FAILED.to_owned())?;
+            let next = url.join(location).map_err(|_| fetch_failed())?;
             if !matches!(next.scheme(), "http" | "https") || redirects == MAX_REDIRECTS {
-                return Err(FETCH_FAILED.to_owned());
+                return Err(fetch_failed());
             }
             redirects += 1;
             if next.origin() != url.origin() {
@@ -218,7 +227,7 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
         response
             .into_reader()
             .read_to_end(&mut raw)
-            .map_err(|_| "TypeError: terminated".to_owned())?;
+            .map_err(|_| type_error("terminated"))?;
         let body = decode_body(raw, content_encoding.as_deref())?;
         return Ok(HttpResponse {
             status,
@@ -239,7 +248,7 @@ fn decode_body(raw: Vec<u8>, content_encoding: Option<&str>) -> Result<Vec<u8>, 
         .map(|c| c.trim().to_owned())
         .collect();
     if codings.len() > 5 {
-        return Err(FETCH_FAILED.to_owned());
+        return Err(fetch_failed());
     }
     if !codings
         .iter()
@@ -295,7 +304,7 @@ mod tests {
                 .iter()
                 .map(|(n, v)| ((*n).to_owned(), (*v).to_owned()))
                 .collect();
-            fetch(url, &headers).unwrap_err()
+            fetch(url, &headers).unwrap_err().to_js_string()
         };
         assert_eq!(
             err("http://[::1/", &[]),
@@ -326,8 +335,8 @@ mod tests {
             "TypeError: Headers.append: \"x\ny\" is an invalid header value."
         );
         // Port 1 is on fetch's bad-port list.
-        assert_eq!(err("http://127.0.0.1:1/", &[]), FETCH_FAILED);
-        assert_eq!(err("ftp://a.bc/x", &[]), FETCH_FAILED);
+        assert_eq!(err("http://127.0.0.1:1/", &[]), "TypeError: fetch failed");
+        assert_eq!(err("ftp://a.bc/x", &[]), "TypeError: fetch failed");
     }
 
     #[test]
@@ -342,7 +351,7 @@ mod tests {
         );
         assert_eq!(
             decode_body(b"abc".to_vec(), Some("gzip,gzip,gzip,gzip,gzip,gzip")).unwrap_err(),
-            FETCH_FAILED
+            fetch_failed()
         );
         assert_eq!(
             decode_body(b"not gzip".to_vec(), Some("gzip")).unwrap(),

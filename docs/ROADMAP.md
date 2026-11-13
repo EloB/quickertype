@@ -44,7 +44,7 @@ parallel; phases are ordered by dependency.
 | B | `feat/core-type-graph` | `ty/*`, `attributes/*`, `graph`, `graph_rewriting`, `union_builder`, `unify_classes`, `messages` (error type), `support/{support,chance}`, collection-utils hashing (`EqualityMap`). Graph printer identical to `--debug print-graph` for stage-by-stage diffing. |
 | C | `feat/cli` | CLI-behavior golden cases (help, version, stdout, stdin, directories, errors, a full renderer-option sweep per language); language registry + renderer option declarations; CLI parsing and exact `--help`/error output. |
 
-## Phase 2 — Engine (parallel) — in progress
+## Phase 2 — Engine (parallel) — ✅ done
 
 | WP | Branch | Scope |
 |---|---|---|
@@ -53,7 +53,7 @@ parallel; phases are ordered by dependency.
 | F | `feat/core-rendering` | `Source`, `Renderer`, `ConvenienceRenderer`, `Naming`, `GatherNames`, `Annotation`, `Comments`, `Converters`, the renderer trait; the Rust renderer as the first language |
 | G | `feat/core-json-schema-input` | `JSONSchemaInput`, schema stores, `urijs` port, YAML, schema attribute producers; `Input` glue after D lands |
 
-## Phase 3 — Integration: first end-to-end language
+## Phase 3 — Integration: first end-to-end language — ✅ done (parity 7,331)
 
 `Run` (the pipeline driver) and the CLI generation path, wiring JSON input,
 the rewrite pipeline and the Rust renderer end to end: the first

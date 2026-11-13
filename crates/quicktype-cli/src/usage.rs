@@ -2,7 +2,7 @@
 //! `sectionsAfterRenderers`, `makeLangTypeLabel` and
 //! `tableOptionsForOptions` in `src/index.ts`.
 
-use quicktype_core::target_language::TargetLanguage;
+use quicktype_core::TargetLanguage;
 
 use crate::chalk::{Chalk, TemplateError};
 use crate::cli_options::make_option_definitions;

@@ -4,15 +4,14 @@
 //! `parseCLIOptions`, `parseOptions`, `inferCLIOptions`, `inferLang`,
 //! `inferTopLevel`).
 
-use quicktype_core::language::all::{default_target_languages, language_named};
-use quicktype_core::renderer_options::{
-    OptionDefinition, OptionKind, OptionType, OptionValue, RendererOptions,
+use quicktype_core::{
+    ErrorKind, OptionDefinition, OptionKind, OptionType, OptionValue, RendererOptions,
+    TargetLanguage, default_target_languages, language_named,
 };
-use quicktype_core::target_language::TargetLanguage;
 
 use crate::command_line_args::{self, ArgValue};
 use crate::js;
-use crate::messages::DriverError;
+use crate::messages::{CliError, message_error};
 
 /// `defaultDefaultTargetLanguageName`.
 const DEFAULT_TARGET_LANGUAGE_NAME: &str = "go";
@@ -70,9 +69,8 @@ impl GlobalOption {
     ///
     /// The `--no-*` inference switches are `no` + the inference flag name
     /// without `infer`, dashed; their description is the flag's
-    /// `negationDescription` plus a period.
-    // TODO(core): take the inference flags from quicktype_core::inference
-    // once Inference.ts is ported.
+    /// `negationDescription` plus a period (checked against
+    /// `quicktype_core::INFERENCE_FLAGS` in the tests).
     fn definition(self) -> OptionDefinition {
         use OptionType::{Boolean, String};
         let cli = |name, option_type, description| {
@@ -238,9 +236,6 @@ fn global_options(target_languages: &[&'static dyn TargetLanguage]) -> Vec<Globa
 /// consumes. Renderer options keep every value the parser produced,
 /// including the defaults of all of the language's options (both `x` and
 /// `no-x` for booleans), in definition order, exactly like the TS object.
-// TODO(engine): most fields are read only once makeQuicktypeOptions can
-// build the engine's options from them.
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct CliOptions {
     /// Input files, URLs or directories (`--src` and bare arguments).
@@ -278,6 +273,8 @@ pub struct CliOptions {
     /// `--graphql-introspect`.
     pub graphql_introspect: Option<String>,
     /// `--http-method`.
+    // TODO(graphql): read by `--graphql-introspect` (Phase 5).
+    #[allow(dead_code)]
     pub http_method: Option<String>,
     /// `--http-header`.
     pub http_header: Option<Vec<String>>,
@@ -355,19 +352,22 @@ fn parse_options(
     renderer: &[OptionDefinition],
     argv: &[String],
     partial: bool,
-) -> Result<PartialCliOptions, DriverError> {
+) -> Result<PartialCliOptions, CliError> {
     let mut definitions: Vec<OptionDefinition> = globals.iter().map(|o| o.definition()).collect();
     definitions.extend_from_slice(renderer);
-    let parsed = command_line_args::parse(&definitions, argv, partial).map_err(|e| {
-        DriverError::CliOptionParsingFailed {
-            message: e.to_string(),
-        }
-    })?;
+    let parsing_failed = |message: String| {
+        message_error(
+            ErrorKind::DriverCLIOptionParsingFailed,
+            vec![("message", message.into())],
+        )
+    };
+    let parsed = command_line_args::parse(&definitions, argv, partial)
+        .map_err(|e| parsing_failed(e.to_string()))?;
 
     if let Some((name, _)) = parsed.values.iter().find(|(_, v)| *v == ArgValue::Null) {
-        return Err(DriverError::CliOptionParsingFailed {
-            message: format!("Missing value for command line option \"{name}\""),
-        });
+        return Err(parsing_failed(format!(
+            "Missing value for command line option \"{name}\""
+        )));
     }
 
     let mut options = PartialCliOptions::default();
@@ -391,12 +391,15 @@ fn parse_options(
 }
 
 /// TS `inferLang`: the `--out` extension without the dot, or the default.
-fn infer_lang(options: &PartialCliOptions, default_language: &str) -> Result<String, DriverError> {
+fn infer_lang(options: &PartialCliOptions, default_language: &str) -> Result<String, CliError> {
     match &options.out {
         Some(out) => {
             let extension = js::extname(out);
             if extension.is_empty() {
-                return Err(DriverError::NoLanguageOrExtension);
+                return Err(message_error(
+                    ErrorKind::DriverNoLanguageOrExtension,
+                    vec![],
+                ));
             }
             Ok(extension[1..].to_owned())
         }
@@ -427,10 +430,13 @@ fn infer_top_level(options: &PartialCliOptions) -> String {
 fn infer_cli_options(
     options: PartialCliOptions,
     target_language: Option<&'static dyn TargetLanguage>,
-) -> Result<CliOptions, DriverError> {
+) -> Result<CliOptions, CliError> {
     let src_lang = if options.graphql_schema.is_some() || options.graphql_introspect.is_some() {
         if options.src_lang.as_deref().is_some_and(|l| l != "graphql") {
-            return Err(DriverError::SourceLangMustBeGraphQL);
+            return Err(message_error(
+                ErrorKind::DriverSourceLangMustBeGraphQL,
+                vec![],
+            ));
         }
         "graphql".to_owned()
     } else if options
@@ -441,7 +447,7 @@ fn infer_cli_options(
         "typescript".to_owned()
     } else {
         if options.src_lang.as_deref() == Some("graphql") {
-            return Err(DriverError::GraphQLSchemaNeeded);
+            return Err(message_error(ErrorKind::DriverGraphQLSchemaNeeded, vec![]));
         }
         options
             .src_lang
@@ -456,8 +462,15 @@ fn infer_cli_options(
                 Some(lang) => lang.clone(),
                 None => infer_lang(&options, DEFAULT_TARGET_LANGUAGE_NAME)?,
             };
-            language_named(&name, default_target_languages())
-                .ok_or(DriverError::UnknownOutputLanguage { lang: name })?
+            match language_named(&name, default_target_languages()) {
+                Some(language) => language,
+                None => {
+                    return Err(message_error(
+                        ErrorKind::DriverUnknownOutputLanguage,
+                        vec![("lang", name.into())],
+                    ));
+                }
+            }
         }
     };
 
@@ -495,7 +508,7 @@ fn infer_cli_options(
 /// parsed twice: leniently with the global options to find the target
 /// language, then strictly with the global options plus that language's
 /// renderer options.
-pub fn parse_cli_options(argv: &[String]) -> Result<CliOptions, DriverError> {
+pub fn parse_cli_options(argv: &[String]) -> Result<CliOptions, CliError> {
     if argv.is_empty() {
         let options = PartialCliOptions {
             help: Some(true),
@@ -616,6 +629,53 @@ mod tests {
             parse(&["--graphql-schema", "s", "q"]).unwrap().src_lang,
             "graphql"
         );
+    }
+
+    /// Port of `test/unit/cli-options.test.ts`: "reports a duplicate
+    /// output option as a user input error".
+    #[test]
+    fn reports_a_duplicate_output_option_as_a_user_input_error() {
+        let message = parse(&["-o", "list.go", "-o", "list.ts"]).unwrap_err();
+        assert!(
+            message.starts_with("Option parsing failed: ")
+                && message.contains("Singular option already set"),
+            "{message}"
+        );
+        assert!(!message.contains("Internal error"));
+    }
+
+    /// Port of `test/unit/cli-options.test.ts`: "%s accepts --just-schema".
+    #[test]
+    fn zod_and_effect_schema_accept_just_schema() {
+        for lang in ["typescript-zod", "typescript-effect-schema"] {
+            let options = parse(&["--lang", lang, "--just-schema"]).unwrap();
+            assert_eq!(
+                options.renderer_options.get("just-schema"),
+                Some(&OptionValue::Bool(true)),
+                "{lang}"
+            );
+        }
+    }
+
+    /// The `--no-*` switches are the inference flags, negated.
+    #[test]
+    fn inference_switches_match_the_inference_flags() {
+        let switches = [
+            GlobalOption::NoMaps,
+            GlobalOption::NoEnums,
+            GlobalOption::NoUuids,
+            GlobalOption::NoDateTimes,
+            GlobalOption::NoIntegerStrings,
+            GlobalOption::NoBooleanStrings,
+            GlobalOption::NoCombineClasses,
+            GlobalOption::NoIgnoreJsonRefs,
+        ];
+        for (switch, flag) in switches.iter().zip(&quicktype_core::INFERENCE_FLAGS) {
+            assert_eq!(
+                switch.definition().description,
+                format!("{}.", flag.negation_description)
+            );
+        }
     }
 
     #[test]
