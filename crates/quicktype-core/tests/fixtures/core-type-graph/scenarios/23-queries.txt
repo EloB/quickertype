@@ -1,0 +1,54 @@
+# Helpers used by the rewrite passes.
+builder
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+prim any any
+enum e a,b
+union u1 i,s n=U1
+union u2 u1,nul n=U2
+union u3 i,d
+union u4 s,e
+union u5 u1,d in=U5
+uinter x1 n=X1
+members x1 i,any
+uinter x2 n=X2
+members x2 x1,s
+cls c1 a:i,b:s n=C1
+cls c2 a:d,b:s n=C2
+cls c3 a:i n=C3
+arr a1 c1
+arr a2 c2
+cls top a:u2,b:u3,c:u4,d:u5,e:x2,f:c1,g:c2,h:c3,i:a1,j:a2,k:e n=Top
+top Top top
+finish
+print
+query recmembers 7 union
+query recmembers 10
+query recmembers 12 intersect
+query recmembers 11,12 intersect
+query recmembers 6,7,10 union
+query groups 6,7,8,9,10
+query compatible 13 14
+query compatible 13 14 conflate
+query compatible 13 15
+query compatible 16 17 conflate
+query compatible 0 1
+query compatible 0 1 conflate
+query canonical 6
+query canonical 7
+query canonical 8
+query canonical 9
+query nullable 7
+query nullable 6
+query nullable 4
+query named
+query parents 0
+query parents 2
+query nonnull 7
+query nonnull 8
+query reachable 18
+query reachable 7
+query reachable 8
+query nullable 11

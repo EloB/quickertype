@@ -37,6 +37,11 @@
 //                                         graph, `1,2;3,4`) is replaced by unifyTypes of its
 //                                         types, like CombineClasses
 //   remap 3>1,4>2 [debug]                 remap
+//   query WHAT ARGS                       prints a helper's result for types of the current
+//                                         graph (by index): recmembers I,J [union|intersect],
+//                                         groups I,J,K, compatible I J [conflate],
+//                                         canonical I, nullable I, named, parents I,
+//                                         nonnull I, reachable I
 //
 // PROPS = name:V,name?:V (optional with ?), MEMBERS = V,V (`-` for none). ATTRS are any of
 // n=Name (given name), in=Name (inferred name), many=prefix:count (that many
@@ -69,7 +74,13 @@ const { StringTypes } = load("attributes/StringTypes.js");
 const { noneToAny, optionalToNullable, removeIndirectionIntersections } = load(
     "Type/TypeGraphUtils.js",
 );
-const { combineTypeAttributesOfTypes } = load("Type/TypeUtils.js");
+const {
+    combineTypeAttributesOfTypes,
+    setOperationMembersRecursively,
+    makeGroupsToFlatten,
+    removeNullFromUnion,
+    directlyReachableSingleNamedType,
+} = load("Type/TypeUtils.js");
 const { unifyTypes, unionBuilderForUnification } = load("UnifyClasses.js");
 
 const scenarioDir = join(
@@ -155,6 +166,57 @@ function parseProps(spec, vars, builder) {
 function parseMembers(spec, vars) {
     if (spec === "-") return new Set();
     return new Set(spec.split(",").map((v) => ref(vars, v)));
+}
+
+function attributesText(attributes) {
+    const parts = [];
+    for (const [kind, value] of attributes) {
+        const s = kind.stringify(value);
+        if (s !== undefined) parts.push(s);
+    }
+    return parts.join(" | ");
+}
+
+function query(graph, args) {
+    const types = Array.from(graph.allTypesUnordered());
+    const at = (i) => types[Number(i)];
+    const indexes = (ts) => Array.from(ts).map((t) => t.index).join(",");
+    switch (args[0]) {
+        case "recmembers": {
+            const kind = args[2] === undefined ? undefined : args[2];
+            const [members, attributes] = setOperationMembersRecursively(
+                args[1].split(",").map(at),
+                kind,
+            );
+            return `${indexes(members)} | ${attributesText(attributes)}`;
+        }
+        case "groups":
+            return makeGroupsToFlatten(args[1].split(",").map(at), undefined)
+                .map(indexes)
+                .join(";");
+        case "compatible":
+            return String(at(args[1]).structurallyCompatible(at(args[2]), args[3] === "conflate"));
+        case "canonical":
+            return String(at(args[1]).isCanonical);
+        case "nullable":
+            return String(at(args[1]).isNullable);
+        case "named": {
+            const { objects, enums, unions } = graph.allNamedTypesSeparated();
+            return `objects ${indexes(objects)} enums ${indexes(enums)} unions ${indexes(unions)}`;
+        }
+        case "parents":
+            return indexes(at(args[1]).getParentTypes());
+        case "nonnull": {
+            const [nullType, rest] = removeNullFromUnion(at(args[1]), true);
+            return `${nullType === null ? "-" : nullType.index} | ${indexes(rest)}`;
+        }
+        case "reachable": {
+            const t = directlyReachableSingleNamedType(at(args[1]));
+            return t === undefined ? "-" : String(t.index);
+        }
+        default:
+            throw new Error(`unknown query ${args[0]}`);
+    }
 }
 
 function runScenario(text) {
@@ -350,6 +412,9 @@ function runScenario(text) {
                     set(graph.remap("remap", getNoStringTypeMapping(), false, map, debug), "remap");
                     break;
                 }
+                case "query":
+                    out.push(`${args.join(" ")}: ${query(graph, args)}`);
+                    break;
                 default:
                     throw new Error(`unknown command ${cmd}`);
             }

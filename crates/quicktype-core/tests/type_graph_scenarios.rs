@@ -33,6 +33,7 @@ use quicktype_core::messages::{QuickTypeError, Result};
 use quicktype_core::support::support::set_console_sink;
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::ClassProperty;
+use quicktype_core::ty::ty::structurally_compatible;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::ty::type_builder_utils::{StringTypeMapping, get_no_string_type_mapping};
 use quicktype_core::ty::type_graph::TypeGraph;
@@ -40,7 +41,11 @@ use quicktype_core::ty::type_graph_utils::{
     none_to_any, optional_to_nullable, remove_indirection_intersections,
 };
 use quicktype_core::ty::type_ref::TypeRef;
-use quicktype_core::ty::type_utils::combine_type_attributes_of_types;
+use quicktype_core::ty::type_utils::{
+    NullRemovalSort, combine_type_attributes_of_types, directly_reachable_single_named_type,
+    is_nullable, make_groups_to_flatten, remove_null_from_union, set_operation_members_recursively,
+    union_is_canonical,
+};
 use quicktype_core::unify_classes::{unify_types, union_builder_for_unification};
 
 fn err(message: impl Into<String>) -> QuickTypeError {
@@ -413,9 +418,91 @@ impl Interpreter {
                 )?;
                 self.set_graph(g, "remap");
             }
+            "query" => {
+                let result = self.query(args)?;
+                self.out
+                    .borrow_mut()
+                    .push(format!("{}: {result}", args.join(" ")));
+            }
             _ => return Err(err(format!("unknown command {cmd}"))),
         }
         Ok(())
+    }
+
+    fn query(&self, args: &[&str]) -> Result<String> {
+        let graph = self.graph()?;
+        let types: Vec<TypeRef> = graph.all_types_unordered().collect();
+        let at = |i: &str| -> Result<TypeRef> {
+            let i: usize = i.parse().map_err(|_| err("bad index"))?;
+            types
+                .get(i)
+                .copied()
+                .ok_or_else(|| err("index out of range"))
+        };
+        let list = |spec: &str| -> Result<Vec<TypeRef>> { spec.split(',').map(at).collect() };
+        let indexes = |ts: &mut dyn Iterator<Item = TypeRef>| -> String {
+            ts.map(|t| t.index().to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        };
+        let arg = |i: usize| -> Result<&str> {
+            args.get(i).copied().ok_or_else(|| err("missing argument"))
+        };
+        Ok(match arg(0)? {
+            "recmembers" => {
+                let kind = match args.get(2).copied() {
+                    None => None,
+                    Some("union") => Some(CombinationKind::Union),
+                    Some(_) => Some(CombinationKind::Intersect),
+                };
+                let (members, attributes) =
+                    set_operation_members_recursively(graph, &list(arg(1)?)?, kind)?;
+                let mut parts = Vec::new();
+                for value in attributes.iter() {
+                    if let Some(s) = value.stringify()? {
+                        parts.push(s);
+                    }
+                }
+                format!(
+                    "{} | {}",
+                    indexes(&mut members.into_iter()),
+                    parts.join(" | ")
+                )
+            }
+            "groups" => make_groups_to_flatten(graph, list(arg(1)?)?, None)?
+                .into_iter()
+                .map(|g| indexes(&mut g.into_iter()))
+                .collect::<Vec<_>>()
+                .join(";"),
+            "compatible" => structurally_compatible(
+                graph,
+                at(arg(1)?)?,
+                at(arg(2)?)?,
+                args.get(3) == Some(&"conflate"),
+            )?
+            .to_string(),
+            "canonical" => union_is_canonical(graph, at(arg(1)?)?)?.to_string(),
+            "nullable" => is_nullable(graph, at(arg(1)?)?)?.to_string(),
+            "named" => {
+                let named = graph.all_named_types_separated()?;
+                format!(
+                    "objects {} enums {} unions {}",
+                    indexes(&mut named.objects.into_iter()),
+                    indexes(&mut named.enums.into_iter()),
+                    indexes(&mut named.unions.into_iter())
+                )
+            }
+            "parents" => indexes(&mut graph.parents_of_type(at(arg(1)?)?)?.iter().copied()),
+            "nonnull" => {
+                let (null_type, rest) =
+                    remove_null_from_union(graph, at(arg(1)?)?, NullRemovalSort::ByKind)?;
+                let null_text = null_type.map_or_else(|| "-".to_owned(), |t| t.index().to_string());
+                format!("{null_text} | {}", indexes(&mut rest.into_iter()))
+            }
+            "reachable" => directly_reachable_single_named_type(graph, at(arg(1)?)?)?
+                .map_or_else(|| "-".to_owned(), |t| t.index().to_string()),
+            other => return Err(err(format!("unknown query {other}"))),
+        })
     }
 }
 

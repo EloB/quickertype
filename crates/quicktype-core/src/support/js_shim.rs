@@ -7,9 +7,6 @@
 //! word splitting and singularization are approximations: replace them as
 //! soon as the js-compat work package is merged.
 
-// Some helpers are only used by modules that later commits port.
-#![allow(dead_code)]
-
 use std::cmp::Ordering;
 
 /// JavaScript `Number.prototype.toString()` for any `f64`.

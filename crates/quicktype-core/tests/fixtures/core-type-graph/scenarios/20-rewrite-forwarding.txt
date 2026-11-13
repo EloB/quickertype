@@ -1,0 +1,14 @@
+# A unified map that already exists in the new graph becomes a forwarding
+# intersection, which the rewrite removes with a second, remapping pass.
+builder
+prim i integer
+str s unrestricted
+map m i in=existing
+obj o1 a:i i n=O1
+obj o2 b:i i n=O2
+cls top m:m,o1:o1,o2:o2 n=Top
+top Top top
+finish printonrewrite
+print
+unify 3,4 debug
+print
