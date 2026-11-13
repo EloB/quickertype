@@ -1,0 +1,127 @@
+# Publishes the workspace's crates to crates.io (docs/RELEASING.md).
+#
+# - Release: release.yml calls it (dist's custom publish job
+#   "./publish-crates" in dist-workspace.toml) after the GitHub Release is
+#   created, on the release tag's commit. Crates are published in dependency
+#   order; a version already on crates.io is skipped, so re-running after a
+#   partial failure is safe. Authentication: the CARGO_REGISTRY_TOKEN secret
+#   when it is set, otherwise crates.io trusted publishing (OIDC).
+# - Pull requests: the same packaging as a dry run (`cargo publish --dry-run`
+#   of every crate, each compiled from its .crate as crates.io would).
+name: Publish crates
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Dependencies first: cargo publish waits until a crate is in the index
+  # before the next one is published.
+  CRATES: >-
+    quickertype-js-compat
+    quickertype-core
+    quickertype-graphql-input
+    quickertype-typescript-input
+    quickertype
+
+jobs:
+  publish-crates:
+    name: ${{ github.event_name == 'pull_request' && 'crates (dry run)' || 'publish crates' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # crates.io trusted publishing (rust-lang/crates-io-auth-action)
+      id-token: write
+    env:
+      HAS_CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN != '' }}
+    defaults:
+      run:
+        # -eo pipefail
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+      - name: The crates' version is the workspace version (and the tag's)
+        env:
+          PLAN: ${{ inputs.plan }}
+        run: |
+          workspace=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[] | select(.name == "quickertype")][0].version')
+          echo "workspace version: $workspace"
+          for crate in $CRATES; do
+            version=$(cargo metadata --format-version 1 --no-deps | jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version')
+            if [ "$version" != "$workspace" ]; then
+              echo "::error::$crate is at $version, not the workspace version $workspace."
+              exit 1
+            fi
+          done
+          if [ -n "$PLAN" ]; then
+            tag=$(jq -r .announcement_tag <<<"$PLAN")
+            if [ "$tag" != "v$workspace" ]; then
+              echo "::error::The release tag is $tag but the crates are at $workspace."
+              exit 1
+            fi
+          fi
+          echo "VERSION=$workspace" >> "$GITHUB_ENV"
+      - name: Dry run (cargo publish --dry-run)
+        if: github.event_name == 'pull_request'
+        run: |
+          args=()
+          for crate in $CRATES; do args+=(--package "$crate"); done
+          cargo publish --dry-run --locked "${args[@]}"
+          # The .crate files cargo would upload.
+          find target/package -name '*.crate' -not -path '*/tmp-registry/*' -exec ls -l {} +
+      - name: Authenticate with crates.io (trusted publishing)
+        id: auth
+        if: github.event_name != 'pull_request' && env.HAS_CARGO_REGISTRY_TOKEN != 'true'
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: Publish
+        if: github.event_name != 'pull_request'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN || steps.auth.outputs.token }}
+        run: |
+          if [ "$HAS_CARGO_REGISTRY_TOKEN" = true ]; then
+            echo "Publishing with the CARGO_REGISTRY_TOKEN secret."
+          else
+            echo "Publishing with crates.io trusted publishing."
+          fi
+          # Whether crate $1 has version $VERSION in the crates.io index.
+          published() {
+            local name=$1 prefix
+            case ${#name} in
+              1) prefix=1 ;;
+              2) prefix=2 ;;
+              3) prefix="3/${name:0:1}" ;;
+              *) prefix="${name:0:2}/${name:2:2}" ;;
+            esac
+            curl -fsSL "https://index.crates.io/$prefix/$name" 2>/dev/null |
+              jq -e --arg v "$VERSION" 'select(.vers == $v)' > /dev/null
+          }
+          for crate in $CRATES; do
+            if published "$crate"; then
+              echo "$crate $VERSION is already on crates.io; skipping."
+              continue
+            fi
+            echo "::group::cargo publish --package $crate"
+            if ! cargo publish --locked --package "$crate" 2>&1 | tee publish.log; then
+              if grep -qE 'already (exists|uploaded)' publish.log; then
+                echo "$crate $VERSION is already on crates.io; skipping."
+              else
+                echo "::endgroup::"
+                echo "::error::Publishing $crate $VERSION failed."
+                exit 1
+              fi
+            fi
+            echo "::endgroup::"
+          done
