@@ -16,6 +16,7 @@ use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::string_escape;
 use crate::target_language::TargetLanguage;
+use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_utils::{
     NullRemovalSort, is_nullable, nullable_from_union, remove_null_from_union,
 };
@@ -43,6 +44,17 @@ impl std::fmt::Debug for PikeRenderer<'_> {
 /// `${n}` of a JavaScript number.
 fn js_number(n: f64) -> String {
     number::to_string(n)
+}
+
+/// `Array.from(u.members).some((t) => t.kind === kind)`, stopping at the
+/// first match. (`instanceof ArrayType` is the kind `array`.)
+fn any_member_of_kind(graph: &TypeGraph, u: TypeRef, kind: TypeKind) -> Result<bool> {
+    for &m in graph.type_at(u)?.members()? {
+        if graph.kind(m)? == kind {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 /// The two bounds of an optional constraint (`constraint ?? []`).
@@ -444,12 +456,7 @@ impl<'a> PikeRenderer<'a> {
         }
         let rejects_array = ty.is_union()
             && nullable_from_union(graph, t)?.is_none()
-            && !ty
-                .members()?
-                .iter()
-                .map(|&m| Ok(graph.type_at(m)?.is_array()))
-                .collect::<Result<Vec<bool>>>()?
-                .contains(&true);
+            && !any_member_of_kind(graph, t, TypeKind::Array)?;
         if rejects_array {
             self.emit_line(format!(
                 "if (arrayp(json[\"{escaped}\"])) error(\"Unexpected array\");"
@@ -469,14 +476,8 @@ impl<'a> PikeRenderer<'a> {
         let rejects_string_map = match required_type {
             Some(map_type) if graph.type_at(map_type)?.is_map() => {
                 let values = graph.type_at(map_type)?.map_values()?;
-                let values_ty = graph.type_at(values)?;
-                values_ty.is_union()
-                    && !values_ty
-                        .members()?
-                        .iter()
-                        .map(|&m| graph.kind(m))
-                        .collect::<Result<Vec<TypeKind>>>()?
-                        .contains(&TypeKind::String)
+                graph.type_at(values)?.is_union()
+                    && !any_member_of_kind(graph, values, TypeKind::String)?
             }
             _ => false,
         };
