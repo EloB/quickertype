@@ -77,10 +77,7 @@ impl<'a> KotlinJacksonRenderer<'a> {
             TypeKind::Enum => "is TextNode".into(),
             TypeKind::Union => return must_not_happen(),
             kind if kind.is_transformed_string_type_kind() => "is TextNode".into(),
-            TypeKind::Intersection => {
-                return crate::support::support::panic("Unknown type intersection");
-            }
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 

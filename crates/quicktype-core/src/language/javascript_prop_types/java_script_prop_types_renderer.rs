@@ -287,7 +287,7 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             TypeKind::Uuid => "(props, name) => props[name] == null || /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(props[name]) ? null : new Error(\"Expected UUID\")".into(),
             TypeKind::DateTime => "(props, name) => props[name] == null || typeof props[name] === \"string\" && !Number.isNaN(Date.parse(props[name])) ? null : new Error(\"Expected date-time\")".into(),
             k if k.is_transformed_string_type_kind() => "PropTypes.string".into(),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         };
 
             let allows_null = kind == TypeKind::Null

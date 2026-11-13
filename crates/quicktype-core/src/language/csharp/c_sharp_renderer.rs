@@ -379,10 +379,7 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
                 kind if kind.is_primitive_string_type_kind() => {
                     cs_type_for_transformed_string_type(kind)?
                 }
-                TypeKind::Intersection => {
-                    return crate::support::support::panic("Unknown type intersection");
-                }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

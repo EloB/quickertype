@@ -13,7 +13,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::support::collection_utils::array_intercalate;
 use crate::support::strings::camel_case;
-use crate::support::support::{must_not_happen, panic};
+use crate::support::support::must_not_happen;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::nullable_from_union;
 
@@ -90,8 +90,7 @@ impl<'a> KotlinKlaxonRenderer<'a> {
             TypeKind::Date => sl![e, ".string?.let { LocalDate.parse(it) }"],
             TypeKind::Time => sl![e, ".string?.let { OffsetTime.parse(it) }"],
             kind if kind.is_transformed_string_type_kind() => sl![e, ".string"],
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -127,8 +126,7 @@ impl<'a> KotlinKlaxonRenderer<'a> {
             TypeKind::Enum => "is String".into(),
             TypeKind::Union => return must_not_happen(),
             kind if kind.is_transformed_string_type_kind() => "is String".into(),
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 

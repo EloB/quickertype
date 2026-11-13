@@ -267,7 +267,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                 }
             }
             k if k.is_transformed_string_type_kind() => "S.String".into(),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         };
 
             if required {

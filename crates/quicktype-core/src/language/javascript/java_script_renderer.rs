@@ -347,7 +347,7 @@ pub mod javascript_methods {
                 TypeKind::DateTime => "Date".into(),
                 TypeKind::Uuid => "{ uuid: \"\" }".into(),
                 k if k.is_transformed_string_type_kind() => "\"\"".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

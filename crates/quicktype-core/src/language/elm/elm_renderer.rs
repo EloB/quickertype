@@ -179,7 +179,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -325,7 +325,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.decoder_name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -404,7 +404,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.encoder_name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

@@ -323,7 +323,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                 TypeKind::BoolString => "z.enum([\"true\", \"false\"])".into(),
                 TypeKind::IntegerString => "z.string().regex(/^-?\\d+$/)".into(),
                 k if k.is_transformed_string_type_kind() => "z.string()".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             };
 
             if required {
@@ -374,7 +374,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                 }
                 TypeKind::DateTime => "Date".into(),
                 k if k.is_transformed_string_type_kind() => "string".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

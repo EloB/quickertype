@@ -107,10 +107,7 @@ impl<'a> PikeRenderer<'a> {
                     }
                     single_word(vec![self.name_for_named_type(t)?.into()])
                 }
-                TypeKind::Intersection => {
-                    return crate::support::support::panic("Unknown type intersection");
-                }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
