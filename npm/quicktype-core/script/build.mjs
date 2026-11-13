@@ -10,10 +10,13 @@
 //    (`createGlue()`) so that an instance that trapped can be replaced by
 //    a fresh one with fresh glue state, and written once as CommonJS and
 //    once as an ES module, each with a `wasmLocation()` for its tree.
-// 3. `tsc` for both trees (as quicktype-core's own build does), plus the
+// 3. `wasm-opt -O3` (binaryen, the version pinned in devDependencies) on the
+//    module wasm-bindgen wrote, for release builds.
+// 4. `tsc` for both trees (as quicktype-core's own build does), plus the
 //    {"type": "module"} marker in dist/esm.
 //
-// --skip-wasm reuses build/wasm-bindgen from an earlier build.
+// --skip-wasm reuses build/wasm-bindgen from an earlier build (optimized
+// already, if it was a release build); --no-wasm-opt leaves out step 3.
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -79,6 +82,35 @@ function buildWasm() {
     );
     fs.rmSync(bindgenDir, { recursive: true, force: true });
     run(findBindgen(), ["--target", "web", "--out-dir", bindgenDir, wasm]);
+    if (profile === "release" && !args.has("--no-wasm-opt")) optimizeWasm();
+}
+
+/**
+ * The WebAssembly features the module uses: those rustc's
+ * wasm32-unknown-unknown target enables by default (`rustc --print cfg
+ * --target wasm32-unknown-unknown`), which wasm-opt must be told, since
+ * the module carries no target_features section. Every engine this
+ * package supports has them (see the README).
+ */
+const wasmFeatures = [
+    "--enable-bulk-memory",
+    "--enable-bulk-memory-opt",
+    "--enable-multivalue",
+    "--enable-mutable-globals",
+    "--enable-nontrapping-float-to-int",
+    "--enable-reference-types",
+    "--enable-sign-ext",
+    "--enable-call-indirect-overlong",
+];
+
+/** `wasm-opt -O3` on the module, in place. */
+function optimizeWasm() {
+    const wasmOpt = path.join(packageRoot, "node_modules", "binaryen", "bin", "wasm-opt");
+    if (!fs.existsSync(wasmOpt)) throw new Error("binaryen is not installed: npm install");
+    const file = path.join(bindgenDir, "quicktype_wasm_bg.wasm");
+    const before = fs.statSync(file).size;
+    run(process.execPath, [wasmOpt, "-O3", ...wasmFeatures, file, "-o", file]);
+    console.log(`wasm-opt: ${(before / 1024 / 1024).toFixed(2)} MiB -> ${(fs.statSync(file).size / 1024 / 1024).toFixed(2)} MiB`);
 }
 
 /** Exports of the glue that the facade uses (src/native/wasm/glue.d.ts). */
