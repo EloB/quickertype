@@ -1,0 +1,21 @@
+(forwarding intersections: false)
+0: integer count | distance 1 count,total ()
+1: double
+2: string label | distance 1 label () | unrestricted
+3: bool Flag | given Flag ()
+4: null
+5: array counts | children 0 | distance 1 counts ()
+6: class Point | children 0,2,5 | given Point ()
+7: class | children 0
+
+# GC
+0: class Point | children 1,2,3 | given Point ()
+1: integer count | distance 1 count,total ()
+2: string label | distance 1 label () | unrestricted
+3: array counts | children 1 | distance 1 counts ()
+4: class | children 1
+0: class Point | children 1,2,3 | given Point ()
+1: integer count | distance 1 count,total ()
+2: string label | distance 1 label () | unrestricted
+3: array counts | children 1 | distance 1 counts ()
+4: class | children 1

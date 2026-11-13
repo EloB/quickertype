@@ -1,0 +1,40 @@
+(forwarding intersections: false)
+0: integer
+1: double
+2: string | unrestricted
+3: class Unused | children 1 | given Unused ()
+4: class C | children 0,2 | given C ()
+
+# fixed-point
+reconstituting 4
+reconstituted 4 as 0
+reconstituting 0
+reconstituted 0 as 1
+reconstituting 2
+reconstituted 2 as 2
+0: class C | children 1,2 | given C ()
+1: integer
+2: string | unrestricted
+
+# fixed-point
+reconstituting 4
+reconstituted 4 as 0
+reconstituting 0
+reconstituted 0 as 1
+reconstituting 2
+reconstituted 2 as 2
+0: class C | children 1,2 | given C ()
+1: integer
+2: string | unrestricted
+0: class C | children 1,2 | given C ()
+1: integer
+2: string | unrestricted
+
+# fixed-point
+0: class C | children 1,2 | given C ()
+1: integer
+2: string | unrestricted
+(fixedpoint: unchanged)
+0: class C | children 1,2 | given C ()
+1: integer
+2: string | unrestricted

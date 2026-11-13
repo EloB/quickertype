@@ -1,0 +1,16 @@
+# With provenance, every type carries its index; rewrites must keep them all.
+builder prov
+prim i integer n=Int
+prim any any n=Anything
+str s unrestricted
+cls a x:i,y:s n=A
+cls b x:i,z:any n=B
+arr arr a
+cls top a:arr,b:b n=Top
+top Top top
+finish printonrewrite
+print
+unify 3,4 debug
+print
+gc
+print

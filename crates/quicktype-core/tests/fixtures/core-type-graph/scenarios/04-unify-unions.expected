@@ -1,0 +1,27 @@
+(forwarding intersections: false)
+0: integer num | distance 1 num ()
+1: double
+2: string color | distance 1 color () | 2 enums: red (2), ...
+3: string | 2 enums: blue (3), ...
+4: enum Letters | given Letters ()
+5: null
+6: union first | children 0,2 | distance 1 first ()
+7: union second | children 1,5,6 | distance 1 second ()
+8: class X | children 7,3 | given X ()
+9: class Y | children 6,4 | given Y ()
+
+# unify
+replacing set 8,9 as 0
+replaced set 8,9 as 0
+0: class x | children 1,5 | given X,Y ()
+1: union second | children 2,3,4 | distance 2 second,first ()
+2: double num | distance 1 num ()
+3: null
+4: string color | distance 1 color () | 2 enums: red (2), ...
+5: string Letters | 2 enums: blue (3), ... | distance 1 Letters ()
+0: class x | children 1,5 | given X,Y ()
+1: union second | children 2,3,4 | distance 2 second,first ()
+2: double num | distance 1 num ()
+3: null
+4: string color | distance 1 color () | 2 enums: red (2), ...
+5: string Letters | 2 enums: blue (3), ... | distance 1 Letters ()

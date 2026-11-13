@@ -1,0 +1,12 @@
+# Combining contradicting constraints fails with a user-facing error.
+builder
+prim i1 integer mm=5:2
+prim i2 integer mm=6:2
+cls a x:i1 n=A
+cls b x:i2 n=B
+cls top a:a,b:b n=Top
+top Top top
+finish
+print
+unify 2,3
+print

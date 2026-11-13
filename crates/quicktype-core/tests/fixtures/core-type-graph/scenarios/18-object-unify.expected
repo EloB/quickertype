@@ -1,0 +1,19 @@
+(forwarding intersections: false)
+0: integer
+1: string | unrestricted
+2: object O1 | children 1,0 | given O1 ()
+3: object O2 | children 0,1 | given O2 ()
+4: class Top | children 2,3 | given Top ()
+reconstituting 4
+reconstituted 4 as 0
+replacing set 2,3 as 1
+  reconstituting 1
+  reconstituted 1 as 4
+  reconstituting 0
+  reconstituted 0 as 3
+replaced set 2,3 as 1
+0: class Top | children 1 | given Top ()
+1: object o1 | children 4,3,2 | given O1,O2 ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
