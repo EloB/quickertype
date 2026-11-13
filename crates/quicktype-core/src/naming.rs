@@ -36,6 +36,13 @@ impl Name {
     }
 }
 
+/// As a JavaScript `Map` key, a `Name` object is compared by identity.
+impl crate::support::collection_utils::SameValueZeroKey for Name {
+    fn same_value_zero_key(&self) -> crate::support::collection_utils::SameValueZero {
+        crate::support::collection_utils::SameValueZero::Identity(u64::from(self.0))
+    }
+}
+
 /// A namespace (TS `Namespace`): names in the same namespace, or forbidden
 /// for it, must not get the same string.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]

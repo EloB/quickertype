@@ -32,7 +32,7 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
-use quicktype_js_compat::{sort as js_sort, whitespace, wordwrap::WordWrap};
+use quicktype_js_compat::{whitespace, wordwrap::WordWrap};
 
 use crate::annotation::AnnotationData;
 use crate::attributes::accessor_names::{
@@ -53,6 +53,9 @@ use crate::renderer::{
     BlankLineConfig, ForEachPosition, RenderContext, RenderResult, RendererCore,
 };
 use crate::source::{Source, serialize_render_result};
+use crate::support::collection_utils::{
+    SameValueZeroKey, first_by_same_value_zero, sort_by_cached_string_key,
+};
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::strings::trim_end;
 use crate::support::support::{assert, defined, non_null, panic};
@@ -298,13 +301,333 @@ impl<'a> ConvenienceRendererCore<'a> {
     }
 }
 
+/// The list of [`ConvenienceRenderer`] hooks, the single source of truth
+/// for the trait (`[declare]`) and for
+/// [`forward_convenience_renderer_hooks!`](crate::forward_convenience_renderer_hooks) (`[forward module]`).
+///
+/// Each entry is `[required mut|ref]` (abstract in TypeScript) or
+/// `[mut|ref]` (with a default in [`defaults`]), the hook's name, its
+/// parameters after `self` and its return type.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __convenience_renderer_hooks {
+    ($mode:tt) => {
+        $crate::__convenience_renderer_hook_items! {
+            $mode
+
+            // ---- Abstract ----------------------------------------------------
+
+            /// `makeNamedTypeNamer()`: the namer for classes, enums and
+            /// unions.
+            [required mut] make_named_type_namer() -> $crate::naming::Namer;
+
+            /// `namerForObjectProperty(o, p)`: the namer for a property, or
+            /// `None` if the property gets no name. A namer created anew for
+            /// each call is a separate naming group (see
+            /// [`Namer`](crate::naming::Namer)).
+            [required mut] namer_for_object_property(
+                o: $crate::ty::type_ref::TypeRef,
+                p: &$crate::ty::ty::ClassProperty
+            ) -> $crate::messages::Result<Option<$crate::naming::Namer>>;
+
+            /// `makeUnionMemberNamer()`: the namer for union members, or
+            /// `None` if they get no names.
+            [required mut] make_union_member_namer() -> Option<$crate::naming::Namer>;
+
+            /// `makeEnumCaseNamer()`: the namer for enum cases, or `None` if
+            /// they get no names.
+            [required mut] make_enum_case_namer() -> Option<$crate::naming::Namer>;
+
+            /// `emitSourceStructure(givenOutputFilename)`: emits the whole
+            /// output.
+            [required mut] emit_source_structure(
+                given_output_filename: &str
+            ) -> $crate::messages::Result<()>;
+
+            // ---- Naming ------------------------------------------------------
+
+            /// `forbiddenNamesForGlobalNamespace()`: names no type may have
+            /// (and, via `include_global_forbidden`, no property, case or
+            /// member).
+            [mut] forbidden_names_for_global_namespace()
+                -> $crate::messages::Result<Vec<String>>;
+
+            /// `forbiddenForObjectProperties(o, className)`.
+            [mut] forbidden_for_object_properties(
+                o: $crate::ty::type_ref::TypeRef,
+                class_name: $crate::naming::Name
+            ) -> $crate::messages::Result<$crate::convenience_renderer::ForbiddenWordsInfo>;
+
+            /// `forbiddenForUnionMembers(u, unionName)`.
+            [mut] forbidden_for_union_members(
+                u: $crate::ty::type_ref::TypeRef,
+                union_name: $crate::naming::Name
+            ) -> $crate::messages::Result<$crate::convenience_renderer::ForbiddenWordsInfo>;
+
+            /// `forbiddenForEnumCases(e, enumName)`.
+            [mut] forbidden_for_enum_cases(
+                e: $crate::ty::type_ref::TypeRef,
+                enum_name: $crate::naming::Name
+            ) -> $crate::messages::Result<$crate::convenience_renderer::ForbiddenWordsInfo>;
+
+            /// `makeTopLevelDependencyNames(t, topLevelName)`: extra global
+            /// names derived from a top-level's name.
+            [mut] make_top_level_dependency_names(
+                t: $crate::ty::type_ref::TypeRef,
+                top_level_name: $crate::naming::Name
+            ) -> $crate::messages::Result<Vec<$crate::naming::Name>>;
+
+            /// `makeNamedTypeDependencyNames(t, name)`: extra global names
+            /// derived from a named type's name.
+            [mut] make_named_type_dependency_names(
+                t: $crate::ty::type_ref::TypeRef,
+                name: $crate::naming::Name
+            ) -> $crate::messages::Result<Vec<$crate::naming::Name>>;
+
+            /// `makeNameForTransformation(xf, typeName)`.
+            [mut] make_name_for_transformation(
+                xf: &::std::rc::Rc<dyn $crate::attributes::type_attributes::TransformationAttribute>,
+                type_name: Option<$crate::naming::Name>
+            ) -> $crate::messages::Result<Option<$crate::naming::Name>>;
+
+            /// `namedTypeToNameForTopLevel(type)`: the named type that takes
+            /// a top-level's name, if any.
+            [ref] named_type_to_name_for_top_level(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<Option<$crate::ty::type_ref::TypeRef>>;
+
+            /// `unionMembersInGlobalNamespace`.
+            [ref] union_members_in_global_namespace() -> bool;
+
+            /// `enumCasesInGlobalNamespace`.
+            [ref] enum_cases_in_global_namespace() -> bool;
+
+            /// `makeNameForTopLevel(t, givenName, maybeNamedType)`.
+            [mut] make_name_for_top_level(
+                t: $crate::ty::type_ref::TypeRef,
+                given_name: &str,
+                maybe_named_type: Option<$crate::ty::type_ref::TypeRef>
+            ) -> $crate::messages::Result<$crate::naming::Name>;
+
+            /// `makeNameForNamedType(t)`.
+            [mut] make_name_for_named_type(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<$crate::naming::Name>;
+
+            /// `makeNameForProperty(o, className, p, jsonName,
+            /// assignedName)`: `None` if the property gets no name.
+            [mut] make_name_for_property(
+                o: $crate::ty::type_ref::TypeRef,
+                class_name: $crate::naming::Name,
+                p: &$crate::ty::ty::ClassProperty,
+                json_name: &str,
+                assigned_name: Option<&str>
+            ) -> $crate::messages::Result<Option<$crate::naming::Name>>;
+
+            /// `makePropertyDependencyNames(o, className, p, jsonName,
+            /// name)`.
+            [mut] make_property_dependency_names(
+                o: $crate::ty::type_ref::TypeRef,
+                class_name: $crate::naming::Name,
+                p: &$crate::ty::ty::ClassProperty,
+                json_name: &str,
+                name: $crate::naming::Name
+            ) -> $crate::messages::Result<Vec<$crate::naming::Name>>;
+
+            /// `makeNameForUnionMember(u, unionName, t)`.
+            [mut] make_name_for_union_member(
+                u: $crate::ty::type_ref::TypeRef,
+                union_name: $crate::naming::Name,
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<$crate::naming::Name>;
+
+            /// `makeNameForEnumCase(e, enumName, caseName, assignedName)`.
+            [mut] make_name_for_enum_case(
+                e: $crate::ty::type_ref::TypeRef,
+                enum_name: $crate::naming::Name,
+                case_name: &str,
+                assigned_name: Option<&str>
+            ) -> $crate::messages::Result<$crate::naming::Name>;
+
+            /// `proposedUnionMemberNameForTypeKind(kind)`.
+            [ref] proposed_union_member_name_for_type_kind(
+                kind: $crate::ty::transformed_string_type::TypeKind
+            ) -> Option<String>;
+
+            /// `proposeUnionMemberName(u, unionName, fieldType, lookup)`.
+            ///
+            /// Returns the proposal function instead of calling it: the
+            /// TypeScript closure reads renderer state, which the
+            /// [`Proposer`](crate::naming::Proposer) captures when it is
+            /// built.
+            [mut] propose_union_member_name(
+                u: $crate::ty::type_ref::TypeRef,
+                union_name: $crate::naming::Name,
+                field_type: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<$crate::naming::Proposer>;
+
+            // ---- Graph -------------------------------------------------------
+
+            /// `unionNeedsName(u)`: by default, every union except
+            /// `T | null`.
+            [ref] union_needs_name(
+                u: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<bool>;
+
+            /// `needsTypeDeclarationBeforeUse`: whether to compute forward
+            /// declarations.
+            [ref] needs_type_declaration_before_use() -> bool;
+
+            /// `canBeForwardDeclared(t)`: must be implemented if
+            /// `needs_type_declaration_before_use`.
+            [ref] can_be_forward_declared(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<bool>;
+
+            /// `isImplicitCycleBreaker(t)`: must be implemented by renderers
+            /// that call `is_cycle_breaker_type`.
+            [ref] is_implicit_cycle_breaker(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<bool>;
+
+            /// `canBreakCycles(t)`.
+            [ref] can_break_cycles(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<bool>;
+
+            // ---- Output ------------------------------------------------------
+
+            /// `descriptionForType(t)`.
+            [ref] description_for_type(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<Option<Vec<String>>>;
+
+            /// `descriptionForClassProperty(o, name)`.
+            [ref] description_for_class_property(
+                o: $crate::ty::type_ref::TypeRef,
+                name: &str
+            ) -> $crate::messages::Result<Option<Vec<String>>>;
+
+            /// `sortClassProperties(properties, propertyNames)`: the order of
+            /// `for_each_class_property`.
+            [ref] sort_class_properties(
+                properties: &::indexmap::IndexMap<String, $crate::ty::ty::ClassProperty>,
+                property_names: &::indexmap::IndexMap<String, $crate::naming::Name>
+            ) -> $crate::messages::Result<Vec<(String, $crate::ty::ty::ClassProperty)>>;
+
+            /// `commentLineStart`.
+            [ref] comment_line_start() -> &'static str;
+
+            /// `commentLinesSpliceOnBackslash`: whether a comment line ending
+            /// in a backslash gets a `.` appended (C-family lexers splice
+            /// such lines).
+            [ref] comment_lines_splice_on_backslash() -> bool;
+
+            /// `emitDescriptionBlock(lines)`.
+            [mut] emit_description_block(
+                lines: &[$crate::source::Source]
+            ) -> $crate::messages::Result<()>;
+
+            /// `finishFile(filename)`: TypeScript renderers that write
+            /// several files override it.
+            [mut] finish_file(filename: &str) -> $crate::messages::Result<()>;
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __convenience_renderer_hook_items {
+    (
+        $mode:tt
+        $(
+            $(#[$doc:meta])*
+            [$($kind:ident)+] $name:ident ($($arg:ident : $ty:ty),* $(,)?) -> $ret:ty;
+        )*
+    ) => {
+        $(
+            $crate::__convenience_renderer_hook_fn! {
+                $mode [$($kind)+] $(#[$doc])* $name ($($arg: $ty),*) -> $ret
+            }
+        )*
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __convenience_renderer_hook_fn {
+    ([declare] [required mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        fn $name(&mut self $(, $arg: $ty)*) -> $ret;
+    };
+    ([declare] [required ref] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        fn $name(&self $(, $arg: $ty)*) -> $ret;
+    };
+    ([declare] [mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        ///
+        /// Default: [`defaults`](crate::convenience_renderer::defaults) function of
+        /// the same name.
+        fn $name(&mut self $(, $arg: $ty)*) -> $ret {
+            $crate::convenience_renderer::defaults::$name(self $(, $arg)*)
+        }
+    };
+    ([declare] [ref] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        $(#[$doc])*
+        ///
+        /// Default: [`defaults`](crate::convenience_renderer::defaults) function of
+        /// the same name.
+        fn $name(&self $(, $arg: $ty)*) -> $ret {
+            $crate::convenience_renderer::defaults::$name(self $(, $arg)*)
+        }
+    };
+    ([forward $module:ident] [$(required)? mut] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        fn $name(&mut self $(, $arg: $ty)*) -> $ret {
+            $module::$name(self $(, $arg)*)
+        }
+    };
+    ([forward $module:ident] [$(required)? ref] $(#[$doc:meta])* $name:ident ($($arg:ident : $ty:ty),*) -> $ret:ty) => {
+        fn $name(&self $(, $arg: $ty)*) -> $ret {
+            $module::$name(self $(, $arg)*)
+        }
+    };
+}
+
+/// Implements **every** [`ConvenienceRenderer`] hook by calling the function
+/// of the same name in `module`, for renderers that belong to a family of
+/// TypeScript subclasses (see `docs/RENDERERS.md`).
+///
+/// `module` (a single identifier in scope: `use ... as hooks;`) holds one
+/// function per hook: it glob-imports the hooks of the level above
+/// (`pub use crate::convenience_renderer::defaults::*;` for a family,
+/// the family's hooks module for a leaf) and defines the hooks this level
+/// overrides, which shadow the glob. So a family cannot forget to forward a
+/// hook, and a leaf overrides any hook by defining it. Required hooks must
+/// be defined somewhere in the chain or the impl doesn't compile.
+///
+/// ```ignore
+/// impl<'a> ConvenienceRenderer<'a> for TypeScriptRenderer<'a> {
+///     fn core(&self) -> &ConvenienceRendererCore<'a> { &self.core }
+///     fn core_mut(&mut self) -> &mut ConvenienceRendererCore<'a> { &mut self.core }
+///     forward_convenience_renderer_hooks!(typescript_hooks);
+/// }
+/// ```
+#[macro_export]
+macro_rules! forward_convenience_renderer_hooks {
+    ($module:ident) => {
+        $crate::__convenience_renderer_hooks!([forward $module]);
+    };
+}
+
 /// The hooks of a renderer: every method a TypeScript `ConvenienceRenderer`
 /// subclass may override.
 ///
 /// Required methods are TypeScript's abstract methods. Every other method
 /// has the TypeScript default, implemented in the [`defaults`] function of
 /// the same name, so an override can call the default where TypeScript
-/// calls `super`.
+/// calls `super`. The hooks are generated from one list, which
+/// [`forward_convenience_renderer_hooks!`](crate::forward_convenience_renderer_hooks) also uses.
 pub trait ConvenienceRenderer<'a>: Sized {
     /// The renderer's [`ConvenienceRendererCore`].
     fn core(&self) -> &ConvenienceRendererCore<'a>;
@@ -312,280 +635,165 @@ pub trait ConvenienceRenderer<'a>: Sized {
     /// The renderer's [`ConvenienceRendererCore`], mutably.
     fn core_mut(&mut self) -> &mut ConvenienceRendererCore<'a>;
 
-    // ---- Abstract -------------------------------------------------------
+    crate::__convenience_renderer_hooks!([declare]);
+}
 
-    /// `makeNamedTypeNamer()`: the namer for classes, enums and unions.
-    fn make_named_type_namer(&mut self) -> Namer;
+/// The default implementations of the [`ConvenienceRenderer`] hooks, one
+/// function per non-abstract hook: what `super.x(...)` calls in
+/// TypeScript.
+pub mod defaults {
+    use super::*;
 
-    /// `namerForObjectProperty(o, p)`: the namer for a property, or `None`
-    /// if the property gets no name. A namer created anew for each call is
-    /// a separate naming group (see [`Namer`]).
-    fn namer_for_object_property(&mut self, o: TypeRef, p: &ClassProperty)
-    -> Result<Option<Namer>>;
-
-    /// `makeUnionMemberNamer()`: the namer for union members, or `None` if
-    /// they get no names.
-    fn make_union_member_namer(&mut self) -> Option<Namer>;
-
-    /// `makeEnumCaseNamer()`: the namer for enum cases, or `None` if they
-    /// get no names.
-    fn make_enum_case_namer(&mut self) -> Option<Namer>;
-
-    /// `emitSourceStructure(givenOutputFilename)`: emits the whole output.
-    fn emit_source_structure(&mut self, given_output_filename: &str) -> Result<()>;
-
-    // ---- Naming ---------------------------------------------------------
-
-    /// `forbiddenNamesForGlobalNamespace()`: names no type may have (and,
-    /// via `include_global_forbidden`, no property, case or member).
-    fn forbidden_names_for_global_namespace(&mut self) -> Result<Vec<String>> {
+    /// Default `forbiddenNamesForGlobalNamespace`: none.
+    pub fn forbidden_names_for_global_namespace<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
+    ) -> Result<Vec<String>> {
+        let _ = r;
         Ok(Vec::new())
     }
 
-    /// `forbiddenForObjectProperties(o, className)`.
-    fn forbidden_for_object_properties(
-        &mut self,
+    /// Default `forbiddenForObjectProperties`: nothing forbidden.
+    pub fn forbidden_for_object_properties<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         o: TypeRef,
         class_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
-        let _ = (o, class_name);
+        let _ = (r, o, class_name);
         Ok(ForbiddenWordsInfo::default())
     }
 
-    /// `forbiddenForUnionMembers(u, unionName)`.
-    fn forbidden_for_union_members(
-        &mut self,
+    /// Default `forbiddenForUnionMembers`: nothing forbidden.
+    pub fn forbidden_for_union_members<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         u: TypeRef,
         union_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
-        let _ = (u, union_name);
+        let _ = (r, u, union_name);
         Ok(ForbiddenWordsInfo::default())
     }
 
-    /// `forbiddenForEnumCases(e, enumName)`.
-    fn forbidden_for_enum_cases(
-        &mut self,
+    /// Default `forbiddenForEnumCases`: nothing forbidden.
+    pub fn forbidden_for_enum_cases<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         e: TypeRef,
         enum_name: Name,
     ) -> Result<ForbiddenWordsInfo> {
-        let _ = (e, enum_name);
+        let _ = (r, e, enum_name);
         Ok(ForbiddenWordsInfo::default())
     }
 
-    /// `makeTopLevelDependencyNames(t, topLevelName)`: extra global names
-    /// derived from a top-level's name.
-    fn make_top_level_dependency_names(
-        &mut self,
+    /// Default `makeTopLevelDependencyNames`: none.
+    pub fn make_top_level_dependency_names<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         t: TypeRef,
         top_level_name: Name,
     ) -> Result<Vec<Name>> {
-        let _ = (t, top_level_name);
+        let _ = (r, t, top_level_name);
         Ok(Vec::new())
     }
 
-    /// `makeNamedTypeDependencyNames(t, name)`: extra global names derived
-    /// from a named type's name.
-    fn make_named_type_dependency_names(&mut self, t: TypeRef, name: Name) -> Result<Vec<Name>> {
-        let _ = (t, name);
+    /// Default `makeNamedTypeDependencyNames`: none.
+    pub fn make_named_type_dependency_names<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
+        t: TypeRef,
+        name: Name,
+    ) -> Result<Vec<Name>> {
+        let _ = (r, t, name);
         Ok(Vec::new())
     }
 
-    /// `makeNameForTransformation(xf, typeName)`.
-    fn make_name_for_transformation(
-        &mut self,
+    /// Default `makeNameForTransformation`: no name.
+    pub fn make_name_for_transformation<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         xf: &Rc<dyn TransformationAttribute>,
         type_name: Option<Name>,
     ) -> Result<Option<Name>> {
-        let _ = (xf, type_name);
+        let _ = (r, xf, type_name);
         Ok(None)
     }
 
-    /// `namedTypeToNameForTopLevel(type)`: the named type that takes a
-    /// top-level's name, if any.
-    fn named_type_to_name_for_top_level(&self, t: TypeRef) -> Result<Option<TypeRef>> {
-        defaults::named_type_to_name_for_top_level(self, t)
-    }
-
-    /// `unionMembersInGlobalNamespace`.
-    fn union_members_in_global_namespace(&self) -> bool {
+    /// Default `unionMembersInGlobalNamespace`: `false`.
+    pub fn union_members_in_global_namespace<'a, R: ConvenienceRenderer<'a>>(r: &R) -> bool {
+        let _ = r;
         false
     }
 
-    /// `enumCasesInGlobalNamespace`.
-    fn enum_cases_in_global_namespace(&self) -> bool {
+    /// Default `enumCasesInGlobalNamespace`: `false`.
+    pub fn enum_cases_in_global_namespace<'a, R: ConvenienceRenderer<'a>>(r: &R) -> bool {
+        let _ = r;
         false
     }
 
-    /// `makeNameForTopLevel(t, givenName, maybeNamedType)`.
-    fn make_name_for_top_level(
-        &mut self,
-        t: TypeRef,
-        given_name: &str,
-        maybe_named_type: Option<TypeRef>,
-    ) -> Result<Name> {
-        defaults::make_name_for_top_level(self, t, given_name, maybe_named_type)
-    }
-
-    /// `makeNameForNamedType(t)`.
-    fn make_name_for_named_type(&mut self, t: TypeRef) -> Result<Name> {
-        defaults::make_name_for_named_type(self, t)
-    }
-
-    /// `makeNameForProperty(o, className, p, jsonName, assignedName)`:
-    /// `None` if the property gets no name.
-    fn make_name_for_property(
-        &mut self,
-        o: TypeRef,
-        class_name: Name,
-        p: &ClassProperty,
-        json_name: &str,
-        assigned_name: Option<&str>,
-    ) -> Result<Option<Name>> {
-        defaults::make_name_for_property(self, o, class_name, p, json_name, assigned_name)
-    }
-
-    /// `makePropertyDependencyNames(o, className, p, jsonName, name)`.
-    fn make_property_dependency_names(
-        &mut self,
+    /// Default `makePropertyDependencyNames`: none.
+    pub fn make_property_dependency_names<'a, R: ConvenienceRenderer<'a>>(
+        r: &mut R,
         o: TypeRef,
         class_name: Name,
         p: &ClassProperty,
         json_name: &str,
         name: Name,
     ) -> Result<Vec<Name>> {
-        let _ = (o, class_name, p, json_name, name);
+        let _ = (r, o, class_name, p, json_name, name);
         Ok(Vec::new())
     }
 
-    /// `makeNameForUnionMember(u, unionName, t)`.
-    fn make_name_for_union_member(
-        &mut self,
-        u: TypeRef,
-        union_name: Name,
-        t: TypeRef,
-    ) -> Result<Name> {
-        defaults::make_name_for_union_member(self, u, union_name, t)
-    }
-
-    /// `makeNameForEnumCase(e, enumName, caseName, assignedName)`.
-    fn make_name_for_enum_case(
-        &mut self,
-        e: TypeRef,
-        enum_name: Name,
-        case_name: &str,
-        assigned_name: Option<&str>,
-    ) -> Result<Name> {
-        defaults::make_name_for_enum_case(self, e, enum_name, case_name, assigned_name)
-    }
-
-    /// `proposedUnionMemberNameForTypeKind(kind)`.
-    fn proposed_union_member_name_for_type_kind(&self, kind: TypeKind) -> Option<String> {
-        let _ = kind;
+    /// Default `proposedUnionMemberNameForTypeKind`: none.
+    pub fn proposed_union_member_name_for_type_kind<'a, R: ConvenienceRenderer<'a>>(
+        r: &R,
+        kind: TypeKind,
+    ) -> Option<String> {
+        let _ = (r, kind);
         None
     }
 
-    /// `proposeUnionMemberName(u, unionName, fieldType, lookup)`.
-    ///
-    /// Returns the proposal function instead of calling it: the TypeScript
-    /// closure reads renderer state, which the [`Proposer`] captures when it
-    /// is built (see [`Proposer`]).
-    fn propose_union_member_name(
-        &mut self,
-        u: TypeRef,
-        union_name: Name,
-        field_type: TypeRef,
-    ) -> Result<Proposer> {
-        defaults::propose_union_member_name(self, u, union_name, field_type)
+    /// Default `unionNeedsName`: every union except `T | null`.
+    pub fn union_needs_name<'a, R: ConvenienceRenderer<'a>>(r: &R, u: TypeRef) -> Result<bool> {
+        Ok(nullable_from_union(r.core().base.type_graph(), u)?.is_none())
     }
 
-    // ---- Graph ----------------------------------------------------------
-
-    /// `unionNeedsName(u)`: by default, every union except `T | null`.
-    fn union_needs_name(&self, u: TypeRef) -> Result<bool> {
-        Ok(nullable_from_union(self.core().base.type_graph(), u)?.is_none())
-    }
-
-    /// `needsTypeDeclarationBeforeUse`: whether to compute forward
-    /// declarations.
-    fn needs_type_declaration_before_use(&self) -> bool {
+    /// Default `needsTypeDeclarationBeforeUse`: `false`.
+    pub fn needs_type_declaration_before_use<'a, R: ConvenienceRenderer<'a>>(r: &R) -> bool {
+        let _ = r;
         false
     }
 
-    /// `canBeForwardDeclared(t)`: must be implemented if
-    /// [`needs_type_declaration_before_use`](Self::needs_type_declaration_before_use).
-    fn can_be_forward_declared(&self, t: TypeRef) -> Result<bool> {
-        let _ = t;
+    /// Default `canBeForwardDeclared`: an error, as in TypeScript.
+    pub fn can_be_forward_declared<'a, R: ConvenienceRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+    ) -> Result<bool> {
+        let _ = (r, t);
         panic(
             "If needsTypeDeclarationBeforeUse returns true, canBeForwardDeclared must be implemented",
         )
     }
 
-    /// `isImplicitCycleBreaker(t)`: must be implemented by renderers that
-    /// call [`is_cycle_breaker_type`](ConvenienceRendererExt::is_cycle_breaker_type).
-    fn is_implicit_cycle_breaker(&self, t: TypeRef) -> Result<bool> {
-        let _ = t;
+    /// Default `isImplicitCycleBreaker`: an error, as in TypeScript.
+    pub fn is_implicit_cycle_breaker<'a, R: ConvenienceRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+    ) -> Result<bool> {
+        let _ = (r, t);
         panic("A renderer that invokes isCycleBreakerType must implement isImplicitCycleBreaker")
     }
 
-    /// `canBreakCycles(t)`.
-    fn can_break_cycles(&self, t: TypeRef) -> Result<bool> {
-        let _ = t;
+    /// Default `canBreakCycles`: `true`.
+    pub fn can_break_cycles<'a, R: ConvenienceRenderer<'a>>(r: &R, t: TypeRef) -> Result<bool> {
+        let _ = (r, t);
         Ok(true)
     }
 
-    // ---- Output ---------------------------------------------------------
-
-    /// `descriptionForType(t)`.
-    fn description_for_type(&self, t: TypeRef) -> Result<Option<Vec<String>>> {
-        defaults::description_for_type(self, t)
-    }
-
-    /// `descriptionForClassProperty(o, name)`.
-    fn description_for_class_property(
-        &self,
-        o: TypeRef,
-        name: &str,
-    ) -> Result<Option<Vec<String>>> {
-        defaults::description_for_class_property(self, o, name)
-    }
-
-    /// `sortClassProperties(properties, propertyNames)`: the order of
-    /// [`for_each_class_property`](ConvenienceRendererExt::for_each_class_property).
-    fn sort_class_properties(
-        &self,
-        properties: &IndexMap<String, ClassProperty>,
-        property_names: &IndexMap<String, Name>,
-    ) -> Result<Vec<(String, ClassProperty)>> {
-        defaults::sort_class_properties(self, properties, property_names)
-    }
-
-    /// `commentLineStart`.
-    fn comment_line_start(&self) -> &'static str {
+    /// Default `commentLineStart`: `"// "`.
+    pub fn comment_line_start<'a, R: ConvenienceRenderer<'a>>(r: &R) -> &'static str {
+        let _ = r;
         "// "
     }
 
-    /// `commentLinesSpliceOnBackslash`: whether a comment line ending in a
-    /// backslash gets a `.` appended (C-family lexers splice such lines).
-    fn comment_lines_splice_on_backslash(&self) -> bool {
+    /// Default `commentLinesSpliceOnBackslash`: `false`.
+    pub fn comment_lines_splice_on_backslash<'a, R: ConvenienceRenderer<'a>>(r: &R) -> bool {
+        let _ = r;
         false
     }
-
-    /// `emitDescriptionBlock(lines)`.
-    fn emit_description_block(&mut self, lines: &[Source]) -> Result<()> {
-        defaults::emit_description_block(self, lines)
-    }
-
-    /// `finishFile(filename)`: TypeScript renderers that write several
-    /// files override it.
-    fn finish_file(&mut self, filename: &str) -> Result<()> {
-        defaults::finish_file(self, filename)
-    }
-}
-
-/// The default implementations of the [`ConvenienceRenderer`] hooks: what
-/// `super.x(...)` calls in TypeScript.
-pub mod defaults {
-    use super::*;
 
     /// Default `namedTypeToNameForTopLevel`: the type itself if it is named.
     pub fn named_type_to_name_for_top_level<'a, R: ConvenienceRenderer<'a>>(
@@ -840,20 +1048,16 @@ pub mod defaults {
         properties: &IndexMap<String, ClassProperty>,
         property_names: &IndexMap<String, Name>,
     ) -> Result<Vec<(String, ClassProperty)>> {
-        let mut entries: Vec<(String, ClassProperty)> =
+        let entries: Vec<(String, ClassProperty)> =
             properties.iter().map(|(k, v)| (k.clone(), *v)).collect();
-        if r.core().alphabetize_properties {
-            let names = r.core().base.names()?;
-            let mut keyed: Vec<(String, (String, ClassProperty))> =
-                Vec::with_capacity(entries.len());
-            for entry in entries {
-                let name = defined(property_names.get(&entry.0))?;
-                keyed.push((defined(names.get(*name))?.to_owned(), entry));
-            }
-            js_sort::sort_by(&mut keyed, |a, b| js_sort::compare_utf16(&a.0, &b.0));
-            entries = keyed.into_iter().map(|(_, e)| e).collect();
+        if !r.core().alphabetize_properties {
+            return Ok(entries);
         }
-        Ok(entries)
+        let names = r.core().base.names()?;
+        sort_by_cached_string_key(entries, |(json_name, _)| -> Result<String> {
+            let name = defined(property_names.get(json_name))?;
+            Ok(defined(names.get(*name))?.to_owned())
+        })
     }
 
     /// Default `emitDescriptionBlock`: comment lines.
@@ -880,18 +1084,6 @@ pub fn render_with<'a, R: ConvenienceRenderer<'a>>(
 ) -> Result<RenderResult> {
     renderer.set_alphabetize_properties(alphabetize_properties);
     renderer.render(given_output_filename)
-}
-
-/// Sorts `items` stably by a string key in UTF-16 order (TS `mapSortBy`
-/// with a string key).
-fn sort_by_key<T>(items: &mut Vec<T>, mut key: impl FnMut(&T) -> Result<String>) -> Result<()> {
-    let mut keyed: Vec<(String, T)> = Vec::with_capacity(items.len());
-    for item in items.drain(..) {
-        keyed.push((key(&item)?, item));
-    }
-    js_sort::sort_by(&mut keyed, |a, b| js_sort::compare_utf16(&a.0, &b.0));
-    items.extend(keyed.into_iter().map(|(_, item)| item));
-    Ok(())
 }
 
 /// The machinery of [`ConvenienceRenderer`] (and TS `Renderer`), shared by
@@ -1411,14 +1603,15 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         }
         let names = self.names()?;
         let property_nameds = self.core().property_names(t)?;
-        let mut filtered: Vec<(String, TypeRef)> = Vec::new();
-        for (n, p) in ty.properties()? {
-            if let Some(name) = property_nameds.get(n) {
-                filtered.push((defined(names.get(*name))?.to_owned(), p.type_ref));
-            }
-        }
-        js_sort::sort_by(&mut filtered, |a, b| js_sort::compare_utf16(&a.0, &b.0));
-        Ok(filtered.into_iter().map(|(_, t)| t).collect())
+        let filtered: Vec<(Name, TypeRef)> = ty
+            .properties()?
+            .iter()
+            .filter_map(|(n, p)| property_nameds.get(n).map(|&name| (name, p.type_ref)))
+            .collect();
+        let sorted = sort_by_cached_string_key(filtered, |&(name, _)| -> Result<String> {
+            Ok(defined(names.get(name))?.to_owned())
+        })?;
+        Ok(sorted.into_iter().map(|(_, t)| t).collect())
     }
 
     /// `processGraph()`: computes the declarations and the named types.
@@ -1681,14 +1874,21 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         blank_locations: impl Into<BlankLineConfig>,
         mut f: impl FnMut(&mut Self, Name, &str, ClassProperty, ForEachPosition) -> Result<()>,
     ) -> Result<()> {
-        let property_names = self.core().property_names(o)?.clone();
         let properties = self.type_graph().type_at(o)?.properties()?;
-        let sorted = self.sort_class_properties(properties, &property_names)?;
-        let items: Vec<(String, ClassProperty)> = sorted;
-        self.for_each_with_blank_lines(items, blank_locations, |r, p, json_name, position| {
-            let name = defined(property_names.get(&json_name).copied())?;
-            f(r, name, &json_name, p, position)
-        })?;
+        let property_names = self.core().property_names(o)?;
+        let items: Vec<(String, (ClassProperty, Option<Name>))> = self
+            .sort_class_properties(properties, property_names)?
+            .into_iter()
+            .map(|(json_name, p)| {
+                let name = property_names.get(&json_name).copied();
+                (json_name, (p, name))
+            })
+            .collect();
+        self.for_each_with_blank_lines(
+            items,
+            blank_locations,
+            |r, (p, name), json_name, position| f(r, defined(name)?, &json_name, p, position),
+        )?;
         Ok(())
     }
 
@@ -1712,19 +1912,18 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
                 all_members
             }
         };
-        let mut member_names: Vec<(TypeRef, Name)> = self
+        let member_names: Vec<(TypeRef, Name)> = self
             .core()
             .member_names(u)?
             .iter()
             .filter(|(t, _)| iterate_members.contains(*t))
             .map(|(&t, &n)| (t, n))
             .collect();
-        sort_by_key(&mut member_names, |&(t, n)| match sort_order {
+        let sorted = sort_by_cached_string_key(member_names, |&(t, n)| match sort_order {
             Some(order) => order(self, n, t),
             None => Ok(defined(self.names()?.get(n))?.to_owned()),
         })?;
-        let items: Vec<(TypeRef, Name)> = member_names;
-        self.for_each_with_blank_lines(items, blank_locations, |r, name, t, position| {
+        self.for_each_with_blank_lines(sorted, blank_locations, |r, name, t, position| {
             f(r, name, t, position)
         })?;
         Ok(())
@@ -1821,19 +2020,22 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
 
     /// `forEachUniqueUnion(blankLocations, uniqueValue, f)`: `f(union,
     /// value, position)` for the first named union with each distinct
-    /// `unique_value`.
-    fn for_each_unique_union<T: Eq + Hash>(
+    /// `unique_value`. Values are JavaScript `Map` keys: strings, numbers
+    /// and booleans are compared by value, a [`Name`] by identity, and a
+    /// [`JsObject`](crate::support::collection_utils::JsObject) (a fresh
+    /// array or object in TypeScript) equals nothing.
+    fn for_each_unique_union<T: SameValueZeroKey>(
         &mut self,
         blank_locations: impl Into<BlankLineConfig>,
         mut unique_value: impl FnMut(&Self, TypeRef) -> Result<T>,
         f: impl FnMut(&mut Self, TypeRef, T, ForEachPosition) -> Result<()>,
     ) -> Result<()> {
-        let mut first_union_by_value: IndexMap<T, TypeRef> = IndexMap::new();
         let unions: Vec<TypeRef> = self.named_unions()?.iter().copied().collect();
+        let mut values: Vec<(T, TypeRef)> = Vec::with_capacity(unions.len());
         for u in unions {
-            let v = unique_value(self, u)?;
-            first_union_by_value.entry(v).or_insert(u);
+            values.push((unique_value(self, u)?, u));
         }
+        let first_union_by_value = first_by_same_value_zero(values);
         self.for_each_with_blank_lines(first_union_by_value, blank_locations, f)?;
         Ok(())
     }
@@ -2068,6 +2270,7 @@ pub mod prelude {
         ConvenienceRenderer, ConvenienceRendererCore, ConvenienceRendererExt, ForbiddenWord,
         ForbiddenWordsInfo, constant_proposer, defaults, render_with, type_not_supported,
     };
+    pub use crate::forward_convenience_renderer_hooks;
     pub use crate::messages::Result;
     pub use crate::naming::{Name, Namer, Proposer, fun_prefix_namer};
     pub use crate::renderer::{
@@ -2075,6 +2278,7 @@ pub mod prelude {
     };
     pub use crate::sl;
     pub use crate::source::{Source, annotated, maybe_annotated, modify_source};
+    pub use crate::support::collection_utils::{JsObject, SameValueZeroKey};
     pub use crate::ty::transformed_string_type::TypeKind;
     pub use crate::ty::ty::ClassProperty;
     pub use crate::ty::type_ref::TypeRef;
@@ -2084,6 +2288,158 @@ pub mod prelude {
 /// `matchType` for a kind it has no case for.
 pub fn type_not_supported<T>(kind: TypeKind) -> Result<T> {
     panic(format!("Unsupported type {kind} in non-exhaustive match"))
+}
+
+/// A two-level family of renderers built with
+/// [`forward_convenience_renderer_hooks!`](crate::forward_convenience_renderer_hooks), as `docs/RENDERERS.md`
+/// describes it.
+#[cfg(test)]
+mod family_tests {
+    use crate::convenience_renderer::prelude::*;
+    use crate::target_language::TargetLanguage;
+
+    /// The family's own methods (a TS mid-level base class), with defaults.
+    pub trait FamilyRenderer<'a>: ConvenienceRenderer<'a> {
+        fn greeting(&self) -> String {
+            "family greeting".to_owned()
+        }
+    }
+
+    /// The hooks the family overrides; everything else comes from the
+    /// framework defaults through the glob.
+    pub mod family_hooks {
+        pub use crate::convenience_renderer::defaults::*;
+
+        use super::FamilyRenderer;
+        use crate::convenience_renderer::prelude::*;
+
+        pub fn make_named_type_namer<'a, R: FamilyRenderer<'a>>(_r: &mut R) -> Namer {
+            fun_prefix_namer("types", str::to_owned)
+        }
+
+        pub fn namer_for_object_property<'a, R: FamilyRenderer<'a>>(
+            _r: &mut R,
+            _o: TypeRef,
+            _p: &ClassProperty,
+        ) -> Result<Option<Namer>> {
+            Ok(None)
+        }
+
+        pub fn make_union_member_namer<'a, R: FamilyRenderer<'a>>(_r: &mut R) -> Option<Namer> {
+            None
+        }
+
+        pub fn make_enum_case_namer<'a, R: FamilyRenderer<'a>>(_r: &mut R) -> Option<Namer> {
+            None
+        }
+
+        pub fn comment_line_start<'a, R: FamilyRenderer<'a>>(_r: &R) -> &'static str {
+            "# "
+        }
+
+        pub fn forbidden_names_for_global_namespace<'a, R: FamilyRenderer<'a>>(
+            _r: &mut R,
+        ) -> Result<Vec<String>> {
+            Ok(vec!["TopLevel".to_owned()])
+        }
+
+        pub fn emit_source_structure<'a, R: FamilyRenderer<'a>>(
+            r: &mut R,
+            _given_output_filename: &str,
+        ) -> Result<()> {
+            let greeting = r.greeting();
+            r.emit_line(greeting);
+            let start = r.comment_line_start();
+            r.emit_line(start);
+            r.for_each_top_level(BlankLinePosition::None, |r, _, name, _| {
+                r.emit_line(name);
+                Ok(())
+            })?;
+            Ok(())
+        }
+    }
+
+    /// A leaf that overrides one hook (with `super`) and one family method.
+    mod leaf_hooks {
+        pub use super::family_hooks::*;
+
+        use super::FamilyRenderer;
+
+        pub fn comment_line_start<'a, R: FamilyRenderer<'a>>(r: &R) -> &'static str {
+            if super::family_hooks::comment_line_start(r) == "# " {
+                "-- "
+            } else {
+                "?"
+            }
+        }
+    }
+
+    struct Leaf<'a> {
+        core: ConvenienceRendererCore<'a>,
+        override_greeting: bool,
+    }
+
+    impl<'a> ConvenienceRenderer<'a> for Leaf<'a> {
+        fn core(&self) -> &ConvenienceRendererCore<'a> {
+            &self.core
+        }
+
+        fn core_mut(&mut self) -> &mut ConvenienceRendererCore<'a> {
+            &mut self.core
+        }
+
+        forward_convenience_renderer_hooks!(leaf_hooks);
+    }
+
+    impl<'a> FamilyRenderer<'a> for Leaf<'a> {
+        fn greeting(&self) -> String {
+            if self.override_greeting {
+                "leaf greeting".to_owned()
+            } else {
+                "family greeting".to_owned()
+            }
+        }
+    }
+
+    #[test]
+    fn hooks_resolve_leaf_then_family_then_framework() {
+        let mut builder = crate::ty::type_builder::TypeBuilder::new(
+            crate::ty::type_builder_utils::get_no_string_type_mapping(),
+            false,
+            false,
+            false,
+            false,
+        )
+        .unwrap();
+        let t = builder
+            .get_primitive_type(
+                TypeKind::Bool,
+                crate::attributes::type_attributes::TypeAttributes::new(),
+                None,
+            )
+            .unwrap();
+        builder.add_top_level("TopLevel", t).unwrap();
+        let graph = builder.finish().unwrap();
+        let language = crate::language::rust::language::RustTargetLanguage;
+        let ctx = RenderContext {
+            type_graph: &graph,
+            leading_comments: None,
+        };
+        let leaf = Leaf {
+            core: ConvenienceRendererCore::new(&language as &dyn TargetLanguage, ctx),
+            override_greeting: true,
+        };
+        // Framework default, reached through both globs.
+        assert!(leaf.can_break_cycles(t).unwrap());
+        let result = render_with(leaf, "out", false).unwrap();
+        let source = &result.sources["out"];
+        let lines = crate::source::serialize_render_result(source, &result.names, "  ")
+            .unwrap()
+            .lines;
+        // The leaf's greeting and comment start, the family's forbidden
+        // names (so the top-level is renamed).
+        assert_eq!(lines, ["leaf greeting", "-- ", "Purple_TopLevel", ""]);
+    }
 }
 
 #[cfg(test)]
