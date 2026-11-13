@@ -20,8 +20,16 @@
 //!   [`JsonSample`] read with `JSON.parse` semantics as the JavaScript API
 //!   does, or with stream-json semantics as the CLI does);
 //!   [`json_input_for_target_language`] makes one that suits a language.
-//!   [`sources_from_postman_collection`] turns a Postman collection into
-//!   JSON sources.
+//!   [`JsonSchemaInput`] reads JSON Schema ([`JsonSchemaSourceData`]),
+//!   fetching documents through a [`JsonSchemaStore`] such as
+//!   [`FetchingJsonSchemaStore`]. [`sources_from_postman_collection`] turns
+//!   a Postman collection into JSON sources.
+//! - **I/O:** files, URLs and standard input are read through the [`Io`]
+//!   trait, with Node's semantics and error texts
+//!   ([`read_from_file_or_url`], [`readable_from_file_or_url`]); [`StdIo`]
+//!   implements it on `std` (cargo feature `fs`, on by default; `http` adds
+//!   URLs). Inputs that fetch are asynchronous; [`block_on`] runs them
+//!   natively.
 //! - **Languages and their options:** [`TargetLanguage`],
 //!   [`default_target_languages`], [`language_named`],
 //!   [`get_target_language`], and the untyped [`RendererOptions`] the
@@ -31,7 +39,9 @@
 //!   [`INFERENCE_FLAGS`].
 //! - **Errors:** every failure is a [`QuickTypeError`], whose
 //!   [`user_message`](QuickTypeError::user_message) is the message the
-//!   TypeScript implementation reports; nothing panics on user input.
+//!   TypeScript implementation reports: one of quicktype's messages
+//!   ([`ErrorKind`]) or a JavaScript exception that escapes it
+//!   ([`JsException`]). Nothing panics on user input.
 //! - **Diagnostics:** `--debug` output is written with [`console_log`];
 //!   [`set_console_sink`] redirects it.
 //!
@@ -99,7 +109,7 @@ pub mod union_builder;
 
 pub use crate::annotation::AnnotationData;
 pub use crate::run::{
-    Clock, DebugOptions, Options, QuicktypeTiming, RunContext, TimingCallback,
+    Clock, DebugOptions, Options, QuicktypeTiming, RunContext, Timer, TimingCallback,
     combine_render_results, get_target_language, quicktype, quicktype_multi_file,
     quicktype_multi_file_sync,
 };
@@ -113,11 +123,26 @@ pub use crate::inference::{INFERENCE_FLAGS, InferenceFlag, InferenceFlagName, In
 // ---- Inputs (`input/`) ---------------------------------------------------
 
 pub use crate::input::compressed_json::{CompressedJsonTables, JsonSample};
+pub use crate::input::fetching_json_schema_store::FetchingJsonSchemaStore;
 pub use crate::input::inputs::{
     CompressedTopLevel, Input, InputData, JsonInput, JsonSourceData, LocalBoxFuture,
     json_input_for_target_language, json_input_for_target_language_named,
 };
+pub use crate::input::json_schema_input::{
+    JsonSchemaAttributeProducer, JsonSchemaAttributes, JsonSchemaInput, JsonSchemaSourceData,
+    JsonSchemaType, Ref,
+};
+pub use crate::input::json_schema_store::{JsonSchema, JsonSchemaStore, SchemaCache};
 pub use crate::input::postman_collection::{PostmanSources, sources_from_postman_collection};
+
+// ---- I/O (`input/io/`) ---------------------------------------------------
+
+pub use crate::input::io::block_on;
+#[cfg(feature = "fs")]
+pub use crate::input::io::node_io::StdIo;
+pub use crate::input::io::node_io::{
+    HttpResponse, Io, IoError, Readable, is_url, read_from_file_or_url, readable_from_file_or_url,
+};
 
 // ---- Languages and renderer options --------------------------------------
 
@@ -131,10 +156,13 @@ pub use crate::target_language::{LanguageConfig, TargetLanguage};
 
 // ---- Errors (`Messages.ts`) ----------------------------------------------
 
-pub use crate::messages::{ErrorKind, MessageValue, QuickTypeError, Result};
+pub use crate::messages::{
+    ErrorKind, JsErrorName, JsException, MessageValue, QuickTypeError, Result,
+};
 
 // ---- Support -------------------------------------------------------------
 
 pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
 pub use crate::support::comments::{Comment, CommentOptions};
+pub use crate::support::parse_json::parse_json;
 pub use crate::support::support::{ConsoleSink, console_log, set_console_sink};
