@@ -196,16 +196,30 @@ TargetLanguage.prototype.renderGraphAndSerialize = function (
     rendererOptions,
     indentation,
 ) {
-    const result = originalRender.call(
-        this,
-        typeGraph,
-        givenOutputFilename,
-        alphabetizeProperties,
-        leadingComments,
-        rendererOptions,
-        indentation,
-    );
+    // console.log lines the render prints (Renderer.finishFile's
+    // "[WARNING] Tried to emit file ... more than once"), still printed.
+    const consoleLines = [];
+    const originalLog = console.log;
+    console.log = (...args) => {
+        consoleLines.push(args.join(" "));
+        originalLog.apply(console, args);
+    };
+    let result;
+    try {
+        result = originalRender.call(
+            this,
+            typeGraph,
+            givenOutputFilename,
+            alphabetizeProperties,
+            leadingComments,
+            rendererOptions,
+            indentation,
+        );
+    } finally {
+        console.log = originalLog;
+    }
     if (captured !== undefined) {
+        if (consoleLines.length > 0) captured.console = consoleLines;
         if (leadingComments !== undefined) throw new Error("leading comments are not recorded");
         captured.render = {
             lang: this.name,
@@ -320,20 +334,24 @@ async function recordGolden(id) {
         if (step.files.length !== rec.files.length) return "mismatch: file count differs";
     }
     const quiet = step.args.includes("--quiet");
+    // The render's console.log lines come first on stdout.
+    const consolePrefix = (rec.console ?? []).map((line) => `${line}\n`).join("");
     if (step.files.length === 0) {
         const golden = readFileSync(join(goldenDir, id, "step0.stdout"), "utf8");
-        if (rec.files.length === 0 || golden !== stdout || stdout !== joinStdout(rec.files, quiet)) {
+        if (rec.files.length === 0 || golden !== stdout || stdout !== consolePrefix + joinStdout(rec.files, quiet)) {
             return "mismatch: stdout differs from golden";
         }
     }
-    // Several files printed to stdout: the fixture names the stdout golden
-    // once (`stdout`) and the test joins the rendered files like the CLI.
-    const multiFileStdout = step.files.length === 0 && rec.files.length > 1;
+    // Several files (or console lines) printed to stdout: the fixture names
+    // the stdout golden once (`stdout`) and the test joins the console lines
+    // and the rendered files like the CLI.
+    const multiFileStdout = step.files.length === 0 && (rec.files.length > 1 || rec.console !== undefined);
     const fixture = {
         id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
+        console: rec.console,
         stdout: multiFileStdout ? `${id}/step0.stdout` : undefined,
         quiet: multiFileStdout && quiet ? true : undefined,
         files: rec.files.map((f) => ({

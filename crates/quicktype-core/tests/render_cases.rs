@@ -20,6 +20,7 @@ use std::fs;
 use std::path::Path;
 
 use quicktype_core::language::all::{ALL, language_named};
+use quicktype_core::support::support::capture_console;
 use quicktype_core::target_language::MultiFileRenderResult;
 use render_support::{build_graph, first_difference, gather_and_render};
 use serde_json::Value;
@@ -50,17 +51,31 @@ fn join_stdout(result: &MultiFileRenderResult, quiet: bool) -> String {
 
 fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let mut graph = build_graph(&fixture["graph"]).map_err(|e| format!("graph: {e}"))?;
-    let result = gather_and_render(&mut graph, &fixture["gather"], &fixture["render"])
-        .map_err(|e| format!("render: {e}"))?;
+    let (result, console) =
+        capture_console(|| gather_and_render(&mut graph, &fixture["gather"], &fixture["render"]));
+    let result = result.map_err(|e| format!("render: {e}"))?;
+    // The `console.log` lines of the render (`finishFile`'s warning about a
+    // file emitted twice), recorded when there were any; the CLI prints
+    // them on stdout before the files.
+    let console_prefix = match fixture["console"].as_array() {
+        Some(expected) => {
+            let expected: Vec<&str> = expected.iter().filter_map(Value::as_str).collect();
+            if console != expected {
+                return Err(format!("console {console:?}, expected {expected:?}"));
+            }
+            console.iter().map(|line| format!("{line}\n")).collect()
+        }
+        None => String::new(),
+    };
     let files = fixture["files"].as_array().ok_or("no files")?;
     let names: Vec<&String> = result.keys().collect();
     let expected_names: Vec<&str> = files.iter().filter_map(|f| f["name"].as_str()).collect();
     if names != expected_names {
         return Err(format!("files {names:?}, expected {expected_names:?}"));
     }
-    // Several files printed to stdout (no `--out`): compare them joined the
-    // way the CLI's `writeOutput` prints them, with the stdout golden
-    // (`stdout`) or the recorded stdout (`stdoutText`).
+    // Several files (or console lines) printed to stdout (no `--out`):
+    // compare them joined the way the CLI prints them, with the stdout
+    // golden (`stdout`) or the recorded stdout (`stdoutText`).
     let stdout = match (fixture["stdout"].as_str(), fixture["stdoutText"].as_str()) {
         (Some(path), _) => Some(
             fs::read_to_string(golden_dir.join(path))
@@ -72,7 +87,7 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let has_stdout = stdout.is_some();
     if let Some(expected) = stdout {
         let quiet = fixture["quiet"].as_bool().unwrap_or(false);
-        let actual = join_stdout(&result, quiet);
+        let actual = console_prefix + &join_stdout(&result, quiet);
         if actual != expected {
             return Err(format!(
                 "stdout differs at {}",
