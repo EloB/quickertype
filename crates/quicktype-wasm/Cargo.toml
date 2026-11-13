@@ -9,6 +9,10 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+[package.metadata.dist]
+# Only quicktype-cli is released (docs/RELEASING.md).
+dist = false
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

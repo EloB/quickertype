@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[package.metadata.dist]
+# Only quicktype-cli is released (docs/RELEASING.md).
+dist = false
+
 [lib]
 name = "quicktype_js_compat"
 

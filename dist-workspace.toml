@@ -1,0 +1,39 @@
+[workspace]
+members = ["cargo:."]
+
+# Config for 'dist' (https://axodotdev.github.io/cargo-dist/book/), which
+# generates .github/workflows/release.yml: never edit that file by hand,
+# change this file and run `dist generate` (CI checks with
+# `dist generate --check`). See docs/RELEASING.md.
+#
+# Only quicktype-cli is distributed; every other workspace member sets
+# `dist = false` in its [package.metadata.dist]. Package-specific settings
+# (formula and npm package names) are in crates/quicktype-cli/Cargo.toml.
+[dist]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.34.0"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell", "powershell", "npm", "homebrew", "msi"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Where to host releases
+hosting = "github"
+# Whether to install an updater program
+install-updater = false
+# A GitHub repo to push Homebrew formulas to (needs the HOMEBREW_TAP_TOKEN secret)
+tap = "EloB/homebrew-tap"
+# Publish jobs to run in CI (npm needs the NPM_TOKEN secret)
+publish-jobs = ["homebrew", "npm"]
+# Build and upload every artifact on pull requests, without releasing
+pr-run-mode = "upload"
+# Build with `cargo build --package quicktype-cli` instead of `--workspace`:
+# the same build as `cargo build --release -p quicktype-cli` (no WASM
+# bindings or xtask, no features unified from other members)
+precise-builds = true
+# Files to copy into the archives and installers besides the auto-included
+# README.md, LICENSE and CHANGELOG.md (paths relative to the workspace root)
+include = ["NOTICE"]

@@ -7,6 +7,10 @@ rust-version.workspace = true
 license.workspace = true
 publish = false
 
+[package.metadata.dist]
+# Only quicktype-cli is released (docs/RELEASING.md).
+dist = false
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true

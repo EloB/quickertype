@@ -69,3 +69,9 @@ opt-level = 2
 inherits = "release"
 debug = "line-tables-only"
 strip = false
+
+# The profile that dist (docs/RELEASING.md) builds release artifacts with:
+# exactly the release profile, so a released binary is the one
+# `cargo build --release` makes and parity tests.
+[profile.dist]
+inherits = "release"
