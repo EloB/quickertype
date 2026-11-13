@@ -336,9 +336,10 @@ the others name the fix they need.
   stops them at 10,000 nested levels. YAML values nested deeper
   than 1,000 levels, also through aliases, cannot be read, where `yaml`
   itself overflows somewhere between about 750 and 1,200 levels. The
-  generation stages (rewrites, rendering) will need the same care once
-  ported; the native stack grows as needed, so the CLI needs no
-  big-stack thread.
+  generation stages (inference, rewrites, rendering) recurse on the native
+  stack; the CLI runs them on a thread with a 256 MB stack (`STACK_SIZE`
+  in `crates/quicktype-cli/src/main.rs`). See "Very deeply nested JSON"
+  and "Endless recursion over the type graph".
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
   recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
