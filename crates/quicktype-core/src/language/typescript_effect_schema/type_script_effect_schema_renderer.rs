@@ -22,7 +22,7 @@ use crate::support::strings::{
 };
 use crate::support::support::assert;
 use crate::target_language::TargetLanguage;
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::JUST_SCHEMA;
 
@@ -188,14 +188,14 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                 if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
                     schema.extend([
                         ".pipe(S.minItems(".into(),
-                        js_number(min_items).into(),
+                        number::to_string(min_items).into(),
                         "))".into(),
                     ]);
                 }
                 if let Some(max_items) = max_items {
                     schema.extend([
                         ".pipe(S.maxItems(".into(),
-                        js_number(max_items).into(),
+                        number::to_string(max_items).into(),
                         "))".into(),
                     ]);
                 }
@@ -291,7 +291,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             schema.push(
                 format!(
                     ".pipe(S.filter(value => Array.from(value).length >= {}))",
-                    js_number(min)
+                    number::to_string(min)
                 )
                 .into(),
             );
@@ -300,7 +300,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             schema.push(
                 format!(
                     ".pipe(S.filter(value => Array.from(value).length <= {}))",
-                    js_number(max)
+                    number::to_string(max)
                 )
                 .into(),
             );
@@ -327,14 +327,14 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
         if let Some(min) = min {
             schema.extend([
                 ".pipe(S.greaterThanOrEqualTo(".into(),
-                js_number(min).into(),
+                number::to_string(min).into(),
                 "))".into(),
             ]);
         }
         if let Some(max) = max {
             schema.extend([
                 ".pipe(S.lessThanOrEqualTo(".into(),
-                js_number(max).into(),
+                number::to_string(max).into(),
                 "))".into(),
             ]);
         }

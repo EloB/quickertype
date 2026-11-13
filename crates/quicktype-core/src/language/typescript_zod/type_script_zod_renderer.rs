@@ -22,7 +22,7 @@ use crate::support::strings::{
 use crate::support::support::{console_error, console_warn};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::find_member;
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::JUST_SCHEMA;
 
@@ -198,14 +198,14 @@ impl<'a> TypeScriptZodRenderer<'a> {
                 None => String::new(),
                 Some(min) => format!(
                     ".refine(value => Array.from(value).length >= {})",
-                    js_number(min)
+                    number::to_string(min)
                 ),
             },
             match max {
                 None => String::new(),
                 Some(max) => format!(
                     ".refine(value => Array.from(value).length <= {})",
-                    js_number(max)
+                    number::to_string(max)
                 ),
             }
         ])
@@ -222,11 +222,11 @@ impl<'a> TypeScriptZodRenderer<'a> {
             if integer { ".int()" } else { "" },
             match min {
                 None => Source::from(""),
-                Some(min) => sl![".min(", js_number(min), ")"],
+                Some(min) => sl![".min(", number::to_string(min), ")"],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![".max(", js_number(max), ")"],
+                Some(max) => sl![".max(", number::to_string(max), ")"],
             }
         ])
     }
@@ -263,7 +263,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
                         array_source.extend([
                             ".min(".into(),
-                            js_number(min_items).into(),
+                            number::to_string(min_items).into(),
                             ")".into(),
                         ]);
                     }
@@ -271,7 +271,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     if let Some(max_items) = max_items {
                         array_source.extend([
                             ".max(".into(),
-                            js_number(max_items).into(),
+                            number::to_string(max_items).into(),
                             ")".into(),
                         ]);
                     }

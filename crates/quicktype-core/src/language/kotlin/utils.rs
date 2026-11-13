@@ -70,11 +70,6 @@ pub fn string_escape(s: &str) -> String {
         .replace('$', "\\$")
 }
 
-/// `${n}`: a constraint bound as JavaScript prints it.
-pub fn js_number(n: f64) -> String {
-    quicktype_js_compat::number::to_string(n)
-}
-
 /// `unionMemberMatchPriority(t)`: when several union members are guarded
 /// by the same JSON node/value type (e.g. date, time and enum values are
 /// all strings), parse attempts must be ordered strictest first:

@@ -24,7 +24,7 @@ use crate::support::strings::{
 };
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{directly_reachable_single_named_type, find_member};
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::{ACRONYM_STYLE, CONVERTERS, MODULE_SYSTEM};
 
@@ -157,11 +157,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             "(props, name) => { const value = props[name]; return value == null || (typeof value === 'string'",
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && [...value].length >= ", js_number(min)],
+                Some(min) => sl![" && [...value].length >= ", number::to_string(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && [...value].length <= ", js_number(max)],
+                Some(max) => sl![" && [...value].length <= ", number::to_string(max)],
             },
             match pattern {
                 None => Source::from(""),
@@ -198,11 +198,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             },
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && value >= ", js_number(min)],
+                Some(min) => sl![" && value >= ", number::to_string(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && value <= ", js_number(max)],
+                Some(max) => sl![" && value <= ", number::to_string(max)],
             },
             ") ? null : new Error(\"Expected bounded number\"); }"
         ])
@@ -247,12 +247,12 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                         "(props, name, ...args) => { const value = props[name]; if (value != null && (",
                         match min {
                             None => Source::from("false"),
-                            Some(min) => sl!["value.length < ", js_number(min)],
+                            Some(min) => sl!["value.length < ", number::to_string(min)],
                         },
                         " || ",
                         match max {
                             None => Source::from("false"),
-                            Some(max) => sl!["value.length > ", js_number(max)],
+                            Some(max) => sl!["value.length > ", number::to_string(max)],
                         },
                         ")) return new Error(\"Expected bounded array\"); return PropTypes.arrayOf(",
                         item,

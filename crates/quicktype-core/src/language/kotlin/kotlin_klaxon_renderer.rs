@@ -4,6 +4,7 @@
 //! converters for enums, unions, empty objects and `java.time` types.
 
 use indexmap::IndexSet;
+use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
@@ -19,7 +20,7 @@ use crate::ty::type_utils::nullable_from_union;
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{js_number, string_escape, union_member_match_priority};
+use super::utils::{string_escape, union_member_match_priority};
 
 /// TS `KotlinKlaxonRenderer`.
 pub struct KotlinKlaxonRenderer<'a> {
@@ -572,10 +573,10 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                         if p.is_optional {
                             format!(
                                 "{value}?.let {{ require(it {operator} {}) }}",
-                                js_number(bound)
+                                number::to_string(bound)
                             )
                         } else {
-                            format!("require({value} {operator} {})", js_number(bound))
+                            format!("require({value} {operator} {})", number::to_string(bound))
                         }
                     };
                     if let Some(m) = min_max_value_for_type(graph, t)? {
@@ -593,10 +594,16 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                     };
                     if let Some(m) = min_max_length_for_type(graph, t)? {
                         if let Some(min) = m.0 {
-                            r.emit_validation(format!("{length} >= {}{close}", js_number(min)))?;
+                            r.emit_validation(format!(
+                                "{length} >= {}{close}",
+                                number::to_string(min)
+                            ))?;
                         }
                         if let Some(max) = m.1 {
-                            r.emit_validation(format!("{length} <= {}{close}", js_number(max)))?;
+                            r.emit_validation(format!(
+                                "{length} <= {}{close}",
+                                number::to_string(max)
+                            ))?;
                         }
                     }
                     let array = if p.is_optional {
@@ -606,10 +613,16 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                     };
                     if let Some(m) = min_max_items_for_type(graph, t)? {
                         if let Some(min) = m.0 {
-                            r.emit_validation(format!("{array} >= {}{close}", js_number(min)))?;
+                            r.emit_validation(format!(
+                                "{array} >= {}{close}",
+                                number::to_string(min)
+                            ))?;
                         }
                         if let Some(max) = m.1 {
-                            r.emit_validation(format!("{array} <= {}{close}", js_number(max)))?;
+                            r.emit_validation(format!(
+                                "{array} <= {}{close}",
+                                number::to_string(max)
+                            ))?;
                         }
                     }
                     if let Some(pattern) = pattern_for_type(graph, t)? {
