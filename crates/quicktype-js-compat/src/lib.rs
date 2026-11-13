@@ -12,6 +12,7 @@
 //! runs the JavaScript originals in Node and records test vectors under
 //! `tests/vectors/`, which the integration tests replay without Node.
 
+pub mod json;
 pub mod number;
 pub mod sort;
 pub mod unicode;
