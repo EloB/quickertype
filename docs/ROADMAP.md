@@ -20,11 +20,14 @@ parallel; phases are ordered by dependency.
   quicktype's concepts (`InputData`, `JsonInput`, `JsonSchemaInput`,
   `Options`, `quicktype()` → rendered files), with `Result`-based errors that
   carry quicktype's message names.
-- The CLI and the WASM bindings use **only** the public API (dogfooding), so
-  it is always complete.
-- I/O (schema `$ref`s, URL sources) goes through a pluggable trait: std file +
-  HTTP implementations behind cargo features for native builds; the WASM
-  build plugs in the JS facade's `fs` / `fetch`.
+- The CLI and the WASM bindings use the public API (dogfooding) plus
+  `quicktype_core::internal`; like any `Input` implementation, the WASM
+  bindings also reach into hidden modules (`ty`), see
+  [ARCHITECTURE.md](ARCHITECTURE.md#1-crates).
+- I/O (schema `$ref`s, URL sources) goes through a pluggable trait (`Io`):
+  std file + HTTP implementations behind cargo features for native builds.
+  The WASM build has no `Io`; it fetches schemas through the JS facade's
+  stores (`JsonSchemaStore::get`).
 - crates.io-ready: rustdoc with doctested examples, semver discipline.
 
 ## Phase 0 — Foundations
