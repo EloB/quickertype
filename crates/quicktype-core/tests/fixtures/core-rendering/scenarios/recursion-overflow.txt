@@ -19,3 +19,6 @@ render objc {"rendererOptions": {"features": "interface"}}
 render objc {"rendererOptions": {"features": "implementation", "just-types": true}}
 render dart {}
 render dart {"rendererOptions": {"just-types": true}}
+render crystal {}
+render cplusplus {}
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}
