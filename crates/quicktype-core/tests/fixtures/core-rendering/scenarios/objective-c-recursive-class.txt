@@ -1,0 +1,12 @@
+# Objective-C's needsMap recurses through class properties: a class that
+# requires itself (with no map or array type anywhere in the graph) makes
+# it recurse until V8's stack overflows, but only when the implementation
+# file asks (not with --just-types or --features interface). An optional
+# self-reference is a nullable union, which needsMap does not enter.
+input schema Node {"type": "object", "properties": {"value": {"type": "integer"}, "next": {"$ref": "#"}}, "required": ["value", "next"]}
+input schema Chain {"type": "object", "properties": {"value": {"type": "integer"}, "next": {"$ref": "#"}}, "required": ["value"]}
+pipeline {"lang": "objc"}
+
+render objc {}
+render objc {"rendererOptions": {"features": "interface"}}
+render objc {"rendererOptions": {"just-types": true}}

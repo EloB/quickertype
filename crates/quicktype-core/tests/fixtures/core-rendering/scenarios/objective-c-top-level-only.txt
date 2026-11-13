@@ -1,0 +1,9 @@
+# Objective-C with a single non-class top-level: a lone top-level name
+# (Úmixedvalues: no capitals to infer a prefix from) that is a union,
+# rendered to stdout (the file name comes from the union's name).
+input json Úmixedvalues [1, "two", null]
+pipeline {"lang": "objc"}
+
+render objc {}
+render objc {"filename": "stdout"}
+render objc {"rendererOptions": {"just-types": true}}

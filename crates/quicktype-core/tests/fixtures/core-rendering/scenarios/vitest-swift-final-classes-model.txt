@@ -1,0 +1,8 @@
+# Port of quicktype's test/unit/swift-final-classes.test.ts (the model
+# schema): classes stay open by default and are final with --final-classes
+# (checked in tests/vitest_swift_dart.rs).
+input schema TopLevel {"type": "object", "properties": {"child": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}}, "required": ["child"]}
+pipeline {"lang": "swift"}
+
+render swift {"rendererOptions": {"struct-or-class": "class"}}
+render swift {"rendererOptions": {"struct-or-class": "class", "final-classes": "true"}}
