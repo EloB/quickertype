@@ -215,22 +215,30 @@ impl BooleanOption {
     }
 
     /// The effective value (TS `BooleanOption.getValue`): combines `name` and
-    /// `no-name`, accepts the strings `"true"`/`"false"` for `name`, and
-    /// otherwise uses JS truthiness.
+    /// `no-name`. Only a missing key (`undefined`) falls back to the default;
+    /// any present value, `null` included, is used as is: `"true"`/`"false"`
+    /// for `name` are parsed, everything else goes through JS truthiness.
     pub fn get_value(&self, values: &RendererOptions) -> bool {
-        let value = match values.get(self.name) {
-            None => self.default_value,
-            Some(OptionValue::String(s)) if s == "true" => true,
-            Some(OptionValue::String(s)) if s == "false" => false,
-            Some(v) => v.is_truthy(),
-        };
+        // let value = values[name]; if (value === undefined) value = default;
+        let value = values
+            .get(self.name)
+            .cloned()
+            .unwrap_or(OptionValue::Bool(self.default_value));
+        // let negated = values[`no-${name}`]; if (negated === undefined) negated = !default;
         let negated = values
             .get(&format!("no-{}", self.name))
-            .map_or(!self.default_value, OptionValue::is_truthy);
+            .cloned()
+            .unwrap_or(OptionValue::Bool(!self.default_value));
+        // if (value === "true") value = true; else if (value === "false") value = false;
+        let value = match value {
+            OptionValue::String(s) if s == "true" => OptionValue::Bool(true),
+            OptionValue::String(s) if s == "false" => OptionValue::Bool(false),
+            other => other,
+        };
         if self.default_value {
-            value && !negated
+            value.is_truthy() && !negated.is_truthy()
         } else {
-            value || !negated
+            value.is_truthy() || !negated.is_truthy()
         }
     }
 }
@@ -522,6 +530,20 @@ mod tests {
         assert!(!FLAG_ON.get_value(&opts(&[("flag", "".into())])));
         // The negation is not parsed: "false" is a truthy string.
         assert!(!FLAG_ON.get_value(&opts(&[("no-flag", "false".into())])));
+    }
+
+    #[test]
+    fn boolean_get_value_uses_null_as_is() {
+        let null = OptionValue::Null;
+        // An explicit null is falsy; it does not fall back to the default.
+        assert!(!FLAG_ON.get_value(&opts(&[("flag", null.clone())])));
+        assert!(!FLAG_OFF.get_value(&opts(&[("flag", null.clone()), ("no-flag", true.into())])));
+        // Without `no-flag`, the default-off negation (`!false`) is true.
+        assert!(!FLAG_OFF.get_value(&opts(&[("flag", null.clone())])));
+        // A null negation is falsy, so it does not turn the flag off.
+        assert!(FLAG_ON.get_value(&opts(&[("no-flag", null.clone())])));
+        assert!(FLAG_OFF.get_value(&opts(&[("no-flag", null.clone())])));
+        assert!(!FLAG_ON.get_value(&opts(&[("flag", null.clone()), ("no-flag", null)])));
     }
 
     #[test]
