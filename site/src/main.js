@@ -1014,7 +1014,9 @@ function renderMeter() {
         html += line.html;
         html += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
         if (line.detail !== undefined) say(line.detail);
-        say("The lighter part of each bar is reading the input; the rest is generating the code.");
+        say(
+            "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
+        );
         if (sides.wasm.ok && sides.ts.ok) {
             const generating = pace({ wasm: phases(sides.wasm).generate, ts: phases(sides.ts).generate });
             if (generating !== undefined && generating.key !== line.faster?.key) {

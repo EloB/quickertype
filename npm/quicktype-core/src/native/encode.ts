@@ -6,18 +6,19 @@
 // own (not a subclass, not modified), every input is an exact `JSONInput`
 // over a `CompressedJSONFromString` (or a class registered under
 // `Symbol.for("quicktype-core.nativeInputs")`, such as the CLI's stream
-// reader) with a built-in date/time recognizer, or an exact
+// reader) with an unmodified built-in date/time recognizer, or an exact
 // `JSONSchemaInput` without extra attribute producers, and every option
 // value is one the engine models (renderer options are lowered here, by
 // the rules of `Option.getValue`/`BooleanOption.getValue`/
 // `EnumOption.getEnumValue`). Every other run uses the TypeScript engine,
 // which gives the same result by construction.
 //
-// The request carries JSON samples as the tables of their
-// `CompressedJSON` (already parsed with `JSON.parse` semantics and V8's
-// error messages), and JSON Schema inputs as their already normalized
-// sources; the schemas themselves stay in JavaScript and are fetched
-// through the input's own store while the engine runs.
+// The request carries JSON samples as a lease on the compressed form the
+// engine read them into as they were added (samples.ts), taken here, or
+// else as the tables of their `CompressedJSON` (parsed with `JSON.parse`
+// and V8's error messages), and JSON Schema inputs as their already
+// normalized sources; the schemas themselves stay in JavaScript and are
+// fetched through the input's own store while the engine runs.
 
 import { DefaultDateTimeRecognizer } from "../DateTime.js";
 import { CompressedJSONFromString } from "../input/CompressedJSON.js";
@@ -28,6 +29,10 @@ import { KotlinDateTimeRecognizer } from "../language/Kotlin/utils.js";
 import { SwiftDateTimeRecognizer } from "../language/Swift/utils.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
 
+import { currentEngine } from "./engine.js";
+import { leaseSamples, releaseLeases } from "./samples.js";
+import type { WasmGlue } from "./wasm/glue.js";
+
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
 
 /** What the engine receives (crates/quicktype-wasm/src/js.rs). */
@@ -35,6 +40,17 @@ export interface EncodedRun {
     request: Record<string, unknown>;
     /** The JSON Schema inputs, by `storeId`. */
     schemaInputs: JSONSchemaInput[];
+    /**
+     * The engine instance holding the samples of `jsonShared` inputs: the
+     * run must go to that instance (or to the TypeScript engine).
+     */
+    sharedGlue?: WasmGlue;
+    /**
+     * The leases of `jsonShared` inputs on their samples in `sharedGlue`:
+     * the run takes them over when it starts there; otherwise they must
+     * be released (`releaseLeases`).
+     */
+    leases: number[];
 }
 
 const nativeInputsKey = Symbol.for("quicktype-core.nativeInputs");
@@ -53,25 +69,94 @@ function isNativeCompressedJSON(cjson: unknown): boolean {
     );
 }
 
-function dateTimeKind(recognizer: unknown): string | undefined {
+/** The methods of a date/time recognizer (`DateTimeRecognizer`). */
+interface RecognizerMethods {
+    isDate: unknown;
+    isTime: unknown;
+    isDateTime: unknown;
+}
+
+/** The methods of a recognizer whose prototype is `proto`. */
+function recognizerMethodsOf(proto: any): RecognizerMethods {
+    return { isDate: proto.isDate, isTime: proto.isTime, isDateTime: proto.isDateTime };
+}
+
+/** A built-in date/time recognizer class, as loaded. */
+interface BuiltinRecognizer {
+    /** Its name in the request (`DateTimeKind`, crates/quicktype-wasm/src/wire.rs). */
+    kind: string;
+    /** The prototype its prototype extends. */
+    parent: unknown;
+    /** Its methods, as an instance of it finds them. */
+    methods: RecognizerMethods;
+}
+
+/**
+ * The built-in date/time recognizers the engine has, by prototype, with
+ * their methods captured when this module loads: those are the ones the
+ * engine's recognizers reproduce.
+ */
+const builtinRecognizers = new Map<unknown, BuiltinRecognizer>(
+    (
+        [
+            [DefaultDateTimeRecognizer, "default"],
+            [KotlinDateTimeRecognizer, "kotlin"],
+            [SwiftDateTimeRecognizer, "swift"],
+        ] as const
+    ).map(([c, kind]) => [
+        c.prototype,
+        { kind, parent: Object.getPrototypeOf(c.prototype), methods: recognizerMethodsOf(c.prototype) },
+    ]),
+);
+
+/**
+ * `DefaultDateTimeRecognizer`'s methods, which Kotlin's and Swift's
+ * recognizers call too (`super.isDate`).
+ */
+const defaultRecognizerMethods = recognizerMethodsOf(DefaultDateTimeRecognizer.prototype);
+
+/**
+ * The name of the built-in date/time recognizer `recognizer` is, if it is
+ * one exactly: an instance of a built-in class, without own properties (no
+ * method replaced on the instance), whose methods are still the ones that
+ * class had when this module loaded (none replaced on a prototype). For
+ * anything else, the TypeScript engine reads samples and runs, calling the
+ * recognizer's methods as they are. (Called for every sample: the methods
+ * are compared by name, which is cheaper than by key in a loop.)
+ */
+export function dateTimeKind(recognizer: unknown): string | undefined {
     if (recognizer === null || typeof recognizer !== "object") {
         return undefined;
     }
 
-    switch (Object.getPrototypeOf(recognizer)) {
-        case DefaultDateTimeRecognizer.prototype:
-            return "default";
-        case KotlinDateTimeRecognizer.prototype:
-            return "kotlin";
-        case SwiftDateTimeRecognizer.prototype:
-            return "swift";
-        default:
-            return undefined;
+    const proto = Object.getPrototypeOf(recognizer);
+    const builtin = builtinRecognizers.get(proto);
+    if (builtin === undefined || Object.getPrototypeOf(proto) !== builtin.parent) return undefined;
+    const r = recognizer as any;
+    const m = builtin.methods;
+    const d = DefaultDateTimeRecognizer.prototype as any;
+    const dm = defaultRecognizerMethods;
+    if (
+        r.isDate !== m.isDate ||
+        r.isTime !== m.isTime ||
+        r.isDateTime !== m.isDateTime ||
+        d.isDate !== dm.isDate ||
+        d.isTime !== dm.isTime ||
+        d.isDateTime !== dm.isDateTime ||
+        Object.getOwnPropertyNames(recognizer).length !== 0
+    ) {
+        return undefined;
     }
+
+    return builtin.kind;
 }
 
-function ownNames(x: object): string {
-    return Object.getOwnPropertyNames(x).sort().join(",");
+/** The own property names of `x`, but `except`, sorted. */
+function ownNames(x: object, except: readonly string[] = []): string {
+    return Object.getOwnPropertyNames(x)
+        .filter((name) => !except.includes(name))
+        .sort()
+        .join(",");
 }
 
 let builtinLanguages: Map<unknown, TargetLanguage> | undefined;
@@ -103,19 +188,29 @@ export function builtinLanguageName(lang: TargetLanguage): string | undefined {
 
 let expectedOwnNames: Map<unknown, string> | undefined;
 
-/** The own properties a fresh instance of each built-in input has. */
-function hasOnlyBuiltinFields(input: object): boolean {
+/** The fields a read creates on a `CompressedJSON` (`process` and `finish`). */
+const readingFields = ["_ctx", "_rootValue"];
+
+/**
+ * Whether `x` has the own properties a fresh instance of its class has, and
+ * no others (no method replaced on the instance), for the built-in classes
+ * the engine reads: `JSONInput`, `JSONSchemaInput` and
+ * `CompressedJSONFromString` (which may also have the fields reading a
+ * sample creates).
+ */
+export function hasOnlyBuiltinFields(x: object): boolean {
     if (expectedOwnNames === undefined) {
+        const cjson = (): CompressedJSONFromString => new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false);
         expectedOwnNames = new Map<unknown, string>([
-            [
-                JSONInput.prototype,
-                ownNames(new JSONInput(new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false))),
-            ],
+            [JSONInput.prototype, ownNames(new JSONInput(cjson()))],
             [JSONSchemaInput.prototype, ownNames(new JSONSchemaInput(undefined))],
+            [CompressedJSONFromString.prototype, ownNames(cjson(), readingFields)],
         ]);
     }
 
-    return expectedOwnNames.get(Object.getPrototypeOf(input)) === ownNames(input);
+    const proto = Object.getPrototypeOf(x);
+    const except = proto === CompressedJSONFromString.prototype ? readingFields : [];
+    return expectedOwnNames.get(proto) === ownNames(x, except);
 }
 
 /** JavaScript truthiness. */
@@ -300,11 +395,38 @@ function encodeLeadingComments(comments: unknown): unknown {
     });
 }
 
-function encodeJSONInput(input: any): Record<string, unknown> {
+function encodeJSONInput(input: any, encoded: EncodedRun): Record<string, unknown> {
     const cjson = input._compressedJSON;
     if (!isNativeCompressedJSON(cjson)) fail();
     const dateTime = dateTimeKind(cjson.dateTimeRecognizer);
     if (dateTime === undefined) fail();
+
+    const topLevelNames: string[] = [];
+    const topLevelDescriptions: unknown[] = [];
+    const counts: number[] = [];
+    const samples: number[] = [];
+    for (const [name, topLevel] of input._topLevels as Map<string, any>) {
+        topLevelNames.push(name);
+        const description = topLevel.description;
+        if (description !== undefined && typeof description !== "string") fail();
+        topLevelDescriptions.push(description);
+        counts.push(topLevel.samples.length);
+        for (const sample of topLevel.samples) samples.push(sample);
+    }
+
+    const topLevels = {
+        topLevelNames,
+        topLevelDescriptions,
+        topLevelSampleCounts: new Uint32Array(counts),
+        topLevelSamples: new Int32Array(samples),
+    };
+    const glue = currentEngine();
+    const lease = leaseSamples(cjson, glue, samples);
+    if (lease !== undefined) {
+        encoded.sharedGlue = glue;
+        encoded.leases.push(lease);
+        return { kind: "jsonShared", lease, ...topLevels };
+    }
 
     const strings: string[] = cjson._strings;
     const stringLengths = new Uint32Array(strings.length);
@@ -332,19 +454,6 @@ function encodeJSONInput(input: any): Record<string, unknown> {
     const [objects, objectOffsets] = flatten(cjson._objects);
     const [arrays, arrayOffsets] = flatten(cjson._arrays);
 
-    const topLevelNames: string[] = [];
-    const topLevelDescriptions: unknown[] = [];
-    const counts: number[] = [];
-    const samples: number[] = [];
-    for (const [name, topLevel] of input._topLevels as Map<string, any>) {
-        topLevelNames.push(name);
-        const description = topLevel.description;
-        if (description !== undefined && typeof description !== "string") fail();
-        topLevelDescriptions.push(description);
-        counts.push(topLevel.samples.length);
-        for (const sample of topLevel.samples) samples.push(sample);
-    }
-
     return {
         kind: "json",
         handleRefs: truthy(cjson.handleRefs),
@@ -355,10 +464,7 @@ function encodeJSONInput(input: any): Record<string, unknown> {
         objectOffsets,
         arrays,
         arrayOffsets,
-        topLevelNames,
-        topLevelDescriptions,
-        topLevelSampleCounts: new Uint32Array(counts),
-        topLevelSamples: new Int32Array(samples),
+        ...topLevels,
     };
 }
 
@@ -456,6 +562,7 @@ export function encodeRun(
     inputData: InputData,
     targetLanguage: TargetLanguage,
 ): EncodedRun | undefined {
+    let encoded: EncodedRun | undefined;
     try {
         const lang = builtinLanguageName(targetLanguage);
         if (lang === undefined) fail();
@@ -485,13 +592,14 @@ export function encodeRun(
         );
 
         const schemaInputs: JSONSchemaInput[] = [];
+        encoded = { request: {}, schemaInputs, leases: [] };
         const inputs: unknown[] = [];
         for (const input of (inputData as any)._inputs as Set<any>) {
             if (input === null || typeof input !== "object") fail();
             if (!hasOnlyBuiltinFields(input)) fail();
             const proto = Object.getPrototypeOf(input);
             if (proto === JSONInput.prototype && input.kind === "json") {
-                inputs.push(encodeJSONInput(input));
+                inputs.push(encodeJSONInput(input, encoded));
             } else if (proto === JSONSchemaInput.prototype && input.kind === "schema") {
                 inputs.push(encodeSchemaInput(input, schemaInputs.length));
                 schemaInputs.push(input);
@@ -512,8 +620,10 @@ export function encodeRun(
         };
         // (The JSON inputs' string tables were checked while encoding.)
         checkStrings({ ...request, inputs: inputs.map(withoutTables) });
-        return { request, schemaInputs };
+        encoded.request = request;
+        return encoded;
     } catch (e) {
+        if (encoded?.sharedGlue !== undefined) releaseLeases(encoded.sharedGlue, encoded.leases);
         if (e === ineligible) return undefined;
         throw e;
     }

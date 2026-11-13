@@ -388,3 +388,59 @@ test("a module that is not the engine is instantiated once, not on every run", (
     assert.deepEqual(JSON.parse(out), [1, 1, 0, 3, 0, true, [true, true, true]]);
 });
 
+
+// ---- Large outputs ------------------------------------------------------------
+
+/** A JSON sample of `n` distinct classes of eight properties each. */
+function manyClasses(n) {
+    const words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet"];
+    const sample = {};
+    for (let i = 0; i < n; i++) {
+        const properties = {};
+        for (let j = 0; j < 8; j++) {
+            properties[`${words[j]}${words[(i + j) % 10]}${i}`] = j % 3 === 0 ? "text" : j % 3 === 1 ? i : [true];
+        }
+
+        sample[`record${words[i % 10]}${i}`] = properties;
+    }
+
+    return JSON.stringify(sample);
+}
+
+// Rust's wasm32 allocator grew the memory 64 KiB at a time, and each
+// `memory.grow` costs V8 about half a millisecond (more past 2 GiB): runs
+// with outputs of millions of lines spent most of their time growing the
+// memory, more than linearly in the output's size (an 8-million-line PHP
+// file took 726 s against TypeScript's 126 s). The engine's allocator now
+// grows the memory geometrically (crates/quicktype-wasm/src/allocator.rs).
+test("a run with a large output grows the engine's memory a few times", { timeout: 300_000 }, async () => {
+    const options = { lang: "php", inferMaps: false, rendererOptions: { "with-get": true, "with-set": true } };
+    const run = () => {
+        const input = qt.jsonInputForTargetLanguage("php");
+        input.addSourceSync({ name: "Big", samples: [manyClasses(800)] });
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        return qt.quicktypeMultiFileSync({ ...options, inputData });
+    };
+    const glue = engine.engineSync();
+    const before = glue.__memoryGrowths();
+    const pagesBefore = glue.__memoryPages();
+    const runsBefore = engineStats.wasm;
+    const actual = run();
+    assert.equal(engineStats.wasm, runsBefore + 1);
+    const lines = [...actual.values()].reduce((n, f) => n + f.lines.length, 0);
+    assert.ok(lines > 500_000, `${lines} lines`);
+    // Some 200 MB of memory, several times what the instance had. Each
+    // time an allocation grows the memory, growing ahead adds a quarter of
+    // it (at least a fifth, after what the top of the heap had free): at
+    // most two `memory.grow` calls per step, and a step at least 1.2 times
+    // the memory before. So a few dozen growths, where 64 KiB steps take
+    // thousands (one per page).
+    const growths = glue.__memoryGrowths() - before;
+    const ratio = glue.__memoryPages() / pagesBefore;
+    assert.ok(ratio > 4, `the memory grew ${ratio} times over`);
+    const bound = 2 * Math.ceil(Math.log(ratio) / Math.log(1.2));
+    assert.ok(growths <= bound, `the memory grew ${growths} times (at most ${bound})`);
+    const expected = await tsMode(() => run());
+    assert.deepEqual([...actual], [...expected]);
+});

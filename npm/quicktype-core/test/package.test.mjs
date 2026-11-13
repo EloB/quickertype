@@ -158,11 +158,33 @@ test("the vendored files the bridge depends on are unchanged", async () => {
     const { guarded } = JSON.parse(fs.readFileSync(path.join(packageRoot, "src", "native", "UPSTREAM.json"), "utf8"));
     assert.ok(Object.keys(guarded).length > 10);
     const changed = Object.entries(guarded)
-        // Run.ts is the one file modified here; its hash is upstream's.
-        .filter(([file]) => file !== "src/Run.ts")
+        // The files modified here; their hashes are upstream's.
+        .filter(([file]) => file !== "src/Run.ts" && file !== "src/input/CompressedJSON.ts")
         .filter(([file, hash]) => createHash("sha256").update(fs.readFileSync(path.join(packageRoot, file))).digest("hex") !== hash)
         .map(([file]) => file);
     assert.deepEqual(changed, []);
+});
+
+test("CompressedJSON.ts is upstream's but for the hook of the JSON samples reader", (t) => {
+    const configured = process.env.QUICKTYPE_REFERENCE;
+    const candidates = configured ? [configured] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
+    const file = path.join("packages", "quicktype-core", "src", "input", "CompressedJSON.ts");
+    const upstream = candidates.map((c) => path.join(c, file)).find((f) => fs.existsSync(f));
+    if (upstream === undefined) {
+        t.skip("no reference checkout");
+        return;
+    }
+
+    const ours = fs.readFileSync(path.join(packageRoot, "src", "input", "CompressedJSON.ts"), "utf8");
+    const hook = [
+        'import { readSampleNatively } from "../native/hook.js";\n',
+        "        // quicktype-wasm: the WebAssembly engine reads the sample if it can.\n" +
+            "        const value = readSampleNatively(this, input);\n" +
+            "        if (value !== undefined) return value;\n\n",
+    ];
+    for (const part of hook) assert.ok(ours.includes(part), part);
+    const unhooked = hook.reduce((text, part) => text.replace(part, ""), ours);
+    assert.equal(unhooked, fs.readFileSync(upstream, "utf8"));
 });
 
 test("declaration files are byte-identical to the reference build", (t) => {

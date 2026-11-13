@@ -57,7 +57,12 @@ js-sys = "=0.3.91"
 wasm-bindgen = "=0.2.114"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# Denied rather than forbidden: `forbid` cannot be lowered anywhere below
+# it, and the WebAssembly engine's global allocator
+# (crates/quicktype-wasm/src/allocator.rs) is the one module that needs
+# unsafe code and allows it there. Every other `allow(unsafe_code)` is a
+# change to review as such.
+unsafe_code = "deny"
 unused_must_use = "deny"
 rust_2018_idioms = { level = "warn", priority = -1 }
 

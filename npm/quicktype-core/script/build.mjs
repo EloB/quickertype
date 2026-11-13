@@ -1,7 +1,7 @@
 // Builds the package: the WebAssembly engine (crates/quicktype-wasm) and
 // the TypeScript facade, as CommonJS (dist/) and ES modules (dist/esm/).
 //
-//   node script/build.mjs [--skip-wasm] [--debug]
+//   node script/build.mjs [--skip-wasm] [--debug] [--heap-stats]
 //
 // 1. `cargo build -p quicktype-wasm --target wasm32-unknown-unknown --release`
 // 2. `wasm-bindgen --target web` (the CLI version must equal the
@@ -10,10 +10,16 @@
 //    (`createGlue()`) so that an instance that trapped can be replaced by
 //    a fresh one with fresh glue state, and written once as CommonJS and
 //    once as an ES module, each with a `wasmLocation()` for its tree.
-// 3. `tsc` for both trees (as quicktype-core's own build does), plus the
+// 3. `wasm-opt -O3` (binaryen, the version pinned in devDependencies) on the
+//    module wasm-bindgen wrote, for release builds.
+// 4. `tsc` for both trees (as quicktype-core's own build does), plus the
 //    {"type": "module"} marker in dist/esm.
 //
-// --skip-wasm reuses build/wasm-bindgen from an earlier build.
+// --skip-wasm reuses build/wasm-bindgen from an earlier build (optimized
+// already, if it was a release build); --no-wasm-opt leaves out step 3;
+// --heap-stats builds the engine with the `heap-stats` feature, whose
+// allocator counts the bytes in use and their peak (`__heapBytes`,
+// `__heapPeak`), for measurements (it costs about 2% of a run's time).
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -69,6 +75,7 @@ function findBindgen() {
 function buildWasm() {
     const cargoArgs = ["build", "-p", "quicktype-wasm", "--target", "wasm32-unknown-unknown"];
     if (profile === "release") cargoArgs.push("--release");
+    if (args.has("--heap-stats")) cargoArgs.push("--features", "heap-stats");
     run("cargo", cargoArgs, { cwd: repositoryRoot });
     const wasm = path.join(
         repositoryRoot,
@@ -79,6 +86,35 @@ function buildWasm() {
     );
     fs.rmSync(bindgenDir, { recursive: true, force: true });
     run(findBindgen(), ["--target", "web", "--out-dir", bindgenDir, wasm]);
+    if (profile === "release" && !args.has("--no-wasm-opt")) optimizeWasm();
+}
+
+/**
+ * The WebAssembly features the module uses: those rustc's
+ * wasm32-unknown-unknown target enables by default (`rustc --print cfg
+ * --target wasm32-unknown-unknown`), which wasm-opt must be told, since
+ * the module carries no target_features section. Every engine this
+ * package supports has them (see the README).
+ */
+const wasmFeatures = [
+    "--enable-bulk-memory",
+    "--enable-bulk-memory-opt",
+    "--enable-multivalue",
+    "--enable-mutable-globals",
+    "--enable-nontrapping-float-to-int",
+    "--enable-reference-types",
+    "--enable-sign-ext",
+    "--enable-call-indirect-overlong",
+];
+
+/** `wasm-opt -O3` on the module, in place. */
+function optimizeWasm() {
+    const wasmOpt = path.join(packageRoot, "node_modules", "binaryen", "bin", "wasm-opt");
+    if (!fs.existsSync(wasmOpt)) throw new Error("binaryen is not installed: npm install");
+    const file = path.join(bindgenDir, "quicktype_wasm_bg.wasm");
+    const before = fs.statSync(file).size;
+    run(process.execPath, [wasmOpt, "-O3", ...wasmFeatures, file, "-o", file]);
+    console.log(`wasm-opt: ${(before / 1024 / 1024).toFixed(2)} MiB -> ${(fs.statSync(file).size / 1024 / 1024).toFixed(2)} MiB`);
 }
 
 /** Exports of the glue that the facade uses (src/native/wasm/glue.d.ts). */
@@ -90,10 +126,24 @@ const glueExports = [
     "settle",
     "cancel",
     "supportsLanguage",
+    "jsonCreate",
+    "jsonRead",
+    "jsonDrop",
+    "jsonHeld",
+    "jsonExport",
+    "jsonAcquire",
+    "jsonRelease",
     "engineVersion",
     "__pow",
     "__panicForTests",
     "__pendingRuns",
+    "__jsonCount",
+    "__jsonLeases",
+    "__jsonReadTrapForTests",
+    "__memoryGrowths",
+    "__memoryPages",
+    "__heapBytes",
+    "__heapPeak",
 ];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */
@@ -106,6 +156,30 @@ function glueFactory() {
     };
 
     replace(/^\/\* @ts-self-types=.*\*\/\n/m, "");
+    // Strings go into the engine with one `encodeInto` (native, and much
+    // faster than the glue's loop over the ASCII prefix, which JSON samples
+    // of many megabytes go through), then as the glue does for the rest.
+    replace(
+        `    const mem = getUint8ArrayMemory0();
+
+    let offset = 0;
+
+    for (; offset < len; offset++) {
+        const code = arg.charCodeAt(offset);
+        if (code > 0x7F) break;
+        mem[ptr + offset] = code;
+    }
+    if (offset !== len) {
+        if (offset !== 0) {
+            arg = arg.slice(offset);
+        }
+`,
+        `    const prefix = cachedTextEncoder.encodeInto(arg, getUint8ArrayMemory0().subarray(ptr, ptr + len));
+    let offset = prefix.written;
+    if (prefix.read !== arg.length) {
+        arg = arg.slice(prefix.read);
+`,
+    );
     replace(/^export function /gm, "function ");
     replace(/^export \{ initSync, __wbg_init as default \};\n?/m, "");
     // The default module location uses import.meta, which CommonJS cannot

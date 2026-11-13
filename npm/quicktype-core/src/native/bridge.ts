@@ -33,6 +33,7 @@ import {
     engineSync,
     isDiscarded,
 } from "./engine.js";
+import { releaseLeases } from "./samples.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -53,6 +54,19 @@ export const engineStats = {
     rerun: 0,
     /** Store documents flattened for the engine (each object once per run). */
     documentsEncoded: 0,
+    /** JSON samples the engine read as they were added (samples.ts). */
+    samplesRead: 0,
+    /**
+     * Compressed forms the engine let go of to stay within its limit
+     * (samples.ts, `evict`), their tables exported to JavaScript.
+     */
+    evicted: 0,
+    /**
+     * `CompressedJSON`s whose samples the engine read and whose TypeScript
+     * tables were then filled after all (something read them, or a sample
+     * or run the engine does not take came along).
+     */
+    tablesFilled: 0,
     /** What the engine's last failure was (a panic message or an exception). */
     lastFailure: undefined as string | undefined,
 };
@@ -314,7 +328,7 @@ const abandoned = (() => {
  * discarded, and every run on it, this one included, is redone on the
  * TypeScript engine, which gives the result (or error) TypeScript gives.
  */
-function engineFailed(glue: WasmGlue, e: unknown): void {
+export function engineFailed(glue: WasmGlue, e: unknown): void {
     engineStats.lastFailure = lastPanic ?? String(e);
     lastPanic = undefined;
     discardEngine(glue);
@@ -389,6 +403,15 @@ class Driver {
         inflight.get(this.glue)?.delete(this.self);
         abandoned?.unregister(this);
         return true;
+    }
+
+    /**
+     * The TypeScript engine does the run, which the engine did not start:
+     * it lacks `feature` (as many runs in flight as it takes, say).
+     */
+    public decline(feature: string): void {
+        if (!this.end()) return;
+        this.handOver(declined(feature));
     }
 
     /** Redo the run on the TypeScript engine (the engine failed). */
@@ -614,11 +637,17 @@ function runOnEngine(
     return new Promise((resolve, reject) => {
         const driver = new Driver(glue, run, restore, resolve, reject);
         const host = makeHost(run, options, encoded, glue, weakRef(driver));
-        let id: number;
+        let id: number | undefined;
         try {
             id = glue.start(encoded.request, host);
         } catch (e) {
             engineFailed(glue, e);
+            return;
+        }
+
+        if (id === undefined) {
+            // A limit, not a failure: the instance stays.
+            driver.decline("more runs at once than the engine takes");
             return;
         }
 
@@ -698,15 +727,32 @@ export function runNative(
     }
 
     return engineAsync().then((glue) => {
-        if (glue === undefined) {
-            if (mode === "wasm") throw engineLoadError();
-            engineStats.ts++;
-            return undefined;
-        }
+        try {
+            if (glue === undefined) {
+                if (mode === "wasm") throw engineLoadError();
+                engineStats.ts++;
+                return undefined;
+            }
 
-        if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
-        return runOnEngine(glue, encoded, run, options);
+            if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
+                // The instance that read the samples failed in the meantime.
+                engineStats.ts++;
+                engineStats.rerun++;
+                return undefined;
+            }
+
+            if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
+            return runOnEngine(glue, encoded, run, options);
+        } finally {
+            // The run has taken its leases over if it started.
+            releaseRun(encoded);
+        }
     });
+}
+
+/** Lets go of whatever leases of `encoded` its run did not take over. */
+function releaseRun(encoded: EncodedRun): void {
+    if (encoded.sharedGlue !== undefined) releaseLeases(encoded.sharedGlue, encoded.leases);
 }
 
 /** `runSync()` on the WebAssembly engine, or `undefined` (see `runNative`). */
@@ -728,6 +774,21 @@ export function runNativeSync(
         return undefined;
     }
 
+    try {
+        return runEncodedSync(run, options, encoded, targetLanguage, mode);
+    } finally {
+        // The run has taken its leases over if it started.
+        releaseRun(encoded);
+    }
+}
+
+function runEncodedSync(
+    run: RunContext,
+    options: any,
+    encoded: EncodedRun,
+    targetLanguage: TargetLanguage,
+    mode: "wasm" | "auto",
+): MultiFileRenderResult | undefined {
     const glue = engineSync();
     if (glue === undefined) {
         if (mode === "wasm" && engineLoadError() !== undefined) {
@@ -735,6 +796,12 @@ export function runNativeSync(
         }
 
         engineStats.ts++;
+        return undefined;
+    }
+
+    if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
+        engineStats.ts++;
+        engineStats.rerun++;
         return undefined;
     }
 

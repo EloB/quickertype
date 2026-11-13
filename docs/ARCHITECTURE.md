@@ -114,7 +114,7 @@ is TS `Input<T>`: `kind`, `need_ir`, `need_schema_processing`,
 
 | Input | Rust | Notes |
 |---|---|---|
-| JSON | `JsonInput`: running tallies ([`input/tallies.rs`](../crates/quicktype-core/src/input/tallies.rs)) inferred by `TallyInference` ([`input/tally_inference.rs`](../crates/quicktype-core/src/input/tally_inference.rs)); the reference path, a `CompressedJson` ([`input/compressed_json.rs`](../crates/quicktype-core/src/input/compressed_json.rs)) inferred by `TypeInference` ([`input/inference.rs`](../crates/quicktype-core/src/input/inference.rs)), for `JsonInput::from_compressed` | Each `JsonSample` names its reader. `JsonSample::String` is read with `JSON.parse` semantics (the JS API's reader), on `quicktype_js_compat::json::parse`, and its parsed value is emitted into a `JsonSink` (`compressed_json::parse_string_into`). `JsonSample::Stream` and `JsonSample::Reader` go through the stream-json tokenizer ([`input/compressed_json_from_stream.rs`](../crates/quicktype-core/src/input/compressed_json_from_stream.rs)), which emits into a `JsonSink` too. The sink is the tallies (each sample a tree of its own, merged into its source's and then its top-level's; nothing kept whole), or a `CompressedJson` on the reference path (`JsonInput::set_tally_inference(false)`, needed for `JsonInput::to_compressed`). The CLI always passes `Reader`. Under WASM the samples arrive parsed, as `CompressedJsonTables` (`JsonInput::from_compressed`), and are inferred from those. Why both inferences agree: [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md). |
+| JSON | `JsonInput`: running tallies ([`input/tallies.rs`](../crates/quicktype-core/src/input/tallies.rs)) inferred by `TallyInference` ([`input/tally_inference.rs`](../crates/quicktype-core/src/input/tally_inference.rs)); the reference path, a `CompressedJson` ([`input/compressed_json.rs`](../crates/quicktype-core/src/input/compressed_json.rs)) inferred by `TypeInference` ([`input/inference.rs`](../crates/quicktype-core/src/input/inference.rs)), for `JsonInput::from_compressed` | Each `JsonSample` names its reader. `JsonSample::String` is read with `JSON.parse` semantics (the JS API's reader) by a one-pass reader ([`input/compressed_json/from_string.rs`](../crates/quicktype-core/src/input/compressed_json/from_string.rs): V8's grammar checked in one pass that records a tape, then emitted in own-property order, without building the value; V8's error messages from `quicktype_js_compat::json::parse`) into a `JsonSink` (`compressed_json::parse_string_into`). `JsonSample::Stream` and `JsonSample::Reader` go through the stream-json tokenizer ([`input/compressed_json_from_stream.rs`](../crates/quicktype-core/src/input/compressed_json_from_stream.rs)), which emits into a `JsonSink` too. The sink is the tallies (each sample a tree of its own, merged into its source's and then its top-level's; nothing kept whole), or a `CompressedJson` on the reference path (`JsonInput::set_tally_inference(false)`, needed for `JsonInput::to_compressed`). The CLI always passes `Reader`. Under WASM, inference is from the compressed form: the engine reads the facade's samples as they are added into a `CompressedJson` that runs share (`JsonInput::from_shared`), and samples the facade read itself arrive as `CompressedJsonTables` (`JsonInput::from_compressed`). A `CompressedJson` interns strings in TypeScript's order (a key after its value), so its string table is TypeScript's and it converts to a JavaScript `CompressedJSON`'s tables (`CompressedJson::to_tables`). Why both inferences agree: [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md). |
 | JSON Schema | `JsonSchemaInput` ([`input/json_schema_input.rs`](../crates/quicktype-core/src/input/json_schema_input.rs)) over a `JsonSchemaStore` ([`input/json_schema_store.rs`](../crates/quicktype-core/src/input/json_schema_store.rs)) | `$ref`ed documents are fetched lazily while types are built, where TS awaits. The CLI's store, `FetchingJsonSchemaStore` ([`input/fetching_json_schema_store.rs`](../crates/quicktype-core/src/input/fetching_json_schema_store.rs)), reads with `read_from_file_or_url` on an `Io` and parses with `parse_json` (JSON, else YAML). As in TS, `add_types_sync` fails. |
 | GraphQL | `GraphQlInput` ([`crates/quicktype-graphql-input/src/lib.rs`](../crates/quicktype-graphql-input/src/lib.rs)) | graphql-js's parser is hand-ported so syntax errors read the same; the introspection JSON is walked with JavaScript property-read semantics (`src/js.rs`). |
 | TypeScript | `schema_for_typescript_sources` ([`crates/quicktype-typescript-input/src/lib.rs`](../crates/quicktype-typescript-input/src/lib.rs)) | Starts `tsc --api` of TypeScript 7.0.2 (`QUICKTYPE_TSC`, else the npm platform package in `node_modules` of the working directory or a parent, else `tsgo`/`tsc` on `PATH`: `src/tsc/locate.rs`), talks to its checker over MessagePack frames (`src/tsc/`), and runs the typescript-json-schema port (`src/tjs/`), which replays TS 5.9's union order (`src/tjs/order.rs`). The schema text it returns goes to `JsonSchemaInput`. No Node involved. |
@@ -352,8 +352,17 @@ V8 in the last bit for some inputs. quicktype-wasm enables it.
 [`crates/quicktype-wasm`](../crates/quicktype-wasm/src/lib.rs) exports through
 `wasm-bindgen`: `runSync` (for `quicktypeMultiFileSync`); `start`, `poll`,
 `settle` and `cancel` (an async run as a future the facade polls, settling
-each schema fetch when its promise does); and `supportsLanguage`, which
-renders an empty graph (`has_renderer`) to learn whether a renderer is ported.
+each schema fetch when its promise does); `supportsLanguage`, which
+renders an empty graph (`has_renderer`) to learn whether a renderer is
+ported; and `jsonCreate`, `jsonRead`, `jsonDrop`, `jsonExport`,
+`jsonAcquire` and `jsonRelease`
+([`samples.rs`](../crates/quicktype-wasm/src/samples.rs)), with which the
+facade has the engine read JSON samples as they are added and keep them,
+one compressed form per JavaScript `CompressedJSON`, for the runs that use
+them (each holds a lease on it from when it is encoded), and gets the
+tables TypeScript would have built from them. Runs, compressed forms and
+leases are referred to by ids that are never reused
+([`slots.rs`](../crates/quicktype-wasm/src/slots.rs)).
 The request is a flat wire format ([`wire.rs`](../crates/quicktype-wasm/src/wire.rs),
 read in `js.rs`; encoded by `npm/quicktype-core/src/native/encode.ts`), which
 [`assemble.rs`](../crates/quicktype-wasm/src/assemble.rs) turns into
@@ -363,7 +372,14 @@ read in `js.rs`; encoded by `npm/quicktype-core/src/native/encode.ts`), which
 [`npm/quicktype-core`](../npm/quicktype-core/README.md) is quicktype's own
 TypeScript API: `src/` is upstream's `packages/quicktype-core/src` byte for
 byte except `Run.ts`, which after `preRun()` calls `runNative`/`runNativeSync`
-in `src/native/bridge.ts`. Per run, the TypeScript engine is used when
+in `src/native/bridge.ts`, and `input/CompressedJSON.ts`, whose
+`CompressedJSONFromString.parseSync` first offers each JSON sample to the
+engine (`src/native/samples.ts`): the engine reads it with the port's
+`JSON.parse`-semantics reader (`CompressedJson::read_string_sample`) and
+returns the root `Value` TypeScript would have computed, and the
+TypeScript tables are filled from the engine's, which are TypeScript's for
+the same samples, only if something reads them (the package README has
+the argument). Per run, the TypeScript engine is used when
 `QUICKTYPE_ENGINE=ts` is set; when `encodeRun` finds something the engine
 does not model (a custom language, input, recognizer or attribute producer,
 an unusual option value, GraphQL input); when the `.wasm` cannot be loaded

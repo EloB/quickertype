@@ -26,11 +26,14 @@
 //! The JavaScript facade can also hand over tables a JavaScript
 //! `CompressedJSON` built ([`CompressedJsonTables`]).
 //!
+//! The string table is TypeScript's, string for string and in the same
+//! order: an object key is interned when its value is committed (after the
+//! value's own strings, as `commitValue` does), and a
+//! [`Value::StringFormat`] interns its kind's name. So the tables convert to
+//! a JavaScript `CompressedJSON`'s exactly ([`CompressedJson::to_tables`]).
 //! Differences from the TypeScript that cannot be observed: values are an
-//! enum instead of tagged integers, objects are lists of key/value pairs, a
-//! [`Value::StringFormat`] holds its kind instead of interning the kind's
-//! name, and object keys are interned when they are read rather than when
-//! their value is committed.
+//! enum instead of tagged integers, objects are lists of key/value pairs,
+//! and a [`Value::StringFormat`] holds its kind (whose name it interned).
 
 use std::cell::RefCell;
 use std::fmt;
@@ -46,12 +49,17 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
-use crate::support::fast_hash::{BuildHasher, HashMap};
+use crate::support::fast_hash::BuildHasher;
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
+
+mod from_string;
+
+pub(crate) use from_string::StringReaderState;
+pub use from_string::{Decline, ReadStringError, StringSampleLimits};
 
 /// One JSON value in compressed form (TS `Value`, a tag plus an index).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -152,13 +160,24 @@ impl From<&str> for JsonSample {
     }
 }
 
-/// The state of an object or array being read (TS `Context`). The current
-/// key is held interned.
+/// The state of an object or array being read (TS `Context`).
 #[derive(Debug, Default)]
 struct Context {
     current_array: Option<Vec<Value>>,
-    current_key: Option<u32>,
+    /// `currentKey`, interned when the value under it is committed.
+    current_key: Option<PendingKey>,
     current_object: Option<Vec<(Value, Value)>>,
+}
+
+/// The key of the next value of an object, not interned yet: TypeScript's
+/// `commitValue` interns `currentKey` only once the value is computed (so
+/// after the strings inside the value).
+#[derive(Clone, Copy, Debug)]
+enum PendingKey {
+    /// `key_stack[start..start + len]` (keys nest as their objects do).
+    Text { start: usize, len: usize },
+    /// A key of the string reader's key table (`from_string`).
+    Read(u32),
 }
 
 /// The compressed form of the JSON samples of one input, and the builder
@@ -181,6 +200,28 @@ pub struct CompressedJson {
     /// Emptied buffers of finished objects and arrays, for the next ones.
     spare_objects: Vec<Vec<(Value, Value)>>,
     spare_arrays: Vec<Vec<Value>>,
+    /// The texts of [`PendingKey::Text`] keys, innermost last.
+    key_stack: String,
+    /// By `TypeKind as usize`: the string index of the kind's name, once a
+    /// [`Value::StringFormat`] of it interned it; [`NO_INDEX`] before.
+    kind_names: Vec<u32>,
+    /// What [`parse_string`](Self::parse_string) keeps between samples.
+    string_reader: from_string::StringReaderState,
+}
+
+/// No string index (yet).
+const NO_INDEX: u32 = u32::MAX;
+
+/// How many objects, arrays and strings a [`CompressedJson`] has: a
+/// prefix of its tables.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TableCounts {
+    /// Strings in the string table.
+    pub strings: usize,
+    /// Objects.
+    pub objects: usize,
+    /// Arrays.
+    pub arrays: usize,
 }
 
 /// The number of items a block of [`Runs`] or [`Strings`] holds at least.
@@ -285,6 +326,16 @@ impl<T: Copy> Runs<T> {
     fn iter(&self) -> impl Iterator<Item = &[T]> {
         (0..self.len()).filter_map(|i| self.get(i))
     }
+
+    /// How many items the first `count` runs have.
+    fn total_len(&self, count: usize) -> usize {
+        self.spans.iter().take(count).map(|s| s.len as usize).sum()
+    }
+
+    /// The bytes of its buffers.
+    fn heap_size(&self) -> usize {
+        buffers_size(&self.blocks) + vec_size(&self.spans)
+    }
 }
 
 /// The interned strings (TS `_strings` and `_stringIndexes`): the text
@@ -323,6 +374,19 @@ impl Strings {
 
     fn iter(&self) -> impl Iterator<Item = &str> {
         (0..self.len()).filter_map(|i| self.get(i))
+    }
+
+    /// The bytes of its buffers.
+    fn heap_size(&self) -> usize {
+        vec_size(&self.blocks)
+            + self.blocks.iter().map(String::capacity).sum::<usize>()
+            + vec_size(&self.spans)
+            + self.indexes.allocation_size()
+    }
+
+    /// The index `internString(s)` would return, if `s` is there.
+    fn find(&self, s: &str) -> Option<u32> {
+        self.find_hashed(s, self.hasher.hash_one(s))
     }
 
     /// `internString(s)`: the index of `s`, appended if it is not there
@@ -439,6 +503,9 @@ impl CompressedJson {
             arrays: Runs::new(),
             spare_objects: Vec::new(),
             spare_arrays: Vec::new(),
+            key_stack: String::new(),
+            kind_names: Vec::new(),
+            string_reader: from_string::StringReaderState::default(),
         }
     }
 
@@ -487,6 +554,26 @@ impl CompressedJson {
         match &self.supported_integer_range {
             None => true,
             Some(range) => integer_string_in_range(integer_string, range),
+        }
+    }
+
+    /// Whether every whole number of at most 15 digits fits the integer
+    /// range, so that their literals need not be compared with it: there is
+    /// no range, or its bounds are plain integer literals that the extremes
+    /// of 15 digits fit.
+    pub(crate) fn small_integers_fit(&self) -> bool {
+        let is_plain_integer = |s: &str| {
+            let digits = s.strip_prefix('-').unwrap_or(s);
+            !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())
+        };
+        match &self.supported_integer_range {
+            None => true,
+            Some(range) => {
+                is_plain_integer(range.min())
+                    && is_plain_integer(range.max())
+                    && self.integer_string_fits("-999999999999999")
+                    && self.integer_string_fits("999999999999999")
+            }
         }
     }
 
@@ -562,12 +649,32 @@ impl CompressedJson {
         Value::InternedString(self.intern_string(s))
     }
 
+    /// The text of a key not interned yet.
+    fn pending_key_text(&self, key: PendingKey) -> &str {
+        match key {
+            PendingKey::Text { start, len } => &self.key_stack[start..start + len],
+            PendingKey::Read(id) => self.string_reader.key_text(id),
+        }
+    }
+
+    /// `makeString(key)` for the key of a value being committed.
+    fn intern_pending_key(&mut self, key: PendingKey) -> u32 {
+        match key {
+            PendingKey::Text { start, len } => {
+                let index = self.strings.intern(&self.key_stack[start..start + len]);
+                self.key_stack.truncate(start);
+                index
+            }
+            PendingKey::Read(id) => self.string_reader.intern_key(id, &mut self.strings),
+        }
+    }
+
     /// `isExpectingRef`.
     fn is_expecting_ref(&self) -> bool {
         self.ctx
             .as_ref()
             .and_then(|ctx| ctx.current_key)
-            .is_some_and(|key| self.strings.get(key as usize).is_some_and(|k| k == "$ref"))
+            .is_some_and(|key| self.pending_key_text(key) == "$ref")
     }
 
     /// `commitValue(value)`.
@@ -580,11 +687,15 @@ impl CompressedJson {
             self.root_value = Some(value);
             return Ok(());
         };
-        if let Some(object) = &mut ctx.current_object {
+        if ctx.current_object.is_some() {
             let Some(key) = ctx.current_key.take() else {
                 return panic("Must have key and can't have string when committing");
             };
-            object.push((Value::InternedString(key), value));
+            // `this.makeString(this._ctx.currentKey)`, after the value.
+            let key = self.intern_pending_key(key);
+            if let Some(object) = self.ctx.as_mut().and_then(|c| c.current_object.as_mut()) {
+                object.push((Value::InternedString(key), value));
+            }
             Ok(())
         } else if let Some(array) = &mut ctx.current_array {
             array.push(value);
@@ -622,12 +733,42 @@ impl CompressedJson {
                 Some(kind) if transformed_string_type_attributes_producer(kind).is_some() => {
                     Value::TransformedString(self.intern_string(s))
                 }
-                Some(kind) => Value::StringFormat(kind),
-                None if utf16::len(s) <= 64 => self.make_string(s),
+                Some(kind) => {
+                    // `makeValue(Tag.StringFormat, this.internString(format))`.
+                    self.intern_kind_name(kind);
+                    Value::StringFormat(kind)
+                }
+                // At most 64 UTF-16 code units (each of 1 to 3 UTF-8
+                // bytes, or 4 bytes for a pair).
+                None if s.len() <= 64 || (s.len() <= 192 && utf16::len(s) <= 64) => {
+                    self.make_string(s)
+                }
                 None => Value::UninternedString,
             }
         };
         self.commit_value(value)
+    }
+
+    /// `internString(kind)` for the name of a string format.
+    fn intern_kind_name(&mut self, kind: TypeKind) {
+        let k = kind as usize;
+        if self.kind_names.get(k).is_some_and(|&i| i != NO_INDEX) {
+            return;
+        }
+        let index = self.strings.intern(kind.as_str());
+        if k >= self.kind_names.len() {
+            self.kind_names.resize(k + 1, NO_INDEX);
+        }
+        self.kind_names[k] = index;
+    }
+
+    /// The index `internString(kind)` gave the name of a string format.
+    fn kind_name_index(&self, kind: TypeKind) -> Option<u32> {
+        match self.kind_names.get(kind as usize) {
+            Some(&index) if index != NO_INDEX => Some(index),
+            // Imported tables have their names; nothing else interned them.
+            _ => self.strings.find(kind.as_str()),
+        }
     }
 
     /// `finish()`: the root value of the sample just read.
@@ -635,6 +776,7 @@ impl CompressedJson {
         // The buffers are kept for one sample at a time.
         self.spare_objects = Vec::new();
         self.spare_arrays = Vec::new();
+        self.release_key_stack();
         let Some(value) = self.root_value.take() else {
             return panic("Finished without root document");
         };
@@ -669,11 +811,36 @@ impl CompressedJson {
         }
     }
 
-    /// `setPropertyKey(key)`: the key of the next value in the object.
+    /// `setPropertyKey(key)`: the key of the next value in the object,
+    /// interned when the value is committed.
     pub fn set_property_key(&mut self, key: &str) -> Result<()> {
-        let key = self.intern_string(key);
-        self.context()?.current_key = Some(key);
+        let ctx = defined(self.ctx.as_mut())?;
+        // A key that is replaced before its value came is the top one.
+        if let Some(PendingKey::Text { start, .. }) = ctx.current_key.take() {
+            self.key_stack.truncate(start);
+        }
+        let start = self.key_stack.len();
+        self.key_stack.push_str(key);
+        self.context()?.current_key = Some(PendingKey::Text {
+            start,
+            len: key.len(),
+        });
         Ok(())
+    }
+
+    /// `setPropertyKey(key)` for a key of the string reader's key table.
+    fn set_property_key_read(&mut self, key: u32) -> Result<()> {
+        self.context()?.current_key = Some(PendingKey::Read(key));
+        Ok(())
+    }
+
+    /// Empties the key stack, freeing it if a long key made it large.
+    fn release_key_stack(&mut self) {
+        if self.key_stack.capacity() > 4096 {
+            self.key_stack = String::new();
+        } else {
+            self.key_stack.clear();
+        }
     }
 
     /// `finishObject()`: the object ends.
@@ -716,6 +883,7 @@ impl CompressedJson {
         self.root_value = None;
         self.ctx = None;
         self.context_stack.clear();
+        self.release_key_stack();
     }
 
     /// Reads one sample with the reader it asks for.
@@ -731,7 +899,9 @@ impl CompressedJson {
     }
 
     /// `CompressedJSONFromString.parseSync(input)`: `JSON.parse`, then
-    /// `process` the value in `Object.getOwnPropertyNames` order.
+    /// `process` the value in `Object.getOwnPropertyNames` order, read in
+    /// one pass over the text and committed without building the value
+    /// (see [`read_string_sample`](Self::read_string_sample)).
     ///
     /// ```
     /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
@@ -752,45 +922,111 @@ impl CompressedJson {
         parse_string_into(self, text)
     }
 
+    /// How many strings, objects and arrays there are.
+    pub fn table_counts(&self) -> TableCounts {
+        TableCounts {
+            strings: self.strings.len(),
+            objects: self.objects.len(),
+            arrays: self.arrays.len(),
+        }
+    }
+
     /// The compressed form with a JavaScript `CompressedJSON`'s encoding,
     /// as the JavaScript facade sends it (research 05, §4.2), together
     /// with `roots` (sample values) encoded against it; the inverse of
-    /// [`CompressedJson::from_tables`].
+    /// [`CompressedJson::from_tables`]. For samples read here, these are
+    /// the very tables TypeScript builds from the same samples.
     pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
-        let mut strings: Vec<String> = self.strings.iter().map(str::to_owned).collect();
-        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::default();
+        let mut strings = Vec::new();
+        let (runs, roots) = self.export(self.table_counts(), roots, &mut strings);
+        let tables = CompressedJsonTables {
+            strings,
+            objects: runs.objects,
+            object_offsets: runs.object_offsets,
+            arrays: runs.arrays,
+            array_offsets: runs.array_offsets,
+        };
+        (tables, roots)
+    }
+
+    /// The tables of the first `counts` strings, objects and arrays (the
+    /// tables as they were when there were that many: a compressed form
+    /// only ever grows) as the JavaScript facade receives them: like
+    /// [`to_tables`](Self::to_tables), with the strings written back to
+    /// back, straight from the string table, and their lengths in UTF-16
+    /// code units.
+    pub fn joined_tables_up_to(&self, counts: TableCounts) -> JoinedTables {
+        let mut strings = (String::new(), Vec::new());
+        let (runs, _) = self.export(counts, &[], &mut strings);
+        JoinedTables {
+            strings: strings.0,
+            string_lengths: strings.1,
+            objects: runs.objects,
+            object_offsets: runs.object_offsets,
+            arrays: runs.arrays,
+            array_offsets: runs.array_offsets,
+        }
+    }
+
+    /// Writes the first `counts.strings` strings to `strings`, and returns
+    /// the first `counts` objects and arrays, and `roots`, encoded against
+    /// them. Every string format interned its name; should one not have
+    /// (or not among those strings), its name is appended.
+    fn export(
+        &self,
+        counts: TableCounts,
+        roots: &[Value],
+        strings: &mut impl StringsOut,
+    ) -> (EncodedRuns, Vec<i32>) {
+        let texts = || self.strings.iter().take(counts.strings);
+        strings.reserve(counts.strings, texts().map(str::len).sum());
+        for text in texts() {
+            strings.push(text);
+        }
+        // By `TypeKind as usize`: the string index of the kind's name,
+        // found once.
+        let mut kind_indexes: Vec<u32> = Vec::new();
         let mut encode = |v: Value| {
-            encode_value(v, |kind| {
-                *kind_indexes.entry(kind).or_insert_with(|| {
-                    strings.push(kind.as_str().to_owned());
-                    (strings.len() - 1) as u32
-                })
+            self.encode_with(v, |kind| {
+                let k = kind as usize;
+                if k >= kind_indexes.len() {
+                    kind_indexes.resize(k + 1, NO_INDEX);
+                }
+                if kind_indexes[k] == NO_INDEX {
+                    kind_indexes[k] = self
+                        .kind_name_index(kind)
+                        .filter(|&i| (i as usize) < counts.strings)
+                        .unwrap_or_else(|| {
+                            strings.push(kind.as_str());
+                            (strings.len() - 1) as u32
+                        });
+                }
+                kind_indexes[k]
             })
         };
-        let mut objects = Vec::new();
-        let mut object_offsets = Vec::with_capacity(self.objects.len());
-        for object in self.objects.iter() {
+        let mut objects = Vec::with_capacity(2 * self.objects.total_len(counts.objects));
+        let mut object_offsets = Vec::with_capacity(counts.objects);
+        for object in self.objects.iter().take(counts.objects) {
             object_offsets.push(objects.len() as u32);
             for &(key, value) in object {
                 objects.push(encode(key));
                 objects.push(encode(value));
             }
         }
-        let mut arrays = Vec::new();
-        let mut array_offsets = Vec::with_capacity(self.arrays.len());
-        for array in self.arrays.iter() {
+        let mut arrays = Vec::with_capacity(self.arrays.total_len(counts.arrays));
+        let mut array_offsets = Vec::with_capacity(counts.arrays);
+        for array in self.arrays.iter().take(counts.arrays) {
             array_offsets.push(arrays.len() as u32);
             arrays.extend(array.iter().map(|&v| encode(v)));
         }
         let roots = roots.iter().map(|&v| encode(v)).collect();
-        let tables = CompressedJsonTables {
-            strings,
+        let runs = EncodedRuns {
             objects,
             object_offsets,
             arrays,
             array_offsets,
         };
-        (tables, roots)
+        (runs, roots)
     }
 
     /// Imports the tables a JavaScript `CompressedJSON` built (the facade's
@@ -847,14 +1083,46 @@ impl CompressedJson {
         Ok(cjson)
     }
 
-    /// Decodes a JavaScript `Value` (`tag | index << 4`) against the tables
-    /// being imported.
-    pub(crate) fn decode_value(
-        &self,
-        v: i32,
-        object_count: usize,
-        array_count: usize,
-    ) -> Result<Value> {
+    /// `makeValue(tag, index)`: `v` as TypeScript encodes it, `tag | index
+    /// << 4` in 32-bit arithmetic (as there, an index of 2^27 or more
+    /// wraps), a [`Value::StringFormat`]'s index being that of its kind's
+    /// name in the string table; `None` if the name is not there. The
+    /// inverse of [`decode_value`](Self::decode_value).
+    pub fn encode_value(&self, v: Value) -> Option<i32> {
+        let mut missing = false;
+        let encoded = self.encode_with(v, |kind| {
+            self.kind_name_index(kind).unwrap_or_else(|| {
+                missing = true;
+                0
+            })
+        });
+        (!missing).then_some(encoded)
+    }
+
+    /// [`encode_value`](Self::encode_value), with the string index of a
+    /// string format's name from `kind_index`.
+    fn encode_with(&self, v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
+        let (tag, index) = match v {
+            Value::Null => (TAG_NULL, 0),
+            Value::False => (TAG_FALSE, 0),
+            Value::True => (TAG_TRUE, 0),
+            Value::Integer => (TAG_INTEGER, 0),
+            Value::Double => (TAG_DOUBLE, 0),
+            Value::InternedString(i) => (TAG_INTERNED_STRING, i),
+            Value::UninternedString => (TAG_UNINTERNED_STRING, 0),
+            Value::Object(i) => (TAG_OBJECT, i),
+            Value::Array(i) => (TAG_ARRAY, i),
+            Value::StringFormat(kind) => (TAG_STRING_FORMAT, kind_index(kind)),
+            Value::TransformedString(i) => (TAG_TRANSFORMED_STRING, i),
+        };
+        encode_tagged(tag, index)
+    }
+
+    /// Decodes a JavaScript `Value` (`tag | index << 4`) against these
+    /// tables, which have `object_count` objects and `array_count` arrays
+    /// (see [`counts`](Self::counts)); the inverse of
+    /// [`encode_value`](Self::encode_value).
+    pub fn decode_value(&self, v: i32, object_count: usize, array_count: usize) -> Result<Value> {
         let tag = v & TAG_MASK;
         let index = (v >> TAG_BITS) as u32;
         let in_range = |count: usize| (index as usize) < count;
@@ -886,9 +1154,36 @@ impl CompressedJson {
 
     /// The number of objects and arrays, for decoding values against this
     /// compressed form.
-    pub(crate) fn counts(&self) -> (usize, usize) {
+    pub fn counts(&self) -> (usize, usize) {
         (self.objects.len(), self.arrays.len())
     }
+
+    /// About how many bytes of memory this compressed form holds: itself
+    /// and the capacity of every buffer it owns (not what the allocator
+    /// adds to them), for whoever bounds the memory compressed forms take
+    /// (the WebAssembly engine keeps the forms of many inputs).
+    pub fn heap_size(&self) -> usize {
+        std::mem::size_of::<Self>()
+            + self.strings.heap_size()
+            + self.objects.heap_size()
+            + self.arrays.heap_size()
+            + buffers_size(&self.spare_objects)
+            + buffers_size(&self.spare_arrays)
+            + vec_size(&self.context_stack)
+            + self.key_stack.capacity()
+            + vec_size(&self.kind_names)
+            + self.string_reader.heap_size()
+    }
+}
+
+/// The bytes of `v`'s buffer.
+pub(crate) fn vec_size<T>(v: &Vec<T>) -> usize {
+    v.capacity() * std::mem::size_of::<T>()
+}
+
+/// The bytes of `buffers` and of their buffers.
+fn buffers_size<T>(buffers: &Vec<Vec<T>>) -> usize {
+    vec_size(buffers) + buffers.iter().map(vec_size).sum::<usize>()
 }
 
 /// What a JSON reader emits while it reads a sample (TS: the protected
@@ -925,6 +1220,16 @@ pub(crate) trait JsonSink {
     fn integer_string_fits(&self, integer_string: &str) -> bool;
     /// `parsedNumberIsDouble(n)`.
     fn parsed_number_is_double(&self, n: f64) -> bool;
+    /// Whether every whole number of at most 15 digits fits
+    /// `supportedIntegerRange`, so that the `JSON.parse` reader need not
+    /// compare such literals with it ([`CompressedJson::small_integers_fit`]).
+    fn small_integers_fit(&self) -> bool;
+    /// What the `JSON.parse` reader ([`parse_string_into`]) keeps between
+    /// samples: its key table and a spare tape.
+    fn string_reader(&mut self) -> &mut StringReaderState;
+    /// `setPropertyKey(key)` for key `id` of the `JSON.parse` reader's key
+    /// table (in [`string_reader`](Self::string_reader)).
+    fn set_property_key_read(&mut self, id: u32) -> Result<()>;
     /// Forgets a sample a reader failed on: the next sample reads as if the
     /// failed one had never started. Nothing it added is counted or
     /// referenced any more (`CompressedJson` keeps the objects, arrays and
@@ -934,19 +1239,42 @@ pub(crate) trait JsonSink {
 }
 
 /// [`CompressedJson::parse_string`] into any [`JsonSink`]: `JSON.parse`,
-/// then `process` the value. A sample that fails is forgotten
+/// then `process` the value, read in one pass over the text without
+/// building the value (`from_string`). A sample that is not JSON emits
+/// nothing; one that fails later is forgotten
 /// ([`JsonSink::reset_partial_sample`]).
 pub(crate) fn parse_string_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
 ) -> Result<S::Root, ParseError> {
-    let json = json::parse(text)
-        .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
+    match from_string::read_string_sample_into(sink, text, StringSampleLimits::default()) {
+        Ok(root) => Ok(root),
+        Err(ReadStringError::Parse(e)) => Err(e),
+        Err(ReadStringError::Declined(decline)) => Err(ParseError::Quicktype(
+            QuickTypeError::internal(format!("A sample without limits was declined: {decline:?}")),
+        )),
+    }
+}
+
+/// `JSON.parse(text)` with the port of V8's parser, then `process` the
+/// value into `sink`: what the one-pass reader falls back on for V8's
+/// error message (and for a text too long for its tape). A sample that
+/// fails after the parse is forgotten ([`JsonSink::reset_partial_sample`]).
+pub(crate) fn parse_string_value_into<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+) -> Result<S::Root, ParseError> {
+    let json = json::parse(text).map_err(|e| syntax_error(&e))?;
     let result = process(sink, &json).and_then(|()| sink.finish());
     if result.is_err() {
         sink.reset_partial_sample();
     }
     Ok(result?)
+}
+
+/// `JSON.parse`'s `SyntaxError` for what the port of V8's parser rejected.
+fn syntax_error(e: &json::JsonParseError) -> ParseError {
+    ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message()))
 }
 
 /// `process(json)`, iteratively: emits `json` into `sink` in
@@ -1053,6 +1381,18 @@ impl JsonSink for CompressedJson {
         CompressedJson::parsed_number_is_double(self, n)
     }
 
+    fn small_integers_fit(&self) -> bool {
+        CompressedJson::small_integers_fit(self)
+    }
+
+    fn string_reader(&mut self) -> &mut StringReaderState {
+        &mut self.string_reader
+    }
+
+    fn set_property_key_read(&mut self, id: u32) -> Result<()> {
+        CompressedJson::set_property_key_read(self, id)
+    }
+
     fn reset_partial_sample(&mut self) {
         CompressedJson::reset_partial_sample(self);
     }
@@ -1091,22 +1431,76 @@ pub struct CompressedJsonTables {
     pub array_offsets: Vec<u32>,
 }
 
-/// Encodes a value as TypeScript does, `tag | index << 4`, with
-/// `kind_index` giving the string index of a transformed kind's name.
-fn encode_value(v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
-    let (tag, index) = match v {
-        Value::Null => (TAG_NULL, 0),
-        Value::False => (TAG_FALSE, 0),
-        Value::True => (TAG_TRUE, 0),
-        Value::Integer => (TAG_INTEGER, 0),
-        Value::Double => (TAG_DOUBLE, 0),
-        Value::InternedString(i) => (TAG_INTERNED_STRING, i),
-        Value::UninternedString => (TAG_UNINTERNED_STRING, 0),
-        Value::Object(i) => (TAG_OBJECT, i),
-        Value::Array(i) => (TAG_ARRAY, i),
-        Value::StringFormat(kind) => (TAG_STRING_FORMAT, kind_index(kind)),
-        Value::TransformedString(i) => (TAG_TRANSFORMED_STRING, i),
-    };
+/// [`CompressedJsonTables`] with the strings joined, as the JavaScript
+/// facade receives them ([`CompressedJson::joined_tables_up_to`]).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JoinedTables {
+    /// The string table's strings, back to back.
+    pub strings: String,
+    /// Each string's length in UTF-16 code units.
+    pub string_lengths: Vec<u32>,
+    /// As in [`CompressedJsonTables`].
+    pub objects: Vec<i32>,
+    /// As in [`CompressedJsonTables`].
+    pub object_offsets: Vec<u32>,
+    /// As in [`CompressedJsonTables`].
+    pub arrays: Vec<i32>,
+    /// As in [`CompressedJsonTables`].
+    pub array_offsets: Vec<u32>,
+}
+
+/// The encoded objects and arrays of an export ([`CompressedJson::export`]).
+struct EncodedRuns {
+    objects: Vec<i32>,
+    object_offsets: Vec<u32>,
+    arrays: Vec<i32>,
+    array_offsets: Vec<u32>,
+}
+
+/// Where an export writes the string table: a string per string
+/// ([`CompressedJsonTables`]), or the strings joined with their UTF-16
+/// lengths ([`JoinedTables`]).
+trait StringsOut {
+    /// Makes room for `count` more strings of `bytes` in all.
+    fn reserve(&mut self, count: usize, bytes: usize);
+    fn push(&mut self, s: &str);
+    /// How many strings there are.
+    fn len(&self) -> usize;
+}
+
+impl StringsOut for Vec<String> {
+    fn reserve(&mut self, count: usize, _bytes: usize) {
+        Vec::reserve_exact(self, count);
+    }
+
+    fn push(&mut self, s: &str) {
+        Vec::push(self, s.to_owned());
+    }
+
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+impl StringsOut for (String, Vec<u32>) {
+    fn reserve(&mut self, count: usize, bytes: usize) {
+        self.0.reserve_exact(bytes);
+        self.1.reserve_exact(count);
+    }
+
+    fn push(&mut self, s: &str) {
+        self.0.push_str(s);
+        self.1.push(utf16::len(s) as u32);
+    }
+
+    fn len(&self) -> usize {
+        self.1.len()
+    }
+}
+
+/// `makeValue(tag, index)`: `t | (index << TAG_BITS)` on JavaScript's
+/// 32-bit integers.
+fn encode_tagged(tag: i32, index: u32) -> i32 {
     tag | ((index as i32) << TAG_BITS)
 }
 
@@ -1365,5 +1759,70 @@ mod tests {
         assert!(
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &bad).is_err()
         );
+    }
+
+    /// What a compressed form holds grows with its tables, and not with
+    /// what reading a sample needed only while it read it.
+    #[test]
+    fn heap_size_counts_the_tables() {
+        let mut r = cjson(None);
+        assert!(r.heap_size() < 1024, "{}", r.heap_size());
+        let records: Vec<String> = (0..20_000)
+            .map(|i| {
+                format!(
+                    r#"{{"id": {i}, "name{}": "n{i}", "tags": ["a", "b"]}}"#,
+                    i % 9
+                )
+            })
+            .collect();
+        r.parse_string(&format!("[{}]", records.join(","))).unwrap();
+        let tables = 20_000 * 3 * std::mem::size_of::<(Value, Value)>()
+            + 60_000 * std::mem::size_of::<Value>();
+        let size = r.heap_size();
+        assert!(size >= tables && size < 4 * tables, "{size} for {tables}");
+        // The reader keeps no tape this large for the next sample.
+        r.parse_string("[1]").unwrap();
+        assert!(r.heap_size() < size + 4096);
+    }
+
+    /// The joined tables are the tables, with the strings back to back
+    /// and their UTF-16 lengths; up to a count, those of that prefix.
+    #[test]
+    fn joined_tables() {
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        r.parse_string(
+            r#"{"d":"2020-01-01","é":["😀x",{"k":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}]}"#,
+        )
+        .unwrap();
+        let first = r.table_counts();
+        r.parse_string(r#"[{"t":"12:30:00","d":"2021-01-01"}, "y"]"#)
+            .unwrap();
+        let joined = |r: &CompressedJson, counts| {
+            let j = r.joined_tables_up_to(counts);
+            let (whole, _) = r.to_tables(&[]);
+            assert_eq!(j.strings, whole.strings[..j.string_lengths.len()].concat());
+            let lengths: Vec<u32> = whole.strings[..j.string_lengths.len()]
+                .iter()
+                .map(|s| utf16::len(s) as u32)
+                .collect();
+            assert_eq!(j.string_lengths, lengths);
+            j
+        };
+        let all = joined(&r, r.table_counts());
+        let (tables, _) = r.to_tables(&[]);
+        assert_eq!(all.objects, tables.objects);
+        assert_eq!(all.object_offsets, tables.object_offsets);
+        assert_eq!(all.arrays, tables.arrays);
+        assert_eq!(all.array_offsets, tables.array_offsets);
+        let prefix = joined(&r, first);
+        assert_eq!(prefix.string_lengths.len(), first.strings);
+        assert_eq!(prefix.object_offsets.len(), first.objects);
+        assert_eq!(prefix.array_offsets.len(), first.arrays);
+        assert_eq!(prefix.objects, all.objects[..prefix.objects.len()]);
+        // Imported tables, whose kind names are found by their text.
+        let imported =
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
+                .unwrap();
+        assert_eq!(imported.joined_tables_up_to(imported.table_counts()), all);
     }
 }

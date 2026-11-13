@@ -15,7 +15,7 @@ use quicktype_core::{
     RunContext, SchemaCache, TimingCallback, get_target_language,
 };
 
-use crate::wire::{DateTimeKind, InputRequest, Request};
+use crate::wire::{InputRequest, Request};
 
 /// What a run needs from the JavaScript facade.
 pub trait RunHost {
@@ -58,19 +58,18 @@ pub fn assemble(request: Request, host: Rc<dyn RunHost>) -> Result<Options<'stat
                 tables,
                 top_levels,
             } => {
-                let recognizer = match date_time {
-                    DateTimeKind::Default => {
-                        Box::new(quicktype_core::date_time::DefaultDateTimeRecognizer)
-                    }
-                    DateTimeKind::Kotlin => get_target_language("kotlin")?.date_time_recognizer(),
-                    DateTimeKind::Swift => get_target_language("swift")?.date_time_recognizer(),
-                };
                 input_data.add_input(JsonInput::from_compressed(
                     &tables,
                     handle_refs,
-                    recognizer,
+                    date_time.recognizer()?,
                     top_levels,
                 )?);
+            }
+            InputRequest::JsonShared {
+                compressed_json,
+                top_levels,
+            } => {
+                input_data.add_input(JsonInput::from_shared(compressed_json, top_levels)?);
             }
             InputRequest::Schema {
                 store_id,
@@ -255,7 +254,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::wire::SchemaSource;
+    use crate::wire::{DateTimeKind, SchemaSource};
 
     #[derive(Default)]
     struct MockHost {

@@ -231,6 +231,10 @@ const expectedEngines = {
     ts: [{ wasm: 0, ts: 1 }, { wasm: 0, ts: 2 }, { wasm: 0, ts: 3 }, { wasm: 0, ts: 4 }],
 };
 
+// The JSON samples the engine read: those added once it was compiled (with
+// the asset, the first two are added while it is still compiling).
+const expectedSamplesRead = { asset: 1, supplied: 3, cjs: 1, ts: 0 };
+
 let failed = false;
 for (const variant of ["asset", "supplied", "cjs", "ts"]) {
     const server = await serve(variant);
@@ -245,10 +249,11 @@ for (const variant of ["asset", "supplied", "cjs", "ts"]) {
         if (result.error !== undefined) throw new Error(result.error);
         assert.deepEqual(result.outputs, expected.outputs);
         assert.deepEqual(result.engines, expectedEngines[variant]);
+        assert.equal(result.samplesRead, expectedSamplesRead[variant]);
         if (variant === "ts") {
             assert.deepEqual(server.requests.filter((r) => r.endsWith(".wasm")), [], "the .wasm was fetched");
         }
-        console.log(`${variant}: ok (engines per step: ${JSON.stringify(result.engines)})`);
+        console.log(`${variant}: ok (engines per step: ${JSON.stringify(result.engines)}, samples read by the engine: ${result.samplesRead})`);
     } catch (e) {
         failed = true;
         console.log(`${variant}: FAILED\n${e.message}`);

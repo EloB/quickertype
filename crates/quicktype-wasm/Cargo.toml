@@ -26,5 +26,12 @@ wasm-bindgen.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 
+[features]
+# The allocator counts the bytes in use and their peak (`__heapBytes`,
+# `__heapPeak`), for measuring what an operation needs: about 2% of a
+# run's time, so release builds leave it out
+# (`node npm/quicktype-core/script/build.mjs --heap-stats` turns it on).
+heap-stats = []
+
 [lints]
 workspace = true

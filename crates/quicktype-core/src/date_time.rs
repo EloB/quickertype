@@ -38,7 +38,9 @@ impl DateTimeRecognizer for DefaultDateTimeRecognizer {
     }
 
     fn is_date_time(&self, s: &str) -> bool {
-        default_is_date_time(self, s)
+        // The date part starts with four digits (`is_date`), so a string
+        // that does not start with one is not split at all.
+        s.as_bytes().first().is_some_and(u8::is_ascii_digit) && default_is_date_time(self, s)
     }
 }
 

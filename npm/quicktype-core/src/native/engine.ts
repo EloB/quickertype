@@ -3,7 +3,8 @@
 //
 // * Node: nothing happens at import. The first run reads the .wasm file
 //   next to the glue with `fs.readFileSync` and compiles it synchronously,
-//   so `quicktypeMultiFileSync` works from the first call.
+//   so `quicktypeMultiFileSync` works from the first call. (A JSON sample
+//   compiles it only if it is large: samples.ts, `engineForSample`.)
 // * Browsers (and other hosts without Node's `fs`): compilation starts at
 //   import with `fetch` + `WebAssembly.compileStreaming`, unless the
 //   TypeScript engine is forced (`engineMode()` is "ts"); `quicktype()`
@@ -140,6 +141,11 @@ function startCompiling(): Promise<void> {
     return compiling;
 }
 
+/**
+ * The instance runs use: the current one, or a new one of the compiled
+ * module; `undefined` if there is no module (yet), or it does not
+ * instantiate as this engine.
+ */
 function instantiate(): WasmGlue | undefined {
     if (current !== undefined) return current;
     if (compiledModule === undefined || compiledModule === failedModule) return undefined;
@@ -179,6 +185,19 @@ export async function engineAsync(): Promise<WasmGlue | undefined> {
     }
 
     return instantiate();
+}
+
+/**
+ * The engine, if it is compiled already (it is instantiated if need be);
+ * never compiles it.
+ */
+export function engineIfCompiled(): WasmGlue | undefined {
+    return instantiate();
+}
+
+/** The engine instance runs use now, if there is one; loads nothing. */
+export function currentEngine(): WasmGlue | undefined {
+    return current;
 }
 
 /** Why the engine could not be loaded, if it could not. */

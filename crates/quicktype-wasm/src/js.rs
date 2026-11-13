@@ -153,6 +153,9 @@ extern "C" {
     fn top_level_sample_counts(this: &InputObject) -> Vec<u32>;
     #[wasm_bindgen(method, getter, js_name = topLevelSamples)]
     fn top_level_samples(this: &InputObject) -> Vec<i32>;
+    /// The run's lease on the compressed samples (`jsonShared`).
+    #[wasm_bindgen(method, getter)]
+    fn lease(this: &InputObject) -> f64;
     // JSON Schema
     #[wasm_bindgen(method, getter, js_name = storeId)]
     fn store_id(this: &InputObject) -> u32;
@@ -252,6 +255,33 @@ fn option_value(value: &JsValue) -> Result<OptionValue> {
     }
 }
 
+/// A JSON input's `_topLevels`.
+fn decode_top_levels(input: &InputObject) -> Result<Vec<CompressedTopLevel>> {
+    let names = input.top_level_names();
+    let descriptions = input.top_level_descriptions();
+    let counts = input.top_level_sample_counts();
+    let samples = input.top_level_samples();
+    if descriptions.len() != names.len() || counts.len() != names.len() {
+        return Err(wire(WireError::new("top-level arrays differ in length")));
+    }
+    let mut rest = samples.as_slice();
+    let mut top_levels = Vec::with_capacity(names.len());
+    for ((name, description), count) in names.into_iter().zip(descriptions).zip(counts) {
+        let count = count as usize;
+        if count > rest.len() {
+            return Err(wire(WireError::new("not enough top-level samples")));
+        }
+        let (mine, others) = rest.split_at(count);
+        rest = others;
+        top_levels.push(CompressedTopLevel {
+            name,
+            description: description.as_string(),
+            samples: mine.to_vec(),
+        });
+    }
+    Ok(top_levels)
+}
+
 fn decode_input(input: &InputObject) -> Result<InputRequest> {
     match input.kind().as_str() {
         "json" => {
@@ -265,33 +295,19 @@ fn decode_input(input: &InputObject) -> Result<InputRequest> {
                 arrays: input.arrays(),
                 array_offsets: input.array_offsets(),
             };
-            let names = input.top_level_names();
-            let descriptions = input.top_level_descriptions();
-            let counts = input.top_level_sample_counts();
-            let samples = input.top_level_samples();
-            if descriptions.len() != names.len() || counts.len() != names.len() {
-                return Err(wire(WireError::new("top-level arrays differ in length")));
-            }
-            let mut rest = samples.as_slice();
-            let mut top_levels = Vec::with_capacity(names.len());
-            for ((name, description), count) in names.into_iter().zip(descriptions).zip(counts) {
-                let count = count as usize;
-                if count > rest.len() {
-                    return Err(wire(WireError::new("not enough top-level samples")));
-                }
-                let (mine, others) = rest.split_at(count);
-                rest = others;
-                top_levels.push(CompressedTopLevel {
-                    name,
-                    description: description.as_string(),
-                    samples: mine.to_vec(),
-                });
-            }
             Ok(InputRequest::Json {
                 handle_refs: input.handle_refs(),
                 date_time,
                 tables,
-                top_levels,
+                top_levels: decode_top_levels(input)?,
+            })
+        }
+        "jsonShared" => {
+            let compressed_json = crate::samples::take_lease(input.lease())
+                .ok_or_else(|| wire(WireError::new("unknown JSON samples lease")))?;
+            Ok(InputRequest::JsonShared {
+                compressed_json,
+                top_levels: decode_top_levels(input)?,
             })
         }
         "schema" => {

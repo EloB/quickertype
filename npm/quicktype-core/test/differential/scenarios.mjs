@@ -19,9 +19,10 @@ import * as errors from "./scenarios/errors.mjs";
 import * as fuzz from "./scenarios/fuzz.mjs";
 import * as inputs from "./scenarios/inputs.mjs";
 import * as robustness from "./scenarios/robustness.mjs";
+import * as samples from "./scenarios/samples.mjs";
 import * as stores from "./scenarios/stores.mjs";
 
-export const modules = { corpus, inputs, api: apiTests, stores, errors, robustness, fuzz };
+export const modules = { corpus, inputs, api: apiTests, stores, errors, robustness, samples, fuzz };
 
 export function allScenarios(categories) {
     const list = [];

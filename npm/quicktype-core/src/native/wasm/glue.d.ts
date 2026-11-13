@@ -5,15 +5,53 @@
 // dist/esm/native/wasm/glue.js; the .wasm file is
 // dist/native/wasm/quicktype_wasm_bg.wasm.
 
-/** The exports of crates/quicktype-wasm (see its crate documentation). */
+/**
+ * A `CompressedJSON`'s tables as the engine exports them (`jsonExport`):
+ * the strings joined, with their lengths in UTF-16 code units, and each
+ * object's keys and values (and each array's elements) in turn, encoded as
+ * TypeScript encodes `Value`s.
+ */
+export interface ExportedTables {
+    strings: string;
+    stringLengths: Uint32Array;
+    objects: Int32Array;
+    objectOffsets: Uint32Array;
+    arrays: Int32Array;
+    arrayOffsets: Uint32Array;
+}
+
+/**
+ * The exports of crates/quicktype-wasm (see its crate documentation). Ids
+ * of runs, compressed samples and leases are never reused
+ * (crates/quicktype-wasm/src/slots.rs).
+ */
 export interface WasmGlue {
     initSync(options: { module: unknown }): unknown;
     runSync(request: unknown, host: unknown): unknown;
-    start(request: unknown, host: unknown): number;
+    /** `undefined` if the engine has as many runs in flight as it takes. */
+    start(request: unknown, host: unknown): number | undefined;
     poll(id: number): unknown;
     settle(id: number, callId: number, ok: boolean, value: unknown): void;
     cancel(id: number): void;
     supportsLanguage(name: string): boolean;
+    /** `undefined` if the engine has as many inputs as it takes. */
+    jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
+    jsonRead(id: number, text: string): number;
+    jsonDrop(id: number): void;
+    /** The bytes the compressed forms hold together. */
+    jsonHeld(): number;
+    jsonExport(id: number): ExportedTables | undefined;
+    jsonAcquire(id: number): number | undefined;
+    jsonRelease(lease: number): void;
+    __jsonCount(): number;
+    __jsonLeases(): number;
+    __jsonReadTrapForTests(id: number, text: string): number;
+    __memoryGrowths(): number;
+    __memoryPages(): number;
+    /** `NaN` unless the engine is built with `--heap-stats`. */
+    __heapBytes(): number;
+    /** `NaN` unless the engine is built with `--heap-stats`. */
+    __heapPeak(): number;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;

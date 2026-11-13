@@ -10,9 +10,14 @@
 //! plus their lengths in UTF-16 code units (JavaScript's `length`), which
 //! saves one boundary crossing per string.
 
+use std::rc::Rc;
+
+use quicktype_core::date_time::{DateTimeRecognizer, DefaultDateTimeRecognizer};
+use quicktype_core::input::compressed_json::CompressedJson;
 use quicktype_core::internal::{CompressedJsonTables, CompressedTopLevel};
 use quicktype_core::{
     Comment, CommentOptions, DebugOptions, InferenceFlags, JsonSchema, OptionValue,
+    get_target_language,
 };
 
 /// A run of quicktype (TS `Options`, minus everything that stays in
@@ -64,6 +69,14 @@ pub enum InputRequest {
         /// `_topLevels`, in insertion order.
         top_levels: Vec<CompressedTopLevel>,
     },
+    /// A `JSONInput` whose samples the engine read as they were added
+    /// ([`crate::samples`]).
+    JsonShared {
+        /// The compressed samples.
+        compressed_json: Rc<CompressedJson>,
+        /// `_topLevels`, in insertion order (no sample is a string).
+        top_levels: Vec<CompressedTopLevel>,
+    },
     /// A `JSONSchemaInput`. Its store, the schemas given as text and URI
     /// normalization stay in JavaScript.
     Schema {
@@ -111,6 +124,15 @@ impl DateTimeKind {
             "swift" => Some(Self::Swift),
             _ => None,
         }
+    }
+
+    /// The recognizer.
+    pub fn recognizer(self) -> quicktype_core::Result<Box<dyn DateTimeRecognizer>> {
+        Ok(match self {
+            Self::Default => Box::new(DefaultDateTimeRecognizer),
+            Self::Kotlin => get_target_language("kotlin")?.date_time_recognizer(),
+            Self::Swift => get_target_language("swift")?.date_time_recognizer(),
+        })
     }
 }
 

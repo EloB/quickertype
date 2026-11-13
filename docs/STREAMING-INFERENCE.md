@@ -313,9 +313,12 @@ sample, so a directory of samples is merged into one tree per top-level.
 ### `JSON.parse` samples
 
 Samples given as text (`JsonSample::String`, `JSON.parse` semantics) are
-parsed whole by the port of `JSON.parse` either way, and `process` emits
-the parsed value into a `JsonSink` in `Object.getOwnPropertyNames` order:
-the same function fills a `CompressedJson` on the reference path and a
+read by the one-pass `JSON.parse` reader either way
+(`compressed_json/from_string.rs`): it checks V8's grammar in one pass
+that records the sample on a tape, without building the value, then
+emits the tape into a `JsonSink` in `Object.getOwnPropertyNames` order,
+the events `process` would emit for the parsed value. The same function
+(`parse_string_into`) fills a `CompressedJson` on the reference path and a
 `TallyBuilder` here, so the tallies receive exactly the events the
 compressed form is built from. Nothing of the sample is kept.
 
@@ -370,7 +373,7 @@ Nothing in inference is left on the old path. Only
 `JsonInput::from_compressed` keeps the compressed form: its tables come
 from the TypeScript `CompressedJSON` of the npm facade, so that input
 infers from them, as before. Text samples (`JSON.parse` semantics) are
-parsed whole, as `JSON.parse` does, and then tallied like any other.
+recorded whole on the reader's tape, and then tallied like any other.
 
 ## Choosing the path
 
@@ -389,8 +392,9 @@ A tally grows with the number of places, distinct keys per place, and
 distinct interned strings per place; the text of keys and cases is stored
 once for all places. Nodes freed by `__proto__` and by merges are reused.
 What still grows with the input: a single token is held whole while it is
-read (a 1 GB string needs 1 GB), a text sample is parsed whole (as
-`JSON.parse` does), each place keeps every distinct short string (enum
+read (a 1 GB string needs 1 GB), a text sample is recorded whole on the
+`JSON.parse` reader's tape (12 bytes a value or key, freed after the
+sample), each place keeps every distinct short string (enum
 inference needs all of them with their counts), the text of the keys and
 strings of a sample that failed stays in the string table, and a
 `__proto__` key costs an entry only when a new key was listed since its

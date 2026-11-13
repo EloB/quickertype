@@ -208,6 +208,7 @@ semantics were verified.
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 | V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
+| `JSON.parse` followed by `CompressedJSONFromString.process` | `compressed_json::parse_string_into` and `CompressedJson::read_string_sample` (`input/compressed_json/from_string.rs`): V8's grammar checked in one pass that records a tape, emitted in own-property order into a `JsonSink` (the compressed form or the running tallies), keys interned when their values are committed; errors from the port above | the same 5,017 vectors read into one compressed form, 300 rounds of seeded random documents (duplicate, array-index and `__proto__` keys, escapes, lone surrogates, numbers at the integer ranges' edges) and mutations of them, compared to reading the value whole with the port above: the same root values, objects and arrays in the same order, the same string table and errors; string tables recorded from TypeScript; through the WebAssembly facade, the `samples` category of `npm run test:differential` compares with the reference quicktype-core |
 | `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()`; the depths at which the reference CLI's parser overflows Node's stack, per construct, are modeled (see "GraphQL input" in Known gaps) |
 | Node's `path` (`path.posix`, and `path.win32` on Windows; Node 24.16: `isAbsolute`, `dirname`, `basename`, `extname`, `normalize`, `join`) | `quicktype_js_compat::path_posix` and `path_win32`, ports of `lib/path.js`; `quicktype_js_compat::path` is one or the other by platform, as `require("path")` is, for the CLI (file names, `--out`) and `NodeIO` (symbolic links) | `xtask/js-compat/gen-path-vectors.mjs`: 437 drive, UNC, device, relative and reserved-name paths through the five `path.win32` functions and 120 joins, and 643 paths and 120 joins through `path.posix`, identical to Node (`tests/path.rs`) |
 
@@ -240,6 +241,13 @@ the others name the fix they need.
   from the state it would have; what the attempt did outside the inputs
   (store `fetch` calls, `--debug` output, `onTiming` calls) happens twice.
   Beyond that, only these differ:
+  - JSON samples of quicktype's own `CompressedJSONFromString` are read by
+    the engine as they are added, and its TypeScript tables are filled
+    when first used, from the engine's tables, which are TypeScript's for
+    the same samples (the package README, "JSON samples"); until then
+    `Object.getOwnPropertyDescriptor`
+    shows its four table fields (`_strings`, `_stringIndexes`, `_objects`,
+    `_arrays`) as accessors;
   - a custom `JSONSchemaStore` can return documents holding `undefined`
     (or functions, symbols, bigints), which `JSON.parse` and YAML never
     produce; the engine reads such a property as absent and such an array
@@ -316,10 +324,14 @@ the others name the fix they need.
     first and overflows at the 4,579th nested value (counting the sample
     itself; Node 24, fresh process), which it reports as the sample's
     parse error (`Syntax error in input JSON <name>: Maximum call stack
-    size exceeded`). The port's `process`, which feeds both the
-    compressed JSON and the running tallies, fails the same way past depth
-    4,578 (`PROCESS_MAX_DEPTH` in `input/compressed_json.rs`). Samples
-    between 1,000 and 4,578 levels deep reach inference and fail there.
+    size exceeded`). The port's `JSON.parse`-semantics reader, which
+    feeds both the compressed JSON and the running tallies, fails the
+    same way past depth 4,578 (`PROCESS_MAX_DEPTH` in
+    `input/compressed_json.rs`): the one-pass reader
+    (`input/compressed_json/from_string.rs`) when it commits the value at
+    that depth, after the values `process` commits before it, and the
+    port of `process` it falls back on. Samples between 1,000 and 4,578
+    levels deep reach inference and fail there.
   `crates/quicktype-core/tests/deep_json.rs` and the CLI's
   `inputs_too_deep_for_node_fail_like_node` pin these rules end to end.
 - **Endless recursion over the type graph.** On a graph that cycles

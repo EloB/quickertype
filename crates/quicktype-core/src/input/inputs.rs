@@ -19,6 +19,7 @@
 use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
+use std::rc::Rc;
 use std::sync::OnceLock;
 
 use indexmap::{IndexMap, IndexSet};
@@ -396,8 +397,9 @@ pub struct CompressedTopLevel {
 /// `docs/STREAMING-INFERENCE.md`): every sample is counted while it is read
 /// and never kept, so memory grows with the number of distinct places,
 /// keys and strings in the samples rather than with their size (a sample
-/// given as text, [`JsonSample::String`], is still parsed whole first, as
-/// `JSON.parse` does). The types are the same as quicktype infers from the
+/// given as text, [`JsonSample::String`], is still read whole first: its
+/// syntax is checked, as `JSON.parse` checks it, on a tape of the whole
+/// sample). The types are the same as quicktype infers from the
 /// compressed form of the samples, which an input built with
 /// [`from_compressed`](Self::from_compressed) still does, and an input
 /// does after [`set_tally_inference(false)`](Self::set_tally_inference)
@@ -407,8 +409,9 @@ pub struct CompressedTopLevel {
 #[derive(Debug)]
 pub struct JsonInput {
     /// How samples are read; with inference from the compressed form, also
-    /// the samples.
-    compressed_json: CompressedJson,
+    /// the samples. Shared with other inputs only when made with
+    /// [`from_shared`](Self::from_shared).
+    compressed_json: Rc<CompressedJson>,
     top_levels: IndexMap<String, JsonTopLevel>,
     /// The running tallies; `None` to infer from the compressed form.
     tallies: Option<Tallies>,
@@ -433,10 +436,62 @@ impl JsonInput {
     /// [`set_tally_inference`](Self::set_tally_inference)).
     pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
-            compressed_json,
+            compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::new(),
             tallies: (!compressed_json_inference_requested()).then(Tallies::new),
         }
+    }
+
+    /// A JSON input over samples read already, into a compressed form
+    /// that other inputs may share: the WebAssembly engine reads the
+    /// samples of a JavaScript `JSONInput` as they are added and keeps them
+    /// for every run that uses the input. `top_levels` are its
+    /// `_topLevels`, the samples encoded as in TypeScript; they cannot be
+    /// strings (whose index in TypeScript's string table this compressed
+    /// form does not know). The input cannot take more samples while the
+    /// compressed form is shared. It infers from the compressed form, not
+    /// from running tallies.
+    pub fn from_shared(
+        compressed_json: Rc<CompressedJson>,
+        top_levels: Vec<CompressedTopLevel>,
+    ) -> Result<Self> {
+        Self::over_compressed(compressed_json, top_levels, false)
+    }
+
+    /// An input that infers from `compressed_json`, with `top_levels`
+    /// whose samples are encoded as in TypeScript; samples that are
+    /// strings only if `allow_strings` (see [`from_shared`](Self::from_shared)).
+    fn over_compressed(
+        compressed_json: Rc<CompressedJson>,
+        top_levels: Vec<CompressedTopLevel>,
+        allow_strings: bool,
+    ) -> Result<Self> {
+        let (objects, arrays) = compressed_json.counts();
+        let mut input = JsonInput {
+            compressed_json,
+            top_levels: IndexMap::new(),
+            tallies: None,
+        };
+        for top_level in top_levels {
+            let values = top_level
+                .samples
+                .iter()
+                .map(
+                    |&v| match input.compressed_json.decode_value(v, objects, arrays)? {
+                        Value::InternedString(_)
+                        | Value::StringFormat(_)
+                        | Value::TransformedString(_)
+                            if !allow_strings =>
+                        {
+                            panic("A shared JSON sample cannot be an interned string")
+                        }
+                        value => Ok(value),
+                    },
+                )
+                .collect::<Result<Vec<Value>>>()?;
+            input.add_samples(&top_level.name, values, top_level.description.as_deref());
+        }
+        Ok(input)
     }
 
     /// Whether types are inferred from running tallies (`true`, the
@@ -472,21 +527,7 @@ impl JsonInput {
     ) -> Result<Self> {
         let compressed_json =
             CompressedJson::from_tables(date_time_recognizer, handle_refs, tables)?;
-        let (objects, arrays) = compressed_json.counts();
-        let mut input = JsonInput {
-            compressed_json,
-            top_levels: IndexMap::new(),
-            tallies: None,
-        };
-        for top_level in top_levels {
-            let values = top_level
-                .samples
-                .iter()
-                .map(|&v| input.compressed_json.decode_value(v, objects, arrays))
-                .collect::<Result<Vec<Value>>>()?;
-            input.add_samples(&top_level.name, values, top_level.description.as_deref());
-        }
-        Ok(input)
+        Self::over_compressed(Rc::new(compressed_json), top_levels, true)
     }
 
     /// The inverse of [`from_compressed`](Self::from_compressed): the
@@ -585,9 +626,12 @@ impl JsonInput {
             e => message_parse_error(&name, description.as_deref(), &e),
         };
         let Some(tallies) = &mut self.tallies else {
+            let Some(compressed_json) = Rc::get_mut(&mut self.compressed_json) else {
+                return panic("Samples cannot be added to a JSON input whose samples are shared");
+            };
             let mut values = Vec::with_capacity(samples.len());
             for sample in samples {
-                values.push(self.compressed_json.parse_sample(sample).map_err(report)?);
+                values.push(compressed_json.parse_sample(sample).map_err(report)?);
             }
             self.add_samples(&name, values, description.as_deref());
             return Ok(());
