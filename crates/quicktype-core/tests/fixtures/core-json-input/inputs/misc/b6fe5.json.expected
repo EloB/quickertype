@@ -1,0 +1,28 @@
+### stream-typescript
+0: string | 0 | enum with no cases,uri
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 1: "group":0, "movie":0, "movie-image":0, "theater":0
+### api-typescript
+0: string | enum with no cases,uri
+1: class TopLevel | children 0 | given TopLevel ()
+props 1: "movie":0, "movie-image":0, "group":0, "theater":0
+### stream-schema
+0: string | enum with no cases,uri
+1: class TopLevel | children 0 | given TopLevel ()
+props 1: "movie":0, "movie-image":0, "group":0, "theater":0
+### api-csharp
+0: string | 0 | enum with no cases,uri
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 1: "group":0, "movie":0, "movie-image":0, "theater":0
+### stream-kotlin
+0: string | enum with no cases,uri
+1: class TopLevel | children 0 | given TopLevel ()
+props 1: "movie":0, "movie-image":0, "group":0, "theater":0
+### api-swift
+0: string | enum with no cases,uri
+1: class TopLevel | children 0 | given TopLevel ()
+props 1: "movie":0, "movie-image":0, "group":0, "theater":0
+### stream-python
+0: string | 0 | enum with no cases,uri
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 1: "movie":0, "movie-image":0, "group":0, "theater":0

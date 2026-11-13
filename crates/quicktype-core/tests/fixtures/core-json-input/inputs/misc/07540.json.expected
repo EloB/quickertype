@@ -1,0 +1,35 @@
+### stream-typescript
+0: class | 0
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### api-typescript
+0: class
+1: class TopLevel | children 0 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### stream-schema
+0: class
+1: class TopLevel | children 0 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### api-csharp
+0: class | 0
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### stream-kotlin
+0: class
+1: class TopLevel | children 0 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### api-swift
+0: class
+1: class TopLevel | children 0 | given TopLevel ()
+props 0: 
+props 1: "cookies":0
+### stream-python
+0: class | 0
+1: class TopLevel | children 0 | 1 | given TopLevel ()
+props 0: 
+props 1: "cookies":0

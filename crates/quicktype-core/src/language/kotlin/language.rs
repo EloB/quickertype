@@ -2,10 +2,14 @@
 //!
 //! Language metadata and renderer option declarations.
 
+use super::utils::KotlinDateTimeRecognizer;
+use crate::date_time::DateTimeRecognizer;
 use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption, acronym_option,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `kotlinOptions.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -53,10 +57,6 @@ pub struct KotlinTargetLanguage;
 
 // TODO(renderer): port the hooks KotlinTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date -> date, time -> time, date-time -> date-time
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
-// - dateTimeRecognizer: KotlinDateTimeRecognizer
 impl TargetLanguage for KotlinTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &KOTLIN_LANGUAGE_CONFIG
@@ -65,4 +65,34 @@ impl TargetLanguage for KotlinTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         KOTLIN_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Date, TypeKind::Date),
+            (TypeKind::Time, TypeKind::Time),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `dateTimeRecognizer`: [`KotlinDateTimeRecognizer`].
+    fn date_time_recognizer(&self) -> Box<dyn DateTimeRecognizer> {
+        Box::new(KotlinDateTimeRecognizer)
+    }
+
+    // End of inference hooks.
 }

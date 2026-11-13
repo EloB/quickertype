@@ -1,9 +1,10 @@
 //! Port of `packages/quicktype-core/src/attributes/URIAttributes.ts`.
 //!
-//! The protocols and file extensions seen in `uri` strings. The inference
-//! producer (`uriInferenceAttributesProducer`, which needs the `urijs` port)
-//! and the schema producer and `addToSchema` are ported with the JSON input,
-//! the JSON Schema input and the JSON Schema output.
+//! The protocols and file extensions seen in `uri` strings, from JSON
+//! inference ([`uri_inference_attributes_producer`], on the urijs port in
+//! `quicktype_js_compat::uri`) and from JSON Schema
+//! ([`uri_schema_attributes_producer`]). `addToSchema` follows with the JSON
+//! Schema output.
 
 use indexmap::IndexSet;
 
@@ -106,6 +107,7 @@ pub fn uri_schema_attributes_producer(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::attributes::type_attributes::AttributeKind;
 
     #[test]
     fn extensions() {
@@ -114,6 +116,38 @@ mod tests {
         assert_eq!(path_extension(".jpg"), None);
         assert_eq!(path_extension("/a.b/c"), None);
         assert_eq!(path_extension("/"), None);
+    }
+
+    fn producer(s: &str) -> Option<(Vec<String>, Vec<String>)> {
+        let attributes = uri_inference_attributes_producer(s);
+        UriTypeAttributeKind
+            .try_get_in_attributes(&attributes)
+            .map(|(p, e)| (p.iter().cloned().collect(), e.iter().cloned().collect()))
+    }
+
+    #[test]
+    fn inference_producer() {
+        let some = |p: &str, e: &[&str]| {
+            Some((
+                vec![p.to_owned()],
+                e.iter().map(|&e| e.to_owned()).collect(),
+            ))
+        };
+        assert_eq!(producer("http://a/b.JSON"), some("http", &[".json"]));
+        assert_eq!(
+            producer("https://a/x.tar.gz?q=1#f"),
+            some("https", &[".gz"])
+        );
+        assert_eq!(producer("ftp://a/.htaccess"), some("ftp", &[".htaccess"]));
+        assert_eq!(producer("http://a"), some("http", &[]));
+        assert_eq!(producer("http://a:99999/x"), None);
+        assert_eq!(producer("http://a:0/x"), None);
+        assert_eq!(producer("http://a:8080/x.png"), some("http", &[".png"]));
+        assert_eq!(producer("http://a:0x50/x"), some("http", &[]));
+        assert_eq!(producer("http://u%zz@a/x"), None);
+        assert_eq!(producer("http://u%C3%A9@a/x"), some("http", &[]));
+        assert_eq!(producer("http://u%C3@a/x"), None);
+        assert_eq!(producer("http:///\\a/b.c"), some("http", &[".c"]));
     }
 
     #[test]

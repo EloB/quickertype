@@ -1,0 +1,474 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "color",
+      1,
+      false
+     ],
+     [
+      "either",
+      2,
+      true
+     ],
+     [
+      "maybe",
+      6,
+      true
+     ],
+     [
+      "shade",
+      8,
+      true
+     ],
+     [
+      "value",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "color"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "red",
+     "Green",
+     "blue-ish",
+     "RED",
+     "TopLevel"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     4,
+     3,
+     5
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "either",
+       "maybe"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybe"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     4,
+     7
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybe",
+       "value"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "shade"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     9,
+     4
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "shade"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "red",
+     "dark"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     7,
+     11,
+     13,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 12
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "thing"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "name",
+      2,
+      true
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    RED <- \"red\"\n    GREEN <- \"Green\"\n    BLUE_ISH <- \"blue-ish\"\n    COLOR_RED <- \"RED\"\n    TOP_LEVEL <- \"TopLevel\"\nunion Name\n    Bool <- bool\n    Null <- null\n    String <- string\nenum Shade\n    RED <- \"red\"\n    DARK <- \"dark\"\nunion Value\n    DoubleArray <- array\n    Integer <- integer\n    String <- string\n    Thing <- class\nclass Thing (thing)\n    name <- \"name\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "globalCases": true,
+    "globalMembers": true
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    COLOR_RED <- \"red\"\n    GREEN <- \"Green\"\n    BLUE_ISH <- \"blue-ish\"\n    RED <- \"RED\"\n    TOP_LEVEL <- \"TopLevel\"\nunion Name\n    Bool <- bool\n    Null <- null\n    PurpleString <- string\nenum Shade\n    SHADE_RED <- \"red\"\n    DARK <- \"dark\"\nunion Value\n    DoubleArray <- array\n    FluffyString <- string\n    Integer <- integer\n    PurpleThing <- class\nclass Thing (thing)\n    name <- \"name\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "topLevelDep": true,
+    "typeDep": true,
+    "caseDep": true
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    RED_COLOR <- \"red\"\n    GREEN_COLOR <- \"Green\"\n    BLUE_ISH_COLOR <- \"blue-ish\"\n    PURPLE_RED_COLOR <- \"RED\"\n    TOP_LEVEL_COLOR <- \"TopLevel\"\nunion Name\n    Bool <- bool\n    Null <- null\n    String <- string\nenum Shade\n    RED_SHADE <- \"red\"\n    DARK_SHADE <- \"dark\"\nunion Value\n    DoubleArray <- array\n    Integer <- integer\n    String <- string\n    Thing <- class\nclass Thing (thing)\n    name <- \"name\"?\ndependency UnmarshalTopLevel\ndependency TopLevelExtensions\ndependency ThingExtensions\ndependency ColorExtensions\ndependency ShadeExtensions\ndependency NameExtensions\ndependency ValueExtensions\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "memberKind": true,
+    "allUnionsNamed": true,
+    "cases": "types",
+    "members": "types"
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    Red <- \"red\"\n    Green <- \"Green\"\n    BlueIsh <- \"blue-ish\"\n    ColorRed <- \"RED\"\n    TopLevel <- \"TopLevel\"\nunion Name\n    BoolValue <- bool\n    NullValue <- null\n    StringValue <- string\nunion Maybe\n    IntegerValue <- integer\n    NullValue <- null\nunion ShadeUnion\n    EnumValue <- enum\n    NullValue <- null\nenum ShadeEnum\n    Red <- \"red\"\n    Dark <- \"dark\"\nunion Value\n    ArrayValue <- array\n    IntegerValue <- integer\n    StringValue <- string\n    Thing <- class\nclass Thing (thing)\n    name <- \"name\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "caseForbid": [
+     "Red"
+    ],
+    "caseGlobal": true,
+    "keywords": [
+     "Green",
+     "String"
+    ],
+    "memberForbid": [
+     "Integer"
+    ],
+    "memberGlobal": true
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    RED <- \"red\"\n    GREEN <- \"Green\"\n    BLUE_ISH <- \"blue-ish\"\n    COLOR_RED <- \"RED\"\n    TOP_LEVEL <- \"TopLevel\"\nunion Name\n    Bool <- bool\n    Null <- null\n    PurpleString <- string\nenum Shade\n    RED <- \"red\"\n    DARK <- \"dark\"\nunion Value\n    DoubleArray <- array\n    PurpleInteger <- integer\n    PurpleString <- string\n    Thing <- class\nclass Thing (thing)\n    name <- \"name\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "cases": null,
+    "members": null
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\nunion Name\nenum Shade\nunion Value\nclass Thing (thing)\n    name <- \"name\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "topLevelReach": true
+   },
+   "script": [
+    "default",
+    "foreach [\"toplevel\", \"leading-and-interposing\"]",
+    "foreach [\"named\", [\"interposing\", 2]]",
+    "foreach [\"object\", \"leading\"]",
+    "foreach [\"enum\", \"none\"]",
+    "foreach [\"union\", \"interposing\"]",
+    "uniqueunions",
+    "foreachtype",
+    "have"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    color <- \"color\"\n    either <- \"either\"?\n    maybe <- \"maybe\"?\n    shade <- \"shade\"?\n    value <- \"value\"\nenum Color\n    RED <- \"red\"\n    GREEN <- \"Green\"\n    BLUE_ISH <- \"blue-ish\"\n    COLOR_RED <- \"RED\"\n    TOP_LEVEL <- \"TopLevel\"\nunion Name\n    Bool <- bool\n    Null <- null\n    String <- string\nenum Shade\n    RED <- \"red\"\n    DARK <- \"dark\"\nunion Value\n    DoubleArray <- array\n    Integer <- integer\n    String <- string\n    Thing <- class\nclass Thing (thing)\n    name <- \"name\"?\n\ntop TopLevel #0 only\nobject TopLevel #0 first\n\n\nenum Color #1 middle\n\n\nunion Name #2 middle\n\n\nenum Shade #9 middle\n\n\nunion Value #10 middle\n\n\nobject Thing #13 last\n\nobject TopLevel #0 first\nobject Thing #13 last\nenum Color #1 first\nenum Shade #9 last\nunion Name #2 first\n\nunion Value #10 last\nunique Name 3 first\n\nunique Value 4 last\ntypes 0,10,5,7,13,2,4,3,11,12,8,9,6,1\nunions=true maps=false optional=true namedUnions=true namedTypes=true enums=true\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    pub color: Color,\n\n    pub either: Option<Name>,\n\n    pub maybe: Option<i64>,\n\n    pub shade: Option<Shade>,\n\n    pub value: Value,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum Color {\n    #[serde(rename = \"red\")]\n    Red,\n\n    Green,\n\n    #[serde(rename = \"blue-ish\")]\n    BlueIsh,\n\n    #[serde(rename = \"RED\")]\n    ColorRed,\n\n    #[serde(rename = \"TopLevel\")]\n    TopLevel,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Name {\n    Bool(bool),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"snake_case\")]\npub enum Shade {\n    Red,\n\n    Dark,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Value {\n    DoubleArray(Vec<f64>),\n\n    Integer(i64),\n\n    PurpleString(String),\n\n    Thing(Thing),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Thing {\n    pub name: Option<Name>,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "naming-namespaces"
+}

@@ -1,0 +1,431 @@
+[
+ {
+  "input": "http://a/b.JSON",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".json"
+   ]
+  ]
+ },
+ {
+  "input": "https://a/x.tar.gz?q=1#f",
+  "attributes": [
+   [
+    "https"
+   ],
+   [
+    ".gz"
+   ]
+  ]
+ },
+ {
+  "input": "ftp://a/.htaccess",
+  "attributes": [
+   [
+    "ftp"
+   ],
+   [
+    ".htaccess"
+   ]
+  ]
+ },
+ {
+  "input": "http://a",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a/",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a:99999/x",
+  "attributes": null
+ },
+ {
+  "input": "http://a:0/x",
+  "attributes": null
+ },
+ {
+  "input": "http://a:8080/x.png",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".png"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:0x50/x",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a: 80/x.y",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".y"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:1e3/x.y",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".y"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:80.0/x.y",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".y"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:80.5/x.y",
+  "attributes": null
+ },
+ {
+  "input": "http://a:+80/x.y",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".y"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:-80/x.y",
+  "attributes": null
+ },
+ {
+  "input": "http://a:/x.y",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".y"
+   ]
+  ]
+ },
+ {
+  "input": "http://u%zz@a/x",
+  "attributes": null
+ },
+ {
+  "input": "http://u%C3%A9@a/x",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://u%C3@a/x",
+  "attributes": null
+ },
+ {
+  "input": "http://u:p%zz@a/x",
+  "attributes": null
+ },
+ {
+  "input": "http://u:%zz@a/x",
+  "attributes": null
+ },
+ {
+  "input": "http://:p@a/x.q",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".q"
+   ]
+  ]
+ },
+ {
+  "input": "http://u@a@b/c.d",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".d"
+   ]
+  ]
+ },
+ {
+  "input": "http:///\\a/b.c",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".c"
+   ]
+  ]
+ },
+ {
+  "input": "http://\\\\a\\b.c",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".c"
+   ]
+  ]
+ },
+ {
+  "input": "http://[::1]/a.b",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".b"
+   ]
+  ]
+ },
+ {
+  "input": "http://[::1]:8080/a.b",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".b"
+   ]
+  ]
+ },
+ {
+  "input": "http://[::1]:99999/a.b",
+  "attributes": null
+ },
+ {
+  "input": "http://[::1/a.b",
+  "attributes": null
+ },
+ {
+  "input": "http://a:b:c/d.e",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".e"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b/c.D/e",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a/b.c.d",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".d"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/.",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a/b.",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a/b\\c.d",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".d"
+   ]
+  ]
+ },
+ {
+  "input": "http://a\n/b.png",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".png"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b.p\tng",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".png"
+   ]
+  ]
+ },
+ {
+  "input": "https://a?b.png",
+  "attributes": [
+   [
+    "https"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "https://a#b.png",
+  "attributes": [
+   [
+    "https"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://é/ü.ÄÖ",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".äö"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b.ﬀ",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".ﬀ"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b%20c.png",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".png"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b?c=d.png",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a:65535/b.c",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".c"
+   ]
+  ]
+ },
+ {
+  "input": "http://a:65536/b.c",
+  "attributes": null
+ },
+ {
+  "input": "ftp://user:pass@host:21/file.txt",
+  "attributes": [
+   [
+    "ftp"
+   ],
+   [
+    ".txt"
+   ]
+  ]
+ },
+ {
+  "input": "http://a/b c.d",
+  "attributes": [
+   [
+    "http"
+   ],
+   []
+  ]
+ },
+ {
+  "input": "http://a/b.c ",
+  "attributes": [
+   [
+    "http"
+   ],
+   [
+    ".c "
+   ]
+  ]
+ }
+]

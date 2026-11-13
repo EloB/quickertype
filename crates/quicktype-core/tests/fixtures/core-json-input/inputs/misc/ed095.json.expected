@@ -1,0 +1,21 @@
+### stream-typescript
+0: string | 0 | enum with no cases,uri
+1: map TopLevel | children 0 | 1 | given TopLevel ()
+### api-typescript
+0: string | enum with no cases,uri
+1: map TopLevel | children 0 | given TopLevel ()
+### stream-schema
+0: string | enum with no cases,uri
+1: map TopLevel | children 0 | given TopLevel ()
+### api-csharp
+0: string | 0 | enum with no cases,uri
+1: map TopLevel | children 0 | 1 | given TopLevel ()
+### stream-kotlin
+0: string | enum with no cases,uri
+1: map TopLevel | children 0 | given TopLevel ()
+### api-swift
+0: string | enum with no cases,uri
+1: map TopLevel | children 0 | given TopLevel ()
+### stream-python
+0: string | 0 | enum with no cases,uri
+1: map TopLevel | children 0 | 1 | given TopLevel ()

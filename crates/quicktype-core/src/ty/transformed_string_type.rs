@@ -8,6 +8,8 @@
 //! `uri` kind's `attributesProducer` (`uriInferenceAttributesProducer`) needs
 //! the `urijs` port and is provided by the inputs work package.
 
+use crate::attributes::type_attributes::TypeAttributes;
+use crate::attributes::uri_attributes::uri_inference_attributes_producer;
 use std::fmt;
 
 use crate::support::collection_utils::{JsEquals, JsHash};
@@ -216,6 +218,18 @@ pub fn transformed_string_type_targets(kind: TypeKind) -> Option<TransformedStri
         json_schema,
         primitive,
     })
+}
+
+/// `transformedStringTypeTargetTypeKindsMap.get(kind).attributesProducer`:
+/// computes type attributes from a string JSON inference recognized as
+/// `kind`. Only `uri` has one.
+pub fn transformed_string_type_attributes_producer(
+    kind: TypeKind,
+) -> Option<fn(&str) -> TypeAttributes> {
+    match kind {
+        TypeKind::Uri => Some(uri_inference_attributes_producer),
+        _ => None,
+    }
 }
 
 /// `targetTypeKindForTransformedStringTypeKind(kind)`.

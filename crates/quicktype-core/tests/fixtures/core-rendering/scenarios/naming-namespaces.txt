@@ -1,0 +1,31 @@
+# Enum cases and union members in their own or the global namespace,
+# dependency names (top-level, named type, enum case), union member names
+# from the type kind, unions that need names, forbidden names for cases and
+# members, and namers shared between kinds.
+input schema TopLevel {"type": "object", "properties": {"color": {"enum": ["red", "Green", "blue-ish", "RED", "TopLevel"]}, "shade": {"enum": ["red", "dark"]}, "value": {"anyOf": [{"type": "string"}, {"type": "integer"}, {"type": "array", "items": {"type": "number"}}, {"$ref": "#/definitions/thing"}, {"type": "object", "additionalProperties": {"type": "boolean"}}]}, "maybe": {"anyOf": [{"type": "null"}, {"type": "integer"}]}, "either": {"anyOf": [{"type": "null"}, {"type": "boolean"}, {"type": "string", "format": "date-time"}]}}, "required": ["color", "value"], "definitions": {"thing": {"type": "object", "properties": {"name": {"type": "string"}}}}}
+
+render probe {}
+
+render probe {"probe": {"globalCases": true, "globalMembers": true}}
+
+render probe {"probe": {"topLevelDep": true, "typeDep": true, "caseDep": true}}
+
+render probe {"probe": {"memberKind": true, "allUnionsNamed": true, "cases": "types", "members": "types"}}
+
+render probe {"probe": {"caseForbid": ["Red"], "caseGlobal": true, "keywords": ["Green", "String"], "memberForbid": ["Integer"], "memberGlobal": true}}
+
+render probe {"probe": {"cases": null, "members": null}}
+
+render probe {"probe": {"topLevelReach": true}} script
+default
+foreach ["toplevel", "leading-and-interposing"]
+foreach ["named", ["interposing", 2]]
+foreach ["object", "leading"]
+foreach ["enum", "none"]
+foreach ["union", "interposing"]
+uniqueunions
+foreachtype
+have
+end
+
+render rust {}

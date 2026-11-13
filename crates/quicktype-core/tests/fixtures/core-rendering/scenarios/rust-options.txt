@@ -1,0 +1,20 @@
+# The Rust renderer with each of its options.
+input json TopLevel {"name": "x", "count": 1, "ratio": 1.5, "flag": true, "tags": ["a"], "nested": {"deepValue": null, "items": [{"id": 1}, {"id": "two"}]}, "maybe": null, "choice": [1, "a", {"z": 1}], "byKey": {"k1": {"v": 1}, "k2": {"v": 2}, "k3": {"v": 3}, "k4": {"v": 4}, "k5": {"v": 5}, "k6": {"v": 6}}}
+pipeline {"inferMaps": true}
+
+render rust {}
+render rust {"rendererOptions": {"density": "dense"}}
+render rust {"rendererOptions": {"visibility": "private"}}
+render rust {"rendererOptions": {"visibility": "crate"}}
+render rust {"rendererOptions": {"derive-debug": false, "no-derive-debug": true}}
+render rust {"rendererOptions": {"derive-clone": "false"}}
+render rust {"rendererOptions": {"derive-partial-eq": true}}
+render rust {"rendererOptions": {"skip-serializing-none": true}}
+render rust {"rendererOptions": {"leading-comments": false}}
+render rust {"rendererOptions": {"integer-type": "force-i32"}}
+render rust {"rendererOptions": {"integer-type": "force-i64"}}
+render rust {"rendererOptions": {"density": "dense", "visibility": "crate", "derive-partial-eq": true, "skip-serializing-none": true}, "alphabetize": true}
+render rust {"indentation": "\t"}
+render rust {"indentation": "  "}
+render rust {"rendererOptions": {"density": "sparse"}}
+render rust {"rendererOptions": {"visibility": ""}}

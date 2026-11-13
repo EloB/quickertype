@@ -1,0 +1,120 @@
+### stream-typescript
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | 8 enums: I D I (1), ...
+5: union | children 3,4 | 5
+6: string | 6 | enum with no cases,date-time
+7: string | 7 | enum with no cases,uri
+8: string | 8 | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7 | 9
+10: array | children 9 | 10
+11: bool | 11
+12: class TopLevel | children 0,1,7,11,10 | 12 | given TopLevel ()
+props 1: 
+props 9: "acronym":5, "created_at":6, "id":8, "name":2, "updated_at":6, "uri":7
+props 12: "count":0, "facets":1, "limit":0, "next":7, "offset":0, "previous":11, "results":10
+### api-typescript
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: string | 8 enums: I D I (1), ...
+5: union | children 3,4
+6: string | enum with no cases,date-time
+7: string | enum with no cases,uri
+8: string | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7
+10: array | children 9
+11: bool
+12: class TopLevel | children 0,1,7,11,10 | given TopLevel ()
+props 1: 
+props 9: "name":2, "acronym":5, "created_at":6, "uri":7, "updated_at":6, "id":8
+props 12: "count":0, "facets":1, "results":10, "next":7, "limit":0, "offset":0, "previous":11
+### stream-schema
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: string | 8 enums: I D I (1), ...
+5: union | children 3,4
+6: string | enum with no cases,date-time
+7: string | enum with no cases,uri
+8: string | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7
+10: array | children 9
+11: bool
+12: class TopLevel | children 0,1,7,11,10 | given TopLevel ()
+props 1: 
+props 9: "name":2, "acronym":5, "created_at":6, "uri":7, "updated_at":6, "id":8
+props 12: "count":0, "facets":1, "results":10, "next":7, "limit":0, "offset":0, "previous":11
+### api-csharp
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | 8 enums: I D I (1), ...
+5: union | children 3,4 | 5
+6: string | 6 | enum with no cases,date-time
+7: string | 7 | enum with no cases,uri
+8: string | 8 | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7 | 9
+10: array | children 9 | 10
+11: bool | 11
+12: class TopLevel | children 0,1,7,11,10 | 12 | given TopLevel ()
+props 1: 
+props 9: "acronym":5, "created_at":6, "id":8, "name":2, "updated_at":6, "uri":7
+props 12: "count":0, "facets":1, "limit":0, "next":7, "offset":0, "previous":11, "results":10
+### stream-kotlin
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: string | 8 enums: I D I (1), ...
+5: union | children 3,4
+6: string | 7 enums: 2015-04-24T02:23:58.791310Z (1), ...,date-time
+7: string | enum with no cases,uri
+8: string | 4 enums: 2015-04-24T01:53:59.129280Z (1), ...,date-time
+9: string | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+10: class | children 5,6,9,2,8,7
+11: array | children 10
+12: bool
+13: class TopLevel | children 0,1,7,12,11 | given TopLevel ()
+props 1: 
+props 10: "name":2, "acronym":5, "created_at":6, "uri":7, "updated_at":8, "id":9
+props 13: "count":0, "facets":1, "results":11, "next":7, "limit":0, "offset":0, "previous":12
+### api-swift
+0: integer
+1: class
+2: string | unrestricted
+3: null
+4: string | 8 enums: I D I (1), ...
+5: union | children 3,4
+6: string | enum with no cases,date-time
+7: string | enum with no cases,uri
+8: string | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7
+10: array | children 9
+11: bool
+12: class TopLevel | children 0,1,7,11,10 | given TopLevel ()
+props 1: 
+props 9: "name":2, "acronym":5, "created_at":6, "uri":7, "updated_at":6, "id":8
+props 12: "count":0, "facets":1, "results":10, "next":7, "limit":0, "offset":0, "previous":11
+### stream-python
+0: integer | 0
+1: class | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: string | 4 | 8 enums: I D I (1), ...
+5: union | children 3,4 | 5
+6: string | 6 | enum with no cases,date-time
+7: string | 7 | enum with no cases,uri
+8: string | 8 | 50 enums: ffff4d12eef74252b51812e9ce1713de (1), ...
+9: class | children 5,6,8,2,7 | 9
+10: array | children 9 | 10
+11: bool | 11
+12: class TopLevel | children 0,1,7,11,10 | 12 | given TopLevel ()
+props 1: 
+props 9: "name":2, "acronym":5, "created_at":6, "uri":7, "updated_at":6, "id":8
+props 12: "count":0, "facets":1, "results":10, "next":7, "limit":0, "offset":0, "previous":11

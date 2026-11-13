@@ -72,7 +72,7 @@ The CLI prints `Error: Syntax error in input JSON ${topLevel}: ${msg}.` (`Inputs
 
 Duplicate keys keep the **last** value at the **first** key's position. `"__proto__"` becomes an ordinary own property.
 
-Errors use V8's text, e.g. `Unexpected end of JSON input`, `Unexpected token 'x', "x" is not valid JSON`, or `Expected ',' or ']' after array element in JSON at position 4 (line 1 column 5)`. The quoted snippet follows V8's context rule: a source of ≤ 21 UTF-16 units is shown whole; otherwise, with `p` the error position:
+Errors use V8's text, e.g. `Unexpected end of JSON input`, `Unexpected token 'x', "x" is not valid JSON`, or `Expected ',' or ']' after array element in JSON at position 4 (line 1 column 5)`. The quoted snippet follows V8's context rule: a source of fewer than 21 UTF-16 units is shown whole (measured; 21 units already get the excerpt); otherwise, with `p` the error position:
 
 | Condition | Snippet |
 |---|---|

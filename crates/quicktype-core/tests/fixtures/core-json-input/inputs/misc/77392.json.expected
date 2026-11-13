@@ -1,0 +1,98 @@
+### stream-typescript
+0: string | 0 | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | 54 enums: 19.7 (7), ...,integer-string
+3: string | 3 | 195 enums: 9.65 (2), ...,integer-string
+4: string | 4 | 160 enums: 0.035 (3), ...
+5: string | 5 | 9 enums: Apollo (105), ...
+6: string | 6 | 166 enums: 4.06 (1), ...,integer-string
+7: string | 7 | 3 enums: Y (30), ...
+8: string | 8 | 97 enums: 0.84 (2), ...,integer-string
+9: string | 9 | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9 | 10
+11: array TopLevel | children 10 | 11 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### api-typescript
+0: string | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | enum with no cases,date-time
+2: string | 54 enums: 19.7 (7), ...,integer-string
+3: string | 195 enums: 9.65 (2), ...,integer-string
+4: string | 160 enums: 0.035 (3), ...
+5: string | 9 enums: Apollo (105), ...
+6: string | 166 enums: 4.06 (1), ...,integer-string
+7: string | 3 enums: Y (30), ...
+8: string | 97 enums: 0.84 (2), ...,integer-string
+9: string | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9
+11: array TopLevel | children 10 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### stream-schema
+0: string | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | enum with no cases,date-time
+2: string | 54 enums: 19.7 (7), ...,integer-string
+3: string | 195 enums: 9.65 (2), ...,integer-string
+4: string | 160 enums: 0.035 (3), ...
+5: string | 9 enums: Apollo (105), ...
+6: string | 166 enums: 4.06 (1), ...,integer-string
+7: string | 3 enums: Y (30), ...
+8: string | 97 enums: 0.84 (2), ...,integer-string
+9: string | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9
+11: array TopLevel | children 10 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### api-csharp
+0: string | 0 | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | 54 enums: 19.7 (7), ...,integer-string
+3: string | 3 | 195 enums: 9.65 (2), ...,integer-string
+4: string | 4 | 160 enums: 0.035 (3), ...
+5: string | 5 | 9 enums: Apollo (105), ...
+6: string | 6 | 166 enums: 4.06 (1), ...,integer-string
+7: string | 7 | 3 enums: Y (30), ...
+8: string | 8 | 97 enums: 0.84 (2), ...,integer-string
+9: string | 9 | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9 | 10
+11: array TopLevel | children 10 | 11 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### stream-kotlin
+0: string | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | 165 enums: 2011-01-07T00:00:00.000Z (1), ...
+2: string | 54 enums: 19.7 (7), ...,integer-string
+3: string | 195 enums: 9.65 (2), ...,integer-string
+4: string | 160 enums: 0.035 (3), ...
+5: string | 9 enums: Apollo (105), ...
+6: string | 166 enums: 4.06 (1), ...,integer-string
+7: string | 3 enums: Y (30), ...
+8: string | 97 enums: 0.84 (2), ...,integer-string
+9: string | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9
+11: array TopLevel | children 10 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### api-swift
+0: string | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | enum with no cases,date-time
+2: string | 54 enums: 19.7 (7), ...,integer-string
+3: string | 195 enums: 9.65 (2), ...,integer-string
+4: string | 160 enums: 0.035 (3), ...
+5: string | 9 enums: Apollo (105), ...
+6: string | 166 enums: 4.06 (1), ...,integer-string
+7: string | 3 enums: Y (30), ...
+8: string | 97 enums: 0.84 (2), ...,integer-string
+9: string | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9
+11: array TopLevel | children 10 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9
+### stream-python
+0: string | 0 | 202 enums: 419880 (2011 AH37) (1), ...
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | 54 enums: 19.7 (7), ...,integer-string
+3: string | 3 | 195 enums: 9.65 (2), ...,integer-string
+4: string | 4 | 160 enums: 0.035 (3), ...
+5: string | 5 | 9 enums: Apollo (105), ...
+6: string | 6 | 166 enums: 4.06 (1), ...,integer-string
+7: string | 7 | 3 enums: Y (30), ...
+8: string | 8 | 97 enums: 0.84 (2), ...,integer-string
+9: string | 9 | 165 enums: 4.26 (1), ...,integer-string
+10: class | children 0,1,2,3,4,5,6,7,8,9 | 10
+11: array TopLevel | children 10 | 11 | given TopLevel ()
+props 10: "designation":0, "discovery_date":1, "h_mag"?:2, "i_deg":3, "moid_au":4, "orbit_class":5, "period_yr"?:6, "pha":7, "q_au_1":8, "q_au_2"?:9

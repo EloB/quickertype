@@ -1,0 +1,35 @@
+### stream-typescript
+0: string | 0 | 2 enums:   (10), ...
+1: class | children 0 | 1
+2: array TopLevel | children 1 | 2 | given TopLevel ()
+props 1: "category":0
+### api-typescript
+0: string | 2 enums:   (10), ...
+1: class | children 0
+2: array TopLevel | children 1 | given TopLevel ()
+props 1: "category":0
+### stream-schema
+0: string | 2 enums:   (10), ...
+1: class | children 0
+2: array TopLevel | children 1 | given TopLevel ()
+props 1: "category":0
+### api-csharp
+0: string | 0 | 2 enums:   (10), ...
+1: class | children 0 | 1
+2: array TopLevel | children 1 | 2 | given TopLevel ()
+props 1: "category":0
+### stream-kotlin
+0: string | 2 enums:   (10), ...
+1: class | children 0
+2: array TopLevel | children 1 | given TopLevel ()
+props 1: "category":0
+### api-swift
+0: string | 2 enums:   (10), ...
+1: class | children 0
+2: array TopLevel | children 1 | given TopLevel ()
+props 1: "category":0
+### stream-python
+0: string | 0 | 2 enums:   (10), ...
+1: class | children 0 | 1
+2: array TopLevel | children 1 | 2 | given TopLevel ()
+props 1: "category":0

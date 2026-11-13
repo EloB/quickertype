@@ -39,23 +39,93 @@ pub enum JsonSchema {
 }
 
 impl From<JsonValue> for JsonSchema {
+    /// Converts iteratively: `JSON.parse` accepts any nesting.
     fn from(value: JsonValue) -> Self {
-        // One level per call, on a stack that grows as needed: documents can
-        // nest far deeper than a thread's stack allows.
-        grow_stack(|| match value {
-            JsonValue::Null => JsonSchema::Null,
-            JsonValue::Bool(b) => JsonSchema::Bool(b),
-            JsonValue::Number(n) => JsonSchema::Number(n),
-            JsonValue::String(s) => JsonSchema::String(s),
-            JsonValue::Array(items) => {
-                JsonSchema::Array(Rc::new(items.into_iter().map(JsonSchema::from).collect()))
+        /// A collection being converted: what is done, and what is left.
+        enum Frame {
+            Array(Vec<JsonSchema>, std::vec::IntoIter<JsonValue>),
+            Object(
+                IndexMap<String, JsonSchema>,
+                Option<String>,
+                indexmap::map::IntoIter<String, JsonValue>,
+            ),
+        }
+
+        /// What converting a value starts with.
+        enum Start {
+            Leaf(JsonSchema),
+            Open(Frame),
+        }
+
+        /// A leaf, or the frame for a collection.
+        fn start(mut value: JsonValue) -> Start {
+            Start::Leaf(match &mut value {
+                JsonValue::Null => JsonSchema::Null,
+                JsonValue::Bool(b) => JsonSchema::Bool(*b),
+                JsonValue::Number(n) => JsonSchema::Number(*n),
+                JsonValue::String(s) => JsonSchema::String(std::mem::take(s)),
+                JsonValue::Array(items) => {
+                    let items = std::mem::take(items);
+                    return Start::Open(Frame::Array(
+                        Vec::with_capacity(items.len()),
+                        items.into_iter(),
+                    ));
+                }
+                JsonValue::Object(map) => {
+                    let map = std::mem::take(map);
+                    return Start::Open(Frame::Object(
+                        IndexMap::with_capacity(map.len()),
+                        None,
+                        map.into_iter(),
+                    ));
+                }
+            })
+        }
+
+        let mut stack: Vec<Frame> = Vec::new();
+        let mut done = match start(value) {
+            Start::Leaf(leaf) => return leaf,
+            Start::Open(frame) => {
+                stack.push(frame);
+                None
             }
-            JsonValue::Object(map) => JsonSchema::Object(Rc::new(
-                map.into_iter()
-                    .map(|(k, v)| (k, JsonSchema::from(v)))
-                    .collect(),
-            )),
-        })
+        };
+        loop {
+            let Some(frame) = stack.last_mut() else {
+                return done.unwrap_or(JsonSchema::Null);
+            };
+            // Store the value just converted, then take the next child.
+            let next = match frame {
+                Frame::Array(items, rest) => {
+                    if let Some(value) = done.take() {
+                        items.push(value);
+                    }
+                    rest.next()
+                }
+                Frame::Object(map, key, rest) => {
+                    if let (Some(value), Some(k)) = (done.take(), key.take()) {
+                        map.insert(k, value);
+                    }
+                    rest.next().map(|(k, v)| {
+                        *key = Some(k);
+                        v
+                    })
+                }
+            };
+            match next {
+                Some(child) => match start(child) {
+                    Start::Leaf(leaf) => done = Some(leaf),
+                    Start::Open(frame) => stack.push(frame),
+                },
+                None => {
+                    done = Some(match stack.pop() {
+                        Some(Frame::Array(items, _)) => JsonSchema::Array(Rc::new(items)),
+                        Some(Frame::Object(map, _, _)) => JsonSchema::Object(Rc::new(map)),
+                        None => JsonSchema::Null,
+                    });
+                }
+            }
+        }
     }
 }
 

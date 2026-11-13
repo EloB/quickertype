@@ -30,6 +30,16 @@ findings per area, with file and line references.
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
   over many inputs. Use it for anything outside the corpus.
+- **Renderers in isolation:** `xtask/core-rendering/record-render-cases.mjs`
+  runs the reference CLI on every golden case of a language, dumps the type
+  graph that reaches `gatherNames` and checks the intercepted
+  `renderGraphAndSerialize` result against the golden files;
+  `tests/render_cases.rs` rebuilds the graph (same type indexes) and runs the
+  Rust `gather_names` and renderer on it, comparing files and issue
+  annotations. `run-render-scenarios.mjs` / `tests/render_scenarios.rs` do
+  the same for hand-written scenarios, rendered with real languages or a
+  configurable probe renderer that exercises the framework directly. See
+  `docs/RENDERERS.md`.
 - **JS API:** a differential suite (planned, `npm/`) runs the same API calls
   against npm `quicktype-core` and our WASM package and compares results.
 
@@ -135,6 +145,7 @@ semantics were verified.
 | Node's `fetch` (undici, Node 24), as `NodeIO` uses it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`), undici's default headers and case-insensitive header combining (`3, 2`), `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, header names/values and `ByteString`s, the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case |
 | Node's stack depth (`RangeError: Maximum call stack size exceeded`) | a model of the JavaScript stack in `JSONSchemaInput` (per-keyword costs, reset after every `await`) and a depth limit for `addIDs`, with `stacker` 0.1 growing the native stack on demand | `xtask/core-json-schema-input/measure-stack-depth.mjs` measures Node 24 per recursion path in fresh processes; `tests/deep_schemas.rs` pins the same last-good and first-failing depths (items 322, tuples 198, properties 161, `allOf` 200, `oneOf`/`anyOf` 170, properties plus items 107, `addIDs` 4,150) and runs on 2 MB test-thread stacks |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
+| V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
 
 ## Known gaps
 
@@ -157,10 +168,30 @@ the others name the fix they need.
   `utf16_legalize_characters`, `combine_words` (via legalizers),
   `pluralize` and `combineNames` (`attributes/type_names.rs`, whose common
   prefix/suffix of a type's names can cut an astral character in half).
-  Lone surrogates in input JSON are not representable at all. No golden
-  input contains one. Fix: a WTF-16 JavaScript-string type at the
+  In input JSON, both readers decode a `\u` escape that leaves a surrogate
+  unpaired to U+FFFD (so two such keys or enum cases can collide), and
+  `JSON.parse` errors that quote half of a surrogate pair show U+FFFD, as
+  Node prints them. No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
+- **Very deeply nested JSON.** Both JSON readers are iterative, but
+  inference recurses once per nesting level, as in TypeScript. There the
+  JavaScript stack runs out somewhere between 500 and 1,000 levels
+  (`Maximum call stack size exceeded`, depending on Node's stack size); the
+  port goes much deeper but eventually overflows the native stack and
+  aborts. Fix: an explicit depth limit reporting the `RangeError`, or
+  iterative inference.
+- **Stack exhaustion in Postman collections.** The TypeScript recurses
+  through nested folders and through `String(array)` when it formats a
+  request's `method` and `url.raw`; the port is iterative and reports
+  Node's `RangeError` (`Maximum call stack size exceeded`) at the depths
+  measured on the reference CLI (Node 24.16): more than 3,731 nested
+  folders, or arrays nested more than 2,830 deep. Inside nested folders
+  Node's array limit is lower (less stack is left); that is not modelled.
+- **Postman collections that are not JSON** (temporary). `parseJSON` falls
+  back to YAML, which the JSON Schema input ports; until then
+  `sources_from_postman_collection` reports `JSON.parse`'s error for them
+  (`TODO(parse-json)` in `input/postman_collection.rs`).
 - **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
   native compiler where the reference runs TypeScript 5.9 and
   typescript-json-schema, and emulates TS 5.9's union member order by
@@ -225,6 +256,13 @@ the others name the fix they need.
 - **Accessor entries.** `qt-accessors`/`qt-enum-values` entries whose values
   are not strings are converted with `String(value)` (TypeScript passes
   the raw value on to naming).
+- **Rendering one graph twice.** A TypeScript `ConvenienceRenderer` stores
+  the names it assigns in the graph's attribute store, so a second
+  `renderGraphAndSerialize` on the same `TypeGraph` reuses stale names and
+  fails with `Internal error: No name for Named` (or `Defined value
+  expected`). Rust renderers keep their names to themselves, so a second
+  render succeeds. Only reachable through the library API; the CLI and
+  `quicktype()` build a new graph per run.
 - **chalk-template features quicktype never uses.** Style arguments and hex
   colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
   exit 2 as not implemented. Style names that are other properties of the

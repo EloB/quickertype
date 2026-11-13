@@ -1,0 +1,129 @@
+### stream-typescript
+0: string | 0 | enum with no cases,uri
+1: null | 1
+2: string | 2 | 28 enums: Spain (1), ...
+3: string | 3 | 28 enums: ES (1), ...
+4: string | 4 | 28 enums: ES (1), ...
+5: string | 5 | 1 enums: 0000-01-01 (27), ...,date
+6: double | 6
+7: class | children 6 | 7
+8: class | children 5,7 | 8
+9: array | children 8 | 9
+10: class | children 3,4,2,9 | 10
+11: array | children 10 | 11
+12: class TopLevel | children 0,11,1 | 12 | given TopLevel ()
+props 7: "parking"?:6, "reduced"?:6, "reduced1"?:6, "reduced2"?:6, "standard":6, "super_reduced"?:6
+props 8: "effective_from":5, "rates":7
+props 10: "code":3, "country_code":4, "name":2, "periods":9
+props 12: "details":0, "rates":11, "version":1
+### api-typescript
+0: string | enum with no cases,uri
+1: null
+2: string | 28 enums: Spain (1), ...
+3: string | 28 enums: ES (1), ...
+4: string | 28 enums: ES (1), ...
+5: string | 1 enums: 0000-01-01 (27), ...,date
+6: double
+7: integer
+8: class | children 6,7
+9: class | children 5,8
+10: array | children 9
+11: class | children 3,4,2,10
+12: array | children 11
+13: class TopLevel | children 0,12,1 | given TopLevel ()
+props 8: "super_reduced"?:6, "reduced"?:6, "standard":7, "reduced1"?:6, "reduced2"?:6, "parking"?:6
+props 9: "effective_from":5, "rates":8
+props 11: "name":2, "code":3, "country_code":4, "periods":10
+props 13: "details":0, "version":1, "rates":12
+### stream-schema
+0: string | enum with no cases,uri
+1: null
+2: string | 28 enums: Spain (1), ...
+3: string | 28 enums: ES (1), ...
+4: string | 28 enums: ES (1), ...
+5: string | 1 enums: 0000-01-01 (27), ...,date
+6: double
+7: class | children 6
+8: class | children 5,7
+9: array | children 8
+10: class | children 3,4,2,9
+11: array | children 10
+12: class TopLevel | children 0,11,1 | given TopLevel ()
+props 7: "super_reduced"?:6, "reduced"?:6, "standard":6, "reduced1"?:6, "reduced2"?:6, "parking"?:6
+props 8: "effective_from":5, "rates":7
+props 10: "name":2, "code":3, "country_code":4, "periods":9
+props 12: "details":0, "version":1, "rates":11
+### api-csharp
+0: string | 0 | enum with no cases,uri
+1: null | 1
+2: string | 2 | 28 enums: Spain (1), ...
+3: string | 3 | 28 enums: ES (1), ...
+4: string | 4 | 28 enums: ES (1), ...
+5: string | 5 | 1 enums: 0000-01-01 (27), ...,date
+6: double | 6
+7: integer | 7
+8: class | children 6,7 | 8
+9: class | children 5,8 | 9
+10: array | children 9 | 10
+11: class | children 3,4,2,10 | 11
+12: array | children 11 | 12
+13: class TopLevel | children 0,12,1 | 13 | given TopLevel ()
+props 8: "parking"?:6, "reduced"?:6, "reduced1"?:6, "reduced2"?:6, "standard":7, "super_reduced"?:6
+props 9: "effective_from":5, "rates":8
+props 11: "code":3, "country_code":4, "name":2, "periods":10
+props 13: "details":0, "rates":12, "version":1
+### stream-kotlin
+0: string | enum with no cases,uri
+1: null
+2: string | 28 enums: Spain (1), ...
+3: string | 28 enums: ES (1), ...
+4: string | 28 enums: ES (1), ...
+5: string | 1 enums: 0000-01-01 (27), ...,date
+6: double
+7: class | children 6
+8: class | children 5,7
+9: array | children 8
+10: class | children 3,4,2,9
+11: array | children 10
+12: class TopLevel | children 0,11,1 | given TopLevel ()
+props 7: "super_reduced"?:6, "reduced"?:6, "standard":6, "reduced1"?:6, "reduced2"?:6, "parking"?:6
+props 8: "effective_from":5, "rates":7
+props 10: "name":2, "code":3, "country_code":4, "periods":9
+props 12: "details":0, "version":1, "rates":11
+### api-swift
+0: string | enum with no cases,uri
+1: null
+2: string | 28 enums: Spain (1), ...
+3: string | 28 enums: ES (1), ...
+4: string | 28 enums: ES (1), ...
+5: string | 1 enums: 0000-01-01 (27), ...,date
+6: double
+7: integer
+8: class | children 6,7
+9: class | children 5,8
+10: array | children 9
+11: class | children 3,4,2,10
+12: array | children 11
+13: class TopLevel | children 0,12,1 | given TopLevel ()
+props 8: "super_reduced"?:6, "reduced"?:6, "standard":7, "reduced1"?:6, "reduced2"?:6, "parking"?:6
+props 9: "effective_from":5, "rates":8
+props 11: "name":2, "code":3, "country_code":4, "periods":10
+props 13: "details":0, "version":1, "rates":12
+### stream-python
+0: string | 0 | enum with no cases,uri
+1: null | 1
+2: string | 2 | 28 enums: Spain (1), ...
+3: string | 3 | 28 enums: ES (1), ...
+4: string | 4 | 28 enums: ES (1), ...
+5: string | 5 | 1 enums: 0000-01-01 (27), ...,date
+6: double | 6
+7: class | children 6 | 7
+8: class | children 5,7 | 8
+9: array | children 8 | 9
+10: class | children 3,4,2,9 | 10
+11: array | children 10 | 11
+12: class TopLevel | children 0,11,1 | 12 | given TopLevel ()
+props 7: "super_reduced"?:6, "reduced"?:6, "standard":6, "reduced1"?:6, "reduced2"?:6, "parking"?:6
+props 8: "effective_from":5, "rates":7
+props 10: "name":2, "code":3, "country_code":4, "periods":9
+props 12: "details":0, "version":1, "rates":11

@@ -66,16 +66,9 @@ fn json_parse(text: &str) -> Option<JsonValue> {
     result
 }
 
-/// Drops a value without recursing once per nesting level.
+/// Drops a value; `JsonValue` takes itself apart without recursing.
 pub(crate) fn drop_deep(value: JsonValue) {
-    let mut pending = vec![value];
-    while let Some(value) = pending.pop() {
-        match value {
-            JsonValue::Array(items) => pending.extend(items),
-            JsonValue::Object(map) => pending.extend(map.into_values()),
-            _ => {}
-        }
-    }
+    drop(value);
 }
 
 /// A collection [`JsonParser`] is in the middle of.

@@ -1,0 +1,49 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums: foo (1), ...
+2: union | children 0,1 | 2
+3: class | children 2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "a"?:2
+### api-typescript
+0: integer
+1: string | 1 enums: foo (1), ...
+2: union | children 0,1
+3: class | children 2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "a"?:2
+### stream-schema
+0: integer
+1: string | 1 enums: foo (1), ...
+2: union | children 0,1
+3: class | children 2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "a"?:2
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums: foo (1), ...
+2: union | children 0,1 | 2
+3: class | children 2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "a"?:2
+### stream-kotlin
+0: integer
+1: string | 1 enums: foo (1), ...
+2: union | children 0,1
+3: class | children 2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "a"?:2
+### api-swift
+0: integer
+1: string | 1 enums: foo (1), ...
+2: union | children 0,1
+3: class | children 2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "a"?:2
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums: foo (1), ...
+2: union | children 0,1 | 2
+3: class | children 2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "a"?:2

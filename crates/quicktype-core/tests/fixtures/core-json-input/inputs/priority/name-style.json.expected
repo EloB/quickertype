@@ -1,0 +1,49 @@
+### stream-typescript
+0: integer | 0
+1: bool | 1
+2: string | 2 | 1 enums: abc (1), ...
+3: string | 3 | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | 4 | given TopLevel ()
+props 4: "   spaces are separators  too  ":1, "JSONString":2, "PrettyEasyToo":1, "ZSR_HH_DEMO3_DELMATNR":1, "anEasyOne":0, "isMNISTLetter":1, "should_know_that_id_is_an_initialism":3
+### api-typescript
+0: integer
+1: bool
+2: string | 1 enums: abc (1), ...
+3: string | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | given TopLevel ()
+props 4: "anEasyOne":0, "PrettyEasyToo":1, "JSONString":2, "isMNISTLetter":1, "ZSR_HH_DEMO3_DELMATNR":1, "should_know_that_id_is_an_initialism":3, "   spaces are separators  too  ":1
+### stream-schema
+0: integer
+1: bool
+2: string | 1 enums: abc (1), ...
+3: string | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | given TopLevel ()
+props 4: "anEasyOne":0, "PrettyEasyToo":1, "JSONString":2, "isMNISTLetter":1, "ZSR_HH_DEMO3_DELMATNR":1, "should_know_that_id_is_an_initialism":3, "   spaces are separators  too  ":1
+### api-csharp
+0: integer | 0
+1: bool | 1
+2: string | 2 | 1 enums: abc (1), ...
+3: string | 3 | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | 4 | given TopLevel ()
+props 4: "   spaces are separators  too  ":1, "JSONString":2, "PrettyEasyToo":1, "ZSR_HH_DEMO3_DELMATNR":1, "anEasyOne":0, "isMNISTLetter":1, "should_know_that_id_is_an_initialism":3
+### stream-kotlin
+0: integer
+1: bool
+2: string | 1 enums: abc (1), ...
+3: string | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | given TopLevel ()
+props 4: "anEasyOne":0, "PrettyEasyToo":1, "JSONString":2, "isMNISTLetter":1, "ZSR_HH_DEMO3_DELMATNR":1, "should_know_that_id_is_an_initialism":3, "   spaces are separators  too  ":1
+### api-swift
+0: integer
+1: bool
+2: string | 1 enums: abc (1), ...
+3: string | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | given TopLevel ()
+props 4: "anEasyOne":0, "PrettyEasyToo":1, "JSONString":2, "isMNISTLetter":1, "ZSR_HH_DEMO3_DELMATNR":1, "should_know_that_id_is_an_initialism":3, "   spaces are separators  too  ":1
+### stream-python
+0: integer | 0
+1: bool | 1
+2: string | 2 | 1 enums: abc (1), ...
+3: string | 3 | 1 enums: yup (1), ...
+4: class TopLevel | children 1,2,0,3 | 4 | given TopLevel ()
+props 4: "anEasyOne":0, "PrettyEasyToo":1, "JSONString":2, "isMNISTLetter":1, "ZSR_HH_DEMO3_DELMATNR":1, "should_know_that_id_is_an_initialism":3, "   spaces are separators  too  ":1

@@ -3,9 +3,13 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, acronym_option, converters_option,
+    BooleanOption, EnumOption, OptionKind, RendererOption, RendererOptions, acronym_option,
+    converters_option,
 };
+use crate::support::integer_range::{IntegerRange, JS_SAFE_INTEGER_RANGE};
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `javaScriptOptions.acronymStyle`.
 pub const ACRONYM_STYLE: EnumOption = acronym_option("pascal");
@@ -60,10 +64,7 @@ pub struct JavaScriptTargetLanguage;
 
 // TODO(renderer): port the hooks JavaScriptTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date -> date-time, date-time -> date-time, uuid -> uuid
-// - supportsOptionalClassProperties: true
 // - supportsFullObjectType: true
-// - getSupportedIntegerRange: JS_SAFE_INTEGER_RANGE
 impl TargetLanguage for JavaScriptTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &JAVA_SCRIPT_LANGUAGE_CONFIG
@@ -72,4 +73,32 @@ impl TargetLanguage for JavaScriptTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         JAVA_SCRIPT_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: JavaScript numbers are exact within ±(2^53 − 1).
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        Some(JS_SAFE_INTEGER_RANGE.clone())
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Date, TypeKind::DateTime),
+            (TypeKind::DateTime, TypeKind::DateTime),
+            (TypeKind::Uuid, TypeKind::Uuid),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

@@ -1,0 +1,49 @@
+### stream-typescript
+0: string | 0 | 77 enums: 2017-04 (1), ...
+1: string | 1 | 44 enums: bedfordshire (25), ...
+2: array | children 1 | 2
+3: class | children 0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### api-typescript
+0: string | 77 enums: 2017-04 (1), ...
+1: string | 44 enums: bedfordshire (25), ...
+2: array | children 1
+3: class | children 0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### stream-schema
+0: string | 77 enums: 2017-04 (1), ...
+1: string | 44 enums: bedfordshire (25), ...
+2: array | children 1
+3: class | children 0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### api-csharp
+0: string | 0 | 77 enums: 2017-04 (1), ...
+1: string | 1 | 44 enums: bedfordshire (25), ...
+2: array | children 1 | 2
+3: class | children 0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### stream-kotlin
+0: string | 77 enums: 2017-04 (1), ...
+1: string | 44 enums: bedfordshire (25), ...
+2: array | children 1
+3: class | children 0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### api-swift
+0: string | 77 enums: 2017-04 (1), ...
+1: string | 44 enums: bedfordshire (25), ...
+2: array | children 1
+3: class | children 0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2
+### stream-python
+0: string | 0 | 77 enums: 2017-04 (1), ...
+1: string | 1 | 44 enums: bedfordshire (25), ...
+2: array | children 1 | 2
+3: class | children 0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "date":0, "stop-and-search":2

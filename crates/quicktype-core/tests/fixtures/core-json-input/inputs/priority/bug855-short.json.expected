@@ -1,0 +1,56 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1000 enums: freyat2FreyChamp (1), ...
+2: string | 2 | enum with no cases,integer-string
+3: string | 3 | 374 enums: freyatopmid (1), ...
+4: class | children 2,3,1,0 | 4
+5: map TopLevel | children 4 | 5 | given TopLevel ()
+props 4: "channel_id":2, "channel_name":3, "code":1, "emoticon_set":0, "id":0
+### api-typescript
+0: integer
+1: string | 1000 enums: dayJ (1), ...
+2: string | enum with no cases,integer-string
+3: string | 374 enums: day9tv (25), ...
+4: class | children 2,3,1,0
+5: map TopLevel | children 4 | given TopLevel ()
+props 4: "id":0, "code":1, "emoticon_set":0, "channel_id":2, "channel_name":3
+### stream-schema
+0: integer
+1: string | 1000 enums: freyat2FreyChamp (1), ...
+2: string | enum with no cases,integer-string
+3: string | 374 enums: freyatopmid (1), ...
+4: class | children 2,3,1,0
+5: map TopLevel | children 4 | given TopLevel ()
+props 4: "id":0, "code":1, "emoticon_set":0, "channel_id":2, "channel_name":3
+### api-csharp
+0: integer | 0
+1: string | 1 | 1000 enums: dayJ (1), ...
+2: string | 2 | enum with no cases,integer-string
+3: string | 3 | 374 enums: day9tv (25), ...
+4: class | children 2,3,1,0 | 4
+5: map TopLevel | children 4 | 5 | given TopLevel ()
+props 4: "channel_id":2, "channel_name":3, "code":1, "emoticon_set":0, "id":0
+### stream-kotlin
+0: integer
+1: string | 1000 enums: freyat2FreyChamp (1), ...
+2: string | enum with no cases,integer-string
+3: string | 374 enums: freyatopmid (1), ...
+4: class | children 2,3,1,0
+5: map TopLevel | children 4 | given TopLevel ()
+props 4: "id":0, "code":1, "emoticon_set":0, "channel_id":2, "channel_name":3
+### api-swift
+0: integer
+1: string | 1000 enums: dayJ (1), ...
+2: string | enum with no cases,integer-string
+3: string | 374 enums: day9tv (25), ...
+4: class | children 2,3,1,0
+5: map TopLevel | children 4 | given TopLevel ()
+props 4: "id":0, "code":1, "emoticon_set":0, "channel_id":2, "channel_name":3
+### stream-python
+0: integer | 0
+1: string | 1 | 1000 enums: freyat2FreyChamp (1), ...
+2: string | 2 | enum with no cases,integer-string
+3: string | 3 | 374 enums: freyatopmid (1), ...
+4: class | children 2,3,1,0 | 4
+5: map TopLevel | children 4 | 5 | given TopLevel ()
+props 4: "id":0, "code":1, "emoticon_set":0, "channel_id":2, "channel_name":3

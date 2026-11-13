@@ -1,0 +1,217 @@
+### stream-typescript
+0: string | 0 | 5 enums: Apache-2.0 (1), ...
+1: string | 1 | 10 enums: Apache-2.0 (2), ...
+2: string | 2 | 3 enums: DEP5 (5), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 4 enums: tl;dr legal (2), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 10 | 7 enums: Simplified BSD License (1), ...
+11: null | 11
+12: string | 12 | unrestricted
+13: union | children 11,12 | 13
+14: class | children 10,13 | 14
+15: array | children 14 | 15
+16: string | 16 | 4 enums: osi-approved (5), ...
+17: array | children 16 | 17
+18: string | 18 | 1 enums: text/html (5), ...
+19: string | 19 | 1 enums: HTML (5), ...
+20: string | 20 | enum with no cases,uri
+21: class | children 18,19,20 | 21
+22: array | children 21 | 22
+23: class | children 0,4,17,8,9,15,11,22 | 23
+24: array TopLevel | children 23 | 24 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "keywords":17, "links":8, "name":9, "other_names":15, "superseded_by":11, "text":22
+### api-typescript
+0: string | 5 enums: Apache-2.0 (1), ...
+1: string | 10 enums: Apache-2.0 (2), ...
+2: string | 3 enums: DEP5 (5), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 4 enums: tl;dr legal (2), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 7 enums: Simplified BSD License (1), ...
+11: null
+12: string | unrestricted
+13: union | children 11,12
+14: class | children 10,13
+15: array | children 14
+16: string | 4 enums: osi-approved (5), ...
+17: array | children 16
+18: string | 1 enums: text/html (5), ...
+19: string | 1 enums: HTML (5), ...
+20: string | enum with no cases,uri
+21: class | children 18,19,20
+22: array | children 21
+23: class | children 0,4,17,8,9,15,11,22
+24: array TopLevel | children 23 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "links":8, "name":9, "other_names":15, "superseded_by":11, "keywords":17, "text":22
+### stream-schema
+0: string | 5 enums: Apache-2.0 (1), ...
+1: string | 10 enums: Apache-2.0 (2), ...
+2: string | 3 enums: DEP5 (5), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 4 enums: tl;dr legal (2), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 7 enums: Simplified BSD License (1), ...
+11: null
+12: string | unrestricted
+13: union | children 11,12
+14: class | children 10,13
+15: array | children 14
+16: string | 4 enums: osi-approved (5), ...
+17: array | children 16
+18: string | 1 enums: text/html (5), ...
+19: string | 1 enums: HTML (5), ...
+20: string | enum with no cases,uri
+21: class | children 18,19,20
+22: array | children 21
+23: class | children 0,4,17,8,9,15,11,22
+24: array TopLevel | children 23 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "links":8, "name":9, "other_names":15, "superseded_by":11, "keywords":17, "text":22
+### api-csharp
+0: string | 0 | 5 enums: Apache-2.0 (1), ...
+1: string | 1 | 10 enums: Apache-2.0 (2), ...
+2: string | 2 | 3 enums: DEP5 (5), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 4 enums: tl;dr legal (2), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 10 | 7 enums: Simplified BSD License (1), ...
+11: null | 11
+12: string | 12 | unrestricted
+13: union | children 11,12 | 13
+14: class | children 10,13 | 14
+15: array | children 14 | 15
+16: string | 16 | 4 enums: osi-approved (5), ...
+17: array | children 16 | 17
+18: string | 18 | 1 enums: text/html (5), ...
+19: string | 19 | 1 enums: HTML (5), ...
+20: string | 20 | enum with no cases,uri
+21: class | children 18,19,20 | 21
+22: array | children 21 | 22
+23: class | children 0,4,17,8,9,15,11,22 | 23
+24: array TopLevel | children 23 | 24 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "keywords":17, "links":8, "name":9, "other_names":15, "superseded_by":11, "text":22
+### stream-kotlin
+0: string | 5 enums: Apache-2.0 (1), ...
+1: string | 10 enums: Apache-2.0 (2), ...
+2: string | 3 enums: DEP5 (5), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 4 enums: tl;dr legal (2), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 7 enums: Simplified BSD License (1), ...
+11: null
+12: string | unrestricted
+13: union | children 11,12
+14: class | children 10,13
+15: array | children 14
+16: string | 4 enums: osi-approved (5), ...
+17: array | children 16
+18: string | 1 enums: text/html (5), ...
+19: string | 1 enums: HTML (5), ...
+20: string | enum with no cases,uri
+21: class | children 18,19,20
+22: array | children 21
+23: class | children 0,4,17,8,9,15,11,22
+24: array TopLevel | children 23 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "links":8, "name":9, "other_names":15, "superseded_by":11, "keywords":17, "text":22
+### api-swift
+0: string | 5 enums: Apache-2.0 (1), ...
+1: string | 10 enums: Apache-2.0 (2), ...
+2: string | 3 enums: DEP5 (5), ...
+3: class | children 1,2
+4: array | children 3
+5: string | 4 enums: tl;dr legal (2), ...
+6: string | enum with no cases,uri
+7: class | children 5,6
+8: array | children 7
+9: string | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 7 enums: Simplified BSD License (1), ...
+11: null
+12: string | unrestricted
+13: union | children 11,12
+14: class | children 10,13
+15: array | children 14
+16: string | 4 enums: osi-approved (5), ...
+17: array | children 16
+18: string | 1 enums: text/html (5), ...
+19: string | 1 enums: HTML (5), ...
+20: string | enum with no cases,uri
+21: class | children 18,19,20
+22: array | children 21
+23: class | children 0,4,17,8,9,15,11,22
+24: array TopLevel | children 23 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "links":8, "name":9, "other_names":15, "superseded_by":11, "keywords":17, "text":22
+### stream-python
+0: string | 0 | 5 enums: Apache-2.0 (1), ...
+1: string | 1 | 10 enums: Apache-2.0 (2), ...
+2: string | 2 | 3 enums: DEP5 (5), ...
+3: class | children 1,2 | 3
+4: array | children 3 | 4
+5: string | 5 | 4 enums: tl;dr legal (2), ...
+6: string | 6 | enum with no cases,uri
+7: class | children 5,6 | 7
+8: array | children 7 | 8
+9: string | 9 | 5 enums: Apache License, Version 2.0 (1), ...
+10: string | 10 | 7 enums: Simplified BSD License (1), ...
+11: null | 11
+12: string | 12 | unrestricted
+13: union | children 11,12 | 13
+14: class | children 10,13 | 14
+15: array | children 14 | 15
+16: string | 16 | 4 enums: osi-approved (5), ...
+17: array | children 16 | 17
+18: string | 18 | 1 enums: text/html (5), ...
+19: string | 19 | 1 enums: HTML (5), ...
+20: string | 20 | enum with no cases,uri
+21: class | children 18,19,20 | 21
+22: array | children 21 | 22
+23: class | children 0,4,17,8,9,15,11,22 | 23
+24: array TopLevel | children 23 | 24 | given TopLevel ()
+props 3: "identifier":1, "scheme":2
+props 7: "note":5, "url":6
+props 14: "name":10, "note":13
+props 21: "media_type":18, "title":19, "url":20
+props 23: "id":0, "identifiers":4, "links":8, "name":9, "other_names":15, "superseded_by":11, "keywords":17, "text":22

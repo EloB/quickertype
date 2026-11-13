@@ -1,0 +1,331 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "123",
+      1,
+      false
+     ],
+     [
+      "camelOne",
+      1,
+      false
+     ],
+     [
+      "camelTwo",
+      1,
+      false
+     ],
+     [
+      "snake_one",
+      1,
+      false
+     ],
+     [
+      "type",
+      6,
+      false
+     ],
+     [
+      "Option",
+      1,
+      false
+     ],
+     [
+      "self",
+      1,
+      false
+     ],
+     [
+      "Self",
+      1,
+      false
+     ],
+     [
+      "ünïcødé",
+      1,
+      false
+     ],
+     [
+      "with\"quote",
+      1,
+      false
+     ],
+     [
+      "tab\there",
+      1,
+      false
+     ],
+     [
+      "",
+      1,
+      false
+     ],
+     [
+      "_",
+      1,
+      false
+     ],
+     [
+      "__",
+      1,
+      false
+     ],
+     [
+      "a-b",
+      1,
+      false
+     ],
+     [
+      "UPPER",
+      1,
+      false
+     ],
+     [
+      "Box",
+      2,
+      false
+     ],
+     [
+      "String",
+      4,
+      false
+     ],
+     [
+      "emoji😀",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "HashMap",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 5
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "Vec",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Allcamel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "oneTwo",
+      1,
+      false
+     ],
+     [
+      "threeFour",
+      1,
+      false
+     ],
+     [
+      "five",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "AllKebab"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "one-two",
+      1,
+      false
+     ],
+     [
+      "three-four",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Screaming"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "ONE_TWO",
+      1,
+      false
+     ],
+     [
+      "THREE_FOUR",
+      1,
+      false
+     ],
+     [
+      "FIVE",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Allcamel",
+    7
+   ],
+   [
+    "AllKebab",
+    8
+   ],
+   [
+    "Screaming",
+    9
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct TopLevel {\n    #[serde(rename = \"a-b\")]\n    pub a_b: i64,\n\n    #[serde(rename = \"camelOne\")]\n    pub camel_one: i64,\n\n    #[serde(rename = \"camelTwo\")]\n    pub camel_two: i64,\n\n    #[serde(rename = \"emoji\\u{01f600}\")]\n    pub emoji: i64,\n\n    #[serde(rename = \"\")]\n    pub empty: i64,\n\n    #[serde(rename = \"ünïcødé\")]\n    pub ncd: i64,\n\n    #[serde(rename = \"__\")]\n    pub purple: i64,\n\n    #[serde(rename = \"self\")]\n    pub purple_self: i64,\n\n    #[serde(rename = \"snake_one\")]\n    pub snake_one: i64,\n\n    pub string: Vec<StringElement>,\n\n    #[serde(rename = \"tab\\there\")]\n    pub tab_here: i64,\n\n    #[serde(rename = \"123\")]\n    pub the_123: i64,\n\n    #[serde(rename = \"_\")]\n    pub top_level: i64,\n\n    #[serde(rename = \"Box\")]\n    pub top_level_box: BoxClass,\n\n    #[serde(rename = \"Option\")]\n    pub top_level_option: i64,\n\n    #[serde(rename = \"Self\")]\n    pub top_level_self: i64,\n\n    #[serde(rename = \"type\")]\n    pub top_level_type: String,\n\n    #[serde(rename = \"UPPER\")]\n    pub upper: i64,\n\n    #[serde(rename = \"with\\\"quote\")]\n    pub with_quote: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct StringElement {\n    pub vec: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct BoxClass {\n    pub hash_map: HashMapClass,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct HashMapClass {\n    pub x: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Allcamel {\n    pub five: i64,\n\n    pub one_two: i64,\n\n    pub three_four: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"kebab-case\")]\npub struct AllKebab {\n    pub one_two: i64,\n\n    pub three_four: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"SCREAMING_SNAKE_CASE\")]\npub struct Screaming {\n    pub five: i64,\n\n    pub one_two: i64,\n\n    pub three_four: i64,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct TopLevel {\n    #[serde(rename = \"123\")]\n    pub the_123: i64,\n\n    #[serde(rename = \"camelOne\")]\n    pub camel_one: i64,\n\n    #[serde(rename = \"camelTwo\")]\n    pub camel_two: i64,\n\n    #[serde(rename = \"snake_one\")]\n    pub snake_one: i64,\n\n    #[serde(rename = \"type\")]\n    pub top_level_type: String,\n\n    #[serde(rename = \"Option\")]\n    pub top_level_option: i64,\n\n    #[serde(rename = \"self\")]\n    pub purple_self: i64,\n\n    #[serde(rename = \"Self\")]\n    pub top_level_self: i64,\n\n    #[serde(rename = \"ünïcødé\")]\n    pub ncd: i64,\n\n    #[serde(rename = \"with\\\"quote\")]\n    pub with_quote: i64,\n\n    #[serde(rename = \"tab\\there\")]\n    pub tab_here: i64,\n\n    #[serde(rename = \"\")]\n    pub empty: i64,\n\n    #[serde(rename = \"_\")]\n    pub top_level: i64,\n\n    #[serde(rename = \"__\")]\n    pub purple: i64,\n\n    #[serde(rename = \"a-b\")]\n    pub a_b: i64,\n\n    #[serde(rename = \"UPPER\")]\n    pub upper: i64,\n\n    #[serde(rename = \"Box\")]\n    pub top_level_box: BoxClass,\n\n    pub string: Vec<StringElement>,\n\n    #[serde(rename = \"emoji\\u{01f600}\")]\n    pub emoji: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct StringElement {\n    pub vec: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"PascalCase\")]\npub struct BoxClass {\n    pub hash_map: HashMapClass,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct HashMapClass {\n    pub x: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Allcamel {\n    pub one_two: i64,\n\n    pub three_four: i64,\n\n    pub five: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"kebab-case\")]\npub struct AllKebab {\n    pub one_two: i64,\n\n    pub three_four: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"SCREAMING_SNAKE_CASE\")]\npub struct Screaming {\n    pub one_two: i64,\n\n    pub three_four: i64,\n\n    pub five: i64,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "rust-naming"
+}

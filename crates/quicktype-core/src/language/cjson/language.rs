@@ -3,7 +3,11 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
+    BooleanOption, EnumOption, OptionKind, OptionValue, RendererOption, RendererOptions,
+    StringOption,
+};
+use crate::support::integer_range::{
+    INT8_RANGE, INT16_RANGE, INT32_RANGE, INT64_RANGE, IntegerRange,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
 
@@ -134,9 +138,6 @@ pub struct CJsonTargetLanguage;
 
 // TODO(renderer): port the hooks CJSONTargetLanguage overrides:
 // - makeRenderer
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
-// - getSupportedIntegerRange: by `integer-size` (INT8/16/32_RANGE, else INT64_RANGE)
 impl TargetLanguage for CJsonTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_JSON_LANGUAGE_CONFIG
@@ -145,4 +146,37 @@ impl TargetLanguage for CJsonTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         C_JSON_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `getSupportedIntegerRange`: the range of the `integer-size` type.
+    fn get_supported_integer_range(
+        &self,
+        renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        // `typeIntegerSize.getValue(rendererOptions)`: the raw value, so
+        // anything but one of the smaller sizes is int64_t.
+        let range = match renderer_options.get(TYPE_INTEGER_SIZE.name) {
+            Some(OptionValue::String(size)) => match size.as_str() {
+                "int8_t" => &INT8_RANGE,
+                "int16_t" => &INT16_RANGE,
+                "int32_t" => &INT32_RANGE,
+                _ => &INT64_RANGE,
+            },
+            _ => &INT64_RANGE,
+        };
+        Some(range.clone())
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

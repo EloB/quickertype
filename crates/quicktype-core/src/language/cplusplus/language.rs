@@ -6,6 +6,8 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `cPlusPlusOptions.typeSourceStyle`.
 pub const TYPE_SOURCE_STYLE: EnumOption = EnumOption::new(
@@ -171,9 +173,6 @@ pub struct CPlusPlusTargetLanguage;
 
 // TODO(renderer): port the hooks CPlusPlusTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: uuid -> uuid, date-time -> date-time
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for CPlusPlusTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_PLUS_PLUS_LANGUAGE_CONFIG
@@ -182,4 +181,28 @@ impl TargetLanguage for CPlusPlusTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         C_PLUS_PLUS_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }

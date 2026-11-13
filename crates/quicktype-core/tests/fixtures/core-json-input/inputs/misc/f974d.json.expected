@@ -1,0 +1,42 @@
+### stream-typescript
+0: string | 0 | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer | 1
+2: array | children 1 | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "block_index":1, "hash":0, "height":1, "time":1, "txIndexes":2
+### api-typescript
+0: string | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer
+2: array | children 1
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "hash":0, "time":1, "block_index":1, "height":1, "txIndexes":2
+### stream-schema
+0: string | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer
+2: array | children 1
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "hash":0, "time":1, "block_index":1, "height":1, "txIndexes":2
+### api-csharp
+0: string | 0 | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer | 1
+2: array | children 1 | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "block_index":1, "hash":0, "height":1, "time":1, "txIndexes":2
+### stream-kotlin
+0: string | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer
+2: array | children 1
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "hash":0, "time":1, "block_index":1, "height":1, "txIndexes":2
+### api-swift
+0: string | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer
+2: array | children 1
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "hash":0, "time":1, "block_index":1, "height":1, "txIndexes":2
+### stream-python
+0: string | 0 | 1 enums: 000000000000000000af61dbc3e870826a68b9e2ddd7ebc5a6059b6ac497f558 (1), ...
+1: integer | 1
+2: array | children 1 | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "hash":0, "time":1, "block_index":1, "height":1, "txIndexes":2

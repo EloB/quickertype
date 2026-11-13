@@ -1,0 +1,42 @@
+# Declaration order from strongly connected components, with and without
+# forward declarations, and cycle breakers with different implicit breakers
+# and breakable kinds.
+input schema TopLevel {"$ref": "#/definitions/node", "definitions": {"node": {"type": "object", "properties": {"next": {"$ref": "#/definitions/node"}, "children": {"type": "array", "items": {"$ref": "#/definitions/node"}}, "byName": {"type": "object", "additionalProperties": {"$ref": "#/definitions/node"}}, "value": {"$ref": "#/definitions/value"}, "pair": {"$ref": "#/definitions/pair"}}}, "value": {"anyOf": [{"type": "string"}, {"$ref": "#/definitions/node"}, {"type": "array", "items": {"$ref": "#/definitions/value"}}]}, "pair": {"type": "object", "properties": {"left": {"$ref": "#/definitions/pair"}, "right": {"$ref": "#/definitions/leaf"}, "kind": {"enum": ["a", "b"]}}}, "leaf": {"type": "object", "properties": {"up": {"$ref": "#/definitions/pair"}, "n": {"type": "integer"}}}}}
+
+render probe {} script
+declarations
+end
+
+render probe {"probe": {"fwd": true}} script
+declarations
+end
+
+render probe {"probe": {"fwd": true, "forwardKinds": ["union", "class"]}} script
+declarations
+end
+
+render probe {"probe": {"fwd": true, "forwardKinds": ["enum"]}} script
+declarations
+end
+
+render probe {"probe": {"breakers": ["array", "map"]}} script
+cyclebreakers
+end
+
+render probe {"probe": {"breakers": []}} script
+cyclebreakers
+end
+
+render probe {"probe": {"breakers": ["array"], "canBreak": ["union"]}} script
+cyclebreakers
+end
+
+render probe {"probe": {"breakers": [], "canBreak": ["enum"]}} script
+cyclebreakers
+end
+
+render probe {} script
+cyclebreakers
+end
+
+render rust {}

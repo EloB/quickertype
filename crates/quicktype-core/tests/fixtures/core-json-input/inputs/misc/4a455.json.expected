@@ -1,0 +1,217 @@
+### stream-typescript
+0: string | 0 | 1 enums: FeatureCollection (1), ...
+1: integer | 1
+2: string | 2 | 1 enums: Feature (53), ...
+3: string | 3 | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 4 | 1 enums: MultiPoint (53), ...
+5: double | 5
+6: array | children 5 | 6
+7: array | children 6 | 7
+8: class | children 7,4 | 8
+9: string | 9 | 1 enums: geom (53), ...
+10: string | 10 | 53 enums: 891 ABC Adelaide (1), ...
+11: string | 11 | unrestricted
+12: string | 12 | 51 enums: 891adelaide (1), ...
+13: string | 13 | 1 enums:  (1), ...,uri
+14: string | 14 | enum with no cases,uri
+15: string | 15 | enum with no cases,uri
+16: class | children 13,15,10,14,11,12 | 16
+17: class | children 8,9,3,16,2 | 17
+18: array | children 17 | 18
+19: string | 19 | 1 enums: name (1), ...
+20: string | 20 | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20 | 21
+22: class | children 21,19 | 22
+23: class TopLevel | children 22,18,1,0 | 23 | given TopLevel ()
+props 8: "coordinates":7, "type":4
+props 16: "facebookaccount":13, "frequencyfinderurl":15, "name":10, "siteurl":14, "streetaddress":11, "twitteraccount":12
+props 17: "geometry":8, "geometry_name":9, "id":3, "properties":16, "type":2
+props 21: "name":20
+props 22: "properties":21, "type":19
+props 23: "crs":22, "features":18, "totalFeatures":1, "type":0
+### api-typescript
+0: string | 1 enums: FeatureCollection (1), ...
+1: integer
+2: string | 1 enums: Feature (53), ...
+3: string | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 1 enums: MultiPoint (53), ...
+5: double
+6: array | children 5
+7: array | children 6
+8: class | children 7,4
+9: string | 1 enums: geom (53), ...
+10: string | 53 enums: 891 ABC Adelaide (1), ...
+11: string | unrestricted
+12: string | 51 enums: 891adelaide (1), ...
+13: string | 1 enums:  (1), ...,uri
+14: string | enum with no cases,uri
+15: string | enum with no cases,uri
+16: class | children 13,15,10,14,11,12
+17: class | children 8,9,3,16,2
+18: array | children 17
+19: string | 1 enums: name (1), ...
+20: string | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20
+22: class | children 21,19
+23: class TopLevel | children 22,18,1,0 | given TopLevel ()
+props 8: "type":4, "coordinates":7
+props 16: "name":10, "streetaddress":11, "twitteraccount":12, "facebookaccount":13, "siteurl":14, "frequencyfinderurl":15
+props 17: "type":2, "id":3, "geometry":8, "geometry_name":9, "properties":16
+props 21: "name":20
+props 22: "type":19, "properties":21
+props 23: "type":0, "totalFeatures":1, "features":18, "crs":22
+### stream-schema
+0: string | 1 enums: FeatureCollection (1), ...
+1: integer
+2: string | 1 enums: Feature (53), ...
+3: string | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 1 enums: MultiPoint (53), ...
+5: double
+6: array | children 5
+7: array | children 6
+8: class | children 7,4
+9: string | 1 enums: geom (53), ...
+10: string | 53 enums: 891 ABC Adelaide (1), ...
+11: string | unrestricted
+12: string | 51 enums: 891adelaide (1), ...
+13: string | 1 enums:  (1), ...,uri
+14: string | enum with no cases,uri
+15: string | enum with no cases,uri
+16: class | children 13,15,10,14,11,12
+17: class | children 8,9,3,16,2
+18: array | children 17
+19: string | 1 enums: name (1), ...
+20: string | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20
+22: class | children 21,19
+23: class TopLevel | children 22,18,1,0 | given TopLevel ()
+props 8: "type":4, "coordinates":7
+props 16: "name":10, "streetaddress":11, "twitteraccount":12, "facebookaccount":13, "siteurl":14, "frequencyfinderurl":15
+props 17: "type":2, "id":3, "geometry":8, "geometry_name":9, "properties":16
+props 21: "name":20
+props 22: "type":19, "properties":21
+props 23: "type":0, "totalFeatures":1, "features":18, "crs":22
+### api-csharp
+0: string | 0 | 1 enums: FeatureCollection (1), ...
+1: integer | 1
+2: string | 2 | 1 enums: Feature (53), ...
+3: string | 3 | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 4 | 1 enums: MultiPoint (53), ...
+5: double | 5
+6: array | children 5 | 6
+7: array | children 6 | 7
+8: class | children 7,4 | 8
+9: string | 9 | 1 enums: geom (53), ...
+10: string | 10 | 53 enums: 891 ABC Adelaide (1), ...
+11: string | 11 | unrestricted
+12: string | 12 | 51 enums: 891adelaide (1), ...
+13: string | 13 | 1 enums:  (1), ...,uri
+14: string | 14 | enum with no cases,uri
+15: string | 15 | enum with no cases,uri
+16: class | children 13,15,10,14,11,12 | 16
+17: class | children 8,9,3,16,2 | 17
+18: array | children 17 | 18
+19: string | 19 | 1 enums: name (1), ...
+20: string | 20 | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20 | 21
+22: class | children 21,19 | 22
+23: class TopLevel | children 22,18,1,0 | 23 | given TopLevel ()
+props 8: "coordinates":7, "type":4
+props 16: "facebookaccount":13, "frequencyfinderurl":15, "name":10, "siteurl":14, "streetaddress":11, "twitteraccount":12
+props 17: "geometry":8, "geometry_name":9, "id":3, "properties":16, "type":2
+props 21: "name":20
+props 22: "properties":21, "type":19
+props 23: "crs":22, "features":18, "totalFeatures":1, "type":0
+### stream-kotlin
+0: string | 1 enums: FeatureCollection (1), ...
+1: integer
+2: string | 1 enums: Feature (53), ...
+3: string | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 1 enums: MultiPoint (53), ...
+5: double
+6: array | children 5
+7: array | children 6
+8: class | children 7,4
+9: string | 1 enums: geom (53), ...
+10: string | 53 enums: 891 ABC Adelaide (1), ...
+11: string | unrestricted
+12: string | 51 enums: 891adelaide (1), ...
+13: string | 1 enums:  (1), ...,uri
+14: string | enum with no cases,uri
+15: string | enum with no cases,uri
+16: class | children 13,15,10,14,11,12
+17: class | children 8,9,3,16,2
+18: array | children 17
+19: string | 1 enums: name (1), ...
+20: string | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20
+22: class | children 21,19
+23: class TopLevel | children 22,18,1,0 | given TopLevel ()
+props 8: "type":4, "coordinates":7
+props 16: "name":10, "streetaddress":11, "twitteraccount":12, "facebookaccount":13, "siteurl":14, "frequencyfinderurl":15
+props 17: "type":2, "id":3, "geometry":8, "geometry_name":9, "properties":16
+props 21: "name":20
+props 22: "type":19, "properties":21
+props 23: "type":0, "totalFeatures":1, "features":18, "crs":22
+### api-swift
+0: string | 1 enums: FeatureCollection (1), ...
+1: integer
+2: string | 1 enums: Feature (53), ...
+3: string | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 1 enums: MultiPoint (53), ...
+5: double
+6: array | children 5
+7: array | children 6
+8: class | children 7,4
+9: string | 1 enums: geom (53), ...
+10: string | 53 enums: 891 ABC Adelaide (1), ...
+11: string | unrestricted
+12: string | 51 enums: 891adelaide (1), ...
+13: string | 1 enums:  (1), ...,uri
+14: string | enum with no cases,uri
+15: string | enum with no cases,uri
+16: class | children 13,15,10,14,11,12
+17: class | children 8,9,3,16,2
+18: array | children 17
+19: string | 1 enums: name (1), ...
+20: string | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20
+22: class | children 21,19
+23: class TopLevel | children 22,18,1,0 | given TopLevel ()
+props 8: "type":4, "coordinates":7
+props 16: "name":10, "streetaddress":11, "twitteraccount":12, "facebookaccount":13, "siteurl":14, "frequencyfinderurl":15
+props 17: "type":2, "id":3, "geometry":8, "geometry_name":9, "properties":16
+props 21: "name":20
+props 22: "type":19, "properties":21
+props 23: "type":0, "totalFeatures":1, "features":18, "crs":22
+### stream-python
+0: string | 0 | 1 enums: FeatureCollection (1), ...
+1: integer | 1
+2: string | 2 | 1 enums: Feature (53), ...
+3: string | 3 | 53 enums: ckan_d534c0e9_a9bf_487b_ac8f_b7877a09d162.1 (1), ...
+4: string | 4 | 1 enums: MultiPoint (53), ...
+5: double | 5
+6: array | children 5 | 6
+7: array | children 6 | 7
+8: class | children 7,4 | 8
+9: string | 9 | 1 enums: geom (53), ...
+10: string | 10 | 53 enums: 891 ABC Adelaide (1), ...
+11: string | 11 | unrestricted
+12: string | 12 | 51 enums: 891adelaide (1), ...
+13: string | 13 | 1 enums:  (1), ...,uri
+14: string | 14 | enum with no cases,uri
+15: string | 15 | enum with no cases,uri
+16: class | children 13,15,10,14,11,12 | 16
+17: class | children 8,9,3,16,2 | 17
+18: array | children 17 | 18
+19: string | 19 | 1 enums: name (1), ...
+20: string | 20 | 1 enums: urn:ogc:def:crs:EPSG::4326 (1), ...
+21: class | children 20 | 21
+22: class | children 21,19 | 22
+23: class TopLevel | children 22,18,1,0 | 23 | given TopLevel ()
+props 8: "type":4, "coordinates":7
+props 16: "name":10, "streetaddress":11, "twitteraccount":12, "facebookaccount":13, "siteurl":14, "frequencyfinderurl":15
+props 17: "type":2, "id":3, "geometry":8, "geometry_name":9, "properties":16
+props 21: "name":20
+props 22: "type":19, "properties":21
+props 23: "type":0, "totalFeatures":1, "features":18, "crs":22

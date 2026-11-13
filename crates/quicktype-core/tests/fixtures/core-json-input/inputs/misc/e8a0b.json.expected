@@ -1,0 +1,42 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums: United States (101), ...
+2: class | children 0,1 | 2
+3: array TopLevel | children 2 | 3 | given TopLevel ()
+props 2: "age":0, "country":1, "females":0, "males":0, "total":0, "year":0
+### api-typescript
+0: integer
+1: string | 1 enums: United States (101), ...
+2: class | children 0,1
+3: array TopLevel | children 2 | given TopLevel ()
+props 2: "females":0, "country":1, "age":0, "males":0, "year":0, "total":0
+### stream-schema
+0: integer
+1: string | 1 enums: United States (101), ...
+2: class | children 0,1
+3: array TopLevel | children 2 | given TopLevel ()
+props 2: "females":0, "country":1, "age":0, "males":0, "year":0, "total":0
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums: United States (101), ...
+2: class | children 0,1 | 2
+3: array TopLevel | children 2 | 3 | given TopLevel ()
+props 2: "age":0, "country":1, "females":0, "males":0, "total":0, "year":0
+### stream-kotlin
+0: integer
+1: string | 1 enums: United States (101), ...
+2: class | children 0,1
+3: array TopLevel | children 2 | given TopLevel ()
+props 2: "females":0, "country":1, "age":0, "males":0, "year":0, "total":0
+### api-swift
+0: integer
+1: string | 1 enums: United States (101), ...
+2: class | children 0,1
+3: array TopLevel | children 2 | given TopLevel ()
+props 2: "females":0, "country":1, "age":0, "males":0, "year":0, "total":0
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums: United States (101), ...
+2: class | children 0,1 | 2
+3: array TopLevel | children 2 | 3 | given TopLevel ()
+props 2: "females":0, "country":1, "age":0, "males":0, "year":0, "total":0

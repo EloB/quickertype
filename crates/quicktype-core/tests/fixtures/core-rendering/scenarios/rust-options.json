@@ -1,0 +1,802 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      7,
+      false
+     ],
+     [
+      "count",
+      3,
+      false
+     ],
+     [
+      "ratio",
+      14,
+      false
+     ],
+     [
+      "flag",
+      8,
+      false
+     ],
+     [
+      "tags",
+      15,
+      false
+     ],
+     [
+      "nested",
+      10,
+      false
+     ],
+     [
+      "maybe",
+      9,
+      false
+     ],
+     [
+      "choice",
+      4,
+      false
+     ],
+     [
+      "byKey",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "k1",
+      2,
+      false
+     ],
+     [
+      "k2",
+      2,
+      false
+     ],
+     [
+      "k3",
+      2,
+      false
+     ],
+     [
+      "k4",
+      2,
+      false
+     ],
+     [
+      "k5",
+      2,
+      false
+     ],
+     [
+      "k6",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 5
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     3,
+     6,
+     7
+    ]
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "z",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "deepValue",
+      9,
+      false
+     ],
+     [
+      "items",
+      11,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 12
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      13,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     3,
+     7
+    ]
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 7
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "density": "dense"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n    pub count: i64,\n    pub ratio: f64,\n    pub flag: bool,\n    pub tags: Vec<String>,\n    pub nested: Nested,\n    pub maybe: Option<serde_json::Value>,\n    pub choice: Vec<ChoiceElement>,\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n    pub k2: K1,\n    pub k3: K1,\n    pub k4: K1,\n    pub k5: K1,\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n    Integer(i64),\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       24,
+       15,
+       24,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       60,
+       20,
+       60,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "visibility": "private"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    name: String,\n\n    count: i64,\n\n    ratio: f64,\n\n    flag: bool,\n\n    tags: Vec<String>,\n\n    nested: Nested,\n\n    maybe: Option<serde_json::Value>,\n\n    choice: Vec<ChoiceElement>,\n\n    by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    k1: K1,\n\n    k2: K1,\n\n    k3: K1,\n\n    k4: K1,\n\n    k5: K1,\n\n    k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    deep_value: Option<serde_json::Value>,\n\n    items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       11,
+       30,
+       36
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       16,
+       75,
+       41
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "visibility": "crate"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub(crate) name: String,\n\n    pub(crate) count: i64,\n\n    pub(crate) ratio: f64,\n\n    pub(crate) flag: bool,\n\n    pub(crate) tags: Vec<String>,\n\n    pub(crate) nested: Nested,\n\n    pub(crate) maybe: Option<serde_json::Value>,\n\n    pub(crate) choice: Vec<ChoiceElement>,\n\n    pub(crate) by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub(crate) k1: K1,\n\n    pub(crate) k2: K1,\n\n    pub(crate) k3: K1,\n\n    pub(crate) k4: K1,\n\n    pub(crate) k5: K1,\n\n    pub(crate) k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub(crate) v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub(crate) z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub(crate) deep_value: Option<serde_json::Value>,\n\n    pub(crate) items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub(crate) id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       22,
+       30,
+       47
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       27,
+       75,
+       52
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "derive-debug": false,
+    "no-derive-debug": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "derive-clone": "false"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "derive-partial-eq": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "skip-serializing-none": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "leading-comments": false
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "use serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       17,
+       15,
+       17,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       62,
+       20,
+       62,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "integer-type": "force-i32"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i32,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i32,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i32),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i32,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i32),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "integer-type": "force-i64"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "density": "dense",
+    "visibility": "crate",
+    "derive-partial-eq": true,
+    "skip-serializing-none": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub(crate) by_key: ByKey,\n    pub(crate) choice: Vec<ChoiceElement>,\n    pub(crate) count: i64,\n    pub(crate) flag: bool,\n    pub(crate) maybe: Option<serde_json::Value>,\n    pub(crate) name: String,\n    pub(crate) nested: Nested,\n    pub(crate) ratio: f64,\n    pub(crate) tags: Vec<String>,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct ByKey {\n    pub(crate) k1: K1,\n    pub(crate) k2: K1,\n    pub(crate) k3: K1,\n    pub(crate) k4: K1,\n    pub(crate) k5: K1,\n    pub(crate) k6: K1,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct K1 {\n    pub(crate) v: i64,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n    Integer(i64),\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub(crate) z: i64,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub(crate) deep_value: Option<serde_json::Value>,\n    pub(crate) items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\npub struct Item {\n    pub(crate) id: Id,\n}\n\n#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       22,
+       22,
+       22,
+       47
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       60,
+       27,
+       60,
+       52
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "\t",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n\tpub name: String,\n\n\tpub count: i64,\n\n\tpub ratio: f64,\n\n\tpub flag: bool,\n\n\tpub tags: Vec<String>,\n\n\tpub nested: Nested,\n\n\tpub maybe: Option<serde_json::Value>,\n\n\tpub choice: Vec<ChoiceElement>,\n\n\tpub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n\tpub k1: K1,\n\n\tpub k2: K1,\n\n\tpub k3: K1,\n\n\tpub k4: K1,\n\n\tpub k5: K1,\n\n\tpub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n\tpub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n\tChoiceClass(ChoiceClass),\n\n\tInteger(i64),\n\n\tPurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n\tpub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n\tpub deep_value: Option<serde_json::Value>,\n\n\tpub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n\tpub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n\tInteger(i64),\n\n\tPurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       12,
+       30,
+       37
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       17,
+       75,
+       42
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n  pub name: String,\n\n  pub count: i64,\n\n  pub ratio: f64,\n\n  pub flag: bool,\n\n  pub tags: Vec<String>,\n\n  pub nested: Nested,\n\n  pub maybe: Option<serde_json::Value>,\n\n  pub choice: Vec<ChoiceElement>,\n\n  pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n  pub k1: K1,\n\n  pub k2: K1,\n\n  pub k3: K1,\n\n  pub k4: K1,\n\n  pub k5: K1,\n\n  pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n  pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n  ChoiceClass(ChoiceClass),\n\n  Integer(i64),\n\n  PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n  pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n  pub deep_value: Option<serde_json::Value>,\n\n  pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n  pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n  Integer(i64),\n\n  PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       13,
+       30,
+       38
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       18,
+       75,
+       43
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "density": "sparse"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Unknown value sparse for option density",
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "visibility": ""
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub name: String,\n\n    pub count: i64,\n\n    pub ratio: f64,\n\n    pub flag: bool,\n\n    pub tags: Vec<String>,\n\n    pub nested: Nested,\n\n    pub maybe: Option<serde_json::Value>,\n\n    pub choice: Vec<ChoiceElement>,\n\n    pub by_key: ByKey,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ByKey {\n    pub k1: K1,\n\n    pub k2: K1,\n\n    pub k3: K1,\n\n    pub k4: K1,\n\n    pub k5: K1,\n\n    pub k6: K1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct K1 {\n    pub v: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ChoiceElement {\n    ChoiceClass(ChoiceClass),\n\n    Integer(i64),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ChoiceClass {\n    pub z: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Nested {\n    pub deep_value: Option<serde_json::Value>,\n\n    pub items: Vec<Item>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item {\n    pub id: Id,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Id {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       30,
+       15,
+       30,
+       40
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       20,
+       75,
+       45
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "rust-options"
+}

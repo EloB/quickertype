@@ -1,0 +1,49 @@
+### stream-typescript
+0: string | 0 | 1 enums: \u001b (1), ...
+1: string | 1 | 2 enums: c0 (5), ...
+2: array | children 1 | 2
+3: integer | 3
+4: class TopLevel | children 3,0,2 | 4 | given TopLevel ()
+props 4: "#{1+1}":3, "literal":0, "values":2
+### api-typescript
+0: string | 1 enums: \u001b (1), ...
+1: string | 2 enums: c0 (5), ...
+2: array | children 1
+3: integer
+4: class TopLevel | children 3,0,2 | given TopLevel ()
+props 4: "literal":0, "values":2, "#{1+1}":3
+### stream-schema
+0: string | 1 enums: \u001b (1), ...
+1: string | 2 enums: c0 (5), ...
+2: array | children 1
+3: integer
+4: class TopLevel | children 3,0,2 | given TopLevel ()
+props 4: "literal":0, "values":2, "#{1+1}":3
+### api-csharp
+0: string | 0 | 1 enums: \u001b (1), ...
+1: string | 1 | 2 enums: c0 (5), ...
+2: array | children 1 | 2
+3: integer | 3
+4: class TopLevel | children 3,0,2 | 4 | given TopLevel ()
+props 4: "#{1+1}":3, "literal":0, "values":2
+### stream-kotlin
+0: string | 1 enums: \u001b (1), ...
+1: string | 2 enums: c0 (5), ...
+2: array | children 1
+3: integer
+4: class TopLevel | children 3,0,2 | given TopLevel ()
+props 4: "literal":0, "values":2, "#{1+1}":3
+### api-swift
+0: string | 1 enums: \u001b (1), ...
+1: string | 2 enums: c0 (5), ...
+2: array | children 1
+3: integer
+4: class TopLevel | children 3,0,2 | given TopLevel ()
+props 4: "literal":0, "values":2, "#{1+1}":3
+### stream-python
+0: string | 0 | 1 enums: \u001b (1), ...
+1: string | 1 | 2 enums: c0 (5), ...
+2: array | children 1 | 2
+3: integer | 3
+4: class TopLevel | children 3,0,2 | 4 | given TopLevel ()
+props 4: "literal":0, "values":2, "#{1+1}":3

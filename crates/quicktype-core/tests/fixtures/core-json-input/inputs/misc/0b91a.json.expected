@@ -1,0 +1,182 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: null | 14
+15: string | 15 | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10 | 16
+17: array | children 16 | 17
+18: class TopLevel | children 5,17 | 18 | given TopLevel ()
+props 2: "developerMessage":1, "status":0
+props 3: "count":0, "page":0, "pagesize":0
+props 5: "executionTime":4, "responseInfo":2, "resultset":3
+props 12: "name":11, "uuid":10
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### api-typescript
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10
+13: array | children 12
+14: null
+15: string | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10
+17: array | children 16
+18: class TopLevel | children 5,17 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### stream-schema
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10
+13: array | children 12
+14: null
+15: string | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10
+17: array | children 16
+18: class TopLevel | children 5,17 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: null | 14
+15: string | 15 | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10 | 16
+17: array | children 16 | 17
+18: class TopLevel | children 5,17 | 18 | given TopLevel ()
+props 2: "developerMessage":1, "status":0
+props 3: "count":0, "page":0, "pagesize":0
+props 5: "executionTime":4, "responseInfo":2, "resultset":3
+props 12: "name":11, "uuid":10
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### stream-kotlin
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10
+13: array | children 12
+14: null
+15: string | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10
+17: array | children 16
+18: class TopLevel | children 5,17 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### api-swift
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10
+13: array | children 12
+14: null
+15: string | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10
+17: array | children 16
+18: class TopLevel | children 5,17 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 1 enums: Interpol Washington (2), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: null | 14
+15: string | 15 | enum with no cases,uri
+16: class | children 7,8,9,13,14,15,10 | 16
+17: array | children 16 | 17
+18: class TopLevel | children 5,17 | 18 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 16: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "number":14, "teaser":14, "title":8, "topic":7, "url":15, "uuid":10, "vuuid":10
+props 18: "metadata":5, "results":17

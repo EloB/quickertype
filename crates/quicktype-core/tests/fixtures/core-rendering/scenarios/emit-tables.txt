@@ -1,0 +1,25 @@
+# Tables pad every column but the last to the widest cell (UTF-16 widths),
+# including rows with fewer cells; names, modified and annotated cells count
+# with their serialized width.
+input schema TopLevel {"type": "object", "properties": {"short": {"type": "integer"}, "aVeryLongPropertyName": {"type": "string", "description": "A described property.\nSecond line."}, "mid": {"type": "boolean"}, "tail": {"type": "number", "description": "Tail."}}, "required": ["short"]}
+
+render probe {} script
+table [["a", "bbb", "c"], ["dddd"], ["😀", "e", "f"], []]
+indented
+table [[{"top": "TopLevel"}, " = ", "1;"], [{"mod": "upper", "s": ["x", {"top": "TopLevel"}]}, " = ", "2;"], [{"ann": "note", "s": "annotated"}, " = ", "3;"]]
+end
+table []
+line ["done"]
+end
+
+render probe {} script
+property-table 0
+end
+
+render probe {"alphabetize": true} script
+property-table 0
+end
+
+render probe {} script
+table [["a\nb", "c"]]
+end

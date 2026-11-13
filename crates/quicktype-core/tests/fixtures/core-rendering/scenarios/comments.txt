@@ -1,0 +1,29 @@
+# Comments: the four leading-comment shapes, delimiter-driven escapes (/* */,
+# {- -}, """ with the trailing-quote rule), splicing on a trailing
+# backslash, empty lines that trim the line start, and description splitting
+# and word wrapping (\r\n, U+0085, U+2028, tabs, long words, several
+# descriptions).
+input schema TopLevel {"type": "object", "description": "First line of the top-level description, long enough that word wrapping at ninety columns has to split it somewhere.\r\nSecond third\u0085fourth\n\n\tTabbed paragraph.", "properties": {"x": {"type": "string", "description": "Averyveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongword then more"}, "y": {"type": "string", "description": "   "}}}
+
+render probe {} script
+description-of 0
+property-table 0
+description ["one", "", "two"]
+comments ["plain", {"lines": ["a", "", "b"]}, {"descriptionBlock": ["desc"]}, {"customLines": ["custom", "*/ closing", "/* opening"], "beforeComment": "/**", "lineStart": " * ", "afterComment": " */"}]
+commentlines [["{- nested -}", "x -}"], {"lineStart": "-- ", "firstLineStart": "{-| "}]
+commentlines [["say \"hi\"", "path\\", "ends with quote\"", "escaped \\\"", "triple \"\"\" quotes"], {"beforeComment": "\"\"\"", "afterComment": "\"\"\"", "lineStart": "", "lineEnd": "\""}]
+commentlines [["", "x"], {"lineStart": "  ##  ", "lineEnd": ""}]
+end
+
+render probe {"probe": {"comment": "/// ", "splice": true}} script
+commentlines [["ends with backslash\\", "", "fine"], {}]
+comments [{"lines": ["two\\"]}]
+end
+
+render probe {"leadingComments": ["ignored by the probe"]} script
+line ["the probe does not read leadingComments"]
+end
+
+render rust {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block"]}, {"customLines": ["custom"], "lineStart": "// ", "beforeComment": "//--", "afterComment": "//--"}]}
+
+render rust {}

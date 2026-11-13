@@ -1,0 +1,56 @@
+### stream-typescript
+0: bool | 0
+1: integer | 1
+2: double | 2
+3: string | 3 | 1 enums: value (1), ...
+4: array | children 1 | 4
+5: class TopLevel | children 0,1,4,2,3 | 5 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "integers":4, "number":2, "string":3
+### api-typescript
+0: bool
+1: integer
+2: double
+3: string | 1 enums: value (1), ...
+4: array | children 1
+5: class TopLevel | children 0,1,4,2,3 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "number":2, "string":3, "integers":4
+### stream-schema
+0: bool
+1: integer
+2: double
+3: string | 1 enums: value (1), ...
+4: array | children 1
+5: class TopLevel | children 0,1,4,2,3 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "number":2, "string":3, "integers":4
+### api-csharp
+0: bool | 0
+1: integer | 1
+2: double | 2
+3: string | 3 | 1 enums: value (1), ...
+4: array | children 1 | 4
+5: class TopLevel | children 0,1,4,2,3 | 5 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "integers":4, "number":2, "string":3
+### stream-kotlin
+0: bool
+1: integer
+2: double
+3: string | 1 enums: value (1), ...
+4: array | children 1
+5: class TopLevel | children 0,1,4,2,3 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "number":2, "string":3, "integers":4
+### api-swift
+0: bool
+1: integer
+2: double
+3: string | 1 enums: value (1), ...
+4: array | children 1
+5: class TopLevel | children 0,1,4,2,3 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "number":2, "string":3, "integers":4
+### stream-python
+0: bool | 0
+1: integer | 1
+2: double | 2
+3: string | 3 | 1 enums: value (1), ...
+4: array | children 1 | 4
+5: class TopLevel | children 0,1,4,2,3 | 5 | given TopLevel ()
+props 5: "boolean":0, "integer":1, "number":2, "string":3, "integers":4

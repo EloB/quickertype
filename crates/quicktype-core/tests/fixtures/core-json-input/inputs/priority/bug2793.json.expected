@@ -1,0 +1,63 @@
+### stream-typescript
+0: string | 0 | 1 enums: Accountnumber (1), ...
+1: string | 1 | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1 | 2
+3: class | 3
+4: class TopLevel | children 3,2 | 4 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Hints":3, "Labels":2
+### api-typescript
+0: string | 1 enums: Accountnumber (1), ...
+1: string | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1
+3: class
+4: class TopLevel | children 3,2 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Labels":2, "Hints":3
+### stream-schema
+0: string | 1 enums: Accountnumber (1), ...
+1: string | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1
+3: class
+4: class TopLevel | children 3,2 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Labels":2, "Hints":3
+### api-csharp
+0: string | 0 | 1 enums: Accountnumber (1), ...
+1: string | 1 | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1 | 2
+3: class | 3
+4: class TopLevel | children 3,2 | 4 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Hints":3, "Labels":2
+### stream-kotlin
+0: string | 1 enums: Accountnumber (1), ...
+1: string | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1
+3: class
+4: class TopLevel | children 3,2 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Labels":2, "Hints":3
+### api-swift
+0: string | 1 enums: Accountnumber (1), ...
+1: string | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1
+3: class
+4: class TopLevel | children 3,2 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Labels":2, "Hints":3
+### stream-python
+0: string | 0 | 1 enums: Accountnumber (1), ...
+1: string | 1 | 1 enums: Create new Service Address (1), ...
+2: class | children 0,1 | 2
+3: class | 3
+4: class TopLevel | children 3,2 | 4 | given TopLevel ()
+props 2: "AccountNumber":0, "Title":1
+props 3: 
+props 4: "Labels":2, "Hints":3

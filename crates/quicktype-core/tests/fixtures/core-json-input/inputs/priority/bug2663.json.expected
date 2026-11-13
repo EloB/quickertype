@@ -1,0 +1,42 @@
+### stream-typescript
+0: string | 0 | 1 enums: Marge (1), ...
+1: string | 1 | enum with no cases,date
+2: string | 2 | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | 3 | given TopLevel ()
+props 3: "birthday":1, "lastSeen":2, "name":0
+### api-typescript
+0: string | 1 enums: Marge (1), ...
+1: string | enum with no cases,date
+2: string | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | given TopLevel ()
+props 3: "name":0, "birthday":1, "lastSeen":2
+### stream-schema
+0: string | 1 enums: Marge (1), ...
+1: string | enum with no cases,date
+2: string | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | given TopLevel ()
+props 3: "name":0, "birthday":1, "lastSeen":2
+### api-csharp
+0: string | 0 | 1 enums: Marge (1), ...
+1: string | 1 | enum with no cases,date
+2: string | 2 | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | 3 | given TopLevel ()
+props 3: "birthday":1, "lastSeen":2, "name":0
+### stream-kotlin
+0: string | 1 enums: Marge (1), ...
+1: string | enum with no cases,date
+2: string | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | given TopLevel ()
+props 3: "name":0, "birthday":1, "lastSeen":2
+### api-swift
+0: string | 1 enums: Marge (1), ...
+1: string | enum with no cases,date
+2: string | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | given TopLevel ()
+props 3: "name":0, "birthday":1, "lastSeen":2
+### stream-python
+0: string | 0 | 1 enums: Marge (1), ...
+1: string | 1 | enum with no cases,date
+2: string | 2 | enum with no cases,date-time
+3: class TopLevel | children 1,2,0 | 3 | given TopLevel ()
+props 3: "name":0, "birthday":1, "lastSeen":2
