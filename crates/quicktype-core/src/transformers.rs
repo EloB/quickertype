@@ -236,7 +236,7 @@ fn are_equal(a: &Rc<Transformer>, b: &Rc<Transformer>) -> bool {
 /// `debugStringForType(t)`: the kind, and the kind of the transformation's
 /// final target if `t` has a transformation.
 fn debug_string_for_type(lookup: &dyn TypeLookup, t: TypeRef) -> Result<String> {
-    let target = lookup_follow_target_type(lookup, t)?;
+    let target = follow_target_type(lookup, t)?;
     let kind = lookup.lookup_kind(t)?;
     if target == t {
         return Ok(kind.as_str().to_owned());
@@ -1385,28 +1385,6 @@ pub fn make_transformation_attributes(transformation: Transformation) -> TypeAtt
 /// value (which the attribute module only knows as a trait object).
 pub fn downcast_transformation(xf: &dyn TransformationAttribute) -> Option<&Transformation> {
     xf.as_any().downcast_ref::<Transformation>()
-}
-
-/// `transformationForType(t)` over any [`TypeLookup`], including a graph
-/// still being built (the public version for frozen graphs is
-/// [`transformation_for_type`]).
-fn lookup_transformation_for_type(
-    lookup: &dyn TypeLookup,
-    t: TypeRef,
-) -> Result<Option<&dyn TransformationAttribute>> {
-    Ok(TransformationTypeAttributeKind
-        .try_get_in_attributes(lookup.lookup_attributes(t)?)
-        .map(|xf| xf.as_ref()))
-}
-
-/// `followTargetType(t)` over any [`TypeLookup`] (the public version for
-/// frozen graphs is [`follow_target_type`]).
-fn lookup_follow_target_type(lookup: &dyn TypeLookup, t: TypeRef) -> Result<TypeRef> {
-    let mut t = t;
-    while let Some(xf) = lookup_transformation_for_type(lookup, t)? {
-        t = xf.target_type();
-    }
-    Ok(t)
 }
 
 #[cfg(test)]

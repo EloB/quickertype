@@ -48,10 +48,10 @@ use crate::attributes::uri_attributes::{self, UriAttributes, UriTypeAttributeKin
 use crate::messages::Result;
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
 use crate::support::support::panic;
+use crate::transformers::TypeLookup;
 use crate::ty::provenance_type_attribute_kind::{self, ProvenanceTypeAttributeKind};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
-use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 
 /// The kinds of type attributes (`TypeAttributeKind` instances in
@@ -607,19 +607,21 @@ plain_attribute_kind!(
 );
 
 /// `transformationForType(t)` (`Transformers.ts`): the transformation
-/// attribute of `t`, if any.
-pub fn transformation_for_type(
-    graph: &TypeGraph,
+/// attribute of `t`, if any, in a frozen
+/// [`TypeGraph`](crate::ty::type_graph::TypeGraph) or a graph still being
+/// built (any [`TypeLookup`]).
+pub fn transformation_for_type<L: TypeLookup + ?Sized>(
+    graph: &L,
     t: TypeRef,
 ) -> Result<Option<Rc<dyn TransformationAttribute>>> {
     Ok(TransformationTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t)?)
+        .try_get_in_attributes(graph.lookup_attributes(t)?)
         .cloned())
 }
 
 /// `followTargetType(t)` (`Transformers.ts`): follows transformation target
 /// types from `t` until reaching a type without a transformation.
-pub fn follow_target_type(graph: &TypeGraph, mut t: TypeRef) -> Result<TypeRef> {
+pub fn follow_target_type<L: TypeLookup + ?Sized>(graph: &L, mut t: TypeRef) -> Result<TypeRef> {
     while let Some(xf) = transformation_for_type(graph, t)? {
         t = xf.target_type();
     }
