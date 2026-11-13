@@ -30,7 +30,6 @@ use quicktype_core::input::compressed_json::{
     CompressedJson, ParseError, ReadStringError, StringSampleLimits, TableCounts, Value,
 };
 use quicktype_core::support::integer_range::IntegerRange;
-use quicktype_js_compat::utf16;
 use wasm_bindgen::prelude::*;
 
 use crate::slots::Slots;
@@ -169,22 +168,19 @@ pub fn json_export(id: f64) -> JsValue {
     }) else {
         return JsValue::UNDEFINED;
     };
-    let (tables, _) = cjson.tables_up_to(committed, &[]);
+    let tables = cjson.joined_tables_up_to(committed);
     drop(cjson);
-    let lengths: Vec<u32> = tables
-        .strings
-        .iter()
-        .map(|s| utf16::len(s) as u32)
-        .collect();
-    let strings = tables.strings.concat();
     let object = Object::new();
     let set = |name: &str, value: &JsValue| {
         // Setting a property of a new plain object cannot fail.
         let _ = Reflect::set(&object, &JsValue::from_str(name), value);
     };
-    set("strings", &JsValue::from_str(&strings));
-    drop(strings);
-    set("stringLengths", &Uint32Array::from(lengths.as_slice()));
+    set("strings", &JsValue::from_str(&tables.strings));
+    drop(tables.strings);
+    set(
+        "stringLengths",
+        &Uint32Array::from(tables.string_lengths.as_slice()),
+    );
     set("objects", &Int32Array::from(tables.objects.as_slice()));
     set(
         "objectOffsets",
@@ -326,10 +322,14 @@ mod tests {
         assert_eq!(json_read(id, r#""not a root here""#), DECLINED);
         let all = cjson(id).to_tables(&[]).0;
         let committed = SAMPLES.with(|s| s.borrow().get(id).unwrap().committed);
-        let exported = cjson(id).tables_up_to(committed, &[]).0;
-        assert_eq!(exported.strings, ["date", "a", "x", "b"]);
+        let exported = cjson(id).joined_tables_up_to(committed);
+        assert_eq!(exported.strings, "dateaxb");
+        assert_eq!(exported.string_lengths, [4, 1, 1, 1]);
         assert_eq!(all.strings.len(), 5);
         assert_eq!(exported.objects, all.objects);
+        assert_eq!(exported.object_offsets, all.object_offsets);
+        assert_eq!(exported.arrays, all.arrays);
+        assert_eq!(exported.array_offsets, all.array_offsets);
         json_drop(id);
     }
 }

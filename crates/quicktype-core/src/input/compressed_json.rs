@@ -49,7 +49,7 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
-use crate::support::fast_hash::{BuildHasher, HashMap};
+use crate::support::fast_hash::BuildHasher;
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, defined, panic};
@@ -325,6 +325,11 @@ impl<T: Copy> Runs<T> {
 
     fn iter(&self) -> impl Iterator<Item = &[T]> {
         (0..self.len()).filter_map(|i| self.get(i))
+    }
+
+    /// How many items the first `count` runs have.
+    fn total_len(&self, count: usize) -> usize {
+        self.spans.iter().take(count).map(|s| s.len as usize).sum()
     }
 }
 
@@ -919,37 +924,74 @@ impl CompressedJson {
     /// [`CompressedJson::from_tables`]. For samples read here, these are
     /// the very tables TypeScript builds from the same samples.
     pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
-        self.tables_up_to(self.table_counts(), roots)
+        let mut strings = Vec::new();
+        let (runs, roots) = self.export(self.table_counts(), roots, &mut strings);
+        let tables = CompressedJsonTables {
+            strings,
+            objects: runs.objects,
+            object_offsets: runs.object_offsets,
+            arrays: runs.arrays,
+            array_offsets: runs.array_offsets,
+        };
+        (tables, roots)
     }
 
-    /// [`to_tables`](Self::to_tables) of the first `counts` strings,
-    /// objects and arrays: the tables as they were when there were that
-    /// many (a compressed form only ever grows).
-    pub fn tables_up_to(
+    /// The tables of the first `counts` strings, objects and arrays (the
+    /// tables as they were when there were that many: a compressed form
+    /// only ever grows) as the JavaScript facade receives them: like
+    /// [`to_tables`](Self::to_tables), with the strings written back to
+    /// back, straight from the string table, and their lengths in UTF-16
+    /// code units.
+    pub fn joined_tables_up_to(&self, counts: TableCounts) -> JoinedTables {
+        let mut strings = (String::new(), Vec::new());
+        let (runs, _) = self.export(counts, &[], &mut strings);
+        JoinedTables {
+            strings: strings.0,
+            string_lengths: strings.1,
+            objects: runs.objects,
+            object_offsets: runs.object_offsets,
+            arrays: runs.arrays,
+            array_offsets: runs.array_offsets,
+        }
+    }
+
+    /// Writes the first `counts.strings` strings to `strings`, and returns
+    /// the first `counts` objects and arrays, and `roots`, encoded against
+    /// them. Every string format interned its name; should one not have
+    /// (or not among those strings), its name is appended.
+    fn export(
         &self,
         counts: TableCounts,
         roots: &[Value],
-    ) -> (CompressedJsonTables, Vec<i32>) {
-        let mut strings: Vec<String> = self
-            .strings
-            .iter()
-            .take(counts.strings)
-            .map(str::to_owned)
-            .collect();
-        // Every string format interned its name; should one not have,
-        // its name is appended.
-        let mut appended: HashMap<TypeKind, u32> = HashMap::default();
+        strings: &mut impl StringsOut,
+    ) -> (EncodedRuns, Vec<i32>) {
+        let texts = || self.strings.iter().take(counts.strings);
+        strings.reserve(counts.strings, texts().map(str::len).sum());
+        for text in texts() {
+            strings.push(text);
+        }
+        // By `TypeKind as usize`: the string index of the kind's name,
+        // found once.
+        let mut kind_indexes: Vec<u32> = Vec::new();
         let mut encode = |v: Value| {
             self.encode_with(v, |kind| {
-                self.kind_name_index(kind).unwrap_or_else(|| {
-                    *appended.entry(kind).or_insert_with(|| {
-                        strings.push(kind.as_str().to_owned());
-                        (strings.len() - 1) as u32
-                    })
-                })
+                let k = kind as usize;
+                if k >= kind_indexes.len() {
+                    kind_indexes.resize(k + 1, NO_INDEX);
+                }
+                if kind_indexes[k] == NO_INDEX {
+                    kind_indexes[k] = self
+                        .kind_name_index(kind)
+                        .filter(|&i| (i as usize) < counts.strings)
+                        .unwrap_or_else(|| {
+                            strings.push(kind.as_str());
+                            (strings.len() - 1) as u32
+                        });
+                }
+                kind_indexes[k]
             })
         };
-        let mut objects = Vec::new();
+        let mut objects = Vec::with_capacity(2 * self.objects.total_len(counts.objects));
         let mut object_offsets = Vec::with_capacity(counts.objects);
         for object in self.objects.iter().take(counts.objects) {
             object_offsets.push(objects.len() as u32);
@@ -958,21 +1000,20 @@ impl CompressedJson {
                 objects.push(encode(value));
             }
         }
-        let mut arrays = Vec::new();
+        let mut arrays = Vec::with_capacity(self.arrays.total_len(counts.arrays));
         let mut array_offsets = Vec::with_capacity(counts.arrays);
         for array in self.arrays.iter().take(counts.arrays) {
             array_offsets.push(arrays.len() as u32);
             arrays.extend(array.iter().map(|&v| encode(v)));
         }
         let roots = roots.iter().map(|&v| encode(v)).collect();
-        let tables = CompressedJsonTables {
-            strings,
+        let runs = EncodedRuns {
             objects,
             object_offsets,
             arrays,
             array_offsets,
         };
-        (tables, roots)
+        (runs, roots)
     }
 
     /// Imports the tables a JavaScript `CompressedJSON` built (the facade's
@@ -1350,6 +1391,73 @@ pub struct CompressedJsonTables {
     pub array_offsets: Vec<u32>,
 }
 
+/// [`CompressedJsonTables`] with the strings joined, as the JavaScript
+/// facade receives them ([`CompressedJson::joined_tables_up_to`]).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JoinedTables {
+    /// The string table's strings, back to back.
+    pub strings: String,
+    /// Each string's length in UTF-16 code units.
+    pub string_lengths: Vec<u32>,
+    /// As in [`CompressedJsonTables`].
+    pub objects: Vec<i32>,
+    /// As in [`CompressedJsonTables`].
+    pub object_offsets: Vec<u32>,
+    /// As in [`CompressedJsonTables`].
+    pub arrays: Vec<i32>,
+    /// As in [`CompressedJsonTables`].
+    pub array_offsets: Vec<u32>,
+}
+
+/// The encoded objects and arrays of an export ([`CompressedJson::export`]).
+struct EncodedRuns {
+    objects: Vec<i32>,
+    object_offsets: Vec<u32>,
+    arrays: Vec<i32>,
+    array_offsets: Vec<u32>,
+}
+
+/// Where an export writes the string table: a string per string
+/// ([`CompressedJsonTables`]), or the strings joined with their UTF-16
+/// lengths ([`JoinedTables`]).
+trait StringsOut {
+    /// Makes room for `count` more strings of `bytes` in all.
+    fn reserve(&mut self, count: usize, bytes: usize);
+    fn push(&mut self, s: &str);
+    /// How many strings there are.
+    fn len(&self) -> usize;
+}
+
+impl StringsOut for Vec<String> {
+    fn reserve(&mut self, count: usize, _bytes: usize) {
+        Vec::reserve_exact(self, count);
+    }
+
+    fn push(&mut self, s: &str) {
+        Vec::push(self, s.to_owned());
+    }
+
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+impl StringsOut for (String, Vec<u32>) {
+    fn reserve(&mut self, count: usize, bytes: usize) {
+        self.0.reserve_exact(bytes);
+        self.1.reserve_exact(count);
+    }
+
+    fn push(&mut self, s: &str) {
+        self.0.push_str(s);
+        self.1.push(utf16::len(s) as u32);
+    }
+
+    fn len(&self) -> usize {
+        self.1.len()
+    }
+}
+
 /// `makeValue(tag, index)`: `t | (index << TAG_BITS)` on JavaScript's
 /// 32-bit integers.
 fn encode_tagged(tag: i32, index: u32) -> i32 {
@@ -1611,5 +1719,46 @@ mod tests {
         assert!(
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &bad).is_err()
         );
+    }
+
+    /// The joined tables are the tables, with the strings back to back
+    /// and their UTF-16 lengths; up to a count, those of that prefix.
+    #[test]
+    fn joined_tables() {
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        r.parse_string(
+            r#"{"d":"2020-01-01","é":["😀x",{"k":"6ba7b810-9dad-11d1-80b4-00c04fd430c8"}]}"#,
+        )
+        .unwrap();
+        let first = r.table_counts();
+        r.parse_string(r#"[{"t":"12:30:00","d":"2021-01-01"}, "y"]"#)
+            .unwrap();
+        let joined = |r: &CompressedJson, counts| {
+            let j = r.joined_tables_up_to(counts);
+            let (whole, _) = r.to_tables(&[]);
+            assert_eq!(j.strings, whole.strings[..j.string_lengths.len()].concat());
+            let lengths: Vec<u32> = whole.strings[..j.string_lengths.len()]
+                .iter()
+                .map(|s| utf16::len(s) as u32)
+                .collect();
+            assert_eq!(j.string_lengths, lengths);
+            j
+        };
+        let all = joined(&r, r.table_counts());
+        let (tables, _) = r.to_tables(&[]);
+        assert_eq!(all.objects, tables.objects);
+        assert_eq!(all.object_offsets, tables.object_offsets);
+        assert_eq!(all.arrays, tables.arrays);
+        assert_eq!(all.array_offsets, tables.array_offsets);
+        let prefix = joined(&r, first);
+        assert_eq!(prefix.string_lengths.len(), first.strings);
+        assert_eq!(prefix.object_offsets.len(), first.objects);
+        assert_eq!(prefix.array_offsets.len(), first.arrays);
+        assert_eq!(prefix.objects, all.objects[..prefix.objects.len()]);
+        // Imported tables, whose kind names are found by their text.
+        let imported =
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
+                .unwrap();
+        assert_eq!(imported.joined_tables_up_to(imported.table_counts()), all);
     }
 }
