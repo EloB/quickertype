@@ -182,17 +182,19 @@ Hosts without `FinalizationRegistry` read every sample with TypeScript.
 ## Loading
 
 The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
-(4.9 MiB, 1.6 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
+(4.9 MiB, 1.8 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
 (`dist/esm/`) builds.
 
-- **Node**: nothing happens at import. The first run reads and compiles the
-  file synchronously, so `quicktypeMultiFileSync` works from the start.
+- **Node**: nothing happens at import. The first run (or the first JSON
+  sample added) reads and compiles the file synchronously, so
+  `quicktypeMultiFileSync` works from the start.
 - **Browsers**: the ES module build starts `WebAssembly.compileStreaming` at
   import, from `new URL("../../../native/wasm/quicktype_wasm_bg.wasm",
   import.meta.url)`, which bundlers with asset support (Vite, webpack 5,
   Parcel) emit as an asset. `quicktype()` waits for it;
   `quicktypeMultiFileSync` uses the engine once it is ready and the TypeScript
-  engine until then. With the TypeScript engine forced (`"ts"`, set before
+  engine until then, and JSON samples added before it is ready are read by
+  TypeScript. With the TypeScript engine forced (`"ts"`, set before
   the import), nothing is fetched or compiled; should the mode change later,
   the first run that may use the engine loads it.
 - **Bundlers without asset support** (esbuild, an iife bundle): set
@@ -210,6 +212,14 @@ not compile, or it does not instantiate as this engine), every run uses the
 TypeScript engine. Loading is not tried again on each run, unless a different
 module is supplied.
 
+The module uses the WebAssembly features Rust's `wasm32-unknown-unknown`
+target enables by default (bulk memory, multi-value, mutable globals,
+non-trapping float-to-int conversions, reference types and sign extension),
+so the engine runs in Chrome and Edge 96, Firefox 79 and Safari 15 and
+later, and in every Node this package supports (20 and later). Where the
+module does not compile, everything runs on the TypeScript engine, as
+above.
+
 ## Building and testing
 
 Needs Rust (with the `wasm32-unknown-unknown` target), `wasm-bindgen-cli` in
@@ -218,19 +228,28 @@ the version of the `wasm-bindgen` crate (`cargo install wasm-bindgen-cli
 
 ```sh
 npm install
-npm run build                  # cargo build (release, wasm32) + wasm-bindgen + tsc (CJS and ESM)
-npm test                       # package checks, engine tests (pow vectors, concurrency, traps)
+npm run build                  # cargo build (release, wasm32) + wasm-bindgen + wasm-opt -O3 + tsc (CJS and ESM)
+npm test                       # package checks, engine tests (pow vectors, concurrency, traps, samples)
+node --expose-gc test/bench/compare.mjs [--browser] [--cold N]   # WebAssembly against TypeScript
 npm run test:differential      # same API calls against the reference quicktype-core and this package
 npm run test:browser           # headless Chrome: bundled with esbuild, run in a page
 npm run check:upstream         # src/ is still upstream's (needs a quicktype checkout)
 ```
 
+`wasm-opt` is binaryen's, pinned in devDependencies (`--no-wasm-opt` skips
+it). The engine's global allocator is Rust's own (dlmalloc) growing the
+WebAssembly memory geometrically (`crates/quicktype-wasm/src/allocator.rs`):
+growing it a page at a time made runs with outputs of millions of lines
+superlinear. Neither changes what a run computes.
+
 The differential suite (`test/differential/`) compares results (every file,
 line and annotation), errors and console output of: the golden corpus
 replayed through the API, every input × every language with default
 options, ports of quicktype's API-level unit tests, JSON Schema store paths
-(lazy fetch order, failures, concurrency, re-entrancy), errors and options.
-The reference is the built `packages/quicktype-core` of a quicktype checkout
+(lazy fetch order, failures, concurrency, re-entrancy), errors and options,
+and JSON samples as the engine reads them (errors from `addSource`, the
+inputs' private state, key order, numbers, deep nesting, repeated and
+concurrent use; category `samples`). The reference is the built `packages/quicktype-core` of a quicktype checkout
 (`$QUICKTYPE_REFERENCE`, or `../quicktype` / `../../quicktype` next to the
 repository), else this package's own TypeScript engine. Identical results
 are reported by where they ran: on WebAssembly, on the TypeScript fallback
