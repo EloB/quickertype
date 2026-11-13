@@ -8,7 +8,10 @@
 //! with the golden recording (and, for cases without `--quiet`, the issue
 //! annotations that the CLI prints to stderr). Node is not needed.
 //!
-//! Set `RENDER_CASES_FILTER=<substring>` to run a subset.
+//! Set `RENDER_CASES_FILTER=<substring>` to run a subset, and
+//! `RENDER_CASES_LANG=<lang>[,<lang>...]` to run only the cases rendered
+//! with those languages. With `RENDER_CASES_DUMP=<dir>`, the actual output
+//! of every differing file is written to `<dir>/<case file>.<file name>`.
 
 mod render_support;
 
@@ -38,6 +41,14 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
         let serialized = &result[name];
         let actual = serialized.lines.join("\n");
         if actual != expected {
+            if let Ok(dir) = std::env::var("RENDER_CASES_DUMP") {
+                let id = fixture["id"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .replace('/', "__");
+                let _ = fs::create_dir_all(&dir);
+                let _ = fs::write(Path::new(&dir).join(format!("{id}.{name}")), &actual);
+            }
             return Err(format!(
                 "{name} differs at {}",
                 first_difference(&expected, &actual)
@@ -73,6 +84,8 @@ fn render_cases_match_reference() {
     let dir = manifest.join("tests/fixtures/core-rendering/cases");
     let golden_dir = manifest.join("../../tests/golden");
     let filter = std::env::var("RENDER_CASES_FILTER").unwrap_or_default();
+    let langs = std::env::var("RENDER_CASES_LANG").unwrap_or_default();
+    let langs: Vec<&str> = langs.split(',').filter(|l| !l.is_empty()).collect();
     let mut entries: Vec<_> = fs::read_dir(&dir)
         .unwrap()
         .map(|e| e.unwrap().path())
@@ -86,6 +99,10 @@ fn render_cases_match_reference() {
         let fixture: Value = serde_json::from_str(&text).unwrap();
         let id = fixture["id"].as_str().unwrap_or_default().to_owned();
         if !id.contains(&filter) {
+            continue;
+        }
+        let lang = fixture["render"]["lang"].as_str().unwrap_or_default();
+        if !langs.is_empty() && !langs.contains(&lang) {
             continue;
         }
         total += 1;
