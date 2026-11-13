@@ -31,7 +31,7 @@ use crate::number;
 pub mod parse;
 
 /// A JSON value. Objects keep their keys in insertion order.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum JsonValue {
     /// `null`.
     Null,
@@ -69,6 +69,81 @@ impl Drop for JsonValue {
             }
             // `child` is now childless and drops without recursing.
         }
+    }
+}
+
+/// Cloning never recurses either (the derived `clone` would, once per
+/// nesting level): a deep GraphQL schema shared by the queries of a
+/// directory used to overflow the stack here.
+impl Clone for JsonValue {
+    fn clone(&self) -> Self {
+        /// A collection being copied: what is done, and what is left.
+        enum Frame<'a> {
+            Array(Vec<JsonValue>, std::slice::Iter<'a, JsonValue>),
+            Object(
+                IndexMap<String, JsonValue>,
+                Option<&'a String>,
+                indexmap::map::Iter<'a, String, JsonValue>,
+            ),
+        }
+
+        /// A copied leaf, or the frame for a collection.
+        fn start(value: &JsonValue) -> Result<JsonValue, Frame<'_>> {
+            match value {
+                JsonValue::Null => Ok(JsonValue::Null),
+                JsonValue::Bool(b) => Ok(JsonValue::Bool(*b)),
+                JsonValue::Number(n) => Ok(JsonValue::Number(*n)),
+                JsonValue::String(s) => Ok(JsonValue::String(s.clone())),
+                JsonValue::Array(items) => {
+                    Err(Frame::Array(Vec::with_capacity(items.len()), items.iter()))
+                }
+                JsonValue::Object(map) => Err(Frame::Object(
+                    IndexMap::with_capacity(map.len()),
+                    None,
+                    map.iter(),
+                )),
+            }
+        }
+
+        let mut stack = match start(self) {
+            Ok(leaf) => return leaf,
+            Err(frame) => vec![frame],
+        };
+        let mut done: Option<JsonValue> = None;
+        while let Some(frame) = stack.last_mut() {
+            // Store the value just copied, then take the next child.
+            let next = match frame {
+                Frame::Array(items, rest) => {
+                    if let Some(value) = done.take() {
+                        items.push(value);
+                    }
+                    rest.next()
+                }
+                Frame::Object(map, key, rest) => {
+                    if let (Some(value), Some(k)) = (done.take(), key.take()) {
+                        map.insert(k.clone(), value);
+                    }
+                    rest.next().map(|(k, v)| {
+                        *key = Some(k);
+                        v
+                    })
+                }
+            };
+            match next {
+                Some(child) => match start(child) {
+                    Ok(leaf) => done = Some(leaf),
+                    Err(frame) => stack.push(frame),
+                },
+                None => {
+                    done = match stack.pop() {
+                        Some(Frame::Array(items, _)) => Some(JsonValue::Array(items)),
+                        Some(Frame::Object(map, _, _)) => Some(JsonValue::Object(map)),
+                        None => None,
+                    };
+                }
+            }
+        }
+        done.unwrap_or(JsonValue::Null)
     }
 }
 
@@ -358,6 +433,35 @@ pub(crate) fn array_index(key: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clones_keep_order_and_never_recurse() {
+        let v = parse(r#"{"b": [1, {"2": null, "a": "x"}, []], "1": true, "": {}}"#).unwrap();
+        assert_eq!(v.clone(), v);
+        assert_eq!(stringify(&v.clone(), None), stringify(&v, None));
+        assert_eq!(JsonValue::Number(-0.0).clone(), JsonValue::Number(0.0));
+
+        // A million levels, on the test thread's small stack.
+        let depth = 1_000_000;
+        let deep = parse(&format!(
+            "{}1{}",
+            r#"[{"a":"#.repeat(depth),
+            "}]".repeat(depth)
+        ))
+        .unwrap();
+        let mut copy = &deep.clone();
+        let mut levels = 0;
+        loop {
+            copy = match copy {
+                JsonValue::Array(items) if items.len() == 1 => &items[0],
+                JsonValue::Object(map) if map.len() == 1 => &map["a"],
+                _ => break,
+            };
+            levels += 1;
+        }
+        assert_eq!(levels, 2 * depth);
+        assert_eq!(*copy, JsonValue::Number(1.0));
+    }
 
     #[test]
     fn truthiness_and_property_reads_are_javascript_s() {
