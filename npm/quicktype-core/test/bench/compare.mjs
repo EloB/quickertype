@@ -54,12 +54,17 @@ const inputs = benchInputs
     .map(([name, make]) => ({ name, text: make() }));
 
 async function inNode() {
-    const sides = variants.map(([name, dir]) => ({
-        name,
-        qt: require(path.resolve(dir)),
-        stats: require(path.join(path.resolve(dir), "dist", "native", "bridge.js")).engineStats,
-        ts: false,
-    }));
+    const sides = variants.map(([name, dir]) => {
+        // Warm: the engine is loaded, as the page below loads it (a small
+        // JSON sample does not compile it).
+        require(path.join(path.resolve(dir), "dist", "native", "engine.js")).engineSync();
+        return {
+            name,
+            qt: require(path.resolve(dir)),
+            stats: require(path.join(path.resolve(dir), "dist", "native", "bridge.js")).engineStats,
+            ts: false,
+        };
+    });
     sides.push({ ...sides[0], name: tsSide, ts: true });
     return measure(sides, inputs, {
         ...(fixedRounds === undefined ? {} : { rounds: () => fixedRounds }),
