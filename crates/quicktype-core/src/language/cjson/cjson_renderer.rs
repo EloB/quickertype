@@ -76,11 +76,13 @@ pub fn c_string_escape(s: &str) -> String {
 /// start of `s`, if it is there.
 fn control_escape(s: &str) -> Option<u32> {
     let hex = s.strip_prefix("u00")?.get(..2)?;
-    let bytes = hex.as_bytes();
+    let &[high, low] = hex.as_bytes() else {
+        return None;
+    };
     let lower_hex = |b: u8| b.is_ascii_digit() || (b'a'..=b'f').contains(&b);
-    let matches = match bytes[0] {
-        b'0' | b'1' | b'8' | b'9' => lower_hex(bytes[1]),
-        b'7' => bytes[1] == b'f',
+    let matches = match high {
+        b'0' | b'1' | b'8' | b'9' => lower_hex(low),
+        b'7' => low == b'f',
         _ => false,
     };
     if !matches {
