@@ -5,7 +5,6 @@
 //! and wrapped in `z.lazy()`.
 
 use std::collections::{HashMap, HashSet};
-use std::io::Write;
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
@@ -19,6 +18,7 @@ use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     is_letter_or_underscore, split_into_words, string_escape, utf16_string_escape,
 };
+use crate::support::support::{console_error, console_warn};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::find_member;
 use quicktype_js_compat::number::to_string as js_number;
@@ -140,13 +140,6 @@ fn extract_underlying_typerefs(
     }
 
     Ok(type_refs)
-}
-
-/// `console.warn(message)`: a line on stderr.
-fn console_warn(message: &str) {
-    let mut stderr = std::io::stderr().lock();
-    let _ = stderr.write_all(message.as_bytes());
-    let _ = stderr.write_all(b"\n");
 }
 
 impl<'a> TypeScriptZodRenderer<'a> {
@@ -588,6 +581,12 @@ impl<'a> TypeScriptZodRenderer<'a> {
             }
         }
 
+        // Which indices are in `order` (TS searches `order` for the child).
+        let mut placed = vec![false; map_type.len()];
+        for &index in &order {
+            placed[index] = true;
+        }
+
         // defensive: make sure we don't loop forever, even complex sets
         // shouldn't require many passes
         const MAX_PASSES: u32 = 999;
@@ -600,16 +599,16 @@ impl<'a> TypeScriptZodRenderer<'a> {
                 let mut found_all_children = true;
                 for child_ref in &map_child_type_refs[index] {
                     // defensive: first check if there is a definition for the
-                    // referenced type (there should be: every class is a
-                    // named object, so TS's `console.error` for a missing one
-                    // is unreachable)
-                    if map_type_ref.contains(child_ref) {
-                        // find this child's ordinal, if it has already been
-                        // added
-                        let found = order
-                            .iter()
-                            .any(|&child_index| map_type_ref[child_index] == *child_ref);
-                        found_all_children = found_all_children && found;
+                    // referenced type (there should be)
+                    match index_for_type_ref.get(child_ref) {
+                        // whether this child has already been added
+                        Some(&child_index) => {
+                            found_all_children = found_all_children && placed[child_index];
+                        }
+                        None => console_error(&format!(
+                            "A child type reference was not found amongst all Object definitions! TypeRef: {}",
+                            child_ref.js_value()
+                        )),
                     }
                 }
 
@@ -617,6 +616,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
                     // insert index into order as we are safe to define this
                     // type
                     order.push(index);
+                    placed[index] = true;
                 } else {
                     // defer to a subsequent pass as we need to define other
                     // types
