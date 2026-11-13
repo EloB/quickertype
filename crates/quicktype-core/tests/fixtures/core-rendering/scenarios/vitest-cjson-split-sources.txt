@@ -1,0 +1,9 @@
+# test/unit/cjson-split-sources.test.ts: header/source pairs, one per type
+# with multi-source, quoted includes of generated headers, no file
+# including itself, and `.c` names from a trailing `.h` only.
+input jsonsamples TopLevel ["{\"child\": {\"n\": 1}, \"color\": \"red\", \"value\": 1}", "{\"child\": {\"n\": 2}, \"color\": \"green\", \"value\": \"s\"}"]
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source", "header-only": false}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source"}}
+render cjson {"filename": "my.house.h", "rendererOptions": {"header-only": false}}

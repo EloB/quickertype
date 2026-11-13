@@ -1,0 +1,7 @@
+# Shapes the cJSON renderer rejects with `panic("Invalid type")`: a
+# property whose items are arrays but whose type is not itself an array
+# or map (a nullable array of arrays, a nullable map of arrays).
+input schema TopLevel {"type": "object", "properties": {"x": {"type": ["array", "null"], "items": {"type": "array", "items": {"type": "integer"}}}}, "required": ["x"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}

@@ -1,0 +1,5 @@
+# `integer-size` int32_t: only 3000000000 becomes a double.
+input json TopLevel {"small": 100, "negative": -128, "medium": 300, "big": 3000000000, "list": [1, 200]}
+pipeline {"lang": "cjson", "rendererOptions": {"integer-size": "int32_t"}}
+
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"integer-size": "int32_t"}}

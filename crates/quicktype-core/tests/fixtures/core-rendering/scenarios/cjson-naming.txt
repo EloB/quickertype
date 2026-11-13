@@ -1,0 +1,10 @@
+# cJSON names: the global names (`CheckConstraint`, ...) are forbidden in
+# the type naming style, C and cJSON keywords are forbidden everywhere,
+# and union members named `bool` and `double` become `boolean` and
+# `number`.
+input json TopLevel {"check_constraint": {"a": 1}, "value_too_low_exception": {"b": 2}, "class_member_constraints": {"c": 3}, "int": 1, "struct": "s", "NULL": true, "Bool": 1, "String": "s", "switch": [true, 1.5, "x"], "enum": [1, true], "typedef": {"union": 1, "default": [false, 2.5]}}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "underscore-case", "member-style": "upper-underscore-case"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "camel-case", "member-style": "camel-case-upper-acronyms", "enumerator-style": "camel-case"}}
