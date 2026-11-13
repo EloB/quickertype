@@ -182,9 +182,38 @@ Scala3 → Circe/Upickle, Python → JSONPython) forward **every**
   (`JavaScriptState`) that every leaf owns next to its
   `ConvenienceRendererCore`.
 - **Family methods.** The base class's own methods (not hooks) become a
-  family trait with default bodies:
-  `trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> { fn js(&self) -> &JavaScriptState; fn emit_types(&mut self) -> Result<()> { ... } }`.
-  Leaves override them in their `impl JavaScriptRenderer`.
+  family trait, generated like the hooks from **one list** so that no
+  level can forget to forward one. The family keeps the list in a macro
+  of its own that passes a mode to `family_methods!` (entries use the hook
+  list's syntax, with `$crate::` paths for types):
+
+  ```rust
+  macro_rules! javascript_renderer_methods {
+      ($mode:tt) => {
+          $crate::family_methods! { $mode
+              /// `emitTypes()`.
+              [mut] emit_types() -> $crate::messages::Result<()>;
+              // ... every method of the TS base class
+          }
+      };
+  }
+  pub(crate) use javascript_renderer_methods;
+
+  pub trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> {
+      fn js(&self) -> &JavaScriptState;                          // state accessor
+      javascript_renderer_methods!([declare javascript_methods]); // defaults call it
+  }
+  ```
+
+  Each level has a *methods module* (`javascript_methods`,
+  `typescript_flow_base_methods`, `typescript_methods`) that glob-imports
+  the level above and defines the methods its class overrides, exactly
+  like the hooks modules below; `super.x()` is a call by path to the level
+  above. Every subclass implements the trait with
+  `javascript_renderer_methods!([forward typescript_methods]);`. A
+  mid-level class's *new* methods (`anyType`, `emitEnum`, ...) go in its
+  own subtrait (`TypeScriptFlowBaseRenderer<'a>: JavaScriptRenderer<'a>`),
+  which the leaves implement directly.
 - **Hooks.** Each level has a *hooks module* with one function per hook,
   named like the hook, taking the renderer first. It glob-imports the level
   above and defines only what this level overrides; an explicit item
