@@ -217,6 +217,12 @@ the others name the fix they need.
   from the state it would have; what the attempt did outside the inputs
   (store `fetch` calls, `--debug` output, `onTiming` calls) happens twice.
   Beyond that, only these differ:
+  - JSON samples of quicktype's own `CompressedJSONFromString` are read by
+    the engine as they are added, and its TypeScript tables are filled
+    when first used, by TypeScript reading the same texts (the package
+    README, "JSON samples"); until then `Object.getOwnPropertyDescriptor`
+    shows its four table fields (`_strings`, `_stringIndexes`, `_objects`,
+    `_arrays`) as accessors;
   - a custom `JSONSchemaStore` can return documents holding `undefined`
     (or functions, symbols, bigints), which `JSON.parse` and YAML never
     produce; the engine reads such a property as absent and such an array

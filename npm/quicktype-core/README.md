@@ -18,19 +18,23 @@ const { lines } = await quicktype({ inputData, lang: "typescript" });
 ## How it works
 
 `src/` is quicktype's `packages/quicktype-core/src` at the commit in
-`src/native/UPSTREAM.json`, byte for byte, except `Run.ts`: after `preRun()`
-it hands the run to the engine (`src/native/bridge.ts`) when the engine can
-do it exactly. Everything before that stays in TypeScript, so inputs are
-collected, JSON samples parsed (`JSON.parse`, V8's errors), schema text
-parsed (JSON, then YAML) and files and URLs read exactly as before. Each run
-is **one call** into `crates/quicktype-wasm`, carrying the inputs'
-`CompressedJSON` tables and normalized JSON Schema sources; the engine fetches
-`$ref`ed schemas through the input's own `JSONSchemaStore` while it builds
-types, at the points where TypeScript awaits them. Errors come back as
-quicktype's message kinds and are rebuilt with the TypeScript `messageError`,
-so `QuickTypeError`'s `messageName`, `message` and `properties` are the same;
-JavaScript exceptions are rethrown as the same class with the same message;
-whatever a store or `onTiming` throws is rethrown as is.
+`src/native/UPSTREAM.json`, byte for byte, except two files: `Run.ts`,
+which after `preRun()` hands the run to the engine (`src/native/bridge.ts`)
+when the engine can do it exactly, and `input/CompressedJSON.ts`, whose
+`CompressedJSONFromString.parseSync` lets the engine read a JSON sample
+before parsing it itself (see [JSON samples](#json-samples)). Everything
+else before the run stays in TypeScript, so inputs are collected, schema
+text parsed (JSON, then YAML) and files and URLs read exactly as before.
+Each run is **one call** into `crates/quicktype-wasm`, carrying the JSON
+inputs (the engine's own copy of their samples, or their `CompressedJSON`
+tables) and normalized JSON Schema sources; the engine fetches `$ref`ed
+schemas through the input's own `JSONSchemaStore` while it builds types,
+at the points where TypeScript awaits them. Errors come back as
+quicktype's message kinds and are rebuilt with the TypeScript
+`messageError`, so `QuickTypeError`'s `messageName`, `message` and
+`properties` are the same; JavaScript exceptions are rethrown as the same
+class with the same message; whatever a store or `onTiming` throws is
+rethrown as is.
 
 Runs the engine does not model use the original TypeScript engine, with the
 same results by construction:
@@ -58,7 +62,122 @@ they were.
 load the engine an error instead of a fallback. `engineStats` in
 `dist/native/bridge.js` counts the runs on each engine (`wasm`, `ts`) and
 the runs the engine declined (`unsupported`, by feature in
-`unsupportedBy`) or that were redone after it failed (`rerun`).
+`unsupportedBy`) or that were redone after it failed (`rerun`), the JSON
+samples the engine read (`samplesRead`) and the `CompressedJSON`s whose
+TypeScript tables were filled after all (`tablesFilled`).
+
+### JSON samples
+
+`JSONInput.addSource` and `addSourceSync` parse every sample on the spot
+(`CompressedJSONFromString.parseSync`: `JSON.parse`, then `process` the
+value into the `CompressedJSON`'s tables), and a run then reads those
+tables. Here the engine reads the sample instead, when it can, and keeps
+the result for the runs: parsing in TypeScript and converting the tables
+for every run are both skipped.
+
+**Design.** `parseSync` first asks `src/native/samples.ts`. For a
+`CompressedJSONFromString` that is exactly quicktype's (its prototype and
+own fields, a built-in date/time recognizer, a valid integer range) and a
+string sample that is well-formed UTF-16, while the engine is loaded and
+not forced off, that is **one engine call per sample**:
+`jsonRead(id, text)` reads the text with the port's `JSON.parse`-semantics
+reader (`CompressedJson::read_string_sample` in quicktype-core: V8's
+grammar, own-property order, the last of duplicate keys) into a compressed
+form held in WebAssembly memory, one per `CompressedJSON` (`id`, made by
+`jsonCreate` with the first sample), and returns the sample's root
+`Value`. `parseSync` returns it, and `JSONInput` stores it in `_topLevels`
+as it would its own. The `CompressedJSON`'s four table fields (`_strings`,
+`_stringIndexes`, `_objects`, `_arrays`) stay empty and become accessors:
+the first read or write of any of them fills all four by reading the
+recorded texts again, in order, with TypeScript's own `process`
+(`materialize`), and from then on the `CompressedJSON` is an ordinary one
+whose samples TypeScript reads. A run on the engine sends the compressed
+form's id instead of the tables (`kind: "jsonShared"`); a run on the
+TypeScript engine reads the tables, which fills them.
+
+The engine leaves a sample to TypeScript (after filling the tables, so
+that TypeScript continues from the state it would have) when it cannot
+return what TypeScript would: a root value that is a string (its `Value`
+is an index into TypeScript's string table, which the engine's does not
+mirror), nesting deeper than 256 levels (TypeScript's recursive `process`
+runs out of stack at a few thousand levels, earlier on a smaller or
+fuller stack; such a sample keeps whatever TypeScript does with it), a
+`\u` escape that leaves a surrogate unpaired (a Rust string cannot hold
+it), a configuration (`dateTimeRecognizer`, `handleRefs`,
+`supportedIntegerRange`) that changed since the first sample, a compressed
+form that a run is using right now, and an engine instance that failed.
+A sample that is not JSON is not read at all: the engine reports that it
+is not JSON, without changing anything, and `parseSync` goes on to
+`JSON.parse`, which throws.
+
+**Lifetime.** The compressed form lives as long as its `CompressedJSON`
+does, so that any number of runs can use it: a `FinalizationRegistry` on
+the `CompressedJSON` frees it once the input is collected (a run that
+never happens costs nothing beyond that), and filling the tables frees it
+at once. A run takes its own reference (an `Rc`) when it starts, so it
+keeps the samples it started with even if the `CompressedJSON` is
+collected or its tables filled meanwhile; the request keeps the
+`CompressedJSON` alive until the run has taken it. Runs at once on the
+same input share it. A sample added while a run holds it is left to
+TypeScript (the engine never changes a compressed form a run is reading).
+When an instance fails, its compressed forms are gone with it; the texts
+are still recorded, so the tables are filled by TypeScript the next time
+anything needs them, and a run whose samples were read by another
+instance than the one it would run on goes to the TypeScript engine.
+Hosts without `FinalizationRegistry` read every sample with TypeScript.
+
+**Why this cannot be told apart from TypeScript reading the samples:**
+
+- *Errors surface where they did.* `addSource`/`addSourceSync` still call
+  `parseSync` for each sample at the same point; only the engine's answer
+  differs. A sample that is not JSON reaches V8's `JSON.parse`, so the
+  error is V8's own, thrown from `addSource` as before, after the same
+  earlier samples were added to the tables. The engine's reader accepts
+  exactly V8's grammar (a port of `json-parser.cc`; checked against the
+  5,017 recorded `JSON.parse` vectors and seeded random documents and
+  mutations); should it ever reject a text V8 accepts, V8 parses it and
+  TypeScript continues (the tables are filled first). Samples that are
+  not strings, and every sample of other `CompressedJSON`s, take
+  TypeScript's path untouched.
+- *The same `Value`s.* A root `Value` is `tag | index << 4`. The engine
+  returns it only for roots whose index does not depend on the string
+  table: `null`, booleans, numbers (classified as `parsedNumberIsDouble`
+  does, from the same `f64` and range), strings over 64 code units, and
+  objects and arrays, which it numbers in the order they end, as
+  `process` interns them, counting every sample read into the same
+  `CompressedJSON`. So `_topLevels` holds the very numbers TypeScript
+  would put there.
+- *The same tables, whenever they are looked at.* The tables only change
+  when a sample is read, and only through these four fields, so any code
+  that could observe them (TypeScript's inference, `hashCode`,
+  `getStringForValue`, a user's `CompressedJSON` shared by inputs,
+  `JSON.stringify`, reading the private fields) goes through the
+  accessors first. Filling them runs TypeScript's own `JSON.parse` and
+  `process` on the same texts, in the same order, with the configuration
+  each was read with, starting from the empty tables the
+  `CompressedJSON` had (the engine only starts on a fresh one), with the
+  reading in progress (if a read touched a table first) set aside
+  meanwhile; the arrays and the object are the originals. The result is
+  the tables TypeScript would have built. The other fields a read creates
+  (`_ctx`, `_rootValue`) are created by the engine's reads as `process`
+  would create them, in the same order. What remains observable is that
+  `Object.getOwnPropertyDescriptor` shows the four fields as accessors
+  until they are first used.
+- *The same timing.* `parseSync` stays synchronous and `parse` still
+  awaits it once, so `addSource` settles after the same number of
+  microtask ticks, and concurrent `addSource` calls on one input
+  interleave their samples the same way.
+- *The same runs.* A run on the engine builds the same compressed form
+  from the shared samples that it would build from the tables (the
+  tables are its encoding), with the `_topLevels` read when the run
+  starts, as before. Reading samples prints nothing and reports no timing
+  in TypeScript, nor here; a run's `read input` timing covers inference
+  in both. `quicktypeMultiFileSync` uses the shared samples like
+  `quicktype()`; in a browser where the engine is not loaded yet,
+  samples are read by TypeScript in the first place.
+- *Everything else is TypeScript.* Whenever the engine does not take a
+  sample (see above), or the TypeScript engine runs, the tables are
+  filled first and TypeScript's code runs on the state it would have.
 
 ## Loading
 

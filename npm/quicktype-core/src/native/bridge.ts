@@ -50,6 +50,14 @@ export const engineStats = {
     rerun: 0,
     /** Store documents flattened for the engine (each object once per run). */
     documentsEncoded: 0,
+    /** JSON samples the engine read as they were added (samples.ts). */
+    samplesRead: 0,
+    /**
+     * `CompressedJSON`s whose samples the engine read and whose TypeScript
+     * tables were then filled after all (something read them, or a sample
+     * or run the engine does not take came along).
+     */
+    tablesFilled: 0,
     /** What the engine's last failure was (a panic message or an exception). */
     lastFailure: undefined as string | undefined,
 };
@@ -289,7 +297,7 @@ const abandoned = (() => {
  * discarded, and every run on it, this one included, is redone on the
  * TypeScript engine, which gives the result (or error) TypeScript gives.
  */
-function engineFailed(glue: WasmGlue, e: unknown): void {
+export function engineFailed(glue: WasmGlue, e: unknown): void {
     engineStats.lastFailure = lastPanic ?? String(e);
     lastPanic = undefined;
     discardEngine(glue);
@@ -679,6 +687,13 @@ export function runNative(
             return undefined;
         }
 
+        if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
+            // The instance that read the samples failed in the meantime.
+            engineStats.ts++;
+            engineStats.rerun++;
+            return undefined;
+        }
+
         if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
         return runOnEngine(glue, encoded, run, options);
     });
@@ -710,6 +725,12 @@ export function runNativeSync(
         }
 
         engineStats.ts++;
+        return undefined;
+    }
+
+    if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
+        engineStats.ts++;
+        engineStats.rerun++;
         return undefined;
     }
 

@@ -90,10 +90,14 @@ const glueExports = [
     "settle",
     "cancel",
     "supportsLanguage",
+    "jsonCreate",
+    "jsonRead",
+    "jsonDrop",
     "engineVersion",
     "__pow",
     "__panicForTests",
     "__pendingRuns",
+    "__jsonCount",
 ];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */

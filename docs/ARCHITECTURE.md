@@ -344,8 +344,13 @@ V8 in the last bit for some inputs. quicktype-wasm enables it.
 [`crates/quicktype-wasm`](../crates/quicktype-wasm/src/lib.rs) exports through
 `wasm-bindgen`: `runSync` (for `quicktypeMultiFileSync`); `start`, `poll`,
 `settle` and `cancel` (an async run as a future the facade polls, settling
-each schema fetch when its promise does); and `supportsLanguage`, which
-renders an empty graph (`has_renderer`) to learn whether a renderer is ported.
+each schema fetch when its promise does); `supportsLanguage`, which
+renders an empty graph (`has_renderer`) to learn whether a renderer is
+ported; and `jsonCreate`, `jsonRead` and `jsonDrop`
+([`samples.rs`](../crates/quicktype-wasm/src/samples.rs)), with which the
+facade has the engine read JSON samples as they are added and keep them,
+one compressed form per JavaScript `CompressedJSON`, for the runs that use
+them.
 The request is a flat wire format ([`wire.rs`](../crates/quicktype-wasm/src/wire.rs),
 read in `js.rs`; encoded by `npm/quicktype-core/src/native/encode.ts`), which
 [`assemble.rs`](../crates/quicktype-wasm/src/assemble.rs) turns into
@@ -355,7 +360,13 @@ read in `js.rs`; encoded by `npm/quicktype-core/src/native/encode.ts`), which
 [`npm/quicktype-core`](../npm/quicktype-core/README.md) is quicktype's own
 TypeScript API: `src/` is upstream's `packages/quicktype-core/src` byte for
 byte except `Run.ts`, which after `preRun()` calls `runNative`/`runNativeSync`
-in `src/native/bridge.ts`. Per run, the TypeScript engine is used when
+in `src/native/bridge.ts`, and `input/CompressedJSON.ts`, whose
+`CompressedJSONFromString.parseSync` first offers each JSON sample to the
+engine (`src/native/samples.ts`): the engine reads it with the port's
+`JSON.parse`-semantics reader (`CompressedJson::read_string_sample`) and
+returns the root `Value` TypeScript would have computed, and the
+TypeScript tables are filled, by TypeScript reading the same texts, only if
+something reads them (the package README has the argument). Per run, the TypeScript engine is used when
 `QUICKTYPE_ENGINE=ts` is set; when `encodeRun` finds something the engine
 does not model (a custom language, input, recognizer or attribute producer,
 an unusual option value, GraphQL input); when the `.wasm` cannot be loaded

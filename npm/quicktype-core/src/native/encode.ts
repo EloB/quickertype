@@ -13,11 +13,12 @@
 // `EnumOption.getEnumValue`). Every other run uses the TypeScript engine,
 // which gives the same result by construction.
 //
-// The request carries JSON samples as the tables of their
-// `CompressedJSON` (already parsed with `JSON.parse` semantics and V8's
-// error messages), and JSON Schema inputs as their already normalized
-// sources; the schemas themselves stay in JavaScript and are fetched
-// through the input's own store while the engine runs.
+// The request carries JSON samples as the id of the compressed form the
+// engine read them into as they were added (samples.ts), or else as the
+// tables of their `CompressedJSON` (parsed with `JSON.parse` and V8's error
+// messages), and JSON Schema inputs as their already normalized sources;
+// the schemas themselves stay in JavaScript and are fetched through the
+// input's own store while the engine runs.
 
 import { DefaultDateTimeRecognizer } from "../DateTime.js";
 import { CompressedJSONFromString } from "../input/CompressedJSON.js";
@@ -28,6 +29,10 @@ import { KotlinDateTimeRecognizer } from "../language/Kotlin/utils.js";
 import { SwiftDateTimeRecognizer } from "../language/Swift/utils.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
 
+import { currentEngine } from "./engine.js";
+import { sharedSamples } from "./samples.js";
+import type { WasmGlue } from "./wasm/glue.js";
+
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
 
 /** What the engine receives (crates/quicktype-wasm/src/js.rs). */
@@ -35,6 +40,13 @@ export interface EncodedRun {
     request: Record<string, unknown>;
     /** The JSON Schema inputs, by `storeId`. */
     schemaInputs: JSONSchemaInput[];
+    /**
+     * The engine instance holding the samples of `jsonShared` inputs: the
+     * run must go to that instance (or to the TypeScript engine).
+     */
+    sharedGlue?: WasmGlue;
+    /** The `CompressedJSON`s of `jsonShared` inputs, kept alive for the run. */
+    shared: object[];
 }
 
 const nativeInputsKey = Symbol.for("quicktype-core.nativeInputs");
@@ -53,7 +65,7 @@ function isNativeCompressedJSON(cjson: unknown): boolean {
     );
 }
 
-function dateTimeKind(recognizer: unknown): string | undefined {
+export function dateTimeKind(recognizer: unknown): string | undefined {
     if (recognizer === null || typeof recognizer !== "object") {
         return undefined;
     }
@@ -300,11 +312,38 @@ function encodeLeadingComments(comments: unknown): unknown {
     });
 }
 
-function encodeJSONInput(input: any): Record<string, unknown> {
+function encodeJSONInput(input: any, encoded: EncodedRun): Record<string, unknown> {
     const cjson = input._compressedJSON;
     if (!isNativeCompressedJSON(cjson)) fail();
     const dateTime = dateTimeKind(cjson.dateTimeRecognizer);
     if (dateTime === undefined) fail();
+
+    const topLevelNames: string[] = [];
+    const topLevelDescriptions: unknown[] = [];
+    const counts: number[] = [];
+    const samples: number[] = [];
+    for (const [name, topLevel] of input._topLevels as Map<string, any>) {
+        topLevelNames.push(name);
+        const description = topLevel.description;
+        if (description !== undefined && typeof description !== "string") fail();
+        topLevelDescriptions.push(description);
+        counts.push(topLevel.samples.length);
+        for (const sample of topLevel.samples) samples.push(sample);
+    }
+
+    const topLevels = {
+        topLevelNames,
+        topLevelDescriptions,
+        topLevelSampleCounts: new Uint32Array(counts),
+        topLevelSamples: new Int32Array(samples),
+    };
+    const glue = currentEngine();
+    const id = sharedSamples(cjson, glue, samples);
+    if (id !== undefined) {
+        encoded.sharedGlue = glue;
+        encoded.shared.push(cjson);
+        return { kind: "jsonShared", samples: id, ...topLevels };
+    }
 
     const strings: string[] = cjson._strings;
     const stringLengths = new Uint32Array(strings.length);
@@ -332,19 +371,6 @@ function encodeJSONInput(input: any): Record<string, unknown> {
     const [objects, objectOffsets] = flatten(cjson._objects);
     const [arrays, arrayOffsets] = flatten(cjson._arrays);
 
-    const topLevelNames: string[] = [];
-    const topLevelDescriptions: unknown[] = [];
-    const counts: number[] = [];
-    const samples: number[] = [];
-    for (const [name, topLevel] of input._topLevels as Map<string, any>) {
-        topLevelNames.push(name);
-        const description = topLevel.description;
-        if (description !== undefined && typeof description !== "string") fail();
-        topLevelDescriptions.push(description);
-        counts.push(topLevel.samples.length);
-        for (const sample of topLevel.samples) samples.push(sample);
-    }
-
     return {
         kind: "json",
         handleRefs: truthy(cjson.handleRefs),
@@ -355,10 +381,7 @@ function encodeJSONInput(input: any): Record<string, unknown> {
         objectOffsets,
         arrays,
         arrayOffsets,
-        topLevelNames,
-        topLevelDescriptions,
-        topLevelSampleCounts: new Uint32Array(counts),
-        topLevelSamples: new Int32Array(samples),
+        ...topLevels,
     };
 }
 
@@ -485,13 +508,14 @@ export function encodeRun(
         );
 
         const schemaInputs: JSONSchemaInput[] = [];
+        const encoded: EncodedRun = { request: {}, schemaInputs, shared: [] };
         const inputs: unknown[] = [];
         for (const input of (inputData as any)._inputs as Set<any>) {
             if (input === null || typeof input !== "object") fail();
             if (!hasOnlyBuiltinFields(input)) fail();
             const proto = Object.getPrototypeOf(input);
             if (proto === JSONInput.prototype && input.kind === "json") {
-                inputs.push(encodeJSONInput(input));
+                inputs.push(encodeJSONInput(input, encoded));
             } else if (proto === JSONSchemaInput.prototype && input.kind === "schema") {
                 inputs.push(encodeSchemaInput(input, schemaInputs.length));
                 schemaInputs.push(input);
@@ -512,7 +536,8 @@ export function encodeRun(
         };
         // (The JSON inputs' string tables were checked while encoding.)
         checkStrings({ ...request, inputs: inputs.map(withoutTables) });
-        return { request, schemaInputs };
+        encoded.request = request;
+        return encoded;
     } catch (e) {
         if (e === ineligible) return undefined;
         throw e;

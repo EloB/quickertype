@@ -181,6 +181,11 @@ export async function engineAsync(): Promise<WasmGlue | undefined> {
     return instantiate();
 }
 
+/** The engine instance runs use now, if there is one; loads nothing. */
+export function currentEngine(): WasmGlue | undefined {
+    return current;
+}
+
 /** Why the engine could not be loaded, if it could not. */
 export function engineLoadError(): unknown {
     return loadError;

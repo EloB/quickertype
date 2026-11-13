@@ -14,6 +14,10 @@ export interface WasmGlue {
     settle(id: number, callId: number, ok: boolean, value: unknown): void;
     cancel(id: number): void;
     supportsLanguage(name: string): boolean;
+    jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number;
+    jsonRead(id: number, text: string): number;
+    jsonDrop(id: number): void;
+    __jsonCount(): number;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
