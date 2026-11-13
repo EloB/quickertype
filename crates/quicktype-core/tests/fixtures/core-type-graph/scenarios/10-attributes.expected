@@ -1,0 +1,48 @@
+(forwarding intersections: false)
+0: integer | 1-10 | first, ...
+1: integer | 0-undefined
+2: integer | undefined-5 | anoth...
+3: string | "aaa" | unrestricted
+4: string | 2-4 | 1.5 | unrestricted
+5: bool | true
+6: null | null
+7: class C | children 0,1,2,3,4,5,6 | given C ()
+8: class D | children 1,2 | given D ()
+
+# unify
+reconstituting 7
+reconstituted 7 as 0
+reconstituting 0
+reconstituted 0 as 1
+reconstituting 1
+reconstituted 1 as 2
+replacing set 2,3 as 3
+replaced set 2,3 as 3
+reconstituting 4
+reconstituted 4 as 6
+reconstituting 5
+reconstituted 5 as 7
+reconstituting 6
+reconstituted 6 as 8
+reconstituting 8
+reconstituted 8 as 9
+0: class C | children 1,2,3,6,7,8 | given C ()
+1: integer | 1-10 | first, ...
+2: integer | 0-undefined
+3: union | children 4,5 | undefined-5 | anoth... | "aaa" | unrestricted
+4: integer | undefined-5 | anoth...
+5: string | "aaa" | unrestricted
+6: string | 2-4 | 1.5 | unrestricted
+7: bool | true
+8: null | null
+9: class D | children 2,3 | given D ()
+0: class C | children 1,2,3,6,7,8 | given C ()
+1: integer | 1-10 | first, ...
+2: integer | 0-undefined
+3: union | children 4,5 | undefined-5 | anoth... | "aaa" | unrestricted
+4: integer | undefined-5 | anoth...
+5: string | "aaa" | unrestricted
+6: string | 2-4 | 1.5 | unrestricted
+7: bool | true
+8: null | null
+9: class D | children 2,3 | given D ()

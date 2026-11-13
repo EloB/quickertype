@@ -1,0 +1,20 @@
+# Maps and objects with additional properties.
+builder
+prim i integer
+str s unrestricted
+prim any any
+map m1 i in=m
+map m2 i in=other
+obj o1 a:s i n=O1
+obj o2 b:i s n=O2
+obj o3 {} any n=O3
+umap um
+props um - s
+cls top m1:m1,m2:m2,o1:o1,o2:o2,o3:o3,um:um n=Top
+top Top top
+finish printonrewrite
+print
+unify 3,4
+print
+unify 5,6
+print

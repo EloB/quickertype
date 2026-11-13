@@ -1,0 +1,18 @@
+(forwarding intersections: false)
+0: integer
+1: class datum | children 0 | distance 1 datum,Person,Cookie,analysis,movie,Index ()
+2: class größe_ | children 0 | given größeWert,größeListe ()
+3: class ÉtatCivil | children 0 | given ÉtatCivil ()
+4: class Top | children 1,2,3 | given Top ()
+
+# GC
+0: class Top | children 1,3,4 | given Top ()
+1: class datum | children 2 | distance 1 datum,Person,Cookie,analysis,movie,Index ()
+2: integer
+3: class größe_ | children 2 | given größeWert,größeListe ()
+4: class ÉtatCivil | children 2 | given ÉtatCivil ()
+0: class Top | children 1,3,4 | given Top ()
+1: class datum | children 2 | distance 1 datum,Person,Cookie,analysis,movie,Index ()
+2: integer
+3: class größe_ | children 2 | given größeWert,größeListe ()
+4: class ÉtatCivil | children 2 | given ÉtatCivil ()

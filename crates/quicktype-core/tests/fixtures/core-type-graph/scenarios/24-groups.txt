@@ -1,0 +1,21 @@
+# makeGroupsToFlatten groups set operations by their recursive member sets.
+builder
+prim i integer
+str s unrestricted
+prim b bool
+union u1 i,s n=U1
+union u2 u1,s n=U2
+uunion u3 n=U3
+members u3 i
+union u4 s,i,b n=U4
+union u5 u4,u1 n=U5
+uinter x1 n=X1
+members x1 i
+cls top a:u1,b:u2,c:u3,d:u4,e:u5,f:x1 n=Top
+top Top top
+finish
+print
+query groups 3,4,5,6,7
+query groups 5,8
+query recmembers 7 union
+query canonical 5

@@ -1,0 +1,48 @@
+(forwarding intersections: false)
+0: integer Int | 0 | given Int ()
+1: any | 1
+2: string | 2 | unrestricted
+3: class A | children 0,2 | 3 | given A ()
+4: class B | children 0,1 | 4 | given B ()
+5: array | children 3 | 5
+6: class Top | children 5,4 | 6 | given Top ()
+
+# unify
+reconstituting 6
+reconstituted 6 as 0
+reconstituting 5
+reconstituted 5 as 1
+replacing set 3,4 as 2
+  reconstituting 0
+  reconstituted 0 as 3
+  reconstituting 2
+  reconstituted 2 as 4
+  reconstituting 1
+  reconstituted 1 as 5
+replaced set 3,4 as 2
+0: class Top | children 1,2 | 6 | given Top ()
+1: array | children 2 | 5
+2: class a | children 3,4,5 | 3,4 | given A,B ()
+3: integer Int | 0 | given Int ()
+4: string | 2 | unrestricted
+5: any | 1
+0: class Top | children 1,2 | 6 | given Top ()
+1: array | children 2 | 5
+2: class a | children 3,4,5 | 3,4 | given A,B ()
+3: integer Int | 0 | given Int ()
+4: string | 2 | unrestricted
+5: any | 1
+
+# GC
+0: class Top | children 1,2 | 6 | given Top ()
+1: array | children 2 | 5
+2: class a | children 3,4,5 | 3,4 | given A,B ()
+3: integer Int | 0 | given Int ()
+4: string | 2 | unrestricted
+5: any | 1
+0: class Top | children 1,2 | 6 | given Top ()
+1: array | children 2 | 5
+2: class a | children 3,4,5 | 3,4 | given A,B ()
+3: integer Int | 0 | given Int ()
+4: string | 2 | unrestricted
+5: any | 1

@@ -1,0 +1,14 @@
+# Remapping merges the attributes of every type mapped to a target.
+builder prov
+prim i integer n=Int
+prim d double n=Dbl
+str s unrestricted in=text
+cls a x:i,y:d n=A
+cls b x:d,y:s n=B
+cls top a:a,b:b n=Top
+top Top top
+finish printonrewrite
+print
+remap 1>0,2>0 debug
+print
+remap 1>0,0>1

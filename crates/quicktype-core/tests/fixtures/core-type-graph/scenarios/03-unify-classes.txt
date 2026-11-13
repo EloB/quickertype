@@ -1,0 +1,18 @@
+# Unifying classes like CombineClasses does.
+builder
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+cls a x:i,y:s n=Alpha
+cls b x:d,z?:nul n=Beta
+cls c y:s,w:i in=Gamma
+arr arr a
+cls top a:arr,b:b,c:c n=Top
+top Top top
+finish printonrewrite
+print
+unify 4,5,6 conflate debug
+print
+gc
+print

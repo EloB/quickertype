@@ -1,0 +1,7 @@
+(forwarding intersections: false)
+0: integer | 5-2
+1: integer | 6-2
+2: class A | children 0 | given A ()
+3: class B | children 1 | given B ()
+4: class Top | children 2,3 | given Top ()
+error: Invalid min-max constraint: 5-2

@@ -1,0 +1,20 @@
+# Singularized names (pluralize irregulars and the cookies special case) and
+# non-ASCII names combined by deduplication.
+builder
+prim i integer
+cls a x:i sing=data
+cls b x:i sing=People
+cls c x:i sing=Cookies
+cls d x:i sing=analyses
+cls e x:i sing=movies
+cls f x:i sing=Indices
+cls g y:i n=größeWert
+cls h y:i n=größeListe
+cls k z:i n=ÉtatCivil
+cls l z:i in=étatCivilCode
+cls top a:a,b:b,c:c,d:d,e:e,f:f,g:g,h:h,k:k,l:l n=Top
+top Top top
+finish printonrewrite
+print
+gc
+print

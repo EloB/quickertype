@@ -1,0 +1,16 @@
+# Recursive types through reserved refs, and forwarding intersections.
+builder
+reserve self
+prim i integer
+arr list self in=children
+ucls node open - n=Node fwd=self
+props node v:i,children?:list
+reserve f
+prim i2 integer in=again fwd=f
+cls wrapper a:f,b:i in=Wrapper
+top Tree node
+top W wrapper
+finish printonrewrite
+print
+rmind debug
+print

@@ -1,0 +1,6 @@
+builder
+prim i integer
+uunion u n=U
+members u i
+reserve r
+union e - n=Empty

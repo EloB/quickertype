@@ -3,6 +3,7 @@
 pub mod acronyms;
 pub mod acronyms_const;
 pub mod chance;
+pub mod collection_utils;
 pub mod comments;
 pub mod converters;
 pub mod integer_range;

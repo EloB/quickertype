@@ -1,0 +1,10 @@
+# Transformed string kinds map through the string type mapping.
+builder stm=string
+prim d date in=when
+prim u uuid
+prim t date-time
+str s unrestricted
+cls c d:d,u:u,t:t,s:s n=C
+top C c
+finish
+print

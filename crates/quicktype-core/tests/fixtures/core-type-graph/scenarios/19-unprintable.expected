@@ -1,0 +1,3 @@
+(forwarding intersections: false)
+0: integer
+error: Internal error: Defined value expected, but got undefined

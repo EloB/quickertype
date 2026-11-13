@@ -4,6 +4,13 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- **Phase 1 done.** Merged `feat/cli`, `feat/js-compat`,
+  `feat/core-type-graph` (each reviewed; all findings fixed or documented
+  under "Known gaps" in `docs/PARITY.md`). ~26k lines of Rust. Parity:
+  113/11,177 (all help, version and argument-error cases), 0 regressions.
+- Started Phase 2 (engine: JSON input, pipeline, rendering + Rust renderer,
+  JSON Schema input) and `feat/typescript-input` in parallel.
+
 - TypeScript-input spike (`docs/research/07-typescript-input.md`): feasible
   without Node via the TypeScript 7 native checker. 564/596 TS inputs give a
   byte-identical schema (94.6%); remaining diffs are union member order only

@@ -36,7 +36,7 @@ parallel; phases are ordered by dependency.
 - [x] Corpus self-check: 10,132/10,132 pass against the TypeScript CLI
 - [ ] Research notes per area (`docs/research/`)
 
-## Phase 1 — Leaf modules, data model, CLI (parallel) — in progress
+## Phase 1 — Leaf modules, data model, CLI (parallel) — ✅ done
 
 | WP | Branch | Scope |
 |---|---|---|
@@ -44,20 +44,21 @@ parallel; phases are ordered by dependency.
 | B | `feat/core-type-graph` | `ty/*`, `attributes/*`, `graph`, `graph_rewriting`, `union_builder`, `unify_classes`, `messages` (error type), `support/{support,chance}`, collection-utils hashing (`EqualityMap`). Graph printer identical to `--debug print-graph` for stage-by-stage diffing. |
 | C | `feat/cli` | CLI-behavior golden cases (help, version, stdout, stdin, directories, errors, a full renderer-option sweep per language); language registry + renderer option declarations; CLI parsing and exact `--help`/error output. |
 
-## Phase 2 — Engine (parallel, after Phase 1)
+## Phase 2 — Engine (parallel) — in progress
 
 | WP | Branch | Scope |
 |---|---|---|
-| D | `feat/core-json-input` | Two JSON readers (stream-json semantics for the CLI, `JSON.parse` semantics for the API), `CompressedJSON`, JSON inference, `Inputs`/`InputData`, string-type detection, inference-affecting language metadata |
-| E | `feat/core-pipeline` | `rewrites/*`, `MakeTransformations`, `Transformers`, `CycleBreaker`, `DeclarationIR`, `Run` |
-| F | `feat/core-rendering` | `Source`, `Renderer`, `ConvenienceRenderer`, `Naming`, `GatherNames`, renderer trait for all languages, `Comments`, `Converters` |
-| G | `feat/core-json-schema-input` | `JSONSchemaInput`, schema stores, `urijs` port, YAML |
+| D | `feat/core-json-input` | Two JSON readers (stream-json semantics for the CLI, `JSON.parse` semantics for the API), `CompressedJSON`, JSON inference, `Inputs` (`Input` trait, `InputData`, `JSONInput`), `RunContext`, `DateTime`, Postman input, inference-affecting language metadata (`stringTypeMapping`, `supports*`, date-time recognizers) |
+| E | `feat/core-pipeline` | `rewrites/*`, `MakeTransformations`, `Transformers`, `CycleBreaker`, `DeclarationIR` |
+| F | `feat/core-rendering` | `Source`, `Renderer`, `ConvenienceRenderer`, `Naming`, `GatherNames`, `Annotation`, `Comments`, `Converters`, the renderer trait; the Rust renderer as the first language |
+| G | `feat/core-json-schema-input` | `JSONSchemaInput`, schema stores, `urijs` port, YAML, schema attribute producers; `Input` glue after D lands |
 
-## Phase 3 — First end-to-end language: Rust
+## Phase 3 — Integration: first end-to-end language
 
-Rust (852 TS lines, 321 golden cases, no transformers or multi-file output)
-wired through the CLI, proving the whole pipeline; then Go as the second
-pilot (aligned tables, `DependencyName`, GraphQL).
+`Run` (the pipeline driver) and the CLI generation path, wiring JSON input,
+the rewrite pipeline and the Rust renderer end to end: the first
+golden-corpus passes for generated code. Then Go as the second pilot
+(aligned tables, `DependencyName`, GraphQL).
 
 ## Phase 4 — Language fan-out (parallel)
 
@@ -74,6 +75,12 @@ same files:
 | L6 | Ruby, Elixir, Python | 5.3k / 955 |
 | L7 | Swift, Objective-C, Dart | 5.0k / 1,025 |
 | L8 | Haskell, Scala 3, Smithy4s, PHP | 4.9k / 1,235 |
+
+Cross-cutting items each language package must pick up:
+
+- `TargetLanguage::supports_full_object_type()` returns `true` for
+  TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
+  `false`.
 
 ## Phase 5 — Remaining inputs
 

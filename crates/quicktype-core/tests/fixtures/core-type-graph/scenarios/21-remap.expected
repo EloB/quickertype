@@ -1,0 +1,28 @@
+(forwarding intersections: false)
+0: integer Int | 0 | given Int ()
+1: double Dbl | 1 | given Dbl ()
+2: string text | 2 | distance 1 text () | unrestricted
+3: class A | children 0,1 | 3 | given A ()
+4: class B | children 1,2 | 4 | given B ()
+5: class Top | children 3,4 | 5 | given Top ()
+
+# remap
+reconstituting 5 as 0
+reconstituted 5 as 0
+reconstituting 3 as 1
+reconstituted 3 as 1
+reconstituting 0 as 2
+reconstituted 0 as 2
+reconstituting 4 as 3
+reconstituted 4 as 3
+0: class Top | children 1,3 | 5 | given Top ()
+1: class A | children 2 | 3 | given A ()
+2: integer int | 0,1,2 | given Int,Dbl () | unrestricted
+3: class B | children 2 | 4 | given B ()
+0: class Top | children 1,3 | 5 | given Top ()
+1: class A | children 2 | 3 | given A ()
+2: integer int | 0,1,2 | given Int,Dbl () | unrestricted
+3: class B | children 2 | 4 | given B ()
+
+# remap
+error: Internal error: We have a type that's remapped to a remapped type

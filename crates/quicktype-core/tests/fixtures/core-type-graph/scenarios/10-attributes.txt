@@ -1,0 +1,19 @@
+# Identity attributes keep types apart; non-identity attributes merge.
+builder
+prim i1 integer mm=1:10 desc=first
+prim i2 integer mm=1:10 desc=second
+prim i3 integer mm=0:
+prim i4 integer mm=:5 desc=another-very-long-description
+str s1 unrestricted pat=^a+$ def=s:aaa
+str s2 unrestricted pat=^a+$ def=s:aaa
+str s3 unrestricted ml=2:4 def=n:1.5
+prim b bool def=b:true
+prim nul null def=null
+cls c a:i1,b:i2,c:i3,d:i4,e:s1,f:s2,g:s3,h:b,i:nul n=C
+cls d a:i3,b:i4 n=D
+top C c
+top D d
+finish printonrewrite
+print
+unify 2,3 debug
+print

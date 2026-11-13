@@ -1,0 +1,14 @@
+# Combining 1200 names makes a random name from the seeded generator.
+builder
+prim i integer
+cls a x:i many=a:600
+cls b x:i,y:i many=b:600
+cls c z:i many=c:999
+cls top a:a,b:b,c:c n=Top
+top Top top
+finish printonrewrite
+print
+unify 1,2
+print
+unify 1,3
+print
