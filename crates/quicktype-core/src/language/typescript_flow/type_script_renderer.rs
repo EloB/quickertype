@@ -6,18 +6,16 @@ use crate::attributes::constraints::min_max_items_for_type;
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::java_script_renderer::{
-    JavaScriptTypeAnnotations, javascript_methods, usage_module_name,
+    JavaScriptRenderer, JavaScriptState, javascript_renderer_methods,
 };
 use crate::source::{MultiWord, paren_if_needed, single_word};
-use crate::support::strings::{camel_case, utf16_string_escape};
+use crate::support::strings::utf16_string_escape;
 use crate::target_language::TargetLanguage;
-use crate::ty::type_utils::is_named_type;
 
 use super::type_script_flow_base_renderer::{
     TypeScriptFlowBaseRenderer, TypeScriptFlowOptions, TypeScriptFlowState,
     typescript_flow_base_methods,
 };
-use super::utils::ts_flow_type_annotations;
 
 /// An array type with a huge `minItems` would otherwise expand into an
 /// equally huge tuple type, so beyond this limit we fall back to a plain
@@ -40,6 +38,115 @@ mod typescript_hooks {
             .into_iter()
             .map(str::to_owned)
             .collect())
+    }
+}
+
+/// The `JavaScriptRenderer` methods TS `TypeScriptRenderer` overrides, on
+/// top of
+/// [`typescript_flow_base_methods`](super::type_script_flow_base_renderer::typescript_flow_base_methods).
+mod typescript_methods {
+    pub use crate::language::typescript_flow::type_script_flow_base_renderer::typescript_flow_base_methods::*;
+
+    use crate::convenience_renderer::prelude::*;
+    use crate::language::javascript::java_script_renderer::JavaScriptTypeAnnotations;
+    use crate::language::typescript_flow::type_script_flow_base_renderer::{
+        TypeScriptFlowBaseRenderer, typescript_flow_base_methods,
+    };
+    use crate::language::typescript_flow::utils::ts_flow_type_annotations;
+    use crate::support::strings::camel_case;
+    use crate::ty::type_utils::is_named_type;
+
+    /// `uncheckedParsedJson(t, parsedJson)`: with `raw-type any` and
+    /// `prefer-unknown` the deserializer's parameter is `unknown`, which
+    /// can't be returned as the target type without a cast.
+    pub fn unchecked_parsed_json<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        parsed_json: Source,
+    ) -> Result<Source> {
+        if typescript_flow_base_methods::needs_unchecked_cast(r) {
+            return Ok(sl![parsed_json, " as ", source_for(r, t)?.source]);
+        }
+
+        Ok(parsed_json)
+    }
+
+    /// `deserializerFunctionLine(t, name)`.
+    pub fn deserializer_function_line<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        name: Name,
+    ) -> Result<Source> {
+        let json_type = raw_type(r);
+        Ok(sl![
+            "public static to",
+            name,
+            "(json: ",
+            json_type,
+            "): ",
+            source_for(r, t)?.source
+        ])
+    }
+
+    /// `serializerFunctionLine(t, name)`.
+    pub fn serializer_function_line<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        name: Name,
+    ) -> Result<Source> {
+        let camel_case_name = modify_source(camel_case, name);
+        let return_type = raw_type(r);
+        Ok(sl![
+            "public static ",
+            camel_case_name,
+            "ToJson(value: ",
+            source_for(r, t)?.source,
+            "): ",
+            return_type
+        ])
+    }
+
+    /// `moduleLine`.
+    pub fn module_line<'a, R: TypeScriptFlowBaseRenderer<'a>>(_r: &R) -> Option<&'static str> {
+        Some("export class Convert")
+    }
+
+    /// `typeAnnotations`.
+    pub fn type_annotations<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        _r: &R,
+    ) -> Result<JavaScriptTypeAnnotations> {
+        Ok(ts_flow_type_annotations(": never"))
+    }
+
+    /// `emitModuleExports()`: nothing; `Convert` is exported.
+    pub fn emit_module_exports<'a, R: TypeScriptFlowBaseRenderer<'a>>(_r: &mut R) -> Result<()> {
+        Ok(())
+    }
+
+    /// `emitUsageImportComment(givenOutputFilename)`.
+    pub fn emit_usage_import_comment<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &mut R,
+        given_output_filename: &str,
+    ) -> Result<()> {
+        let mut top_level_names: Vec<Source> = Vec::new();
+        r.for_each_top_level_where(
+            BlankLinePosition::None,
+            |r, t| Ok(is_named_type(r.type_graph().type_at(t)?)),
+            |_, _, name, _| {
+                top_level_names.push(", ".into());
+                top_level_names.push(name.into());
+                Ok(())
+            },
+        )?;
+        let module_name = r.usage_module_name(given_output_filename);
+        r.emit_line(sl![
+            "//   import { Convert",
+            Source::Sequence(top_level_names),
+            " } from \"./",
+            module_name,
+            "\";"
+        ]);
+        Ok(())
     }
 }
 
@@ -69,19 +176,6 @@ impl<'a> TypeScriptRenderer<'a> {
             ts_flow: TypeScriptFlowState::new(options),
         }
     }
-
-    /// `this.sourceFor(t).source`.
-    fn source(&self, t: TypeRef) -> Result<Source> {
-        Ok(typescript_flow_base_methods::source_for(self, t)?.source)
-    }
-
-    /// The `jsonType`/`returnType` of the converter signatures.
-    fn raw_type(&self) -> &'static str {
-        match self.ts_flow.options.js.raw_type {
-            crate::language::javascript::language::RawType::Json => "string",
-            crate::language::javascript::language::RawType::Any => self.any_type(),
-        }
-    }
 }
 
 impl<'a> ConvenienceRenderer<'a> for TypeScriptRenderer<'a> {
@@ -94,6 +188,14 @@ impl<'a> ConvenienceRenderer<'a> for TypeScriptRenderer<'a> {
     }
 
     forward_convenience_renderer_hooks!(typescript_hooks);
+}
+
+impl<'a> JavaScriptRenderer<'a> for TypeScriptRenderer<'a> {
+    fn js(&self) -> &JavaScriptState {
+        &self.ts_flow.js
+    }
+
+    javascript_renderer_methods!([forward typescript_methods]);
 }
 
 impl<'a> TypeScriptFlowBaseRenderer<'a> for TypeScriptRenderer<'a> {
@@ -144,81 +246,6 @@ impl<'a> TypeScriptFlowBaseRenderer<'a> for TypeScriptRenderer<'a> {
         Ok(single_word(vec![Source::Sequence(source)]))
     }
 
-    /// `uncheckedParsedJson(t, parsedJson)`: with `raw-type any` and
-    /// `prefer-unknown` the deserializer's parameter is `unknown`, which
-    /// can't be returned as the target type without a cast.
-    fn unchecked_parsed_json(&self, t: TypeRef, parsed_json: Source) -> Result<Source> {
-        if typescript_flow_base_methods::needs_unchecked_cast(self) {
-            return Ok(sl![parsed_json, " as ", self.source(t)?]);
-        }
-
-        Ok(parsed_json)
-    }
-
-    /// `deserializerFunctionLine(t, name)`.
-    fn deserializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        let json_type = self.raw_type();
-        Ok(sl![
-            "public static to",
-            name,
-            "(json: ",
-            json_type,
-            "): ",
-            self.source(t)?
-        ])
-    }
-
-    /// `serializerFunctionLine(t, name)`.
-    fn serializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        let camel_case_name = modify_source(camel_case, name);
-        let return_type = self.raw_type();
-        Ok(sl![
-            "public static ",
-            camel_case_name,
-            "ToJson(value: ",
-            self.source(t)?,
-            "): ",
-            return_type
-        ])
-    }
-
-    /// `moduleLine`.
-    fn module_line(&self) -> Option<&'static str> {
-        Some("export class Convert")
-    }
-
-    /// `typeAnnotations`.
-    fn type_annotations(&self) -> Result<JavaScriptTypeAnnotations> {
-        Ok(ts_flow_type_annotations(": never"))
-    }
-
-    /// `emitModuleExports()`: nothing; `Convert` is exported.
-    fn emit_module_exports(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    /// `emitUsageImportComment(givenOutputFilename)`.
-    fn emit_usage_import_comment(&mut self, given_output_filename: &str) -> Result<()> {
-        let mut top_level_names: Vec<Source> = Vec::new();
-        self.for_each_top_level_where(
-            BlankLinePosition::None,
-            |r, t| Ok(is_named_type(r.type_graph().type_at(t)?)),
-            |_, _, name, _| {
-                top_level_names.push(", ".into());
-                top_level_names.push(name.into());
-                Ok(())
-            },
-        )?;
-        self.emit_line(sl![
-            "//   import { Convert",
-            Source::Sequence(top_level_names),
-            " } from \"./",
-            usage_module_name(given_output_filename),
-            "\";"
-        ]);
-        Ok(())
-    }
-
     /// `emitEnum(e, enumName)`.
     fn emit_enum(&mut self, e: TypeRef, enum_name: Name) -> Result<()> {
         let description = self.description_for_type(e)?;
@@ -242,20 +269,15 @@ impl<'a> TypeScriptFlowBaseRenderer<'a> for TypeScriptRenderer<'a> {
             }
             self.emit_line(sl!["export type ", enum_name, " = ", items, ";"]);
         } else {
-            javascript_methods::emit_block(
-                self,
-                sl!["export enum ", enum_name, " "],
-                "".into(),
-                |r| {
-                    r.for_each_enum_case(e, BlankLinePosition::None, |r, name, json_name, _| {
-                        r.emit_line(sl![
-                            name,
-                            format!(" = \"{}\",", utf16_string_escape(json_name))
-                        ]);
-                        Ok(())
-                    })
-                },
-            )?;
+            self.emit_block(sl!["export enum ", enum_name, " "], "".into(), |r| {
+                r.for_each_enum_case(e, BlankLinePosition::None, |r, name, json_name, _| {
+                    r.emit_line(sl![
+                        name,
+                        format!(" = \"{}\",", utf16_string_escape(json_name))
+                    ]);
+                    Ok(())
+                })
+            })?;
         }
         Ok(())
     }
@@ -267,7 +289,7 @@ impl<'a> TypeScriptFlowBaseRenderer<'a> for TypeScriptRenderer<'a> {
         } else {
             sl!["export interface ", class_name, " "]
         };
-        javascript_methods::emit_block(self, source, "".into(), |r| {
+        self.emit_block(source, "".into(), |r| {
             typescript_flow_base_methods::emit_class_block_body(r, c)
         })
     }

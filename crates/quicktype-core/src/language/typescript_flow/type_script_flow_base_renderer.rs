@@ -4,10 +4,11 @@
 //! interfaces and the TypeScript/Flow flavour of the JavaScript converters.
 //!
 //! TS `TypeScriptFlowBaseRenderer` extends `JavaScriptRenderer`. Its own
-//! methods, and the `JavaScriptRenderer` methods it or its subclasses
-//! override, are the [`TypeScriptFlowBaseRenderer`] trait; every
-//! implementor is a [`JavaScriptRenderer`] through a blanket impl that
-//! forwards those methods. Its hook overrides are
+//! methods are the [`TypeScriptFlowBaseRenderer`] trait (a subtrait of
+//! [`JavaScriptRenderer`]); its overrides of `JavaScriptRenderer` methods
+//! are in [`typescript_flow_base_methods`], which a subclass's methods
+//! module glob-imports and forwards with
+//! `javascript_renderer_methods!([forward ...])`; its hook overrides are
 //! [`typescript_flow_base_hooks`].
 
 use crate::convenience_renderer::prelude::*;
@@ -89,13 +90,10 @@ impl TypeScriptFlowState {
     }
 }
 
-/// The methods of TS `TypeScriptFlowBaseRenderer`, including the
-/// `JavaScriptRenderer` methods it or its subclasses override (forwarded
-/// to [`JavaScriptRenderer`] by a blanket impl). Defaults are the bodies
-/// in [`typescript_flow_base_methods`] or, for methods this class does not
-/// override, in
-/// [`javascript_methods`].
-pub trait TypeScriptFlowBaseRenderer<'a>: ConvenienceRenderer<'a> {
+/// The methods of TS `TypeScriptFlowBaseRenderer` that `JavaScriptRenderer`
+/// doesn't have. Defaults are the bodies in
+/// [`typescript_flow_base_methods`].
+pub trait TypeScriptFlowBaseRenderer<'a>: JavaScriptRenderer<'a> {
     /// The fields of TS `TypeScriptFlowBaseRenderer`.
     fn ts_flow(&self) -> &TypeScriptFlowState;
 
@@ -103,8 +101,6 @@ pub trait TypeScriptFlowBaseRenderer<'a>: ConvenienceRenderer<'a> {
     fn ts_flow_options(&self) -> &TypeScriptFlowOptions {
         &self.ts_flow().options
     }
-
-    // ---- TypeScriptFlowBaseRenderer's own methods ---------------------------
 
     /// `emptyObjectType`: how a class without properties is spelled, if
     /// it is collapsed.
@@ -136,165 +132,14 @@ pub trait TypeScriptFlowBaseRenderer<'a>: ConvenienceRenderer<'a> {
 
     /// `emitClassBlock(c, className)`.
     fn emit_class_block(&mut self, c: TypeRef, class_name: Name) -> Result<()>;
-
-    // ---- JavaScriptRenderer methods ---------------------------------------
-
-    /// `typeMapTypeFor(t)`: `m("any")` for a collapsed empty object.
-    fn type_map_type_for(&self, t: TypeRef) -> Result<Source> {
-        typescript_flow_base_methods::type_map_type_for(self, t)
-    }
-
-    /// `shouldEmitTypeMapEntry(t)`: not for a collapsed empty object.
-    fn should_emit_type_map_entry(&self, t: TypeRef) -> Result<bool> {
-        Ok(typescript_flow_base_methods::empty_object_type_for(self, t)?.is_none())
-    }
-
-    /// `deserializerFunctionLine(t, name)`.
-    fn deserializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        typescript_flow_base_methods::deserializer_function_line(self, t, name)
-    }
-
-    /// `serializerFunctionLine(t, name)`.
-    fn serializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        typescript_flow_base_methods::serializer_function_line(self, t, name)
-    }
-
-    /// `moduleLine`.
-    fn module_line(&self) -> Option<&'static str> {
-        None
-    }
-
-    /// `castFunctionLines`. The runtime typecheck helpers are deliberately
-    /// dynamic, so they stay on `any` even with `prefer-unknown`. Only the
-    /// public API surface (type declarations and converter signatures)
-    /// uses [`any_type`](Self::any_type).
-    fn cast_function_lines(&self) -> (&'static str, &'static str) {
-        (
-            "function cast<T>(val: any, typ: any): T",
-            "function uncast<T>(val: T, typ: any): any",
-        )
-    }
-
-    /// `typeAnnotations`: not implemented in the base class.
-    fn type_annotations(&self) -> Result<JavaScriptTypeAnnotations> {
-        crate::support::support::panic("not implemented")
-    }
-
-    /// `uncheckedParsedJson(t, parsedJson)`.
-    fn unchecked_parsed_json(&self, t: TypeRef, parsed_json: Source) -> Result<Source> {
-        let _ = t;
-        Ok(parsed_json)
-    }
-
-    /// `emitTypes()`: the top-level aliases and every named type.
-    fn emit_types(&mut self) -> Result<()> {
-        typescript_flow_base_methods::emit_types(self)
-    }
-
-    /// `emitUsageImportComment(givenOutputFilename)`.
-    fn emit_usage_import_comment(&mut self, given_output_filename: &str) -> Result<()> {
-        javascript_methods::emit_usage_import_comment(self, given_output_filename)
-    }
-
-    /// `emitUsageComments(givenOutputFilename)`: none with `just-types`.
-    fn emit_usage_comments(&mut self, given_output_filename: &str) -> Result<()> {
-        if self.ts_flow_options().just_types {
-            return Ok(());
-        }
-        javascript_methods::emit_usage_comments(self, given_output_filename)
-    }
-
-    /// `emitConvertModule()`: none with `just-types`.
-    fn emit_convert_module(&mut self) -> Result<()> {
-        if self.ts_flow_options().just_types {
-            return Ok(());
-        }
-        javascript_methods::emit_convert_module(self)
-    }
-
-    /// `emitConvertModuleHelpers()`: none with `just-types`.
-    fn emit_convert_module_helpers(&mut self) -> Result<()> {
-        if self.ts_flow_options().just_types {
-            return Ok(());
-        }
-        javascript_methods::emit_convert_module_helpers(self)
-    }
-
-    /// `emitModuleExports()`: none with `just-types`.
-    fn emit_module_exports(&mut self) -> Result<()> {
-        if self.ts_flow_options().just_types {
-            return Ok(());
-        }
-        javascript_methods::emit_module_exports(self)
-    }
-}
-
-impl<'a, T: TypeScriptFlowBaseRenderer<'a>> JavaScriptRenderer<'a> for T {
-    fn js(&self) -> &JavaScriptState {
-        &self.ts_flow().js
-    }
-
-    fn type_map_type_for(&self, t: TypeRef) -> Result<Source> {
-        TypeScriptFlowBaseRenderer::type_map_type_for(self, t)
-    }
-
-    fn should_emit_type_map_entry(&self, t: TypeRef) -> Result<bool> {
-        TypeScriptFlowBaseRenderer::should_emit_type_map_entry(self, t)
-    }
-
-    fn deserializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        TypeScriptFlowBaseRenderer::deserializer_function_line(self, t, name)
-    }
-
-    fn serializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        TypeScriptFlowBaseRenderer::serializer_function_line(self, t, name)
-    }
-
-    fn module_line(&self) -> Option<&'static str> {
-        TypeScriptFlowBaseRenderer::module_line(self)
-    }
-
-    fn cast_function_lines(&self) -> (&'static str, &'static str) {
-        TypeScriptFlowBaseRenderer::cast_function_lines(self)
-    }
-
-    fn type_annotations(&self) -> Result<JavaScriptTypeAnnotations> {
-        TypeScriptFlowBaseRenderer::type_annotations(self)
-    }
-
-    fn unchecked_parsed_json(&self, t: TypeRef, parsed_json: Source) -> Result<Source> {
-        TypeScriptFlowBaseRenderer::unchecked_parsed_json(self, t, parsed_json)
-    }
-
-    fn emit_types(&mut self) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_types(self)
-    }
-
-    fn emit_usage_import_comment(&mut self, given_output_filename: &str) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_usage_import_comment(self, given_output_filename)
-    }
-
-    fn emit_usage_comments(&mut self, given_output_filename: &str) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_usage_comments(self, given_output_filename)
-    }
-
-    fn emit_convert_module(&mut self) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_convert_module(self)
-    }
-
-    fn emit_convert_module_helpers(&mut self) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_convert_module_helpers(self)
-    }
-
-    fn emit_module_exports(&mut self) -> Result<()> {
-        TypeScriptFlowBaseRenderer::emit_module_exports(self)
-    }
 }
 
 /// The bodies of TS `TypeScriptFlowBaseRenderer`'s methods: the defaults
 /// of [`TypeScriptFlowBaseRenderer`] and what a subclass's `super.x(...)`
 /// calls.
 pub mod typescript_flow_base_methods {
+    pub use crate::language::javascript::java_script_renderer::javascript_methods::*;
+
     use super::*;
 
     /// `this.targetLanguage.name === "flow" ? "+" : "readonly "`.
@@ -325,7 +170,7 @@ pub mod typescript_flow_base_methods {
         Ok(None)
     }
 
-    /// `typeMapTypeFor(t)`.
+    /// `typeMapTypeFor(t)`: `m("any")` for a collapsed empty object.
     pub fn type_map_type_for<'a, R: TypeScriptFlowBaseRenderer<'a>>(
         r: &R,
         t: TypeRef,
@@ -587,7 +432,7 @@ pub mod typescript_flow_base_methods {
     }
 
     /// The `jsonType`/`returnType` of the converter signatures.
-    fn raw_type<'a, R: TypeScriptFlowBaseRenderer<'a>>(r: &R) -> &'static str {
+    pub fn raw_type<'a, R: TypeScriptFlowBaseRenderer<'a>>(r: &R) -> &'static str {
         match r.ts_flow_options().js.raw_type {
             RawType::Json => "string",
             RawType::Any => r.any_type(),
@@ -627,6 +472,77 @@ pub mod typescript_flow_base_methods {
             "): ",
             return_type
         ])
+    }
+
+    /// `shouldEmitTypeMapEntry(t)`: not for a collapsed empty object.
+    pub fn should_emit_type_map_entry<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+    ) -> Result<bool> {
+        Ok(empty_object_type_for(r, t)?.is_none()
+            && javascript_methods::should_emit_type_map_entry(r, t)?)
+    }
+
+    /// `moduleLine`: none.
+    pub fn module_line<'a, R: TypeScriptFlowBaseRenderer<'a>>(_r: &R) -> Option<&'static str> {
+        None
+    }
+
+    /// `castFunctionLines`. The runtime typecheck helpers are deliberately
+    /// dynamic, so they stay on `any` even with `prefer-unknown`. Only the
+    /// public API surface (type declarations and converter signatures)
+    /// uses `anyType()`.
+    pub fn cast_function_lines<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        _r: &R,
+    ) -> (&'static str, &'static str) {
+        (
+            "function cast<T>(val: any, typ: any): T",
+            "function uncast<T>(val: T, typ: any): any",
+        )
+    }
+
+    /// `typeAnnotations`: not implemented in the base class.
+    pub fn type_annotations<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        _r: &R,
+    ) -> Result<JavaScriptTypeAnnotations> {
+        crate::support::support::panic("not implemented")
+    }
+
+    /// `emitUsageComments(givenOutputFilename)`: none with `just-types`.
+    pub fn emit_usage_comments<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &mut R,
+        given_output_filename: &str,
+    ) -> Result<()> {
+        if r.ts_flow_options().just_types {
+            return Ok(());
+        }
+        javascript_methods::emit_usage_comments(r, given_output_filename)
+    }
+
+    /// `emitConvertModule()`: none with `just-types`.
+    pub fn emit_convert_module<'a, R: TypeScriptFlowBaseRenderer<'a>>(r: &mut R) -> Result<()> {
+        if r.ts_flow_options().just_types {
+            return Ok(());
+        }
+        javascript_methods::emit_convert_module(r)
+    }
+
+    /// `emitConvertModuleHelpers()`: none with `just-types`.
+    pub fn emit_convert_module_helpers<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &mut R,
+    ) -> Result<()> {
+        if r.ts_flow_options().just_types {
+            return Ok(());
+        }
+        javascript_methods::emit_convert_module_helpers(r)
+    }
+
+    /// `emitModuleExports()`: none with `just-types`.
+    pub fn emit_module_exports<'a, R: TypeScriptFlowBaseRenderer<'a>>(r: &mut R) -> Result<()> {
+        if r.ts_flow_options().just_types {
+            return Ok(());
+        }
+        javascript_methods::emit_module_exports(r)
     }
 
     /// `this._tsFlowOptions.rawType !== "json" && this._tsFlowOptions.preferUnknown`:

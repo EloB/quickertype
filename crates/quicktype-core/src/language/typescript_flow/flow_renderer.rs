@@ -5,7 +5,7 @@
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::java_script_renderer::{
-    JavaScriptTypeAnnotations, javascript_methods,
+    JavaScriptRenderer, JavaScriptState, javascript_renderer_methods,
 };
 use crate::support::strings::utf16_string_escape;
 use crate::support::support::defined;
@@ -15,7 +15,6 @@ use super::type_script_flow_base_renderer::{
     TypeScriptFlowBaseRenderer, TypeScriptFlowOptions, TypeScriptFlowState,
     typescript_flow_base_methods,
 };
-use super::utils::ts_flow_type_annotations;
 
 /// The hooks TS `FlowRenderer` overrides, on top of
 /// [`typescript_flow_base_hooks`](super::type_script_flow_base_renderer::typescript_flow_base_hooks).
@@ -47,6 +46,47 @@ mod flow_hooks {
         r.emit_line("// @flow");
         r.ensure_blank_line();
         typescript_flow_base_hooks::emit_source_structure(r, given_output_filename)
+    }
+}
+
+/// The `JavaScriptRenderer` methods TS `FlowRenderer` overrides, on top of
+/// [`typescript_flow_base_methods`](super::type_script_flow_base_renderer::typescript_flow_base_methods).
+mod flow_methods {
+    pub use crate::language::typescript_flow::type_script_flow_base_renderer::typescript_flow_base_methods::*;
+
+    use crate::convenience_renderer::prelude::*;
+    use crate::language::javascript::java_script_renderer::JavaScriptTypeAnnotations;
+    use crate::language::typescript_flow::type_script_flow_base_renderer::{
+        TypeScriptFlowBaseRenderer, typescript_flow_base_methods,
+    };
+    use crate::language::typescript_flow::utils::ts_flow_type_annotations;
+
+    /// `uncheckedParsedJson(t, parsedJson)`: with `raw-type any` and
+    /// `prefer-unknown` the deserializer's parameter is `mixed`, which
+    /// can't be returned as the target type without a cast.
+    pub fn unchecked_parsed_json<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        parsed_json: Source,
+    ) -> Result<Source> {
+        if typescript_flow_base_methods::needs_unchecked_cast(r) {
+            return Ok(sl![
+                "((",
+                parsed_json,
+                ": any): ",
+                source_for(r, t)?.source,
+                ")"
+            ]);
+        }
+
+        Ok(parsed_json)
+    }
+
+    /// `typeAnnotations`.
+    pub fn type_annotations<'a, R: TypeScriptFlowBaseRenderer<'a>>(
+        _r: &R,
+    ) -> Result<JavaScriptTypeAnnotations> {
+        Ok(ts_flow_type_annotations(""))
     }
 }
 
@@ -90,6 +130,14 @@ impl<'a> ConvenienceRenderer<'a> for FlowRenderer<'a> {
     forward_convenience_renderer_hooks!(flow_hooks);
 }
 
+impl<'a> JavaScriptRenderer<'a> for FlowRenderer<'a> {
+    fn js(&self) -> &JavaScriptState {
+        &self.ts_flow.js
+    }
+
+    javascript_renderer_methods!([forward flow_methods]);
+}
+
 impl<'a> TypeScriptFlowBaseRenderer<'a> for FlowRenderer<'a> {
     fn ts_flow(&self) -> &TypeScriptFlowState {
         &self.ts_flow
@@ -107,28 +155,6 @@ impl<'a> TypeScriptFlowBaseRenderer<'a> for FlowRenderer<'a> {
     /// `undefinedType`: `void`.
     fn undefined_type(&self) -> &'static str {
         "void"
-    }
-
-    /// `uncheckedParsedJson(t, parsedJson)`: with `raw-type any` and
-    /// `prefer-unknown` the deserializer's parameter is `mixed`, which
-    /// can't be returned as the target type without a cast.
-    fn unchecked_parsed_json(&self, t: TypeRef, parsed_json: Source) -> Result<Source> {
-        if typescript_flow_base_methods::needs_unchecked_cast(self) {
-            return Ok(sl![
-                "((",
-                parsed_json,
-                ": any): ",
-                typescript_flow_base_methods::source_for(self, t)?.source,
-                ")"
-            ]);
-        }
-
-        Ok(parsed_json)
-    }
-
-    /// `typeAnnotations`.
-    fn type_annotations(&self) -> Result<JavaScriptTypeAnnotations> {
-        Ok(ts_flow_type_annotations(""))
     }
 
     /// `emitEnum(e, enumName)`: a union of string literals.
@@ -161,11 +187,8 @@ impl<'a> TypeScriptFlowBaseRenderer<'a> for FlowRenderer<'a> {
 
     /// `emitClassBlock(c, className)`.
     fn emit_class_block(&mut self, c: TypeRef, class_name: Name) -> Result<()> {
-        javascript_methods::emit_block(
-            self,
-            sl!["export type ", class_name, " = "],
-            ";".into(),
-            |r| typescript_flow_base_methods::emit_class_block_body(r, c),
-        )
+        self.emit_block(sl!["export type ", class_name, " = "], ";".into(), |r| {
+            typescript_flow_base_methods::emit_class_block_body(r, c)
+        })
     }
 }

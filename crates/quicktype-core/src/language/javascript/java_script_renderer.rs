@@ -158,9 +158,9 @@ pub(crate) fn bound_or_undefined(bound: Option<f64>) -> String {
     )
 }
 
-/// `usageModuleName(givenOutputFilename)`: the file name without
-/// directories and extension (`"file"` for stdout).
-pub fn usage_module_name(given_output_filename: &str) -> String {
+/// The body of `usageModuleName(givenOutputFilename)`: the file name
+/// without directories and extension (`"file"` for stdout).
+fn file_module_name(given_output_filename: &str) -> String {
     if given_output_filename == "stdout" {
         return "file".to_owned();
     }
@@ -179,9 +179,106 @@ pub fn usage_module_name(given_output_filename: &str) -> String {
     }
 }
 
+/// The list of the methods of TS `JavaScriptRenderer` that are not
+/// `ConvenienceRenderer` hooks, for
+/// [`family_methods!`](crate::family_methods): `[declare module]` declares
+/// them in [`JavaScriptRenderer`], `[forward module]` implements them all
+/// in a subclass by calling `module`. `nameStyle` is a function
+/// ([`name_style`]) because the namers' closures need it; no subclass
+/// overrides it.
+macro_rules! javascript_renderer_methods {
+    ($mode:tt) => {
+        $crate::family_methods! { $mode
+            /// `typeMapTypeFor(t)`: the runtime type map entry of `t`.
+            [ref] type_map_type_for(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<$crate::source::Source>;
+
+            /// `emitBlock(source, end, emit)`.
+            [mut] emit_block(
+                source: $crate::source::Source,
+                end: $crate::source::Source,
+                emit: impl FnOnce(&mut Self) -> $crate::messages::Result<()>
+            ) -> $crate::messages::Result<()>;
+
+            /// `shouldEmitTypeMapEntry(t)`.
+            [ref] should_emit_type_map_entry(
+                t: $crate::ty::type_ref::TypeRef
+            ) -> $crate::messages::Result<bool>;
+
+            /// `deserializerFunctionName(name)`.
+            [ref] deserializer_function_name(name: $crate::naming::Name) -> $crate::source::Source;
+
+            /// `deserializerFunctionLine(t, name)`.
+            [ref] deserializer_function_line(
+                t: $crate::ty::type_ref::TypeRef,
+                name: $crate::naming::Name
+            ) -> $crate::messages::Result<$crate::source::Source>;
+
+            /// `serializerFunctionName(name)`.
+            [ref] serializer_function_name(name: $crate::naming::Name) -> $crate::source::Source;
+
+            /// `serializerFunctionLine(t, name)`.
+            [ref] serializer_function_line(
+                t: $crate::ty::type_ref::TypeRef,
+                name: $crate::naming::Name
+            ) -> $crate::messages::Result<$crate::source::Source>;
+
+            /// `moduleLine`: the line opening the converter module, if any.
+            [ref] module_line() -> Option<&'static str>;
+
+            /// `castFunctionLines`: the signatures of `cast` and `uncast`.
+            [ref] cast_function_lines() -> (&'static str, &'static str);
+
+            /// `typeAnnotations`.
+            [ref] type_annotations() -> $crate::messages::Result<
+                $crate::language::javascript::java_script_renderer::JavaScriptTypeAnnotations
+            >;
+
+            /// `uncheckedParsedJson(t, parsedJson)`: the expression a
+            /// deserializer returns when runtime typechecks are disabled.
+            [ref] unchecked_parsed_json(
+                t: $crate::ty::type_ref::TypeRef,
+                parsed_json: $crate::source::Source
+            ) -> $crate::messages::Result<$crate::source::Source>;
+
+            /// `emitConvertModuleBody()`.
+            [mut] emit_convert_module_body() -> $crate::messages::Result<()>;
+
+            /// `emitConvertModuleHelpers()`.
+            [mut] emit_convert_module_helpers() -> $crate::messages::Result<()>;
+
+            /// `emitConvertModule()`.
+            [mut] emit_convert_module() -> $crate::messages::Result<()>;
+
+            /// `emitTypes()`.
+            [mut] emit_types() -> $crate::messages::Result<()>;
+
+            /// `usageModuleName(givenOutputFilename)`.
+            [ref] usage_module_name(given_output_filename: &str) -> String;
+
+            /// `emitUsageImportComment(givenOutputFilename)`.
+            [mut] emit_usage_import_comment(
+                given_output_filename: &str
+            ) -> $crate::messages::Result<()>;
+
+            /// `emitUsageComments(givenOutputFilename)`.
+            [mut] emit_usage_comments(
+                given_output_filename: &str
+            ) -> $crate::messages::Result<()>;
+
+            /// `emitModuleExports()`.
+            [mut] emit_module_exports() -> $crate::messages::Result<()>;
+        }
+    };
+}
+pub(crate) use javascript_renderer_methods;
+
 /// The methods of TS `JavaScriptRenderer` that are not
 /// `ConvenienceRenderer` hooks; subclasses override them. Each default is
-/// the function of the same name in [`javascript_methods`].
+/// the function of the same name in [`javascript_methods`]. A subclass
+/// implements all of them with
+/// `javascript_renderer_methods!([forward its_methods_module])`.
 pub trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> {
     /// The fields of TS `JavaScriptRenderer`.
     fn js(&self) -> &JavaScriptState;
@@ -191,103 +288,7 @@ pub trait JavaScriptRenderer<'a>: ConvenienceRenderer<'a> {
         &self.js().options
     }
 
-    /// `typeMapTypeFor(t)`: the runtime type map entry of `t`.
-    fn type_map_type_for(&self, t: TypeRef) -> Result<Source> {
-        javascript_methods::type_map_type_for(self, t)
-    }
-
-    /// `shouldEmitTypeMapEntry(t)`.
-    fn should_emit_type_map_entry(&self, t: TypeRef) -> Result<bool> {
-        let _ = t;
-        Ok(true)
-    }
-
-    /// `deserializerFunctionName(name)`: `["to", name]`.
-    fn deserializer_function_name(&self, name: Name) -> Source {
-        sl!["to", name]
-    }
-
-    /// `deserializerFunctionLine(t, name)`.
-    fn deserializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        javascript_methods::deserializer_function_line(self, t, name)
-    }
-
-    /// `serializerFunctionName(name)`: `[camelCase(name), "ToJson"]`.
-    fn serializer_function_name(&self, name: Name) -> Source {
-        sl![modify_source(camel_case, name), "ToJson"]
-    }
-
-    /// `serializerFunctionLine(t, name)`.
-    fn serializer_function_line(&self, t: TypeRef, name: Name) -> Result<Source> {
-        javascript_methods::serializer_function_line(self, t, name)
-    }
-
-    /// `moduleLine`: the line opening the converter module, if any.
-    fn module_line(&self) -> Option<&'static str> {
-        None
-    }
-
-    /// `castFunctionLines`: the signatures of `cast` and `uncast`.
-    fn cast_function_lines(&self) -> (&'static str, &'static str) {
-        ("function cast(val, typ)", "function uncast(val, typ)")
-    }
-
-    /// `typeAnnotations`.
-    fn type_annotations(&self) -> Result<JavaScriptTypeAnnotations> {
-        Ok(JavaScriptTypeAnnotations {
-            any: "",
-            any_array: "",
-            any_map: "",
-            string: "",
-            string_array: "",
-            boolean: "",
-            never: "",
-        })
-    }
-
-    /// `uncheckedParsedJson(t, parsedJson)`: the expression a deserializer
-    /// returns when runtime typechecks are disabled. Subclasses can wrap it
-    /// in a cast to the target type if `parsedJson`'s type isn't assignable
-    /// to it.
-    fn unchecked_parsed_json(&self, t: TypeRef, parsed_json: Source) -> Result<Source> {
-        let _ = t;
-        Ok(parsed_json)
-    }
-
-    /// `emitConvertModuleBody()`.
-    fn emit_convert_module_body(&mut self) -> Result<()> {
-        javascript_methods::emit_convert_module_body(self)
-    }
-
-    /// `emitConvertModuleHelpers()`.
-    fn emit_convert_module_helpers(&mut self) -> Result<()> {
-        javascript_methods::emit_convert_module_helpers(self)
-    }
-
-    /// `emitConvertModule()`.
-    fn emit_convert_module(&mut self) -> Result<()> {
-        javascript_methods::emit_convert_module(self)
-    }
-
-    /// `emitTypes()`: nothing in JavaScript.
-    fn emit_types(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    /// `emitUsageImportComment(givenOutputFilename)`.
-    fn emit_usage_import_comment(&mut self, given_output_filename: &str) -> Result<()> {
-        javascript_methods::emit_usage_import_comment(self, given_output_filename)
-    }
-
-    /// `emitUsageComments(givenOutputFilename)`.
-    fn emit_usage_comments(&mut self, given_output_filename: &str) -> Result<()> {
-        javascript_methods::emit_usage_comments(self, given_output_filename)
-    }
-
-    /// `emitModuleExports()`.
-    fn emit_module_exports(&mut self) -> Result<()> {
-        javascript_methods::emit_module_exports(self)
-    }
+    javascript_renderer_methods!([declare javascript_methods]);
 }
 
 /// The bodies of TS `JavaScriptRenderer`'s methods: the defaults of
@@ -345,6 +346,76 @@ pub mod javascript_methods {
             k if k.is_transformed_string_type_kind() => "\"\"".into(),
             kind => return type_not_supported(kind),
         })
+    }
+
+    /// `shouldEmitTypeMapEntry(t)`.
+    pub fn should_emit_type_map_entry<'a, R: JavaScriptRenderer<'a>>(
+        _r: &R,
+        _t: TypeRef,
+    ) -> Result<bool> {
+        Ok(true)
+    }
+
+    /// `deserializerFunctionName(name)`: `["to", name]`.
+    pub fn deserializer_function_name<'a, R: JavaScriptRenderer<'a>>(_r: &R, name: Name) -> Source {
+        sl!["to", name]
+    }
+
+    /// `serializerFunctionName(name)`: `[camelCase(name), "ToJson"]`.
+    pub fn serializer_function_name<'a, R: JavaScriptRenderer<'a>>(_r: &R, name: Name) -> Source {
+        sl![modify_source(camel_case, name), "ToJson"]
+    }
+
+    /// `moduleLine`: none.
+    pub fn module_line<'a, R: JavaScriptRenderer<'a>>(_r: &R) -> Option<&'static str> {
+        None
+    }
+
+    /// `castFunctionLines`.
+    pub fn cast_function_lines<'a, R: JavaScriptRenderer<'a>>(
+        _r: &R,
+    ) -> (&'static str, &'static str) {
+        ("function cast(val, typ)", "function uncast(val, typ)")
+    }
+
+    /// `typeAnnotations`: none in JavaScript.
+    pub fn type_annotations<'a, R: JavaScriptRenderer<'a>>(
+        _r: &R,
+    ) -> Result<JavaScriptTypeAnnotations> {
+        Ok(JavaScriptTypeAnnotations {
+            any: "",
+            any_array: "",
+            any_map: "",
+            string: "",
+            string_array: "",
+            boolean: "",
+            never: "",
+        })
+    }
+
+    /// `uncheckedParsedJson(t, parsedJson)`: `parsedJson` itself.
+    /// Subclasses can wrap it in a cast to the target type if
+    /// `parsedJson`'s type isn't assignable to it.
+    pub fn unchecked_parsed_json<'a, R: JavaScriptRenderer<'a>>(
+        _r: &R,
+        _t: TypeRef,
+        parsed_json: Source,
+    ) -> Result<Source> {
+        Ok(parsed_json)
+    }
+
+    /// `emitTypes()`: nothing in JavaScript.
+    pub fn emit_types<'a, R: JavaScriptRenderer<'a>>(_r: &mut R) -> Result<()> {
+        Ok(())
+    }
+
+    /// `usageModuleName(givenOutputFilename)`: the file name without
+    /// directories and extension (`"file"` for stdout).
+    pub fn usage_module_name<'a, R: JavaScriptRenderer<'a>>(
+        _r: &R,
+        given_output_filename: &str,
+    ) -> String {
+        file_module_name(given_output_filename)
     }
 
     /// `typeMapString(t)`.
@@ -411,8 +482,7 @@ pub mod javascript_methods {
     /// `emitTypeMap()`.
     fn emit_type_map<'a, R: JavaScriptRenderer<'a>>(r: &mut R) -> Result<()> {
         let any_annotation = r.type_annotations()?.any;
-        emit_block(
-            r,
+        r.emit_block(
             format!("const typeMap{any_annotation} = ").into(),
             ";".into(),
             |r| {
@@ -498,7 +568,7 @@ pub mod javascript_methods {
         let options = *r.js_options();
         let type_map = r.type_map_type_for(t)?;
         let deserializer_line = r.deserializer_function_line(t, name)?;
-        emit_block(r, sl![deserializer_line, " "], "".into(), |r| {
+        r.emit_block(sl![deserializer_line, " "], "".into(), |r| {
             let parsed_json = match options.raw_type {
                 RawType::Json => "JSON.parse(json)",
                 RawType::Any => "json",
@@ -520,7 +590,7 @@ pub mod javascript_methods {
         r.ensure_blank_line();
 
         let serializer_line = r.serializer_function_line(t, name)?;
-        emit_block(r, sl![serializer_line, " "], "".into(), |r| {
+        r.emit_block(sl![serializer_line, " "], "".into(), |r| {
             match (options.raw_type, options.runtime_typecheck) {
                 (RawType::Json, false) => r.emit_line("return JSON.stringify(value);"),
                 (RawType::Json, true) => r.emit_line(sl![
@@ -601,7 +671,7 @@ pub mod javascript_methods {
 
         match r.module_line() {
             None => r.emit_convert_module_body(),
-            Some(module_line) => emit_block(r, sl![module_line, " "], "".into(), |r| {
+            Some(module_line) => r.emit_block(sl![module_line, " "], "".into(), |r| {
                 r.emit_convert_module_body()
             }),
         }
@@ -614,7 +684,7 @@ pub mod javascript_methods {
     ) -> Result<()> {
         r.emit_line(sl![
             "//   const Convert = require(\"./",
-            usage_module_name(given_output_filename),
+            r.usage_module_name(given_output_filename),
             "\");"
         ]);
         Ok(())
@@ -652,7 +722,7 @@ pub mod javascript_methods {
     pub fn emit_module_exports<'a, R: JavaScriptRenderer<'a>>(r: &mut R) -> Result<()> {
         r.ensure_blank_line();
 
-        emit_block(r, "module.exports = ".into(), ";".into(), |r| {
+        r.emit_block("module.exports = ".into(), ";".into(), |r| {
             let exporter = |r: &mut R, _: TypeRef, name: Name, _: ForEachPosition| {
                 let serializer = r.serializer_function_name(name);
                 let deserializer = r.deserializer_function_name(name);
@@ -1151,18 +1221,18 @@ mod tests {
 
     #[test]
     fn usage_module_names_strip_directories_and_extension() {
-        assert_eq!(usage_module_name("stdout"), "file");
+        assert_eq!(file_module_name("stdout"), "file");
         assert_eq!(
-            usage_module_name("src/cli/ExperimentCounts.ts"),
+            file_module_name("src/cli/ExperimentCounts.ts"),
             "ExperimentCounts"
         );
-        assert_eq!(usage_module_name("C:\\out\\dir.v2\\Counts"), "Counts");
-        assert_eq!(usage_module_name("dir/file.tar.gz"), "file.tar");
-        assert_eq!(usage_module_name("noext."), "noext.");
-        assert_eq!(usage_module_name(".hidden"), "");
-        assert_eq!(usage_module_name("out/"), "");
+        assert_eq!(file_module_name("C:\\out\\dir.v2\\Counts"), "Counts");
+        assert_eq!(file_module_name("dir/file.tar.gz"), "file.tar");
+        assert_eq!(file_module_name("noext."), "noext.");
+        assert_eq!(file_module_name(".hidden"), "");
+        assert_eq!(file_module_name("out/"), "");
         // `.` in `/^.*[/\\]/` stops at the first line terminator.
-        assert_eq!(usage_module_name("a/b\nc/d.ts"), "b\nc/d");
+        assert_eq!(file_module_name("a/b\nc/d.ts"), "b\nc/d");
     }
 
     #[test]
