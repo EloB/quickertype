@@ -7,8 +7,12 @@
 //! Rust destructors and leave borrows held. What it threw is kept by the
 //! run's [`JsHost`] and rethrown unchanged when the run returns.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::rc::Rc;
+use std::task::{Context, Poll};
 
 use js_sys::{Array, Object, Reflect};
 use quicktype_core::internal::{CompressedJsonTables, CompressedTopLevel};
@@ -33,16 +37,31 @@ extern "C" {
     #[wasm_bindgen(method, catch, js_name = schemaPrepare)]
     fn schema_prepare(this: &HostObject, store_id: u32) -> std::result::Result<(), JsValue>;
 
+    /// Starts `store.get(address, …)`; the facade later calls `settle`
+    /// with `call_id` and the outcome.
     #[wasm_bindgen(method, catch, js_name = schemaGet)]
     fn schema_get(
         this: &HostObject,
         store_id: u32,
         address: &str,
-    ) -> std::result::Result<js_sys::Promise, JsValue>;
+        call_id: u32,
+    ) -> std::result::Result<(), JsValue>;
+
+    #[wasm_bindgen(method, catch, js_name = schemaTopLevels)]
+    fn schema_top_levels(
+        this: &HostObject,
+        store_id: u32,
+        names: Vec<String>,
+        refs: Vec<String>,
+    ) -> std::result::Result<(), JsValue>;
 
     #[wasm_bindgen(method, catch)]
     fn timing(this: &HostObject, name: &str, milliseconds: f64)
     -> std::result::Result<(), JsValue>;
+
+    /// JavaScript `String(value)`.
+    #[wasm_bindgen(catch, js_name = String)]
+    fn js_string(value: &JsValue) -> std::result::Result<String, JsValue>;
 
     #[wasm_bindgen(method, catch)]
     fn log(this: &HostObject, line: &str) -> std::result::Result<(), JsValue>;
@@ -380,6 +399,9 @@ fn decode_encoded_value(value: &JsValue) -> Result<Option<JsonSchema>> {
 /// A run's connection to the facade, and what JavaScript threw during it.
 pub struct JsHost {
     object: HostObject,
+    /// The host calls in flight, by call id: filled by [`JsHost::settle`].
+    calls: RefCell<HashMap<u32, Rc<CallSlot>>>,
+    next_call: Cell<u32>,
     /// Exceptions a callback threw, each with the [`QuickTypeError`] the
     /// engine propagated in its place.
     thrown: RefCell<Vec<(QuickTypeError, JsValue)>>,
@@ -394,6 +416,8 @@ impl JsHost {
     pub fn new(object: JsValue) -> Rc<Self> {
         Rc::new(JsHost {
             object: object.unchecked_into(),
+            calls: RefCell::new(HashMap::new()),
+            next_call: Cell::new(0),
             thrown: RefCell::new(Vec::new()),
             deferred: RefCell::new(None),
         })
@@ -420,7 +444,7 @@ impl JsHost {
             .unwrap_or(JsErrorName::Error);
         let message = match get(&exception, "message").as_string() {
             Some(message) if exception.is_object() => message,
-            _ => js_sys::JsString::from(exception.clone()).into(),
+            _ => js_string(&exception).unwrap_or_default(),
         };
         let error = QuickTypeError::js_exception(name, message);
         self.thrown.borrow_mut().push((error.clone(), exception));
@@ -445,6 +469,20 @@ impl JsHost {
         }
     }
 
+    /// Fills the slot of host call `call_id` (from `schemaGet`) with its
+    /// outcome; the facade polls the run afterwards.
+    pub fn settle(&self, call_id: u32, outcome: std::result::Result<JsValue, JsValue>) {
+        if let Some(slot) = self.calls.borrow_mut().remove(&call_id) {
+            *slot.0.borrow_mut() = Some(outcome);
+        }
+    }
+
+    /// Whether a host call is in flight (a pending run is waiting for
+    /// one; otherwise it could never finish).
+    pub fn waiting(&self) -> bool {
+        !self.calls.borrow().is_empty()
+    }
+
     /// Reports a Rust panic before the instance traps.
     pub fn panicked(&self, message: &str) {
         self.object.panicked(message);
@@ -452,23 +490,26 @@ impl JsHost {
 
     /// The run's outcome as the facade expects it: the result, or the
     /// value to throw.
-    pub fn finish(
-        &self,
-        result: Result<MultiFileRenderResult>,
-    ) -> std::result::Result<JsValue, JsValue> {
+    /// The run's outcome as the facade expects it: `{ files }`,
+    /// `{ error }` (see [`encode_error`]) or `{ thrown }`, the value a
+    /// callback threw.
+    pub fn finish(&self, result: Result<MultiFileRenderResult>) -> JsValue {
+        let outcome = Object::new();
         if let Some(exception) = self.deferred.borrow_mut().take() {
-            return Err(exception);
+            set(&outcome, "thrown", &exception);
+            return outcome.into();
         }
         match result {
-            Ok(files) => Ok(encode_result(&files)),
+            Ok(files) => set(&outcome, "files", &encode_files(&files)),
             Err(error) => {
                 let thrown = self.thrown.borrow();
                 match thrown.iter().find(|(e, _)| *e == error) {
-                    Some((_, exception)) => Err(exception.clone()),
-                    None => Err(encode_error(&error)),
+                    Some((_, exception)) => set(&outcome, "thrown", exception),
+                    None => set(&outcome, "error", &encode_error(&error)),
                 }
             }
         }
+        outcome.into()
     }
 }
 
@@ -485,14 +526,26 @@ impl RunHost for Rc<JsHost> {
         address: &str,
     ) -> LocalBoxFuture<'static, Result<Option<JsonSchema>>> {
         let host = Rc::clone(self);
-        let promise = self.object.schema_get(store_id, address);
+        let call_id = self.next_call.get();
+        self.next_call.set(call_id.wrapping_add(1));
+        let slot = Rc::new(CallSlot(RefCell::new(None)));
+        self.calls.borrow_mut().insert(call_id, Rc::clone(&slot));
+        let started = self.object.schema_get(store_id, address, call_id);
         Box::pin(async move {
-            let promise = promise.map_err(|e| host.thrown(e))?;
-            let value = wasm_bindgen_futures::JsFuture::from(promise)
-                .await
-                .map_err(|e| host.thrown(e))?;
+            if let Err(e) = started {
+                host.calls.borrow_mut().remove(&call_id);
+                return Err(host.thrown(e));
+            }
+            let value = CallFuture(slot).await.map_err(|e| host.thrown(e))?;
             decode_encoded_value(&value)
         })
+    }
+
+    fn schema_top_levels(&self, store_id: u32, top_levels: Vec<(String, String)>) {
+        let (names, refs) = top_levels.into_iter().unzip();
+        if let Err(e) = self.object.schema_top_levels(store_id, names, refs) {
+            self.defer(e);
+        }
     }
 
     fn timing(&self, name: &str, milliseconds: f64) {
@@ -515,6 +568,24 @@ impl RunHost for Rc<JsHost> {
     }
 }
 
+/// Where the outcome of a host call lands.
+pub struct CallSlot(RefCell<Option<std::result::Result<JsValue, JsValue>>>);
+
+/// Waits for a [`CallSlot`]. Runs are polled by the facade (see `poll` in
+/// the crate root), not by a waker, after each `settle`.
+struct CallFuture(Rc<CallSlot>);
+
+impl Future for CallFuture {
+    type Output = std::result::Result<JsValue, JsValue>;
+
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.0.0.borrow_mut().take() {
+            Some(outcome) => Poll::Ready(outcome),
+            None => Poll::Pending,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Results and errors
 
@@ -523,10 +594,10 @@ fn set(object: &Object, key: &str, value: &JsValue) {
     let _ = Reflect::set(object, &JsValue::from_str(key), value);
 }
 
-/// `{ files: [{ name, text, lengths, spans, messages }] }`: each file's
-/// lines as a string blob, and its annotations as four numbers each
-/// (start line and column, end line and column) plus their messages.
-fn encode_result(files: &MultiFileRenderResult) -> JsValue {
+/// `[{ name, text, lengths, spans, messages }]`: each file's lines as a
+/// string blob, and its annotations as four numbers each (start line and
+/// column, end line and column) plus their messages.
+fn encode_files(files: &MultiFileRenderResult) -> JsValue {
     let list = Array::new();
     for (name, file) in files {
         let (text, lengths) = join_blob(file.lines.iter().map(String::as_str));
@@ -558,14 +629,13 @@ fn encode_result(files: &MultiFileRenderResult) -> JsValue {
         set(&entry, "messages", &messages);
         list.push(&entry);
     }
-    let result = Object::new();
-    set(&result, "files", &list);
-    result.into()
+    list.into()
 }
 
-/// `{ qt: { kind, properties } }` for one of quicktype's messages, which the
-/// facade turns back into a `QuickTypeError` with the JavaScript
-/// `messageError`; `{ js: { name, message } }` for a JavaScript exception.
+/// `{ qt: { kind, properties, message } }` for one of quicktype's
+/// messages, which the facade turns back into a `QuickTypeError` with the
+/// JavaScript `messageError` (`message` is only for checking); `{ js: {
+/// name, message } }` for a JavaScript exception.
 pub fn encode_error(error: &QuickTypeError) -> JsValue {
     let result = Object::new();
     match (error.message_name(), error.as_js_exception()) {
@@ -632,7 +702,13 @@ fn message_value(value: &MessageValue) -> JsValue {
     }
 }
 
-/// The error a broken request causes, encoded for the facade.
-pub fn internal_error(message: &str) -> JsValue {
-    encode_error(&QuickTypeError::internal(message))
+/// A `{ error }` outcome for an internal error.
+pub fn internal_error_outcome(message: &str) -> JsValue {
+    let outcome = Object::new();
+    set(
+        &outcome,
+        "error",
+        &encode_error(&QuickTypeError::internal(message)),
+    );
+    outcome.into()
 }

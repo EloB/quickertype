@@ -34,6 +34,11 @@ pub trait RunHost {
         address: &str,
     ) -> LocalBoxFuture<'static, Result<Option<JsonSchema>>>;
 
+    /// After `JSONSchemaInput.addTypes` of input `store_id` succeeded: its
+    /// `_topLevels` (name and `Ref.toString()`), which TypeScript keeps on
+    /// the input object (a later run starts from them).
+    fn schema_top_levels(&self, store_id: u32, top_levels: Vec<(String, String)>);
+
     /// `onTiming({ name, milliseconds })`.
     fn timing(&self, name: &str, milliseconds: f64);
 
@@ -206,7 +211,16 @@ impl Input for HostSchemaInput {
             // Schema text is parsed (and timed) by the JavaScript store.
             self.inner
                 .add_types(type_builder, debug_print_schema_resolving, None)
-                .await
+                .await?;
+            if self.has_sources {
+                let top_levels = self
+                    .inner
+                    .top_levels()
+                    .map(|(name, r)| (name.to_owned(), r.to_string()))
+                    .collect();
+                self.host.schema_top_levels(self.store_id, top_levels);
+            }
+            Ok(())
         }
     }
 
@@ -262,6 +276,12 @@ mod tests {
                 .push(format!("get {store_id} {address}"));
             let schema = self.schemas.get(address).cloned();
             Box::pin(async move { Ok(schema) })
+        }
+
+        fn schema_top_levels(&self, store_id: u32, top_levels: Vec<(String, String)>) {
+            self.log
+                .borrow_mut()
+                .push(format!("top-levels {store_id} {top_levels:?}"));
         }
 
         fn timing(&self, name: &str, _milliseconds: f64) {
@@ -356,6 +376,10 @@ mod tests {
         let log = host.log.borrow();
         assert_eq!(log[..2], ["prepare 3", "get 3 main.json"]);
         assert!(log.iter().any(|l| l == "get 3 other.json"), "{log:?}");
+        assert_eq!(
+            log.last().map(String::as_str),
+            Some(r#"top-levels 3 [("Main", "main.json#")]"#)
+        );
     }
 
     #[test]
