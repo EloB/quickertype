@@ -42,7 +42,9 @@ pub type LocalBoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
 /// An input of one source language (TS `Input<T>`, with `T` as
 /// [`Source`](Self::Source)).
 ///
-/// Implementations: [`JsonInput`]; JSON Schema and GraphQL input follow.
+/// Implementations: [`JsonInput`],
+/// [`JsonSchemaInput`](crate::input::json_schema_input::JsonSchemaInput)
+/// and quicktype-graphql-input's `GraphQlInput`.
 /// [`InputData`] stores inputs as trait objects and finds them again by
 /// [`kind`](Self::kind) and concrete type, so an implementation must be
 /// `'static`.

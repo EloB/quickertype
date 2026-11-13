@@ -376,8 +376,7 @@ fn deep_inputs_do_not_overflow_the_stack() {
 
 /// Runs `args` on TypeScript sources written to a fresh directory (the
 /// TypeScript input only accepts files below the working directory).
-/// `None` (with a note) without the TypeScript 7 compiler, or while the
-/// target language's renderer is not ported yet.
+/// `None` (with a note) without the TypeScript 7 compiler.
 fn typescript_input(name: &str, source: &str, args: &[&str]) -> Option<Output> {
     let dir = work_dir(name);
     fs::write(dir.join("input.ts"), source).unwrap();
@@ -385,9 +384,7 @@ fn typescript_input(name: &str, source: &str, args: &[&str]) -> Option<Output> {
     all_args.push("input.ts");
     let output = quicktype_in(&dir, &all_args, None);
     let error = stderr(&output);
-    if error.contains("requires the TypeScript 7.0.2 compiler")
-        || error.contains("renderer is not ported yet")
-    {
+    if error.contains("requires the TypeScript 7.0.2 compiler") {
         eprintln!("skipped: {error}");
         return None;
     }
