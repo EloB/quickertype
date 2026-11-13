@@ -8,9 +8,17 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = ["fs"]
+# `StdIo`: reading schemas and inputs from the file system and stdin.
+fs = []
+# HTTP(S) URLs for `StdIo` (ureq with rustls), as the native CLI needs.
+http = ["fs", "dep:ureq"]
+
 [dependencies]
 indexmap.workspace = true
 quicktype-js-compat.workspace = true
+ureq = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
