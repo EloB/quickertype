@@ -1,0 +1,39 @@
+# The Objective-C renderer with each of its options and output file names,
+# on a schema with every kind of property, constraint (bounds, items,
+# pattern, length), nullable class and enum, map of primitives and of
+# classes, untyped union, boolean and forbidden property names (id,
+# description, new...), JSON names with characters that are escaped as
+# octal UTF-8 bytes, and top-level arrays, maps, enums and unions. The
+# corpus has almost only --functions renders into QTTopLevel.m. (A
+# top-level name shorter than NSString fails the prototypes' padding; see
+# objective-c-prefixes.txt.)
+input schema TopLevel {"$schema": "http://json-schema.org/draft-07/schema#", "title": "TopLevel", "description": "The kitchen sink.\nEnds with a backslash \\", "type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "created": {"type": "string", "format": "date-time", "description": "When it was made."}, "maybeCreated": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]}, "count": {"type": "integer", "minimum": 1, "maximum": 1e21}, "ratio": {"type": "number", "minimum": -0.5}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 10}, "code": {"type": "string", "pattern": "^[A-Z]\\d+\\\\$", "minLength": 2, "maxLength": 8}, "active": {"type": "boolean"}, "hasValue": {"type": "boolean"}, "isOn": {"type": ["boolean", "null"]}, "description": {"type": "string"}, "newThing": {"type": "integer"}, "copy": {"type": "number"}, "with \"quote\" and \\ and \u0001 and ­": {"type": "string"}, "ünï": {"type": "integer"}, "plain": {"type": "string"}, "maybeInt": {"type": ["integer", "null"]}, "maybeDouble": {"anyOf": [{"type": "number"}, {"type": "null"}]}, "maybePoint": {"anyOf": [{"$ref": "#/definitions/Point"}, {"type": "null"}]}, "maybeKind": {"anyOf": [{"$ref": "#/definitions/Kind"}, {"type": "null"}]}, "kind": {"$ref": "#/definitions/Kind"}, "kinds": {"type": "array", "items": {"$ref": "#/definitions/Kind"}}, "points": {"type": "array", "items": {"$ref": "#/definitions/Point"}}, "nested": {"type": "array", "items": {"type": "array", "items": {"$ref": "#/definitions/Point"}}}, "byName": {"type": "object", "additionalProperties": {"$ref": "#/definitions/Point"}}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "flags": {"type": "object", "additionalProperties": {"type": "boolean"}}, "maybes": {"type": "object", "additionalProperties": {"type": ["string", "null"]}}, "mixed": {"anyOf": [{"type": "string"}, {"type": "integer"}, {"$ref": "#/definitions/Point"}]}, "anything": {}, "nothing": {"type": "null"}, "anythings": {"type": "array", "items": {}}, "empty": {"$ref": "#/definitions/Empty"}, "point": {"$ref": "#/definitions/Point"}}, "required": ["id", "created", "count", "tags", "code", "active", "isOn", "description", "kind", "points", "byName", "counts", "flags", "mixed", "anything", "nothing", "point", "maybePoint", "maybeInt"], "definitions": {"Point": {"type": "object", "description": "A point.", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "label": {"type": "string", "description": "The label."}}, "required": ["x", "y"]}, "Kind": {"enum": ["first-kind", "SECOND", "new", "values", "with \"quote\"", "ü"], "description": "The kind."}, "Empty": {"type": "object", "properties": {}, "additionalProperties": false}}}
+input schema LabelList {"type": "array", "items": {"type": "string"}}
+input schema PointList {"type": "array", "items": {"$ref": "#/definitions/P"}, "definitions": {"P": {"type": "object", "properties": {"p": {"type": "integer"}}, "required": ["p"]}}}
+input schema CountMap {"type": "object", "additionalProperties": {"type": "integer"}}
+input schema StatusEnum {"enum": ["on", "off"]}
+input schema MixedUnion {"anyOf": [{"type": "string"}, {"type": "integer"}]}
+input schema MaybeString {"type": ["string", "null"]}
+pipeline {"lang": "objc"}
+
+render objc {}
+render objc {"filename": "stdout"}
+render objc {"filename": "QTTopLevel.m"}
+render objc {"filename": "Models"}
+render objc {"filename": "out/My.Models.objc"}
+render objc {"rendererOptions": {"functions": true}}
+render objc {"rendererOptions": {"just-types": true}}
+render objc {"rendererOptions": {"just-types": true, "functions": true}}
+render objc {"rendererOptions": {"features": "interface"}}
+render objc {"rendererOptions": {"features": "implementation"}}
+render objc {"rendererOptions": {"features": "interface", "just-types": true}}
+render objc {"rendererOptions": {"extra-comments": true}}
+render objc {"rendererOptions": {"extra-comments": true, "just-types": true}}
+render objc {"rendererOptions": {"class-prefix": "XY"}}
+render objc {"rendererOptions": {"class-prefix": ""}}
+render objc {"rendererOptions": {"class-prefix": "Ü"}}
+render objc {"alphabetize": true}
+render objc {"indentation": "\t"}
+render objc {"leadingComments": ["Leading comment", {"lines": ["line one", "line two \\"]}]}
+render objc {"rendererOptions": {"just-types": true}, "leadingComments": ["Leading comment"]}
+render objc {"rendererOptions": {"features": "both"}}

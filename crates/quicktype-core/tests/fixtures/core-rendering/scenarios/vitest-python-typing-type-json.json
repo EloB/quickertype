@@ -1,0 +1,178 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "MixedValues"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "mixed",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 3,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 7,
+       "null": {
+        "k": "decode",
+        "s": 6,
+        "c": {
+         "k": "union-instantiation",
+         "s": 6
+        }
+       },
+       "integer": {
+        "k": "decode",
+        "s": 5,
+        "c": {
+         "k": "union-instantiation",
+         "s": 5
+        }
+       },
+       "double": null,
+       "bool": null,
+       "string": {
+        "k": "decode",
+        "s": 8,
+        "c": {
+         "k": "parse-string",
+         "s": 8,
+         "c": {
+          "k": "union-instantiation",
+          "s": 5
+         }
+        }
+       },
+       "array": null,
+       "object": {
+        "k": "decode",
+        "s": 4,
+        "c": {
+         "k": "union-instantiation",
+         "s": 4
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     6,
+     5,
+     4
+    ]
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "MixedValues",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "from typing import Any, List, Union, Optional, TypeVar, Callable, cast\n\n\nT = TypeVar(\"T\")\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\nclass MixedClass:\n    pass\n\n    def __init__(self, ) -> None:\n        pass\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        return MixedClass()\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        return result\n\n\nclass MixedValues:\n    mixed: List[Optional[Union[int, MixedClass]]]\n\n    def __init__(self, mixed: List[Optional[Union[int, MixedClass]]]) -> None:\n        self.mixed = mixed\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedValues':\n        assert isinstance(obj, dict)\n        mixed = from_list(lambda x: from_union([from_none, from_int, lambda x: int(from_str(x)), MixedClass.from_dict], x), obj[\"mixed\"])\n        return MixedValues(mixed)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        return result\n\n\ndef mixed_values_from_dict(s: Any) -> MixedValues:\n    return MixedValues.from_dict(s)\n\n\ndef mixed_values_to_dict(x: MixedValues) -> Any:\n    return to_class(MixedValues, x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.7"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "from dataclasses import dataclass\nfrom typing import Any, List, Union, Optional, TypeVar, Callable, Type, cast\n\n\nT = TypeVar(\"T\")\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\n@dataclass\nclass MixedClass:\n    pass\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        return MixedClass()\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        return result\n\n\n@dataclass\nclass MixedValues:\n    mixed: List[Optional[Union[int, MixedClass]]]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedValues':\n        assert isinstance(obj, dict)\n        mixed = from_list(lambda x: from_union([from_none, from_int, lambda x: int(from_str(x)), MixedClass.from_dict], x), obj[\"mixed\"])\n        return MixedValues(mixed)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        return result\n\n\ndef mixed_values_from_dict(s: Any) -> MixedValues:\n    return MixedValues.from_dict(s)\n\n\ndef mixed_values_to_dict(x: MixedValues) -> Any:\n    return to_class(MixedValues, x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-python-typing-type-json"
+}

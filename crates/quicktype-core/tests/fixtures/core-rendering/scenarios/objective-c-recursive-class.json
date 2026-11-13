@@ -1,0 +1,231 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Node"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      1,
+      false
+     ],
+     [
+      "value",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "next",
+       "Nod"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      1,
+      false
+     ],
+     [
+      "value",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Chain"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      4,
+      true
+     ],
+     [
+      "value",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "next",
+       "Chai"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     5,
+     6
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "next",
+       "Chai"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      4,
+      true
+     ],
+     [
+      "value",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "null",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "Node",
+    0
+   ],
+   [
+    "Chain",
+    3
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "features": "interface"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "// To parse this JSON:\n//\n//   NSError *error;\n//   QTNode *node = [QTNode fromJSON:json encoding:NSUTF8Encoding error:&error];\n//   QTChain *chain = [QTChain fromJSON:json encoding:NSUTF8Encoding error:&error];\n\n#import <Foundation/Foundation.h>\n\n@class QTNode;\n@class QTNodeNext;\n@class QTChain;\n@class QTChainNext;\n\nNS_ASSUME_NONNULL_BEGIN\n\n#pragma mark - Object interfaces\n\n@interface QTNode : NSObject\n@property (nonatomic, strong) QTNodeNext *next;\n@property (nonatomic, assign) NSInteger value;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\n@interface QTNodeNext : NSObject\n@property (nonatomic, strong) QTNodeNext *next;\n@property (nonatomic, assign) NSInteger value;\n@end\n\n@interface QTChain : NSObject\n@property (nonatomic, nullable, strong) QTChainNext *next;\n@property (nonatomic, assign)           NSInteger value;\n\n+ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n+ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;\n- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;\n- (NSData *_Nullable)toData:(NSError *_Nullable *)error;\n@end\n\n@interface QTChainNext : NSObject\n@property (nonatomic, nullable, strong) QTChainNext *next;\n@property (nonatomic, assign)           NSInteger value;\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "#import <Foundation/Foundation.h>\n\n@class QTNode;\n@class QTNodeNext;\n@class QTChain;\n@class QTChainNext;\n\nNS_ASSUME_NONNULL_BEGIN\n\n#pragma mark - Object interfaces\n\n@interface QTNode : NSObject\n@property (nonatomic, strong) QTNodeNext *next;\n@property (nonatomic, assign) NSInteger value;\n@end\n\n@interface QTNodeNext : NSObject\n@property (nonatomic, strong) QTNodeNext *next;\n@property (nonatomic, assign) NSInteger value;\n@end\n\n@interface QTChain : NSObject\n@property (nonatomic, nullable, strong) QTChainNext *next;\n@property (nonatomic, assign)           NSInteger value;\n@end\n\n@interface QTChainNext : NSObject\n@property (nonatomic, nullable, strong) QTChainNext *next;\n@property (nonatomic, assign)           NSInteger value;\n@end\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "out.txt",
+     "text": "#import \"out.h\"\n\n@implementation QTNode\n@end\n\n@implementation QTNodeNext\n@end\n\n@implementation QTChain\n@end\n\n@implementation QTChainNext\n@end\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "objective-c-recursive-class"
+}

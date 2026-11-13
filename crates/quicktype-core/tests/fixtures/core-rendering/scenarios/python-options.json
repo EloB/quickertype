@@ -1,0 +1,975 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "count",
+      4,
+      false
+     ],
+     [
+      "flag",
+      6,
+      false
+     ],
+     [
+      "day",
+      5,
+      false
+     ],
+     [
+      "at",
+      3,
+      false
+     ],
+     [
+      "when",
+      24,
+      false
+     ],
+     [
+      "id",
+      8,
+      false
+     ],
+     [
+      "mixed",
+      14,
+      false
+     ],
+     [
+      "maybe",
+      9,
+      false
+     ],
+     [
+      "maybeCount",
+      11,
+      false
+     ],
+     [
+      "someValue",
+      23,
+      false
+     ],
+     [
+      "nested",
+      20,
+      false
+     ],
+     [
+      "class",
+      2,
+      false
+     ],
+     [
+      "from_dict",
+      2,
+      false
+     ],
+     [
+      "Weird Key",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "transformation": {
+      "target": 2,
+      "xfer": {
+       "k": "decode",
+       "s": 3,
+       "c": {
+        "k": "parse-string",
+        "s": 3,
+        "c": null
+       }
+      }
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "date",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "transformation": {
+      "target": 7,
+      "xfer": {
+       "k": "decode",
+       "s": 3,
+       "c": {
+        "k": "parse-string",
+        "s": 3,
+        "c": null
+       }
+      }
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "uuid",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     10,
+     3
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 12,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 13,
+       "null": {
+        "k": "decode",
+        "s": 10,
+        "c": {
+         "k": "union-instantiation",
+         "s": 10
+        }
+       },
+       "integer": null,
+       "double": null,
+       "bool": null,
+       "string": {
+        "k": "decode",
+        "s": 3,
+        "c": {
+         "k": "parse-string",
+         "s": 3,
+         "c": {
+          "k": "union-instantiation",
+          "s": 2
+         }
+        }
+       },
+       "array": null,
+       "object": null
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     10,
+     2
+    ]
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 15
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 16,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 13,
+       "null": {
+        "k": "decode",
+        "s": 10,
+        "c": {
+         "k": "union-instantiation",
+         "s": 10
+        }
+       },
+       "integer": null,
+       "double": {
+        "k": "decode",
+        "s": 19,
+        "c": {
+         "k": "union-instantiation",
+         "s": 19
+        }
+       },
+       "bool": {
+        "k": "decode",
+        "s": 7,
+        "c": {
+         "k": "union-instantiation",
+         "s": 7
+        }
+       },
+       "string": {
+        "k": "decode",
+        "s": 3,
+        "c": {
+         "k": "parse-string",
+         "s": 3,
+         "c": {
+          "k": "union-instantiation",
+          "s": 2
+         }
+        }
+       },
+       "array": {
+        "k": "decode",
+        "s": 17,
+        "c": {
+         "k": "union-instantiation",
+         "s": 17
+        }
+       },
+       "object": {
+        "k": "decode",
+        "s": 18,
+        "c": {
+         "k": "union-instantiation",
+         "s": 18
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     7,
+     10,
+     19,
+     18,
+     17,
+     2
+    ]
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "innerName",
+      3,
+      false
+     ],
+     [
+      "list",
+      21,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 22
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     2,
+     3
+    ]
+   },
+   {
+    "k": "date-time",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Counts"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      2,
+      false
+     ],
+     [
+      "b",
+      2,
+      false
+     ],
+     [
+      "c",
+      2,
+      false
+     ],
+     [
+      "d",
+      2,
+      false
+     ],
+     [
+      "e",
+      2,
+      false
+     ],
+     [
+      "f",
+      2,
+      false
+     ],
+     [
+      "g",
+      2,
+      false
+     ],
+     [
+      "h",
+      2,
+      false
+     ],
+     [
+      "i",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Values"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 27
+   },
+   {
+    "k": "any",
+    "a": {
+     "transformation": {
+      "target": 28,
+      "xfer": {
+       "k": "decoding-choice",
+       "s": 13,
+       "null": null,
+       "integer": {
+        "k": "decode",
+        "s": 2,
+        "c": {
+         "k": "union-instantiation",
+         "s": 2
+        }
+       },
+       "double": null,
+       "bool": {
+        "k": "decode",
+        "s": 7,
+        "c": {
+         "k": "union-instantiation",
+         "s": 7
+        }
+       },
+       "string": {
+        "k": "decode",
+        "s": 3,
+        "c": {
+         "k": "parse-string",
+         "s": 3,
+         "c": {
+          "k": "union-instantiation",
+          "s": 2
+         }
+        }
+       },
+       "array": null,
+       "object": null
+      }
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     2,
+     7
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Counts",
+    25
+   ],
+   [
+    "Values",
+    26
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    some_value: int | str\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: str | None = None\n    maybe_count: int | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[int | bool]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[int | bool]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    some_value: int | str\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: str | None\n    maybe_count: int | None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[int | bool]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[int | bool]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.5"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom uuid import UUID\nimport dateutil.parser\n\n\ndef from_int(x):\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x):\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f, x):\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c, x):\n    assert isinstance(x, c)\n    return x.to_dict()\n\n\ndef from_stringified_bool(x):\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x):\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x):\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x):\n    assert x is None\n    return x\n\n\ndef from_float(x):\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x):\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t, x):\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x):\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass:\n    def __init__(self, a):\n        self.a = a\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self):\n        result = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement:\n    def __init__(self, v):\n        self.v = v\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self):\n        result = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested:\n    def __init__(self, inner_name, list):\n        self.inner_name = inner_name\n        self.list = list\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self):\n        result = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement:\n    def __init__(self, count, flag, day, at, when, id, mixed, maybe, maybe_count, some_value, nested, top_level_class, top_level_from_dict, weird_key):\n        self.count = count\n        self.flag = flag\n        self.day = day\n        self.at = at\n        self.when = when\n        self.id = id\n        self.mixed = mixed\n        self.maybe = maybe\n        self.maybe_count = maybe_count\n        self.some_value = some_value\n        self.nested = nested\n        self.top_level_class = top_level_class\n        self.top_level_from_dict = top_level_from_dict\n        self.weird_key = weird_key\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, maybe, maybe_count, some_value, nested, top_level_class, top_level_from_dict, weird_key)\n\n    def to_dict(self):\n        result = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        return result\n\n\nclass Counts:\n    def __init__(self, a, b, c, d, e, f, g, h, i):\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self):\n        result = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s):\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x):\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s):\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x):\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s):\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x):\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom typing import Any, List, Union, Optional, TypeVar, Callable, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass:\n    a: int\n\n    def __init__(self, a: int) -> None:\n        self.a = a\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement:\n    v: int\n\n    def __init__(self, v: int) -> None:\n        self.v = v\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested:\n    inner_name: str\n    list: List[ListElement]\n\n    def __init__(self, inner_name: str, list: List[ListElement]) -> None:\n        self.inner_name = inner_name\n        self.list = list\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    maybe: Optional[str]\n    maybe_count: Optional[int]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n\n    def __init__(self, count: int, flag: bool, day: datetime.date, at: str, when: datetime.datetime, id: UUID, mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]], maybe: Optional[str], maybe_count: Optional[int], some_value: Union[int, str], nested: Nested, top_level_class: int, top_level_from_dict: int, weird_key: int) -> None:\n        self.count = count\n        self.flag = flag\n        self.day = day\n        self.at = at\n        self.when = when\n        self.id = id\n        self.mixed = mixed\n        self.maybe = maybe\n        self.maybe_count = maybe_count\n        self.some_value = some_value\n        self.nested = nested\n        self.top_level_class = top_level_class\n        self.top_level_from_dict = top_level_from_dict\n        self.weird_key = weird_key\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, maybe, maybe_count, some_value, nested, top_level_class, top_level_from_dict, weird_key)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        return result\n\n\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    def __init__(self, a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int, i: int) -> None:\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> List[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: List[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> List[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: List[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.7"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, List, Union, Optional, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: List[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> List[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: List[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> List[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: List[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.9"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, Union, Optional, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[Optional[Union[bool, float, MixedClass, list[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.5",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom uuid import UUID\n\n\nclass MixedClass:\n    def __init__(self, a):\n        self.a = a\n\n\nclass ListElement:\n    def __init__(self, v):\n        self.v = v\n\n\nclass Nested:\n    def __init__(self, inner_name, list):\n        self.inner_name = inner_name\n        self.list = list\n\n\nclass TopLevelElement:\n    def __init__(self, count, flag, day, at, when, id, mixed, maybe, maybe_count, some_value, nested, top_level_class, from_dict, weird_key):\n        self.count = count\n        self.flag = flag\n        self.day = day\n        self.at = at\n        self.when = when\n        self.id = id\n        self.mixed = mixed\n        self.maybe = maybe\n        self.maybe_count = maybe_count\n        self.some_value = some_value\n        self.nested = nested\n        self.top_level_class = top_level_class\n        self.from_dict = from_dict\n        self.weird_key = weird_key\n\n\nclass Counts:\n    def __init__(self, a, b, c, d, e, f, g, h, i):\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.6",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom typing import List, Union, Optional\nfrom uuid import UUID\n\n\nclass MixedClass:\n    a: int\n\n    def __init__(self, a: int) -> None:\n        self.a = a\n\n\nclass ListElement:\n    v: int\n\n    def __init__(self, v: int) -> None:\n        self.v = v\n\n\nclass Nested:\n    inner_name: str\n    list: List[ListElement]\n\n    def __init__(self, inner_name: str, list: List[ListElement]) -> None:\n        self.inner_name = inner_name\n        self.list = list\n\n\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    maybe: Optional[str]\n    maybe_count: Optional[int]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    from_dict: int\n    weird_key: int\n\n    def __init__(self, count: int, flag: bool, day: datetime.date, at: str, when: datetime.datetime, id: UUID, mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]], maybe: Optional[str], maybe_count: Optional[int], some_value: Union[int, str], nested: Nested, top_level_class: int, from_dict: int, weird_key: int) -> None:\n        self.count = count\n        self.flag = flag\n        self.day = day\n        self.at = at\n        self.when = when\n        self.id = id\n        self.mixed = mixed\n        self.maybe = maybe\n        self.maybe_count = maybe_count\n        self.some_value = some_value\n        self.nested = nested\n        self.top_level_class = top_level_class\n        self.from_dict = from_dict\n        self.weird_key = weird_key\n\n\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    def __init__(self, a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int, i: int) -> None:\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.7",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom dataclasses import dataclass\nfrom typing import List, Union, Optional\nfrom uuid import UUID\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: List[ListElement]\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "3.9",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom dataclasses import dataclass\nfrom uuid import UUID\nfrom typing import Union, Optional\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[Optional[Union[bool, float, MixedClass, list[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom dataclasses import dataclass\nfrom uuid import UUID\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    some_value: int | str\n    nested: Nested\n    top_level_class: int\n    from_dict: int\n    weird_key: int\n    maybe: str | None\n    maybe_count: int | None\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "pydantic-base-model": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom pydantic import BaseModel\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass(BaseModel):\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement(BaseModel):\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested(BaseModel):\n    inner_name: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement(BaseModel):\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    some_value: int | str\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: str | None = None\n    maybe_count: int | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\nclass Counts(BaseModel):\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[int | bool]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[int | bool]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "pydantic-base-model": true,
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom pydantic import BaseModel\nfrom typing import Any, List, Union, Optional, TypeVar, Callable, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass(BaseModel):\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement(BaseModel):\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested(BaseModel):\n    inner_name: str\n    list: List[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement(BaseModel):\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\nclass Counts(BaseModel):\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> List[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: List[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> List[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: List[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "pydantic-base-model": true,
+    "just-types": true,
+    "python-version": "3.9"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nfrom pydantic import BaseModel\nfrom uuid import UUID\nfrom typing import Union, Optional\n\n\nclass MixedClass(BaseModel):\n    a: int\n\n\nclass ListElement(BaseModel):\n    v: int\n\n\nclass Nested(BaseModel):\n    inner_name: str\n    list: list[ListElement]\n\n\nclass TopLevelElement(BaseModel):\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[Optional[Union[bool, float, MixedClass, list[int], int]]]\n    some_value: Union[int, str]\n    nested: Nested\n    top_level_class: int\n    from_dict: int\n    weird_key: int\n    maybe: Optional[str] = None\n    maybe_count: Optional[int] = None\n\n\nclass Counts(BaseModel):\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "nice-property-names": false
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    innerName: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        innerName = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(innerName, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.innerName)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    someValue: int | str\n    nested: Nested\n    TopLevelclass: int\n    fromdict: int\n    WeirdKey: int\n    maybe: str | None = None\n    maybeCount: int | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        someValue = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        TopLevelclass = from_int(obj[\"class\"])\n        fromdict = from_int(obj[\"from_dict\"])\n        WeirdKey = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybeCount = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, someValue, nested, TopLevelclass, fromdict, WeirdKey, maybe, maybeCount)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.someValue)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.TopLevelclass)\n        result[\"from_dict\"] = from_int(self.fromdict)\n        result[\"Weird Key\"] = from_int(self.WeirdKey)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybeCount)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef TopLevelfromdict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef TopLeveltodict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef Countsfromdict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef Countstodict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef Valuesfromdict(s: Any) -> list[int | bool]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef Valuestodict(x: list[int | bool]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "nice-property-names": false,
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom typing import Any, List, Union, Optional, TypeVar, Callable, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass:\n    a: int\n\n    def __init__(self, a: int) -> None:\n        self.a = a\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement:\n    v: int\n\n    def __init__(self, v: int) -> None:\n        self.v = v\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested:\n    innerName: str\n    list: List[ListElement]\n\n    def __init__(self, innerName: str, list: List[ListElement]) -> None:\n        self.innerName = innerName\n        self.list = list\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        innerName = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(innerName, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.innerName)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    maybe: Optional[str]\n    maybeCount: Optional[int]\n    someValue: Union[int, str]\n    nested: Nested\n    TopLevelclass: int\n    fromdict: int\n    WeirdKey: int\n\n    def __init__(self, count: int, flag: bool, day: datetime.date, at: str, when: datetime.datetime, id: UUID, mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]], maybe: Optional[str], maybeCount: Optional[int], someValue: Union[int, str], nested: Nested, TopLevelclass: int, fromdict: int, WeirdKey: int) -> None:\n        self.count = count\n        self.flag = flag\n        self.day = day\n        self.at = at\n        self.when = when\n        self.id = id\n        self.mixed = mixed\n        self.maybe = maybe\n        self.maybeCount = maybeCount\n        self.someValue = someValue\n        self.nested = nested\n        self.TopLevelclass = TopLevelclass\n        self.fromdict = fromdict\n        self.WeirdKey = WeirdKey\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybeCount = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        someValue = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        TopLevelclass = from_int(obj[\"class\"])\n        fromdict = from_int(obj[\"from_dict\"])\n        WeirdKey = from_int(obj[\"Weird Key\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, maybe, maybeCount, someValue, nested, TopLevelclass, fromdict, WeirdKey)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybeCount)\n        result[\"someValue\"] = from_union([from_int, from_str], self.someValue)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.TopLevelclass)\n        result[\"from_dict\"] = from_int(self.fromdict)\n        result[\"Weird Key\"] = from_int(self.WeirdKey)\n        return result\n\n\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    def __init__(self, a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int, i: int) -> None:\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef TopLevelfromdict(s: Any) -> List[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef TopLeveltodict(x: List[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef Countsfromdict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef Countstodict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef Valuesfromdict(s: Any) -> List[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef Valuestodict(x: List[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "python-version": "3.6"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom typing import Any, List, Optional, Union, TypeVar, Callable, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> List[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c, x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef is_type(t, x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\nclass MixedClass:\n    a: int\n\n    def __init__(self, a: int) -> None:\n        self.a = a\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\nclass ListElement:\n    v: int\n\n    def __init__(self, v: int) -> None:\n        self.v = v\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\nclass Nested:\n    inner_name: str\n    list: List[ListElement]\n\n    def __init__(self, inner_name: str, list: List[ListElement]) -> None:\n        self.inner_name = inner_name\n        self.list = list\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\nclass TopLevelElement:\n    at: str\n    count: int\n    day: datetime.date\n    flag: bool\n    id: UUID\n    maybe: Optional[str]\n    maybe_count: Optional[int]\n    mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]]\n    nested: Nested\n    some_value: Union[int, str]\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    when: datetime.datetime\n\n    def __init__(self, at: str, count: int, day: datetime.date, flag: bool, id: UUID, maybe: Optional[str], maybe_count: Optional[int], mixed: List[Optional[Union[bool, float, MixedClass, List[int], int]]], nested: Nested, some_value: Union[int, str], top_level_class: int, top_level_from_dict: int, weird_key: int, when: datetime.datetime) -> None:\n        self.at = at\n        self.count = count\n        self.day = day\n        self.flag = flag\n        self.id = id\n        self.maybe = maybe\n        self.maybe_count = maybe_count\n        self.mixed = mixed\n        self.nested = nested\n        self.some_value = some_value\n        self.top_level_class = top_level_class\n        self.top_level_from_dict = top_level_from_dict\n        self.weird_key = weird_key\n        self.when = when\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        at = from_str(obj[\"at\"])\n        count = int(from_str(obj[\"count\"]))\n        day = from_date(obj[\"day\"])\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        id = UUID(obj[\"id\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        when = from_datetime(obj[\"when\"])\n        return TopLevelElement(at, count, day, flag, id, maybe, maybe_count, mixed, nested, some_value, top_level_class, top_level_from_dict, weird_key, when)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"at\"] = from_str(self.at)\n        result[\"count\"] = from_str(str(self.count))\n        result[\"day\"] = self.day.isoformat()\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"id\"] = str(self.id)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(List, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"when\"] = self.when.isoformat()\n        return result\n\n\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    def __init__(self, a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int, i: int) -> None:\n        self.a = a\n        self.b = b\n        self.c = c\n        self.d = d\n        self.e = e\n        self.f = f\n        self.g = g\n        self.h = h\n        self.i = i\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> List[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: List[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> List[Union[int, bool]]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: List[Union[int, bool]]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "import datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n  assert isinstance(x, int) and not isinstance(x, bool)\n  return x\n\n\ndef from_str(x: Any) -> str:\n  assert isinstance(x, str)\n  return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n  assert isinstance(x, list)\n  return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n  assert isinstance(x, c)\n  return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n  if x == \"true\":\n    return True\n  if x == \"false\":\n    return False\n  assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n  assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n  return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n  return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n  assert x is None\n  return x\n\n\ndef from_float(x: Any) -> float:\n  assert isinstance(x, (float, int)) and not isinstance(x, bool)\n  return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n  assert isinstance(x, bool)\n  return x\n\n\ndef from_union(fs, x):\n  for f in fs:\n    try:\n      return f(x)\n    except:\n      pass\n  assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n  assert isinstance(x, t)\n  return x\n\n\ndef to_float(x: Any) -> float:\n  assert isinstance(x, (int, float))\n  return x\n\n\n@dataclass\nclass MixedClass:\n  a: int\n\n  @staticmethod\n  def from_dict(obj: Any) -> 'MixedClass':\n    assert isinstance(obj, dict)\n    a = from_int(obj[\"a\"])\n    return MixedClass(a)\n\n  def to_dict(self) -> dict:\n    result: dict = {}\n    result[\"a\"] = from_int(self.a)\n    return result\n\n\n@dataclass\nclass ListElement:\n  v: int\n\n  @staticmethod\n  def from_dict(obj: Any) -> 'ListElement':\n    assert isinstance(obj, dict)\n    v = from_int(obj[\"v\"])\n    return ListElement(v)\n\n  def to_dict(self) -> dict:\n    result: dict = {}\n    result[\"v\"] = from_int(self.v)\n    return result\n\n\n@dataclass\nclass Nested:\n  inner_name: str\n  list: list[ListElement]\n\n  @staticmethod\n  def from_dict(obj: Any) -> 'Nested':\n    assert isinstance(obj, dict)\n    inner_name = from_str(obj[\"innerName\"])\n    list = from_list(ListElement.from_dict, obj[\"list\"])\n    return Nested(inner_name, list)\n\n  def to_dict(self) -> dict:\n    result: dict = {}\n    result[\"innerName\"] = from_str(self.inner_name)\n    result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n    return result\n\n\n@dataclass\nclass TopLevelElement:\n  count: int\n  flag: bool\n  day: datetime.date\n  at: str\n  when: datetime.datetime\n  id: UUID\n  mixed: list[bool | float | MixedClass | list[int] | int | None]\n  some_value: int | str\n  nested: Nested\n  top_level_class: int\n  top_level_from_dict: int\n  weird_key: int\n  maybe: str | None = None\n  maybe_count: int | None = None\n\n  @staticmethod\n  def from_dict(obj: Any) -> 'TopLevelElement':\n    assert isinstance(obj, dict)\n    count = int(from_str(obj[\"count\"]))\n    flag = from_stringified_bool(from_str(obj[\"flag\"]))\n    day = from_date(obj[\"day\"])\n    at = from_str(obj[\"at\"])\n    when = from_datetime(obj[\"when\"])\n    id = UUID(obj[\"id\"])\n    mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n    some_value = from_union([from_int, from_str], obj[\"someValue\"])\n    nested = Nested.from_dict(obj[\"nested\"])\n    top_level_class = from_int(obj[\"class\"])\n    top_level_from_dict = from_int(obj[\"from_dict\"])\n    weird_key = from_int(obj[\"Weird Key\"])\n    maybe = from_union([from_none, from_str], obj[\"maybe\"])\n    maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n    return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n  def to_dict(self) -> dict:\n    result: dict = {}\n    result[\"count\"] = from_str(str(self.count))\n    result[\"flag\"] = from_str(str(self.flag).lower())\n    result[\"day\"] = self.day.isoformat()\n    result[\"at\"] = from_str(self.at)\n    result[\"when\"] = self.when.isoformat()\n    result[\"id\"] = str(self.id)\n    result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n    result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n    result[\"nested\"] = to_class(Nested, self.nested)\n    result[\"class\"] = from_int(self.top_level_class)\n    result[\"from_dict\"] = from_int(self.top_level_from_dict)\n    result[\"Weird Key\"] = from_int(self.weird_key)\n    result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n    result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n    return result\n\n\n@dataclass\nclass Counts:\n  a: int\n  b: int\n  c: int\n  d: int\n  e: int\n  f: int\n  g: int\n  h: int\n  i: int\n\n  @staticmethod\n  def from_dict(obj: Any) -> 'Counts':\n    assert isinstance(obj, dict)\n    a = from_int(obj[\"a\"])\n    b = from_int(obj[\"b\"])\n    c = from_int(obj[\"c\"])\n    d = from_int(obj[\"d\"])\n    e = from_int(obj[\"e\"])\n    f = from_int(obj[\"f\"])\n    g = from_int(obj[\"g\"])\n    h = from_int(obj[\"h\"])\n    i = from_int(obj[\"i\"])\n    return Counts(a, b, c, d, e, f, g, h, i)\n\n  def to_dict(self) -> dict:\n    result: dict = {}\n    result[\"a\"] = from_int(self.a)\n    result[\"b\"] = from_int(self.b)\n    result[\"c\"] = from_int(self.c)\n    result[\"d\"] = from_int(self.d)\n    result[\"e\"] = from_int(self.e)\n    result[\"f\"] = from_int(self.f)\n    result[\"g\"] = from_int(self.g)\n    result[\"h\"] = from_int(self.h)\n    result[\"i\"] = from_int(self.i)\n    return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n  return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n  return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n  return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n  return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[int | bool]:\n  return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[int | bool]) -> Any:\n  return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "string comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    },
+    {
+     "descriptionBlock": [
+      "block",
+      "two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# string comment\n\n# line one\n# line two\n\n\"\"\"block\ntwo\n\"\"\"\n\nimport datetime\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, TypeVar, Callable, Type, cast\nfrom uuid import UUID\nimport dateutil.parser\n\n\nT = TypeVar(\"T\")\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x: Any) -> str:\n    assert isinstance(x, str)\n    return x\n\n\ndef from_list(f: Callable[[Any], T], x: Any) -> list[T]:\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef to_class(c: Type[T], x: Any) -> dict:\n    assert isinstance(x, c)\n    return cast(Any, x).to_dict()\n\n\ndef from_stringified_bool(x: str) -> bool:\n    if x == \"true\":\n        return True\n    if x == \"false\":\n        return False\n    assert False\n\n\ndef from_date(x: Any) -> datetime.date:\n    assert isinstance(x, str) and re.match(r\"^\\d{4}-\\d{2}-\\d{2}$\", x)\n    return dateutil.parser.parse(x).date()\n\n\ndef from_datetime(x: Any) -> datetime.datetime:\n    return dateutil.parser.parse(x)\n\n\ndef from_none(x: Any) -> Any:\n    assert x is None\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_bool(x: Any) -> bool:\n    assert isinstance(x, bool)\n    return x\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef is_type(t: Type[T], x: Any) -> T:\n    assert isinstance(x, t)\n    return x\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\n@dataclass\nclass MixedClass:\n    a: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'MixedClass':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        return MixedClass(a)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        return result\n\n\n@dataclass\nclass ListElement:\n    v: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'ListElement':\n        assert isinstance(obj, dict)\n        v = from_int(obj[\"v\"])\n        return ListElement(v)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"v\"] = from_int(self.v)\n        return result\n\n\n@dataclass\nclass Nested:\n    inner_name: str\n    list: list[ListElement]\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Nested':\n        assert isinstance(obj, dict)\n        inner_name = from_str(obj[\"innerName\"])\n        list = from_list(ListElement.from_dict, obj[\"list\"])\n        return Nested(inner_name, list)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"innerName\"] = from_str(self.inner_name)\n        result[\"list\"] = from_list(lambda x: to_class(ListElement, x), self.list)\n        return result\n\n\n@dataclass\nclass TopLevelElement:\n    count: int\n    flag: bool\n    day: datetime.date\n    at: str\n    when: datetime.datetime\n    id: UUID\n    mixed: list[bool | float | MixedClass | list[int] | int | None]\n    some_value: int | str\n    nested: Nested\n    top_level_class: int\n    top_level_from_dict: int\n    weird_key: int\n    maybe: str | None = None\n    maybe_count: int | None = None\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'TopLevelElement':\n        assert isinstance(obj, dict)\n        count = int(from_str(obj[\"count\"]))\n        flag = from_stringified_bool(from_str(obj[\"flag\"]))\n        day = from_date(obj[\"day\"])\n        at = from_str(obj[\"at\"])\n        when = from_datetime(obj[\"when\"])\n        id = UUID(obj[\"id\"])\n        mixed = from_list(lambda x: from_union([from_none, from_float, from_bool, lambda x: int(from_str(x)), lambda x: from_list(from_int, x), MixedClass.from_dict], x), obj[\"mixed\"])\n        some_value = from_union([from_int, from_str], obj[\"someValue\"])\n        nested = Nested.from_dict(obj[\"nested\"])\n        top_level_class = from_int(obj[\"class\"])\n        top_level_from_dict = from_int(obj[\"from_dict\"])\n        weird_key = from_int(obj[\"Weird Key\"])\n        maybe = from_union([from_none, from_str], obj[\"maybe\"])\n        maybe_count = from_union([from_none, lambda x: int(from_str(x))], obj[\"maybeCount\"])\n        return TopLevelElement(count, flag, day, at, when, id, mixed, some_value, nested, top_level_class, top_level_from_dict, weird_key, maybe, maybe_count)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"count\"] = from_str(str(self.count))\n        result[\"flag\"] = from_str(str(self.flag).lower())\n        result[\"day\"] = self.day.isoformat()\n        result[\"at\"] = from_str(self.at)\n        result[\"when\"] = self.when.isoformat()\n        result[\"id\"] = str(self.id)\n        result[\"mixed\"] = from_list(lambda x: from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: to_float((lambda x: is_type(float, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x)), lambda x: from_list(from_int, (lambda x: is_type(list, x))(x)), lambda x: to_class(MixedClass, (lambda x: is_type(MixedClass, x))(x))], x), self.mixed)\n        result[\"someValue\"] = from_union([from_int, from_str], self.some_value)\n        result[\"nested\"] = to_class(Nested, self.nested)\n        result[\"class\"] = from_int(self.top_level_class)\n        result[\"from_dict\"] = from_int(self.top_level_from_dict)\n        result[\"Weird Key\"] = from_int(self.weird_key)\n        result[\"maybe\"] = from_union([from_none, from_str], self.maybe)\n        result[\"maybeCount\"] = from_union([lambda x: from_none((lambda x: is_type(type(None), x))(x)), lambda x: from_str((lambda x: str((lambda x: is_type(int, x))(x)))(x))], self.maybe_count)\n        return result\n\n\n@dataclass\nclass Counts:\n    a: int\n    b: int\n    c: int\n    d: int\n    e: int\n    f: int\n    g: int\n    h: int\n    i: int\n\n    @staticmethod\n    def from_dict(obj: Any) -> 'Counts':\n        assert isinstance(obj, dict)\n        a = from_int(obj[\"a\"])\n        b = from_int(obj[\"b\"])\n        c = from_int(obj[\"c\"])\n        d = from_int(obj[\"d\"])\n        e = from_int(obj[\"e\"])\n        f = from_int(obj[\"f\"])\n        g = from_int(obj[\"g\"])\n        h = from_int(obj[\"h\"])\n        i = from_int(obj[\"i\"])\n        return Counts(a, b, c, d, e, f, g, h, i)\n\n    def to_dict(self) -> dict:\n        result: dict = {}\n        result[\"a\"] = from_int(self.a)\n        result[\"b\"] = from_int(self.b)\n        result[\"c\"] = from_int(self.c)\n        result[\"d\"] = from_int(self.d)\n        result[\"e\"] = from_int(self.e)\n        result[\"f\"] = from_int(self.f)\n        result[\"g\"] = from_int(self.g)\n        result[\"h\"] = from_int(self.h)\n        result[\"i\"] = from_int(self.i)\n        return result\n\n\ndef top_level_from_dict(s: Any) -> list[TopLevelElement]:\n    return from_list(TopLevelElement.from_dict, s)\n\n\ndef top_level_to_dict(x: list[TopLevelElement]) -> Any:\n    return from_list(lambda x: to_class(TopLevelElement, x), x)\n\n\ndef counts_from_dict(s: Any) -> Counts:\n    return Counts.from_dict(s)\n\n\ndef counts_to_dict(x: Counts) -> Any:\n    return to_class(Counts, x)\n\n\ndef values_from_dict(s: Any) -> list[int | bool]:\n    return from_list(lambda x: from_union([from_int, from_bool, lambda x: int(from_str(x))], x), s)\n\n\ndef values_to_dict(x: list[int | bool]) -> Any:\n    return from_list(lambda x: from_union([lambda x: from_int((lambda x: is_type(int, x))(x)), lambda x: from_bool((lambda x: is_type(bool, x))(x))], x), x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "2.7"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Unknown value 2.7 for option python-version",
+   "console": []
+  }
+ ],
+ "id": "python-options"
+}

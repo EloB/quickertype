@@ -1,6 +1,8 @@
 # Endless recursion over the type graph: a nullable union whose member is an
 # array of the union itself makes the renderers' type-to-source functions
-# (C# csType, Pike sourceFor) recurse until V8's stack overflows, a
+# (C# csType, Pike sourceFor, Ruby dryType, Elixir elixirType, Python
+# pythonType, Swift swiftType, Dart dartType, ...) recurse until V8's stack
+# overflows, a
 # RangeError (support::recursion::guard in Rust). The graph comes from the
 # default (Rust) pipeline: C#'s own pipeline already overflows in
 # needTransformerForType.
@@ -9,3 +11,22 @@ input schema TopLevel {"type": "object", "properties": {"x": {"$ref": "#/definit
 render csharp {}
 render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "5"}}
 render pike {}
+render ruby {}
+render ruby {"rendererOptions": {"just-types": true}}
+render elixir {}
+render python {}
+render python {"rendererOptions": {"python-version": "3.7"}}
+render python {"rendererOptions": {"just-types": true}}
+render swift {}
+render swift {"rendererOptions": {"just-types": true}}
+# Objective-C declares the unnamed nullable union (it breaks the cycle) and
+# fails to name it before it recurses; --just-types --features
+# implementation recurses in implicitlyConvertsFromJSON.
+render objc {}
+render objc {"rendererOptions": {"features": "interface"}}
+render objc {"rendererOptions": {"features": "implementation", "just-types": true}}
+render dart {}
+render dart {"rendererOptions": {"just-types": true}}
+render crystal {}
+render cplusplus {}
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}

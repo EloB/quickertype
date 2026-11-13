@@ -4,11 +4,16 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
-- `feat/wasm-js-api` (Phase 6): `npm/quicktype-core` runs quicktype-core's
-  API on the WebAssembly engine. Differential suite against the reference
-  quicktype-core: 18,717 scenarios, 12,041 identical, 6,675 in renderers
-  not ported yet, 0 different (1 documented known gap). `**` on `wasm32`
-  is the host's `Math.pow`. Engine: 3.8 MiB (1.3 MiB gzipped).
+- **Parity 10,174 / 11,177 (91.0%), 0 regressions.** Merged language wave
+  2 so far: Crystal, C++; Swift, Objective-C, Dart; Ruby, Elixir, Python
+  (each reviewed; 100% of render cases and every end-to-end case except
+  GraphQL input). Remaining: C (cJSON), Go + JSON Schema output (review
+  fixes), GraphQL input (in review).
+- JS API (`feat/wasm-js-api`, in review): WASM engine behind quicktype's
+  own TypeScript API; 0 differences over 18,717 differential scenarios
+  against npm quicktype-core; all 416 `.d.ts` files byte-identical. In-process
+  WASM speed is about equal to warm TypeScript (the big speedup is the
+  native CLI, which skips Node startup); WASM performance is a Phase 7 item.
 
 - **Parity 7,331 / 11,177 (65.6%), 0 regressions.** Merged
   `feat/run-and-cli` (Phase 3: Run, the public Rust API, the CLI generation

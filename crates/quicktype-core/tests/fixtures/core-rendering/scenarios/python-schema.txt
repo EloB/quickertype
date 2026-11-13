@@ -1,0 +1,21 @@
+# The Python renderers on schema features: one- and multi-line
+# descriptions (docstrings), constraint asserts, enums, optional and
+# nullable properties (" = None" defaults sort last with dataclasses),
+# unions with several members, Any and None properties, and classes that
+# refer to each other (quoted forward references; PEP 604 quotes the
+# whole union).
+input schema TopLevel {"type": "object", "description": "The top level.\nIt has \"\"\"quotes\"\"\" and a \\ backslash.", "properties": {"small": {"type": "integer", "minimum": -5, "maximum": 100}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 1e21}, "name": {"type": "string", "minLength": 1, "maxLength": 3, "pattern": "^[a-z\"]+$", "description": "The name."}, "optName": {"type": "string", "minLength": 2}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4}, "kind": {"enum": ["one-two", "three \"four\"", "5", "class"]}, "maybeKind": {"anyOf": [{"enum": ["a", "b"]}, {"type": "null"}]}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"$ref": "#/definitions/child"}]}, "maybeChoice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "maybeChild": {"anyOf": [{"$ref": "#/definitions/child"}, {"type": "null"}]}, "children": {"type": "object", "additionalProperties": {"$ref": "#/definitions/child"}}, "list": {"type": "array", "items": {"$ref": "#/definitions/child"}}, "anything": {}, "nothing": {"type": "null"}, "number": {"type": ["integer", "number"]}, "self": {"$ref": "#"}, "when": {"type": "string", "format": "date-time"}, "day": {"type": "string", "format": "date"}, "at": {"type": "string", "format": "time"}, "id": {"type": "string", "format": "uuid"}, "count": {"type": "string", "format": "integer"}, "flag": {"type": "string", "format": "boolean"}}, "required": ["small", "ratio", "name", "tags", "kind", "maybeKind", "choice", "maybeChoice", "maybeChild", "children", "list", "anything", "nothing", "number", "when", "day", "at", "id"], "definitions": {"child": {"type": "object", "description": "A child.", "properties": {"x": {"type": "number", "description": "One line."}, "parent": {"$ref": "#"}, "sibling": {"anyOf": [{"$ref": "#/definitions/child"}, {"type": "null"}]}}, "required": ["x", "sibling"]}}}
+input schema Mode {"enum": ["on", "off"]}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+pipeline {"lang": "python"}
+
+render python {}
+render python {"alphabetize": true}
+render python {"rendererOptions": {"python-version": "3.5"}}
+render python {"rendererOptions": {"python-version": "3.6"}}
+render python {"rendererOptions": {"python-version": "3.7"}}
+render python {"rendererOptions": {"python-version": "3.9"}}
+render python {"rendererOptions": {"just-types": true}}
+render python {"rendererOptions": {"just-types": true, "python-version": "3.6"}}
+render python {"rendererOptions": {"pydantic-base-model": true}}
+render python {"rendererOptions": {"pydantic-base-model": true, "python-version": "3.7"}, "alphabetize": true}

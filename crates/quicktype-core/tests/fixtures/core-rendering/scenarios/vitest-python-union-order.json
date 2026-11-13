@@ -1,0 +1,64 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     1,
+     2
+    ]
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "integer",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "from typing import Any\n\n\ndef from_int(x: Any) -> int:\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_float(x: Any) -> float:\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_union(fs, x):\n    for f in fs:\n        try:\n            return f(x)\n        except:\n            pass\n    assert False\n\n\ndef to_float(x: Any) -> float:\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef top_level_from_dict(s: Any) -> float | int:\n    return from_union([from_int, from_float], s)\n\n\ndef top_level_to_dict(x: float | int) -> Any:\n    return from_union([from_int, to_float], x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-python-union-order"
+}

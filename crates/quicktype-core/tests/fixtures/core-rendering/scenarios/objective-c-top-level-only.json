@@ -1,0 +1,136 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Úmixedvalues"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     2,
+     3,
+     4
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Úmixedvalues",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "// To parse this JSON:\n//\n//   NSError *error;\n//   QTÚmixedvalues *úmixedvalues = QTÚmixedvaluesFromJSON(json, NSUTF8Encoding, &error);\n\n#import <Foundation/Foundation.h>\n\nNS_ASSUME_NONNULL_BEGIN\n\ntypedef NSArray<id> QTÚmixedvalues;\n\n#pragma mark - Top-level marshaling functions\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromData(NSData *data, NSError **error);\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromJSON(NSString *json, NSStringEncoding encoding, NSError **error);\nNSData         *_Nullable QTÚmixedvaluesToData(QTÚmixedvalues *úmixedvalues, NSError **error);\nNSString       *_Nullable QTÚmixedvaluesToJSON(QTÚmixedvalues *úmixedvalues, NSStringEncoding encoding, NSError **error);\n\n#pragma mark - Object interfaces\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "out.txt",
+     "text": "#import \"out.h\"\n\n#define λ(decl, expr) (^(decl) { return (expr); })\n\nstatic id NSNullify(id _Nullable x) {\n    return (x == nil || x == NSNull.null) ? NSNull.null : x;\n}\n\nNS_ASSUME_NONNULL_BEGIN\n\nstatic id map(id collection, id (^f)(id value)) {\n    id result = nil;\n    if ([collection isKindOfClass:NSArray.class]) {\n            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];\n            for (id x in collection) [result addObject:NSNullify(f(x))];\n    } else if ([collection isKindOfClass:NSDictionary.class]) {\n            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];\n            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];\n    }\n    return result;\n}\n\n#pragma mark - JSON serialization\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        if (![json isKindOfClass:NSArray.class]) [NSException raise:@\"Invalid JSON\" format:@\"Expected NSArray.\"];\n        return *error ? nil : map(json, λ(id x, x));\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return QTÚmixedvaluesFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable QTÚmixedvaluesToData(QTÚmixedvalues *úmixedvalues, NSError **error)\n{\n    @try {\n        id json = úmixedvalues;\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable QTÚmixedvaluesToJSON(QTÚmixedvalues *úmixedvalues, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = QTÚmixedvaluesToData(úmixedvalues, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "stdout",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "QTÚmixedvalues.h",
+     "text": "// To parse this JSON:\n//\n//   NSError *error;\n//   QTÚmixedvalues *úmixedvalues = QTÚmixedvaluesFromJSON(json, NSUTF8Encoding, &error);\n\n#import <Foundation/Foundation.h>\n\nNS_ASSUME_NONNULL_BEGIN\n\ntypedef NSArray<id> QTÚmixedvalues;\n\n#pragma mark - Top-level marshaling functions\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromData(NSData *data, NSError **error);\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromJSON(NSString *json, NSStringEncoding encoding, NSError **error);\nNSData         *_Nullable QTÚmixedvaluesToData(QTÚmixedvalues *úmixedvalues, NSError **error);\nNSString       *_Nullable QTÚmixedvaluesToJSON(QTÚmixedvalues *úmixedvalues, NSStringEncoding encoding, NSError **error);\n\n#pragma mark - Object interfaces\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "QTÚmixedvalues.m",
+     "text": "#import \"QTÚmixedvalues.h\"\n\n#define λ(decl, expr) (^(decl) { return (expr); })\n\nstatic id NSNullify(id _Nullable x) {\n    return (x == nil || x == NSNull.null) ? NSNull.null : x;\n}\n\nNS_ASSUME_NONNULL_BEGIN\n\nstatic id map(id collection, id (^f)(id value)) {\n    id result = nil;\n    if ([collection isKindOfClass:NSArray.class]) {\n            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];\n            for (id x in collection) [result addObject:NSNullify(f(x))];\n    } else if ([collection isKindOfClass:NSDictionary.class]) {\n            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];\n            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];\n    }\n    return result;\n}\n\n#pragma mark - JSON serialization\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromData(NSData *data, NSError **error)\n{\n    @try {\n        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];\n        if (![json isKindOfClass:NSArray.class]) [NSException raise:@\"Invalid JSON\" format:@\"Expected NSArray.\"];\n        return *error ? nil : map(json, λ(id x, x));\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nQTÚmixedvalues *_Nullable QTÚmixedvaluesFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)\n{\n    return QTÚmixedvaluesFromData([json dataUsingEncoding:encoding], error);\n}\n\nNSData *_Nullable QTÚmixedvaluesToData(QTÚmixedvalues *úmixedvalues, NSError **error)\n{\n    @try {\n        id json = úmixedvalues;\n        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];\n        return *error ? nil : data;\n    } @catch (NSException *exception) {\n        *error = [NSError errorWithDomain:@\"JSONSerialization\" code:-1 userInfo:@{ @\"exception\": exception }];\n        return nil;\n    }\n}\n\nNSString *_Nullable QTÚmixedvaluesToJSON(QTÚmixedvalues *úmixedvalues, NSStringEncoding encoding, NSError **error)\n{\n    NSData *data = QTÚmixedvaluesToData(úmixedvalues, error);\n    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;\n}\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objc",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.h",
+     "text": "#import <Foundation/Foundation.h>\n\nNS_ASSUME_NONNULL_BEGIN\n\ntypedef NSArray<id> QTÚmixedvalues;\n\n#pragma mark - Object interfaces\n\nNS_ASSUME_NONNULL_END\n",
+     "annotations": []
+    },
+    {
+     "name": "out.txt",
+     "text": "#import \"out.h\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "objective-c-top-level-only"
+}

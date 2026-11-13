@@ -1,0 +1,11 @@
+# --multi-file-output with a type named JSONSchemaSupport: the support file
+# continues that type's finished emit context and finishes the same file
+# name twice, which prints a warning (TypeScript's console.log). The URL
+# and Url definitions collide in naming (the first one is renamed after its
+# property), also with --acronym-style original.
+input schema TopLevel {"type": "object", "properties": {"a": {"$ref": "#/definitions/URL"}, "b": {"$ref": "#/definitions/Url"}, "c": {"$ref": "#/definitions/JSONSchemaSupport"}}, "required": ["a", "b"], "definitions": {"URL": {"type": "object", "properties": {"x": {"type": "integer"}}}, "Url": {"type": "object", "properties": {"y": {"type": "string"}}}, "JSONSchemaSupport": {"enum": ["p", "q"]}}}
+pipeline {"lang": "swift"}
+
+render swift {"rendererOptions": {"multi-file-output": true, "acronym-style": "original"}}
+render swift {"rendererOptions": {"multi-file-output": true, "acronym-style": "original", "just-types": true}}
+render swift {"rendererOptions": {"multi-file-output": true}}
