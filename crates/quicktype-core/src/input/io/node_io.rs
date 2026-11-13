@@ -40,6 +40,17 @@ pub struct HttpResponse {
     pub body: Option<Vec<u8>>,
 }
 
+/// The members of fetch's `RequestInit` dictionary that quicktype sets.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RequestInit<'a> {
+    /// `method`, e.g. `"POST"`.
+    pub method: &'a str,
+    /// `headers`, as a record (names and values in property order).
+    pub headers: &'a [(String, String)],
+    /// `body`, sent as UTF-8.
+    pub body: Option<&'a str>,
+}
+
 /// What kind of failure an [`IoError`] is.
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -191,6 +202,31 @@ pub trait Io {
         url: &'a str,
         headers: &'a [(String, String)],
     ) -> LocalBoxFuture<'a, std::result::Result<HttpResponse, IoError>>;
+
+    /// `fetch(url, { method, headers, body })`, following redirects, as
+    /// `--graphql-introspect` sends its query. Errors are as for
+    /// [`fetch`](Self::fetch), plus undici's `TypeError`s for a bad method
+    /// or a body on a `GET`.
+    ///
+    /// The default implementation handles a `GET` without a body with
+    /// [`fetch`](Self::fetch) and fails for anything else.
+    fn fetch_with_init<'a>(
+        &'a self,
+        url: &'a str,
+        init: RequestInit<'a>,
+    ) -> LocalBoxFuture<'a, std::result::Result<HttpResponse, IoError>> {
+        if init.method == "GET" && init.body.is_none() {
+            return self.fetch(url, init.headers);
+        }
+        let method = init.method.to_owned();
+        Box::pin(async move {
+            Err(IoError::new(
+                IoErrorKind::Other,
+                JsErrorName::Error,
+                format!("this Io cannot send {method} requests with a body"),
+            ))
+        })
+    }
 
     /// `isNode` (`browser-or-node`): whether files and stdin exist at all.
     /// Without them, everything but URLs is "Input file … does not exist".
@@ -463,7 +499,7 @@ mod std_io {
 
     #[cfg(not(feature = "http"))]
     use super::IoErrorKind;
-    use super::{HttpResponse, Io, IoError, StdIo};
+    use super::{HttpResponse, Io, IoError, RequestInit, StdIo};
     use crate::input::io::LocalBoxFuture;
 
     /// The error of a failed file system call on `path`.
@@ -517,11 +553,29 @@ mod std_io {
         ) -> LocalBoxFuture<'a, Result<HttpResponse, IoError>> {
             Box::pin(async move { http_get(url, headers) })
         }
+
+        fn fetch_with_init<'a>(
+            &'a self,
+            url: &'a str,
+            init: RequestInit<'a>,
+        ) -> LocalBoxFuture<'a, Result<HttpResponse, IoError>> {
+            Box::pin(async move { http_request(url, &init) })
+        }
     }
 
     #[cfg(feature = "http")]
     fn http_get(url: &str, headers: &[(String, String)]) -> Result<HttpResponse, IoError> {
         crate::input::io::fetch::fetch(url, headers)
+    }
+
+    #[cfg(feature = "http")]
+    fn http_request(url: &str, init: &RequestInit<'_>) -> Result<HttpResponse, IoError> {
+        crate::input::io::fetch::fetch_with_init(url, init)
+    }
+
+    #[cfg(not(feature = "http"))]
+    fn http_request(url: &str, init: &RequestInit<'_>) -> Result<HttpResponse, IoError> {
+        http_get(url, init.headers)
     }
 
     #[cfg(not(feature = "http"))]
