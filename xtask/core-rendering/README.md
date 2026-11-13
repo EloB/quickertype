@@ -12,7 +12,7 @@ differential renderer tests. They need a built quicktype checkout
 ```sh
 node xtask/core-rendering/record-render-cases.mjs ../quicktype rust
 node xtask/core-rendering/run-render-scenarios.mjs ../quicktype
-cargo test -p quicktype-core --test render_cases --test render_scenarios
+cargo test -p quickertype-core --test render_cases --test render_scenarios
 ```
 
 ## Render cases

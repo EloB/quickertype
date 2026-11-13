@@ -47,7 +47,7 @@ jobs:
         with:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build -p quicktype-cli
+      - run: cargo build -p quickertype
       - run: cargo test --workspace --no-fail-fast
 
   # .github/workflows/release.yml and crates/quicktype-cli/wix/main.wxs are
@@ -107,7 +107,7 @@ jobs:
           "$tsc" --version
           "$tsc" --version | grep -q "7\.0\.2"
           echo "QUICKTYPE_TSC=$tsc" >> "$GITHUB_ENV"
-      - run: cargo test -p quicktype-typescript-input --test differential
+      - run: cargo test -p quickertype-typescript-input --test differential
 
   # Secrets in the whole history (configuration: .gitleaks.toml).
   secrets:

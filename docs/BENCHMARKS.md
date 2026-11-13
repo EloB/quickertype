@@ -252,10 +252,10 @@ rm target/bench/huge.json
 ## Profiling
 
 ```sh
-cargo build --profile profiling -p quicktype-cli    # release + symbols
+cargo build --profile profiling -p quickertype    # release + symbols
 samply record target/profiling/quicktype big.json -l ts -o out.ts
 target/release/quicktype big.json -l ts -o out.ts --debug print-times
-cargo build --profile profiling -p quicktype-cli --bench in_process
+cargo build --profile profiling -p quickertype --bench in_process
 samply record target/profiling/deps/in_process-<hash> -n 50 --filter github-events --lang c++
 ```
 
@@ -339,12 +339,12 @@ cargo xtask bench --out report.md     # also write the Markdown table
 
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
-(cd ../qt-before && cargo build --release -p quicktype-cli)
+(cd ../qt-before && cargo build --release --bin quicktype)
 cargo xtask bench --baseline ../qt-before/target/release/quicktype --corpus
 
 # The in-process benchmark alone.
-cargo bench -p quicktype-cli --bench in_process -- --per-input
-cargo bench -p quicktype-cli --bench in_process --no-default-features   # system allocator
+cargo bench -p quickertype --bench in_process -- --per-input
+cargo bench -p quickertype --bench in_process --no-default-features   # system allocator
 node xtask/bench/in-process.mjs ../quicktype                            # warm TypeScript
 ```
 

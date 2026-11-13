@@ -8,7 +8,7 @@ license.workspace = true
 publish = false
 
 [package.metadata.dist]
-# Only quicktype-cli is released (docs/RELEASING.md).
+# A development tool, never released.
 dist = false
 
 [dependencies]

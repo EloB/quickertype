@@ -43,6 +43,11 @@ npm/quicktype-core         → loads the .wasm that quicktype-wasm compiles to
 | [`xtask`](../xtask) | no TS file: `cargo xtask parity`, `diff`, `golden` (`xtask/src/`) and the Node recorders (`xtask/*/`) | `serde`, `serde_json` |
 | [`npm/quicktype-core`](../npm/quicktype-core) | `packages/quicktype-core/src` verbatim except `Run.ts`, plus `src/native/` | npm package |
 
+The crates are published as `quickertype-*` (the CLI as `quickertype`),
+so `cargo -p` takes those names (`cargo test -p quickertype-core`); the
+directories and the library names (`quicktype_core`, ...) stay as above.
+[RELEASING.md](RELEASING.md#names-and-versions) has the table.
+
 In [`Cargo.toml`](../Cargo.toml), `default-members` is `crates/*`, so
 `cargo build` and `cargo test` skip `xtask`; `cargo xtask` is an alias in
 [`.cargo/config.toml`](../.cargo/config.toml). `unsafe_code` is forbidden and
@@ -377,7 +382,7 @@ record fixtures and for `cargo xtask diff`. The npm tests run under Node.
 | Golden corpus: recorded TS CLI runs compared byte for byte (files; for `cli-*` cases also stdout, stderr, exit code) | `tests/golden/<fixture>/<input>/<hash>/case.json` plus expected files; runner `xtask/src/parity.rs` | `cargo xtask parity` (`--filter`, `--strict`, `--bin`, `--report`, `--keep`) | `cargo xtask golden [ref-dir]` (`xtask/golden/record.sh`: `record-hook.cjs`, `finalize.mjs`, `record-cli.mjs`) |
 | Parity ratchet | [`tests/parity-baseline.txt`](../tests/parity-baseline.txt): ids that must keep passing | `cargo xtask parity` fails on a regression; `--update-baseline` records new passes | |
 | Live side by side | `xtask/src/diff.rs` | `cargo xtask diff -- <args>`, `--each <dir>` | none: runs the TS CLI live |
-| Renderers in isolation | `crates/quicktype-core/tests/render_cases.rs`, `render_scenarios.rs`; fixtures in `tests/fixtures/core-rendering/` | `cargo test -p quicktype-core --test render_cases --test render_scenarios` | `xtask/core-rendering/` ([README](../xtask/core-rendering/README.md)) |
+| Renderers in isolation | `crates/quicktype-core/tests/render_cases.rs`, `render_scenarios.rs`; fixtures in `tests/fixtures/core-rendering/` | `cargo test -p quickertype-core --test render_cases --test render_scenarios` | `xtask/core-rendering/` ([README](../xtask/core-rendering/README.md)) |
 | Stage-level differential tests | `type_graph_scenarios.rs`, `json_input.rs`, `json_schema_input.rs`, `js_vectors.rs` (quicktype-core); `graphql_input.rs` (graphql-input); `graphql_introspect.rs` (cli); `differential.rs` (typescript-input, skipped without TypeScript 7.0.2); `tests/vectors/` (js-compat) | `cargo test` | `xtask/core-type-graph/`, `core-json-input/`, `core-json-schema-input/`, `graphql-input/`, `typescript-input/`, `js-compat/` (each script's header or the directory's README names its outputs) |
 | Ported Vitest tests (`test/unit/*.test.ts`, names kept) | `crates/quicktype-core/tests/*vitest*.rs`, `render_java_kotlin.rs`, `run.rs`, `windows_schema_paths.rs`; `crates/quicktype-cli/tests/cli.rs`, `url_input.rs`; some module unit tests (`naming.rs`, `markov_chain.rs`, ...); API-level ones in `npm/quicktype-core/test/differential/scenarios/api/` | `cargo test`, `npm run test:differential` | |
 | Unit tests | `#[cfg(test)] mod tests` next to each module | `cargo test` | |

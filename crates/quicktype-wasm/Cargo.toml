@@ -10,7 +10,7 @@ authors.workspace = true
 publish = false
 
 [package.metadata.dist]
-# Only quicktype-cli is released (docs/RELEASING.md).
+# Not released: npm/quicktype-core builds it (docs/RELEASING.md).
 dist = false
 
 [lib]
@@ -19,8 +19,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 indexmap.workspace = true
 js-sys.workspace = true
-quicktype-core = { workspace = true, default-features = false }
-quicktype-js-compat = { workspace = true, features = ["js-host-math"] }
+quickertype-core = { workspace = true, default-features = false }
+quickertype-js-compat = { workspace = true, features = ["js-host-math"] }
 wasm-bindgen.workspace = true
 
 [dev-dependencies]

@@ -391,12 +391,12 @@ fn run_case(
 
 pub(crate) fn build_cli(root: &Path) -> Result<Vec<String>, String> {
     let status = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
-        .args(["build", "--release", "--package", "quicktype-cli"])
+        .args(["build", "--release", "--package", "quickertype"])
         .current_dir(root)
         .status()
         .map_err(|e| e.to_string())?;
     if !status.success() {
-        return Err("building quicktype-cli failed".into());
+        return Err("building the quicktype CLI (package quickertype) failed".into());
     }
     Ok(vec![
         root.join("target/release/quicktype")

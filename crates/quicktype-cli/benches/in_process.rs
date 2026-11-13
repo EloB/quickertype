@@ -2,8 +2,8 @@
 //! (`JSON.parse` semantics, no process start, no file I/O), natively.
 //!
 //! ```text
-//! cargo bench -p quicktype-cli --bench in_process [-- [--iterations N] [--json]]
-//! cargo bench -p quicktype-cli --bench in_process --no-default-features   # system allocator
+//! cargo bench -p quickertype --bench in_process [-- [--iterations N] [--json]]
+//! cargo bench -p quickertype --bench in_process --no-default-features   # system allocator
 //! ```
 //!
 //! It lives in the CLI crate to run with the CLI's global allocator

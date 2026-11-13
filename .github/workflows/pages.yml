@@ -44,7 +44,7 @@ jobs:
         working-directory: npm/quicktype-core
       - run: node site/build.mjs
       # The smoke test compares the page's output with the CLI's.
-      - run: cargo build --release --package quicktype-cli
+      - run: cargo build --release --package quickertype
       - run: node site/test/smoke.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

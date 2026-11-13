@@ -389,20 +389,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "quicktype-cli"
+name = "quickertype"
 version = "0.1.0"
 dependencies = [
  "indexmap",
  "mimalloc",
- "quicktype-core",
- "quicktype-graphql-input",
- "quicktype-js-compat",
- "quicktype-typescript-input",
+ "quickertype-core",
+ "quickertype-graphql-input",
+ "quickertype-js-compat",
+ "quickertype-typescript-input",
  "serde_json",
 ]
 
 [[package]]
-name = "quicktype-core"
+name = "quickertype-core"
 version = "0.1.0"
 dependencies = [
  "brotli-decompressor",
@@ -410,7 +410,7 @@ dependencies = [
  "foldhash",
  "hashbrown",
  "indexmap",
- "quicktype-js-compat",
+ "quickertype-js-compat",
  "regex",
  "serde_json",
  "stacker",
@@ -419,17 +419,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "quicktype-graphql-input"
+name = "quickertype-graphql-input"
 version = "0.1.0"
 dependencies = [
  "indexmap",
- "quicktype-core",
- "quicktype-js-compat",
+ "quickertype-core",
+ "quickertype-js-compat",
  "serde_json",
 ]
 
 [[package]]
-name = "quicktype-js-compat"
+name = "quickertype-js-compat"
 version = "0.1.0"
 dependencies = [
  "indexmap",
@@ -443,10 +443,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "quicktype-typescript-input"
+name = "quickertype-typescript-input"
 version = "0.1.0"
 dependencies = [
- "quicktype-js-compat",
+ "quickertype-js-compat",
  "serde",
  "serde_json",
  "stacker",
@@ -458,8 +458,8 @@ version = "0.1.0"
 dependencies = [
  "indexmap",
  "js-sys",
- "quicktype-core",
- "quicktype-js-compat",
+ "quickertype-core",
+ "quickertype-js-compat",
  "serde_json",
  "wasm-bindgen",
 ]

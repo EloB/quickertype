@@ -1,5 +1,5 @@
 [package]
-name = "quicktype-cli"
+name = "quickertype"
 description = "Rust port of quicktype: generate types and converters from JSON and schemas"
 version.workspace = true
 edition.workspace = true
@@ -7,11 +7,16 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
+readme.workspace = true
 authors.workspace = true
+keywords = ["quicktype", "json", "json-schema", "graphql", "codegen"]
+categories = ["command-line-utilities", "development-tools", "encoding"]
+include = ["/src/", "/LICENSE", "/NOTICE"]
 
-# Release packaging (docs/RELEASING.md). The installed binary is `quicktype`,
-# like quicktype's, so it conflicts with Homebrew core's and npm's
-# `quicktype`; dist has no setting to declare that, RELEASING.md documents it.
+# Release packaging (docs/RELEASING.md). dist names the archives and
+# installers after this package. The installed binary is `quicktype`, like
+# quicktype's, so it conflicts with Homebrew core's and npm's `quicktype`;
+# dist has no setting to declare that, RELEASING.md documents it.
 [package.metadata.dist]
 # The Homebrew formula in EloB/homebrew-tap (`brew install EloB/tap/quickertype`).
 formula = "quickertype"
@@ -41,15 +46,15 @@ mimalloc = ["dep:mimalloc"]
 [dependencies]
 indexmap.workspace = true
 mimalloc = { workspace = true, optional = true }
-quicktype-core = { workspace = true, features = ["http"] }
-quicktype-graphql-input.workspace = true
-quicktype-js-compat.workspace = true
-quicktype-typescript-input.workspace = true
+quickertype-core = { workspace = true, features = ["http"] }
+quickertype-graphql-input.workspace = true
+quickertype-js-compat.workspace = true
+quickertype-typescript-input.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
 
-# `cargo bench -p quicktype-cli --bench in_process`: the engine's in-process
+# `cargo bench -p quickertype --bench in_process`: the engine's in-process
 # throughput, with the CLI's allocator (`--no-default-features` for the
 # system allocator). See docs/BENCHMARKS.md.
 [[bench]]

@@ -6,9 +6,10 @@ members = ["cargo:."]
 # change this file and run `dist generate` (CI checks with
 # `dist generate --check`). See docs/RELEASING.md.
 #
-# Only quicktype-cli is distributed; every other workspace member sets
-# `dist = false` in its [package.metadata.dist]. Package-specific settings
-# (formula and npm package names) are in crates/quicktype-cli/Cargo.toml.
+# dist builds the `quickertype` CLI (crates/quicktype-cli); every other
+# workspace member sets `dist = false` in its [package.metadata.dist].
+# Package-specific settings (formula and npm package names) are in
+# crates/quicktype-cli/Cargo.toml.
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.34.0"
@@ -30,8 +31,8 @@ tap = "EloB/homebrew-tap"
 publish-jobs = ["homebrew", "npm"]
 # Build and upload every artifact on pull requests, without releasing
 pr-run-mode = "upload"
-# Build with `cargo build --package quicktype-cli` instead of `--workspace`:
-# the same build as `cargo build --release -p quicktype-cli` (no WASM
+# Build with `cargo build --package quickertype` instead of `--workspace`:
+# the same build as `cargo build --release -p quickertype` (no WASM
 # bindings or xtask, no features unified from other members)
 precise-builds = true
 # Files to copy into the archives and installers besides the auto-included

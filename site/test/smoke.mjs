@@ -17,7 +17,7 @@
 // asked for while a run is under way; and a worker failing after it loaded.
 //
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
-// (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
+// (`cargo build --release -p quickertype`). The browser is $CHROME, else
 // Google Chrome or Chromium; without one the test says so and exits 0 (in
 // CI it fails).
 
@@ -64,7 +64,7 @@ function findBrowser() {
 
 const cli = process.env.QUICKTYPE_CLI ?? path.join(repositoryRoot, "target", "release", "quicktype");
 if (!fs.existsSync(cli)) {
-    console.log(`No quicktype CLI at ${cli}: build it with \`cargo build --release -p quicktype-cli\` or set QUICKTYPE_CLI.`);
+    console.log(`No quicktype CLI at ${cli}: build it with \`cargo build --release -p quickertype\` or set QUICKTYPE_CLI.`);
     process.exit(1);
 }
 

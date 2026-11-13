@@ -1166,7 +1166,7 @@ fn run_in_process(
     ] {
         eprintln!("bench: in process, {label}");
         let mut command = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
-        command.args(["bench", "-p", "quicktype-cli", "--bench", "in_process"]);
+        command.args(["bench", "-p", "quickertype", "--bench", "in_process"]);
         command.args(features);
         let out = command
             .args(["--", "--json", "-n", &n])

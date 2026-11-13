@@ -1,21 +1,30 @@
 [package]
-name = "quicktype-graphql-input"
+name = "quickertype-graphql-input"
 description = "GraphQL query + schema input for quicktype"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
 authors.workspace = true
+keywords = ["quicktype", "graphql", "codegen", "types"]
+categories = ["development-tools", "parser-implementations"]
+include = ["/src/", "/LICENSE", "/NOTICE"]
 
 [package.metadata.dist]
-# Only quicktype-cli is released (docs/RELEASING.md).
+# dist builds installers for the `quickertype` CLI only; this crate is
+# published to crates.io by .github/workflows/publish-crates.yml.
 dist = false
+
+[lib]
+name = "quicktype_graphql_input"
 
 [dependencies]
 indexmap.workspace = true
-quicktype-core.workspace = true
-quicktype-js-compat.workspace = true
+quickertype-core.workspace = true
+quickertype-js-compat.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
