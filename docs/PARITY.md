@@ -166,6 +166,13 @@ the others name the fix they need.
   port goes much deeper but eventually overflows the native stack and
   aborts. Fix: an explicit depth limit reporting the `RangeError`, or
   iterative inference.
+- **Stack exhaustion in Postman collections.** The TypeScript recurses
+  through nested folders and through `String(array)` when it formats a
+  request's `method` and `url.raw`; the port is iterative and reports
+  Node's `RangeError` (`Maximum call stack size exceeded`) at the depths
+  measured on the reference CLI (Node 24.16): more than 3,731 nested
+  folders, or arrays nested more than 2,830 deep. Inside nested folders
+  Node's array limit is lower (less stack is left); that is not modelled.
 - **Postman collections that are not JSON** (temporary). `parseJSON` falls
   back to YAML, which the JSON Schema input ports; until then
   `sources_from_postman_collection` reports `JSON.parse`'s error for them

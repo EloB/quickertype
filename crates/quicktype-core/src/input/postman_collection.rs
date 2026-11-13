@@ -7,7 +7,9 @@
 //! The TypeScript walks the parsed collection with JavaScript property
 //! access, so malformed collections fail with JavaScript `TypeError`s
 //! (`null` where an object is expected); this port reports the same
-//! messages.
+//! messages. It also recurses, as does `String(array)`, so very deep
+//! collections exhaust Node's stack; this port is iterative and reports
+//! the `RangeError` at the depths where the reference CLI does.
 
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::{number, whitespace};
@@ -78,6 +80,22 @@ fn type_error(message: String) -> QuickTypeError {
     error
 }
 
+/// The deepest nesting of `processCollection` calls the reference CLI
+/// survives (Node 24.16, the default stack; measured on the CLI with nested
+/// `item` folders): 3,731 folders around a request.
+const MAX_COLLECTION_DEPTH: usize = 3_732;
+
+/// The deepest array nesting `String(value)` survives in the reference CLI
+/// when it formats a top-level request's `method` or `url.raw` (measured
+/// like [`MAX_COLLECTION_DEPTH`]). Inside nested folders Node has less stack
+/// left, so its limit is lower; that is not modelled.
+const MAX_STRING_ARRAY_DEPTH: usize = 2_830;
+
+/// The `RangeError` Node throws when its stack runs out.
+fn stack_overflow() -> QuickTypeError {
+    type_error("Maximum call stack size exceeded".to_owned())
+}
+
 /// `obj[key]` for a JSON value that is an object (`typeof obj ===
 /// "object"`): `None` for `undefined`. Reading a property of `null`
 /// throws.
@@ -110,22 +128,59 @@ fn is_object(v: &JsonValue) -> bool {
     )
 }
 
-/// `String(v)`, as a template literal converts a value.
-fn js_string(v: &JsonValue) -> String {
+/// `String(v)`, as a template literal converts a value. Arrays are joined
+/// with `,` (`null` elements give `""`), iteratively; nesting deeper than
+/// [`MAX_STRING_ARRAY_DEPTH`] is Node's `RangeError`.
+fn js_string(v: &JsonValue) -> Result<String> {
+    let JsonValue::Array(items) = v else {
+        return Ok(scalar_string(v));
+    };
+    // (remaining elements, the text so far, whether an element was written)
+    let mut stack: Vec<(std::slice::Iter<'_, JsonValue>, String, bool)> =
+        vec![(items.iter(), String::new(), false)];
+    loop {
+        let Some((elements, text, started)) = stack.last_mut() else {
+            return Ok(String::new());
+        };
+        match elements.next() {
+            Some(element) => {
+                if *started {
+                    text.push(',');
+                }
+                *started = true;
+                match element {
+                    JsonValue::Array(inner) => {
+                        if stack.len() >= MAX_STRING_ARRAY_DEPTH {
+                            return Err(stack_overflow());
+                        }
+                        stack.push((inner.iter(), String::new(), false));
+                    }
+                    JsonValue::Null => {}
+                    other => text.push_str(&scalar_string(other)),
+                }
+            }
+            None => {
+                let Some((_, text, _)) = stack.pop() else {
+                    return Ok(String::new());
+                };
+                match stack.last_mut() {
+                    Some((_, parent, _)) => parent.push_str(&text),
+                    None => return Ok(text),
+                }
+            }
+        }
+    }
+}
+
+/// `String(v)` for anything but an array.
+fn scalar_string(v: &JsonValue) -> String {
     match v {
         JsonValue::Null => "null".to_owned(),
         JsonValue::Bool(b) => b.to_string(),
         JsonValue::Number(n) => number::to_string(*n),
         JsonValue::String(s) => s.clone(),
         JsonValue::Object(_) => "[object Object]".to_owned(),
-        JsonValue::Array(items) => items
-            .iter()
-            .map(|item| match item {
-                JsonValue::Null => String::new(),
-                other => js_string(other),
-            })
-            .collect::<Vec<_>>()
-            .join(","),
+        JsonValue::Array(_) => String::new(),
     }
 }
 
@@ -136,16 +191,19 @@ fn process_collection(
     sources: &mut Vec<JsonSourceData<String>>,
     descriptions: &mut Vec<String>,
 ) -> Result<()> {
-    // (collection, whether its items have been processed)
-    let mut stack: Vec<(&JsonValue, bool)> = vec![(root, false)];
-    while let Some((c, items_done)) = stack.pop() {
+    // (collection, its call depth, whether its items have been processed)
+    let mut stack: Vec<(&JsonValue, usize, bool)> = vec![(root, 1, false)];
+    while let Some((c, depth, items_done)) = stack.pop() {
+        if depth > MAX_COLLECTION_DEPTH {
+            return Err(stack_overflow());
+        }
         if !is_object(c) {
             continue;
         }
         if !items_done {
             if let Some(JsonValue::Array(items)) = get(c, "item")? {
-                stack.push((c, true));
-                stack.extend(items.iter().rev().map(|item| (item, false)));
+                stack.push((c, depth, true));
+                stack.extend(items.iter().rev().map(|item| (item, depth + 1, false)));
                 continue;
             }
         } else if let Some(info) = get(c, "info")? {
@@ -198,7 +256,8 @@ fn add_request(c: &JsonValue, sources: &mut Vec<JsonSourceData<String>>) -> Resu
                     ));
                 }
                 if let Some(raw) = get(url, "raw")? {
-                    source_description.push(format!("{} {}", js_string(method), js_string(raw)));
+                    let method = js_string(method)?;
+                    source_description.push(format!("{method} {}", js_string(raw)?));
                 }
             }
         }
@@ -242,6 +301,45 @@ mod tests {
         assert_eq!(
             result.sources[1].description.as_deref(),
             Some("B\n\nGET http://x\n\nabout B")
+        );
+    }
+
+    /// Iterative, but with Node's stack limits, as measured on the CLI.
+    #[test]
+    fn deep_collections() {
+        let request = |method: &str| {
+            format!(
+                r#"{{"name":"x","response":[{{"body":"1"}}],"request":{{"method":{method},"url":{{"raw":"u"}}}}}}"#
+            )
+        };
+        let nested = |d: usize| format!("{}1{}", "[".repeat(d), "]".repeat(d));
+        let ok = sources(&request(&nested(2830))).unwrap();
+        assert_eq!(ok.sources[0].description.as_deref(), Some("x\n\n1 u"));
+        let message = |text: &str| sources(text).unwrap_err().user_message().to_owned();
+        assert_eq!(
+            message(&request(&nested(2831))),
+            "Maximum call stack size exceeded"
+        );
+        assert_eq!(
+            message(&request(&format!("[{},[]]", nested(1_000_000)))),
+            "Maximum call stack size exceeded"
+        );
+        assert_eq!(
+            js_string(&json::parse("[1,[2,[null,[]]],3]").unwrap()).unwrap(),
+            "1,2,,,3"
+        );
+        let folders = |d: usize| {
+            format!(
+                r#"{}{{"name":"x","response":[{{"body":"1"}}]}}{}"#,
+                r#"{"item":["#.repeat(d),
+                "]}".repeat(d)
+            )
+        };
+        assert_eq!(sources(&folders(3731)).unwrap().sources.len(), 1);
+        assert_eq!(message(&folders(3732)), "Maximum call stack size exceeded");
+        assert_eq!(
+            message(&folders(1_000_000)),
+            "Maximum call stack size exceeded"
         );
     }
 
