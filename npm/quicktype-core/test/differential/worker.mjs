@@ -49,10 +49,24 @@ for (let i = Number(shard); i < list.length; i += Number(shards)) {
     const wasmRuns = ours.stats.wasm - before.wasm;
     const tsRuns = ours.stats.ts - before.ts;
     const declined = ours.stats.unsupported - before.unsupported;
+    const redone = ours.stats.rerun - before.rerun;
     // "wasm": every run on WebAssembly; "fallback": the engine declined a
-    // run as unsupported, which then ran on TypeScript; "ts": runs the
-    // facade gave to TypeScript as not eligible; "none": no run at all.
-    const engine = declined > 0 ? "fallback" : wasmRuns > 0 ? (tsRuns > 0 ? "mixed" : "wasm") : tsRuns > 0 ? "ts" : "none";
+    // run as unsupported, which then ran on TypeScript; "rerun": the engine
+    // failed (trapped, overflowed its stack) and the run was redone on
+    // TypeScript; "ts": runs the facade gave to TypeScript as not
+    // eligible; "none": no run at all.
+    const engine =
+        redone > 0
+            ? "rerun"
+            : declined > 0
+              ? "fallback"
+              : wasmRuns > 0
+                ? tsRuns > 0
+                    ? "mixed"
+                    : "wasm"
+                : tsRuns > 0
+                  ? "ts"
+                  : "none";
     const result = { id: s.id, category: s.category, group: s.group, engine };
     if (declined > 0) {
         result.unsupported = Object.keys(ours.stats.unsupportedBy).filter(

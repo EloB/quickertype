@@ -194,3 +194,154 @@ test("an instance that trapped is replaced by a fresh one", async () => {
     assert.ok(result.lines.some((l) => l.includes("pub b: Vec<bool>")));
     assert.notEqual(engine.engineSync(), glue);
 });
+
+// ---- Failures and resources (code review findings) --------------------------
+
+const tsMode = async (f) => {
+    globalThis[Symbol.for("quicktype-core.engine")] = "ts";
+    try {
+        return await f();
+    } finally {
+        delete globalThis[Symbol.for("quicktype-core.engine")];
+    }
+};
+
+async function trappingRun(lang) {
+    // onTiming makes the instance trap while the run is being polled, as a
+    // nested run that panicked would.
+    let trapped = false;
+    const inputData = await json(lang, ['{"a": [1, 2.5], "b": {"c": "x"}}']);
+    return qt.quicktypeMultiFile({
+        lang,
+        inputData,
+        onTiming: (t) => {
+            if (trapped || t.name !== "flatten unions") return;
+            trapped = true;
+            const glue = engine.engineSync();
+            try {
+                glue.__panicForTests();
+            } catch {
+                engine.discardEngine(glue);
+            }
+        },
+    });
+}
+
+test("a run whose instance traps is redone on TypeScript, never continued", async () => {
+    const expected = await tsMode(() => trappingRun("rust"));
+    const before = { ...engineStats };
+    const actual = await trappingRun("rust");
+    assert.deepEqual([...actual], [...expected]);
+    assert.equal(engineStats.rerun, before.rerun + 1);
+    assert.equal(engineStats.wasm, before.wasm);
+});
+
+test("other runs in flight on a trapping instance are redone too", async () => {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const schemaRun = async () => {
+        class Store extends qt.JSONSchemaStore {
+            async fetch(address) {
+                await delay(30);
+                return address === "a.json"
+                    ? { type: "object", properties: { b: { $ref: "b.json" } } }
+                    : { type: "object", properties: { n: { type: "integer" } } };
+            }
+        }
+
+        const input = new qt.JSONSchemaInput(new Store());
+        await input.addSource({ name: "A", uris: ["a.json"] });
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        return qt.quicktypeMultiFile({ lang: "kotlin", inputData });
+    };
+    const expected = await tsMode(schemaRun);
+    const before = { ...engineStats };
+    const pending = schemaRun();
+    await delay(5);
+    await trappingRun("typescript");
+    assert.deepEqual([...(await pending)], [...expected]);
+    assert.equal(engineStats.rerun, before.rerun + 2);
+});
+
+test("documents are flattened once per run, however often they are fetched", async () => {
+    const definitions = {};
+    for (let i = 0; i < 500; i++) definitions[`D${i}`] = { type: "object", properties: { v: { type: "integer" } } };
+    const documents = { "big.json": { definitions } };
+    const properties = {};
+    for (let i = 0; i < 60; i++) {
+        documents[`s${i}.json`] = { type: "object", properties: { x: { $ref: `big.json#/definitions/D${i}` } } };
+        properties[`p${i}`] = { $ref: `s${i}.json` };
+    }
+
+    documents["root.json"] = { type: "object", properties };
+    let gets = 0;
+    class Store extends qt.JSONSchemaStore {
+        async fetch(address) {
+            return documents[address];
+        }
+
+        async get(address, debugPrint) {
+            gets++;
+            return super.get(address, debugPrint);
+        }
+    }
+
+    const input = new qt.JSONSchemaInput(new Store());
+    await input.addSource({ name: "Root", uris: ["root.json"] });
+    const inputData = new qt.InputData();
+    inputData.addInput(input);
+    const before = engineStats.documentsEncoded;
+    await qt.quicktypeMultiFile({ lang: "typescript", inputData });
+    assert.ok(gets > 100, `${gets} gets`);
+    assert.equal(engineStats.documentsEncoded - before, Object.keys(documents).length);
+});
+
+test("a run nobody waits for any more is dropped by the engine", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        (async () => {
+            const start = async () => {
+                class Never extends qt.JSONSchemaStore {
+                    fetch() { return new Promise(() => {}); }
+                }
+                const input = new qt.JSONSchemaInput(new Never());
+                await input.addSource({ name: "N", uris: ["n.json"] });
+                const inputData = new qt.InputData();
+                inputData.addInput(input);
+                qt.quicktypeMultiFile({ lang: "typescript", inputData });
+            };
+            for (let i = 0; i < 5; i++) await start();
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            const glue = engine.engineSync();
+            const before = glue.__pendingRuns();
+            for (let i = 0; i < 20 && glue.__pendingRuns() > 0; i++) {
+                global.gc();
+                await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            console.log(JSON.stringify([before, glue.__pendingRuns()]));
+        })();
+    `;
+    const out = execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" });
+    assert.deepEqual(JSON.parse(out), [5, 0]);
+});
+
+test("a module that fails to compile is not compiled again on every run", () => {
+    const script = `
+        globalThis[Symbol.for("quicktype-core.wasmModule")] = new Uint8Array([0, 1, 2, 3]);
+        const qt = require(${JSON.stringify(packageRoot)});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        for (let i = 0; i < 3; i++) {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: ["[1]"] });
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            qt.quicktypeMultiFileSync({ lang: "rust", inputData });
+        }
+        console.log(JSON.stringify([engine.compileAttempts(), engineStats.wasm, engineStats.ts]));
+    `;
+    const out = execFileSync(process.execPath, ["-e", script], { encoding: "utf8" });
+    assert.deepEqual(JSON.parse(out), [1, 0, 3]);
+});
+

@@ -74,7 +74,8 @@ for (const [category, list] of byCategory) {
     const pass = count((r) => r.status === "pass");
     const passWasm = count((r) => r.status === "pass" && r.engine === "wasm");
     const fallback = list.filter((r) => r.status === "pass" && r.engine === "fallback");
-    const passOther = pass - passWasm - fallback.length;
+    const rerun = count((r) => r.status === "pass" && r.engine === "rerun");
+    const passOther = pass - passWasm - fallback.length - rerun;
     const known = list.filter((r) => r.status === "fail" && knownGaps.has(r.id));
     const failed = list.filter((r) => r.status === "fail" && !knownGaps.has(r.id));
     failures += failed.length;
@@ -83,13 +84,15 @@ for (const [category, list] of byCategory) {
         identical: pass,
         identicalOnWasm: passWasm,
         identicalOnFallback: fallback.length,
+        identicalAfterEngineFailure: rerun,
         identicalOnTypeScript: passOther,
         knownGaps: known.length,
         different: failed.length,
     };
     console.log(
         `\n${category}: ${list.length} scenarios: ${pass} identical (${passWasm} on WebAssembly, ` +
-            `${fallback.length} on the TypeScript fallback, ${passOther} on TypeScript by eligibility or without a run), ` +
+            `${fallback.length} on the TypeScript fallback, ${rerun} redone on TypeScript after an engine failure, ` +
+            `${passOther} on TypeScript by eligibility or without a run), ` +
             `${known.length} known gaps, ${failed.length} different`,
     );
     for (const r of known) console.log(`  known gap: ${r.id}: ${knownGaps.get(r.id)}`);

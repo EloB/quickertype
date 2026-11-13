@@ -7,7 +7,9 @@
 //   uses the TypeScript engine, everything after it WebAssembly;
 // * "supplied": no asset; the page compiles the .wasm itself and hands it
 //   over as `globalThis[Symbol.for("quicktype-core.wasmModule")]`, so even
-//   the first run uses WebAssembly.
+//   the first run uses WebAssembly;
+// * "cjs": the CommonJS build bundled as an iife and loaded with a classic
+//   script tag, the .wasm file served next to the bundle.
 //
 // The outputs must equal what the same calls give in Node.
 //
@@ -75,16 +77,20 @@ const pages = {
     globalThis[Symbol.for("quicktype-core.wasmModule")] = await WebAssembly.compile(await response.arrayBuffer());
     await import("/app/js/bundle.js");
 </script>`,
+    cjs: `<!doctype html><meta charset="utf-8"><pre id="result">pending</pre>
+<script src="/cjs/bundle.js"></script>`,
 };
 
 async function serve(variant) {
     const files = {
         "/index.html": ["text/html", pages[variant]],
         "/app/js/bundle.js": ["text/javascript", fs.readFileSync(path.join(outDir, "bundle.js"))],
+        "/cjs/bundle.js": ["text/javascript", fs.readFileSync(path.join(outDir, "bundle-cjs.js"))],
     };
     const wasm = fs.readFileSync(wasmFile);
     // Where the glue's `new URL("../../../native/wasm/…", import.meta.url)` points from /app/js/.
     if (variant === "asset") files["/native/wasm/quicktype_wasm_bg.wasm"] = ["application/wasm", wasm];
+    else if (variant === "cjs") files["/cjs/quicktype_wasm_bg.wasm"] = ["application/wasm", wasm];
     else files["/engine.wasm"] = ["application/wasm", wasm];
     const server = http.createServer((request, response) => {
         const file = files[request.url];
@@ -191,6 +197,15 @@ const build = await esbuild.build({
     logLevel: "silent",
 });
 assert.deepEqual(build.errors, []);
+const buildCjs = await esbuild.build({
+    entryPoints: [path.join(here, "entry-cjs.cjs")],
+    bundle: true,
+    format: "iife",
+    platform: "browser",
+    outfile: path.join(outDir, "bundle-cjs.js"),
+    logLevel: "silent",
+});
+assert.deepEqual(buildCjs.errors, []);
 console.log(`bundle: ${(fs.statSync(path.join(outDir, "bundle.js")).size / 1024).toFixed(0)} KiB (+ ${(fs.statSync(wasmFile).size / 1024 / 1024).toFixed(2)} MiB engine)`);
 
 // Expected: the same calls in Node, on the TypeScript engine.
@@ -201,10 +216,11 @@ delete globalThis[Symbol.for("quicktype-core.engine")];
 const expectedEngines = {
     asset: [{ wasm: 0, ts: 1 }, { wasm: 1, ts: 1 }, { wasm: 2, ts: 1 }, { wasm: 3, ts: 1 }],
     supplied: [{ wasm: 1, ts: 0 }, { wasm: 2, ts: 0 }, { wasm: 3, ts: 0 }, { wasm: 4, ts: 0 }],
+    cjs: [{ wasm: 0, ts: 1 }, { wasm: 1, ts: 1 }, { wasm: 2, ts: 1 }, { wasm: 3, ts: 1 }],
 };
 
 let failed = false;
-for (const variant of ["asset", "supplied"]) {
+for (const variant of ["asset", "supplied", "cjs"]) {
     const server = await serve(variant);
     const url = `http://127.0.0.1:${server.address().port}/index.html`;
     if (process.argv.includes("--serve")) {

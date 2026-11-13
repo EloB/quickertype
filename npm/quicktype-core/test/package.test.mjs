@@ -149,6 +149,18 @@ test("declaration files only reference dependencies that resolve with types", ()
     assert.deepEqual(offenders, []);
 });
 
+test("the vendored files the bridge depends on are unchanged", async () => {
+    const { createHash } = await import("node:crypto");
+    const { guarded } = JSON.parse(fs.readFileSync(path.join(packageRoot, "src", "native", "UPSTREAM.json"), "utf8"));
+    assert.ok(Object.keys(guarded).length > 10);
+    const changed = Object.entries(guarded)
+        // Run.ts is the one file modified here; its hash is upstream's.
+        .filter(([file]) => file !== "src/Run.ts")
+        .filter(([file, hash]) => createHash("sha256").update(fs.readFileSync(path.join(packageRoot, file))).digest("hex") !== hash)
+        .map(([file]) => file);
+    assert.deepEqual(changed, []);
+});
+
 test("declaration files are byte-identical to the reference build", (t) => {
     const configured = process.env.QUICKTYPE_REFERENCE;
     const candidates = configured ? [configured] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
