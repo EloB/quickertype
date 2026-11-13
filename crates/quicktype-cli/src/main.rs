@@ -11,8 +11,8 @@
 //! [`quicktype_multi_file`] and write the files (`writeOutput`). The CLI
 //! uses only quicktype-core's public API.
 //!
-//! Not yet ported: GraphQL input and `--graphql-introspect` (Phase 5),
-//! which exit with an internal "not implemented" error (exit code 2).
+//! Not yet ported: `--graphql-introspect`, which exits with an internal
+//! "not implemented" error (exit code 2).
 
 mod chalk;
 mod cli_options;
@@ -42,12 +42,13 @@ use quicktype_core::{
     default_target_languages, json_input_for_target_language, parse_json, quicktype_multi_file,
     set_console_sink, sources_from_postman_collection,
 };
+use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::wordwrap::WordWrap;
 
 use crate::chalk::Chalk;
 use crate::cli_options::{CliOptions, parse_cli_options};
 use crate::messages::{CliError, message_error};
-use crate::type_source::{GraphQlTypeSource, JsonTypeSource, TypeSource};
+use crate::type_source::{JsonTypeSource, TypeSource};
 
 /// `packageJSON.version`.
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -125,9 +126,10 @@ async fn make_input_data(
     let mut input_data = InputData::new();
     for source in sources {
         match source {
-            TypeSource::GraphQl(_) => {
-                // TODO(graphql): GraphQL input is Phase 5.
-                return Err(CliError::NotImplemented("GraphQL input".to_owned()));
+            TypeSource::GraphQl(source) => {
+                input_data
+                    .add_source("graphql", source, GraphQlInput::new)
+                    .await?;
             }
             TypeSource::Json(source) => {
                 add_json_source(
@@ -350,7 +352,7 @@ async fn graphql_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliErr
         } else {
             sources::type_name_from_filename(query_file)
         };
-        sources.push(TypeSource::GraphQl(GraphQlTypeSource {
+        sources.push(TypeSource::GraphQl(GraphQlSourceData {
             name,
             schema,
             query,
