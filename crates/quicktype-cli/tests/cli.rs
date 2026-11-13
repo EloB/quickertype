@@ -248,10 +248,10 @@ fn builds_a_markov_chain() {
 fn url_grammars_name_their_top_levels() {
     let dir = work_dir("src-urls");
     let samples = inputs().join("json/samples");
-    let grammar = format!(
-        r#"{{"Started": ["{}/", {{"oneOf": ["getting-started"]}}, ".json"]}}"#,
-        samples.display()
-    );
+    // The directory as a JSON string (a Windows path has backslashes).
+    let prefix = serde_json::to_string(&format!("{}/", samples.display())).unwrap();
+    let grammar =
+        format!(r#"{{"Started": [{prefix}, {{"oneOf": ["getting-started"]}}, ".json"]}}"#);
     fs::write(dir.join("grammar.json"), grammar).unwrap();
     let output = quicktype_in(
         &dir,

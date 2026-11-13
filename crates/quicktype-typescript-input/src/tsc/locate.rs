@@ -71,14 +71,93 @@ fn is_script(path: &Path) -> bool {
         && head == *b"#!"
 }
 
+/// `path` without the `\\?\` prefix that `fs::canonicalize` adds on Windows
+/// (`\\?\C:\x` → `C:\x`, `\\?\UNC\server\share\x` → `\\server\share\x`), as
+/// the `dunce` crate does, when the plain form means the same file: shorter
+/// than `MAX_PATH`, and no component that Windows would read differently
+/// without the prefix (a reserved device name, a trailing dot or space).
+/// Elsewhere, `path` itself.
+fn simplified(path: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        use std::path::{Component, Prefix};
+        let mut components = path.components();
+        let plain_root = match components.next() {
+            Some(Component::Prefix(prefix)) => match prefix.kind() {
+                Prefix::VerbatimDisk(drive) => format!("{}:\\", drive as char),
+                Prefix::VerbatimUNC(server, share) => format!(
+                    "\\\\{}\\{}\\",
+                    server.to_string_lossy(),
+                    share.to_string_lossy()
+                ),
+                _ => return path,
+            },
+            _ => return path,
+        };
+        let mut plain = PathBuf::from(plain_root);
+        for component in components {
+            match component {
+                Component::RootDir => {}
+                Component::Normal(name) => {
+                    let name = name.to_string_lossy();
+                    let stem = name
+                        .split('.')
+                        .next()
+                        .unwrap_or("")
+                        .trim_end()
+                        .to_uppercase();
+                    let reserved = ["CON", "PRN", "AUX", "NUL"].contains(&stem.as_str())
+                        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
+                            && stem.len() == 4
+                            && stem.as_bytes()[3].is_ascii_digit());
+                    if reserved || name.ends_with('.') || name.ends_with(' ') {
+                        return path;
+                    }
+                    plain.push(&*name);
+                }
+                _ => return path,
+            }
+        }
+        if plain.as_os_str().len() >= 260 {
+            return path;
+        }
+        plain
+    }
+    #[cfg(not(windows))]
+    path
+}
+
+/// Where an npm bin shim (`tsc.cmd`, what npm installs on Windows) in `dir`
+/// has its package's compiler: npm puts the shims of global packages next to
+/// the prefix's `node_modules`, and those of a project in
+/// `node_modules/.bin`.
+fn shim_candidates(dir: &Path) -> Vec<PathBuf> {
+    let node_modules = if dir.file_name().is_some_and(|n| n == ".bin") {
+        dir.parent().unwrap_or(dir).to_path_buf()
+    } else {
+        dir.join("node_modules")
+    };
+    vec![
+        platform_package_exe(&node_modules.join("typescript").join("node_modules")),
+        platform_package_exe(&node_modules),
+    ]
+}
+
 /// Native-binary candidates for a `tsc`/`tsgo` found on `PATH` or named by
 /// `$QUICKTYPE_TSC`. When it is npm's JavaScript launcher
 /// (`…/typescript/bin/tsc`), that would need Node and spawn the compiler as
 /// a grandchild, so the launcher's package is searched for the native
 /// binary (nested, then hoisted) and the launcher itself is not a candidate.
+/// An npm shim (`tsc.cmd`) is looked up the same way through its package.
 fn native_candidates(found: &Path) -> Vec<PathBuf> {
+    if found
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("cmd"))
+    {
+        return shim_candidates(found.parent().unwrap_or(Path::new(".")));
+    }
     let mut out = Vec::new();
-    let real = std::fs::canonicalize(found).unwrap_or_else(|_| found.to_path_buf());
+    let real = simplified(std::fs::canonicalize(found).unwrap_or_else(|_| found.to_path_buf()));
     if let Some(pkg) = real.parent().and_then(Path::parent) {
         out.push(platform_package_exe(&pkg.join("node_modules")));
         if let Some(node_modules) = pkg.parent() {
@@ -116,13 +195,16 @@ pub fn locate(cwd: &Path) -> Result<PathBuf> {
     if let Some(path) = std::env::var_os("PATH") {
         for dir in std::env::split_paths(&path) {
             for name in ["tsgo", "tsc"] {
-                let found = dir.join(exe_name(name));
-                if !found.is_file() {
-                    continue;
-                }
-                for exe in native_candidates(&found) {
-                    if exe.is_file() && has_pinned_version(&exe) {
-                        return Ok(exe);
+                // On Windows, `npm install -g` makes `tsc.cmd`, not `tsc.exe`.
+                let shim = cfg!(windows).then(|| dir.join(format!("{name}.cmd")));
+                for found in std::iter::once(dir.join(exe_name(name))).chain(shim) {
+                    if !found.is_file() {
+                        continue;
+                    }
+                    for exe in native_candidates(&found) {
+                        if exe.is_file() && has_pinned_version(&exe) {
+                            return Ok(exe);
+                        }
                     }
                 }
             }
@@ -145,9 +227,40 @@ mod tests {
     #[test]
     fn platform_package_path() {
         let exe = platform_package_exe(Path::new("/x/node_modules"));
-        let s = exe.to_string_lossy();
-        assert!(s.starts_with("/x/node_modules/@typescript/typescript-"));
-        assert!(s.contains("/lib/tsc"));
+        let package = Path::new("/x/node_modules")
+            .join("@typescript")
+            .join(format!("typescript-{}", platform_suffix()));
+        assert_eq!(exe, package.join("lib").join(exe_name("tsc")));
+    }
+
+    #[test]
+    fn npm_shims_resolve_through_their_package() {
+        let global = Path::new("/prefix");
+        assert_eq!(
+            native_candidates(&global.join("tsc.cmd")),
+            [
+                platform_package_exe(
+                    &global
+                        .join("node_modules")
+                        .join("typescript")
+                        .join("node_modules")
+                ),
+                platform_package_exe(&global.join("node_modules")),
+            ]
+        );
+        let bin = Path::new("/project").join("node_modules").join(".bin");
+        assert_eq!(
+            native_candidates(&bin.join("tsc.cmd")),
+            [
+                platform_package_exe(
+                    &Path::new("/project")
+                        .join("node_modules")
+                        .join("typescript")
+                        .join("node_modules")
+                ),
+                platform_package_exe(&Path::new("/project").join("node_modules")),
+            ]
+        );
     }
 
     #[test]
@@ -163,16 +276,28 @@ mod tests {
     #[test]
     fn npm_launcher_resolves_to_the_native_binary() {
         let root = std::env::temp_dir().join(format!("qt-tsc-locate-{}", std::process::id()));
-        let launcher = root.join("node_modules/typescript/bin/tsc");
-        let nested = platform_package_exe(&root.join("node_modules/typescript/node_modules"));
-        let hoisted = platform_package_exe(&root.join("node_modules"));
+        let launcher = root
+            .join("node_modules")
+            .join("typescript")
+            .join("bin")
+            .join("tsc");
         std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
         std::fs::write(&launcher, "#!/usr/bin/env node\n").unwrap();
+        // The candidates are under the launcher's real path (symbolic links,
+        // 8.3 short names and macOS's /private resolved), in the form users
+        // write: no `\\?\` prefix on Windows.
+        let real_root = simplified(std::fs::canonicalize(&root).unwrap());
         let candidates = native_candidates(&launcher);
         std::fs::remove_dir_all(&root).unwrap();
-        let canonical = |p: &Path| p.to_string_lossy().replace("/private/", "/");
-        let got: Vec<String> = candidates.iter().map(|c| canonical(c)).collect();
-        assert_eq!(got, [canonical(&nested), canonical(&hoisted)]);
+        let node_modules = real_root.join("node_modules");
+        assert_eq!(
+            candidates,
+            [
+                platform_package_exe(&node_modules.join("typescript").join("node_modules")),
+                platform_package_exe(&node_modules),
+            ]
+        );
+        assert!(!candidates[0].to_string_lossy().starts_with("\\\\?\\"));
     }
 
     #[test]

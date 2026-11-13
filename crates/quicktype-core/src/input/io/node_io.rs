@@ -373,12 +373,22 @@ fn posix_join(a: &str, b: &str) -> String {
 
 /// `resolveSymbolicLink(filePath)`: the target of a symbolic link (one
 /// level, relative targets resolved against the link's directory), or the
-/// path itself.
+/// path itself. Node's `path` is `path.win32` on Windows.
 fn resolve_symbolic_link(io: &dyn Io, file_path: &str) -> std::result::Result<String, IoError> {
     if !io.is_symbolic_link(file_path)? {
         return Ok(file_path.to_owned());
     }
     let link_path = io.read_link(file_path)?;
+    if cfg!(windows) {
+        use quicktype_js_compat::path_win32;
+        if path_win32::is_absolute(&link_path) {
+            return Ok(link_path);
+        }
+        return Ok(path_win32::join(&[
+            path_win32::dirname(file_path),
+            &link_path,
+        ]));
+    }
     if link_path.starts_with('/') {
         return Ok(link_path);
     }
@@ -506,6 +516,31 @@ mod std_io {
     use crate::input::io::LocalBoxFuture;
 
     /// The error of a failed file system call on `path`.
+    /// A symbolic link's target as `fs.readlinkSync` returns it. On Windows
+    /// NTFS stores absolute targets as `\\??\C:\x` or `\\??\UNC\server\share`;
+    /// Rust's `read_link` turns that prefix into `\\?\`, while libuv drops it
+    /// (`C:\x`, `\\server\share`).
+    fn node_link_target(target: String) -> String {
+        if !cfg!(windows) {
+            return target;
+        }
+        let Some(rest) = target.strip_prefix("\\\\?\\") else {
+            return target;
+        };
+        let b = rest.as_bytes();
+        if b.len() >= 2
+            && b[0].is_ascii_alphabetic()
+            && b[1] == b':'
+            && (b.len() == 2 || b[2] == b'\\' || b[2] == b'/')
+        {
+            return rest.to_owned();
+        }
+        match rest.strip_prefix("UNC\\") {
+            Some(unc) => format!("\\\\{unc}"),
+            None => target,
+        }
+    }
+
     fn node_error(e: &std::io::Error, syscall: &str, path: &str) -> IoError {
         IoError::from_fs(e, syscall, Some(path))
     }
@@ -569,7 +604,7 @@ mod std_io {
 
         fn read_link(&self, path: &str) -> Result<String, IoError> {
             std::fs::read_link(path)
-                .map(|p| p.to_string_lossy().into_owned())
+                .map(|p| node_link_target(p.to_string_lossy().into_owned()))
                 .map_err(|e| node_error(&e, "readlink", path))
         }
 
@@ -746,7 +781,13 @@ mod tests {
         let file_str = file.to_str().unwrap();
         let read = |p: &str| crate::input::io::block_on(read_from_file_or_url(&StdIo, p, &[]));
         assert_eq!(read(file_str).unwrap(), "{\"a\":1}");
-        assert_eq!(read(&format!("file://{file_str}")).unwrap(), "{\"a\":1}");
+        // The file URI of the path: `file:///tmp/a.json`, `file:///C:/x/a.json`.
+        let uri = if file_str.starts_with('/') {
+            format!("file://{file_str}")
+        } else {
+            format!("file:///{}", file_str.replace('\\', "/"))
+        };
+        assert_eq!(read(&uri).unwrap(), "{\"a\":1}");
         assert_eq!(
             read("nonexistent.json").unwrap_err().user_message(),
             "Cannot read from file or URL nonexistent.json: Error: ENOENT: no such file or directory, lstat 'nonexistent.json'"

@@ -2,7 +2,11 @@
 //!
 //! Lengths, padding and wrapping in the help output count UTF-16 code units,
 //! whitespace follows the JS definition (`\s`, `trim()`), and file names go
-//! through Node's POSIX `path.basename`/`path.extname`.
+//! through Node's `path`: POSIX semantics, or `path.win32`'s on Windows
+//! ([`quicktype_js_compat::path_win32`]), as Node picks by platform.
+
+use quicktype_js_compat::path_win32;
+
 // TODO(js_compat): switch to the shared js_compat helpers once they land in
 // quicktype-core's support module.
 
@@ -50,8 +54,11 @@ pub fn pad_end(s: &str, width: usize) -> String {
     out
 }
 
-/// Node's POSIX `path.basename(path)`.
+/// Node's `path.basename(path)`.
 pub fn basename(path: &str) -> &str {
+    if cfg!(windows) {
+        return path_win32::basename(path);
+    }
     let bytes = path.as_bytes();
     let mut start = 0;
     let mut end = None;
@@ -70,9 +77,12 @@ pub fn basename(path: &str) -> &str {
     end.map_or("", |end| &path[start..end])
 }
 
-/// Node's POSIX `path.extname(path)`: the extension including the dot, or
-/// `""` (also for dot files like `.ts`).
+/// Node's `path.extname(path)`: the extension including the dot, or `""`
+/// (also for dot files like `.ts`).
 pub fn extname(path: &str) -> &str {
+    if cfg!(windows) {
+        return path_win32::extname(path);
+    }
     let bytes = path.as_bytes();
     let mut start_dot: Option<usize> = None;
     let mut start_part = 0;
@@ -114,8 +124,11 @@ pub fn extname(path: &str) -> &str {
     }
 }
 
-/// Node's POSIX `path.dirname(path)`.
+/// Node's `path.dirname(path)`.
 pub fn dirname(path: &str) -> &str {
+    if cfg!(windows) {
+        return path_win32::dirname(path);
+    }
     let bytes = path.as_bytes();
     if bytes.is_empty() {
         return ".";
@@ -213,8 +226,11 @@ fn normalize_string(path: &str, allow_above_root: bool) -> String {
     res
 }
 
-/// Node's POSIX `path.normalize(path)`.
+/// Node's `path.normalize(path)`.
 pub fn normalize(path: &str) -> String {
+    if cfg!(windows) {
+        return path_win32::normalize(path);
+    }
     if path.is_empty() {
         return ".".to_owned();
     }
@@ -237,8 +253,11 @@ pub fn normalize(path: &str) -> String {
     }
 }
 
-/// Node's POSIX `path.join(...paths)`.
+/// Node's `path.join(...paths)`.
 pub fn path_join(paths: &[&str]) -> String {
+    if cfg!(windows) {
+        return path_win32::join(paths);
+    }
     let joined: Vec<&str> = paths.iter().copied().filter(|p| !p.is_empty()).collect();
     if joined.is_empty() {
         return ".".to_owned();
@@ -258,6 +277,10 @@ mod tests {
         assert_eq!(pad_end("😀", 4), "😀  ");
     }
 
+    /// Node's POSIX `path`; on Windows Node (and so the CLI) uses
+    /// `path.win32`, which `quicktype_js_compat::path_win32` tests against
+    /// Node on every platform.
+    #[cfg(not(windows))]
     #[test]
     fn node_paths() {
         assert_eq!(basename("a/b/Foo.ts"), "Foo.ts");
@@ -287,5 +310,15 @@ mod tests {
         assert_eq!(path_join(&["a", "b/"]), "a/b/");
         assert_eq!(normalize("./"), "./");
         assert_eq!(normalize("abc/../../x"), "../x");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn node_paths_on_windows() {
+        assert_eq!(basename("C:\\a/b\\Foo.ts"), "Foo.ts");
+        assert_eq!(extname("C:\\a\\Foo.bar.ts"), ".ts");
+        assert_eq!(dirname("C:\\a\\b.ts"), "C:\\a");
+        assert_eq!(path_join(&["dir", "x.json"]), "dir\\x.json");
+        assert_eq!(normalize("a/b/../c"), "a\\c");
     }
 }

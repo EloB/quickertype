@@ -14,6 +14,7 @@
 
 pub mod json;
 pub mod number;
+pub mod path_win32;
 pub mod pluralize;
 pub mod sort;
 pub mod unicode;
