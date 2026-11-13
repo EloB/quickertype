@@ -12,6 +12,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
+use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -97,32 +98,35 @@ impl<'a> Smithy4sRenderer<'a> {
 
     /// `scalaType(t, withIssues, noOptional)`.
     fn scala_type(&self, t: TypeRef, with_issues: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        Ok(match graph.kind(t)? {
-            TypeKind::Any => maybe_annotated(
-                with_issues,
-                any_type_issue_annotation(),
-                self.any_source_type(),
-            ),
-            TypeKind::Null => maybe_annotated(
-                with_issues,
-                null_type_issue_annotation(),
-                self.any_source_type(),
-            ),
-            TypeKind::Bool => "Boolean".into(),
-            TypeKind::Integer => "Long".into(),
-            TypeKind::Double => "Double".into(),
-            TypeKind::String => "String".into(),
-            TypeKind::Array => self.array_type(t)?,
-            TypeKind::Class | TypeKind::Enum => self.name_for_named_type(t)?.into(),
-            TypeKind::Map => self.map_type(t)?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return Ok(sl![self.scala_type(nullable, with_issues)?]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            Ok(match graph.kind(t)? {
+                TypeKind::Any => maybe_annotated(
+                    with_issues,
+                    any_type_issue_annotation(),
+                    self.any_source_type(),
+                ),
+                TypeKind::Null => maybe_annotated(
+                    with_issues,
+                    null_type_issue_annotation(),
+                    self.any_source_type(),
+                ),
+                TypeKind::Bool => "Boolean".into(),
+                TypeKind::Integer => "Long".into(),
+                TypeKind::Double => "Double".into(),
+                TypeKind::String => "String".into(),
+                TypeKind::Array => self.array_type(t)?,
+                TypeKind::Class | TypeKind::Enum => self.name_for_named_type(t)?.into(),
+                TypeKind::Map => self.map_type(t)?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return Ok(sl![self.scala_type(nullable, with_issues)?]);
+                    }
+                    self.name_for_named_type(t)?.into()
                 }
-                self.name_for_named_type(t)?.into()
-            }
-            kind => return match_type_unsupported(kind),
+                kind => return match_type_unsupported(kind),
+            })
         })
     }
 

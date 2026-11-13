@@ -10,6 +10,7 @@ use crate::naming::Names;
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, multi_word, paren_if_needed, single_word};
 use crate::support::comments::{Comment, CommentOptions};
+use crate::support::recursion::guard;
 use crate::support::strings::string_escape;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::nullable_from_union;
@@ -116,44 +117,50 @@ impl<'a> HaskellRenderer<'a> {
 
     /// `haskellType(t, noOptional)`.
     fn haskell_type(&self, t: TypeRef, no_optional: bool) -> Result<MultiWord> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => single_word(vec!["Value".into()]),
-            TypeKind::Null => multi_word(" ", vec!["Maybe".into(), "Text".into()])?,
-            TypeKind::Bool => single_word(vec!["Bool".into()]),
-            TypeKind::Integer => single_word(vec!["Int".into()]),
-            TypeKind::Double => single_word(vec!["Double".into()]),
-            TypeKind::String => single_word(vec!["Text".into()]),
-            TypeKind::Array => {
-                let items = paren_if_needed(self.haskell_type(ty.items()?, false)?);
-                if self.options.use_list {
-                    multi_word("", vec!["[".into(), items, "]".into()])?
-                } else {
-                    multi_word(" ", vec!["Vector".into(), items])?
-                }
-            }
-            TypeKind::Class | TypeKind::Enum => {
-                single_word(vec![self.name_for_named_type(t)?.into()])
-            }
-            TypeKind::Map => multi_word(
-                " ",
-                vec![
-                    "HashMap Text".into(),
-                    paren_if_needed(self.haskell_type(ty.map_values()?, false)?),
-                ],
-            )?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    let nullable_type = self.haskell_type(nullable, false)?;
-                    if no_optional {
-                        return Ok(nullable_type);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => single_word(vec!["Value".into()]),
+                TypeKind::Null => multi_word(" ", vec!["Maybe".into(), "Text".into()])?,
+                TypeKind::Bool => single_word(vec!["Bool".into()]),
+                TypeKind::Integer => single_word(vec!["Int".into()]),
+                TypeKind::Double => single_word(vec!["Double".into()]),
+                TypeKind::String => single_word(vec!["Text".into()]),
+                TypeKind::Array => {
+                    let items = paren_if_needed(self.haskell_type(ty.items()?, false)?);
+                    if self.options.use_list {
+                        multi_word("", vec!["[".into(), items, "]".into()])?
+                    } else {
+                        multi_word(" ", vec!["Vector".into(), items])?
                     }
-                    return multi_word(" ", vec!["Maybe".into(), paren_if_needed(nullable_type)]);
                 }
-                single_word(vec![self.name_for_named_type(t)?.into()])
-            }
-            kind => return match_type_unsupported(kind),
+                TypeKind::Class | TypeKind::Enum => {
+                    single_word(vec![self.name_for_named_type(t)?.into()])
+                }
+                TypeKind::Map => multi_word(
+                    " ",
+                    vec![
+                        "HashMap Text".into(),
+                        paren_if_needed(self.haskell_type(ty.map_values()?, false)?),
+                    ],
+                )?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        let nullable_type = self.haskell_type(nullable, false)?;
+                        if no_optional {
+                            return Ok(nullable_type);
+                        }
+                        return multi_word(
+                            " ",
+                            vec!["Maybe".into(), paren_if_needed(nullable_type)],
+                        );
+                    }
+                    single_word(vec![self.name_for_named_type(t)?.into()])
+                }
+                kind => return match_type_unsupported(kind),
+            })
         })
     }
 
@@ -174,19 +181,22 @@ impl<'a> HaskellRenderer<'a> {
 
     /// `encoderNameForType(t)`.
     fn encoder_name_for_type(&self, t: TypeRef) -> Result<MultiWord> {
-        let word = match self.type_graph().kind(t)? {
-            TypeKind::Any => "String",
-            TypeKind::Null => "Null",
-            TypeKind::Bool => "Bool",
-            TypeKind::Integer | TypeKind::Double => "Number",
-            TypeKind::String => "String",
-            TypeKind::Array => "Array",
-            TypeKind::Class | TypeKind::Map => "Object",
-            TypeKind::Enum => "String",
-            TypeKind::Union => "Object",
-            kind => return match_type_unsupported(kind),
-        };
-        Ok(single_word(vec![word.into()]))
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let word = match self.type_graph().kind(t)? {
+                TypeKind::Any => "String",
+                TypeKind::Null => "Null",
+                TypeKind::Bool => "Bool",
+                TypeKind::Integer | TypeKind::Double => "Number",
+                TypeKind::String => "String",
+                TypeKind::Array => "Array",
+                TypeKind::Class | TypeKind::Map => "Object",
+                TypeKind::Enum => "String",
+                TypeKind::Union => "Object",
+                kind => return match_type_unsupported(kind),
+            };
+            Ok(single_word(vec![word.into()]))
+        })
     }
 
     /// `emitTopLevelDefinition(t, topLevelName)`.

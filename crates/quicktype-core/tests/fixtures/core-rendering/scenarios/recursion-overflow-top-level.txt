@@ -13,3 +13,8 @@ render javascript {}
 render swift {}
 render objc {}
 render rust {}
+render typescript-zod {}
+render typescript-effect-schema {}
+render typescript {}
+render kotlin {}
+render elm {}
