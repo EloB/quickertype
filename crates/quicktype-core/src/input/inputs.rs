@@ -19,6 +19,7 @@
 use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::OnceLock;
 
 use indexmap::{IndexMap, IndexSet};
 
@@ -399,8 +400,9 @@ pub struct CompressedTopLevel {
 /// `JSON.parse` does). The types are the same as quicktype infers from the
 /// compressed form of the samples, which an input built with
 /// [`from_compressed`](Self::from_compressed) still does, and an input
-/// does after [`set_tally_inference(false)`](Self::set_tally_inference).
-/// Only such an input can be exported with
+/// does after [`set_tally_inference(false)`](Self::set_tally_inference)
+/// (or with `QUICKTYPE_INFERENCE=compressed-json` in the environment, for
+/// testing). Only such an input can be exported with
 /// [`to_compressed`](Self::to_compressed).
 #[derive(Debug)]
 pub struct JsonInput {
@@ -412,15 +414,28 @@ pub struct JsonInput {
     tallies: Option<Tallies>,
 }
 
+/// Whether `QUICKTYPE_INFERENCE=compressed-json` asks every new
+/// [`JsonInput`] to infer from the compressed form of the samples, as
+/// quicktype does, instead of from running tallies; read once. Only for
+/// testing that both give the same results (the CLI, the benchmarks and
+/// the Rust API alike); not a CLI option.
+fn compressed_json_inference_requested() -> bool {
+    static REQUESTED: OnceLock<bool> = OnceLock::new();
+    *REQUESTED.get_or_init(|| {
+        std::env::var_os("QUICKTYPE_INFERENCE").is_some_and(|v| v == "compressed-json")
+    })
+}
+
 impl JsonInput {
     /// `new JSONInput(compressedJSON)`: `compressed_json` configures how
-    /// samples are read. Types are inferred from running tallies (see
+    /// samples are read. Types are inferred from running tallies, unless
+    /// `QUICKTYPE_INFERENCE=compressed-json` is set (see
     /// [`set_tally_inference`](Self::set_tally_inference)).
     pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
             compressed_json,
             top_levels: IndexMap::new(),
-            tallies: Some(Tallies::new()),
+            tallies: (!compressed_json_inference_requested()).then(Tallies::new),
         }
     }
 

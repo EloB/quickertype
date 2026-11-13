@@ -6,6 +6,7 @@
 //! cargo bench -p quickertype --bench in_process --no-default-features   # system allocator
 //! QUICKTYPE_INFERENCE=compressed-json cargo bench -p quickertype --bench in_process
 //!     # inference from the compressed form instead of from running tallies
+//!     # (JsonInput::new reads the variable)
 //! ```
 //!
 //! It lives in the CLI crate to run with the CLI's global allocator
@@ -15,8 +16,8 @@
 //! One iteration runs every JSON file in `tests/inputs/json/samples` (and
 //! `json/misc/1b409.json`, the largest misc file) through eight target
 //! languages: 14 inputs × 8 languages = 112 runs. Each run builds a
-//! `JsonInput` from the text (the "parse" phase: `JSON.parse` plus
-//! `CompressedJSON`) and calls `quicktype_multi_file_sync` (the "engine"
+//! `JsonInput` from the text (the "parse" phase: `JSON.parse` plus the
+//! running tallies, or `CompressedJSON`) and calls `quicktype_multi_file_sync` (the "engine"
 //! phase: inference, rewrites, naming, rendering). The timing of the
 //! reference TypeScript for the same workload comes from
 //! `xtask/bench/in-process.mjs`; `cargo xtask bench --in-process` runs both.
@@ -73,10 +74,6 @@ fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
     let lang = get_target_language(lang).expect("built-in language");
     let start = Instant::now();
     let mut input = json_input_for_target_language(lang, false, &RendererOptions::new());
-    if std::env::var_os("QUICKTYPE_INFERENCE").is_some_and(|v| v == "compressed-json") {
-        // The reference inference (docs/STREAMING-INFERENCE.md), to compare.
-        input.set_tally_inference(false).expect("no sources yet");
-    }
     input
         .add_source_sync(JsonSourceData {
             name: "TopLevel".to_owned(),

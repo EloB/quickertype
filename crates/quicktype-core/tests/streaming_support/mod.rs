@@ -82,16 +82,20 @@ fn sample(s: &generator::Sample, seed: u64) -> JsonSample {
     }
 }
 
-/// The JSON input for `case`, and what each `add_source` returned.
+/// The JSON input for `case`, and what each `add_source` returned; it
+/// infers from running tallies or not as `tallies` says, or as
+/// `JsonInput::new` chooses (`QUICKTYPE_INFERENCE`).
 fn input(
     case: &Case,
     lang: &dyn TargetLanguage,
     renderer_options: &RendererOptions,
-    tallies: bool,
+    tallies: Option<bool>,
 ) -> (JsonInput, Vec<String>) {
     let mut input = json_input_for_target_language(lang, case.handle_refs, renderer_options);
-    input.set_tally_inference(tallies).expect("no sources yet");
-    assert_eq!(input.tally_inference(), tallies);
+    if let Some(tallies) = tallies {
+        input.set_tally_inference(tallies).expect("no sources yet");
+        assert_eq!(input.tally_inference(), tallies);
+    }
     let mut results = Vec::new();
     for (i, source) in case.sources.iter().enumerate() {
         let samples = source
@@ -199,12 +203,13 @@ fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) ->
     }
 }
 
-/// A whole run of `lang` with the CLI flags `option_set`.
+/// A whole run of `lang` with the CLI flags `option_set`, inferring as
+/// `tallies` says (see [`input`]).
 pub fn run(
     case: &Case,
     lang: &'static dyn TargetLanguage,
     option_set: &str,
-    tallies: bool,
+    tallies: Option<bool>,
 ) -> (Vec<String>, Result<MultiFileRenderResult, String>) {
     let renderer_options = RendererOptions::new();
     let (input, sources) = input(case, lang, &renderer_options, tallies);
@@ -269,8 +274,8 @@ fn compare_graphs(
     stats: &mut Stats,
 ) -> Result<(), String> {
     let renderer_options = RendererOptions::new();
-    let (tallied, tallied_sources) = input(case, lang, &renderer_options, true);
-    let (reference, reference_sources) = input(case, lang, &renderer_options, false);
+    let (tallied, tallied_sources) = input(case, lang, &renderer_options, Some(true));
+    let (reference, reference_sources) = input(case, lang, &renderer_options, Some(false));
     if tallied_sources != reference_sources {
         return Err(format!(
             "add_source differs\n  tallies:   {tallied_sources:?}\n  reference: {reference_sources:?}"
@@ -309,7 +314,7 @@ fn compare_run(
     stats: &mut Stats,
 ) -> Result<(), String> {
     if case.handle_refs {
-        let (input, _) = input(case, lang, &RendererOptions::new(), false);
+        let (input, _) = input(case, lang, &RendererOptions::new(), Some(false));
         let mut data = InputData::new();
         data.add_input(input);
         let flags = GraphFlags {
@@ -328,8 +333,8 @@ fn compare_run(
     if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
         eprintln!("  run {} {option_set}", lang.name());
     }
-    let a = run(case, lang, option_set, true);
-    let b = run(case, lang, option_set, false);
+    let a = run(case, lang, option_set, Some(true));
+    let b = run(case, lang, option_set, Some(false));
     if a != b {
         return Err(format!(
             "{} {option_set} differs\n  tallies:   {a:?}\n  reference: {b:?}",
@@ -473,7 +478,7 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
 /// for TypeScript with the default flags.
 pub fn graph_text(case: &Case) -> String {
     let lang = language("typescript");
-    let (input, _) = input(case, lang, &RendererOptions::new(), true);
+    let (input, _) = input(case, lang, &RendererOptions::new(), Some(true));
     let mut data = InputData::new();
     data.add_input(input);
     graph(

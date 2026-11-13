@@ -313,18 +313,17 @@ fn list_cases() {
 
 /// One whole run of the case of seed `QUICKTYPE_STREAMING_START` with
 /// `QUICKTYPE_STREAMING_LANG` and the CLI flags `QUICKTYPE_STREAMING_OPTIONS`,
-/// from tallies unless `QUICKTYPE_INFERENCE=compressed-json` (to look into
-/// a seed).
+/// from tallies unless `QUICKTYPE_INFERENCE=compressed-json` (which
+/// `JsonInput::new` reads; to look into a seed).
 #[test]
 #[ignore]
 fn one_run() {
     let seed = env_u64("QUICKTYPE_STREAMING_START", 0);
     let lang = std::env::var("QUICKTYPE_STREAMING_LANG").unwrap_or_else(|_| "typescript".into());
     let options = std::env::var("QUICKTYPE_STREAMING_OPTIONS").unwrap_or_default();
-    let tallies = std::env::var_os("QUICKTYPE_INFERENCE").is_none_or(|v| v != "compressed-json");
     let case = generator::case(seed, LIMITS);
     let (sources, result) = streaming_support::on_cli_stack(|| {
-        streaming_support::run(&case, streaming_support::language(&lang), &options, tallies)
+        streaming_support::run(&case, streaming_support::language(&lang), &options, None)
     });
     eprintln!("sources: {sources:?}");
     match result {
