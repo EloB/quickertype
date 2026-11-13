@@ -184,13 +184,11 @@ the others name the fix they need.
   disagree in a few corner cases: a tag or anchor directly followed by a
   quoted scalar or collection (`!"x"`, `![…]`), `?`/`:` directly before a
   flow collection inside a flow sequence, and `{?}`.
-- **JavaScript exceptions in JSON Schema input.** Errors that are not
-  `QuickTypeError`s in TypeScript (urijs's `URIError: URI malformed` and
-  `TypeError: Port "…" is not a valid port`, the `TypeError`s of reading a
-  property of `null`) are `InternalError`s whose user message is the
-  exception's message, which is what the CLI prints; the JS API's error
-  class differs. urijs's `equals` can throw only for addresses whose `Ref`
-  could not have been constructed; the port counts that as unequal.
+- **urijs `equals` errors.** urijs's `equals` can throw only for
+  addresses whose `Ref` could not have been constructed; the port counts
+  that as unequal. (JavaScript exceptions themselves, such as urijs's
+  `URIError: URI malformed`, are reported faithfully as
+  `messages::JsException`s.)
 - **Node I/O corner cases.** `StdIo` reads a directory as empty text (as
   Node does on macOS, where the corpus was recorded; Linux Node reports
   `EISDIR`), reports unreadable files (`EACCES`) as a `MiscReadError`
