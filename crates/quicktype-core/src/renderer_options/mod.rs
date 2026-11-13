@@ -134,8 +134,9 @@ impl<K: Into<String>, V: Into<OptionValue>> FromIterator<(K, V)> for RendererOpt
 /// An enum option was given a value it does not declare.
 ///
 /// The message is quicktype's `RendererUnknownOptionValue`:
-/// `Unknown value ${value} for option ${name}`.
-// TODO(messages): return quicktype_core::messages' error kind once ported.
+/// `Unknown value ${value} for option ${name}`, the
+/// [`QuickTypeError`](crate::messages::QuickTypeError) this converts into
+/// (`From`, in `renderer.rs`) when a renderer parses its options.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UnknownOptionValue {
     /// The rejected value, as JS `String(value)`.
