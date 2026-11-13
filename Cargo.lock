@@ -378,7 +378,11 @@ dependencies = [
 name = "quicktype-graphql-input"
 version = "24.0.0"
 dependencies = [
+ "indexmap",
  "quicktype-core",
+ "quicktype-js-compat",
+ "serde_json",
+ "stacker",
 ]
 
 [[package]]

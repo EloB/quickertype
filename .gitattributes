@@ -1,3 +1,5 @@
 # Golden files are compared byte-for-byte: never touch line endings.
 tests/golden/** -text -diff linguist-generated
 tests/inputs/** -text linguist-vendored
+# graphql-js's introspection query, embedded byte for byte (trailing spaces included).
+crates/quicktype-graphql-input/src/graphql/introspection_query.graphql -text

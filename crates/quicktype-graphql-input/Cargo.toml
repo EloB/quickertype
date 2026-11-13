@@ -9,7 +9,13 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+indexmap.workspace = true
 quicktype-core.workspace = true
+quicktype-js-compat.workspace = true
+stacker.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
 
 [lints]
 workspace = true
