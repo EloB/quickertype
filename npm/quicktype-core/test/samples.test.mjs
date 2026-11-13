@@ -455,6 +455,148 @@ test("a configuration changed between samples reads each sample with its own", a
     assert.deepEqual(await attempt(), await inMode("ts", attempt));
 });
 
+// The engine's read stands in for the methods TypeScript's read calls, and
+// its date/time recognizers for the built-in ones. A method replaced on the
+// instance or on a prototype (before the first sample, or between samples)
+// leaves the samples from then on to TypeScript, which calls it.
+
+/** `f()` with `object[name]` set to `value`, and as it was again after. */
+async function patched(object, name, value, f) {
+    const own = Object.getOwnPropertyDescriptor(object, name);
+    object[name] = value;
+    try {
+        return await f();
+    } finally {
+        if (own === undefined) delete object[name];
+        else Object.defineProperty(object, name, own);
+    }
+}
+
+test("a date/time recognizer with a method replaced is TypeScript's", async () => {
+    const dates = ['{"d": "2020-01-01", "t": "12:30:00Z", "dt": "2020-01-01T00:00:00Z"}', '[{"d": "2021-02-03", "e": "x"}]'];
+    const notDate = () => false;
+    for (const lang of ["typescript", "kotlin"]) {
+        const attempt = async (onInstance) => {
+            const input = qt.jsonInputForTargetLanguage(lang);
+            if (onInstance) input._compressedJSON.dateTimeRecognizer.isDate = notDate;
+            await input.addSource({ name: "Dates", samples: dates });
+            return { result: [...(await run(input, lang))], inside: inside(input) };
+        };
+        const unpatched = await inMode("ts", () => attempt(false));
+        const proto = Object.getPrototypeOf(qt.languageNamed(lang).dateTimeRecognizer);
+        const cases = [
+            ["on the instance", (f) => f(true)],
+            ["on its class's prototype", (f) => patched(proto, "isDate", notDate, () => f(false))],
+            // Kotlin's `isDate` calls DefaultDateTimeRecognizer's (`super`).
+            ["on DefaultDateTimeRecognizer's prototype", (f) => patched(DefaultDateTimeRecognizer.prototype, "isDate", notDate, () => f(false))],
+        ];
+        for (const [name, withPatch] of cases) {
+            const expected = await withPatch((onInstance) => inMode("ts", () => attempt(onInstance)));
+            assert.notDeepEqual(expected, unpatched, `${lang}, ${name}: the patch changes the tables`);
+            const before = { ...engineStats };
+            assert.deepEqual(await withPatch(attempt), expected, `${lang}, ${name}`);
+            assert.equal(engineStats.samplesRead, before.samplesRead, `${lang}, ${name}`);
+        }
+    }
+
+    // Unpatched again, the engine reads them.
+    const before = { ...engineStats };
+    await addAll("kotlin", [["Dates", dates]]);
+    assert.equal(engineStats.samplesRead, before.samplesRead + dates.length);
+});
+
+test("CompressedJSONFromString methods replaced on a prototype or the instance are TypeScript's", async () => {
+    const CompressedJSONPrototype = Object.getPrototypeOf(CompressedJSONFromString.prototype);
+    const samples = ['{"a": "x", "n": 1, "list": [2, "y", [3, 4]]}', '[{"a": "z", "n": 5, "m": [6, "w"]}, 7]'];
+    const cases = [
+        // Shadows CompressedJSON's.
+        [
+            "commitString on CompressedJSONFromString's prototype",
+            (_, f) =>
+                patched(CompressedJSONFromString.prototype, "commitString", function () {
+                    this.commitNumber(false);
+                }, f),
+        ],
+        ["parsedNumberIsDouble on CompressedJSON's prototype", (_, f) => patched(CompressedJSONPrototype, "parsedNumberIsDouble", () => true, f)],
+        [
+            "internArray on the instance",
+            (cjson, f) => {
+                const original = cjson.internArray;
+                cjson.internArray = (arr) => original([...arr].reverse());
+                return f();
+            },
+        ],
+    ];
+    // The samples from `from` on are added with the patch.
+    const attempt = async (patch, from) => {
+        const input = qt.jsonInputForTargetLanguage("rust");
+        for (const [i, sample] of samples.entries()) {
+            const add = () => input.addSource({ name: `S${i}`, samples: [sample] });
+            await (i >= from ? patch(input._compressedJSON, add) : add());
+        }
+
+        return { result: [...(await run(input, "rust"))], inside: inside(input) };
+    };
+    const unpatched = await inMode("ts", () => attempt(undefined, samples.length));
+    for (const [name, patch] of cases) {
+        for (const from of [0, 1]) {
+            const expected = await inMode("ts", () => attempt(patch, from));
+            assert.notDeepEqual(expected, unpatched, `${name}, from ${from}: the patch changes the tables`);
+            const before = { ...engineStats };
+            assert.deepEqual(await attempt(patch, from), expected, `${name}, from ${from}`);
+            // The samples before the patch are the engine's, the others TypeScript's.
+            assert.equal(engineStats.samplesRead, before.samplesRead + from, `${name}, from ${from}`);
+        }
+    }
+
+    // Unpatched again, the engine reads them.
+    const before = { ...engineStats };
+    await addAll("rust", [["S", samples]]);
+    assert.equal(engineStats.samplesRead, before.samplesRead + samples.length);
+});
+
+// The engine checks the methods and accessors TypeScript's read calls by
+// name (src/native/samples.ts, `readMethods`): each one, wrapped, leaves
+// the sample to TypeScript, and the others are not part of the read. A
+// method upstream adds fails this until it is in one list or the other.
+test("every method TypeScript's read calls is the original", async () => {
+    const notRead = ["equals", "getStringForValue", "getStringFormatTypeKind", "hashCode", "parse", "parseSync"];
+    const readByEngine = new Set();
+    let wrapped = 0;
+    for (const proto of [CompressedJSONFromString.prototype, Object.getPrototypeOf(CompressedJSONFromString.prototype)]) {
+        for (const name of Object.getOwnPropertyNames(proto)) {
+            if (name === "constructor") continue;
+            const original = Object.getOwnPropertyDescriptor(proto, name);
+            const wrapper =
+                "value" in original
+                    ? {
+                          ...original,
+                          value: function (...args) {
+                              return original.value.apply(this, args);
+                          },
+                      }
+                    : {
+                          ...original,
+                          get() {
+                              return original.get.call(this);
+                          },
+                      };
+            Object.defineProperty(proto, name, wrapper);
+            wrapped++;
+            try {
+                const before = engineStats.samplesRead;
+                await addAll("rust", [["S", ['{"a": [1, "x"], "$ref": "#/y"}']]], { handleRefs: true });
+                if (engineStats.samplesRead > before) readByEngine.add(name);
+            } finally {
+                Object.defineProperty(proto, name, original);
+            }
+        }
+    }
+
+    assert.ok(wrapped > 25, `${wrapped} methods`);
+    assert.deepEqual([...readByEngine].sort(), notRead);
+});
+
 test("many small samples", async () => {
     const list = Array.from({ length: 3000 }, (_, i) => `{"id": ${i}, "v${i % 7}": [${i % 3 === 0 ? "1.5" : i}], "s": "${"ab".repeat(i % 5)}"}`);
     const attempt = async () => {

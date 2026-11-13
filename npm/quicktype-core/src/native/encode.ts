@@ -6,7 +6,7 @@
 // own (not a subclass, not modified), every input is an exact `JSONInput`
 // over a `CompressedJSONFromString` (or a class registered under
 // `Symbol.for("quicktype-core.nativeInputs")`, such as the CLI's stream
-// reader) with a built-in date/time recognizer, or an exact
+// reader) with an unmodified built-in date/time recognizer, or an exact
 // `JSONSchemaInput` without extra attribute producers, and every option
 // value is one the engine models (renderer options are lowered here, by
 // the rules of `Option.getValue`/`BooleanOption.getValue`/
@@ -69,21 +69,86 @@ function isNativeCompressedJSON(cjson: unknown): boolean {
     );
 }
 
+/** The methods of a date/time recognizer (`DateTimeRecognizer`). */
+interface RecognizerMethods {
+    isDate: unknown;
+    isTime: unknown;
+    isDateTime: unknown;
+}
+
+/** The methods of a recognizer whose prototype is `proto`. */
+function recognizerMethodsOf(proto: any): RecognizerMethods {
+    return { isDate: proto.isDate, isTime: proto.isTime, isDateTime: proto.isDateTime };
+}
+
+/** A built-in date/time recognizer class, as loaded. */
+interface BuiltinRecognizer {
+    /** Its name in the request (`DateTimeKind`, crates/quicktype-wasm/src/wire.rs). */
+    kind: string;
+    /** The prototype its prototype extends. */
+    parent: unknown;
+    /** Its methods, as an instance of it finds them. */
+    methods: RecognizerMethods;
+}
+
+/**
+ * The built-in date/time recognizers the engine has, by prototype, with
+ * their methods captured when this module loads: those are the ones the
+ * engine's recognizers reproduce.
+ */
+const builtinRecognizers = new Map<unknown, BuiltinRecognizer>(
+    (
+        [
+            [DefaultDateTimeRecognizer, "default"],
+            [KotlinDateTimeRecognizer, "kotlin"],
+            [SwiftDateTimeRecognizer, "swift"],
+        ] as const
+    ).map(([c, kind]) => [
+        c.prototype,
+        { kind, parent: Object.getPrototypeOf(c.prototype), methods: recognizerMethodsOf(c.prototype) },
+    ]),
+);
+
+/**
+ * `DefaultDateTimeRecognizer`'s methods, which Kotlin's and Swift's
+ * recognizers call too (`super.isDate`).
+ */
+const defaultRecognizerMethods = recognizerMethodsOf(DefaultDateTimeRecognizer.prototype);
+
+/**
+ * The name of the built-in date/time recognizer `recognizer` is, if it is
+ * one exactly: an instance of a built-in class, without own properties (no
+ * method replaced on the instance), whose methods are still the ones that
+ * class had when this module loaded (none replaced on a prototype). For
+ * anything else, the TypeScript engine reads samples and runs, calling the
+ * recognizer's methods as they are. (Called for every sample: the methods
+ * are compared by name, which is cheaper than by key in a loop.)
+ */
 export function dateTimeKind(recognizer: unknown): string | undefined {
     if (recognizer === null || typeof recognizer !== "object") {
         return undefined;
     }
 
-    switch (Object.getPrototypeOf(recognizer)) {
-        case DefaultDateTimeRecognizer.prototype:
-            return "default";
-        case KotlinDateTimeRecognizer.prototype:
-            return "kotlin";
-        case SwiftDateTimeRecognizer.prototype:
-            return "swift";
-        default:
-            return undefined;
+    const proto = Object.getPrototypeOf(recognizer);
+    const builtin = builtinRecognizers.get(proto);
+    if (builtin === undefined || Object.getPrototypeOf(proto) !== builtin.parent) return undefined;
+    const r = recognizer as any;
+    const m = builtin.methods;
+    const d = DefaultDateTimeRecognizer.prototype as any;
+    const dm = defaultRecognizerMethods;
+    if (
+        r.isDate !== m.isDate ||
+        r.isTime !== m.isTime ||
+        r.isDateTime !== m.isDateTime ||
+        d.isDate !== dm.isDate ||
+        d.isTime !== dm.isTime ||
+        d.isDateTime !== dm.isDateTime ||
+        Object.getOwnPropertyNames(recognizer).length !== 0
+    ) {
+        return undefined;
     }
+
+    return builtin.kind;
 }
 
 /** The own property names of `x`, but `except`, sorted. */

@@ -21,8 +21,9 @@
 // TypeScript's string table; nesting deeper than its limit, where
 // TypeScript's recursive `process` could run out of stack; a `\u` escape
 // that leaves a surrogate unpaired); a `CompressedJSON` that is not exactly
-// a `CompressedJSONFromString` with a built-in date/time recognizer and a
-// valid integer range, or that has tables already; a host without
+// a `CompressedJSONFromString` with the methods it had when this module
+// loaded, an unmodified built-in date/time recognizer (`dateTimeKind`) and
+// a valid integer range, or that has tables already; a host without
 // `FinalizationRegistry`; samples read while the TypeScript engine is
 // forced; and samples read while the engine is not compiled yet (see
 // `engineForSample`). A sample that is not JSON is not read by the engine
@@ -141,6 +142,14 @@ const compileForSample = 1 << 20;
 const states = new WeakMap<object, NativeSamples>();
 
 /**
+ * The `internArray` of each `CompressedJSON` the engine started on, as it
+ * was then (`readsAsStarted`). Not in its `NativeSamples`, which the
+ * `FinalizationRegistry` holds: the arrow function holds the
+ * `CompressedJSON`, which could then never be collected.
+ */
+const internArrays = new WeakMap<object, unknown>();
+
+/**
  * Every `NativeSamples` whose form the engine keeps, least recently used
  * (read into, or leased by a run) first.
  */
@@ -175,6 +184,105 @@ function drop(glue: WasmGlue, id: number): void {
     } catch (e) {
         engineFailed(glue, e);
     }
+}
+
+/** `CompressedJSON.prototype`, which `CompressedJSONFromString` extends. */
+const compressedJSONPrototype: object = Object.getPrototypeOf(CompressedJSONFromString.prototype);
+
+/**
+ * The methods TypeScript's read of a sample calls (`parseSync` calls
+ * `process` and `finish`, which call the rest), as an instance of
+ * `CompressedJSONFromString` finds them when this module loads: the
+ * engine's read stands in for all of them, so it reads a sample only while
+ * each is still the original (`prototypesAsLoaded`, for every sample).
+ * Named one by one: in a loop over their names, each is a lookup by key,
+ * which took a third of the time a small sample takes. (The others,
+ * `parse`, `parseSync`, `getStringForValue`, `getStringFormatTypeKind`,
+ * `equals` and `hashCode`, are not part of the read; the test "every
+ * method TypeScript's read calls is the original" fails if upstream adds
+ * one.)
+ */
+const readMethods = (() => {
+    const p: any = CompressedJSONFromString.prototype;
+    return {
+        process: p.process,
+        finish: p.finish,
+        commitValue: p.commitValue,
+        commitNull: p.commitNull,
+        commitBoolean: p.commitBoolean,
+        commitNumber: p.commitNumber,
+        commitString: p.commitString,
+        makeString: p.makeString,
+        internString: p.internString,
+        internObject: p.internObject,
+        pushContext: p.pushContext,
+        pushObjectContext: p.pushObjectContext,
+        pushArrayContext: p.pushArrayContext,
+        setPropertyKey: p.setPropertyKey,
+        finishObject: p.finishObject,
+        finishArray: p.finishArray,
+        popContext: p.popContext,
+        parsedNumberIsDouble: p.parsedNumberIsDouble,
+        integerStringFits: p.integerStringFits,
+    };
+})();
+
+/** The getter of `CompressedJSON`'s accessor `name`. */
+function getterOf(name: string): unknown {
+    return Object.getOwnPropertyDescriptor(compressedJSONPrototype, name)?.get;
+}
+
+/** The getters the read calls (`CompressedJSON`'s), as loaded. */
+const readGetters = { context: getterOf("context"), isExpectingRef: getterOf("isExpectingRef") };
+
+/**
+ * The source of `internArray`, which `finishArray` calls: unlike the other
+ * methods, a field each instance gets its own arrow function in (so `start`
+ * compares its source, and `readsAsStarted` that it is the same function).
+ */
+const internArraySource = Function.prototype.toString.call(
+    (new CompressedJSONFromString(undefined as any, false) as any).internArray,
+);
+
+/**
+ * Whether `CompressedJSONFromString`'s prototypes still have the methods
+ * the read calls that they had when this module loaded (`readMethods`,
+ * `readGetters`), and are still linked as they were. Looked up on the
+ * prototype, not on an instance: an instance the engine started on has
+ * accessors for fields, which leaves its properties slow to look up. That
+ * an instance has no method of its own is checked with its own properties
+ * (`hasOnlyBuiltinFields` in `start`, and `readsAsStarted`), but for
+ * `internArray`, which every instance has.
+ */
+function prototypesAsLoaded(): boolean {
+    const p: any = CompressedJSONFromString.prototype;
+    const m = readMethods;
+    return (
+        Object.getPrototypeOf(p) === compressedJSONPrototype &&
+        p.process === m.process &&
+        p.finish === m.finish &&
+        p.commitValue === m.commitValue &&
+        p.commitNull === m.commitNull &&
+        p.commitBoolean === m.commitBoolean &&
+        p.commitNumber === m.commitNumber &&
+        p.commitString === m.commitString &&
+        p.makeString === m.makeString &&
+        p.internString === m.internString &&
+        p.internObject === m.internObject &&
+        p.pushContext === m.pushContext &&
+        p.pushObjectContext === m.pushObjectContext &&
+        p.pushArrayContext === m.pushArrayContext &&
+        p.setPropertyKey === m.setPropertyKey &&
+        p.finishObject === m.finishObject &&
+        p.finishArray === m.finishArray &&
+        p.popContext === m.popContext &&
+        p.parsedNumberIsDouble === m.parsedNumberIsDouble &&
+        p.integerStringFits === m.integerStringFits &&
+        !Object.prototype.hasOwnProperty.call(p, "context") &&
+        !Object.prototype.hasOwnProperty.call(p, "isExpectingRef") &&
+        getterOf("context") === readGetters.context &&
+        getterOf("isExpectingRef") === readGetters.isExpectingRef
+    );
 }
 
 /** What `cjson` reads its next sample with, if the engine can read with it. */
@@ -223,12 +331,15 @@ function ownProperties(cjson: object): number {
 /**
  * Whether `cjson` still reads samples as when the engine started on it
  * (`start` checked it then): the same prototype, no own property added
- * since (a method replaced on the instance), and the same configuration.
+ * since (a method replaced on the instance), the original methods (none
+ * replaced on a prototype since), and the same configuration.
  */
 function readsAsStarted(cjson: any, state: NativeSamples): boolean {
     return (
         Object.getPrototypeOf(cjson) === CompressedJSONFromString.prototype &&
         ownProperties(cjson) === state.ownProperties &&
+        cjson.internArray === internArrays.get(cjson) &&
+        prototypesAsLoaded() &&
         sameConfig(state.config, cjson)
     );
 }
@@ -288,13 +399,20 @@ function engineForSample(length: number): WasmGlue | undefined {
 
 /**
  * Starts reading `cjson`'s samples on the engine, if it is exactly a
- * fresh `CompressedJSONFromString` (see the top), for a sample of
- * `length` code units: a compressed form in the engine, and the table
- * fields replaced by accessors that fill them on first use. What is
- * checked here holds for the later samples as long as `readsAsStarted`.
+ * fresh `CompressedJSONFromString` (see the top) with its original
+ * methods, for a sample of `length` code units: a compressed form in the
+ * engine, and the table fields replaced by accessors that fill them on
+ * first use. What is checked here holds for the later samples as long as
+ * `readsAsStarted`.
  */
 function start(cjson: any, length: number): NativeSamples | undefined {
-    if (Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype || !hasOnlyBuiltinFields(cjson)) {
+    if (
+        Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype ||
+        !hasOnlyBuiltinFields(cjson) ||
+        !prototypesAsLoaded() ||
+        typeof cjson.internArray !== "function" ||
+        Function.prototype.toString.call(cjson.internArray) !== internArraySource
+    ) {
         return undefined;
     }
 
@@ -322,6 +440,7 @@ function start(cjson: any, length: number): NativeSamples | undefined {
         textLength: 0,
         fields,
     };
+    internArrays.set(cjson, cjson.internArray);
     for (const name of tableFields) {
         const descriptor = Object.getOwnPropertyDescriptor(cjson, name) as PropertyDescriptor;
         fields.push([name, descriptor]);

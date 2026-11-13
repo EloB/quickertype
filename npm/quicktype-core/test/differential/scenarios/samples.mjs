@@ -64,6 +64,42 @@ async function addThenRun(qt, lang, groups, { sync = false, tablesFirst = false,
     return { failures, run, before, after: state(input, true) };
 }
 
+/** `f()` with `object[name]` set to `value`, and as it was again after. */
+async function patched(object, name, value, f) {
+    const own = Object.getOwnPropertyDescriptor(object, name);
+    object[name] = value;
+    try {
+        return await f();
+    } finally {
+        if (own === undefined) delete object[name];
+        else Object.defineProperty(object, name, own);
+    }
+}
+
+const dateSamples = ['{"d": "2020-01-01", "t": "12:30:00Z", "dt": "2020-01-01T00:00:00Z"}', '[{"d": "2021-02-03", "e": "x"}]'];
+
+/**
+ * Two inputs, one with every sample added while `object[name]` is
+ * `value`, one with only its second; their runs (after the patch) and
+ * their tables.
+ */
+async function addPatched(qt, object, name, value) {
+    const samples = ['{"a": "x", "n": 1, "list": [2, "y", [3, 4]]}', '[{"a": "z", "n": 5, "m": [6, "w"]}, 7]'];
+    const before = qt.jsonInputForTargetLanguage("rust");
+    const between = qt.jsonInputForTargetLanguage("rust");
+    await between.addSource({ name: "A", samples: [samples[0]] });
+    await patched(object, name, value, async () => {
+        await before.addSource({ name: "A", samples });
+        between.addSourceSync({ name: "B", samples: [samples[1]] });
+    });
+    const results = [];
+    for (const input of [before, between]) {
+        results.push(await qt.quicktypeMultiFile({ lang: "rust", inputData: data(qt, input) }));
+    }
+
+    return { results, before: state(before, true), between: state(between, true) };
+}
+
 const deep = (n, open = "[", close = "]", inner = "1") => open.repeat(n) + inner + close.repeat(n);
 
 const groups = {
@@ -312,6 +348,34 @@ export function scenarios() {
             await input.addSource({ name: "B", samples: ['[2147483648, {"$ref": "#/x"}]'] });
             return { result: await qt.quicktypeMultiFile({ lang: "typescript", inputData: data(qt, input) }), state: state(input, true) };
         }),
+        // Methods replaced on a date/time recognizer, or on the instance or
+        // a prototype of a CompressedJSONFromString, are called as they are
+        // (the engine's read stands in for the originals only).
+        ...["kotlin", "typescript"].map((lang) =>
+            scenario(`a date/time recognizer with isDate replaced on the instance → ${lang}`, async (qt) => {
+                const input = qt.jsonInputForTargetLanguage(lang);
+                input._compressedJSON.dateTimeRecognizer.isDate = () => false;
+                await input.addSource({ name: "Dates", samples: dateSamples });
+                return { result: await qt.quicktypeMultiFile({ lang, inputData: data(qt, input) }), state: state(input, true) };
+            }, lang),
+        ),
+        scenario("a date/time recognizer with isDate replaced on its class's prototype", async (qt, ctx) => {
+            const { DefaultDateTimeRecognizer } = ctx.deepRequire(qt, "dist/DateTime.js");
+            return patched(DefaultDateTimeRecognizer.prototype, "isDate", () => false, async () => {
+                const input = qt.jsonInputForTargetLanguage("kotlin");
+                await input.addSource({ name: "Dates", samples: dateSamples });
+                return { result: await qt.quicktypeMultiFile({ lang: "kotlin", inputData: data(qt, input) }), state: state(input, true) };
+            });
+        }),
+        scenario("commitString replaced on CompressedJSONFromString's prototype, before and between samples", async (qt, ctx) => {
+            const { CompressedJSONFromString } = ctx.deepRequire(qt, "dist/input/CompressedJSON.js");
+            return addPatched(qt, CompressedJSONFromString.prototype, "commitString", function () {
+                this.commitNumber(false);
+            });
+        }),
+        scenario("parsedNumberIsDouble replaced on CompressedJSON's prototype, before and between samples", async (qt) =>
+            addPatched(qt, qt.CompressedJSON.prototype, "parsedNumberIsDouble", () => true),
+        ),
         // A run holds the samples it was encoded with until it starts,
         // even if a run on TypeScript fills the tables meanwhile (which
         // drops the engine's copy) and another input is read into the
