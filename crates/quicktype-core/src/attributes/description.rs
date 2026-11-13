@@ -155,6 +155,27 @@ pub fn description_attribute_producer(
     }))
 }
 
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addDescriptionToSchema`, `addToSchema`
+
+/// `addDescriptionToSchema(schema, description)`: `description`, the lines
+/// joined by newlines, unless there is no description.
+pub fn add_description_to_schema<'a>(
+    schema: &mut crate::attributes::type_attributes::SchemaObject,
+    description: Option<impl IntoIterator<Item = &'a String>>,
+) {
+    let Some(description) = description else {
+        return;
+    };
+    crate::attributes::type_attributes::set_schema_property(
+        schema,
+        "description",
+        Some(quicktype_js_compat::json::JsonValue::String(
+            description_for_schema(description),
+        )),
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

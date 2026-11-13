@@ -296,6 +296,58 @@ pub fn pattern_attribute_producer(
     }))
 }
 
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addToSchema`
+
+/// `MinMaxConstraintTypeAttributeKind.addToSchema` for the min/max
+/// attribute `attribute_kind`: its schema properties, for a type of one of
+/// its kinds (see [`min_max_schema_info`]).
+pub fn add_min_max_to_schema(
+    schema: &mut crate::attributes::type_attributes::SchemaObject,
+    attribute_kind: crate::attributes::type_attributes::TypeAttributeKind,
+    kind: TypeKind,
+    attr: &MinMaxConstraint,
+) {
+    use crate::attributes::type_attributes::set_schema_property;
+    use quicktype_js_compat::json::JsonValue;
+
+    let Some((type_kinds, min_schema_property, max_schema_property)) =
+        min_max_schema_info(attribute_kind)
+    else {
+        return;
+    };
+    if !type_kinds.contains(&kind) {
+        return;
+    }
+
+    let MinMaxConstraint(min, max) = *attr;
+    if let Some(min) = min {
+        set_schema_property(schema, min_schema_property, Some(JsonValue::Number(min)));
+    }
+
+    if let Some(max) = max {
+        set_schema_property(schema, max_schema_property, Some(JsonValue::Number(max)));
+    }
+}
+
+/// `PatternTypeAttributeKind.addToSchema`: `pattern`, for strings.
+pub fn add_pattern_to_schema(
+    schema: &mut crate::attributes::type_attributes::SchemaObject,
+    kind: TypeKind,
+    pattern: &str,
+) {
+    if kind != TypeKind::String {
+        return;
+    }
+    crate::attributes::type_attributes::set_schema_property(
+        schema,
+        "pattern",
+        Some(quicktype_js_compat::json::JsonValue::String(
+            pattern.to_owned(),
+        )),
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

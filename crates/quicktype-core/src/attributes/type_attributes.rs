@@ -833,6 +833,137 @@ pub fn increase_type_attributes_distance(attr: &TypeAttributes) -> TypeAttribute
     )
 }
 
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addToSchema`
+
+/// A JSON Schema object under construction (TS `{ [name: string]: unknown }`),
+/// for the JSON Schema renderer and `addToSchema`: the object's own
+/// properties in JavaScript order, `None` standing for a property whose value
+/// is `undefined` (it keeps its position but `JSON.stringify` skips it).
+pub type SchemaObject = IndexMap<String, Option<quicktype_js_compat::json::JsonValue>>;
+
+/// `schema[key] = value`: an existing key keeps its position, a new
+/// array-index key (`"0"`, `"42"`) goes before the other keys, any other new
+/// key goes last. Assigning `__proto__` sets the object's prototype instead
+/// of adding a property (and does nothing for a non-object value), so that
+/// key never appears.
+pub fn set_schema_property(
+    schema: &mut SchemaObject,
+    key: &str,
+    value: Option<quicktype_js_compat::json::JsonValue>,
+) {
+    if key == "__proto__" {
+        return;
+    }
+    quicktype_js_compat::json::insert_js_property(schema, key.to_owned(), value);
+}
+
+/// The JSON value of a [`SchemaObject`]: an object without its `undefined`
+/// properties, as `JSON.stringify` writes it.
+pub fn schema_object_to_json(schema: SchemaObject) -> quicktype_js_compat::json::JsonValue {
+    quicktype_js_compat::json::JsonValue::Object(
+        schema
+            .into_iter()
+            .filter_map(|(key, value)| value.map(|v| (key, v)))
+            .collect(),
+    )
+}
+
+impl TypeAttributeValue {
+    /// `kind.addToSchema(schema, t, value)`, for a type of kind `kind`:
+    /// descriptions, default values, URI protocols and extensions, and
+    /// constraints add their JSON Schema keywords; every other kind adds
+    /// nothing.
+    pub fn add_to_schema(&self, schema: &mut SchemaObject, kind: TypeKind) {
+        match self {
+            TypeAttributeValue::Description(d) => {
+                description::add_description_to_schema(schema, Some(d.iter()));
+            }
+            TypeAttributeValue::DefaultValue(v) => {
+                default_value::add_default_value_to_schema(schema, v);
+            }
+            TypeAttributeValue::UriAttributes(u) => {
+                uri_attributes::add_uri_attributes_to_schema(schema, kind, u);
+            }
+            TypeAttributeValue::MinMax(c)
+            | TypeAttributeValue::MinMaxLength(c)
+            | TypeAttributeValue::MinMaxItems(c) => {
+                constraints::add_min_max_to_schema(schema, self.kind(), kind, c);
+            }
+            TypeAttributeValue::Pattern(p) => constraints::add_pattern_to_schema(schema, kind, p),
+            TypeAttributeValue::Names(_)
+            | TypeAttributeValue::PropertyDescriptions(_)
+            | TypeAttributeValue::AccessorNames(_)
+            | TypeAttributeValue::EnumValues(_)
+            | TypeAttributeValue::UnionIdentifier(_)
+            | TypeAttributeValue::UnionMemberNames(_)
+            | TypeAttributeValue::StringTypes(_)
+            | TypeAttributeValue::Provenance(_)
+            | TypeAttributeValue::Transformation(_) => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod add_to_schema_tests {
+    use super::*;
+    use quicktype_js_compat::json::{self, JsonValue};
+
+    fn text(schema: SchemaObject) -> String {
+        json::stringify(&schema_object_to_json(schema), None)
+    }
+
+    #[test]
+    fn schema_properties_follow_javascript_object_order() {
+        let mut schema = SchemaObject::new();
+        set_schema_property(&mut schema, "b", Some(JsonValue::Bool(true)));
+        set_schema_property(&mut schema, "title", None);
+        set_schema_property(&mut schema, "42", Some(JsonValue::Null));
+        set_schema_property(&mut schema, "__proto__", Some(JsonValue::Null));
+        set_schema_property(&mut schema, "1", Some(JsonValue::Number(1.0)));
+        set_schema_property(
+            &mut schema,
+            "description",
+            Some(JsonValue::String("d".into())),
+        );
+        // Assigning an `undefined` property keeps its position.
+        set_schema_property(&mut schema, "title", Some(JsonValue::String("T".into())));
+        assert_eq!(
+            text(schema),
+            r#"{"1":1,"42":null,"b":true,"title":"T","description":"d"}"#
+        );
+    }
+
+    #[test]
+    fn attributes_add_their_keywords_for_their_type_kinds() {
+        let mut schema = SchemaObject::new();
+        let uri = TypeAttributeValue::UriAttributes(Rc::new((
+            ["https", "ftp"].into_iter().map(String::from).collect(),
+            IndexSet::new(),
+        )));
+        let length = TypeAttributeValue::MinMaxLength(MinMaxConstraint(Some(1.0), None));
+        let range = TypeAttributeValue::MinMax(MinMaxConstraint(None, Some(1e21)));
+        let pattern = TypeAttributeValue::Pattern(Rc::new("^a$".to_owned()));
+        let default = TypeAttributeValue::DefaultValue(DefaultValue::Null);
+        let descriptions = TypeAttributeValue::Description(Rc::new(
+            ["one", "two"].into_iter().map(String::from).collect(),
+        ));
+        for attribute in [&uri, &length, &range, &pattern, &default, &descriptions] {
+            attribute.add_to_schema(&mut schema, TypeKind::String);
+        }
+        assert_eq!(
+            text(schema),
+            r#"{"qt-uri-protocols":["ftp","https"],"minLength":1,"pattern":"^a$","default":null,"description":"one\ntwo"}"#
+        );
+
+        let mut schema = SchemaObject::new();
+        for attribute in [&uri, &length, &range, &pattern] {
+            attribute.add_to_schema(&mut schema, TypeKind::Integer);
+        }
+        assert_eq!(text(schema), r#"{"maximum":1e+21}"#);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
