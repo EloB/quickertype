@@ -110,7 +110,8 @@ second copy to run the TypeScript and Rust passes side by side.
 `.github/workflows/roundtrip.yml` runs this weekly and on demand
 (`workflow_dispatch`, with an input for the full input set), one job per
 fixture group, for the languages that the standard setup actions install on
-ubuntu-latest, and Swift and Objective-C on macOS.
+ubuntu-latest, and Swift and Objective-C on macOS. One job per OS prepares
+the patched copy for all of them.
 
 ## Toolchains
 

@@ -37,10 +37,33 @@ jobs:
           name: quicktype-${{ matrix.os }}
           path: target/release/quicktype
 
+  # quicktype at the commit the port matches, installed, built and patched
+  # once per OS for all the jobs below. A tar keeps the modes and symlinks
+  # that node_modules needs.
+  prepare:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Test the tool
+        run: node --test xtask/roundtrip/roundtrip.test.mjs
+      - run: xtask/roundtrip/roundtrip.sh prepare "$QUICKTYPE_DIR"
+      - run: tar -C "$QUICKTYPE_DIR" -cf "$RUNNER_TEMP/quicktype-roundtrip.tar" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quicktype-roundtrip-${{ matrix.os }}
+          path: ${{ runner.temp }}/quicktype-roundtrip.tar
+          retention-days: 1
+
   # The fixtures' later quicktype steps for every language, compared with the
   # TypeScript CLI's output; no language toolchains needed.
   later-steps:
-    needs: build
+    needs: [build, prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,17 +72,28 @@ jobs:
           name: quicktype-ubuntu-latest
           path: ${{ runner.temp }}/bin
       - run: chmod +x "$RUNNER_TEMP/bin/quicktype"
+      - uses: actions/download-artifact@v4
+        with:
+          name: quicktype-roundtrip-ubuntu-latest
+          path: ${{ runner.temp }}
+      - run: mkdir -p "$QUICKTYPE_DIR" && tar -C "$QUICKTYPE_DIR" -xf "$RUNNER_TEMP/quicktype-roundtrip.tar"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: |
           npm install --no-save --prefix "$RUNNER_TEMP/tsc" typescript@7.0.2
           echo "QUICKTYPE_TSC=$RUNNER_TEMP/tsc/node_modules/@typescript/typescript-linux-x64/lib/tsc" >> "$GITHUB_ENV"
-      - run: xtask/roundtrip/roundtrip.sh prepare "$QUICKTYPE_DIR"
-      - run: xtask/roundtrip/roundtrip.sh steps "$QUICKTYPE_DIR" --bin "$RUNNER_TEMP/bin/quicktype" --jobs 4
+      - run: >
+          xtask/roundtrip/roundtrip.sh steps "$QUICKTYPE_DIR" --bin "$RUNNER_TEMP/bin/quicktype"
+          --jobs 4 --work results/later-steps
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: later-steps-mismatches
+          path: results/later-steps/
 
   fixtures:
-    needs: build
+    needs: [build, prepare]
     runs-on: ${{ matrix.runs-on || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
@@ -100,6 +134,12 @@ jobs:
           - fixture: objective-c,schema-objective-c,graphql-objective-c,comment-injection-objective-c
             runs-on: macos-latest
     name: ${{ matrix.fixture }}
+    env:
+      # The Java fixtures, by exact name: 'java' is also in 'javascript'.
+      JAVA_FIXTURES: >-
+        ${{ contains(format(',{0},', matrix.fixture), ',java,')
+        || contains(format(',{0},', matrix.fixture), ',java-datetime-legacy,')
+        || contains(format(',{0},', matrix.fixture), ',java-lombok,') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -107,11 +147,15 @@ jobs:
           name: quicktype-${{ runner.os == 'macOS' && 'macos-latest' || 'ubuntu-latest' }}
           path: ${{ runner.temp }}/bin
       - run: chmod +x "$RUNNER_TEMP/bin/quicktype"
+      - uses: actions/download-artifact@v4
+        with:
+          name: quicktype-roundtrip-${{ runner.os == 'macOS' && 'macos-latest' || 'ubuntu-latest' }}
+          path: ${{ runner.temp }}
+      - name: Unpack quicktype
+        run: mkdir -p "$QUICKTYPE_DIR" && tar -C "$QUICKTYPE_DIR" -xf "$RUNNER_TEMP/quicktype-roundtrip.tar"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Prepare quicktype
-        run: xtask/roundtrip/roundtrip.sh prepare "$QUICKTYPE_DIR"
 
       # The toolchains, as in quicktype's .github/workflows/test-pr.yaml.
       - if: contains(matrix.fixture, 'golang')
@@ -126,12 +170,12 @@ jobs:
         run: pip3.12 install mypy python-dateutil types-python-dateutil
       - if: contains(matrix.fixture, 'flow')
         run: npm install -g flow-bin@0.66.0 flow-remove-types@1.2.3
-      - if: contains(matrix.fixture, 'java') || contains(matrix.fixture, 'kotlin')
+      - if: env.JAVA_FIXTURES == 'true' || contains(matrix.fixture, 'kotlin')
         uses: actions/setup-java@v4
         with:
           java-version: "11"
           distribution: temurin
-      - if: contains(matrix.fixture, 'java')
+      - if: env.JAVA_FIXTURES == 'true'
         uses: stCarolas/setup-maven@v5
         with:
           maven-version: 3.8.2
@@ -204,7 +248,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          xtask/roundtrip/roundtrip.sh compare results/ts.jsonl results/ours.jsonl | tee results/compare.txt
+          xtask/roundtrip/roundtrip.sh compare --fixtures '${{ matrix.fixture }}' \
+            results/ts.jsonl results/ours.jsonl | tee results/compare.txt
       - if: always()
         uses: actions/upload-artifact@v4
         with:
