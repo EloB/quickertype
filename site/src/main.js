@@ -4,11 +4,15 @@
 //
 // State that can be shared lives in the URL hash, in the form of quicktype's
 // README links (`#l=rust`), plus `s` (an unmodified sample), `n` (a typed
-// top-level name), `c=1` (compare mode) and renderer options by their CLI
-// names (`#l=rust&density=dense`). The input text is kept in localStorage
-// when the browser allows it.
+// top-level name), `c=1` (compare mode), the general options that are on
+// (`no-enums=true`) and renderer options by their CLI names
+// (`#l=cs&density=dense`). A renderer option is in the hash when it differs
+// from the page's default: quicktype's, or the language's preset (see
+// site/build.mjs), so moving a preset back to quicktype's default is
+// explicit (`#l=rust&density=normal`). The input text is kept in
+// localStorage when the browser allows it.
 
-/* global __LANGUAGES__, __SAMPLES__ */
+/* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
 
 import { EngineClient } from "./engine-client.js";
 import { highlight } from "./highlight.js";
@@ -16,6 +20,8 @@ import { escapeHtml } from "./html.js";
 
 const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
+/** quicktype's general options: { name (the CLI flag), label, option (of `quicktype()`), value (when on) }. */
+const general = __GENERAL__;
 
 const storageKey = "quickertype.input";
 /** Inputs longer than this (in characters) are not put in the editor or saved. */
@@ -29,6 +35,9 @@ const els = {
     name: $("name"),
     compare: $("compare"),
     options: $("options"),
+    general: $("general"),
+    generalOptions: $("general-options"),
+    generalCount: $("general-count"),
     sample: $("sample"),
     open: $("open"),
     file: $("file"),
@@ -106,8 +115,10 @@ const state = {
     /** What the top-level name field holds ("" or `autoName` unless the user typed a name). */
     name: "",
     lang: languageNamed(defaultLanguage),
-    /** Renderer options that differ from their defaults, by CLI name. */
+    /** Renderer options that differ from quicktype's defaults (presets included), by CLI name. */
     options: {},
+    /** The general options that are on, by CLI name (all are off by default). */
+    general: {},
     compare: false,
     /** Show a large input in the editor anyway. */
     largeInEditor: false,
@@ -115,6 +126,13 @@ const state = {
 
 const topLevelName = () => state.name.trim() || state.autoName;
 const typedName = () => (state.name.trim() !== "" && state.name.trim() !== state.autoName ? state.name.trim() : "");
+
+/** An option's default on this page: the language's preset, else quicktype's default. */
+const pageDefault = (definition) => definition.preset ?? definition.defaultValue;
+
+/** The renderer options a language starts with: its presets. */
+const presetOptions = (lang) =>
+    Object.fromEntries(lang.options.filter((o) => o.preset !== undefined).map((o) => [o.name, o.preset]));
 
 function parseOption(definition, raw) {
     if (raw === null || raw === undefined) return undefined;
@@ -128,13 +146,16 @@ function readHash() {
     const lang = languageNamed(params.get("l")) ?? languageNamed(defaultLanguage);
     const options = {};
     for (const definition of lang.options) {
-        const value = parseOption(definition, params.get(definition.name));
-        if (value !== undefined && value !== definition.defaultValue) options[definition.name] = value;
+        const value = parseOption(definition, params.get(definition.name)) ?? pageDefault(definition);
+        if (value !== definition.defaultValue) options[definition.name] = value;
     }
 
+    const on = {};
+    for (const g of general) if (params.get(g.name) === "true") on[g.name] = true;
     return {
         lang,
         options,
+        general: on,
         name: params.get("n") ?? "",
         sample: sampleWithId(params.get("s")),
         compare: params.get("c") === "1",
@@ -147,7 +168,11 @@ function writeHash() {
     if (state.source.type === "sample") params.set("s", state.source.id);
     if (typedName() !== "") params.set("n", typedName());
     if (state.compare) params.set("c", "1");
-    for (const [name, value] of Object.entries(state.options)) params.set(name, String(value));
+    for (const g of general) if (state.general[g.name]) params.set(g.name, "true");
+    for (const definition of state.lang.options) {
+        const value = state.options[definition.name] ?? definition.defaultValue;
+        if (value !== pageDefault(definition)) params.set(definition.name, String(value));
+    }
     const hash = `#${params}`;
     if (location.hash !== hash) history.replaceState(null, "", hash);
 }
@@ -209,14 +234,30 @@ function renderSamples() {
 }
 
 let moreOpen = false;
+let generalOpen = false;
+
+/** What leaving `just-types` off gives, next to it: quicktype's default is more than types. */
+const justTypesHint = "Off: types plus runtime conversion code (quicktype's default)";
+
+/** A small mark on an option whose page default is a preset, saying so and what quicktype's default is. */
+function presetMark(definition) {
+    if (definition.preset === undefined) return "";
+    const quicktypeDefault =
+        definition.type === "boolean" ? (definition.defaultValue ? "on" : "off") : String(definition.defaultValue);
+    const title = `Preset as on app.quicktype.io; quicktype's default is ${quicktypeDefault}`;
+    return ` <span class="preset" title="${escapeHtml(title)}">preset</span>`;
+}
 
 function optionControl(definition) {
     const id = `opt-${definition.name}`;
     const value = state.options[definition.name] ?? definition.defaultValue;
     const flag = `--${definition.name}`;
-    const label = escapeHtml(definition.description);
+    const label = escapeHtml(definition.description) + presetMark(definition);
     if (definition.type === "boolean") {
-        return `<label class="check" title="${flag}"><input type="checkbox" id="${id}" data-option="${definition.name}"${value ? " checked" : ""}><span>${label}</span></label>`;
+        const hint = definition.name === "just-types" ? justTypesHint : undefined;
+        return `<label class="check${hint ? " hinted" : ""}" title="${flag}"><input type="checkbox" id="${id}" data-option="${definition.name}"${value ? " checked" : ""}><span>${label}${
+            hint ? `<small class="hint">${escapeHtml(hint)}</small>` : ""
+        }</span></label>`;
     }
 
     if (definition.type === "enum") {
@@ -227,6 +268,26 @@ function optionControl(definition) {
     }
 
     return `<label class="field" title="${flag}"><span class="field-label">${label}</span><input type="text" id="${id}" data-option="${definition.name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(definition.typeLabel ?? "")}" spellcheck="false" autocomplete="off"></label>`;
+}
+
+/** How many general options there are, or how many are on. */
+function renderGeneralCount() {
+    const on = general.filter((g) => state.general[g.name]).length;
+    els.generalCount.textContent = on > 0 ? `${on} on` : String(general.length);
+    els.generalCount.classList.toggle("on", on > 0);
+}
+
+/** The General section: collapsed unless an option in it is on (from a link). */
+function renderGeneral() {
+    if (general.some((g) => state.general[g.name])) generalOpen = true;
+    els.general.open = generalOpen;
+    renderGeneralCount();
+    els.generalOptions.innerHTML = general
+        .map(
+            (g) =>
+                `<label class="check" title="--${g.name}"><input type="checkbox" id="general-${g.name}" data-general="${g.name}"${state.general[g.name] ? " checked" : ""}><span>${escapeHtml(g.label)}</span></label>`,
+        )
+        .join("");
 }
 
 function renderOptions() {
@@ -258,6 +319,7 @@ function renderControls() {
     for (const radio of document.querySelectorAll('input[name="kind"]')) radio.checked = radio.value === state.kind;
     els.sample.value = state.source.type === "sample" ? state.source.id : "";
     renderOptions();
+    renderGeneral();
     renderCli();
 }
 
@@ -274,6 +336,7 @@ function cliCommand() {
     const args = ["quicktype"];
     if (state.kind === "schema") args.push("--src-lang", "schema");
     args.push("--lang", state.lang.names[0], "--top-level", topLevelName());
+    for (const g of general) if (state.general[g.name]) args.push(`--${g.name}`);
     for (const definition of state.lang.options) {
         if (!(definition.name in state.options)) continue;
         const value = state.options[definition.name];
@@ -346,6 +409,13 @@ let ticker;
  */
 let currentRun = Promise.resolve();
 
+/** The `quicktype()` options the general options that are on set, as quicktype's CLI sets them. */
+function runOptions() {
+    const options = {};
+    for (const g of general) if (state.general[g.name]) options[g.option] = g.value;
+    return options;
+}
+
 function request() {
     return {
         kind: state.kind,
@@ -353,6 +423,7 @@ function request() {
         name: topLevelName(),
         text: state.text,
         rendererOptions: { ...state.options },
+        options: runOptions(),
     };
 }
 
@@ -814,7 +885,7 @@ let infoTimer;
 function bind() {
     els.lang.addEventListener("change", () => {
         state.lang = languageNamed(els.lang.value);
-        state.options = {};
+        state.options = presetOptions(state.lang);
         renderOptions();
         renderCli();
         writeHash();
@@ -859,6 +930,20 @@ function bind() {
         renderCli();
         writeHash();
         schedule(definition.type === "string" ? 300 : 0);
+    });
+
+    els.generalOptions.addEventListener("input", (event) => {
+        const control = event.target.closest("[data-general]");
+        if (control === null) return;
+        if (control.checked) state.general[control.dataset.general] = true;
+        else delete state.general[control.dataset.general];
+        renderGeneralCount();
+        renderCli();
+        writeHash();
+        schedule(0);
+    });
+    els.general.addEventListener("toggle", () => {
+        generalOpen = els.general.open;
     });
 
     for (const radio of document.querySelectorAll('input[name="kind"]')) {
@@ -965,6 +1050,7 @@ function bind() {
 async function applyHash(hash) {
     state.lang = hash.lang;
     state.options = hash.options;
+    state.general = hash.general;
     state.name = hash.name;
     state.compare = hash.compare;
     if (state.compare) void engines.ts.start();

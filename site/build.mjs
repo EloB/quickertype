@@ -11,10 +11,11 @@
 //   quicktype-core (see src/worker-boot.js);
 // * samples/: inputs from quicktype's test suite (tests/inputs).
 //
-// The languages and their options are read from quicktype-core's API here,
-// at build time, and embedded in main.js, so the page can show its controls
-// before the worker has loaded. File names carry a content hash, so a
-// deploy never mixes old and new files; every URL is relative.
+// The languages and their options, and quicktype's general (run-level)
+// options, are read from quicktype-core's API here, at build time, and
+// embedded in main.js, so the page can show its controls before the worker
+// has loaded. File names carry a content hash, so a deploy never mixes old
+// and new files; every URL is relative.
 
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
@@ -52,10 +53,24 @@ const samples = [
     { id: "direct-union", file: "schema/direct-union.schema", kind: "schema", label: "Definitions", name: "DirectUnion" },
 ];
 
-/** Every target language with its renderer options, from quicktype-core's API. */
+/**
+ * The page's defaults where they differ from quicktype's, by language and
+ * option (CLI names). They mirror app.quicktype.io's presets: the app starts
+ * each language from quicktype's own option defaults and overrides exactly
+ * these. Every other option, `just-types` included, keeps quicktype's
+ * default. The command under the output shows them as flags.
+ */
+const presets = {
+    objc: { "extra-comments": true },
+    swift: { initializers: false },
+    rust: { density: "dense" },
+};
+
+const qt = require(path.join(packageRoot, "dist", "index.js"));
+
+/** Every target language with its renderer options (and the page's presets), from quicktype-core's API. */
 function languages() {
-    const qt = require(path.join(packageRoot, "dist", "index.js"));
-    return qt.defaultTargetLanguages.map((language) => ({
+    const result = qt.defaultTargetLanguages.map((language) => ({
         displayName: language.displayName,
         names: [...language.names],
         extension: language.extension,
@@ -68,8 +83,61 @@ function languages() {
             defaultValue: d.defaultValue,
             ...(d.optionType === "enum" ? { values: Object.keys(d.values) } : {}),
             ...(d.optionType === "string" ? { typeLabel: d.typeLabel } : {}),
+            ...(presets[language.names[0]]?.[d.name] !== undefined ? { preset: presets[language.names[0]][d.name] } : {}),
         })),
     }));
+
+    // Every preset names an option the language has, with a value it takes
+    // that is not already quicktype's default.
+    for (const [lang, options] of Object.entries(presets)) {
+        const language = result.find((l) => l.names[0] === lang);
+        if (language === undefined) throw new Error(`preset for an unknown language ${lang}`);
+        for (const [name, value] of Object.entries(options)) {
+            const definition = language.options.find((o) => o.name === name);
+            const valid =
+                definition !== undefined &&
+                (definition.type === "boolean"
+                    ? typeof value === "boolean"
+                    : definition.type === "enum"
+                      ? definition.values.includes(value)
+                      : typeof value === "string");
+            if (!valid) throw new Error(`invalid preset ${lang}: ${name} = ${JSON.stringify(value)}`);
+            if (value === definition.defaultValue) throw new Error(`preset ${lang}: ${name} is quicktype's default already`);
+        }
+    }
+
+    return result;
+}
+
+/**
+ * quicktype's general options, as the CLI has them: its flag (all off by
+ * default), its label (the CLI's help text without the period), and the
+ * `quicktype()` option it sets, to what. The `--no-*` switches are the
+ * inference flags, named and described as quicktype's CLI does
+ * (`negatedInferenceFlagName`, `negationDescription`).
+ */
+function generalOptions() {
+    const dashed = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+    const general = [
+        { name: "all-properties-optional", label: "Make all class properties optional", option: "allPropertiesOptional", value: true },
+        { name: "alphabetize-properties", label: "Alphabetize order of class properties", option: "alphabetizeProperties", value: true },
+        ...qt.inferenceFlagNames.map((flag) => ({
+            name: `no${dashed(flag.replace(/^infer/, "").replace(/^[a-z]/, (c) => c.toUpperCase()))}`,
+            label: qt.inferenceFlags[flag].negationDescription,
+            option: flag,
+            value: !qt.defaultInferenceFlags[flag],
+        })),
+    ];
+
+    // Their names share the URL hash and the command line with the renderer options.
+    for (const language of qt.defaultTargetLanguages) {
+        for (const d of language.optionDefinitions) {
+            const clash = general.find((g) => g.name === d.name || g.name === `no-${d.name}`);
+            if (clash !== undefined) throw new Error(`${language.displayName}: --${d.name} clashes with --${clash.name}`);
+        }
+    }
+
+    return general;
 }
 
 function hash(content) {
@@ -118,6 +186,7 @@ const mainFile = writeHashed(
     await bundle("main.js", {
         __WORKER_FILE__: JSON.stringify(`./${workerFile}`),
         __LANGUAGES__: JSON.stringify(languages()),
+        __GENERAL__: JSON.stringify(generalOptions()),
         __SAMPLES__: JSON.stringify(
             samples.map(({ file, ...sample }) => ({ ...sample, path: `samples/${path.basename(file)}` })),
         ),

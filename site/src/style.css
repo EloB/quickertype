@@ -287,6 +287,49 @@ input[type="text"] {
     background: var(--track);
 }
 
+.count.on {
+    color: var(--panel);
+    background: var(--wasm);
+}
+
+/* An option with a hint under its label takes two columns, to keep it short. */
+.option-grid .check.hinted {
+    grid-column: span 2;
+    align-items: flex-start;
+    padding-top: 4px;
+}
+
+.check.hinted input {
+    margin-top: 2px;
+}
+
+.hint {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* An option whose default on this page is a preset (as on app.quicktype.io). */
+.preset {
+    font-size: 11px;
+    padding: 0 5px;
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    color: var(--muted);
+    cursor: help;
+}
+
+.general {
+    margin-top: 2px;
+    font-size: 13px;
+}
+
+.general .general-note {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
 /* ---- Panes ------------------------------------------------------------- */
 
 .panes {
@@ -892,7 +935,8 @@ pre#output:focus-visible {
         gap: 2px 12px;
     }
 
-    .options {
+    .options,
+    .general {
         font-size: 12.5px;
     }
 

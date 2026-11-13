@@ -5,16 +5,22 @@
 //   node site/test/smoke.mjs [--screenshots <dir>]     (after `node site/build.mjs`)
 //
 // Checks that the page loads with every language and runs on the
-// WebAssembly engine; that pokedex.json → Rust and → TypeScript, and a JSON
-// Schema sample, give the same bytes as the quicktype CLI with the arguments
-// the page shows under the output ("Same as quicktype …"), as do renderer
-// options given in the URL hash and an uploaded file too large for the
-// editor; that compare mode reports identical output with each engine in its
-// own worker; that invalid JSON shows quicktype's error; that the input
+// WebAssembly engine; that its default view (pokedex.json → TypeScript,
+// quicktype's defaults: types plus converters), pokedex.json → Rust, and a
+// JSON Schema sample give the same bytes as the quicktype CLI with the
+// arguments the page shows under the output ("Same as quicktype …"), as do
+// `just-types` turned on, the presets the page shares with app.quicktype.io
+// (Rust, Swift, Objective-C) and one moved back to quicktype's default,
+// quicktype's general options one by one and combined, `--no-ignore-json-refs`
+// on an uploaded file with `$ref`s, renderer options given in the URL hash,
+// and an uploaded file too large for the editor; that the URL hash brings all
+// of those back; that the general options are labelled as in the CLI's
+// --help; that compare mode reports identical output with each engine in
+// its own worker; that invalid JSON shows quicktype's error; that the input
 // survives a reload (localStorage); and that 360 px and 390 px widths do not
-// scroll sideways. And three things that once went wrong: the code shown
-// after a slow run during which compare mode was turned off; a measurement
-// asked for while a run is under way; and a worker failing after it loaded.
+// scroll sideways. And three things that once went wrong: the code shown after a
+// slow run during which compare mode was turned off; a measurement asked for
+// while a run is under way; and a worker failing after it loaded.
 //
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
 // (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
@@ -72,7 +78,11 @@ if (!fs.existsSync(cli)) {
 const sampleFiles = {
     "pokedex.json": "tests/inputs/json/samples/pokedex.json",
     "us-senators.json": "tests/inputs/json/samples/us-senators.json",
+    "github-events.json": "tests/inputs/json/samples/github-events.json",
+    "kitchen-sink.json": "tests/inputs/json/samples/kitchen-sink.json",
     "description.schema": "tests/inputs/schema/description.schema",
+    // JSON with `$ref`s (uploaded), for --no-ignore-json-refs.
+    "2465e.json": "tests/inputs/json/misc/2465e.json",
 };
 
 /**
@@ -251,6 +261,11 @@ const shown = () =>
         notes: [...document.querySelectorAll("#notes p")].map((p) => p.textContent.replace(/^(Line \\d+) /, "$1: ")),
     })`);
 
+/** What the CLI prints for `files`: each file, with a `// name` header when there are several. */
+function cliOutput(files) {
+    return files.map((f, i) => `${i > 0 ? "\n" : ""}${files.length > 1 ? `// ${f.name}\n\n` : ""}${f.text}`).join("");
+}
+
 /** Does `action` (an expression) in the page and waits for the run it starts to settle. */
 async function andRun(action, what, until = settled) {
     const before = await page.evaluate("playground.generation");
@@ -286,24 +301,42 @@ function select(id, value) {
         `(() => {
             const control = document.getElementById(${JSON.stringify(id)});
             control.value = ${JSON.stringify(value)};
+            control.dispatchEvent(new Event("input", { bubbles: true }));
             control.dispatchEvent(new Event("change", { bubbles: true }));
         })()`,
         `a run after choosing ${value}`,
     );
 }
 
+/** The page shows the CLI's output for the command it shows, which is `expectedCommand`; returns the output. */
 async function sameAsCli(label, expectedCommand) {
     const result = await shown();
     assert.equal(result.status, "done", `${label}: ${result.status}`);
     assert.equal(result.ran, "wasm", `${label} ran on ${result.ran}`);
     assert.equal(result.cli, expectedCommand);
-    assert.equal(result.files.length, 1);
+    assert.ok(result.files.length >= 1);
     const expected = expectedFor(result.cli);
-    assert.ok(result.files[0].text === expected.text, `${label}: output differs from the CLI`);
-    assert.ok(result.code === expected.text, `${label}: the code shown differs from the output`);
-    assert.deepEqual(result.notes, expected.issues, `${label}: issues`);
+    const output = cliOutput(result.files);
+    assert.ok(output === expected.text, `${label}: output differs from the CLI`);
+    const tab = await page.evaluate("playground.view.tab");
+    assert.ok(result.code === result.files[tab].text, `${label}: the code shown differs from the output`);
+    if (result.files.length === 1) assert.deepEqual(result.notes, expected.issues, `${label}: issues`);
     const issues = expected.issues.length > 0 ? `, ${expected.issues.length} issue(s) shown as on the CLI` : "";
     console.log(`ok: ${label} = \`${result.cli}\` (${expected.text.length} characters${issues})`);
+    return output;
+}
+
+/** Ticks or unticks the control `id` (a checkbox) and waits for the run. */
+const click = (id) => andRun(`document.getElementById(${JSON.stringify(id)}).click()`, `a run after clicking ${id}`);
+
+const hashNow = () => page.evaluate("location.hash");
+
+/** Opens `file` with the file picker and waits for the run on it. */
+async function upload(file) {
+    const { result: picker } = await page.send("Runtime.evaluate", { expression: "document.getElementById('file')" });
+    const before = await page.evaluate("playground.generation");
+    await page.send("DOM.setFileInputFiles", { files: [file], objectId: picker.objectId });
+    await page.waitFor(`playground.generation > ${before} && ${settled}`, `the run on ${path.basename(file)}`);
 }
 
 /** "median 3.2 ms (reading the input 1.1, generating 2.1)" for one engine's warm runs. */
@@ -320,7 +353,8 @@ try {
     console.log(`reference: ${cli}`);
 
     await page.viewport(1440, 900);
-    await page.navigate(`${url}#l=rust&s=pokedex`);
+    // The default view: no hash, nothing saved.
+    await page.navigate(url);
     await page.waitFor(settled, "the first run");
     const languages = await page.evaluate("document.querySelectorAll('#lang option').length");
     assert.equal(languages, 27);
@@ -330,7 +364,178 @@ try {
     assert.equal(boot.loadError, undefined);
     console.log(`ok: loads, ${languages} languages, engine compiled in ${boot.compileMs.toFixed(0)} ms`);
 
-    await sameAsCli("pokedex.json → Rust", "quicktype --lang rust --top-level Pokedex pokedex.json");
+    // TypeScript with quicktype's defaults: types plus converters, as
+    // `quicktype` gives them; `just-types` is off, with a hint saying what
+    // that means; the general options are off and collapsed.
+    const defaultTs = await sameAsCli("default: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    const defaults = await page.evaluate(`({
+        hash: location.hash,
+        justTypes: document.getElementById("opt-just-types").checked,
+        hint: document.getElementById("opt-just-types").closest("label").querySelector(".hint")?.textContent,
+        general: document.getElementById("general").open,
+        count: document.getElementById("general-count").textContent,
+        on: [...document.querySelectorAll("#general-options input")].filter((i) => i.checked).length,
+    })`);
+    assert.deepEqual(defaults, {
+        hash: "#l=typescript&s=pokedex",
+        justTypes: false,
+        hint: "Off: types plus runtime conversion code (quicktype's default)",
+        general: false,
+        count: "10",
+        on: 0,
+    });
+    assert.match(defaultTs, /export class Convert/);
+    console.log(`ok: the default view: quicktype's defaults, just-types off with its hint, General collapsed (${defaults.hash})`);
+    await page.screenshot("default.png");
+
+    // just-types on: types only, as `quicktype --just-types`; the hash says
+    // so and brings it back; off again, the converters are back.
+    await click("opt-just-types");
+    const justTypes = await sameAsCli(
+        "pokedex.json → TypeScript, just-types",
+        "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json",
+    );
+    assert.doesNotMatch(justTypes, /Convert/);
+    assert.equal(await hashNow(), "#l=typescript&s=pokedex&just-types=true");
+    await page.navigate(`${url}#l=typescript&s=pokedex&just-types=true`);
+    await page.waitFor(settled, "the run with just-types from the hash");
+    assert.equal(await page.evaluate("document.getElementById('opt-just-types').checked"), true);
+    await sameAsCli("just-types from the hash", "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json");
+    await click("opt-just-types");
+    assert.equal(await sameAsCli("just-types off again", "quicktype --lang typescript --top-level Pokedex pokedex.json"), defaultTs);
+    assert.equal(await hashNow(), "#l=typescript&s=pokedex");
+
+    // A language without a boolean just-types option: quicktype's defaults,
+    // no just-types control or hint, no preset.
+    await select("lang", "typescript-zod");
+    await sameAsCli("pokedex.json → TypeScript Zod", "quicktype --lang typescript-zod --top-level Pokedex pokedex.json");
+    const zod = await page.evaluate(`({
+        hash: location.hash,
+        justTypes: document.getElementById("opt-just-types") !== null,
+        hints: document.querySelectorAll("#options .hint").length,
+        presets: document.querySelectorAll("#options .preset").length,
+    })`);
+    assert.deepEqual(zod, { hash: "#l=typescript-zod&s=pokedex", justTypes: false, hints: 0, presets: 0 });
+    console.log("ok: TypeScript Zod (no just-types option) keeps quicktype's defaults");
+
+    // The presets the page shares with app.quicktype.io, as flags in the
+    // command; moving one back to quicktype's default is explicit in the
+    // hash, and a link without the key gets the preset.
+    await page.navigate(`${url}#l=rust&s=pokedex`);
+    await page.waitFor(settled, "the run on Rust");
+    await sameAsCli("pokedex.json → Rust (preset)", "quicktype --lang rust --top-level Pokedex --density dense pokedex.json");
+    assert.equal(await hashNow(), "#l=rust&s=pokedex");
+    assert.equal(await page.evaluate("document.getElementById('opt-density').closest('label').querySelectorAll('.preset').length"), 1);
+    await page.screenshot("preset-rust.png");
+    await select("opt-density", "normal");
+    await sameAsCli("pokedex.json → Rust, density back to normal", "quicktype --lang rust --top-level Pokedex pokedex.json");
+    assert.equal(await hashNow(), "#l=rust&s=pokedex&density=normal");
+    await page.navigate(`${url}#l=rust&s=pokedex&density=normal`);
+    await page.waitFor(settled, "the run with density=normal from the hash");
+    assert.equal(await page.evaluate("document.getElementById('opt-density').value"), "normal");
+    await sameAsCli("density=normal from the hash", "quicktype --lang rust --top-level Pokedex pokedex.json");
+    await select("lang", "swift");
+    await sameAsCli("pokedex.json → Swift (preset)", "quicktype --lang swift --top-level Pokedex --no-initializers pokedex.json");
+    assert.equal(await page.evaluate("document.getElementById('opt-initializers').checked"), false);
+    await click("opt-initializers");
+    await sameAsCli("pokedex.json → Swift, initializers back on", "quicktype --lang swift --top-level Pokedex pokedex.json");
+    assert.equal(await hashNow(), "#l=swift&s=pokedex&initializers=true");
+    await select("lang", "objc");
+    await sameAsCli("pokedex.json → Objective-C (preset)", "quicktype --lang objc --top-level Pokedex --extra-comments pokedex.json");
+    assert.equal(await hashNow(), "#l=objc&s=pokedex");
+    console.log("ok: presets as on app.quicktype.io (Rust, Swift, Objective-C); one moved back is explicit in the hash");
+
+    // The general options: labelled as in the CLI's --help, all off there
+    // too; each one alone, and combined, gives the CLI's output with the
+    // same flags, and comes back from the hash.
+    const help = execFileSync(cli, ["--help"], { encoding: "utf8" });
+    const generalControls = await page.evaluate(
+        `[...document.querySelectorAll("#general-options label")].map((l) => ({ flag: l.title, label: l.textContent }))`,
+    );
+    assert.equal(generalControls.length, 10);
+    const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    for (const { flag, label } of generalControls) {
+        assert.match(help, new RegExp(`^ ${escape(flag)} +${escape(label)}\\.`, "m"), `${flag} in --help`);
+    }
+    console.log(`ok: general options labelled as in --help: ${generalControls.map((c) => c.flag).join(" ")}`);
+
+    await page.navigate(`${url}#l=typescript&s=pokedex`);
+    await page.waitFor(settled, "the run on TypeScript");
+    await page.evaluate("document.querySelector('#general summary').click()");
+    const generalCases = [
+        ["pokedex", "Pokedex", "all-properties-optional"],
+        ["pokedex", "Pokedex", "alphabetize-properties"],
+        ["pokedex", "Pokedex", "no-enums"],
+        ["github-events", "GithubEvents", "no-date-times"],
+        ["github-events", "GithubEvents", "no-combine-classes"],
+        ["kitchen-sink", "KitchenSink", "no-maps"],
+    ];
+    let current = "pokedex";
+    let without = defaultTs;
+    for (const [sample, name, flag] of generalCases) {
+        if (sample !== current) {
+            await select("sample", sample);
+            without = await sameAsCli(`${sample}.json → TypeScript`, `quicktype --lang typescript --top-level ${name} ${sample}.json`);
+            current = sample;
+        }
+
+        await click(`general-${flag}`);
+        const withFlag = await sameAsCli(
+            `${sample}.json → TypeScript, --${flag}`,
+            `quicktype --lang typescript --top-level ${name} --${flag} ${sample}.json`,
+        );
+        assert.notEqual(withFlag, without, `--${flag} changed nothing`);
+        assert.equal(await hashNow(), `#l=typescript&s=${sample}&${flag}=true`);
+        assert.equal(await page.evaluate("document.getElementById('general-count').textContent"), "1 on");
+        await click(`general-${flag}`);
+    }
+
+    // Two at once, with the hash round trip; and with a preset.
+    await select("sample", "pokedex");
+    await andRun(
+        "document.getElementById('general-all-properties-optional').click(); document.getElementById('general-no-enums').click()",
+        "a run with two general options",
+    );
+    await sameAsCli(
+        "pokedex.json → TypeScript, --all-properties-optional --no-enums",
+        "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
+    );
+    const twoHash = await hashNow();
+    assert.equal(twoHash, "#l=typescript&s=pokedex&all-properties-optional=true&no-enums=true");
+    await page.navigate(`${url}${twoHash}`);
+    await page.waitFor(settled, "the run with two general options from the hash");
+    const restoredGeneral = await page.evaluate(`({
+        open: document.getElementById("general").open,
+        count: document.getElementById("general-count").textContent,
+        on: [...document.querySelectorAll("#general-options input")].filter((i) => i.checked).map((i) => i.dataset.general),
+    })`);
+    assert.deepEqual(restoredGeneral, { open: true, count: "2 on", on: ["all-properties-optional", "no-enums"] });
+    await sameAsCli(
+        "two general options from the hash",
+        "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
+    );
+    await page.screenshot("general-open.png");
+    await page.navigate(`${url}#l=rust&s=github-events&alphabetize-properties=true&no-date-times=true`);
+    await page.waitFor(settled, "the run on Rust with two general options");
+    await sameAsCli(
+        "github-events.json → Rust, --alphabetize-properties --no-date-times and the preset",
+        "quicktype --lang rust --top-level GithubEvents --alphabetize-properties --no-date-times --density dense github-events.json",
+    );
+
+    // --no-ignore-json-refs: `$ref`s in an uploaded JSON file are references.
+    await page.navigate(`${url}#l=typescript`);
+    await page.waitFor(settled, "the run before the upload");
+    await upload(path.join(repositoryRoot, sampleFiles["2465e.json"]));
+    const refsIgnored = await sameAsCli("uploaded 2465e.json → TypeScript", "quicktype --lang typescript --top-level T2465e 2465e.json");
+    await click("general-no-ignore-json-refs");
+    const refsFollowed = await sameAsCli(
+        "uploaded 2465e.json → TypeScript, --no-ignore-json-refs",
+        "quicktype --lang typescript --top-level T2465e --no-ignore-json-refs 2465e.json",
+    );
+    assert.notEqual(refsFollowed, refsIgnored, "--no-ignore-json-refs changed nothing");
+
+    await page.navigate(`${url}#l=rust&s=pokedex`);
+    await page.waitFor(settled, "the run on Rust");
     await select("lang", "typescript");
     await sameAsCli("pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
     await page.screenshot("desktop-light.png");
@@ -455,7 +660,7 @@ try {
     assert.deepEqual([large.panel, large.editor], [true, false], "a large file is shown as a panel, not in the editor");
     await sameAsCli(
         `uploaded big-senators.json (${(fs.statSync(big).size / 1e6).toFixed(1)} MB) → Rust`,
-        "quicktype --lang rust --top-level BigSenators big-senators.json",
+        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
     );
     await toggleCompare("the comparison on the large file");
     await page.evaluate("document.getElementById('measure').click()");
@@ -532,7 +737,10 @@ try {
     assert.equal(failure, "The WebAssembly worker stopped (simulated failure); the next run starts a new one.");
     await select("lang", "rust");
     assert.ok(await page.evaluate("playground.engines.wasm.worker !== globalThis.failedWorker"), "the worker was not replaced");
-    await sameAsCli("after the worker failed, a new one: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators big-senators.json");
+    await sameAsCli(
+        "after the worker failed, a new one: big-senators.json → Rust",
+        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
+    );
     console.log(`ok: a worker failing after it loaded: "${failure}"`);
 
     // Phones: stacked, no sideways scrolling.
