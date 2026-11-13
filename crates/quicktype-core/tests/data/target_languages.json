@@ -1,0 +1,3615 @@
+[
+ {
+  "name": "cjson",
+  "names": [
+   "cjson",
+   "cJSON"
+  ],
+  "displayName": "C (cJSON)",
+  "extension": "h",
+  "options": [
+   {
+    "name": "source-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Source code generation type, whether to generate single or multiple source files",
+    "typeLabel": "single-source|multi-source",
+    "defaultValue": "single-source",
+    "values": [
+     "single-source",
+     "multi-source"
+    ]
+   },
+   {
+    "name": "integer-size",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Integer code generation type (int64_t by default)",
+    "typeLabel": "int8_t|int16_t|int32_t|int64_t",
+    "defaultValue": "int64_t",
+    "values": [
+     "int8_t",
+     "int16_t",
+     "int32_t",
+     "int64_t"
+    ]
+   },
+   {
+    "name": "hashtable-size",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Hashtable size, used when maps are created (64 by default)",
+    "typeLabel": "SIZE",
+    "defaultValue": "64",
+    "values": null
+   },
+   {
+    "name": "typedef-alias",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Add typedef alias to unions, structs, and enums (no typedef by default)",
+    "typeLabel": "no-typedef|add-typedef",
+    "defaultValue": "no-typedef",
+    "values": [
+     "no-typedef",
+     "add-typedef"
+    ]
+   },
+   {
+    "name": "print-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Which cJSON print should be used (formatted by default)",
+    "typeLabel": "print-formatted|print-unformatted",
+    "defaultValue": "print-formatted",
+    "values": [
+     "print-formatted",
+     "print-unformatted"
+    ]
+   },
+   {
+    "name": "type-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for types",
+    "typeLabel": "pascal-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "pascal-case",
+    "values": [
+     "pascal-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "member-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for members",
+    "typeLabel": "pascal-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "underscore-case",
+    "values": [
+     "pascal-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "enumerator-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for enumerators",
+    "typeLabel": "pascal-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "upper-underscore-case",
+    "values": [
+     "pascal-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "header-only",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Generate headers only",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "source-style",
+    "single-source"
+   ],
+   [
+    "integer-size",
+    "int64_t"
+   ],
+   [
+    "hashtable-size",
+    "64"
+   ],
+   [
+    "typedef-alias",
+    "no-typedef"
+   ],
+   [
+    "print-style",
+    "print-formatted"
+   ],
+   [
+    "type-style",
+    "pascal-case"
+   ],
+   [
+    "member-style",
+    "underscore-case"
+   ],
+   [
+    "enumerator-style",
+    "upper-underscore-case"
+   ],
+   [
+    "header-only",
+    true
+   ],
+   [
+    "no-header-only",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "source-style",
+    "Source code generation type, whether to generate single or multiple source files"
+   ],
+   [
+    "integer-size",
+    "Integer code generation type (int64_t by default)"
+   ],
+   [
+    "hashtable-size",
+    "Hashtable size, used when maps are created (64 by default)"
+   ],
+   [
+    "typedef-alias",
+    "Add typedef alias to unions, structs, and enums (no typedef by default)"
+   ],
+   [
+    "print-style",
+    "Which cJSON print should be used (formatted by default)"
+   ],
+   [
+    "type-style",
+    "Naming style for types"
+   ],
+   [
+    "member-style",
+    "Naming style for members"
+   ],
+   [
+    "enumerator-style",
+    "Naming style for enumerators"
+   ],
+   [
+    "[no-]header-only",
+    "Generate headers only (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "c++",
+  "names": [
+   "c++",
+   "cpp",
+   "cplusplus"
+  ],
+  "displayName": "C++",
+  "extension": "cpp",
+  "options": [
+   {
+    "name": "source-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Source code generation type,  whether to generate single or multiple source files",
+    "typeLabel": "single-source|multi-source",
+    "defaultValue": "single-source",
+    "values": [
+     "single-source",
+     "multi-source"
+    ]
+   },
+   {
+    "name": "include-location",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Whether json.hpp is to be located globally or locally",
+    "typeLabel": "local-include|global-include",
+    "defaultValue": "local-include",
+    "values": [
+     "local-include",
+     "global-include"
+    ]
+   },
+   {
+    "name": "code-format",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Generate classes with getters/setters, instead of structs",
+    "typeLabel": "with-struct|with-getter-setter",
+    "defaultValue": "with-getter-setter",
+    "values": [
+     "with-struct",
+     "with-getter-setter"
+    ]
+   },
+   {
+    "name": "wstring",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Store strings using Utf-16 std::wstring, rather than Utf-8 std::string",
+    "typeLabel": "use-string|use-wstring",
+    "defaultValue": "use-string",
+    "values": [
+     "use-string",
+     "use-wstring"
+    ]
+   },
+   {
+    "name": "const-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Put const to the left/west (const T) or right/east (T const)",
+    "typeLabel": "west-const|east-const",
+    "defaultValue": "west-const",
+    "values": [
+     "west-const",
+     "east-const"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "namespace",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Name of the generated namespace(s)",
+    "typeLabel": "NAME",
+    "defaultValue": "quicktype",
+    "values": null
+   },
+   {
+    "name": "enum-type",
+    "kind": "secondary",
+    "optionType": "string",
+    "description": "Type of enum class",
+    "typeLabel": "NAME",
+    "defaultValue": "int",
+    "values": null
+   },
+   {
+    "name": "type-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for types",
+    "typeLabel": "pascal-case|original-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "pascal-case",
+    "values": [
+     "pascal-case",
+     "original-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "member-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for members",
+    "typeLabel": "pascal-case|original-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "underscore-case",
+    "values": [
+     "pascal-case",
+     "original-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "enumerator-style",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Naming style for enumerators",
+    "typeLabel": "pascal-case|original-case|underscore-case|camel-case|upper-underscore-case|pascal-case-upper-acronyms|camel-case-upper-acronyms",
+    "defaultValue": "upper-underscore-case",
+    "values": [
+     "pascal-case",
+     "original-case",
+     "underscore-case",
+     "camel-case",
+     "upper-underscore-case",
+     "pascal-case-upper-acronyms",
+     "camel-case-upper-acronyms"
+    ]
+   },
+   {
+    "name": "boost",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Require a dependency on boost. Without boost, C++17 is required",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "hide-null-optional",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Hide null value for optional field",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "source-style",
+    "single-source"
+   ],
+   [
+    "include-location",
+    "local-include"
+   ],
+   [
+    "code-format",
+    "with-getter-setter"
+   ],
+   [
+    "wstring",
+    "use-string"
+   ],
+   [
+    "const-style",
+    "west-const"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "namespace",
+    "quicktype"
+   ],
+   [
+    "enum-type",
+    "int"
+   ],
+   [
+    "type-style",
+    "pascal-case"
+   ],
+   [
+    "member-style",
+    "underscore-case"
+   ],
+   [
+    "enumerator-style",
+    "upper-underscore-case"
+   ],
+   [
+    "boost",
+    false
+   ],
+   [
+    "no-boost",
+    true
+   ],
+   [
+    "hide-null-optional",
+    false
+   ],
+   [
+    "no-hide-null-optional",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "source-style",
+    "Source code generation type,  whether to generate single or multiple source files"
+   ],
+   [
+    "include-location",
+    "Whether json.hpp is to be located globally or locally"
+   ],
+   [
+    "code-format",
+    "Generate classes with getters/setters, instead of structs"
+   ],
+   [
+    "wstring",
+    "Store strings using Utf-16 std::wstring, rather than Utf-8 std::string"
+   ],
+   [
+    "const-style",
+    "Put const to the left/west (const T) or right/east (T const)"
+   ],
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "namespace",
+    "Name of the generated namespace(s)"
+   ],
+   [
+    "enum-type",
+    "Type of enum class"
+   ],
+   [
+    "type-style",
+    "Naming style for types"
+   ],
+   [
+    "member-style",
+    "Naming style for members"
+   ],
+   [
+    "enumerator-style",
+    "Naming style for enumerators"
+   ],
+   [
+    "[no-]boost",
+    "Require a dependency on boost. Without boost, C++17 is required (off by default)"
+   ],
+   [
+    "[no-]hide-null-optional",
+    "Hide null value for optional field (off by default)"
+   ]
+  ]
+ },
+ {
+  "name": "crystal",
+  "names": [
+   "crystal",
+   "cr",
+   "crystallang"
+  ],
+  "displayName": "Crystal",
+  "extension": "cr",
+  "options": [],
+  "cliActual": [],
+  "cliDisplay": []
+ },
+ {
+  "name": "cs",
+  "names": [
+   "cs",
+   "csharp"
+  ],
+  "displayName": "C#",
+  "extension": "cs",
+  "options": [
+   {
+    "name": "framework",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Serialization framework",
+    "typeLabel": "NewtonSoft|SystemTextJson",
+    "defaultValue": "SystemTextJson",
+    "values": [
+     "NewtonSoft",
+     "SystemTextJson"
+    ]
+   },
+   {
+    "name": "array-type",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Use T[] or List<T>",
+    "typeLabel": "array|list",
+    "defaultValue": "array",
+    "values": [
+     "array",
+     "list"
+    ]
+   },
+   {
+    "name": "density",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Property density",
+    "typeLabel": "normal|dense",
+    "defaultValue": "normal",
+    "values": [
+     "normal",
+     "dense"
+    ]
+   },
+   {
+    "name": "namespace",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Generated namespace",
+    "typeLabel": "NAME",
+    "defaultValue": "QuickType",
+    "values": null
+   },
+   {
+    "name": "csharp-version",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "C# version",
+    "typeLabel": "5|6|8",
+    "defaultValue": "8",
+    "values": [
+     "5",
+     "6",
+     "8"
+    ]
+   },
+   {
+    "name": "virtual",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Generate virtual properties",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "use-records",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Generate records instead of classes (C# 9+)",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "any-type",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Type to use for \"any\"",
+    "typeLabel": "object|dynamic",
+    "defaultValue": "object",
+    "values": [
+     "object",
+     "dynamic"
+    ]
+   },
+   {
+    "name": "number-type",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Type to use for numbers",
+    "typeLabel": "double|decimal",
+    "defaultValue": "double",
+    "values": [
+     "double",
+     "decimal"
+    ]
+   },
+   {
+    "name": "features",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Output features",
+    "typeLabel": "complete|attributes-only",
+    "defaultValue": "complete",
+    "values": [
+     "complete",
+     "attributes-only"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "base-class",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Base class",
+    "typeLabel": "EntityData|Object",
+    "defaultValue": "Object",
+    "values": [
+     "EntityData",
+     "Object"
+    ]
+   },
+   {
+    "name": "check-required",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Fail if required properties are missing",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "keep-property-name",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Keep original field name generate",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "dateonly-timeonly-converters",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Emit DateOnly/TimeOnly converters (requires .NET 6 or later)",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "framework",
+    "SystemTextJson"
+   ],
+   [
+    "array-type",
+    "array"
+   ],
+   [
+    "density",
+    "normal"
+   ],
+   [
+    "namespace",
+    "QuickType"
+   ],
+   [
+    "csharp-version",
+    "8"
+   ],
+   [
+    "virtual",
+    false
+   ],
+   [
+    "no-virtual",
+    true
+   ],
+   [
+    "use-records",
+    false
+   ],
+   [
+    "no-use-records",
+    true
+   ],
+   [
+    "any-type",
+    "object"
+   ],
+   [
+    "number-type",
+    "double"
+   ],
+   [
+    "features",
+    "complete"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "base-class",
+    "Object"
+   ],
+   [
+    "check-required",
+    false
+   ],
+   [
+    "no-check-required",
+    true
+   ],
+   [
+    "keep-property-name",
+    false
+   ],
+   [
+    "no-keep-property-name",
+    true
+   ],
+   [
+    "dateonly-timeonly-converters",
+    true
+   ],
+   [
+    "no-dateonly-timeonly-converters",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "framework",
+    "Serialization framework"
+   ],
+   [
+    "array-type",
+    "Use T[] or List<T>"
+   ],
+   [
+    "density",
+    "Property density"
+   ],
+   [
+    "namespace",
+    "Generated namespace"
+   ],
+   [
+    "csharp-version",
+    "C# version"
+   ],
+   [
+    "[no-]virtual",
+    "Generate virtual properties (off by default)"
+   ],
+   [
+    "[no-]use-records",
+    "Generate records instead of classes (C# 9+) (off by default)"
+   ],
+   [
+    "any-type",
+    "Type to use for \"any\""
+   ],
+   [
+    "number-type",
+    "Type to use for numbers"
+   ],
+   [
+    "features",
+    "Output features"
+   ],
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "base-class",
+    "Base class"
+   ],
+   [
+    "[no-]check-required",
+    "Fail if required properties are missing (off by default)"
+   ],
+   [
+    "[no-]keep-property-name",
+    "Keep original field name generate (off by default)"
+   ],
+   [
+    "[no-]dateonly-timeonly-converters",
+    "Emit DateOnly/TimeOnly converters (requires .NET 6 or later) (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "dart",
+  "names": [
+   "dart"
+  ],
+  "displayName": "Dart",
+  "extension": "dart",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "coders-in-class",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Put encoder & decoder in Class",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "from-map",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Use method names fromMap() & toMap()",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "required-props",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Make all properties required",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "final-props",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Make all properties final",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "copy-with",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Generate CopyWith method",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "use-freezed",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Generate class definitions with @freezed compatibility",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "use-hive",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Generate annotations for Hive type adapters",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "use-json-annotation",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Generate annotations for json_serializable",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "part-name",
+    "kind": "secondary",
+    "optionType": "string",
+    "description": "Use this name in `part` directive",
+    "typeLabel": "NAME",
+    "defaultValue": "",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "coders-in-class",
+    false
+   ],
+   [
+    "no-coders-in-class",
+    true
+   ],
+   [
+    "from-map",
+    false
+   ],
+   [
+    "no-from-map",
+    true
+   ],
+   [
+    "required-props",
+    false
+   ],
+   [
+    "no-required-props",
+    true
+   ],
+   [
+    "final-props",
+    true
+   ],
+   [
+    "no-final-props",
+    false
+   ],
+   [
+    "copy-with",
+    false
+   ],
+   [
+    "no-copy-with",
+    true
+   ],
+   [
+    "use-freezed",
+    false
+   ],
+   [
+    "no-use-freezed",
+    true
+   ],
+   [
+    "use-hive",
+    false
+   ],
+   [
+    "no-use-hive",
+    true
+   ],
+   [
+    "use-json-annotation",
+    false
+   ],
+   [
+    "no-use-json-annotation",
+    true
+   ],
+   [
+    "part-name",
+    ""
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Types only (off by default)"
+   ],
+   [
+    "[no-]coders-in-class",
+    "Put encoder & decoder in Class (off by default)"
+   ],
+   [
+    "[no-]from-map",
+    "Use method names fromMap() & toMap() (off by default)"
+   ],
+   [
+    "[no-]required-props",
+    "Make all properties required (off by default)"
+   ],
+   [
+    "[no-]final-props",
+    "Make all properties final (on by default)"
+   ],
+   [
+    "[no-]copy-with",
+    "Generate CopyWith method (off by default)"
+   ],
+   [
+    "[no-]use-freezed",
+    "Generate class definitions with @freezed compatibility (off by default)"
+   ],
+   [
+    "[no-]use-hive",
+    "Generate annotations for Hive type adapters (off by default)"
+   ],
+   [
+    "[no-]use-json-annotation",
+    "Generate annotations for json_serializable (off by default)"
+   ],
+   [
+    "part-name",
+    "Use this name in `part` directive"
+   ]
+  ]
+ },
+ {
+  "name": "elixir",
+  "names": [
+   "elixir"
+  ],
+  "displayName": "Elixir",
+  "extension": "ex",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "namespace",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Specify a module namespace",
+    "typeLabel": "NAME",
+    "defaultValue": "",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "namespace",
+    ""
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "namespace",
+    "Specify a module namespace"
+   ]
+  ]
+ },
+ {
+  "name": "elm",
+  "names": [
+   "elm"
+  ],
+  "displayName": "Elm",
+  "extension": "elm",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "array-type",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Use Array or List",
+    "typeLabel": "array|list",
+    "defaultValue": "list",
+    "values": [
+     "array",
+     "list"
+    ]
+   },
+   {
+    "name": "module",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Generated module name",
+    "typeLabel": "NAME",
+    "defaultValue": "QuickType",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "array-type",
+    "list"
+   ],
+   [
+    "module",
+    "QuickType"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "array-type",
+    "Use Array or List"
+   ],
+   [
+    "module",
+    "Generated module name"
+   ]
+  ]
+ },
+ {
+  "name": "flow",
+  "names": [
+   "flow"
+  ],
+  "displayName": "Flow",
+  "extension": "js",
+  "options": [
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "runtime-typecheck",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Verify JSON.parse results at runtime",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "runtime-typecheck-ignore-unknown-properties",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Ignore unknown properties when verifying at runtime",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "converters",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Which converters to generate (top-level by default)",
+    "typeLabel": "top-level|all-objects",
+    "defaultValue": "top-level",
+    "values": [
+     "top-level",
+     "all-objects"
+    ]
+   },
+   {
+    "name": "raw-type",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Type of raw input (json by default)",
+    "typeLabel": "json|any",
+    "defaultValue": "json",
+    "values": [
+     "json",
+     "any"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Interfaces only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "nice-property-names",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Transform property names to be JavaScripty",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "explicit-unions",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Explicitly name unions",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-unions",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use union type instead of enum",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "prefer-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use types instead of interfaces",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-const-values",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use string instead of enum for string enums with single value",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "readonly",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use readonly type members",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-unknown",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use unknown (TypeScript) or mixed (Flow) instead of any",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "runtime-typecheck",
+    true
+   ],
+   [
+    "no-runtime-typecheck",
+    false
+   ],
+   [
+    "runtime-typecheck-ignore-unknown-properties",
+    false
+   ],
+   [
+    "no-runtime-typecheck-ignore-unknown-properties",
+    true
+   ],
+   [
+    "converters",
+    "top-level"
+   ],
+   [
+    "raw-type",
+    "json"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "nice-property-names",
+    false
+   ],
+   [
+    "no-nice-property-names",
+    true
+   ],
+   [
+    "explicit-unions",
+    false
+   ],
+   [
+    "no-explicit-unions",
+    true
+   ],
+   [
+    "prefer-unions",
+    true
+   ],
+   [
+    "no-prefer-unions",
+    false
+   ],
+   [
+    "prefer-types",
+    false
+   ],
+   [
+    "no-prefer-types",
+    true
+   ],
+   [
+    "prefer-const-values",
+    false
+   ],
+   [
+    "no-prefer-const-values",
+    true
+   ],
+   [
+    "readonly",
+    false
+   ],
+   [
+    "no-readonly",
+    true
+   ],
+   [
+    "prefer-unknown",
+    true
+   ],
+   [
+    "no-prefer-unknown",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "[no-]runtime-typecheck",
+    "Verify JSON.parse results at runtime (on by default)"
+   ],
+   [
+    "[no-]runtime-typecheck-ignore-unknown-properties",
+    "Ignore unknown properties when verifying at runtime (off by default)"
+   ],
+   [
+    "converters",
+    "Which converters to generate (top-level by default)"
+   ],
+   [
+    "raw-type",
+    "Type of raw input (json by default)"
+   ],
+   [
+    "[no-]just-types",
+    "Interfaces only (off by default)"
+   ],
+   [
+    "[no-]nice-property-names",
+    "Transform property names to be JavaScripty (off by default)"
+   ],
+   [
+    "[no-]explicit-unions",
+    "Explicitly name unions (off by default)"
+   ],
+   [
+    "[no-]prefer-unions",
+    "Use union type instead of enum (on by default)"
+   ],
+   [
+    "[no-]prefer-types",
+    "Use types instead of interfaces (off by default)"
+   ],
+   [
+    "[no-]prefer-const-values",
+    "Use string instead of enum for string enums with single value (off by default)"
+   ],
+   [
+    "[no-]readonly",
+    "Use readonly type members (off by default)"
+   ],
+   [
+    "[no-]prefer-unknown",
+    "Use unknown (TypeScript) or mixed (Flow) instead of any (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "go",
+  "names": [
+   "go",
+   "golang"
+  ],
+  "displayName": "Go",
+  "extension": "go",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "just-types-and-package",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types with package only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "package",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Generated package name",
+    "typeLabel": "NAME",
+    "defaultValue": "main",
+    "values": null
+   },
+   {
+    "name": "multi-file-output",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Renders each top-level object in its own Go file",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "field-tags",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "list of tags which should be generated for fields",
+    "typeLabel": "TAGS",
+    "defaultValue": "json",
+    "values": null
+   },
+   {
+    "name": "omit-empty",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "If set, all non-required objects will be tagged with \",omitempty\"",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "enum-type-name-suffix",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Append the enum type name to enum constant names",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "just-types-and-package",
+    false
+   ],
+   [
+    "no-just-types-and-package",
+    true
+   ],
+   [
+    "package",
+    "main"
+   ],
+   [
+    "multi-file-output",
+    false
+   ],
+   [
+    "no-multi-file-output",
+    true
+   ],
+   [
+    "field-tags",
+    "json"
+   ],
+   [
+    "omit-empty",
+    false
+   ],
+   [
+    "no-omit-empty",
+    true
+   ],
+   [
+    "enum-type-name-suffix",
+    false
+   ],
+   [
+    "no-enum-type-name-suffix",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "[no-]just-types-and-package",
+    "Plain types with package only (off by default)"
+   ],
+   [
+    "package",
+    "Generated package name"
+   ],
+   [
+    "[no-]multi-file-output",
+    "Renders each top-level object in its own Go file (off by default)"
+   ],
+   [
+    "field-tags",
+    "list of tags which should be generated for fields"
+   ],
+   [
+    "[no-]omit-empty",
+    "If set, all non-required objects will be tagged with \",omitempty\" (off by default)"
+   ],
+   [
+    "[no-]enum-type-name-suffix",
+    "Append the enum type name to enum constant names (off by default)"
+   ]
+  ]
+ },
+ {
+  "name": "haskell",
+  "names": [
+   "haskell"
+  ],
+  "displayName": "Haskell",
+  "extension": "haskell",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "array-type",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Use Array or List",
+    "typeLabel": "array|list",
+    "defaultValue": "list",
+    "values": [
+     "array",
+     "list"
+    ]
+   },
+   {
+    "name": "module",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Generated module name",
+    "typeLabel": "NAME",
+    "defaultValue": "QuickType",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "array-type",
+    "list"
+   ],
+   [
+    "module",
+    "QuickType"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "array-type",
+    "Use Array or List"
+   ],
+   [
+    "module",
+    "Generated module name"
+   ]
+  ]
+ },
+ {
+  "name": "java",
+  "names": [
+   "java"
+  ],
+  "displayName": "Java",
+  "extension": "java",
+  "options": [
+   {
+    "name": "array-type",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Use T[] or List<T>",
+    "typeLabel": "array|list",
+    "defaultValue": "list",
+    "values": [
+     "array",
+     "list"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "datetime-provider",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Date time provider type",
+    "typeLabel": "java8|legacy",
+    "defaultValue": "java8",
+    "values": [
+     "java8",
+     "legacy"
+    ]
+   },
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "package",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Generated package name",
+    "typeLabel": "NAME",
+    "defaultValue": "io.quicktype",
+    "values": null
+   },
+   {
+    "name": "lombok",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use lombok",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "lombok-copy-annotations",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Copy accessor annotations",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "array-type",
+    "list"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "datetime-provider",
+    "java8"
+   ],
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "package",
+    "io.quicktype"
+   ],
+   [
+    "lombok",
+    false
+   ],
+   [
+    "no-lombok",
+    true
+   ],
+   [
+    "lombok-copy-annotations",
+    true
+   ],
+   [
+    "no-lombok-copy-annotations",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "array-type",
+    "Use T[] or List<T>"
+   ],
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "datetime-provider",
+    "Date time provider type"
+   ],
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "package",
+    "Generated package name"
+   ],
+   [
+    "[no-]lombok",
+    "Use lombok (off by default)"
+   ],
+   [
+    "[no-]lombok-copy-annotations",
+    "Copy accessor annotations (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "javascript",
+  "names": [
+   "javascript",
+   "js",
+   "jsx"
+  ],
+  "displayName": "JavaScript",
+  "extension": "js",
+  "options": [
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "runtime-typecheck",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Verify JSON.parse results at runtime",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "runtime-typecheck-ignore-unknown-properties",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Ignore unknown properties when verifying at runtime",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "converters",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Which converters to generate (top-level by default)",
+    "typeLabel": "top-level|all-objects",
+    "defaultValue": "top-level",
+    "values": [
+     "top-level",
+     "all-objects"
+    ]
+   },
+   {
+    "name": "raw-type",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Type of raw input (json by default)",
+    "typeLabel": "json|any",
+    "defaultValue": "json",
+    "values": [
+     "json",
+     "any"
+    ]
+   }
+  ],
+  "cliActual": [
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "runtime-typecheck",
+    true
+   ],
+   [
+    "no-runtime-typecheck",
+    false
+   ],
+   [
+    "runtime-typecheck-ignore-unknown-properties",
+    false
+   ],
+   [
+    "no-runtime-typecheck-ignore-unknown-properties",
+    true
+   ],
+   [
+    "converters",
+    "top-level"
+   ],
+   [
+    "raw-type",
+    "json"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "[no-]runtime-typecheck",
+    "Verify JSON.parse results at runtime (on by default)"
+   ],
+   [
+    "[no-]runtime-typecheck-ignore-unknown-properties",
+    "Ignore unknown properties when verifying at runtime (off by default)"
+   ],
+   [
+    "converters",
+    "Which converters to generate (top-level by default)"
+   ],
+   [
+    "raw-type",
+    "Type of raw input (json by default)"
+   ]
+  ]
+ },
+ {
+  "name": "javascript-prop-types",
+  "names": [
+   "javascript-prop-types"
+  ],
+  "displayName": "JavaScript PropTypes",
+  "extension": "js",
+  "options": [
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "converters",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Which converters to generate (top-level by default)",
+    "typeLabel": "top-level|all-objects",
+    "defaultValue": "top-level",
+    "values": [
+     "top-level",
+     "all-objects"
+    ]
+   },
+   {
+    "name": "module-system",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Which module system to use",
+    "typeLabel": "common-js|es6",
+    "defaultValue": "es6",
+    "values": [
+     "common-js",
+     "es6"
+    ]
+   }
+  ],
+  "cliActual": [
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "converters",
+    "top-level"
+   ],
+   [
+    "module-system",
+    "es6"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "converters",
+    "Which converters to generate (top-level by default)"
+   ],
+   [
+    "module-system",
+    "Which module system to use"
+   ]
+  ]
+ },
+ {
+  "name": "schema",
+  "names": [
+   "schema",
+   "json-schema"
+  ],
+  "displayName": "JSON Schema",
+  "extension": "schema",
+  "options": [],
+  "cliActual": [],
+  "cliDisplay": []
+ },
+ {
+  "name": "kotlin",
+  "names": [
+   "kotlin"
+  ],
+  "displayName": "Kotlin",
+  "extension": "kt",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "framework",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Serialization framework",
+    "typeLabel": "jackson|klaxon|kotlinx",
+    "defaultValue": "jackson",
+    "values": [
+     "jackson",
+     "klaxon",
+     "kotlinx"
+    ]
+   },
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "package",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Package",
+    "typeLabel": "PACKAGE",
+    "defaultValue": "quicktype",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "framework",
+    "jackson"
+   ],
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "package",
+    "quicktype"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "framework",
+    "Serialization framework"
+   ],
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "package",
+    "Package"
+   ]
+  ]
+ },
+ {
+  "name": "objc",
+  "names": [
+   "objc",
+   "objective-c",
+   "objectivec"
+  ],
+  "displayName": "Objective-C",
+  "extension": "m",
+  "options": [
+   {
+    "name": "features",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Interface and implementation",
+    "typeLabel": "all|interface|implementation",
+    "defaultValue": "all",
+    "values": [
+     "all",
+     "interface",
+     "implementation"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "functions",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "C-style functions",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "class-prefix",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Class prefix",
+    "typeLabel": "PREFIX",
+    "defaultValue": "QT",
+    "values": null
+   },
+   {
+    "name": "extra-comments",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Extra comments",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "features",
+    "all"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "functions",
+    false
+   ],
+   [
+    "no-functions",
+    true
+   ],
+   [
+    "class-prefix",
+    "QT"
+   ],
+   [
+    "extra-comments",
+    false
+   ],
+   [
+    "no-extra-comments",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "features",
+    "Interface and implementation"
+   ],
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "[no-]functions",
+    "C-style functions (off by default)"
+   ],
+   [
+    "class-prefix",
+    "Class prefix"
+   ],
+   [
+    "[no-]extra-comments",
+    "Extra comments (off by default)"
+   ]
+  ]
+ },
+ {
+  "name": "php",
+  "names": [
+   "php"
+  ],
+  "displayName": "PHP",
+  "extension": "php",
+  "options": [
+   {
+    "name": "with-get",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Create Getter",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "fast-get",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "getter without validation",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "with-set",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Create Setter",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "with-closing",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "PHP Closing Tag",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   }
+  ],
+  "cliActual": [
+   [
+    "with-get",
+    true
+   ],
+   [
+    "no-with-get",
+    false
+   ],
+   [
+    "fast-get",
+    false
+   ],
+   [
+    "no-fast-get",
+    true
+   ],
+   [
+    "with-set",
+    false
+   ],
+   [
+    "no-with-set",
+    true
+   ],
+   [
+    "with-closing",
+    false
+   ],
+   [
+    "no-with-closing",
+    true
+   ],
+   [
+    "acronym-style",
+    "pascal"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]with-get",
+    "Create Getter (on by default)"
+   ],
+   [
+    "[no-]fast-get",
+    "getter without validation (off by default)"
+   ],
+   [
+    "[no-]with-set",
+    "Create Setter (off by default)"
+   ],
+   [
+    "[no-]with-closing",
+    "PHP Closing Tag (off by default)"
+   ],
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ]
+  ]
+ },
+ {
+  "name": "pike",
+  "names": [
+   "pike",
+   "pikelang"
+  ],
+  "displayName": "Pike",
+  "extension": "pmod",
+  "options": [],
+  "cliActual": [],
+  "cliDisplay": []
+ },
+ {
+  "name": "python",
+  "names": [
+   "python",
+   "py"
+  ],
+  "displayName": "Python",
+  "extension": "py",
+  "options": [
+   {
+    "name": "python-version",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Python version",
+    "typeLabel": "3.5|3.6|3.7|3.9|3.10",
+    "defaultValue": "3.10",
+    "values": [
+     "3.5",
+     "3.6",
+     "3.7",
+     "3.9",
+     "3.10"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Classes only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "nice-property-names",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Transform property names to be Pythonic",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "pydantic-base-model",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Uses pydantic BaseModel",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "python-version",
+    "3.10"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "nice-property-names",
+    true
+   ],
+   [
+    "no-nice-property-names",
+    false
+   ],
+   [
+    "pydantic-base-model",
+    false
+   ],
+   [
+    "no-pydantic-base-model",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "python-version",
+    "Python version"
+   ],
+   [
+    "[no-]just-types",
+    "Classes only (off by default)"
+   ],
+   [
+    "[no-]nice-property-names",
+    "Transform property names to be Pythonic (on by default)"
+   ],
+   [
+    "[no-]pydantic-base-model",
+    "Uses pydantic BaseModel (off by default)"
+   ]
+  ]
+ },
+ {
+  "name": "ruby",
+  "names": [
+   "ruby"
+  ],
+  "displayName": "Ruby",
+  "extension": "rb",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "strictness",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Type strictness",
+    "typeLabel": "strict|coercible|none",
+    "defaultValue": "strict",
+    "values": [
+     "strict",
+     "coercible",
+     "none"
+    ]
+   },
+   {
+    "name": "namespace",
+    "kind": "secondary",
+    "optionType": "string",
+    "description": "Specify a wrapping Namespace",
+    "typeLabel": "NAME",
+    "defaultValue": "",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "strictness",
+    "strict"
+   ],
+   [
+    "namespace",
+    ""
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "strictness",
+    "Type strictness"
+   ],
+   [
+    "namespace",
+    "Specify a wrapping Namespace"
+   ]
+  ]
+ },
+ {
+  "name": "rust",
+  "names": [
+   "rust",
+   "rs",
+   "rustlang"
+  ],
+  "displayName": "Rust",
+  "extension": "rs",
+  "options": [
+   {
+    "name": "density",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Density",
+    "typeLabel": "normal|dense",
+    "defaultValue": "normal",
+    "values": [
+     "normal",
+     "dense"
+    ]
+   },
+   {
+    "name": "visibility",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Field visibility",
+    "typeLabel": "private|crate|public",
+    "defaultValue": "public",
+    "values": [
+     "private",
+     "crate",
+     "public"
+    ]
+   },
+   {
+    "name": "integer-type",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Integer type inference",
+    "typeLabel": "conservative|force-i32|force-i64",
+    "defaultValue": "conservative",
+    "values": [
+     "conservative",
+     "force-i32",
+     "force-i64"
+    ]
+   },
+   {
+    "name": "derive-debug",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Derive Debug impl",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "derive-clone",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Derive Clone impl",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "derive-partial-eq",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Derive PartialEq impl",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "skip-serializing-none",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Skip serializing empty Option fields",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "leading-comments",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Leading Comments",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "density",
+    "normal"
+   ],
+   [
+    "visibility",
+    "public"
+   ],
+   [
+    "integer-type",
+    "conservative"
+   ],
+   [
+    "derive-debug",
+    true
+   ],
+   [
+    "no-derive-debug",
+    false
+   ],
+   [
+    "derive-clone",
+    true
+   ],
+   [
+    "no-derive-clone",
+    false
+   ],
+   [
+    "derive-partial-eq",
+    false
+   ],
+   [
+    "no-derive-partial-eq",
+    true
+   ],
+   [
+    "skip-serializing-none",
+    false
+   ],
+   [
+    "no-skip-serializing-none",
+    true
+   ],
+   [
+    "leading-comments",
+    true
+   ],
+   [
+    "no-leading-comments",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "density",
+    "Density"
+   ],
+   [
+    "visibility",
+    "Field visibility"
+   ],
+   [
+    "integer-type",
+    "Integer type inference"
+   ],
+   [
+    "[no-]derive-debug",
+    "Derive Debug impl (on by default)"
+   ],
+   [
+    "[no-]derive-clone",
+    "Derive Clone impl (on by default)"
+   ],
+   [
+    "[no-]derive-partial-eq",
+    "Derive PartialEq impl (off by default)"
+   ],
+   [
+    "[no-]skip-serializing-none",
+    "Skip serializing empty Option fields (off by default)"
+   ],
+   [
+    "[no-]leading-comments",
+    "Leading Comments (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "scala3",
+  "names": [
+   "scala3"
+  ],
+  "displayName": "Scala3",
+  "extension": "scala",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "framework",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Serialization framework",
+    "typeLabel": "circe|upickle",
+    "defaultValue": "circe",
+    "values": [
+     "circe",
+     "upickle"
+    ]
+   },
+   {
+    "name": "package",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Package",
+    "typeLabel": "PACKAGE",
+    "defaultValue": "quicktype",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "framework",
+    "circe"
+   ],
+   [
+    "package",
+    "quicktype"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "framework",
+    "Serialization framework"
+   ],
+   [
+    "package",
+    "Package"
+   ]
+  ]
+ },
+ {
+  "name": "smithy4a",
+  "names": [
+   "smithy4a"
+  ],
+  "displayName": "Smithy",
+  "extension": "smithy",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "package",
+    "kind": "primary",
+    "optionType": "string",
+    "description": "Package",
+    "typeLabel": "PACKAGE",
+    "defaultValue": "quicktype",
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "package",
+    "quicktype"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "package",
+    "Package"
+   ]
+  ]
+ },
+ {
+  "name": "swift",
+  "names": [
+   "swift",
+   "swift4"
+  ],
+  "displayName": "Swift",
+  "extension": "swift",
+  "options": [
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Plain types only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "initializers",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Generate initializers and mutators",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "coding-keys",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Explicit CodingKey values in Codable types",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "coding-keys-protocol",
+    "kind": "secondary",
+    "optionType": "string",
+    "description": "CodingKeys implements protocols",
+    "typeLabel": "protocol1, protocol2...",
+    "defaultValue": "",
+    "values": null
+   },
+   {
+    "name": "alamofire",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Alamofire extensions",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "type-prefix",
+    "kind": "secondary",
+    "optionType": "string",
+    "description": "Prefix for type names",
+    "typeLabel": "PREFIX",
+    "defaultValue": "",
+    "values": null
+   },
+   {
+    "name": "struct-or-class",
+    "kind": "primary",
+    "optionType": "enum",
+    "description": "Structs or classes",
+    "typeLabel": "struct|class",
+    "defaultValue": "struct",
+    "values": [
+     "struct",
+     "class"
+    ]
+   },
+   {
+    "name": "final-classes",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Mark classes as final",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "mutable-properties",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use var instead of let for object properties",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "density",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Code density",
+    "typeLabel": "dense|normal",
+    "defaultValue": "normal",
+    "values": [
+     "dense",
+     "normal"
+    ]
+   },
+   {
+    "name": "support-linux",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Support Linux",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "objective-c-support",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Objects inherit from NSObject and @objcMembers is added to classes",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "optional-enums",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "If no matching case is found enum value is set to null",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "sendable",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Mark generated models as Sendable",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "multi-file-output",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Renders each top-level object in its own Swift file",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "access-level",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Access level",
+    "typeLabel": "internal|public",
+    "defaultValue": "internal",
+    "values": [
+     "internal",
+     "public"
+    ]
+   },
+   {
+    "name": "protocol",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Make types implement protocol",
+    "typeLabel": "none|equatable|hashable",
+    "defaultValue": "none",
+    "values": [
+     "none",
+     "equatable",
+     "hashable"
+    ]
+   }
+  ],
+  "cliActual": [
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "initializers",
+    true
+   ],
+   [
+    "no-initializers",
+    false
+   ],
+   [
+    "coding-keys",
+    true
+   ],
+   [
+    "no-coding-keys",
+    false
+   ],
+   [
+    "coding-keys-protocol",
+    ""
+   ],
+   [
+    "alamofire",
+    false
+   ],
+   [
+    "no-alamofire",
+    true
+   ],
+   [
+    "type-prefix",
+    ""
+   ],
+   [
+    "struct-or-class",
+    "struct"
+   ],
+   [
+    "final-classes",
+    false
+   ],
+   [
+    "no-final-classes",
+    true
+   ],
+   [
+    "mutable-properties",
+    false
+   ],
+   [
+    "no-mutable-properties",
+    true
+   ],
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "density",
+    "normal"
+   ],
+   [
+    "support-linux",
+    false
+   ],
+   [
+    "no-support-linux",
+    true
+   ],
+   [
+    "objective-c-support",
+    false
+   ],
+   [
+    "no-objective-c-support",
+    true
+   ],
+   [
+    "optional-enums",
+    false
+   ],
+   [
+    "no-optional-enums",
+    true
+   ],
+   [
+    "sendable",
+    false
+   ],
+   [
+    "no-sendable",
+    true
+   ],
+   [
+    "multi-file-output",
+    false
+   ],
+   [
+    "no-multi-file-output",
+    true
+   ],
+   [
+    "access-level",
+    "internal"
+   ],
+   [
+    "protocol",
+    "none"
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-types",
+    "Plain types only (off by default)"
+   ],
+   [
+    "[no-]initializers",
+    "Generate initializers and mutators (on by default)"
+   ],
+   [
+    "[no-]coding-keys",
+    "Explicit CodingKey values in Codable types (on by default)"
+   ],
+   [
+    "coding-keys-protocol",
+    "CodingKeys implements protocols"
+   ],
+   [
+    "[no-]alamofire",
+    "Alamofire extensions (off by default)"
+   ],
+   [
+    "type-prefix",
+    "Prefix for type names"
+   ],
+   [
+    "struct-or-class",
+    "Structs or classes"
+   ],
+   [
+    "[no-]final-classes",
+    "Mark classes as final (off by default)"
+   ],
+   [
+    "[no-]mutable-properties",
+    "Use var instead of let for object properties (off by default)"
+   ],
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "density",
+    "Code density"
+   ],
+   [
+    "[no-]support-linux",
+    "Support Linux (off by default)"
+   ],
+   [
+    "[no-]objective-c-support",
+    "Objects inherit from NSObject and @objcMembers is added to classes (off by default)"
+   ],
+   [
+    "[no-]optional-enums",
+    "If no matching case is found enum value is set to null (off by default)"
+   ],
+   [
+    "[no-]sendable",
+    "Mark generated models as Sendable (off by default)"
+   ],
+   [
+    "[no-]multi-file-output",
+    "Renders each top-level object in its own Swift file (off by default)"
+   ],
+   [
+    "access-level",
+    "Access level"
+   ],
+   [
+    "protocol",
+    "Make types implement protocol"
+   ]
+  ]
+ },
+ {
+  "name": "typescript",
+  "names": [
+   "typescript",
+   "ts",
+   "tsx"
+  ],
+  "displayName": "TypeScript",
+  "extension": "ts",
+  "options": [
+   {
+    "name": "acronym-style",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Acronym naming style",
+    "typeLabel": "original|pascal|camel|lowerCase",
+    "defaultValue": "pascal",
+    "values": [
+     "original",
+     "pascal",
+     "camel",
+     "lowerCase"
+    ]
+   },
+   {
+    "name": "runtime-typecheck",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Verify JSON.parse results at runtime",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "runtime-typecheck-ignore-unknown-properties",
+    "kind": "secondary",
+    "optionType": "boolean",
+    "description": "Ignore unknown properties when verifying at runtime",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "converters",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Which converters to generate (top-level by default)",
+    "typeLabel": "top-level|all-objects",
+    "defaultValue": "top-level",
+    "values": [
+     "top-level",
+     "all-objects"
+    ]
+   },
+   {
+    "name": "raw-type",
+    "kind": "secondary",
+    "optionType": "enum",
+    "description": "Type of raw input (json by default)",
+    "typeLabel": "json|any",
+    "defaultValue": "json",
+    "values": [
+     "json",
+     "any"
+    ]
+   },
+   {
+    "name": "just-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Interfaces only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "nice-property-names",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Transform property names to be JavaScripty",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "explicit-unions",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Explicitly name unions",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-unions",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use union type instead of enum",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   },
+   {
+    "name": "prefer-types",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use types instead of interfaces",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-const-values",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use string instead of enum for string enums with single value",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "readonly",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use readonly type members",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   },
+   {
+    "name": "prefer-unknown",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Use unknown (TypeScript) or mixed (Flow) instead of any",
+    "typeLabel": null,
+    "defaultValue": true,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "acronym-style",
+    "pascal"
+   ],
+   [
+    "runtime-typecheck",
+    true
+   ],
+   [
+    "no-runtime-typecheck",
+    false
+   ],
+   [
+    "runtime-typecheck-ignore-unknown-properties",
+    false
+   ],
+   [
+    "no-runtime-typecheck-ignore-unknown-properties",
+    true
+   ],
+   [
+    "converters",
+    "top-level"
+   ],
+   [
+    "raw-type",
+    "json"
+   ],
+   [
+    "just-types",
+    false
+   ],
+   [
+    "no-just-types",
+    true
+   ],
+   [
+    "nice-property-names",
+    false
+   ],
+   [
+    "no-nice-property-names",
+    true
+   ],
+   [
+    "explicit-unions",
+    false
+   ],
+   [
+    "no-explicit-unions",
+    true
+   ],
+   [
+    "prefer-unions",
+    true
+   ],
+   [
+    "no-prefer-unions",
+    false
+   ],
+   [
+    "prefer-types",
+    false
+   ],
+   [
+    "no-prefer-types",
+    true
+   ],
+   [
+    "prefer-const-values",
+    false
+   ],
+   [
+    "no-prefer-const-values",
+    true
+   ],
+   [
+    "readonly",
+    false
+   ],
+   [
+    "no-readonly",
+    true
+   ],
+   [
+    "prefer-unknown",
+    true
+   ],
+   [
+    "no-prefer-unknown",
+    false
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "acronym-style",
+    "Acronym naming style"
+   ],
+   [
+    "[no-]runtime-typecheck",
+    "Verify JSON.parse results at runtime (on by default)"
+   ],
+   [
+    "[no-]runtime-typecheck-ignore-unknown-properties",
+    "Ignore unknown properties when verifying at runtime (off by default)"
+   ],
+   [
+    "converters",
+    "Which converters to generate (top-level by default)"
+   ],
+   [
+    "raw-type",
+    "Type of raw input (json by default)"
+   ],
+   [
+    "[no-]just-types",
+    "Interfaces only (off by default)"
+   ],
+   [
+    "[no-]nice-property-names",
+    "Transform property names to be JavaScripty (off by default)"
+   ],
+   [
+    "[no-]explicit-unions",
+    "Explicitly name unions (off by default)"
+   ],
+   [
+    "[no-]prefer-unions",
+    "Use union type instead of enum (on by default)"
+   ],
+   [
+    "[no-]prefer-types",
+    "Use types instead of interfaces (off by default)"
+   ],
+   [
+    "[no-]prefer-const-values",
+    "Use string instead of enum for string enums with single value (off by default)"
+   ],
+   [
+    "[no-]readonly",
+    "Use readonly type members (off by default)"
+   ],
+   [
+    "[no-]prefer-unknown",
+    "Use unknown (TypeScript) or mixed (Flow) instead of any (on by default)"
+   ]
+  ]
+ },
+ {
+  "name": "typescript-effect-schema",
+  "names": [
+   "typescript-effect-schema"
+  ],
+  "displayName": "TypeScript Effect Schema",
+  "extension": "ts",
+  "options": [
+   {
+    "name": "just-schema",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Schema only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-schema",
+    false
+   ],
+   [
+    "no-just-schema",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-schema",
+    "Schema only (off by default)"
+   ]
+  ]
+ },
+ {
+  "name": "typescript-zod",
+  "names": [
+   "typescript-zod"
+  ],
+  "displayName": "TypeScript Zod",
+  "extension": "ts",
+  "options": [
+   {
+    "name": "just-schema",
+    "kind": "primary",
+    "optionType": "boolean",
+    "description": "Schema only",
+    "typeLabel": null,
+    "defaultValue": false,
+    "values": null
+   }
+  ],
+  "cliActual": [
+   [
+    "just-schema",
+    false
+   ],
+   [
+    "no-just-schema",
+    true
+   ]
+  ],
+  "cliDisplay": [
+   [
+    "[no-]just-schema",
+    "Schema only (off by default)"
+   ]
+  ]
+ }
+]

@@ -1,1 +1,69 @@
 //! Port of `packages/quicktype-core/src/language/Php/language.ts`.
+//!
+//! Language metadata and renderer option declarations.
+
+use crate::renderer_options::{
+    BooleanOption, EnumOption, OptionKind, RendererOption, acronym_option,
+};
+use crate::target_language::{LanguageConfig, TargetLanguage};
+
+/// TS `phpOptions.withGet`.
+pub const WITH_GET: BooleanOption =
+    BooleanOption::new("with-get", "Create Getter", true, OptionKind::Primary);
+
+/// TS `phpOptions.fastGet`.
+pub const FAST_GET: BooleanOption = BooleanOption::new(
+    "fast-get",
+    "getter without validation",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `phpOptions.withSet`.
+pub const WITH_SET: BooleanOption =
+    BooleanOption::new("with-set", "Create Setter", false, OptionKind::Primary);
+
+/// TS `phpOptions.withClosing`.
+pub const WITH_CLOSING: BooleanOption = BooleanOption::new(
+    "with-closing",
+    "PHP Closing Tag",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `phpOptions.acronymStyle`.
+pub const ACRONYM_STYLE: EnumOption = acronym_option("pascal");
+
+/// TS `phpOptions`, in declaration order.
+pub static PHP_OPTIONS: &[RendererOption] = &[
+    RendererOption::Boolean(WITH_GET),
+    RendererOption::Boolean(FAST_GET),
+    RendererOption::Boolean(WITH_SET),
+    RendererOption::Boolean(WITH_CLOSING),
+    RendererOption::Enum(ACRONYM_STYLE),
+];
+
+/// TS `phpLanguageConfig`.
+pub const PHP_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
+    display_name: "PHP",
+    names: &["php"],
+    extension: "php",
+};
+
+/// The PHP target language (TS `PhpTargetLanguage`).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PhpTargetLanguage;
+
+// TODO(renderer): port the hooks PhpTargetLanguage overrides:
+// - makeRenderer
+// - stringTypeMapping: uuid -> uuid, date-time -> date-time
+// - supportsUnionsWithBothNumberTypes: true
+impl TargetLanguage for PhpTargetLanguage {
+    fn config(&self) -> &'static LanguageConfig {
+        &PHP_LANGUAGE_CONFIG
+    }
+
+    fn options(&self) -> &'static [RendererOption] {
+        PHP_OPTIONS
+    }
+}
