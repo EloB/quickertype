@@ -18,6 +18,7 @@
 //! the run (TS `interface RunContext`, which `Run` implements).
 use std::fmt;
 use std::future::Future;
+use std::rc::Rc;
 
 use quicktype_js_compat::json;
 
@@ -28,7 +29,7 @@ use crate::input::inputs::InputData;
 use crate::language::all::{default_target_languages, language_named};
 use crate::language::typescript_flow::language::TypeScriptTargetLanguage;
 use crate::make_transformations::make_transformations;
-use crate::messages::{ErrorKind, QuickTypeError, Result, message_error};
+use crate::messages::{JsErrorName, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
 use crate::rewrites::combine_classes::combine_classes;
 use crate::rewrites::expand_strings::{EnumInference, expand_strings};
@@ -60,10 +61,15 @@ pub struct QuicktypeTiming {
 }
 
 /// A monotonic clock in milliseconds (TS `performance.now()`).
-pub type Clock = Box<dyn Fn() -> f64>;
+pub type Clock = Rc<dyn Fn() -> f64>;
 
 /// A callback for each timed pass (TS `onTiming`).
-pub type TimingCallback = Box<dyn Fn(&QuicktypeTiming)>;
+pub type TimingCallback = Rc<dyn Fn(&QuicktypeTiming)>;
+
+/// `ctx.time` as a value an input can keep (the JSON Schema input times
+/// the parsing of schema text with it): runs the function once, reporting
+/// how long it took.
+pub type Timer = Rc<dyn Fn(&str, &mut dyn FnMut())>;
 
 /// What inputs receive from the run (TS `RunContext`, which `Run`
 /// implements): the effective string type mapping, the debug switches and
@@ -139,19 +145,42 @@ impl RunContext {
         result
     }
 
+    /// `time` as a [`Timer`] that outlives this borrow of the context.
+    pub fn timer(&self) -> Timer {
+        let clock = Rc::clone(&self.clock);
+        let on_timing = self.on_timing.clone();
+        let print_times = self.debug_print_times;
+        Rc::new(move |name, f| {
+            let start = clock();
+            f();
+            report(print_times, on_timing.as_ref(), name, clock() - start);
+        })
+    }
+
     fn report(&self, name: &str, milliseconds: f64) {
-        if self.debug_print_times {
-            // `milliseconds.toFixed(3)`; Rust rounds exact ties to even
-            // where JavaScript rounds them up, which only a measured time
-            // that is an exact binary fraction could show.
-            console_log(&format!("{name} took {milliseconds:.3}ms"));
-        }
-        if let Some(on_timing) = &self.on_timing {
-            on_timing(&QuicktypeTiming {
-                name: name.to_owned(),
-                milliseconds,
-            });
-        }
+        report(
+            self.debug_print_times,
+            self.on_timing.as_ref(),
+            name,
+            milliseconds,
+        );
+    }
+}
+
+/// Reports a timed pass: prints it with `--debug print-times` and calls
+/// `onTiming`.
+fn report(print_times: bool, on_timing: Option<&TimingCallback>, name: &str, milliseconds: f64) {
+    if print_times {
+        // `milliseconds.toFixed(3)`; Rust rounds exact ties to even where
+        // JavaScript rounds them up, which only a measured time that is an
+        // exact binary fraction could show.
+        console_log(&format!("{name} took {milliseconds:.3}ms"));
+    }
+    if let Some(on_timing) = on_timing {
+        on_timing(&QuicktypeTiming {
+            name: name.to_owned(),
+            milliseconds,
+        });
     }
 }
 
@@ -179,13 +208,13 @@ impl fmt::Debug for RunContext {
 #[cfg(not(target_arch = "wasm32"))]
 fn default_clock() -> Clock {
     let start = std::time::Instant::now();
-    Box::new(move || start.elapsed().as_secs_f64() * 1000.0)
+    Rc::new(move || start.elapsed().as_secs_f64() * 1000.0)
 }
 
 #[cfg(target_arch = "wasm32")]
 fn default_clock() -> Clock {
     // TODO(wasm): the facade passes `performance.now`.
-    Box::new(|| 0.0)
+    Rc::new(|| 0.0)
 }
 
 /// `Run.stringTypeMapping`: the target language's mapping, with the
@@ -209,25 +238,22 @@ pub fn string_type_mapping(
 }
 
 /// `getTargetLanguage(name)`: the built-in language with `name` among its
-/// names, or a `DriverUnknownOutputLanguage` error.
+/// names.
+///
+/// For an unknown name, TypeScript's `languageNamed` throws a plain
+/// `Error` before `getTargetLanguage` gets to report
+/// `DriverUnknownOutputLanguage`, so that is the error here too.
 ///
 /// ```
 /// let rust = quicktype_core::get_target_language("rs").unwrap();
 /// assert_eq!(rust.name(), "rust");
 /// let error = quicktype_core::get_target_language("cobol").unwrap_err();
-/// assert_eq!(error.user_message(), "Unknown output language cobol");
+/// assert_eq!(error.user_message(), "Unknown language name: cobol");
 /// ```
 pub fn get_target_language(name: &str) -> Result<&'static dyn TargetLanguage> {
-    // TODO(js-exception): TypeScript's `languageNamed` throws a plain
-    // `Error("Unknown language name: …")` before `getTargetLanguage` gets
-    // to report this message.
-    match language_named(name, default_target_languages()) {
-        Some(language) => Ok(language),
-        None => message_error(
-            ErrorKind::DriverUnknownOutputLanguage,
-            vec![("lang", name.into())],
-        ),
-    }
+    language_named(name, default_target_languages()).ok_or_else(|| {
+        QuickTypeError::js_exception(JsErrorName::Error, format!("Unknown language name: {name}"))
+    })
 }
 
 /// The `--debug` switches of a run (the `debugPrint*` options of TS
@@ -724,10 +750,8 @@ impl<'a> Run<'a> {
         let Some(schema_string) = self.input_data.single_string_schema_source()? else {
             return Ok(None);
         };
-        let value = json::parse(&schema_string).map_err(|e| {
-            // TODO(js-exception): a `SyntaxError` thrown by `JSON.parse`.
-            QuickTypeError::internal(e.to_string())
-        })?;
+        let value = json::parse(&schema_string)
+            .map_err(|e| QuickTypeError::js_exception(JsErrorName::SyntaxError, e.message()))?;
         let mut lines: Vec<String> = json::stringify(&value, Some("    "))
             .split('\n')
             .map(str::to_owned)
@@ -884,10 +908,10 @@ mod tests {
         let seen = Rc::new(RefCell::new(Vec::new()));
         let mut ctx = RunContext::new(StringTypeMapping::new());
         let sink = Rc::clone(&seen);
-        ctx.on_timing = Some(Box::new(move |t| sink.borrow_mut().push(t.name.clone())));
+        ctx.on_timing = Some(Rc::new(move |t| sink.borrow_mut().push(t.name.clone())));
         let ticks = Rc::new(RefCell::new(0.0));
         let clock = Rc::clone(&ticks);
-        ctx.clock = Box::new(move || {
+        ctx.clock = Rc::new(move || {
             *clock.borrow_mut() += 1.5;
             *clock.borrow()
         });
