@@ -21,7 +21,13 @@ node xtask/fuzz/record.mjs target/fuzz/run-1/1234-api.min.json <name> "<what it 
 
 Each worker (`-j`, default 4) is one busy process at a time: it runs a case
 on the reference, then on the port (in-process, or the two CLIs one after the
-other).
+other). An in-process run that takes more than two minutes counts as a
+timeout, but nothing can stop it: it may go on in the background, sharing
+the engine switch, the engine's counters and both quicktype-cores with
+later runs. So the worker skips the case's remaining in-process modes,
+reports it and exits, and a fresh worker takes its place (the minimizer
+stops with the smallest case so far, the replay skips the in-process modes
+left). A run that never yields is killed after `--hang-minutes` (10).
 
 ## Cases
 

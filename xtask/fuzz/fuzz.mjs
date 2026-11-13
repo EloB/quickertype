@@ -52,10 +52,15 @@ if (args.includes("--replay")) {
     const saved = JSON.parse(fs.readFileSync(option("--replay"), "utf8"));
     const kase = saved.case ?? saved;
     const modes = option("--mode") !== undefined ? [option("--mode")] : saved.mode !== undefined ? [saved.mode] : ["api", "stream", "cli"];
-    const { check } = await makeChecker({ reference, bin });
+    const checker = await makeChecker({ reference, bin });
     let differs = false;
     for (const mode of modes) {
-        const r = await check(kase, mode);
+        if (checker.stale && mode !== "cli") {
+            console.log(`${mode}: not run (an earlier mode timed out, and its run may still be going on)`);
+            continue;
+        }
+
+        const r = await checker.check(kase, mode);
         console.log(`${mode}: ${r.status}${r.engine ? ` (${r.engine})` : ""}${r.detail ? `\n  ${r.detail}` : ""}`);
         if (r.status === "diff") differs = true;
     }
@@ -129,6 +134,8 @@ function startWorker(id) {
         let served = 0;
         let since = Date.now();
         let killedForHang = false;
+        // The worker exits after this result (one of its runs timed out).
+        let retired = false;
         // A run that never yields (CPU-bound in either engine) defeats the
         // in-process timeouts: kill the worker and record the seed.
         const watchdog = setInterval(() => {
@@ -166,6 +173,12 @@ function startWorker(id) {
             }
 
             if (done % 250 === 0) progress();
+            if (m.retire) {
+                retired = true;
+                inFlight.delete(id);
+                return;
+            }
+
             feed();
         });
         child.on("exit", (code, signal) => {
@@ -180,7 +193,7 @@ function startWorker(id) {
                 fs.writeFileSync(path.join(config.outDir, `${seed}-crash.json`), `${JSON.stringify({ seed, commit, detail })}\n`);
             }
 
-            resolve(seed !== undefined || served > 400);
+            resolve(seed !== undefined || served > 400 || retired);
         });
     }).then((again) => (again && (next < end && Date.now() < deadline) ? startWorker(id) : undefined));
 }

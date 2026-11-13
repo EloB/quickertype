@@ -27,13 +27,19 @@ const saved = JSON.parse(fs.readFileSync(file, "utf8"));
 const mode = option("--mode", saved.mode ?? "api");
 const out = option("--out", file.replace(/\.json$/, ".min.json"));
 const reference = findReference(option("--reference"));
-const { check } = await makeChecker({ reference, bin: option("--bin") });
+const checker = await makeChecker({ reference, bin: option("--bin") });
+const { check } = checker;
 
 const clone = (x) => JSON.parse(JSON.stringify(x));
 let current = clone(saved.case ?? saved);
 const first = await check(current, mode);
 if (first.status !== "diff") {
     console.log(`${file}: no divergence in mode ${mode} (${first.status}); nothing to minimize`);
+    process.exit(1);
+}
+
+if (checker.stale) {
+    console.log(`${file}: the run timed out; nothing to minimize`);
     process.exit(1);
 }
 
@@ -49,6 +55,14 @@ async function interesting(kase) {
         r = await check(kase, mode);
     } catch {
         return false;
+    }
+
+    if (checker.stale) {
+        // That run timed out and may still be going on in this process,
+        // where it could change the outcome of every later check.
+        save();
+        console.log(`a check timed out after ${checks} checks; stopped with the smallest case so far: ${out}\n(run minimize.mjs on it to go on)`);
+        process.exit(0);
     }
 
     if (r.status !== "diff") return false;
@@ -355,6 +369,10 @@ async function shrinkMixedSchema() {
     );
 }
 
+function save() {
+    fs.writeFileSync(out, `${JSON.stringify({ seed: saved.seed, mode, detail: last.detail, case: current, expected: last.expected, actual: last.actual }, undefined, 1)}\n`);
+}
+
 const started = Date.now();
 await shrinkOptions();
 await shrinkInputs();
@@ -378,5 +396,5 @@ await attempt((c) => {
     return c;
 });
 
-fs.writeFileSync(out, `${JSON.stringify({ seed: saved.seed, mode, detail: last.detail, case: current, expected: last.expected, actual: last.actual }, undefined, 1)}\n`);
+save();
 console.log(`${checks} checks in ${((Date.now() - started) / 1000).toFixed(0)}s; ${out}\n  ${last.detail}`);

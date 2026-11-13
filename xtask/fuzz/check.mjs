@@ -5,18 +5,35 @@ import { cliCommands, cliCompatible, cliInvocation, loadCompare, loadSides, runC
 
 const timeoutMs = 120_000;
 
-function withTimeout(promise) {
-    let timer;
-    const timeout = new Promise((resolve) => {
-        timer = setTimeout(() => resolve({ timeout: true }), timeoutMs);
-    });
-    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
 export async function makeChecker({ reference, bin }) {
     const sides = loadSides(reference);
     const { capture, firstDifference, brief } = await loadCompare();
     const commands = cliCommands(reference, bin);
+
+    // A run that times out is only raced, not stopped: it may go on in this
+    // process, where it shares the engine switch (`globalThis`), the
+    // engine's counters and both quicktype-cores with every later run, and
+    // could change their outcomes. Once one has timed out, the checker
+    // runs nothing more in-process (`stale`); its owner ends the process
+    // (a fuzz worker is replaced by a fresh one). The console the run's
+    // capture replaced is given back at once, for the owner's own output.
+    let stale = false;
+    const realConsole = { log: console.log, error: console.error, warn: console.warn };
+    function withTimeout(promise) {
+        let timer;
+        const timeout = new Promise((resolve) => {
+            timer = setTimeout(() => {
+                stale = true;
+                Object.assign(console, realConsole);
+                resolve({ timeout: true });
+            }, timeoutMs);
+        });
+        return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+    }
+
+    function assertFresh() {
+        if (stale) throw new Error("a run that timed out may still be going on in this process: start a new one");
+    }
 
     /**
      * Runs `kase` in `mode` ("api", "stream" or "cli") on both sides:
@@ -25,6 +42,7 @@ export async function makeChecker({ reference, bin }) {
      * `engine` says where our in-process run went: "wasm", "fallback" (the
      * engine declined it), "rerun" (the engine failed and TypeScript redid
      * it: a trap or panic, reported as a divergence), "ts" or "mixed".
+     * Throws for an in-process mode once a run has timed out (`stale`).
      */
     async function check(kase, mode) {
         if (mode === "stream" && kase.src !== "json" && kase.src !== "postman" && kase.src !== "mixed") return { status: "skip" };
@@ -40,6 +58,7 @@ export async function makeChecker({ reference, bin }) {
             return compareOutcomes(expected, actual);
         }
 
+        assertFresh();
         const expected = await withTimeout(capture(() => sides.ref.wrap(() => runInProcess(sides.ref, kase, mode))));
         if (expected.timeout) return { status: "timeout", detail: "reference timed out" };
         const stats = sides.ours.stats;
@@ -87,6 +106,7 @@ export async function makeChecker({ reference, bin }) {
      */
     async function chain(kase) {
         if (kase.src !== "json" && kase.src !== "postman") return undefined;
+        assertFresh();
         const toSchema = { ...kase, lang: "schema", rendererOptions: {}, api: {}, debug: [] };
         const out = await withTimeout(capture(() => runInProcess(sides.ref, toSchema, "api")));
         if (out.ok === undefined || out.ok.$map.length !== 1) return undefined;
@@ -97,7 +117,15 @@ export async function makeChecker({ reference, bin }) {
         return derived;
     }
 
-    return { check, chain, sides };
+    return {
+        check,
+        chain,
+        sides,
+        /** Whether a run timed out: no more in-process checks in this process. */
+        get stale() {
+            return stale;
+        },
+    };
 }
 
 /** A short signature of an outcome, to keep minimization on the same divergence. */

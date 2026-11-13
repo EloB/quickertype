@@ -1,6 +1,7 @@
 // A fuzz worker (forked by fuzz.mjs): asks for seeds, generates each case,
 // runs it in the selected modes and reports every outcome. Divergences are
-// written to the output directory as `<seed>-<mode>.json`.
+// written to the output directory as `<seed>-<mode>.json`. After a run times
+// out, the worker reports its case and exits, and a fresh one takes over.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -38,6 +39,13 @@ async function runSeed(seed) {
     const modes = modesFor(seed, kase, config);
     for (let m = 0; m < modes.length; m++) {
         const mode = modes[m];
+        if (checker.stale && mode !== "cli") {
+            // A run of an earlier mode timed out and may still be going on
+            // in this process; the CLI runs in processes of its own.
+            results.push({ mode, status: "skip", detail: "not run: an earlier mode timed out" });
+            continue;
+        }
+
         let r;
         let checked = kase;
         let checkedMode = mode;
@@ -76,6 +84,13 @@ process.on("message", async (m) => {
     }
 
     const result = await runSeed(m.seed);
+    if (checker.stale) {
+        // A run that timed out may still be going on here and could change
+        // later cases: hand over to a fresh worker (fuzz.mjs starts one).
+        process.send({ result, retire: true }, () => process.exit(0));
+        return;
+    }
+
     process.send({ result });
 });
 process.send({ ready: true });
