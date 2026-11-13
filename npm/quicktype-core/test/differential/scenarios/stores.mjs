@@ -257,7 +257,7 @@ export function scenarios() {
         ),
         // Longer chains can overflow the reference's stack in a promise callback,
         // depending on what ran before in the same process.
-        ...[50, 1000].map((length) =>
+        ...[50, 300, 1000].map((length) =>
             scenario(`$ref chain of ${length} documents`, async (qt) => {
                 const documents = {};
                 for (let i = 0; i < length; i++) {

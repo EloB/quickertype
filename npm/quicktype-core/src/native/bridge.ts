@@ -286,9 +286,18 @@ function engineFailure(glue: WasmGlue, e: unknown): unknown {
     }
 }
 
+/** A `store.get` the engine is waiting for. */
+interface SchemaRequest {
+    storeId: number;
+    address: string;
+    callId: number;
+}
+
 interface Driver {
     glue: WasmGlue;
     id: number;
+    /** Requested by the engine during the current poll, not yet started. */
+    requests: SchemaRequest[];
     step: () => void;
     fail: (e: unknown) => void;
 }
@@ -297,9 +306,9 @@ function makeHost(
     run: RunContext,
     options: any,
     encoded: EncodedRun,
+    stores: JSONSchemaStore[],
     driver: Driver | undefined,
 ): Record<string, unknown> {
-    const stores: JSONSchemaStore[] = [];
     return {
         schemaPrepare(storeId: number): void {
             stores[storeId] = prepareSchemaInput(
@@ -312,43 +321,8 @@ function makeHost(
                 return panic("The synchronous engine cannot fetch schemas");
             }
 
-            // `await this._store.get(address, this._ctx.debugPrintSchemaResolving)`
-            const pending = stores[storeId].get(
-                address,
-                run.debugPrintSchemaResolving,
-            );
-            const { glue } = driver;
-            const settle = (ok: boolean, value: unknown): void => {
-                if (isDiscarded(glue)) {
-                    driver.fail(
-                        engineFailure(glue, new Error("discarded")),
-                    );
-                    return;
-                }
-
-                try {
-                    glue.settle(driver.id, callId, ok, value);
-                } catch (e) {
-                    driver.fail(engineFailure(glue, e));
-                    return;
-                }
-
-                driver.step();
-            };
-            Promise.resolve(pending).then(
-                (schema) => {
-                    let encodedSchema: unknown;
-                    try {
-                        encodedSchema = encodeValue(schema);
-                    } catch (e) {
-                        settle(false, e);
-                        return;
-                    }
-
-                    settle(true, encodedSchema);
-                },
-                (e) => settle(false, e),
-            );
+            // Started once the poll has returned (see `startFetch`).
+            driver.requests.push({ storeId, address, callId });
         },
         schemaTopLevels(storeId: number, names: string[], refs: string[]): void {
             // `this.addTopLevel(name, ref)` for each top-level `addTypes` found.
@@ -376,6 +350,63 @@ function makeHost(
     };
 }
 
+/**
+ * `await this._store.get(address, this._ctx.debugPrintSchemaResolving)`
+ * for a request of the engine. It runs after the poll that made the
+ * request has returned: the engine awaits right there, so nothing happens
+ * in between, and the store's code (user code) runs on a shallow stack
+ * instead of below every frame of a deeply nested resolution. Returns
+ * whether the request settled synchronously (the store threw).
+ */
+function startFetch(
+    driver: Driver,
+    stores: JSONSchemaStore[],
+    run: RunContext,
+    request: SchemaRequest,
+): boolean {
+    const { glue } = driver;
+    const settle = (ok: boolean, value: unknown): void => {
+        if (isDiscarded(glue)) {
+            driver.fail(engineFailure(glue, new Error("discarded")));
+            return;
+        }
+
+        try {
+            glue.settle(driver.id, request.callId, ok, value);
+        } catch (e) {
+            driver.fail(engineFailure(glue, e));
+        }
+    };
+    let pending: unknown;
+    try {
+        pending = stores[request.storeId].get(request.address, run.debugPrintSchemaResolving);
+    } catch (e) {
+        settle(false, e);
+        return true;
+    }
+
+    Promise.resolve(pending).then(
+        (schema) => {
+            let encodedSchema: unknown;
+            try {
+                encodedSchema = encodeValue(schema);
+            } catch (e) {
+                settle(false, e);
+                driver.step();
+                return;
+            }
+
+            settle(true, encodedSchema);
+            driver.step();
+        },
+        (e) => {
+            settle(false, e);
+            driver.step();
+        },
+    );
+    return false;
+}
+
 function runOnEngine(
     glue: WasmGlue,
     encoded: EncodedRun,
@@ -384,9 +415,11 @@ function runOnEngine(
 ): Promise<MultiFileRenderResult | undefined> {
     return new Promise((resolve, reject) => {
         let settled = false;
+        const stores: JSONSchemaStore[] = [];
         const driver: Driver = {
             glue,
             id: -1,
+            requests: [],
             fail(e) {
                 if (settled) return;
                 settled = true;
@@ -394,25 +427,39 @@ function runOnEngine(
                 reject(e);
             },
             step() {
-                if (settled) return;
-                let outcome: unknown;
-                try {
-                    outcome = glue.poll(driver.id);
-                } catch (e) {
-                    driver.fail(engineFailure(glue, e));
-                    return;
-                }
+                for (;;) {
+                    if (settled) return;
+                    let outcome: unknown;
+                    try {
+                        outcome = glue.poll(driver.id);
+                    } catch (e) {
+                        driver.fail(engineFailure(glue, e));
+                        return;
+                    }
 
-                if (outcome === undefined) return;
-                settled = true;
-                try {
-                    resolve(decodeOutcome(outcome));
-                } catch (e) {
-                    reject(e);
+                    if (outcome !== undefined) {
+                        settled = true;
+                        try {
+                            resolve(decodeOutcome(outcome));
+                        } catch (e) {
+                            reject(e);
+                        }
+
+                        return;
+                    }
+
+                    let settledNow = false;
+                    for (const request of driver.requests.splice(0)) {
+                        if (startFetch(driver, stores, run, request)) {
+                            settledNow = true;
+                        }
+                    }
+
+                    if (!settledNow) return;
                 }
             },
         };
-        const host = makeHost(run, options, encoded, driver);
+        const host = makeHost(run, options, encoded, stores, driver);
         try {
             driver.id = glue.start(encoded.request, host);
         } catch (e) {
@@ -500,7 +547,7 @@ export function runNativeSync(
     try {
         outcome = glue.runSync(
             encoded.request,
-            makeHost(run, options, encoded, undefined),
+            makeHost(run, options, encoded, [], undefined),
         );
     } catch (e) {
         engineStats.wasm++;
