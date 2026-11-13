@@ -27,6 +27,7 @@ use std::fmt;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
+use quicktype_js_compat::json::{JsonValue, insert_js_property};
 
 use crate::attributes::accessor_names::{
     self, AccessorEntry, AccessorNames, AccessorNamesTypeAttributeKind,
@@ -840,28 +841,24 @@ pub fn increase_type_attributes_distance(attr: &TypeAttributes) -> TypeAttribute
 /// for the JSON Schema renderer and `addToSchema`: the object's own
 /// properties in JavaScript order, `None` standing for a property whose value
 /// is `undefined` (it keeps its position but `JSON.stringify` skips it).
-pub type SchemaObject = IndexMap<String, Option<quicktype_js_compat::json::JsonValue>>;
+pub type SchemaObject = IndexMap<String, Option<JsonValue>>;
 
 /// `schema[key] = value`: an existing key keeps its position, a new
 /// array-index key (`"0"`, `"42"`) goes before the other keys, any other new
 /// key goes last. Assigning `__proto__` sets the object's prototype instead
 /// of adding a property (and does nothing for a non-object value), so that
 /// key never appears.
-pub fn set_schema_property(
-    schema: &mut SchemaObject,
-    key: &str,
-    value: Option<quicktype_js_compat::json::JsonValue>,
-) {
+pub fn set_schema_property(schema: &mut SchemaObject, key: &str, value: Option<JsonValue>) {
     if key == "__proto__" {
         return;
     }
-    quicktype_js_compat::json::insert_js_property(schema, key.to_owned(), value);
+    insert_js_property(schema, key.to_owned(), value);
 }
 
 /// The JSON value of a [`SchemaObject`]: an object without its `undefined`
 /// properties, as `JSON.stringify` writes it.
-pub fn schema_object_to_json(schema: SchemaObject) -> quicktype_js_compat::json::JsonValue {
-    quicktype_js_compat::json::JsonValue::Object(
+pub fn schema_object_to_json(schema: SchemaObject) -> JsonValue {
+    JsonValue::Object(
         schema
             .into_iter()
             .filter_map(|(key, value)| value.map(|v| (key, v)))
@@ -907,7 +904,7 @@ impl TypeAttributeValue {
 #[cfg(test)]
 mod add_to_schema_tests {
     use super::*;
-    use quicktype_js_compat::json::{self, JsonValue};
+    use quicktype_js_compat::json;
 
     fn text(schema: SchemaObject) -> String {
         json::stringify(&schema_object_to_json(schema), None)

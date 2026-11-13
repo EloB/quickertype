@@ -6,7 +6,11 @@
 //! and `addToSchema` belong with the JSON Schema input and output and are
 //! ported there.
 
-use crate::attributes::type_attributes::AttributeKind;
+use quicktype_js_compat::json::JsonValue;
+
+use crate::attributes::type_attributes::{
+    AttributeKind, SchemaObject, TypeAttributeKind, set_schema_property,
+};
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
 use crate::ty::transformed_string_type::TypeKind;
@@ -303,14 +307,11 @@ pub fn pattern_attribute_producer(
 /// attribute `attribute_kind`: its schema properties, for a type of one of
 /// its kinds (see [`min_max_schema_info`]).
 pub fn add_min_max_to_schema(
-    schema: &mut crate::attributes::type_attributes::SchemaObject,
-    attribute_kind: crate::attributes::type_attributes::TypeAttributeKind,
+    schema: &mut SchemaObject,
+    attribute_kind: TypeAttributeKind,
     kind: TypeKind,
     attr: &MinMaxConstraint,
 ) {
-    use crate::attributes::type_attributes::set_schema_property;
-    use quicktype_js_compat::json::JsonValue;
-
     let Some((type_kinds, min_schema_property, max_schema_property)) =
         min_max_schema_info(attribute_kind)
     else {
@@ -331,20 +332,14 @@ pub fn add_min_max_to_schema(
 }
 
 /// `PatternTypeAttributeKind.addToSchema`: `pattern`, for strings.
-pub fn add_pattern_to_schema(
-    schema: &mut crate::attributes::type_attributes::SchemaObject,
-    kind: TypeKind,
-    pattern: &str,
-) {
+pub fn add_pattern_to_schema(schema: &mut SchemaObject, kind: TypeKind, pattern: &str) {
     if kind != TypeKind::String {
         return;
     }
-    crate::attributes::type_attributes::set_schema_property(
+    set_schema_property(
         schema,
         "pattern",
-        Some(quicktype_js_compat::json::JsonValue::String(
-            pattern.to_owned(),
-        )),
+        Some(JsonValue::String(pattern.to_owned())),
     );
 }
 

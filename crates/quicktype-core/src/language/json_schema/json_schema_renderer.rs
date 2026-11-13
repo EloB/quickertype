@@ -66,8 +66,7 @@ impl<'a> JsonSchemaRenderer<'a> {
 
     /// `nameForType(t)`: the assigned name of a named type.
     fn name_for_type(&self, t: TypeRef) -> Result<String> {
-        let name = self.name_for_named_type(t)?;
-        Ok(defined(self.names()?.get(name))?.to_owned())
+        self.assigned_name(self.name_for_named_type(t)?)
     }
 
     /// `makeOneOf(types)`: the only type's schema, or `anyOf` all of them.

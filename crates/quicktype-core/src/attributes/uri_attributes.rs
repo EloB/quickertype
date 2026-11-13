@@ -7,6 +7,11 @@
 //! Schema output.
 
 use indexmap::IndexSet;
+use quicktype_js_compat::json::JsonValue;
+use quicktype_js_compat::sort::sort_strings;
+
+use crate::attributes::type_attributes::{SchemaObject, set_schema_property};
+use crate::ty::transformed_string_type::TypeKind;
 
 /// `URIAttributes`: `[protocols, extensions]`.
 pub type UriAttributes = (IndexSet<String>, IndexSet<String>);
@@ -110,39 +115,28 @@ pub fn uri_schema_attributes_producer(
 /// `URITypeAttributeKind.addToSchema`: for `string` and `uri` types, the
 /// protocols and extensions, each sorted in UTF-16 order, if there are any.
 pub fn add_uri_attributes_to_schema(
-    schema: &mut crate::attributes::type_attributes::SchemaObject,
-    kind: crate::ty::transformed_string_type::TypeKind,
+    schema: &mut SchemaObject,
+    kind: TypeKind,
     attrs: &UriAttributes,
 ) {
-    use crate::ty::transformed_string_type::TypeKind;
-    use quicktype_js_compat::json::JsonValue;
-
     if kind != TypeKind::String && kind != TypeKind::Uri {
         return;
     }
 
     let sorted = |set: &IndexSet<String>| {
         let mut items: Vec<String> = set.iter().cloned().collect();
-        quicktype_js_compat::sort::sort_strings(&mut items);
+        sort_strings(&mut items);
         Some(JsonValue::Array(
             items.into_iter().map(JsonValue::String).collect(),
         ))
     };
     let (protocols, extensions) = attrs;
     if !protocols.is_empty() {
-        crate::attributes::type_attributes::set_schema_property(
-            schema,
-            PROTOCOLS_SCHEMA_PROPERTY,
-            sorted(protocols),
-        );
+        set_schema_property(schema, PROTOCOLS_SCHEMA_PROPERTY, sorted(protocols));
     }
 
     if !extensions.is_empty() {
-        crate::attributes::type_attributes::set_schema_property(
-            schema,
-            EXTENSIONS_SCHEMA_PROPERTY,
-            sorted(extensions),
-        );
+        set_schema_property(schema, EXTENSIONS_SCHEMA_PROPERTY, sorted(extensions));
     }
 }
 
