@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>quickertype — quicktype on WebAssembly</title>
+<meta name="description" content="Generate types and converters from JSON or JSON Schema in your browser, with quicktype's own API running on a Rust/WebAssembly engine.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23201d33'/%3E%3Crect x='6' y='9' width='9' height='5' rx='2.5' fill='%23a08cff'/%3E%3Crect x='6' y='18' width='20' height='5' rx='2.5' fill='%236ea8ea'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="%STYLE%">
+<script type="module" src="%MAIN%"></script>
+</head>
+<body>
+<header class="masthead">
+  <a class="brand" href="./" aria-label="quickertype, reload with defaults">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="12" height="7" rx="3.5" class="mark-wasm"/><rect x="2" y="18" width="28" height="7" rx="3.5" class="mark-ts"/></svg>
+    <span class="wordmark">quickertype</span>
+  </a>
+  <p class="tagline">quicktype on WebAssembly</p>
+  <a class="source" href="https://github.com/EloB/quickertype">Source on GitHub</a>
+</header>
+
+<section class="settings" aria-label="Output settings">
+  <div class="settings-row">
+    <label class="field">
+      <span class="field-label">Language</span>
+      <select id="lang"></select>
+    </label>
+    <label class="field">
+      <span class="field-label">Top-level type</span>
+      <input id="name" type="text" spellcheck="false" autocomplete="off" placeholder="TopLevel">
+    </label>
+    <label class="toggle">
+      <input id="compare" type="checkbox">
+      <span>Compare with the TypeScript engine</span>
+    </label>
+  </div>
+  <div id="options" class="options"></div>
+</section>
+
+<main class="panes">
+  <section class="pane" id="input-pane" aria-labelledby="input-heading">
+    <div class="pane-head">
+      <h2 id="input-heading">Input</h2>
+      <div class="segmented" role="radiogroup" aria-label="Input kind">
+        <label><input type="radio" name="kind" value="json" checked><span>JSON</span></label>
+        <label><input type="radio" name="kind" value="schema"><span>JSON Schema</span></label>
+      </div>
+      <div class="head-actions">
+        <select id="sample" aria-label="Load a sample"></select>
+        <button id="open" type="button">Open file</button>
+        <input id="file" type="file" accept=".json,.schema,application/json,text/plain" hidden>
+      </div>
+    </div>
+    <div class="editor">
+      <textarea id="input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-labelledby="input-heading"></textarea>
+      <div id="large" class="large" hidden>
+        <p><strong id="large-name"></strong> <span id="large-size"></span></p>
+        <p>Large files are not shown in the editor, which would slow the page down. They run all the same.</p>
+        <button id="large-edit" type="button">Show in the editor</button>
+      </div>
+      <div class="drop" aria-hidden="true"><span>Drop a JSON or JSON Schema file</span></div>
+    </div>
+    <div class="pane-foot">
+      <span id="input-info"></span>
+      <span class="note">Drop a file anywhere on this side. TypeScript input needs the TypeScript compiler, which doesn't run in the browser; the CLI has it.</span>
+    </div>
+  </section>
+
+  <section class="pane" id="output-pane" aria-labelledby="output-heading">
+    <div class="pane-head">
+      <h2 id="output-heading">Output</h2>
+      <div id="tabs" class="tabs" role="tablist" aria-label="Generated files"></div>
+      <div class="head-actions">
+        <button id="copy" type="button">Copy</button>
+        <button id="download" type="button">Download</button>
+      </div>
+    </div>
+    <div id="meter" class="meter"></div>
+    <div id="notes" class="notes" hidden></div>
+    <div class="code" id="code-wrap">
+      <pre id="output" tabindex="0" aria-label="Generated code"><code id="code"></code></pre>
+      <div id="error" class="error" hidden></div>
+    </div>
+    <div class="pane-foot cli">
+      <span class="cli-label">Same as</span>
+      <code id="cli"></code>
+      <button id="copy-cli" type="button" class="quiet">Copy</button>
+    </div>
+  </section>
+</main>
+
+<footer class="credits">
+  <p>A Rust/WebAssembly port of <a href="https://github.com/glideapps/quicktype">quicktype</a>, under the Apache-2.0 license. Not affiliated with quicktype or Glide. Samples are from quicktype's test suite (Apache-2.0). <a href="https://github.com/EloB/quickertype">github.com/EloB/quickertype</a></p>
+</footer>
+</body>
+</html>

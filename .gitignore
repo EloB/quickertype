@@ -5,3 +5,4 @@ node_modules/
 /npm/*/pkg/
 .DS_Store
 /npm/*/build/
+/site/dist/
