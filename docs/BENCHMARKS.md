@@ -20,7 +20,8 @@ files.
 | JSON Schema (vega-lite, 306 KB) → TS | 418 ms | 61.3 ms | 37.4 ms | 11× | 1.6× |
 | Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 571.7 s | 18.4 s | 12.5 s | 46× | 1.5× |
 | In process, 112 runs (engine as a library) | 369 ms (warm Node) | 288 ms | 153 ms | 2.4× | 1.9× |
-| Peak RSS, 40 MB input | 625 MiB | 221 MiB | 178 MiB | 3.5× less | 1.2× less |
+| Peak RSS, 40 MB input | 625 MiB | 221 MiB | 154 MiB | 4.1× less | 1.4× less |
+| Peak RSS, 2.6 GB input | — | 6.73 GiB | 5.76 GiB | — | 1.2× less |
 
 Wall-time medians. The CLI's lead over TypeScript on small inputs is mostly
 Node's startup (~215 ms); on large inputs and in process it is the engine
@@ -141,6 +142,8 @@ order of impact:
 | `perf(core): build alternative type names without format!` | `format!` was 40% of `gatherNames` | concatenation into a sized `String` | not measured on its own |
 | `perf(core): don't copy string cases in expandStrings` | every restricted string's case map copied twice per type, a set intersection built only to count it | borrowing `mapped_cases`/`mapped_transformations`, counting | 40 MB `expand strings` 13.5 → 7.6 ms |
 | `perf(js-compat): slice the authority in Uri::parse` | the URI authority collected char by char for every URI string value | `&after[2..]` | small |
+| `perf(cli): read JSON samples chunk by chunk` | each sample read whole into memory before parsing | 64 KiB chunks through a decoding window (see [Memory on large inputs](#memory-on-large-inputs)) | the raw input leaves the parsing phase; times unchanged |
+| `perf(core): CompressedJSON keeps objects, arrays and strings in blocks` | one `Vec` per object and array, every string held twice | block tables with spans, strings once with an index table | 2.6 GB input: tables 3.06 → 2.37 GiB, peak 6.73 → 5.76 GiB |
 
 Considered and left out:
 
@@ -153,6 +156,81 @@ Considered and left out:
   (`Type`, `StringTypes`, `JsonValue`, `MultiFileRenderResult`, ...), so
   switching their hasher changes the Rust API used by the GraphQL input,
   the CLI and the WASM bindings. Worth doing as its own change.
+
+## Memory on large inputs
+
+Two changes target multi-GB inputs (measured separately from the tables
+above, on the same machine):
+
+- **Streaming.** The CLI used to read each JSON sample (a file or standard
+  input) whole before parsing it. It now reads 64 KiB chunks through a
+  decoding window, as TypeScript's stream-json does: only the current
+  token is kept, every look-ahead reads more first, and UTF-8 split
+  between chunks decodes as Node's `StringDecoder` does
+  (`quicktype_js_compat::utf8::Decoder`). Values and errors cannot depend
+  on the chunking: unit tests read every sample input and every prefix of
+  a tricky document in chunks of 1 to 16 bytes, and `cargo xtask diff`
+  found 213 files with split, invalid and truncated sequences at the 64,
+  128 and 192 KiB boundaries (plus BOM, empty and whitespace-only input)
+  identical to the TypeScript CLI, from files and from standard input.
+  URL bodies are still fetched whole, then read the same way.
+- **Compact CompressedJSON.** Objects' entries and arrays' elements live in
+  shared blocks of at least 64K items that are never reallocated (each
+  object or array a 12-byte span) instead of one `Vec` per object or
+  array, and interned strings are stored once (64 KiB text blocks, a
+  `hashbrown::HashTable<u32>` of indexes) instead of as `Rc<str>`s held by
+  both the table and the lookup map.
+
+| Input | Before: time, peak RSS | After: time, peak RSS |
+|---|---:|---:|
+| generated (4 MB) | 42.8 ms, 27.7 MiB | 42.2 ms, 22.7 MiB |
+| generated (40 MB) | 345 ms, 177.5 MiB | 350 ms, 154.2 MiB |
+| 60 × generated (40 MB) in one array, 2.6 GB | 19.0 s, 6.73 GiB | 18.8 s, 5.76 GiB |
+| 10.5 M objects with ~200-character strings, 2.6 GB | 6.5 s, 4.32 GiB | 6.0 s, 3.86 GiB |
+
+Output is byte-identical in every case. The streaming alone does not
+lower these peaks: the whole-file buffer was already freed before type
+inference, and inference is where the peak is. It takes the raw file out
+of the parsing phase (on the 2.6 GB file, 2.4 GiB of input plus 3.1 GiB of
+tables then, 2.4 GiB of tables now), which is what bounds memory when
+inference is cheap.
+
+Where the 5.76 GiB peak of the 2.6 GB record file goes (the RSS reaches
+2.37 GiB when parsing ends, then grows during inference):
+
+| Part | Size |
+|---|---:|
+| CompressedJSON: object entries, 129.9 M × 16 B | 1.94 GiB |
+| CompressedJSON: object spans, 22.0 M × 12 B | 0.25 GiB |
+| CompressedJSON: array elements, 16.2 M × 8 B, and spans, 7.2 M × 12 B | 0.20 GiB |
+| CompressedJSON: string table, 0.6 M strings | 0.02 GiB |
+| Inference: one attribute set per string value in the union accumulators (the string types of every date, UUID, URI, integer string and long string, as the TypeScript keeps them) | ~1.9 GiB |
+| Inference: the values of each property and array, gathered per class | ~1.4 GiB |
+| Type graph, naming, rendering | negligible (tens of types) |
+
+The attribute-set share was measured by an experiment that kept only the
+first set per kind (not a valid change: it alters output in general):
+the peak dropped by 2.1 GB on the record file and by 3.0 GB on the
+text-heavy file. Next steps, not done here:
+
+1. Keep one copy of repeated attribute sets in the union accumulators
+   where combining them is idempotent (string types without cases, URI
+   attributes): up to the 2–3 GB above.
+2. Object entries of 12 bytes (the key is always an interned string): a
+   further 0.5 GiB on the record file.
+3. Streaming type inference (inferring while parsing), a separate
+   decision.
+
+To reproduce: build the 2.6 GB file from the benchmark's generated input
+and measure with `/usr/bin/time -l` (delete the file afterwards):
+
+```sh
+cargo xtask bench --no-ref --filter "generated (40" -n 1   # writes target/bench/generated-large.json
+python3 -c 'd = open("target/bench/generated-large.json", "rb").read().rstrip()
+open("target/bench/huge.json", "wb").write(b"[" + b",\n".join([d] * 60) + b"]")'
+/usr/bin/time -l target/release/quicktype target/bench/huge.json -l ts -o out.ts
+rm target/bench/huge.json
+```
 
 ## Profiling
 
