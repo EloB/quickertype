@@ -14,7 +14,14 @@ use std::str::EncodeUtf16;
 
 /// `s.length`: the number of UTF-16 code units.
 pub fn len(s: &str) -> usize {
-    s.chars().map(char::len_utf16).sum()
+    if s.is_ascii() {
+        return s.len();
+    }
+    // A unit per character (every byte that does not continue one), and a
+    // second one for each character outside the BMP (four UTF-8 bytes).
+    s.bytes()
+        .map(|b| usize::from(b & 0xC0 != 0x80) + usize::from(b >= 0xF0))
+        .sum()
 }
 
 /// The UTF-16 code units of `s`, i.e. `s.charCodeAt(0)`, `s.charCodeAt(1)`, ...
@@ -333,6 +340,23 @@ mod tests {
         assert_eq!(code_point_at("a😀b", 1), Some(0x1F600));
         assert_eq!(code_point_at("a😀b", 2), Some(0xDE00));
         assert_eq!(code_point_at("a😀b", 3), Some(u32::from('b')));
+    }
+
+    #[test]
+    fn length_counts_utf16_units() {
+        for s in [
+            "",
+            "abc",
+            "é",
+            "ü€",
+            "😀",
+            "a😀b€é\u{7f}\u{80}\u{7ff}\u{800}\u{ffff}\u{10000}\u{10ffff}",
+        ] {
+            for n in [1, 3, 17] {
+                let text = s.repeat(n);
+                assert_eq!(len(&text), text.encode_utf16().count(), "{text:?}");
+            }
+        }
     }
 
     #[test]
