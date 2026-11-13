@@ -419,8 +419,11 @@ in the same page):
 | + geometric memory growth | 2.40 (1.83×) | 24.1 (1.95×) | 230 (1.89×) | 133 (1.24×) |
 | TypeScript (same page) | 4.40 | 47.0 | 435 | 165 |
 | geometric memory growth, again | 2.30 (2.09×) | 23.6 (1.97×) | 218 (1.92×) | 129 (1.29×) |
-| + the code review's fixes (the branch) | **2.30 (2.09×)** | **23.8 (1.96×)** | **222 (1.88×)** | **131 (1.27×)** |
+| + the code review's fixes | 2.30 (2.09×) | 23.8 (1.96×) | 222 (1.88×) | 131 (1.27×) |
 | TypeScript (same page) | 4.80 | 46.6 | 417 | 166 |
+| the code review's fixes, again | 2.30 (2.26×) | 23.1 (2.08×) | 214 (1.99×) | 127 (1.31×) |
+| + main, the second code review's fixes (the branch) | **2.40 (2.17×)** | **23.7 (2.03×)** | **217 (1.97×)** | **127 (1.31×)** |
+| TypeScript (same page) | 5.20 | 48.1 | 426 | 166 |
 
 Where the branch's time goes: reading against generating, in ms:
 
@@ -467,7 +470,8 @@ Module sizes (bytes of `quicktype_wasm_bg.wasm`, gzipped with `-9`):
 | + the engine reads JSON samples | 5,540,170 | 1,836,379 |
 | + `wasm-opt -O3` | 5,106,071 | 1,879,156 |
 | + geometric memory growth | 5,122,579 | 1,886,059 |
-| the branch (the code review's fixes) | 5,159,057 | 1,900,523 |
+| + the code review's fixes | 5,159,057 | 1,900,523 |
+| the branch (main merged, the second code review's fixes) | 5,245,950 | 1,906,815 |
 
 `wasm-opt` makes the module 8% smaller but 2% larger gzipped (inlining).
 It is kept for the 2–8% of speed.
@@ -555,6 +559,71 @@ in one page or process (load about 25–30):
 (The Node warm figure for the 27 MB records is of 21 runs; a first run
 of 9 gave 160 / 180, within this load's spread.)
 
+### The second code review's fixes
+
+A second review found that the engine's memory could grow without bound
+in a long-running process; that a read that ran out of memory left the
+engine's table of inputs borrowed, so that the tables of no input could
+be taken from the failed instance; that the reader's fallback ignored
+its limits; that a full table of runs or inputs counted as a crash; that
+wide objects whose keys reappear in nested ones were read in quadratic
+time; and that exporting the tables copied the string table twice. Main
+(the robustness branch) was merged too: the one-pass reader now fails
+past Node's depth for `CompressedJSONFromString.process`, as main's
+`process` does. See the package README ("JSON samples", "Memory").
+
+**Memory, input after input.** A Node process makes 200 inputs of a
+1 MB sample (`generateJson(1400)`), keeps every one, and runs each once.
+With the compressed forms limited to 16 MiB, the engine's memory is
+54.6 MiB after the 50th input and still after the 200th (15.7 MiB in
+use); without a limit it grew by 2.2 MiB per input, to 539 MiB (438 MiB
+in use), and would have reached 4 GiB, where the instance traps, at
+about the 1,800th. The default limit is 256 MiB. (In use: the
+allocator's count, in a `--heap-stats` build.)
+
+**Filling the tables of a 104 MB sample** (`materialize`, the 138 MiB
+form of `generateJson(150000)`): exporting them took 115.0 MiB more of
+the engine's memory at its peak, and 65.3 MiB now, by the allocator's
+count; the CPU time (1.1 s) and the process's peak RSS (1.35 GB) are the
+same.
+
+**Wide objects whose keys reappear in nested ones**
+(`{"k0": {"k1": 0, "k2": 1}, "k1": {"k2": 0, "k3": 1}, …}`), read with
+`addSourceSync` on the engine, CPU ms (median of 3):
+
+| Members | 2,500 | 5,000 | 10,000 | 20,000 | 40,000 |
+|---|---:|---:|---:|---:|---:|
+| Before | 11.4 | 40.5 | 150 | 587 | 2,317 |
+| After | 3.8 | 2.6 | 3.3 | 8.1 | 13.8 |
+
+Records whose nested objects reuse their keys (200k
+`{"id": …, "child": {"id": …, "name": …}, "name": …}`, 18.8 MB) read in
+73.5 ms before and 75 ms after (native, best of 15): objects of up to 16
+members still compare their keys one by one; a set of keys, made once,
+takes over only past that (made for every such record, it took 91 ms).
+
+**Everything else is unchanged** within the noise. Warm, before (the
+branch at `bddbf8a67`) against after, with a second copy of the before
+build in the same page or process for the spread (load about 3–5):
+
+| | pokedex | 2 MB | 20 MB | 27 MB records |
+|---|---:|---:|---:|---:|
+| Chrome (ms): before, its copy / after | 2.30, 2.30 / 2.40 | 23.1, 23.8 / 23.7 | 214, 216 / 217 | 127, 127 / 127 |
+| Node (ms, CPU ms), 31 runs: before, its copy / after | 2.39, 2.32 / 2.51 | 24.8, 25.3 / 25.3 | 234, 234 / 236 | 140, 140 / 141 |
+
+pokedex again, 151 runs: Chrome 2.20 for all four (before, after and a
+copy of each); Node 2.32, 2.32 / 2.36, 2.32. Counting the allocator's
+bytes made runs about 2% slower (2 MB 14.4 ms to generate, against 13.8
+and 14.0 for two copies of the build without), so it is only in
+`--heap-stats` builds. The warm benchmark now lets finalizers run
+between runs (`test/bench/workload.mjs`): its loop of awaits never did,
+so the engine kept every input the benchmark made (twelve 20 MB inputs,
+324 MiB per build), and a build that keeps its forms within a limit paid
+for evicting inputs that were already gone.
+
+The module is 87 KB larger (6 KB gzipped), nearly all of it main's
+robustness work (5,243,038 bytes after merging it, before these fixes).
+
 ### Phase breakdown, 27 MB records
 
 The breakdown is one warm run, marked by timestamps: `encodeRun` is
@@ -635,6 +704,7 @@ node --expose-gc npm/quicktype-core/test/bench/compare.mjs             # Node, w
 node npm/quicktype-core/test/bench/compare.mjs --browser               # headless Chrome
 node npm/quicktype-core/test/bench/compare.mjs --browser --cold 5      # first runs
 node npm/quicktype-core/test/bench/compare.mjs --variant main=../main-pkg --variant new=npm/quicktype-core
+(cd npm/quicktype-core && node script/build.mjs --heap-stats)        # + __heapBytes, __heapPeak
 
 # The in-process benchmark alone.
 cargo bench -p quickertype --bench in_process -- --per-input
