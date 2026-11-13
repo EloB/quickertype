@@ -15,6 +15,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, annotated, multi_word, paren_if_needed, single_word};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
@@ -929,18 +930,11 @@ impl<'a> ConvenienceRenderer<'a> for ElmRenderer<'a> {
             .map(Source::from)
             .collect();
             self.emit_comment_lines(&lines, &CommentOptions::default())?;
-            let mut decoders: Vec<Source> = Vec::new();
-            for (i, decoder) in top_level_decoders.iter().enumerate() {
-                if i > 0 {
-                    decoders.push(", ".into());
-                }
-                decoders.push((*decoder).into());
-            }
             self.emit_line(sl![
                 "--     import ",
                 module_name.clone(),
                 " exposing (",
-                Source::Sequence(decoders),
+                array_intercalate(", ".into(), top_level_decoders.iter().map(Source::from)),
                 ")"
             ]);
             self.emit_multiline("--\n-- and you're off to the races with\n--")?;

@@ -13,6 +13,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::camel_case;
@@ -689,14 +690,11 @@ impl<'a> SwiftRenderer<'a> {
                         if let Some(label) = label {
                             r.emit_line(sl!["case ", name, " = \"", label, "\""]);
                         } else {
-                            let mut names: Vec<Source> = Vec::new();
-                            for (i, (n, _)) in group.iter().enumerate() {
-                                if i > 0 {
-                                    names.push(", ".into());
-                                }
-                                names.push(n.into());
-                            }
-                            r.emit_line(sl!["case ", Source::Sequence(names)]);
+                            let names = array_intercalate(
+                                ", ".into(),
+                                group.iter().map(|(n, _)| Source::from(n)),
+                            );
+                            r.emit_line(sl!["case ", names]);
                         }
                     }
                     Ok(())

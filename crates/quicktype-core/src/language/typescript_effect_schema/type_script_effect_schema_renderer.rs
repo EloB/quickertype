@@ -13,6 +13,7 @@ use crate::graph::Graph;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::recursion::guard;
 use crate::support::strings::{
@@ -234,15 +235,11 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                     let child = children.remove(0);
                     sl!["S.NullOr(", child, ")"]
                 } else {
-                    let mut parts: Vec<Source> = vec!["S.Union(".into()];
-                    for (i, child) in children.into_iter().enumerate() {
-                        if i > 0 {
-                            parts.push(", ".into());
-                        }
-                        parts.push(child);
-                    }
-                    parts.push(if nullable { ", S.Null)" } else { ")" }.into());
-                    Source::Sequence(parts)
+                    sl![
+                        "S.Union(",
+                        array_intercalate(", ".into(), children),
+                        if nullable { ", S.Null)" } else { ")" }
+                    ]
                 }
             }
             TypeKind::Uuid => "S.UUID".into(),

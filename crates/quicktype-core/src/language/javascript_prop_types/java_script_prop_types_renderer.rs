@@ -13,6 +13,7 @@ use crate::language::javascript::unicode_maps::is_es3_identifier_start;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
 use crate::support::fast_hash::HashMap;
@@ -267,12 +268,9 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             TypeKind::Union => {
                 let is_nullable_enum = find_member(graph, t, TypeKind::Enum)?.is_some()
                     && find_member(graph, t, TypeKind::Null)?.is_some();
-                let mut parts: Vec<Source> = vec!["PropTypes.oneOfType([".into()];
-                for (i, member) in graph.children(t)?.into_iter().enumerate() {
-                    if i > 0 {
-                        parts.push(", ".into());
-                    }
-                    parts.push(
+                let mut children: Vec<Source> = Vec::new();
+                for member in graph.children(t)? {
+                    children.push(
                         if is_nullable_enum && graph.kind(member)? == TypeKind::Null {
                             "PropTypes.oneOf([null])".into()
                         } else {
@@ -280,8 +278,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                         },
                     );
                 }
-                parts.push("])".into());
-                Source::Sequence(parts)
+                sl![
+                    "PropTypes.oneOfType([",
+                    array_intercalate(", ".into(), children),
+                    "])"
+                ]
             }
             TypeKind::Uuid => "(props, name) => props[name] == null || /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(props[name]) ? null : new Error(\"Expected UUID\")".into(),
             TypeKind::DateTime => "(props, name) => props[name] == null || typeof props[name] === \"string\" && !Number.isNaN(Date.parse(props[name])) ? null : new Error(\"Expected date-time\")".into(),

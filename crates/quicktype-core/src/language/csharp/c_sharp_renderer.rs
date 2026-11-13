@@ -10,6 +10,7 @@
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, PrototypeMember, RendererOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::recursion::guard;
 use crate::support::support::{assert, defined};
 use crate::transformers::{
@@ -255,18 +256,6 @@ pub(crate) type Finish<'f, R> = &'f dyn Fn(&mut R, Source) -> Result<()>;
 pub(crate) fn transformation_of(graph: &TypeGraph, t: TypeRef) -> Result<Transformation> {
     let xf = defined(transformation_for_type(graph, t)?)?;
     Ok(defined(downcast_transformation(xf.as_ref()))?.clone())
-}
-
-/// `arrayIntercalate([" && "], conditions)`.
-pub(crate) fn intercalate_and(conditions: Vec<Source>) -> Source {
-    let mut result = Vec::with_capacity(conditions.len() * 2);
-    for (i, condition) in conditions.into_iter().enumerate() {
-        if i > 0 {
-            result.push(sl![" && "]);
-        }
-        result.push(condition);
-    }
-    Source::Sequence(result)
 }
 
 /// The methods of TS `CSharpRenderer` that are not `ConvenienceRenderer`
@@ -623,17 +612,9 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
                 if find_member(r.type_graph(), u, TypeKind::Null)?.is_none() {
                     return Ok(());
                 }
-                // arrayIntercalate(" && ", nullTests)
-                let mut intercalated: Vec<Source> = Vec::new();
-                for (i, test) in null_tests.into_iter().enumerate() {
-                    if i > 0 {
-                        intercalated.push(" && ".into());
-                    }
-                    intercalated.push(test);
-                }
                 r.emit_expression_member(
                     "public bool IsNull".into(),
-                    Source::Sequence(intercalated),
+                    array_intercalate(" && ".into(), null_tests).into(),
                     true,
                 )
             },

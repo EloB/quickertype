@@ -11,6 +11,7 @@ use crate::attributes::constraints::{
 };
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::support::collection_utils::array_intercalate;
 use crate::support::strings::camel_case;
 use crate::support::support::must_not_happen;
 use crate::target_language::TargetLanguage;
@@ -19,7 +20,7 @@ use crate::ty::type_utils::{is_nullable, nullable_from_union};
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{array_intercalate, js_number, string_escape, union_member_match_priority};
+use super::utils::{js_number, string_escape, union_member_match_priority};
 
 /// TS `KotlinJacksonRenderer`.
 pub struct KotlinJacksonRenderer<'a> {
@@ -112,12 +113,12 @@ impl<'a> KotlinJacksonRenderer<'a> {
         if !property_opts.is_empty() {
             properties.push(sl![
                 "@get:JsonProperty(",
-                array_intercalate(", ", property_opts.clone()),
+                array_intercalate(", ".into(), property_opts.clone()),
                 ")"
             ]);
             properties.push(sl![
                 "@field:JsonProperty(",
-                array_intercalate(", ", property_opts),
+                array_intercalate(", ".into(), property_opts),
                 ")"
             ]);
         }
