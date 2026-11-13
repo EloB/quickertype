@@ -4,6 +4,13 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- JS API after merging wave 2: languages the engine lacks (cJSON, Go, JSON
+  Schema output) fall back to the TypeScript engine via
+  `QuickTypeError::unsupported`/`has_renderer`. Differential suite: 18,718
+  scenarios, 18,717 identical (17,006 on WebAssembly, 1,636 on the
+  TypeScript fallback, 75 on TypeScript by eligibility), 1 known gap, 0
+  different. Engine: 4.8 MiB (1.6 MiB gzipped).
+
 - **Parity 10,174 / 11,177 (91.0%), 0 regressions.** Merged language wave
   2 so far: Crystal, C++; Swift, Objective-C, Dart; Ruby, Elixir, Python
   (each reviewed; 100% of render cases and every end-to-end case except

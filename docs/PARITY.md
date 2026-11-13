@@ -50,8 +50,10 @@ findings per area, with file and line references.
   options, ports of quicktype's API-level unit tests, JSON Schema store
   paths (lazy fetch order, failures, concurrency, re-entrancy), errors and
   options. Without a checkout (CI) the reference is the package's own,
-  vendored TypeScript engine. Renderers not ported yet are reported
-  separately.
+  vendored TypeScript engine. Runs the engine declines as unsupported
+  (`QuickTypeError::unsupported`, e.g. a renderer not ported yet) run on
+  the TypeScript engine and are reported separately from those identical
+  on WebAssembly.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
 rather than the CLI, so it has no CLI recording; the JS API differential
@@ -202,6 +204,21 @@ the others name the fix they need.
     instance is then discarded and the run fails with an `InternalError`;
   - GraphQL input (`quicktype-graphql-input`) is not ported yet, so its
     runs use the TypeScript engine;
+  - the engine declines languages whose renderer is not ported before a
+    run starts (`has_renderer`); should a run hit another unsupported
+    feature midway, it is redone on the TypeScript engine, and what the
+    first attempt did (schema fetches through the store, `--debug`
+    output, `onTiming` calls) happens twice. No such feature exists
+    today;
+  - Rust polls a run's future from its root, so a long chain of `$ref`ed
+    documents nests WebAssembly frames on V8's own stack; at a few hundred
+    documents (300 work, 500 do not, with Node's default stack) that
+    overflows with `RangeError: Maximum call stack size exceeded`, as the
+    TypeScript engine does at about the same length, though not
+    necessarily the same one. The instance is then discarded, and other
+    runs in flight on it fail with an `InternalError`. (The core's model
+    of the JavaScript stack lets `$ref` chains go 10,000 deep, so the
+    native CLI does not fail there; see "Stack depth".)
   - a JSON Schema nested deeper than Node's stack allows (see "Stack
     depth") makes the TypeScript quicktype-core overflow inside a promise
     callback, which takes the whole process down (`Exception in
