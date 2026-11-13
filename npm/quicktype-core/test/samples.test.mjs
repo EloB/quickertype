@@ -23,6 +23,11 @@ const { DefaultDateTimeRecognizer } = require(path.join(packageRoot, "dist", "Da
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
+// Samples are read on the engine once it is compiled (by the first run
+// that uses it, or by a large sample: see "the engine is compiled for a
+// sample only if it is large"); here it is from the start.
+engine.engineSync();
+
 /** No run holds samples it did not take over or let go of. */
 function noLeases() {
     assert.equal(engine.engineSync().__jsonLeases(), 0);
@@ -226,6 +231,63 @@ test("a run keeps its samples when another input is read into the engine meanwhi
     assert.deepEqual(stats, [2, 1, 0]);
 });
 
+test("the tables are TypeScript's, string for string", async () => {
+    // `JSON.parse` keeps one of two "__proto__" members, and TypeScript
+    // interns its key once; a sample that is not JSON interns nothing.
+    for (const groups of [
+        [["Proto", ['{"__proto__":1,"__proto__":2}']]],
+        [["Proto", ['{"__proto__": {"__proto__": 1}, "x": {"__proto__": [2], "__proto__": 3}}']]],
+        [
+            ["Truncated", ['{"key1": [1, {"key2": ']],
+            ["Valid", ['{"k": "v"}']],
+        ],
+        [["Formats", ['{"b": 1, "2": {"q": "date"}, "a": "2020-01-01", "1": [4], "b": "x", "u": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}']]],
+    ]) {
+        const attempt = async () => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            const errors = [];
+            for (const [name, list] of groups) errors.push((await outcome(() => input.addSource({ name, samples: list }))).error);
+            return { errors, inside: inside(input) };
+        };
+        const expected = await inMode("ts", attempt);
+        const before = { ...engineStats };
+        assert.deepEqual(await attempt(), expected, JSON.stringify(groups));
+        assert.equal(engineStats.samplesRead, before.samplesRead + 1, JSON.stringify(groups));
+        assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
+    }
+});
+
+test("the engine is compiled for a sample only if it is large", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const add = (text) => qt.jsonInputForTargetLanguage("rust").addSourceSync({ name: "A", samples: [text] });
+        const out = [];
+        const note = () => out.push([engine.compileAttempts(), engineStats.samplesRead]);
+        add('{"a": [1]}');
+        note();
+        if (process.argv[1] === "large") {
+            add(JSON.stringify(Array.from({ length: 60000 }, (_, i) => ({ id: i, name: "n" + i }))));
+            note();
+        } else {
+            // A run compiles it; from then on, samples are read there.
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: ['{"a": [1]}'] });
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            qt.quicktypeMultiFileSync({ lang: "rust", inputData });
+            note();
+        }
+        add('{"b": [2]}');
+        note();
+        console.log(JSON.stringify(out));
+    `;
+    const run = (arg) => JSON.parse(execFileSync(process.execPath, ["-e", script, arg], { encoding: "utf8" }));
+    assert.deepEqual(run("small"), [[0, 0], [1, 0], [1, 1]]);
+    assert.deepEqual(run("large"), [[0, 0], [1, 1], [1, 2]]);
+});
+
 /** The outcome of `f`, its error as plain data. */
 async function outcome(f) {
     try {
@@ -257,32 +319,6 @@ const invalid = [
     '{"a": [1, 2}',
     "x".repeat(100),
 ];
-
-test("the tables are TypeScript's, string for string", async () => {
-    // `JSON.parse` keeps one of two "__proto__" members, and TypeScript
-    // interns its key once; a sample that is not JSON interns nothing.
-    for (const groups of [
-        [["Proto", ['{"__proto__":1,"__proto__":2}']]],
-        [["Proto", ['{"__proto__": {"__proto__": 1}, "x": {"__proto__": [2], "__proto__": 3}}']]],
-        [
-            ["Truncated", ['{"key1": [1, {"key2": ']],
-            ["Valid", ['{"k": "v"}']],
-        ],
-        [["Formats", ['{"b": 1, "2": {"q": "date"}, "a": "2020-01-01", "1": [4], "b": "x", "u": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}']]],
-    ]) {
-        const attempt = async () => {
-            const input = qt.jsonInputForTargetLanguage("typescript");
-            const errors = [];
-            for (const [name, list] of groups) errors.push((await outcome(() => input.addSource({ name, samples: list }))).error);
-            return { errors, inside: inside(input) };
-        };
-        const expected = await inMode("ts", attempt);
-        const before = { ...engineStats };
-        assert.deepEqual(await attempt(), expected, JSON.stringify(groups));
-        assert.equal(engineStats.samplesRead, before.samplesRead + 1, JSON.stringify(groups));
-        assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
-    }
-});
 
 test("a sample that is not JSON fails in addSource, with V8's error", async () => {
     for (const bad of invalid) {
@@ -512,8 +548,8 @@ test("the engine drops the samples of inputs that are gone", () => {
             }
         }
         (async () => {
-            add(30);
             const glue = engine.engineSync();
+            add(30);
             const before = glue.__jsonCount();
             for (let i = 0; i < 100 && glue.__jsonCount() > keep.length; i++) {
                 global.gc();

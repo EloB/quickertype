@@ -23,10 +23,11 @@
 // that leaves a surrogate unpaired); a `CompressedJSON` that is not exactly
 // a `CompressedJSONFromString` with a built-in date/time recognizer and a
 // valid integer range, or that has tables already; a host without
-// `FinalizationRegistry`; and samples read while the engine is not loaded
-// (in browsers, before it is compiled) or the TypeScript engine is forced.
-// A sample that is not JSON is not read by the engine either: TypeScript's
-// `JSON.parse` then throws V8's own error, from `addSource`, as before.
+// `FinalizationRegistry`; samples read while the TypeScript engine is
+// forced; and samples read while the engine is not compiled yet (see
+// `engineForSample`). A sample that is not JSON is not read by the engine
+// either: TypeScript's `JSON.parse` then throws V8's own error, from
+// `addSource`, as before.
 //
 // The README ("JSON samples") has the argument for why this cannot be told
 // apart from TypeScript reading the samples.
@@ -35,7 +36,7 @@ import { CompressedJSONFromString } from "../input/CompressedJSON.js";
 
 import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
-import { engineMode, engineSync, isDiscarded } from "./engine.js";
+import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
 import { installSampleReader } from "./hook.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
@@ -88,6 +89,12 @@ export function setKeptTexts(codeUnits: number): number {
     keptTexts = codeUnits;
     return old;
 }
+
+/**
+ * The size from which a sample is worth compiling the engine for, in code
+ * units (see `engineForSample`).
+ */
+const compileForSample = 1 << 20;
 
 const states = new WeakMap<object, NativeSamples>();
 
@@ -178,14 +185,27 @@ function isFresh(cjson: any): boolean {
 }
 
 /**
+ * The engine instance to read a sample of `length` code units on, if
+ * reading it there is worth it. Samples never wait for the engine to be
+ * compiled where that is asynchronous (browsers), and in Node a sample
+ * compiles it only if it is large: compiling takes some 20 ms of CPU, a
+ * run that goes to the TypeScript engine (a custom language, say) gains
+ * nothing from it, and a small sample reads about as fast in TypeScript.
+ * Once the engine is compiled (by the first run that uses it, or a large
+ * sample), every sample is read there; instantiating it is cheap, and a
+ * run would do it anyway.
+ */
+function engineForSample(length: number): WasmGlue | undefined {
+    return engineIfCompiled() ?? (length >= compileForSample ? engineSync() : undefined);
+}
+
+/**
  * Starts reading `cjson`'s samples on the engine: a compressed form in
  * the engine, and the table fields replaced by accessors that fill them
  * on first use.
  */
-function start(cjson: any, config: Config): NativeSamples | undefined {
+function start(cjson: any, config: Config, glue: WasmGlue): NativeSamples | undefined {
     if (!isFresh(cjson)) return undefined;
-    const glue = engineSync();
-    if (glue === undefined) return undefined;
     let id: number;
     try {
         id = glue.jsonCreate(config.dateTime, !!config.handleRefs, config.range?.min, config.range?.max);
@@ -431,7 +451,9 @@ function readSample(cjson: any, text: unknown): number | undefined {
     const config = configOf(cjson);
     if (config === undefined || !isWellFormed(text)) return declined(cjson);
     if (state === undefined) {
-        state = start(cjson, config);
+        const glue = engineForSample(text.length);
+        if (glue === undefined) return undefined;
+        state = start(cjson, config, glue);
         if (state === undefined) return undefined;
     } else if (isDiscarded(state.glue) || !sameConfig(state.config, config)) {
         return declined(cjson);
