@@ -22,6 +22,7 @@ import { Readable } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as vm from "node:vm";
 
+import { unportablePaths } from "./file-names.mjs";
 import { INFERENCE_FLAGS } from "./generate.mjs";
 
 /** The CLI's `wordWrap` (the `wordwrap` package at width 90), for Postman descriptions. */
@@ -249,24 +250,30 @@ export function cliInvocation(kase) {
     return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
 }
 
-/** Whether a CLI run can reproduce the case at all (one sample per top-level for directories). */
+/**
+ * Whether a CLI run can reproduce the case at all: one sample per
+ * top-level for directories, top-levels named after their files, and
+ * every file the run writes one that Windows, macOS and Linux can all hold
+ * (file-names.mjs), so that it can be written here and recorded.
+ */
 export function cliCompatible(kase) {
     if (kase.src === "schema" && kase.schemas.length > 1) return false;
+    let fileNamed = [];
     if (kase.src === "mixed") {
-        const names = [...kase.topLevels.map((tl) => tl.name), ...kase.schemas.map((s) => s.name)];
+        fileNamed = [...kase.topLevels.map((tl) => tl.name), ...kase.schemas.map((s) => s.name)];
         if (kase.topLevels.some((tl) => tl.samples.length !== 1)) return false;
-        if (names.some((n) => n === "" || n.includes("/") || n.startsWith(".") || n.length > 100)) return false;
-        if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) return false;
         if (kase.schemas.some((s) => s.uris !== undefined)) return false;
     }
 
-    if (kase.src === "json" && kase.topLevels.length > 1) {
-        const names = kase.topLevels.map((tl) => tl.name);
-        if (names.some((n) => n === "" || n.includes("/") || n.startsWith(".") || n.length > 100)) return false;
-        if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) return false;
-    }
-
-    return cliInvocation(kase) !== undefined;
+    if (kase.src === "json" && kase.topLevels.length > 1) fileNamed = kase.topLevels.map((tl) => tl.name);
+    // A top-level read from a directory is named after its file.
+    if (fileNamed.some((n) => n === "" || n.startsWith(".") || n.includes("/"))) return false;
+    if (new Set(fileNamed.map((n) => n.toLowerCase())).size !== fileNamed.length) return false;
+    const invocation = cliInvocation(kase);
+    if (invocation === undefined) return false;
+    const written = [...invocation.files.keys(), ...invocation.dirs];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    return unportablePaths(written).length === 0;
 }
 
 function snapshot(dir) {
