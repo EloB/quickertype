@@ -286,7 +286,23 @@ mod tests {
         let exe = dir.join("tsc");
         std::fs::write(&exe, "#!/bin/sh\necho 'panic: boom' >&2\nexit 3\n").unwrap();
         std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
-        let mut ch = Channel::spawn(&exe, &dir, Vec::new()).unwrap();
+        // Another test thread forking while the script was still open for
+        // writing can make exec fail with ETXTBSY ("Text file busy") for a
+        // moment, a race of tests in one process on Linux: retry.
+        let mut ch = None;
+        for _ in 0..50 {
+            match Channel::spawn(&exe, &dir, Vec::new()) {
+                Ok(c) => {
+                    ch = Some(c);
+                    break;
+                }
+                Err(e) if e.message().contains("Text file busy") => {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                Err(e) => panic!("{}", e.message()),
+            }
+        }
+        let mut ch = ch.expect("the script stayed busy");
         let err = ch.request("initialize", b"null").unwrap_err().message();
         drop(ch);
         std::fs::remove_dir_all(&dir).unwrap();

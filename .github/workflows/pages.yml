@@ -24,7 +24,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # The whole history: the benchmarks page links the quickertype
+      # commits its numbers were measured at, and the smoke test checks
+      # they are commits of this repository.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.99"
