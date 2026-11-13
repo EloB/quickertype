@@ -4,12 +4,19 @@
 // needs no language toolchains, so it also covers the languages whose
 // fixtures cannot run here.
 //
-//   - JSONFixture with diffViaSchema/roundtripViaSchema: JSON -> JSON Schema
-//     (`--lang schema`), then the schema -> the language, for every fixture
-//     language, sample and quick-test renderer option set that does it;
-//   - schema-json-csharp: JSON -> schema -> C#, and schema -> schema;
-//   - json-ts-csharp: JSON -> TypeScript (just types) -> C#. Ours needs the
-//     TypeScript 7.0.2 compiler for this (`QUICKTYPE_TSC`).
+// The steps are upstream's, taken from the copy's test/fixtures.ts: every
+// JSONFixture in `allFixtures`, each sample of its `getSamples([])` that its
+// `shouldSkipTest` keeps, and
+//   - for a language's JSONFixture (JSONFixture.test): if the language has a
+//     runCommand, and diffViaSchema (the sample not in skipDiffViaSchema) or
+//     roundtripViaSchema, JSON -> JSON Schema, then the schema -> the
+//     language;
+//   - for a JSON -> X -> Y fixture (JSONToXToYFixture.test: schema-json-csharp,
+//     json-ts-csharp): JSON -> X and X -> Y, and for schema-json-csharp
+//     (JSONSchemaJSONFixture.test) the schema -> schema. Ours needs the
+//     TypeScript 7.0.2 compiler (`QUICKTYPE_TSC`) to read the TypeScript.
+// A step's input is the TypeScript CLI's output of the step before it, so a
+// difference shows up in the step that makes it.
 //
 // Run with the copy's tsx, from roundtrip.sh:
 //   tsx later-steps.mts <quicktype copy> <ours command> <work dir> <jobs>
@@ -18,21 +25,140 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const [copy, oursCommand, work, jobsArg] = process.argv.slice(2);
+if (work === undefined || !/^[1-9][0-9]*$/.test(jobsArg ?? "")) {
+    console.error("usage: later-steps.mts <quicktype copy> <ours command> <work dir> <jobs, at least 1>");
+    process.exit(2);
+}
 const jobs = Number(jobsArg);
 const ts = ["node", path.join(copy, "dist/index.js")];
 const ours = oursCommand.trim().split(/\s+/);
+// The fixtures find their samples relative to the checkout.
 process.chdir(copy);
-const languages = await import(path.join(copy, "test/languages.ts"));
+const { allFixtures, JSONFixture, JSONToXToYFixture, JSONSchemaJSONFixture } = await import(
+    path.join(copy, "test/fixtures.ts")
+);
 const { cliArgumentsFromOptions } = await import(path.join(copy, "test/utils.ts"));
 
-type Input = { dir: string; path: string; base: string };
-const inputs: Input[] = ["priority", "samples", "misc"].flatMap((dir) =>
-    fs
-        .readdirSync(path.join(copy, "test/inputs/json", dir))
-        .filter((f) => f.endsWith(".json") && !/\.out\.[^.]+\.json$/.test(f))
-        .sort()
-        .map((base) => ({ dir, path: path.join(copy, "test/inputs/json", dir, base), base })),
-);
+type Options = Record<string, unknown>;
+type Language = {
+    name: string;
+    output: string;
+    topLevel: string;
+    rendererOptions: Options;
+    runCommand?: unknown;
+    diffViaSchema: boolean;
+    roundtripViaSchema?: boolean;
+    skipDiffViaSchema: string[];
+};
+type Sample = { path: string; additionalRendererOptions: Options };
+
+// A quicktype run, and the earlier step whose output file is its input.
+type Step = {
+    id: number;
+    label: string;
+    opts: Options;
+    input?: { step: Step; file: string };
+    level: number;
+    dir?: string;
+};
+
+// The options quicktypeForLanguage (test/utils.ts) passes.
+function forLanguage(
+    language: Language,
+    src: string,
+    srcLang: string,
+    alphabetizeProperties: boolean,
+    ro: Options,
+): Options {
+    return {
+        srcLang,
+        lang: language.name,
+        src: [src],
+        out: language.output,
+        topLevel: language.topLevel,
+        alphabetizeProperties,
+        rendererOptions: { ...language.rendererOptions, ...ro },
+        quiet: true,
+        telemetry: "disable",
+        debug: "provenance",
+    };
+}
+
+// Steps with the same options and input run once.
+const steps = new Map<string, Step>();
+function step(label: string, opts: Options, input?: { step: Step; file: string }): Step {
+    const key = JSON.stringify([opts, input === undefined ? null : [input.step.id, input.file]]);
+    let s = steps.get(key);
+    if (s === undefined) {
+        s = { id: steps.size, label, opts, input, level: input === undefined ? 0 : input.step.level + 1 };
+        steps.set(key, s);
+    }
+    return s;
+}
+
+let fixtureCount = 0;
+let sampleCount = 0;
+for (const fixture of allFixtures) {
+    if (!(fixture instanceof JSONFixture)) continue;
+    fixtureCount++;
+    const language: Language = fixture.language;
+    const { priority, others } = fixture.getSamples([]);
+    for (const sample of [...priority, ...others] as Sample[]) {
+        if (fixture.shouldSkipTest(sample)) continue;
+        sampleCount++;
+        const file = path.resolve(sample.path);
+        const ro = sample.additionalRendererOptions;
+        const label = `${fixture.name} ${sample.path}${Object.keys(ro).length === 0 ? "" : ` ${JSON.stringify(ro)}`}`;
+        if (fixture instanceof JSONToXToYFixture) {
+            const y: Language = (fixture as { runLanguage: Language }).runLanguage;
+            const x = step(`${label}: json -> ${language.name}`, forLanguage(language, file, "json", true, ro));
+            const xOutput = { step: x, file: language.output };
+            step(
+                `${label}: ${language.name} -> ${y.name}`,
+                forLanguage(y, language.output, language.name, false, ro),
+                xOutput,
+            );
+            if (fixture instanceof JSONSchemaJSONFixture) {
+                step(
+                    `${label}: schema -> schema`,
+                    {
+                        src: [language.output],
+                        srcLang: language.name,
+                        lang: language.name,
+                        topLevel: language.topLevel,
+                        out: "schema-from-schema.json",
+                        rendererOptions: {},
+                    },
+                    xOutput,
+                );
+            }
+        } else {
+            const diffViaSchema =
+                language.diffViaSchema && !language.skipDiffViaSchema.includes(path.basename(file));
+            if (language.runCommand === undefined || !(diffViaSchema || language.roundtripViaSchema)) {
+                continue;
+            }
+            const schema = step(`${sample.path} (top level ${language.topLevel}): json -> schema`, {
+                src: [file],
+                lang: "schema",
+                out: "schema.json",
+                topLevel: language.topLevel,
+                rendererOptions: {},
+            });
+            step(
+                `${label}: schema -> ${language.name}`,
+                forLanguage(language, "schema.json", "schema", true, ro),
+                { step: schema, file: "schema.json" },
+            );
+        }
+    }
+}
+
+console.error(`* ${fixtureCount} JSON fixtures, ${sampleCount} samples they test: ${steps.size} steps`);
+if (steps.size === 0) {
+    console.error("later-steps: no steps; nothing would be tested");
+    process.exit(1);
+}
 
 function run(cmd: string[], args: string[], cwd: string): Promise<{ code: number; stderr: string }> {
     return new Promise((resolve) => {
@@ -41,6 +167,7 @@ function run(cmd: string[], args: string[], cwd: string): Promise<{ code: number
         p.stderr.on("data", (d) => {
             stderr += d;
         });
+        p.on("error", (e) => resolve({ code: -1, stderr: String(e) }));
         p.on("close", (code) => resolve({ code: code ?? -1, stderr }));
     });
 }
@@ -55,23 +182,37 @@ function files(dir: string, rel = ""): Map<string, Buffer> {
     return m;
 }
 
-let counter = 0;
-let total = 0;
+let ran = 0;
+let bothFailed = 0;
+const notRun: string[] = [];
 const mismatches: string[] = [];
+const keep = new Set<string>();
 
-// Runs one step with both CLIs, each in a fresh directory seeded with
-// `seed` (name -> source file). Returns the TypeScript CLI's directory, whose
-// output feeds the next step; ours is deleted unless it differs.
-async function step(label: string, opts: object, seed: Record<string, string>): Promise<string> {
-    const id = counter++;
-    const args = cliArgumentsFromOptions(opts);
-    const dirs = ["ts", "ours"].map((w) => path.join(work, `${id}-${w}`));
+// Runs a step with both CLIs, each in a fresh directory with its input.
+async function runStep(s: Step): Promise<void> {
+    let seed: string | undefined;
+    if (s.input !== undefined) {
+        seed = path.join(s.input.step.dir ?? "", s.input.file);
+        if (s.input.step.dir === undefined || !fs.existsSync(seed)) {
+            // Both CLIs failed the step before alike.
+            notRun.push(s.label);
+            return;
+        }
+    }
+    const dirs = ["ts", "ours"].map((w) => path.join(work, `${s.id}-${w}`));
     for (const d of dirs) {
         fs.mkdirSync(d, { recursive: true });
-        for (const [name, src] of Object.entries(seed)) fs.copyFileSync(src, path.join(d, name));
+        if (s.input !== undefined && seed !== undefined) {
+            const to = path.join(d, s.input.file);
+            fs.mkdirSync(path.dirname(to), { recursive: true });
+            fs.copyFileSync(seed, to);
+        }
     }
+    const args = cliArgumentsFromOptions(s.opts);
     const [a, b] = await Promise.all([run(ts, args, dirs[0]), run(ours, args, dirs[1])]);
-    total++;
+    ran++;
+    s.dir = dirs[0];
+    if (a.code !== 0 && b.code !== 0) bothFailed++;
     const fa = files(dirs[0]);
     const fb = files(dirs[1]);
     const problems: string[] = [];
@@ -85,119 +226,43 @@ async function step(label: string, opts: object, seed: Record<string, string>): 
         else if (!x.equals(y)) problems.push(`${k} differs`);
     }
     if (problems.length > 0) {
-        mismatches.push(`${label} (${dirs[0]}): ${problems.join("; ")}\n    args: ${args.join(" ")}`);
+        mismatches.push(`${s.label} (${dirs[0]}): ${problems.join("; ")}\n    args: ${args.join(" ")}`);
+        for (const d of dirs) keep.add(path.basename(d));
     } else {
+        // The TypeScript CLI's output may be a later step's input.
         fs.rmSync(dirs[1], { recursive: true });
     }
-    return dirs[0];
 }
 
 async function pool<T>(items: T[], f: (t: T) => Promise<void>): Promise<void> {
     let i = 0;
     await Promise.all(
-        Array.from({ length: jobs }, async () => {
+        Array.from({ length: Math.min(jobs, items.length) }, async () => {
             while (i < items.length) await f(items[i++]);
         }),
     );
 }
 
-const cliDefaults = { quiet: true, telemetry: "disable", debug: "provenance" };
-
-// The JSON fixtures that run JSON -> schema -> language (test/fixtures.ts).
-const viaSchemaLanguages = [
-    "CSharpLanguage", "CSharpLanguageRecords", "CSharpLanguageSystemTextJson", "GoLanguage",
-    "CJSONLanguage", "CPlusPlusLanguage", "CPlusPlusMultiSourceLanguage", "RustLanguage",
-    "RubyLanguage", "PythonLanguage", "ElmLanguage", "SwiftLanguage",
-    "SwiftSendableObjectiveCSupportLanguage", "TypeScriptLanguage", "TypeScriptZodLanguage",
-    "TypeScriptEffectSchemaLanguage", "JavaScriptLanguage", "KotlinLanguage", "Scala3Language",
-    "Scala3UpickleLanguage", "KotlinJacksonLanguage", "KotlinXLanguage", "DartLanguage",
-    "PikeLanguage", "HaskellLanguage", "ElixirLanguage", "CrystalLanguage",
-].map((k) => languages[k]);
-
-function runsViaSchema(lang: any, s: Input): boolean {
-    const skipped =
-        lang.includeJSON !== undefined
-            ? !lang.includeJSON.includes(s.base)
-            : (lang.skipJSON ?? []).includes(s.base);
-    const diff = lang.diffViaSchema && !lang.skipDiffViaSchema.includes(s.base);
-    return !skipped && (diff || lang.roundtripViaSchema === true);
+const all = [...steps.values()];
+const levels = Math.max(...all.map((s) => s.level)) + 1;
+for (let level = 0; level < levels; level++) {
+    const these = all.filter((s) => s.level === level);
+    await pool(these, runStep);
+    console.error(`* step ${level + 1}: ${these.length} steps, ${mismatches.length} mismatches in all`);
 }
 
-const viaSchema: { lang: any; s: Input; ro: Record<string, string> }[] = [];
-for (const lang of viaSchemaLanguages) {
-    for (const s of inputs) {
-        if (s.dir === "misc" && lang.skipMiscJSON) continue;
-        if (runsViaSchema(lang, s)) viaSchema.push({ lang, s, ro: {} });
-    }
-    for (const qt of lang.quickTestRendererOptions) {
-        const [file, ro] = Array.isArray(qt) ? qt : [undefined, qt];
-        if (file?.endsWith(".schema")) continue;
-        const targets = file !== undefined ? [file] : [1, 2, 3, 4].map((n) => `combinations${n}.json`);
-        for (const s of inputs.filter((i) => targets.includes(i.base))) {
-            if (runsViaSchema(lang, s)) viaSchema.push({ lang, s, ro });
-        }
-    }
+// Only the mismatching steps' outputs stay.
+for (const entry of fs.readdirSync(work)) {
+    if (!keep.has(entry)) fs.rmSync(path.join(work, entry), { recursive: true });
 }
 
-// JSON -> schema, once per sample and top-level name.
-const schemas = new Map<string, string>();
-const pairs = [...new Set(viaSchema.map(({ lang, s }) => `${lang.topLevel}\t${s.path}`))];
-await pool(pairs, async (pair) => {
-    const [topLevel, src] = pair.split("\t");
-    const dir = await step(`schema ${topLevel} ${path.basename(src)}`, {
-        src: [src], lang: "schema", out: "schema.json", topLevel, rendererOptions: {},
-    }, {});
-    const out = path.join(dir, "schema.json");
-    if (fs.existsSync(out)) schemas.set(pair, out);
-});
-console.error(`* JSON -> schema: ${total} steps, ${mismatches.length} mismatches`);
-
-let before = total;
-await pool(viaSchema, async ({ lang, s, ro }) => {
-    const schema = schemas.get(`${lang.topLevel}\t${s.path}`);
-    if (schema === undefined) return;
-    await step(`${lang.name} via schema ${s.dir}/${s.base} ${JSON.stringify(ro)}`, {
-        srcLang: "schema", lang: lang.name, src: ["schema.json"], out: lang.output,
-        topLevel: lang.topLevel, alphabetizeProperties: true,
-        rendererOptions: { ...lang.rendererOptions, ...ro }, ...cliDefaults,
-    }, { "schema.json": schema });
-});
-console.error(`* schema -> language: ${total - before} steps, ${mismatches.length} mismatches in all`);
-
-// schema-json-csharp and json-ts-csharp.
-const cs = languages.CSharpLanguage;
-before = total;
-await pool(inputs.filter((s) => !(cs.skipJSON ?? []).includes(s.base)), async (s) => {
-    const name = `${s.dir}/${s.base}`;
-    const schemaDir = await step(`schema-json-csharp schema ${name}`, {
-        srcLang: "json", lang: "schema", src: [s.path], out: "schema.json", topLevel: "TopLevel",
-        alphabetizeProperties: true, rendererOptions: {}, ...cliDefaults,
-    }, {});
-    const schema = path.join(schemaDir, "schema.json");
-    if (fs.existsSync(schema)) {
-        await step(`schema-json-csharp csharp ${name}`, {
-            srcLang: "schema", lang: "csharp", src: ["schema.json"], out: cs.output, topLevel: "TopLevel",
-            rendererOptions: cs.rendererOptions, ...cliDefaults,
-        }, { "schema.json": schema });
-        await step(`schema-json-csharp schema-from-schema ${name}`, {
-            src: ["schema.json"], srcLang: "schema", lang: "schema", topLevel: "TopLevel",
-            out: "schema-from-schema.json", rendererOptions: {},
-        }, { "schema.json": schema });
-    }
-    const tsDir = await step(`json-ts-csharp ts ${name}`, {
-        srcLang: "json", lang: "ts", src: [s.path], out: "typescript.ts", topLevel: "TopLevel",
-        alphabetizeProperties: true, rendererOptions: { "just-types": "true" }, ...cliDefaults,
-    }, {});
-    const tsFile = path.join(tsDir, "typescript.ts");
-    if (fs.existsSync(tsFile)) {
-        await step(`json-ts-csharp csharp ${name}`, {
-            srcLang: "ts", lang: "csharp", src: ["typescript.ts"], out: cs.output, topLevel: "TopLevel",
-            rendererOptions: cs.rendererOptions, ...cliDefaults,
-        }, { "typescript.ts": tsFile });
-    }
-});
-console.error(`* C# fixtures: ${total - before} steps, ${mismatches.length} mismatches in all`);
-
-console.log(`${total} steps, ${mismatches.length} mismatches`);
-for (const m of mismatches) console.log(m);
+const report = [
+    `${ran} steps, ${mismatches.length} mismatches`,
+    `${bothFailed} steps failed with both CLIs alike`,
+    `${notRun.length} steps not run: the step before failed with both CLIs alike`,
+    ...notRun.sort().map((l) => `  ${l}`),
+    ...mismatches.sort(),
+].join("\n");
+console.log(report);
+if (mismatches.length > 0) fs.writeFileSync(path.join(work, "mismatches.txt"), `${report}\n`);
 process.exit(mismatches.length > 0 ? 1 : 0);

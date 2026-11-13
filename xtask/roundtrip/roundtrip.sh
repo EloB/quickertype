@@ -5,7 +5,7 @@
 #   roundtrip.sh prepare <dir> [--from <quicktype checkout>]
 #   roundtrip.sh run <dir> [--bin <command> | --ts] [--results <file>]
 #                [--quick] [--cpus <n>] <fixture>[,<fixture>...] [-- <sample>...]
-#   roundtrip.sh steps <dir> [--bin <command>] [--jobs <n>]
+#   roundtrip.sh steps <dir> [--bin <command>] [--jobs <n>] [--work <dir>]
 #   roundtrip.sh compare [--fixtures <fixture>[,<fixture>...]]
 #                <ts-results.jsonl> <ours-results.jsonl>
 #   roundtrip.sh summary <results.jsonl>...
@@ -172,11 +172,12 @@ cmd_run() {
 # The fixtures' later steps as a generation-only differential against the
 # TypeScript CLI (later-steps.mts). Needs no language toolchains.
 cmd_steps() {
-    local dir="" bin="" jobs=4
+    local dir="" bin="" jobs=4 base="$repo/target/roundtrip-steps"
     while [ $# -gt 0 ]; do
         case "$1" in
             --bin) bin="$2"; shift 2 ;;
             --jobs) positive_integer --jobs "$2"; jobs="$2"; shift 2 ;;
+            --work) base="$2"; shift 2 ;;
             -*) die "unknown option $1" ;;
             *) [ -z "$dir" ] || die "one directory only"; dir="$1"; shift ;;
         esac
@@ -189,8 +190,13 @@ cmd_steps() {
         (cd "$repo" && cargo build --release --quiet -p quickertype)
         bin="$repo/target/release/quicktype"
     fi
+    # The steps' outputs, in a directory of its own under $base: removed
+    # when every step matches, kept (only the mismatching steps) otherwise.
     local work status=0
-    work="$(mktemp -d)"
+    mkdir -p "$base"
+    work="$(mktemp -d "$(cd "$base" && pwd)/steps.XXXXXX")"
+    # Upstream's full selection: the fixtures' getSamples reads these.
+    unset QUICKTEST ONLY_OUTPUT OUTPUT_SNAPSHOT_DIR
     "$dir/node_modules/.bin/tsx" "$here/later-steps.mts" "$dir" "$bin" "$work" "$jobs" || status=$?
     if [ "$status" -eq 0 ]; then
         rm -rf "$work"

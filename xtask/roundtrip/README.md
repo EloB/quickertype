@@ -86,8 +86,15 @@ later ones (JSON to JSON Schema and on to the language for
 schema for `schema-json-csharp`, JSON to TypeScript to C# for
 `json-ts-csharp`) are checked only when the fixture runs. `steps` runs them
 all with both CLIs and compares every written file, for every language,
-without its toolchain (about 7,000 steps; `QUICKTYPE_TSC` as below for the
-TypeScript input):
+without its toolchain (`QUICKTYPE_TSC` as below for the TypeScript input).
+The steps come from the copy's `allFixtures`: each JSON fixture's own
+`getSamples` and `shouldSkipTest` (all inputs, as without `QUICKTEST`), and
+the language's `diffViaSchema`, `skipDiffViaSchema`, `roundtripViaSchema`
+and `runCommand`, as `JSONFixture.test` uses them; 6,917 steps at the
+reference commit. Each step's input is the TypeScript CLI's output of the
+step before. The outputs go to a new directory under `--work` (default
+`target/roundtrip-steps`), which is removed when every step matches and
+otherwise keeps the mismatching steps and `mismatches.txt`:
 
 ```sh
 xtask/roundtrip/roundtrip.sh steps ../quicktype-roundtrip --jobs 8
