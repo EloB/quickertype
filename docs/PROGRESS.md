@@ -4,6 +4,28 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- Merged `feat/wasm-js-api` (Phase 6): the npm `quicktype-core` package is
+  quicktype's own TypeScript API with a WASM engine underneath (Node and
+  browsers). Differential suite against npm quicktype-core: 18,742
+  scenarios, 0 different. Runs the WASM engine can't do exactly (C until it
+  lands, lone surrogates, circular store documents, custom languages) fall
+  back to the TypeScript engine automatically.
+
+- **Parity 10,796 / 11,177 (96.6%), 0 regressions.** Merged Go + JSON
+  Schema output, GraphQL input (hand port of graphql-js 16's parser;
+  228 input cases, 2,510 parser vectors, 38 introspection runs identical),
+  and a recursion-guard sweep (14 languages used to abort on cyclic
+  schemas; all now return the reference's RangeError). Every input type and
+  every output language except C is on `main`; the remaining 381 cases all
+  need the C renderer (in progress).
+- Phase 7 (benchmarks + hot paths) started.
+- JS API after the code review fixes and merging Go/JSON Schema/GraphQL:
+  differential suite 18,742 scenarios, 18,741 identical (18,025 on
+  WebAssembly, 625 on the TypeScript fallback (C renderer, lone surrogates
+  and circular store documents), 1 redone after an engine stack overflow,
+  90 on TypeScript by eligibility), 1 known gap, 0 different. Engine:
+  4.9 MiB.
+
 - **Parity 10,174 / 11,177 (91.0%), 0 regressions.** Merged language wave
   2 so far: Crystal, C++; Swift, Objective-C, Dart; Ruby, Elixir, Python
   (each reviewed; 100% of render cases and every end-to-end case except

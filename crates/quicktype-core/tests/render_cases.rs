@@ -75,9 +75,9 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     if names != expected_names {
         return Err(format!("files {names:?}, expected {expected_names:?}"));
     }
-    // Several files printed to stdout (no `--out`): compare them joined the
-    // way the CLI's `writeOutput` prints them, with the stdout golden
-    // (`stdout`) or the recorded stdout (`stdoutText`).
+    // Several files (or console lines) printed to stdout (no `--out`):
+    // compare them joined the way the CLI prints them, with the stdout
+    // golden (`stdout`) or the recorded stdout (`stdoutText`).
     let stdout = match (fixture["stdout"].as_str(), fixture["stdoutText"].as_str()) {
         (Some(path), _) => Some(
             fs::read_to_string(golden_dir.join(path))

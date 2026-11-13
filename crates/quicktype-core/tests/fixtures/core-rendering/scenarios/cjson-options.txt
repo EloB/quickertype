@@ -1,0 +1,24 @@
+# The cJSON renderer's options in combinations the golden corpus lacks, on
+# JSON samples (optional properties, a map, a recursive class, unions):
+# multi-source with typedefs, header/source pairs, naming styles, integer
+# sizes, and output file names (no `.h`, several dots, comment
+# delimiters, a trailing backslash, the header and source both named
+# `out`, which warns) and unknown option values.
+input jsonsamples TopLevel ["{\"name\": \"x\", \"count\": 1, \"ratio\": 1.5, \"flag\": true, \"tags\": [\"a\"], \"nested\": {\"deepValue\": null, \"items\": [{\"id\": 1}, {\"id\": \"two\"}]}, \"maybe\": null, \"choice\": [1, \"a\", {\"z\": 1}], \"byKey\": {\"k1\": {\"v\": 1}, \"k2\": {\"v\": 2}, \"k3\": {\"v\": 3}, \"k4\": {\"v\": 4}, \"k5\": {\"v\": 5}, \"k6\": {\"v\": 6}}, \"tree\": {\"label\": \"a\", \"children\": [{\"label\": \"b\", \"children\": []}]}, \"big\": 3000000000}", "{\"name\": \"y\", \"ratio\": 2, \"flag\": false, \"tags\": [], \"nested\": {\"deepValue\": \"v\", \"items\": []}, \"maybe\": 3, \"choice\": [], \"byKey\": {}, \"extra\": [[1.5, null]]}"]
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}
+render cjson {"filename": "TopLevel.h", "alphabetize": true}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source", "typedef-alias": "add-typedef"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source", "header-only": false, "typedef-alias": "add-typedef", "print-style": "print-unformatted", "hashtable-size": "16"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"header-only": false, "print-style": "print-unformatted", "integer-size": "int8_t"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"integer-size": "int16_t", "hashtable-size": ""}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "upper-underscore-case", "member-style": "camel-case", "enumerator-style": "pascal-case-upper-acronyms"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "camel-case-upper-acronyms", "member-style": "pascal-case", "enumerator-style": "underscore-case", "source-style": "multi-source"}}
+render cjson {"filename": "my.house.h", "rendererOptions": {"header-only": false}}
+render cjson {"filename": "out", "rendererOptions": {"header-only": false}}
+render cjson {"filename": "dir/a*/b-c.v2.h", "rendererOptions": {"header-only": false}}
+render cjson {"filename": "Name\\"}
+render cjson {"rendererOptions": {"integer-size": "int128_t"}}
+render cjson {"rendererOptions": {"source-style": "both"}}
+

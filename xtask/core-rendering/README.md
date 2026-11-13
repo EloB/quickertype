@@ -44,7 +44,10 @@ case's `dirs`, which the recorder creates first. When such a render goes to
 stdout, the CLI prints the files under `// <name>` headers; the fixture then
 names the stdout golden once (`stdout`, with `quiet` for `--quiet`, which
 drops the separators) and the test joins the rendered files exactly like
-`writeOutput`. `cliCases` are CLI runs the corpus lacks (`cli-extra/*`, e.g.
+`writeOutput`. Lines the render prints with `console.log` (`finishFile`'s
+`[WARNING] Tried to emit file ... more than once`, e.g. C (cJSON)'s header
+and source both named `stdout`) are recorded as `console`; the test checks
+them and, for stdout, prints them before the files, as the CLI does. `cliCases` are CLI runs the corpus lacks (`cli-extra/*`, e.g.
 quiet multi-file stdout), recorded through the real CLI with their stdout
 inline (`stdoutText`). A case whose render differs from its golden, or that
 throws, is reported and skipped (the exit code is 1); the others are still

@@ -1,0 +1,47 @@
+# The cJSON renderer on top-levels of every kind: a top-level that is not a
+# named type gets a structure of its own (with a `value`), in the single
+# header and in a file of its own with --source-style multi-source.
+# Arrays of ints use the `deleteType === "cJSON_free"` branch, arrays of
+# null the 0xDEADBEAF typo; nested arrays and maps are not supported.
+input schema TopArrStr {"type": "array", "items": {"type": "string"}}
+input schema TopArrInt {"type": "array", "items": {"type": "integer"}}
+input schema TopArrBool {"type": "array", "items": {"type": "boolean"}}
+input schema TopArrDouble {"type": "array", "items": {"type": "number"}}
+input schema TopArrNullInt {"type": "array", "items": {"type": ["integer", "null"]}}
+input schema TopArrNullStr {"type": "array", "items": {"type": ["string", "null"]}}
+input schema TopArrObj {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "integer"}}, "required": ["id"]}}
+input schema TopArrNullObj {"type": "array", "items": {"anyOf": [{"type": "object", "properties": {"id": {"type": "integer"}}, "required": ["id"]}, {"type": "null"}]}}
+input schema TopArrArr {"type": "array", "items": {"type": "array", "items": {"type": "integer"}}}
+input schema TopArrMap {"type": "array", "items": {"type": "object", "additionalProperties": {"type": "integer"}}}
+input schema TopArrNull {"type": "array", "items": {"type": "null"}}
+input schema TopArrAny {"type": "array", "items": {}}
+input schema TopArrUnion {"type": "array", "items": {"type": ["integer", "string"]}}
+input schema TopArrEnum {"type": "array", "items": {"enum": ["one", "two"]}}
+input schema TopMapStr {"type": "object", "additionalProperties": {"type": "string"}}
+input schema TopMapInt {"type": "object", "additionalProperties": {"type": "integer"}}
+input schema TopMapObj {"type": "object", "additionalProperties": {"type": "object", "properties": {"id": {"type": "integer"}}, "required": ["id"]}}
+input schema TopMapNullStr {"type": "object", "additionalProperties": {"type": ["string", "null"]}}
+input schema TopMapNullInt {"type": "object", "additionalProperties": {"type": ["integer", "null"]}}
+input schema TopMapNull {"type": "object", "additionalProperties": {"type": "null"}}
+input schema TopMapArr {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "integer"}}}
+input schema TopMapMap {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer"}}}
+input schema TopMapAny {"type": "object", "additionalProperties": {}}
+input schema TopMapUnion {"type": "object", "additionalProperties": {"type": ["boolean", "string"]}}
+input schema TopStr {"type": "string"}
+input schema TopInt {"type": "integer"}
+input schema TopBool {"type": "boolean"}
+input schema TopDouble {"type": "number"}
+input schema TopNull {"type": "null"}
+input schema TopAny {}
+input schema TopNullable {"type": ["string", "null"]}
+input schema TopNullableArr {"type": ["array", "null"], "items": {"type": "string"}}
+input schema TopNullableMap {"anyOf": [{"type": "object", "additionalProperties": {"type": "string"}}, {"type": "null"}]}
+input schema TopUnion {"type": ["integer", "string"]}
+input schema TopEnum {"enum": ["a", "b"]}
+input schema TopObj {"type": "object", "properties": {"id": {"type": "integer"}}, "required": ["id"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"header-only": false, "typedef-alias": "add-typedef"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source", "header-only": false, "print-style": "print-unformatted"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source", "typedef-alias": "add-typedef", "type-style": "underscore-case"}}

@@ -66,6 +66,16 @@ must pass):
 cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"
 ```
 
+The npm package (`npm/quicktype-core`, see its README) needs Node 20+ and
+`wasm-bindgen-cli` 0.2.114:
+
+```sh
+cd npm/quicktype-core && npm install
+npm run build                   # the WebAssembly engine + quicktype's TypeScript API
+npm test                        # package and engine tests
+npm run test:differential       # API calls against the reference quicktype-core vs ours
+```
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and
 [docs/PARITY.md](docs/PARITY.md) for the rules that keep output identical.
 

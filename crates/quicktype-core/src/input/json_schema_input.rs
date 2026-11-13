@@ -2088,6 +2088,13 @@ impl JsonSchemaInput {
         self.top_levels.insert(name, r);
     }
 
+    /// `_topLevels`: the top-levels added with
+    /// [`add_top_level`](Self::add_top_level) and by
+    /// [`add_types`](Self::add_types), in insertion order.
+    pub fn top_levels(&self) -> impl Iterator<Item = (&str, &Ref)> {
+        self.top_levels.iter().map(|(name, r)| (name.as_str(), r))
+    }
+
     /// `addTypes(ctx, typeBuilder)`: resolves every source and builds the
     /// types of its top-levels with `type_builder`.
     ///
@@ -2140,8 +2147,9 @@ impl JsonSchemaInput {
             canonizer,
         };
 
+        // `this.addTopLevel(…)` as each source resolves, so that a failure
+        // leaves the top-levels found so far, as in TypeScript.
         let single_source = self.schema_sources.len() == 1;
-        let mut top_levels = std::mem::take(&mut self.top_levels);
         for (normalized_uri, source) in &self.schema_sources {
             match refs_in_schema_for_uri(&mut resolver, normalized_uri).await? {
                 SchemaRefs::Single(name, r) => {
@@ -2150,16 +2158,15 @@ impl JsonSchemaInput {
                     } else {
                         name
                     };
-                    top_levels.insert(name, r);
+                    self.top_levels.insert(name, r);
                 }
                 SchemaRefs::Many(refs) => {
                     for (name, r) in refs {
-                        top_levels.insert(name, r);
+                        self.top_levels.insert(name, r);
                     }
                 }
             }
         }
-        self.top_levels = top_levels;
 
         let mut adder = TypeAdder {
             resolver,
@@ -2241,6 +2248,26 @@ impl JsonSchemaInput {
             self.schema_sources
                 .push((normalized, schema_source.clone()));
         }
+        Ok(())
+    }
+
+    /// Adds a source whose `addSource` already ran elsewhere: the
+    /// JavaScript facade keeps TypeScript's own `JSONSchemaInput` (which
+    /// normalizes the URIs and serves schema text through its own store)
+    /// and hands over each `[normalizedURI, source]` pair of its
+    /// `_schemaSources`. `normalized_uri` is the URI's `toString()`; it is
+    /// parsed, not normalized again. The source's `schema` text is not
+    /// stored: the store that came with [`JsonSchemaInput::new`] serves it.
+    pub fn add_normalized_source(
+        &mut self,
+        normalized_uri: &str,
+        schema_source: JsonSchemaSourceData,
+    ) -> Result<()> {
+        if !schema_source.is_converted {
+            self.need_ir = true;
+        }
+        let uri = Uri::parse(normalized_uri).map_err(uri_error)?;
+        self.schema_sources.push((uri, schema_source));
         Ok(())
     }
 

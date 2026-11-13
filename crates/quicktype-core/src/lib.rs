@@ -203,5 +203,7 @@ pub mod internal {
     pub use crate::input::inputs::CompressedTopLevel;
     pub use crate::input::io::{LocalBoxFuture, block_on};
     pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
-    pub use crate::support::support::capture_console;
+    pub use crate::source::Source;
+    pub use crate::support::support::{capture_console, set_console_error_sink};
+    pub use crate::target_language::has_renderer;
 }

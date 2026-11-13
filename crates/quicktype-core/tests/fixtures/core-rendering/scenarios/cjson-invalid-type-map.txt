@@ -1,0 +1,5 @@
+# `panic("Invalid type")` for a nullable map of arrays.
+input schema TopLevel {"type": "object", "properties": {"x": {"anyOf": [{"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}, {"type": "null"}]}}, "required": ["x"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}

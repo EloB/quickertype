@@ -19,6 +19,15 @@ ryu.workspace = true
 saphyr-parser.workspace = true
 stacker.workspace = true
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+
+[features]
+# On wasm32, compute `**` with the JavaScript host's `Math.pow` (exactly
+# what the TypeScript quicktype computes there). Needs a JavaScript host
+# with wasm-bindgen glue; see `number::pow`.
+js-host-math = ["dep:wasm-bindgen"]
+
 [dev-dependencies]
 serde_json.workspace = true
 

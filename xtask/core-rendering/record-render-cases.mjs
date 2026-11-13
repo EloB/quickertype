@@ -347,9 +347,10 @@ async function recordGolden(id) {
             return "mismatch: stdout differs from golden";
         }
     }
-    // Several files printed to stdout: the fixture names the stdout golden
-    // once (`stdout`) and the test joins the rendered files like the CLI.
-    const multiFileStdout = step.files.length === 0 && rec.files.length > 1;
+    // Several files (or console lines) printed to stdout: the fixture names
+    // the stdout golden once (`stdout`) and the test joins the console lines
+    // and the rendered files like the CLI.
+    const multiFileStdout = step.files.length === 0 && (rec.files.length > 1 || rec.console.length > 0);
     const fixture = {
         id,
         graph: rec.graph,

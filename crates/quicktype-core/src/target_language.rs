@@ -68,7 +68,8 @@ pub trait TargetLanguage: Sync {
     ///
     /// Implementations construct their renderer and hand it to
     /// [`render_with`](crate::convenience_renderer::render_with). The
-    /// default reports that the language's renderer is not ported yet,
+    /// default reports that the language's renderer is not ported yet
+    /// ([`QuickTypeError::unsupported`](crate::messages::QuickTypeError::unsupported)),
     /// after resolving the options like every `makeRenderer` does first
     /// (`getOptionValues`), so an unknown option value is reported as in
     /// TypeScript.
@@ -85,10 +86,10 @@ pub trait TargetLanguage: Sync {
             alphabetize_properties,
         );
         crate::renderer_options::get_option_values(self.options(), renderer_options)?;
-        crate::support::support::panic(format!(
-            "The {} renderer is not ported yet",
+        Err(crate::messages::QuickTypeError::unsupported(format!(
+            "{} renderer",
             self.display_name()
-        ))
+        )))
     }
 
     /// TS `renderGraphAndSerialize(typeGraph, givenOutputFilename,
@@ -225,6 +226,74 @@ impl std::fmt::Debug for dyn TargetLanguage {
     }
 }
 
+/// Whether this port has `lang`'s renderer, i.e. whether rendering does not
+/// fail with [`QuickTypeError::unsupported`](crate::messages::QuickTypeError::unsupported).
+/// Decided by rendering an empty type graph, so that a front end with
+/// another engine at hand can choose before a run has any side effects.
+pub fn has_renderer(lang: &dyn TargetLanguage) -> bool {
+    let graph = crate::ty::type_builder::TypeBuilder::new(
+        StringTypeMapping::new(),
+        false,
+        false,
+        false,
+        false,
+    )
+    .and_then(|builder| builder.finish());
+    let Ok(graph) = graph else {
+        return false;
+    };
+    match lang.render_graph_and_serialize(
+        &graph,
+        "stdout",
+        false,
+        None,
+        &RendererOptions::new(),
+        None,
+    ) {
+        Err(e) => e.unsupported_feature().is_none(),
+        Ok(_) => true,
+    }
+}
+
 /// `MultiFileRenderResult`: the serialized files by file name, in the order
 /// the renderer finished them.
 pub type MultiFileRenderResult = indexmap::IndexMap<String, crate::source::SerializedRenderResult>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::input::inputs::{InputData, JsonSourceData, json_input_for_target_language};
+    use crate::language::all::default_target_languages;
+    use crate::run::{Options, quicktype_multi_file_sync};
+
+    /// The probe predicts whether a real run reports the renderer as
+    /// unsupported, for every language.
+    #[test]
+    fn has_renderer_predicts_unsupported_runs() {
+        for &lang in default_target_languages() {
+            let mut input = json_input_for_target_language(lang, false, &RendererOptions::new());
+            input
+                .add_source_sync(JsonSourceData {
+                    name: "TopLevel".to_owned(),
+                    samples: vec![r#"{"a": [1, "x"], "b": {"c": null}}"#.into()],
+                    description: None,
+                })
+                .unwrap();
+            let mut input_data = InputData::new();
+            input_data.add_input(input);
+            let result = quicktype_multi_file_sync(Options::new(lang, input_data));
+            let unsupported = matches!(&result, Err(e) if e.unsupported_feature().is_some());
+            assert_eq!(has_renderer(lang), !unsupported, "{}", lang.name());
+            if let (true, Err(e)) = (unsupported, &result) {
+                assert_eq!(
+                    e.user_message(),
+                    format!(
+                        "Internal error: The {} renderer is not ported yet",
+                        lang.display_name()
+                    )
+                );
+                assert_eq!(e.message_name(), Some("InternalError"));
+            }
+        }
+    }
+}

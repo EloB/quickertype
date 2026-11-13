@@ -223,7 +223,7 @@ fn default_clock() -> Clock {
 
 #[cfg(target_arch = "wasm32")]
 fn default_clock() -> Clock {
-    // TODO(wasm): the facade passes `performance.now`.
+    // The WebAssembly bindings pass `performance.now` as the clock.
     Rc::new(|| 0.0)
 }
 
