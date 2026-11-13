@@ -16,7 +16,8 @@
 //! them; to model a JavaScript object, insert keys with
 //! [`insert_js_property`], which reproduces JavaScript's own-property order.
 
-use indexmap::IndexMap;
+/// The map type of [`JsonValue::Object`], re-exported for building values.
+pub use indexmap::IndexMap;
 
 use crate::number;
 
