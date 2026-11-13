@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--src-lang",
+        "json",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "{INPUTS}/graphql/github1.graphql"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+// Example usage:
+//
+// import { MyShape } from ./myShape.js;
+//
+// class MyComponent extends React.Component {
+//   //
+// }
+//
+// MyComponent.propTypes = {
+//   input: MyShape
+// };
+
+import PropTypes from "prop-types";
+
+let _Github1;
+let _Data;
+let _User;
+let _Error;
+_User = PropTypes.shape({
+    "login": PropTypes.oneOfType([PropTypes.string]).isRequired,
+    "realName": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOfType([PropTypes.oneOf([null]), PropTypes.string])])(props, name, ...args),
+});
+_Data = PropTypes.shape({
+    "viewer": _User,
+});
+_Error = PropTypes.shape({
+    "message": PropTypes.oneOfType([PropTypes.string]).isRequired,
+});
+_Github1 = PropTypes.shape({
+    "data": (props, name, ...args) => props[name] === undefined ? new Error("Expected required property") : PropTypes.oneOfType([PropTypes.oneOfType([_Data, PropTypes.oneOf([null])])])(props, name, ...args),
+    "errors": PropTypes.oneOfType([PropTypes.arrayOf(_Error), PropTypes.oneOf([null])]),
+});
+
+export const Github1 = _Github1;

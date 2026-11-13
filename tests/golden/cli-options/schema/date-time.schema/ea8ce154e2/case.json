@@ -1,0 +1,18 @@
+{
+  "fixture": "cli-options",
+  "input": "schema/date-time.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "java",
+        "--lombok",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/date-time.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

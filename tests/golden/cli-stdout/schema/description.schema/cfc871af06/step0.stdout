@@ -1,0 +1,197 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let description = try Description(json)
+
+import Foundation
+
+/// The top-level class.
+/// Its description has two lines.
+// MARK: - Description
+struct Description: Codable {
+    /// A pretty boolean
+    let bar: Bool?
+    /// An enumeration
+    let descriptionEnum: Enum
+    let foo: Double?
+    let objectOrString: ObjectOrStringUnion
+    /// Either a number or a string
+    let union: Union
+
+    enum CodingKeys: String, CodingKey {
+        case bar = "bar"
+        case descriptionEnum = "enum"
+        case foo = "foo"
+        case objectOrString = "object-or-string"
+        case union = "union"
+    }
+}
+
+// MARK: Description convenience initializers and mutators
+
+extension Description {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(Description.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        bar: Bool?? = nil,
+        descriptionEnum: Enum? = nil,
+        foo: Double?? = nil,
+        objectOrString: ObjectOrStringUnion? = nil,
+        union: Union? = nil
+    ) -> Description {
+        return Description(
+            bar: bar ?? self.bar,
+            descriptionEnum: descriptionEnum ?? self.descriptionEnum,
+            foo: foo ?? self.foo,
+            objectOrString: objectOrString ?? self.objectOrString,
+            union: union ?? self.union
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// An enumeration
+enum Enum: String, Codable {
+    case foo = "foo"
+    case bar = "bar"
+}
+
+enum ObjectOrStringUnion: Codable {
+    case objectOrStringClass(ObjectOrStringClass)
+    case string(String)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(ObjectOrStringClass.self) {
+            self = .objectOrStringClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(ObjectOrStringUnion.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for ObjectOrStringUnion"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .objectOrStringClass(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - ObjectOrStringClass
+struct ObjectOrStringClass: Codable {
+    /// This must not get lost
+    let prop: Double
+
+    enum CodingKeys: String, CodingKey {
+        case prop = "prop"
+    }
+}
+
+// MARK: ObjectOrStringClass convenience initializers and mutators
+
+extension ObjectOrStringClass {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(ObjectOrStringClass.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        prop: Double? = nil
+    ) -> ObjectOrStringClass {
+        return ObjectOrStringClass(
+            prop: prop ?? self.prop
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+/// Either a number or a string
+enum Union: Codable {
+    case double(Double)
+    case string(String)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Double.self) {
+            self = .double(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(Union.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for Union"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .double(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - Helper functions for creating encoders and decoders
+
+func newJSONDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        decoder.dateDecodingStrategy = .iso8601
+    }
+    return decoder
+}
+
+func newJSONEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        encoder.dateEncodingStrategy = .iso8601
+    }
+    return encoder
+}

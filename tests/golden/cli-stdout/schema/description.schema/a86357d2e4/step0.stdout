@@ -1,0 +1,92 @@
+// To parse this JSON data, do
+//
+//     final description = descriptionFromJson(jsonString);
+
+import 'dart:convert';
+
+Description descriptionFromJson(String str) => Description.fromJson(json.decode(str));
+
+String descriptionToJson(Description data) => json.encode(data.toJson());
+
+
+///The top-level class.
+///Its description has two lines.
+class Description {
+    
+    ///A pretty boolean
+    final bool? bar;
+    
+    ///An enumeration
+    final Enum descriptionEnum;
+    final double? foo;
+    final dynamic objectOrString;
+    
+    ///Either a number or a string
+    final dynamic union;
+
+    Description({
+        this.bar,
+        required this.descriptionEnum,
+        this.foo,
+        required this.objectOrString,
+        required this.union,
+    });
+
+    factory Description.fromJson(Map<String, dynamic> json) => Description(
+        bar: json["bar"],
+        descriptionEnum: enumValues.map[json["enum"]]!,
+        foo: json["foo"]?.toDouble(),
+        objectOrString: json["object-or-string"],
+        union: json["union"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "bar": bar,
+        "enum": enumValues.reverse[descriptionEnum],
+        "foo": foo,
+        "object-or-string": objectOrString,
+        "union": union,
+    };
+}
+
+
+///An enumeration
+enum Enum {
+    FOO,
+    BAR
+}
+
+final enumValues = EnumValues({
+    "foo": Enum.FOO,
+    "bar": Enum.BAR
+});
+
+class ObjectOrStringClass {
+    
+    ///This must not get lost
+    final double prop;
+
+    ObjectOrStringClass({
+        required this.prop,
+    });
+
+    factory ObjectOrStringClass.fromJson(Map<String, dynamic> json) => ObjectOrStringClass(
+        prop: json["prop"]?.toDouble(),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "prop": prop,
+    };
+}
+
+class EnumValues<T> {
+    Map<String, T> map;
+    late Map<T, String> reverseMap;
+
+    EnumValues(this.map);
+
+    Map<T, String> get reverse {
+            reverseMap = map.map((k, v) => MapEntry(v, k));
+            return reverseMap;
+    }
+}

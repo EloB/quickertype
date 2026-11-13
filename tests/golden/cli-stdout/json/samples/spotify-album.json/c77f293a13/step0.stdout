@@ -1,0 +1,329 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/SpotifyAlbum",
+    "definitions": {
+        "SpotifyAlbum": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "album_type": {
+                    "type": "string"
+                },
+                "artists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Artist"
+                    }
+                },
+                "available_markets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "copyrights": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Copyright"
+                    }
+                },
+                "external_ids": {
+                    "$ref": "#/definitions/ExternalIDS"
+                },
+                "external_urls": {
+                    "$ref": "#/definitions/ExternalUrls"
+                },
+                "genres": {
+                    "type": "array",
+                    "items": {}
+                },
+                "href": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Image"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "release_date": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "release_date_precision": {
+                    "type": "string"
+                },
+                "tracks": {
+                    "$ref": "#/definitions/Tracks"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "album_type",
+                "artists",
+                "available_markets",
+                "copyrights",
+                "external_ids",
+                "external_urls",
+                "genres",
+                "href",
+                "id",
+                "images",
+                "name",
+                "popularity",
+                "release_date",
+                "release_date_precision",
+                "tracks",
+                "type",
+                "uri"
+            ],
+            "title": "SpotifyAlbum"
+        },
+        "Artist": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "external_urls": {
+                    "$ref": "#/definitions/ExternalUrls"
+                },
+                "href": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "external_urls",
+                "href",
+                "id",
+                "name",
+                "type",
+                "uri"
+            ],
+            "title": "Artist"
+        },
+        "ExternalUrls": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "spotify": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                }
+            },
+            "required": [
+                "spotify"
+            ],
+            "title": "ExternalUrls"
+        },
+        "Copyright": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "text",
+                "type"
+            ],
+            "title": "Copyright"
+        },
+        "ExternalIDS": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "upc": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "upc"
+            ],
+            "title": "ExternalIDS"
+        },
+        "Image": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "height": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "width": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "height",
+                "url",
+                "width"
+            ],
+            "title": "Image"
+        },
+        "Tracks": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "href": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Item"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "next": {
+                    "type": "null"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "previous": {
+                    "type": "null"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "href",
+                "items",
+                "limit",
+                "next",
+                "offset",
+                "previous",
+                "total"
+            ],
+            "title": "Tracks"
+        },
+        "Item": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "artists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Artist"
+                    }
+                },
+                "available_markets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "disc_number": {
+                    "type": "integer"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "explicit": {
+                    "type": "boolean"
+                },
+                "external_urls": {
+                    "$ref": "#/definitions/ExternalUrls"
+                },
+                "href": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "preview_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "qt-uri-protocols": [
+                        "https"
+                    ]
+                },
+                "track_number": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "artists",
+                "available_markets",
+                "disc_number",
+                "duration_ms",
+                "explicit",
+                "external_urls",
+                "href",
+                "id",
+                "name",
+                "preview_url",
+                "track_number",
+                "type",
+                "uri"
+            ],
+            "title": "Item"
+        }
+    }
+}

@@ -1,0 +1,25 @@
+// @flow
+
+export type DateTime = {
+    "complex-union-array":     Array<Date | ComplexUnionArrayEnum | number>;
+    date:                      Date;
+    "date-time":               Date;
+    "local-date-class"?:       LocalDate;
+    "offset-date-time-class"?: OffsetDateTime;
+    "offset-time-class"?:      OffsetTime;
+    time:                      string;
+    "union-array":             string[];
+};
+
+export type ComplexUnionArrayEnum =
+      "foo"
+    | "bar";
+
+export type LocalDate = {
+};
+
+export type OffsetDateTime = {
+};
+
+export type OffsetTime = {
+};

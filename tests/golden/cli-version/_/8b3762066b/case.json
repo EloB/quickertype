@@ -1,0 +1,14 @@
+{
+  "fixture": "cli-version",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--version",
+        "--help"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

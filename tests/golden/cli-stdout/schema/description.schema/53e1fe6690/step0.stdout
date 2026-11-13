@@ -1,0 +1,21 @@
+import * as S from "effect/Schema";
+
+// An enumeration
+
+export const Enum = S.Literal(
+    "foo",
+    "bar",
+);
+export type Enum = S.Schema.Type<typeof Enum>;
+
+export class ObjectOrStringClass extends S.Class<ObjectOrStringClass>("ObjectOrStringClass")({
+    "prop": S.Number,
+}) {}
+
+export class Description extends S.Class<Description>("Description")({
+    "bar": S.optional(S.Boolean),
+    "enum": Enum,
+    "foo": S.optional(S.Number),
+    "object-or-string": S.Union(S.String, ObjectOrStringClass),
+    "union": S.Union(S.Number, S.String),
+}) {}

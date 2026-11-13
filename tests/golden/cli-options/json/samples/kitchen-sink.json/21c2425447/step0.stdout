@@ -1,0 +1,154 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module MyModule
+    ( KitchenSink (..)
+    , DifferentThingClass (..)
+    , PersonElement (..)
+    , PurplePerson (..)
+    , DifferentThingElement (..)
+    , IntOrString (..)
+    , decodeTopLevel
+    ) where
+
+import Data.Aeson
+import Data.Aeson.Types (emptyObject)
+import Data.ByteString.Lazy (ByteString)
+import Data.HashMap.Strict (HashMap)
+import Data.Text (Text)
+
+data KitchenSink = KitchenSink
+    { stringValueKitchenSink :: Text
+    , dateValueKitchenSink :: Text
+    , uuidValueKitchenSink :: Text
+    , nameWithSpacesKitchenSink :: Maybe Text
+    , doubleValueKitchenSink :: Double
+    , intValueKitchenSink :: Int
+    , booleanValueKitchenSink :: Bool
+    , nullValueKitchenSink :: Maybe Text
+    , tuplesKitchenSink :: [([IntOrString])]
+    , personKitchenSink :: PurplePerson
+    , peopleKitchenSink :: [PersonElement]
+    , differentThingsKitchenSink :: [DifferentThingElement]
+    , mapValueKitchenSink :: HashMap Text (Maybe Int)
+    , nullableMapValueKitchenSink :: HashMap Text (Maybe Int)
+    } deriving (Show)
+
+data DifferentThingElement
+    = DifferentThingClassInDifferentThingElement DifferentThingClass
+    | IntegerInDifferentThingElement Int
+    | StringInDifferentThingElement Text
+    deriving (Show)
+
+data DifferentThingClass = DifferentThingClass
+    { nameDifferentThingClass :: Text
+    } deriving (Show)
+
+data PersonElement = PersonElement
+    { namePersonElement :: Text
+    , intOrStringPersonElement :: IntOrString
+    , optionalValuePersonElement :: Maybe Bool
+    } deriving (Show)
+
+data IntOrString
+    = IntegerInIntOrString Int
+    | StringInIntOrString Text
+    deriving (Show)
+
+data PurplePerson = PurplePerson
+    { namePurplePerson :: Text
+    , intOrStringPurplePerson :: Int
+    } deriving (Show)
+
+decodeTopLevel :: ByteString -> Maybe KitchenSink
+decodeTopLevel = decode
+
+instance ToJSON KitchenSink where
+    toJSON (KitchenSink stringValueKitchenSink dateValueKitchenSink uuidValueKitchenSink nameWithSpacesKitchenSink doubleValueKitchenSink intValueKitchenSink booleanValueKitchenSink nullValueKitchenSink tuplesKitchenSink personKitchenSink peopleKitchenSink differentThingsKitchenSink mapValueKitchenSink nullableMapValueKitchenSink) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "stringValue" .= stringValueKitchenSink
+        , Just $ "dateValue" .= dateValueKitchenSink
+        , Just $ "uuidValue" .= uuidValueKitchenSink
+        , Just $ "name with spaces" .= nameWithSpacesKitchenSink
+        , Just $ "doubleValue" .= doubleValueKitchenSink
+        , Just $ "intValue" .= intValueKitchenSink
+        , Just $ "booleanValue" .= booleanValueKitchenSink
+        , Just $ "nullValue" .= nullValueKitchenSink
+        , Just $ "tuples" .= tuplesKitchenSink
+        , Just $ "person" .= personKitchenSink
+        , Just $ "people" .= peopleKitchenSink
+        , Just $ "differentThings" .= differentThingsKitchenSink
+        , Just $ "mapValue" .= mapValueKitchenSink
+        , Just $ "nullableMapValue" .= nullableMapValueKitchenSink
+        ]
+
+instance FromJSON KitchenSink where
+    parseJSON (Object v) = KitchenSink
+        <$> v .: "stringValue"
+        <*> v .: "dateValue"
+        <*> v .: "uuidValue"
+        <*> v .: "name with spaces"
+        <*> v .: "doubleValue"
+        <*> v .: "intValue"
+        <*> v .: "booleanValue"
+        <*> v .: "nullValue"
+        <*> v .: "tuples"
+        <*> v .: "person"
+        <*> v .: "people"
+        <*> v .: "differentThings"
+        <*> v .: "mapValue"
+        <*> v .: "nullableMapValue"
+
+instance ToJSON DifferentThingElement where
+    toJSON (DifferentThingClassInDifferentThingElement x) = toJSON x
+    toJSON (IntegerInDifferentThingElement x) = toJSON x
+    toJSON (StringInDifferentThingElement x) = toJSON x
+
+instance FromJSON DifferentThingElement where
+    parseJSON xs@(Object _) = (fmap DifferentThingClassInDifferentThingElement . parseJSON) xs
+    parseJSON xs@(Number _) = (fmap IntegerInDifferentThingElement . parseJSON) xs
+    parseJSON xs@(String _) = (fmap StringInDifferentThingElement . parseJSON) xs
+
+instance ToJSON DifferentThingClass where
+    toJSON (DifferentThingClass nameDifferentThingClass) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "name" .= nameDifferentThingClass
+        ]
+
+instance FromJSON DifferentThingClass where
+    parseJSON (Object v) = DifferentThingClass
+        <$> v .: "name"
+
+instance ToJSON PersonElement where
+    toJSON (PersonElement namePersonElement intOrStringPersonElement optionalValuePersonElement) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "name" .= namePersonElement
+        , Just $ "intOrString" .= intOrStringPersonElement
+        , ("optionalValue" .=) <$> optionalValuePersonElement
+        ]
+
+instance FromJSON PersonElement where
+    parseJSON (Object v) = PersonElement
+        <$> v .: "name"
+        <*> v .: "intOrString"
+        <*> v .:! "optionalValue"
+
+instance ToJSON IntOrString where
+    toJSON (IntegerInIntOrString x) = toJSON x
+    toJSON (StringInIntOrString x) = toJSON x
+
+instance FromJSON IntOrString where
+    parseJSON xs@(Number _) = (fmap IntegerInIntOrString . parseJSON) xs
+    parseJSON xs@(String _) = (fmap StringInIntOrString . parseJSON) xs
+
+instance ToJSON PurplePerson where
+    toJSON (PurplePerson namePurplePerson intOrStringPurplePerson) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "name" .= namePurplePerson
+        , Just $ "intOrString" .= intOrStringPurplePerson
+        ]
+
+instance FromJSON PurplePerson where
+    parseJSON (Object v) = PurplePerson
+        <$> v .: "name"
+        <*> v .: "intOrString"

@@ -1,0 +1,373 @@
+// QTKitchenSink.h
+
+// To parse this JSON:
+//
+//   NSError *error;
+//   QTKitchenSink *kitchenSink = [QTKitchenSink fromJSON:json encoding:NSUTF8Encoding error:&error];
+
+#import <Foundation/Foundation.h>
+
+@class QTKitchenSink;
+@class QTDifferentThingClass;
+@class QTPersonElement;
+@class QTPurplePerson;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Object interfaces
+
+@interface QTKitchenSink : NSObject
+@property (nonatomic, copy)           NSString *stringValue;
+@property (nonatomic, copy)           NSString *dateValue;
+@property (nonatomic, copy)           NSString *uuidValue;
+@property (nonatomic, nullable, copy) id nameWithSpaces;
+@property (nonatomic, assign)         double doubleValue;
+@property (nonatomic, assign)         NSInteger intValue;
+@property (nonatomic, assign)         BOOL isBooleanValue;
+@property (nonatomic, nullable, copy) id nullValue;
+@property (nonatomic, copy)           NSArray<NSArray<id> *> *tuples;
+@property (nonatomic, strong)         QTPurplePerson *person;
+@property (nonatomic, copy)           NSArray<QTPersonElement *> *people;
+@property (nonatomic, copy)           NSArray<id> *differentThings;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *mapValue;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *nullableMapValue;
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error;
+@end
+
+@interface QTDifferentThingClass : NSObject
+@property (nonatomic, copy) NSString *name;
+@end
+
+@interface QTPersonElement : NSObject
+@property (nonatomic, copy)             NSString *name;
+@property (nonatomic, copy)             id intOrString;
+@property (nonatomic, nullable, strong) NSNumber *optionalValue;
+@end
+
+@interface QTPurplePerson : NSObject
+@property (nonatomic, copy)   NSString *name;
+@property (nonatomic, assign) NSInteger intOrString;
+@end
+
+NS_ASSUME_NONNULL_END
+
+// QTKitchenSink.m
+
+#import "QTKitchenSink.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface QTKitchenSink (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTDifferentThingClass (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTPersonElement (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTPurplePerson (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+static id map(id collection, id (^f)(id value)) {
+    id result = nil;
+    if ([collection isKindOfClass:NSArray.class]) {
+            result = [NSMutableArray arrayWithCapacity:[(NSArray *)collection count]];
+            for (id x in collection) [result addObject:NSNullify(f(x))];
+    } else if ([collection isKindOfClass:NSDictionary.class]) {
+            result = [NSMutableDictionary dictionaryWithCapacity:[(NSDictionary *)collection count]];
+            for (id key in collection) [result setObject:f([collection objectForKey:key]) forKey:key];
+    }
+    return result;
+}
+
+#pragma mark - JSON serialization
+
+QTKitchenSink *_Nullable QTKitchenSinkFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        return *error ? nil : [QTKitchenSink fromJSONDictionary:json];
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+QTKitchenSink *_Nullable QTKitchenSinkFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return QTKitchenSinkFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable QTKitchenSinkToData(QTKitchenSink *kitchenSink, NSError **error)
+{
+    @try {
+        id json = [kitchenSink JSONDictionary];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable QTKitchenSinkToJSON(QTKitchenSink *kitchenSink, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = QTKitchenSinkToData(kitchenSink, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+@implementation QTKitchenSink
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"stringValue": @"stringValue",
+        @"dateValue": @"dateValue",
+        @"uuidValue": @"uuidValue",
+        @"name with spaces": @"nameWithSpaces",
+        @"doubleValue": @"doubleValue",
+        @"intValue": @"intValue",
+        @"booleanValue": @"isBooleanValue",
+        @"nullValue": @"nullValue",
+        @"tuples": @"tuples",
+        @"person": @"person",
+        @"people": @"people",
+        @"differentThings": @"differentThings",
+        @"mapValue": @"mapValue",
+        @"nullableMapValue": @"nullableMapValue",
+    };
+}
+
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error
+{
+    return QTKitchenSinkFromData(data, error);
+}
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTKitchenSinkFromJSON(json, encoding, error);
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTKitchenSink alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"stringValue"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"dateValue"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"uuidValue"] isKindOfClass:NSString.class]) return nil;
+        if (!dict[@"name with spaces"]) return nil;
+        if (![dict[@"doubleValue"] isKindOfClass:NSNumber.class]) return nil;
+        if (![dict[@"intValue"] isKindOfClass:NSNumber.class]) return nil;
+        if ([dict[@"intValue"] doubleValue] != [dict[@"intValue"] longLongValue]) return nil;
+        if (![dict[@"booleanValue"] isKindOfClass:NSNumber.class]) return nil;
+        if (!dict[@"nullValue"]) return nil;
+        if (![dict[@"tuples"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"person"] isKindOfClass:NSDictionary.class]) return nil;
+        if (![dict[@"people"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"differentThings"] isKindOfClass:NSArray.class]) return nil;
+        if (![dict[@"mapValue"] isKindOfClass:NSDictionary.class]) return nil;
+        if (![dict[@"nullableMapValue"] isKindOfClass:NSDictionary.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _person = [QTPurplePerson fromJSONDictionary:(id)_person];
+        if (!_person && dict[@"person"] && ![dict[@"person"] isKindOfClass:NSNull.class]) return nil;
+        _people = map(_people, λ(id x, [QTPersonElement fromJSONDictionary:x]));
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTKitchenSink.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTKitchenSink.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTKitchenSink.properties.allValues] mutableCopy];
+
+    for (id jsonName in QTKitchenSink.properties) {
+        id propertyName = QTKitchenSink.properties[jsonName];
+        if (![jsonName isEqualToString:propertyName]) {
+            dict[jsonName] = dict[propertyName];
+            [dict removeObjectForKey:propertyName];
+        }
+    }
+
+    [dict addEntriesFromDictionary:@{
+        @"booleanValue": _isBooleanValue ? @YES : @NO,
+        @"person": [_person JSONDictionary],
+        @"people": map(_people, λ(id x, [x JSONDictionary])),
+    }];
+
+    return dict;
+}
+
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error
+{
+    return QTKitchenSinkToData(self, error);
+}
+
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTKitchenSinkToJSON(self, encoding, error);
+}
+@end
+
+@implementation QTDifferentThingClass
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTDifferentThingClass alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTDifferentThingClass.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTDifferentThingClass.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTDifferentThingClass.properties.allValues];
+}
+@end
+
+@implementation QTPersonElement
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+        @"intOrString": @"intOrString",
+        @"optionalValue": @"optionalValue",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTPersonElement alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTPersonElement.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTPersonElement.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTPersonElement.properties.allValues];
+}
+@end
+
+@implementation QTPurplePerson
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"name": @"name",
+        @"intOrString": @"intOrString",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTPurplePerson alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"name"] isKindOfClass:NSString.class]) return nil;
+        if (![dict[@"intOrString"] isKindOfClass:NSNumber.class]) return nil;
+        if ([dict[@"intOrString"] doubleValue] != [dict[@"intOrString"] longLongValue]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTPurplePerson.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTPurplePerson.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTPurplePerson.properties.allValues];
+}
+@end
+
+NS_ASSUME_NONNULL_END

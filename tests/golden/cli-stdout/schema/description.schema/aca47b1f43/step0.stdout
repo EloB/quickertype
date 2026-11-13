@@ -1,0 +1,259 @@
+// QTDescription.h
+
+// To parse this JSON:
+//
+//   NSError *error;
+//   QTDescription *description = [QTDescription fromJSON:json encoding:NSUTF8Encoding error:&error];
+
+#import <Foundation/Foundation.h>
+
+@class QTDescription;
+@class QTObjectOrStringClass;
+@class QTEnum;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Boxed enums
+
+/// An enumeration
+@interface QTEnum : NSObject
+@property (nonatomic, readonly, copy) NSString *value;
++ (instancetype _Nullable)withValue:(NSString *)value;
++ (QTEnum *)foo;
++ (QTEnum *)bar;
+@end
+
+#pragma mark - Object interfaces
+
+/// The top-level class.
+/// Its description has two lines.
+@interface QTDescription : NSObject
+/// A pretty boolean
+@property (nonatomic, nullable, strong) NSNumber *bar;
+/// An enumeration
+@property (nonatomic, assign)           QTEnum *theDescriptionEnum;
+@property (nonatomic, nullable, strong) NSNumber *foo;
+@property (nonatomic, copy)             id objectOrString;
+/// Either a number or a string
+@property (nonatomic, copy) id theDescriptionUnion;
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error;
+@end
+
+@interface QTObjectOrStringClass : NSObject
+/// This must not get lost
+@property (nonatomic, assign) double prop;
+@end
+
+NS_ASSUME_NONNULL_END
+
+// QTDescription.m
+
+#import "QTDescription.h"
+
+#define λ(decl, expr) (^(decl) { return (expr); })
+
+static id NSNullify(id _Nullable x) {
+    return (x == nil || x == NSNull.null) ? NSNull.null : x;
+}
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface QTDescription (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@interface QTObjectOrStringClass (JSONConversion)
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict;
+- (NSDictionary *)JSONDictionary;
+@end
+
+@implementation QTEnum
++ (NSDictionary<NSString *, QTEnum *> *)values
+{
+    static NSDictionary<NSString *, QTEnum *> *values;
+    return values = values ? values : @{
+        @"foo": [[QTEnum alloc] initWithValue:@"foo"],
+        @"bar": [[QTEnum alloc] initWithValue:@"bar"],
+    };
+}
+
++ (QTEnum *)foo { return QTEnum.values[@"foo"]; }
++ (QTEnum *)bar { return QTEnum.values[@"bar"]; }
+
++ (instancetype _Nullable)withValue:(NSString *)value
+{
+    return QTEnum.values[value];
+}
+
+- (instancetype)initWithValue:(NSString *)value
+{
+    if (self = [super init]) _value = value;
+    return self;
+}
+
+- (NSUInteger)hash { return _value.hash; }
+@end
+
+#pragma mark - JSON serialization
+
+QTDescription *_Nullable QTDescriptionFromData(NSData *data, NSError **error)
+{
+    @try {
+        id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+        return *error ? nil : [QTDescription fromJSONDictionary:json];
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+QTDescription *_Nullable QTDescriptionFromJSON(NSString *json, NSStringEncoding encoding, NSError **error)
+{
+    return QTDescriptionFromData([json dataUsingEncoding:encoding], error);
+}
+
+NSData *_Nullable QTDescriptionToData(QTDescription *description, NSError **error)
+{
+    @try {
+        id json = [description JSONDictionary];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:json options:NSJSONWritingFragmentsAllowed error:error];
+        return *error ? nil : data;
+    } @catch (NSException *exception) {
+        *error = [NSError errorWithDomain:@"JSONSerialization" code:-1 userInfo:@{ @"exception": exception }];
+        return nil;
+    }
+}
+
+NSString *_Nullable QTDescriptionToJSON(QTDescription *description, NSStringEncoding encoding, NSError **error)
+{
+    NSData *data = QTDescriptionToData(description, error);
+    return data ? [[NSString alloc] initWithData:data encoding:encoding] : nil;
+}
+
+@implementation QTDescription
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"bar": @"bar",
+        @"enum": @"theDescriptionEnum",
+        @"foo": @"foo",
+        @"object-or-string": @"objectOrString",
+        @"union": @"theDescriptionUnion",
+    };
+}
+
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error
+{
+    return QTDescriptionFromData(data, error);
+}
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTDescriptionFromJSON(json, encoding, error);
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTDescription alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"enum"] isKindOfClass:NSString.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+        _theDescriptionEnum = [QTEnum withValue:(id)_theDescriptionEnum];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTDescription.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTDescription.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    id dict = [[self dictionaryWithValuesForKeys:QTDescription.properties.allValues] mutableCopy];
+
+    for (id jsonName in QTDescription.properties) {
+        id propertyName = QTDescription.properties[jsonName];
+        if (![jsonName isEqualToString:propertyName]) {
+            dict[jsonName] = dict[propertyName];
+            [dict removeObjectForKey:propertyName];
+        }
+    }
+
+    [dict addEntriesFromDictionary:@{
+        @"enum": [_theDescriptionEnum value],
+    }];
+
+    return dict;
+}
+
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error
+{
+    return QTDescriptionToData(self, error);
+}
+
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error
+{
+    return QTDescriptionToJSON(self, encoding, error);
+}
+@end
+
+@implementation QTObjectOrStringClass
++ (NSDictionary<NSString *, NSString *> *)properties
+{
+    static NSDictionary<NSString *, NSString *> *properties;
+    return properties = properties ? properties : @{
+        @"prop": @"prop",
+    };
+}
+
++ (instancetype)fromJSONDictionary:(NSDictionary *)dict
+{
+    return [dict isKindOfClass:NSDictionary.class] ? [[QTObjectOrStringClass alloc] initWithJSONDictionary:dict] : nil;
+}
+
+- (instancetype)initWithJSONDictionary:(NSDictionary *)dict
+{
+    if (self = [super init]) {
+        if (![dict[@"prop"] isKindOfClass:NSNumber.class]) return nil;
+        [self setValuesForKeysWithDictionary:dict];
+    }
+    return self;
+}
+
+- (void)setValue:(nullable id)value forKey:(NSString *)key
+{
+    id resolved = QTObjectOrStringClass.properties[key];
+    if (resolved) [super setValue:value forKey:resolved];
+}
+
+- (void)setNilValueForKey:(NSString *)key
+{
+    id resolved = QTObjectOrStringClass.properties[key];
+    if (resolved) [super setValue:@(0) forKey:resolved];
+}
+
+- (NSDictionary *)JSONDictionary
+{
+    return [self dictionaryWithValuesForKeys:QTObjectOrStringClass.properties.allValues];
+}
+@end
+
+NS_ASSUME_NONNULL_END

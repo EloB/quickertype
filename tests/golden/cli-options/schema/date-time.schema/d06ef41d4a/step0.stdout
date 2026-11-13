@@ -1,0 +1,99 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let dateTime = try? JSONDecoder().decode(DateTime.self, from: jsonData)
+
+import Foundation
+
+// MARK: - DateTime
+struct DateTime: Codable {
+    let complexUnionArray: [ComplexUnionArrayElement]
+    let date: String
+    let dateTime: Date
+    let localDateClass: LocalDate?
+    let offsetDateTimeClass: OffsetDateTime?
+    let offsetTimeClass: OffsetTime?
+    let time: String
+    let unionArray: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case complexUnionArray = "complex-union-array"
+        case date = "date"
+        case dateTime = "date-time"
+        case localDateClass = "local-date-class"
+        case offsetDateTimeClass = "offset-date-time-class"
+        case offsetTimeClass = "offset-time-class"
+        case time = "time"
+        case unionArray = "union-array"
+    }
+}
+
+enum ComplexUnionArrayElement: Codable {
+    case dateTime(Date)
+    case enumeration(ComplexUnionArrayEnum)
+    case integer(Int)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(Date.self) {
+            self = .dateTime(x)
+            return
+        }
+        if let x = try? container.decode(ComplexUnionArrayEnum.self) {
+            self = .enumeration(x)
+            return
+        }
+        throw DecodingError.typeMismatch(ComplexUnionArrayElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for ComplexUnionArrayElement"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .dateTime(let x):
+            try container.encode(x)
+        case .enumeration(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+enum ComplexUnionArrayEnum: String, Codable {
+    case foo = "foo"
+    case bar = "bar"
+}
+
+// MARK: - LocalDate
+struct LocalDate: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}
+
+// MARK: - OffsetDateTime
+struct OffsetDateTime: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}
+
+// MARK: - OffsetTime
+struct OffsetTime: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}

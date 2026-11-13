@@ -1,0 +1,6 @@
+
+Issue in line 7: The only value for this in the input is null, which means you probably need a more complete input sample.
+7:     val `name with spaces` : Option[Any] = None,
+
+Issue in line 11: The only value for this in the input is null, which means you probably need a more complete input sample.
+11:     val nullValue : Option[Any] = None,

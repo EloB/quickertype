@@ -1,0 +1,133 @@
+// KitchenSink.java
+
+package io.quicktype;
+
+import java.util.List;
+import java.util.Map;
+
+public class KitchenSink {
+    private String stringValue;
+    private String dateValue;
+    private String uuidValue;
+    private Object nameWithSpaces;
+    private double doubleValue;
+    private long intValue;
+    private boolean booleanValue;
+    private Object nullValue;
+    private List<List<IntOrString>> tuples;
+    private PurplePerson person;
+    private List<PersonElement> people;
+    private List<DifferentThingElement> differentThings;
+    private Map<String, Long> mapValue;
+    private Map<String, Long> nullableMapValue;
+
+    public String getStringValue() { return stringValue; }
+    public void setStringValue(String value) { this.stringValue = value; }
+
+    public String getDateValue() { return dateValue; }
+    public void setDateValue(String value) { this.dateValue = value; }
+
+    public String getUUIDValue() { return uuidValue; }
+    public void setUUIDValue(String value) { this.uuidValue = value; }
+
+    public Object getNameWithSpaces() { return nameWithSpaces; }
+    public void setNameWithSpaces(Object value) { this.nameWithSpaces = value; }
+
+    public double getDoubleValue() { return doubleValue; }
+    public void setDoubleValue(double value) { this.doubleValue = value; }
+
+    public long getIntValue() { return intValue; }
+    public void setIntValue(long value) { this.intValue = value; }
+
+    public boolean getBooleanValue() { return booleanValue; }
+    public void setBooleanValue(boolean value) { this.booleanValue = value; }
+
+    public Object getNullValue() { return nullValue; }
+    public void setNullValue(Object value) { this.nullValue = value; }
+
+    public List<List<IntOrString>> getTuples() { return tuples; }
+    public void setTuples(List<List<IntOrString>> value) { this.tuples = value; }
+
+    public PurplePerson getPerson() { return person; }
+    public void setPerson(PurplePerson value) { this.person = value; }
+
+    public List<PersonElement> getPeople() { return people; }
+    public void setPeople(List<PersonElement> value) { this.people = value; }
+
+    public List<DifferentThingElement> getDifferentThings() { return differentThings; }
+    public void setDifferentThings(List<DifferentThingElement> value) { this.differentThings = value; }
+
+    public Map<String, Long> getMapValue() { return mapValue; }
+    public void setMapValue(Map<String, Long> value) { this.mapValue = value; }
+
+    public Map<String, Long> getNullableMapValue() { return nullableMapValue; }
+    public void setNullableMapValue(Map<String, Long> value) { this.nullableMapValue = value; }
+}
+
+// DifferentThingElement.java
+
+package io.quicktype;
+
+import java.io.IOException;
+
+public class DifferentThingElement {
+    public Long integerValue;
+    public DifferentThingClass differentThingClassValue;
+    public String stringValue;
+}
+
+// DifferentThingClass.java
+
+package io.quicktype;
+
+public class DifferentThingClass {
+    private String name;
+
+    public String getName() { return name; }
+    public void setName(String value) { this.name = value; }
+}
+
+// PersonElement.java
+
+package io.quicktype;
+
+public class PersonElement {
+    private String name;
+    private IntOrString intOrString;
+    private Boolean optionalValue;
+
+    public String getName() { return name; }
+    public void setName(String value) { this.name = value; }
+
+    public IntOrString getIntOrString() { return intOrString; }
+    public void setIntOrString(IntOrString value) { this.intOrString = value; }
+
+    public Boolean getOptionalValue() { return optionalValue; }
+    public void setOptionalValue(Boolean value) { this.optionalValue = value; }
+}
+
+// IntOrString.java
+
+package io.quicktype;
+
+import java.io.IOException;
+
+public class IntOrString {
+    public Long integerValue;
+    public String stringValue;
+}
+
+// PurplePerson.java
+
+package io.quicktype;
+
+public class PurplePerson {
+    private String name;
+    private long intOrString;
+
+    public String getName() { return name; }
+    public void setName(String value) { this.name = value; }
+
+    public long getIntOrString() { return intOrString; }
+    public void setIntOrString(long value) { this.intOrString = value; }
+}

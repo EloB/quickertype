@@ -1,0 +1,37 @@
+from dataclasses import dataclass
+
+
+@dataclass
+class DifferentThingClass:
+    name: str
+
+
+@dataclass
+class PersonElement:
+    name: str
+    int_or_string: int
+    optional_value: bool | None = None
+
+
+@dataclass
+class PurplePerson:
+    name: str
+    int_or_string: int
+
+
+@dataclass
+class KitchenSink:
+    string_value: str
+    date_value: str
+    uuid_value: str
+    double_value: float
+    int_value: int
+    boolean_value: bool
+    tuples: list[list[int | str]]
+    person: PurplePerson
+    people: list[PersonElement]
+    different_things: list[int | DifferentThingClass]
+    map_value: dict[str, int | None]
+    nullable_map_value: dict[str, int | None]
+    name_with_spaces: None = None
+    null_value: None = None

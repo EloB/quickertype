@@ -1,0 +1,31 @@
+export interface KitchenSink {
+    stringValue:        string;
+    dateValue:          string;
+    uuidValue:          string;
+    "name with spaces": null;
+    doubleValue:        number;
+    intValue:           number;
+    booleanValue:       boolean;
+    nullValue:          null;
+    tuples:             Array<Array<number | string>>;
+    person:             PurplePerson;
+    people:             PersonElement[];
+    differentThings:    Array<DifferentThingClass | number | string>;
+    mapValue:           { [key: string]: number | null };
+    nullableMapValue:   { [key: string]: number | null };
+}
+
+export interface DifferentThingClass {
+    name: string;
+}
+
+export interface PersonElement {
+    name:           string;
+    intOrString:    number | string;
+    optionalValue?: boolean;
+}
+
+export interface PurplePerson {
+    name:        string;
+    intOrString: number;
+}

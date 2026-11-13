@@ -1,0 +1,13 @@
+{
+  "fixture": "cli-version",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "-hv"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

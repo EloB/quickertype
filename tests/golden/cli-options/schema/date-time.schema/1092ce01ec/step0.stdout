@@ -1,0 +1,300 @@
+//  To parse this JSON data, first install
+//
+//      json.hpp  https://github.com/nlohmann/json
+//
+//  Then include this file, and then do
+//
+//     DateTime data = nlohmann::json::parse(jsonString);
+
+#pragma once
+
+#include <optional>
+#include <variant>
+#include "json.hpp"
+
+#include <optional>
+#include <stdexcept>
+#include <regex>
+
+#ifndef NLOHMANN_OPT_HELPER
+#define NLOHMANN_OPT_HELPER
+namespace nlohmann {
+    template <typename T>
+    struct adl_serializer<std::shared_ptr<T>> {
+        static void to_json(json & j, const std::shared_ptr<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static std::shared_ptr<T> from_json(const json & j) {
+            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());
+        }
+    };
+    template <typename T>
+    struct adl_serializer<std::optional<T>> {
+        static void to_json(json & j, const std::optional<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static std::optional<T> from_json(const json & j) {
+            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());
+        }
+    };
+}
+#endif
+
+namespace quicktype {
+    using nlohmann::json;
+
+    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER
+    #define NLOHMANN_UNTYPED_quicktype_HELPER
+    inline json get_untyped(const json & j, const char * property) {
+        if (j.find(property) != j.end()) {
+            return j.at(property).get<json>();
+        }
+        return json();
+    }
+
+    inline json get_untyped(const json & j, std::string property) {
+        return get_untyped(j, property.data());
+    }
+    #endif
+
+    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER
+    #define NLOHMANN_OPTIONAL_quicktype_HELPER
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<std::shared_ptr<T>>();
+        }
+        return std::shared_ptr<T>();
+    }
+
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {
+        return get_heap_optional<T>(j, property.data());
+    }
+    template <typename T>
+    inline std::optional<T> get_stack_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<std::optional<T>>();
+        }
+        return std::optional<T>();
+    }
+
+    template <typename T>
+    inline std::optional<T> get_stack_optional(const json & j, std::string property) {
+        return get_stack_optional<T>(j, property.data());
+    }
+    #endif
+
+    enum class ComplexUnionArrayEnum : int { FOO, BAR };
+
+    using ComplexUnionArrayElement = std::variant<std::string, ComplexUnionArrayEnum, int64_t>;
+
+    class LocalDate {
+        public:
+        LocalDate() = default;
+        virtual ~LocalDate() = default;
+
+        private:
+
+        public:
+    };
+
+    class OffsetDateTime {
+        public:
+        OffsetDateTime() = default;
+        virtual ~OffsetDateTime() = default;
+
+        private:
+
+        public:
+    };
+
+    class OffsetTime {
+        public:
+        OffsetTime() = default;
+        virtual ~OffsetTime() = default;
+
+        private:
+
+        public:
+    };
+
+    class DateTime {
+        public:
+        DateTime() = default;
+        virtual ~DateTime() = default;
+
+        private:
+        std::vector<ComplexUnionArrayElement> complexunionarray;
+        std::string date;
+        std::string datetime;
+        std::optional<LocalDate> localdateclass;
+        std::optional<OffsetDateTime> offsetdatetimeclass;
+        std::optional<OffsetTime> offsettimeclass;
+        std::string time;
+        std::vector<std::string> unionarray;
+
+        public:
+        const std::vector<ComplexUnionArrayElement> & get_complexunionarray() const { return complexunionarray; }
+        std::vector<ComplexUnionArrayElement> & getMutable_complexunionarray() { return complexunionarray; }
+        void set_complexunionarray(const std::vector<ComplexUnionArrayElement> & value) { this->complexunionarray = value; }
+
+        const std::string & get_date() const { return date; }
+        std::string & getMutable_date() { return date; }
+        void set_date(const std::string & value) { this->date = value; }
+
+        const std::string & get_datetime() const { return datetime; }
+        std::string & getMutable_datetime() { return datetime; }
+        void set_datetime(const std::string & value) { this->datetime = value; }
+
+        const std::optional<LocalDate> & get_localdateclass() const { return localdateclass; }
+        std::optional<LocalDate> & getMutable_localdateclass() { return localdateclass; }
+        void set_localdateclass(const std::optional<LocalDate> & value) { this->localdateclass = value; }
+
+        const std::optional<OffsetDateTime> & get_offsetdatetimeclass() const { return offsetdatetimeclass; }
+        std::optional<OffsetDateTime> & getMutable_offsetdatetimeclass() { return offsetdatetimeclass; }
+        void set_offsetdatetimeclass(const std::optional<OffsetDateTime> & value) { this->offsetdatetimeclass = value; }
+
+        const std::optional<OffsetTime> & get_offsettimeclass() const { return offsettimeclass; }
+        std::optional<OffsetTime> & getMutable_offsettimeclass() { return offsettimeclass; }
+        void set_offsettimeclass(const std::optional<OffsetTime> & value) { this->offsettimeclass = value; }
+
+        const std::string & get_time() const { return time; }
+        std::string & getMutable_time() { return time; }
+        void set_time(const std::string & value) { this->time = value; }
+
+        const std::vector<std::string> & get_unionarray() const { return unionarray; }
+        std::vector<std::string> & getMutable_unionarray() { return unionarray; }
+        void set_unionarray(const std::vector<std::string> & value) { this->unionarray = value; }
+    };
+}
+
+namespace quicktype {
+void from_json(const json & j, LocalDate & x);
+void to_json(json & j, const LocalDate & x);
+
+void from_json(const json & j, OffsetDateTime & x);
+void to_json(json & j, const OffsetDateTime & x);
+
+void from_json(const json & j, OffsetTime & x);
+void to_json(json & j, const OffsetTime & x);
+
+void from_json(const json & j, DateTime & x);
+void to_json(json & j, const DateTime & x);
+
+void from_json(const json & j, ComplexUnionArrayEnum & x);
+void to_json(json & j, const ComplexUnionArrayEnum & x);
+}
+namespace nlohmann {
+template <>
+struct adl_serializer<std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t>> {
+    static void from_json(const json & j, std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t> & x);
+    static void to_json(json & j, const std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t> & x);
+};
+}
+namespace quicktype {
+    inline void from_json(const json & j, LocalDate& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        (void)j;
+        (void)x;
+    }
+
+    inline void to_json(json & j, const LocalDate & x) {
+        j = json::object();
+        (void)x;
+    }
+
+    inline void from_json(const json & j, OffsetDateTime& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        (void)j;
+        (void)x;
+    }
+
+    inline void to_json(json & j, const OffsetDateTime & x) {
+        j = json::object();
+        (void)x;
+    }
+
+    inline void from_json(const json & j, OffsetTime& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        (void)j;
+        (void)x;
+    }
+
+    inline void to_json(json & j, const OffsetTime & x) {
+        j = json::object();
+        (void)x;
+    }
+
+    inline void from_json(const json & j, DateTime& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_complexunionarray(j.at("complex-union-array").get<std::vector<ComplexUnionArrayElement>>());
+        x.set_date(j.at("date").get<std::string>());
+        if (j.find("date-time") != j.end() && !std::regex_match(j.at("date-time").get<std::string>(), std::regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}T.*$"))) throw std::runtime_error("Expected date-time");
+        x.set_datetime(j.at("date-time").get<std::string>());
+        if (j.find("local-date-class") != j.end() && j.at("local-date-class").is_null()) throw std::runtime_error("Unexpected null");
+        x.set_localdateclass(get_stack_optional<LocalDate>(j, "local-date-class"));
+        if (j.find("offset-date-time-class") != j.end() && j.at("offset-date-time-class").is_null()) throw std::runtime_error("Unexpected null");
+        x.set_offsetdatetimeclass(get_stack_optional<OffsetDateTime>(j, "offset-date-time-class"));
+        if (j.find("offset-time-class") != j.end() && j.at("offset-time-class").is_null()) throw std::runtime_error("Unexpected null");
+        x.set_offsettimeclass(get_stack_optional<OffsetTime>(j, "offset-time-class"));
+        x.set_time(j.at("time").get<std::string>());
+        x.set_unionarray(j.at("union-array").get<std::vector<std::string>>());
+    }
+
+    inline void to_json(json & j, const DateTime & x) {
+        j = json::object();
+        j["complex-union-array"] = x.get_complexunionarray();
+        j["date"] = x.get_date();
+        j["date-time"] = x.get_datetime();
+        j["local-date-class"] = x.get_localdateclass();
+        j["offset-date-time-class"] = x.get_offsetdatetimeclass();
+        j["offset-time-class"] = x.get_offsettimeclass();
+        j["time"] = x.get_time();
+        j["union-array"] = x.get_unionarray();
+    }
+
+    inline void from_json(const json & j, ComplexUnionArrayEnum & x) {
+        if (j == "foo") x = ComplexUnionArrayEnum::FOO;
+        else if (j == "bar") x = ComplexUnionArrayEnum::BAR;
+        else { throw std::runtime_error("Cannot deserialize to enumeration \"ComplexUnionArrayEnum\""); }
+    }
+
+    inline void to_json(json & j, const ComplexUnionArrayEnum & x) {
+        switch (x) {
+            case ComplexUnionArrayEnum::FOO: j = "foo"; break;
+            case ComplexUnionArrayEnum::BAR: j = "bar"; break;
+            default: throw std::runtime_error("Unexpected value in enumeration \"ComplexUnionArrayEnum\": " + std::to_string(static_cast<int>(x)));
+        }
+    }
+}
+namespace nlohmann {
+    inline void adl_serializer<std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t>>::from_json(const json & j, std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t> & x) {
+        if (j.is_number_integer())
+            x = j.get<int64_t>();
+        else if (j.is_string())
+            x = j.get<std::string>();
+        else if (j.is_string())
+            x = j.get<quicktype::ComplexUnionArrayEnum>();
+        else throw std::runtime_error("Could not deserialise!");
+    }
+
+    inline void adl_serializer<std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t>>::to_json(json & j, const std::variant<std::string, quicktype::ComplexUnionArrayEnum, int64_t> & x) {
+        switch (x.index()) {
+            case 0:
+                j = std::get<std::string>(x);
+                break;
+            case 1:
+                j = std::get<quicktype::ComplexUnionArrayEnum>(x);
+                break;
+            case 2:
+                j = std::get<int64_t>(x);
+                break;
+            default: throw std::runtime_error("Input JSON does not conform to schema!");
+        }
+    }
+}

@@ -1,0 +1,6 @@
+
+Issue in line 10: The only value for this in the input is null, which means you probably need a more complete input sample.
+10:     name with spaces : Document,
+
+Issue in line 14: The only value for this in the input is null, which means you probably need a more complete input sample.
+14:     nullValue : Document,

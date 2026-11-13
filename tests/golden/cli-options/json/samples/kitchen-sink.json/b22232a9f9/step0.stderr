@@ -1,0 +1,6 @@
+
+Issue in line 14: The only value for this in the input is null, which means you probably need a more complete input sample.
+14:     val `name with spaces` : Option[Json] = None,
+
+Issue in line 18: The only value for this in the input is null, which means you probably need a more complete input sample.
+18:     val nullValue : Option[Json] = None,

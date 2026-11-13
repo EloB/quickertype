@@ -1,0 +1,14 @@
+{
+  "fixture": "cli-sources",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

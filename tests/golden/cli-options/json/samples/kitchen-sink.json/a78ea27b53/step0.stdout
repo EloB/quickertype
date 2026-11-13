@@ -1,0 +1,53 @@
+// @flow
+
+// To parse this data:
+//
+//   const Convert = require("./file");
+//
+//   const kitchenSink = Convert.toKitchenSink(json);
+
+export type KitchenSink = {
+    stringValue:        string;
+    dateValue:          string;
+    uuidValue:          string;
+    "name with spaces": null;
+    doubleValue:        number;
+    intValue:           number;
+    booleanValue:       boolean;
+    nullValue:          null;
+    tuples:             Array<Array<number | string>>;
+    person:             PurplePerson;
+    people:             PersonElement[];
+    differentThings:    Array<DifferentThingClass | number | string>;
+    mapValue:           { [key: string]: number | null };
+    nullableMapValue:   { [key: string]: number | null };
+};
+
+export type DifferentThingClass = {
+    name: string;
+};
+
+export type PersonElement = {
+    name:           string;
+    intOrString:    number | string;
+    optionalValue?: boolean;
+};
+
+export type PurplePerson = {
+    name:        string;
+    intOrString: number;
+};
+
+// Converts JSON strings to/from your types
+function toKitchenSink(json: string): KitchenSink {
+    return JSON.parse(json);
+}
+
+function kitchenSinkToJson(value: KitchenSink): string {
+    return JSON.stringify(value);
+}
+
+module.exports = {
+    "kitchenSinkToJson": kitchenSinkToJson,
+    "toKitchenSink": toKitchenSink,
+};

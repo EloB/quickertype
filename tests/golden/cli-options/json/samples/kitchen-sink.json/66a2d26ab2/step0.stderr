@@ -1,0 +1,6 @@
+
+Issue in line 46: The only value for this in the input is null, which means you probably need a more complete input sample.
+46:     val nameWithSpaces: Any? = null,
+
+Issue in line 58: The only value for this in the input is null, which means you probably need a more complete input sample.
+58:     val nullValue: Any? = null,

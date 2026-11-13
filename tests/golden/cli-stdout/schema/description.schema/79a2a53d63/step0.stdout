@@ -1,0 +1,86 @@
+package quicktype
+
+import io.circe.syntax._
+import io.circe._
+import cats.syntax.functor._
+
+// If a union has a null in, then we'll need this too... 
+type NullValue = None.type
+
+/**
+ * The top-level class.
+ * Its description has two lines.
+ */
+case class Description (
+    /**
+     * A pretty boolean
+     */
+    val bar : Option[Boolean] = None,
+
+    /**
+     * An enumeration
+     */
+    val `enum` : EnumEnum,
+
+    val foo : Option[Double] = None,
+    val `object-or-string` : ObjectOrStringUnion,
+
+    /**
+     * Either a number or a string
+     */
+    val union : Union
+) derives Encoder.AsObject, Decoder
+
+/**
+ * An enumeration
+ */
+
+enum EnumEnum : 
+    case Foo
+    case Bar
+
+given Decoder[EnumEnum] = Decoder.decodeString.emap {
+    case "foo" => scala.Right(EnumEnum.Foo)
+    case "bar" => scala.Right(EnumEnum.Bar)
+    case other => scala.Left("invalid EnumEnum: " + other)
+}
+given Encoder[EnumEnum] = Encoder.encodeString.contramap {
+    case EnumEnum.Foo => "foo"
+    case EnumEnum.Bar => "bar"
+}
+
+type ObjectOrStringUnion = ObjectOrStringClass | String
+given Decoder[ObjectOrStringUnion] = {
+    List[Decoder[ObjectOrStringUnion]](
+        Decoder[String].widen,
+        Decoder[ObjectOrStringClass].widen,
+    ).reduceLeft(_ or _)
+}
+
+given Encoder[ObjectOrStringUnion] = Encoder.instance {
+    case enc0 : String => Encoder.encodeString(enc0)
+    case enc1 : ObjectOrStringClass => Encoder.AsObject[ObjectOrStringClass].apply(enc1)
+}
+
+case class ObjectOrStringClass (
+    /**
+     * This must not get lost
+     */
+    val prop : Double
+) derives Encoder.AsObject, Decoder
+
+/**
+ * Either a number or a string
+ */
+type Union = Double | String
+given Decoder[Union] = {
+    List[Decoder[Union]](
+        Decoder[String].widen,
+        Decoder[Double].widen,
+    ).reduceLeft(_ or _)
+}
+
+given Encoder[Union] = Encoder.instance {
+    case enc0 : String => Encoder.encodeString(enc0)
+    case enc1 : Double => Encoder.encodeDouble(enc1)
+}

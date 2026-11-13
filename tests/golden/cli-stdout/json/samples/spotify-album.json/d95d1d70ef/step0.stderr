@@ -1,0 +1,9 @@
+
+Issue in line 28: quicktype cannot infer this type because there is no data about it in the input.
+28: 	Genres               []interface{} `json:"genres"`
+
+Issue in line 73: The only value for this in the input is null, which means you probably need a more complete input sample.
+73: 	Next     interface{} `json:"next"`
+
+Issue in line 75: The only value for this in the input is null, which means you probably need a more complete input sample.
+75: 	Previous interface{} `json:"previous"`

@@ -1,0 +1,81 @@
+// To parse this JSON data, do
+//
+//     final github1 = github1FromJson(jsonString);
+
+import 'dart:convert';
+
+Github1 github1FromJson(String str) => Github1.fromJson(json.decode(str));
+
+String github1ToJson(Github1 data) => json.encode(data.toJson());
+
+class Github1 {
+    final Data? data;
+    final List<Error>? errors;
+
+    Github1({
+        required this.data,
+        this.errors,
+    });
+
+    factory Github1.fromJson(Map<String, dynamic> json) => Github1(
+        data: (json.containsKey("data") ? json["data"] : throw FormatException('Missing required property')) == null ? null : Data.fromJson((json.containsKey("data") ? json["data"] : throw FormatException('Missing required property'))),
+        errors: json["errors"] == null ? null : List<Error>.from(json["errors"]!.map((x) => Error.fromJson(x))),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "data": data?.toJson(),
+        "errors": errors == null ? null : List<dynamic>.from(errors!.map((x) => x.toJson())),
+    };
+}
+
+class Data {
+    final User viewer;
+
+    Data({
+        required this.viewer,
+    });
+
+    factory Data.fromJson(Map<String, dynamic> json) => Data(
+        viewer: User.fromJson(json["viewer"]),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "viewer": viewer.toJson(),
+    };
+}
+
+class User {
+    final String login;
+    final String? realName;
+
+    User({
+        required this.login,
+        required this.realName,
+    });
+
+    factory User.fromJson(Map<String, dynamic> json) => User(
+        login: json["login"],
+        realName: (json.containsKey("realName") ? json["realName"] : throw FormatException('Missing required property')),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "login": login,
+        "realName": realName,
+    };
+}
+
+class Error {
+    final String message;
+
+    Error({
+        required this.message,
+    });
+
+    factory Error.fromJson(Map<String, dynamic> json) => Error(
+        message: json["message"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "message": message,
+    };
+}

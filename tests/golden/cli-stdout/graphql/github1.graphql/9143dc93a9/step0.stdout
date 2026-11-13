@@ -1,0 +1,30 @@
+require "json"
+
+class Github1
+  include JSON::Serializable
+
+  property data : Data?
+
+  property errors : Array(Error)?
+end
+
+class Data
+  include JSON::Serializable
+
+  property viewer : User
+end
+
+class User
+  include JSON::Serializable
+
+  property login : String
+
+  @[JSON::Field(key: "realName")]
+  property real_name : String?
+end
+
+class Error
+  include JSON::Serializable
+
+  property message : String
+end

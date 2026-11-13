@@ -1,0 +1,28 @@
+{
+  "fixture": "cli-output",
+  "input": "json/samples/kitchen-sink.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "c++",
+        "--source-style",
+        "multi-source",
+        "--out",
+        "TopLevel.hpp",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [
+        "DifferentThingClass.hpp",
+        "DifferentThingElement.hpp",
+        "Generators.hpp",
+        "IntOrString.hpp",
+        "PersonElement.hpp",
+        "PurplePerson.hpp",
+        "TopLevel.hpp",
+        "helper.hpp"
+      ],
+      "exit": 0
+    }
+  ]
+}

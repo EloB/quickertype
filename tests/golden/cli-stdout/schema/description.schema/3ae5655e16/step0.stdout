@@ -1,0 +1,310 @@
+// Converter.java
+
+// To use this code, add the following Maven dependency to your project:
+//
+//
+//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0
+//     com.fasterxml.jackson.datatype : jackson-datatype-jsr310   : 2.9.0
+//
+// Import this package:
+//
+//     import io.quicktype.Converter;
+//
+// Then you can deserialize a JSON string with
+//
+//     Description data = Converter.fromJsonString(jsonString);
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+
+public class Converter {
+    // Date-time helpers
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ISO_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_INSTANT)
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SX"))
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssX"))
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .toFormatter()
+            .withZone(ZoneOffset.UTC);
+
+    public static OffsetDateTime parseDateTimeString(String str) {
+        return ZonedDateTime.from(Converter.DATE_TIME_FORMATTER.parse(str)).toOffsetDateTime();
+    }
+
+    private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ISO_TIME)
+            .appendOptional(DateTimeFormatter.ISO_OFFSET_TIME)
+            .parseDefaulting(ChronoField.YEAR, 2020)
+            .parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
+            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+            .toFormatter()
+            .withZone(ZoneOffset.UTC);
+
+    public static OffsetTime parseTimeString(String str) {
+        return ZonedDateTime.from(Converter.TIME_FORMATTER.parse(str)).toOffsetDateTime().toOffsetTime();
+    }
+    // Serialize/deserialize helpers
+
+    public static Description fromJsonString(String json) throws IOException {
+        return getObjectReader().readValue(json);
+    }
+
+    public static String toJsonString(Description obj) throws JsonProcessingException {
+        return getObjectWriter().writeValueAsString(obj);
+    }
+
+    private static ObjectReader reader;
+    private static ObjectWriter writer;
+
+    private static void instantiateMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {
+            @Override
+            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        reader = mapper.readerFor(Description.class);
+        writer = mapper.writerFor(Description.class);
+    }
+
+    private static ObjectReader getObjectReader() {
+        if (reader == null) instantiateMapper();
+        return reader;
+    }
+
+    private static ObjectWriter getObjectWriter() {
+        if (writer == null) instantiateMapper();
+        return writer;
+    }
+}
+
+// Description.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+/**
+ * The top-level class.
+ * Its description has two lines.
+ */
+public class Description {
+    private Boolean bar;
+    private Enum descriptionEnum;
+    private Double foo;
+    private ObjectOrStringUnion objectOrString;
+    private Union union;
+
+    /**
+     * A pretty boolean
+     */
+    @JsonProperty("bar")
+    public Boolean getBar() { return bar; }
+    @JsonProperty("bar")
+    public void setBar(Boolean value) { this.bar = value; }
+
+    /**
+     * An enumeration
+     */
+    @JsonProperty("enum")
+    public Enum getDescriptionEnum() { return descriptionEnum; }
+    @JsonProperty("enum")
+    public void setDescriptionEnum(Enum value) { this.descriptionEnum = value; }
+
+    @JsonProperty("foo")
+    public Double getFoo() { return foo; }
+    @JsonProperty("foo")
+    public void setFoo(Double value) { this.foo = value; }
+
+    @JsonProperty("object-or-string")
+    public ObjectOrStringUnion getObjectOrString() { return objectOrString; }
+    @JsonProperty("object-or-string")
+    public void setObjectOrString(ObjectOrStringUnion value) { this.objectOrString = value; }
+
+    /**
+     * Either a number or a string
+     */
+    @JsonProperty("union")
+    public Union getUnion() { return union; }
+    @JsonProperty("union")
+    public void setUnion(Union value) { this.union = value; }
+}
+
+// Enum.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.annotation.*;
+
+/**
+ * An enumeration
+ */
+public enum Enum {
+    FOO, BAR;
+
+    @JsonValue
+    public String toValue() {
+        switch (this) {
+            case FOO: return "foo";
+            case BAR: return "bar";
+        }
+        return null;
+    }
+
+    @JsonCreator
+    public static Enum forValue(String value) throws IOException {
+        if (value.equals("foo")) return FOO;
+        if (value.equals("bar")) return BAR;
+        throw new IOException("Cannot deserialize Enum");
+    }
+}
+
+// ObjectOrStringUnion.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+
+@JsonDeserialize(using = ObjectOrStringUnion.Deserializer.class)
+@JsonSerialize(using = ObjectOrStringUnion.Serializer.class)
+public class ObjectOrStringUnion {
+    public String stringValue;
+    public ObjectOrStringClass objectOrStringClassValue;
+
+    static class Deserializer extends JsonDeserializer<ObjectOrStringUnion> {
+        @Override
+        public ObjectOrStringUnion deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            ObjectOrStringUnion value = new ObjectOrStringUnion();
+            switch (jsonParser.currentToken()) {
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    value.stringValue = string;
+                    break;
+                case START_OBJECT:
+                    value.objectOrStringClassValue = jsonParser.readValueAs(ObjectOrStringClass.class);
+                    break;
+                default: throw new IOException("Cannot deserialize ObjectOrStringUnion");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<ObjectOrStringUnion> {
+        @Override
+        public void serialize(ObjectOrStringUnion obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.stringValue != null) {
+                jsonGenerator.writeObject(obj.stringValue);
+                return;
+            }
+            if (obj.objectOrStringClassValue != null) {
+                jsonGenerator.writeObject(obj.objectOrStringClassValue);
+                return;
+            }
+            throw new IOException("ObjectOrStringUnion must not be null");
+        }
+    }
+}
+
+// ObjectOrStringClass.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+public class ObjectOrStringClass {
+    private double prop;
+
+    /**
+     * This must not get lost
+     */
+    @JsonProperty("prop")
+    public double getProp() { return prop; }
+    @JsonProperty("prop")
+    public void setProp(double value) { this.prop = value; }
+}
+
+// Union.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+
+/**
+ * Either a number or a string
+ */
+@JsonDeserialize(using = Union.Deserializer.class)
+@JsonSerialize(using = Union.Serializer.class)
+public class Union {
+    public Double doubleValue;
+    public String stringValue;
+
+    static class Deserializer extends JsonDeserializer<Union> {
+        @Override
+        public Union deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            Union value = new Union();
+            switch (jsonParser.currentToken()) {
+                case VALUE_NUMBER_INT:
+                case VALUE_NUMBER_FLOAT:
+                    value.doubleValue = jsonParser.readValueAs(Double.class);
+                    break;
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    value.stringValue = string;
+                    break;
+                default: throw new IOException("Cannot deserialize Union");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<Union> {
+        @Override
+        public void serialize(Union obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.doubleValue != null) {
+                jsonGenerator.writeObject(obj.doubleValue);
+                return;
+            }
+            if (obj.stringValue != null) {
+                jsonGenerator.writeObject(obj.stringValue);
+                return;
+            }
+            throw new IOException("Union must not be null");
+        }
+    }
+}

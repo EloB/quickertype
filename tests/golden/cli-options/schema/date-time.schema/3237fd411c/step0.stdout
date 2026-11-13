@@ -1,0 +1,12 @@
+export interface DateTime {
+    "complex-union-array":     Array<Date | ComplexUnionArrayEnum | number>;
+    date:                      Date;
+    "date-time":               Date;
+    "local-date-class"?:       object;
+    "offset-date-time-class"?: object;
+    "offset-time-class"?:      object;
+    time:                      string;
+    "union-array":             string[];
+}
+
+export type ComplexUnionArrayEnum = "foo" | "bar";

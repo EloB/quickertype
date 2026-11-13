@@ -1,0 +1,33 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module QuickType
+    ( Generated (..)
+    , decodeTopLevel
+    ) where
+
+import Data.Aeson
+import Data.Aeson.Types (emptyObject)
+import Data.ByteString.Lazy (ByteString)
+import Data.HashMap.Strict (HashMap)
+import Data.Text (Text)
+
+data Generated = Generated
+    { greetingGenerated :: Text
+    , instructionsGenerated :: [Text]
+    } deriving (Show)
+
+decodeTopLevel :: ByteString -> Maybe Generated
+decodeTopLevel = decode
+
+instance ToJSON Generated where
+    toJSON (Generated greetingGenerated instructionsGenerated) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "greeting" .= greetingGenerated
+        , Just $ "instructions" .= instructionsGenerated
+        ]
+
+instance FromJSON Generated where
+    parseJSON (Object v) = Generated
+        <$> v .: "greeting"
+        <*> v .: "instructions"

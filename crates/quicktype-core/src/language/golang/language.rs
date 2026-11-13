@@ -1,1 +1,98 @@
 //! Port of `packages/quicktype-core/src/language/Golang/language.ts`.
+//!
+//! Language metadata and renderer option declarations.
+
+use crate::renderer_options::{BooleanOption, OptionKind, RendererOption, StringOption};
+use crate::target_language::{LanguageConfig, TargetLanguage};
+
+/// TS `goOptions.justTypes`.
+pub const JUST_TYPES: BooleanOption =
+    BooleanOption::new("just-types", "Plain types only", false, OptionKind::Primary);
+
+/// TS `goOptions.justTypesAndPackage`.
+pub const JUST_TYPES_AND_PACKAGE: BooleanOption = BooleanOption::new(
+    "just-types-and-package",
+    "Plain types with package only",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `goOptions.packageName`.
+pub const PACKAGE_NAME: StringOption = StringOption::new(
+    "package",
+    "Generated package name",
+    "NAME",
+    "main",
+    OptionKind::Primary,
+);
+
+/// TS `goOptions.multiFileOutput`.
+pub const MULTI_FILE_OUTPUT: BooleanOption = BooleanOption::new(
+    "multi-file-output",
+    "Renders each top-level object in its own Go file",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `goOptions.fieldTags`.
+pub const FIELD_TAGS: StringOption = StringOption::new(
+    "field-tags",
+    "list of tags which should be generated for fields",
+    "TAGS",
+    "json",
+    OptionKind::Primary,
+);
+
+/// TS `goOptions.omitEmpty`.
+pub const OMIT_EMPTY: BooleanOption = BooleanOption::new(
+    "omit-empty",
+    "If set, all non-required objects will be tagged with \",omitempty\"",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `goOptions.enumTypeNameSuffix`.
+pub const ENUM_TYPE_NAME_SUFFIX: BooleanOption = BooleanOption::new(
+    "enum-type-name-suffix",
+    "Append the enum type name to enum constant names",
+    false,
+    OptionKind::Primary,
+);
+
+/// TS `goOptions`, in declaration order.
+pub static GO_OPTIONS: &[RendererOption] = &[
+    RendererOption::Boolean(JUST_TYPES),
+    RendererOption::Boolean(JUST_TYPES_AND_PACKAGE),
+    RendererOption::String(PACKAGE_NAME),
+    RendererOption::Boolean(MULTI_FILE_OUTPUT),
+    RendererOption::String(FIELD_TAGS),
+    RendererOption::Boolean(OMIT_EMPTY),
+    RendererOption::Boolean(ENUM_TYPE_NAME_SUFFIX),
+];
+
+/// TS `golangLanguageConfig`.
+pub const GOLANG_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
+    display_name: "Go",
+    names: &["go", "golang"],
+    extension: "go",
+};
+
+/// The Go target language (TS `GoTargetLanguage`).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GoTargetLanguage;
+
+// TODO(renderer): port the hooks GoTargetLanguage overrides:
+// - makeRenderer
+// - defaultIndentation: "\t"
+// - stringTypeMapping: date-time -> date-time
+// - supportsOptionalClassProperties: true
+// - supportsUnionsWithBothNumberTypes: true
+impl TargetLanguage for GoTargetLanguage {
+    fn config(&self) -> &'static LanguageConfig {
+        &GOLANG_LANGUAGE_CONFIG
+    }
+
+    fn options(&self) -> &'static [RendererOption] {
+        GO_OPTIONS
+    }
+}

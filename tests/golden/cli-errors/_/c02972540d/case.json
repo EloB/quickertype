@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/json/misc/00c36.json"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

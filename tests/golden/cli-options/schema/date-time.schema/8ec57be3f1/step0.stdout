@@ -1,0 +1,35 @@
+import datetime
+from enum import Enum
+from dataclasses import dataclass
+
+
+class ComplexUnionArrayEnum(Enum):
+    FOO = "foo"
+    BAR = "bar"
+
+
+@dataclass
+class LocalDate:
+    pass
+
+
+@dataclass
+class OffsetDateTime:
+    pass
+
+
+@dataclass
+class OffsetTime:
+    pass
+
+
+@dataclass
+class DateTime:
+    complex_union_array: list[int | ComplexUnionArrayEnum | datetime.datetime]
+    date: datetime.date
+    date_time: datetime.datetime
+    time: datetime.time
+    union_array: list[datetime.date | datetime.time | datetime.datetime]
+    local_date_class: LocalDate | None = None
+    offset_date_time_class: OffsetDateTime | None = None
+    offset_time_class: OffsetTime | None = None

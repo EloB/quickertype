@@ -1,0 +1,137 @@
+// To parse this JSON data, do
+//
+//     final kitchenSink = kitchenSinkFromJson(jsonString);
+
+import 'dart:convert';
+
+KitchenSink kitchenSinkFromJson(String str) => KitchenSink.fromJson(json.decode(str));
+
+String kitchenSinkToJson(KitchenSink data) => json.encode(data.toJson());
+
+class KitchenSink {
+    final String stringValue;
+    final String dateValue;
+    final String uuidValue;
+    final dynamic nameWithSpaces;
+    final double doubleValue;
+    final int intValue;
+    final bool booleanValue;
+    final dynamic nullValue;
+    final List<List<dynamic>> tuples;
+    final PurplePerson person;
+    final List<PersonElement> people;
+    final List<dynamic> differentThings;
+    final Map<String, int?> mapValue;
+    final Map<String, int?> nullableMapValue;
+
+    KitchenSink({
+        required this.stringValue,
+        required this.dateValue,
+        required this.uuidValue,
+        required this.nameWithSpaces,
+        required this.doubleValue,
+        required this.intValue,
+        required this.booleanValue,
+        required this.nullValue,
+        required this.tuples,
+        required this.person,
+        required this.people,
+        required this.differentThings,
+        required this.mapValue,
+        required this.nullableMapValue,
+    });
+
+    factory KitchenSink.fromJson(Map<String, dynamic> json) => KitchenSink(
+        stringValue: json["stringValue"],
+        dateValue: json["dateValue"],
+        uuidValue: json["uuidValue"],
+        nameWithSpaces: (json.containsKey("name with spaces") ? json["name with spaces"] : throw FormatException('Missing required property')),
+        doubleValue: json["doubleValue"]?.toDouble(),
+        intValue: json["intValue"],
+        booleanValue: json["booleanValue"],
+        nullValue: (json.containsKey("nullValue") ? json["nullValue"] : throw FormatException('Missing required property')),
+        tuples: List<List<dynamic>>.from(json["tuples"].map((x) => List<dynamic>.from(x.map((x) => x)))),
+        person: PurplePerson.fromJson(json["person"]),
+        people: List<PersonElement>.from(json["people"].map((x) => PersonElement.fromJson(x))),
+        differentThings: List<dynamic>.from(json["differentThings"].map((x) => x)),
+        mapValue: Map.from(json["mapValue"]).map((k, v) => MapEntry<String, int?>(k, v)),
+        nullableMapValue: Map.from(json["nullableMapValue"]).map((k, v) => MapEntry<String, int?>(k, v)),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "stringValue": stringValue,
+        "dateValue": dateValue,
+        "uuidValue": uuidValue,
+        "name with spaces": nameWithSpaces,
+        "doubleValue": doubleValue,
+        "intValue": intValue,
+        "booleanValue": booleanValue,
+        "nullValue": nullValue,
+        "tuples": List<dynamic>.from(tuples.map((x) => List<dynamic>.from(x.map((x) => x)))),
+        "person": person.toJson(),
+        "people": List<dynamic>.from(people.map((x) => x.toJson())),
+        "differentThings": List<dynamic>.from(differentThings.map((x) => x)),
+        "mapValue": Map.from(mapValue).map((k, v) => MapEntry<String, dynamic>(k, v)),
+        "nullableMapValue": Map.from(nullableMapValue).map((k, v) => MapEntry<String, dynamic>(k, v)),
+    };
+}
+
+class DifferentThingClass {
+    final String name;
+
+    DifferentThingClass({
+        required this.name,
+    });
+
+    factory DifferentThingClass.fromJson(Map<String, dynamic> json) => DifferentThingClass(
+        name: json["name"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "name": name,
+    };
+}
+
+class PersonElement {
+    final String name;
+    final dynamic intOrString;
+    final bool? optionalValue;
+
+    PersonElement({
+        required this.name,
+        required this.intOrString,
+        this.optionalValue,
+    });
+
+    factory PersonElement.fromJson(Map<String, dynamic> json) => PersonElement(
+        name: json["name"],
+        intOrString: json["intOrString"],
+        optionalValue: json["optionalValue"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "name": name,
+        "intOrString": intOrString,
+        "optionalValue": optionalValue,
+    };
+}
+
+class PurplePerson {
+    final String name;
+    final int intOrString;
+
+    PurplePerson({
+        required this.name,
+        required this.intOrString,
+    });
+
+    factory PurplePerson.fromJson(Map<String, dynamic> json) => PurplePerson(
+        name: json["name"],
+        intOrString: json["intOrString"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "name": name,
+        "intOrString": intOrString,
+    };
+}

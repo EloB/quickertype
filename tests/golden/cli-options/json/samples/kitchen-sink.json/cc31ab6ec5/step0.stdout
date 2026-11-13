@@ -1,0 +1,34 @@
+import * as S from "effect/Schema";
+
+
+export class PurplePerson extends S.Class<PurplePerson>("PurplePerson")({
+    "name": S.String,
+    "intOrString": S.Int,
+}) {}
+
+export class PersonElement extends S.Class<PersonElement>("PersonElement")({
+    "name": S.String,
+    "intOrString": S.Union(S.Int, S.NumberFromString.pipe(S.int())),
+    "optionalValue": S.optional(S.Boolean),
+}) {}
+
+export class DifferentThingClass extends S.Class<DifferentThingClass>("DifferentThingClass")({
+    "name": S.String,
+}) {}
+
+export class KitchenSink extends S.Class<KitchenSink>("KitchenSink")({
+    "stringValue": S.String,
+    "dateValue": S.String,
+    "uuidValue": S.String,
+    "name with spaces": S.Null,
+    "doubleValue": S.Number,
+    "intValue": S.Int,
+    "booleanValue": S.Boolean,
+    "nullValue": S.Null,
+    "tuples": S.Array(S.Array(S.Union(S.Int, S.String))),
+    "person": PurplePerson,
+    "people": S.Array(PersonElement),
+    "differentThings": S.Array(S.Union(S.Int, S.NumberFromString.pipe(S.int()), DifferentThingClass)),
+    "mapValue": S.Record({ key: S.String, value: S.NullOr(S.Int)}),
+    "nullableMapValue": S.Record({ key: S.String, value: S.NullOr(S.Int)}),
+}) {}

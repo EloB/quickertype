@@ -1,0 +1,39 @@
+// Example code that deserializes and serializes the model.
+// extern crate serde;
+// #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_json;
+//
+// use generated_module::github1;
+//
+// fn main() {
+//     let json = r#"{"answer": 42}"#;
+//     let model: github1 = serde_json::from_str(&json).unwrap();
+// }
+
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Github1 {
+    pub data: Option<Data>,
+
+    pub errors: Option<Vec<Error>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Data {
+    pub viewer: User,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct User {
+    pub login: String,
+
+    pub real_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Error {
+    pub message: String,
+}

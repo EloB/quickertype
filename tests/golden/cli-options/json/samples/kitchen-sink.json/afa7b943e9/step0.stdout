@@ -1,0 +1,191 @@
+-- To decode the JSON data, add this file to your project, run
+--
+--     elm install NoRedInk/elm-json-decode-pipeline
+--
+-- add these imports
+--
+--     import Json.Decode exposing (decodeString)
+--     import QuickType exposing (kitchenSink)
+--
+-- and you're off to the races with
+--
+--     decodeString kitchenSink myJsonString
+
+module QuickType exposing
+    ( KitchenSink
+    , kitchenSinkToString
+    , kitchenSink
+    , DifferentThingClass
+    , PersonElement
+    , PurplePerson
+    , DifferentThingElement(..)
+    , IntOrString(..)
+    )
+
+import Json.Decode as Jdec
+import Json.Decode.Pipeline as Jpipe
+import Json.Encode as Jenc
+import Dict exposing (Dict)
+import Array exposing (Array)
+
+type alias KitchenSink =
+    { stringValue : String
+    , dateValue : String
+    , uuidValue : String
+    , nameWithSpaces : ()
+    , doubleValue : Float
+    , intValue : Int
+    , booleanValue : Bool
+    , nullValue : ()
+    , tuples : Array (Array IntOrString)
+    , person : PurplePerson
+    , people : Array PersonElement
+    , differentThings : Array DifferentThingElement
+    , mapValue : Dict String (Maybe Int)
+    , nullableMapValue : Dict String (Maybe Int)
+    }
+
+type DifferentThingElement
+    = DifferentThingClassInDifferentThingElement DifferentThingClass
+    | IntegerInDifferentThingElement Int
+    | StringInDifferentThingElement String
+
+type alias DifferentThingClass =
+    { name : String
+    }
+
+type alias PersonElement =
+    { name : String
+    , intOrString : IntOrString
+    , optionalValue : Maybe Bool
+    }
+
+type IntOrString
+    = IntegerInIntOrString Int
+    | StringInIntOrString String
+
+type alias PurplePerson =
+    { name : String
+    , intOrString : Int
+    }
+
+-- decoders and encoders
+optionalField key decoder fallback =
+    Jdec.dict Jdec.value
+        |> Jdec.andThen (\m ->
+            case Dict.get key m of
+                Nothing -> Jdec.succeed fallback
+                Just x -> Jdec.decodeValue decoder x |> Result.map Jdec.succeed |> Result.withDefault (Jdec.fail ("Invalid " ++ key)))
+
+kitchenSinkToString : KitchenSink -> String
+kitchenSinkToString r = Jenc.encode 0 (encodeKitchenSink r)
+
+kitchenSink : Jdec.Decoder KitchenSink
+kitchenSink =
+    Jdec.succeed KitchenSink
+        |> Jpipe.required "stringValue" Jdec.string
+        |> Jpipe.required "dateValue" Jdec.string
+        |> Jpipe.required "uuidValue" Jdec.string
+        |> Jpipe.required "name with spaces" (Jdec.null ())
+        |> Jpipe.required "doubleValue" Jdec.float
+        |> Jpipe.required "intValue" Jdec.int
+        |> Jpipe.required "booleanValue" Jdec.bool
+        |> Jpipe.required "nullValue" (Jdec.null ())
+        |> Jpipe.required "tuples" (Jdec.array (Jdec.array intOrString ) )
+        |> Jpipe.required "person" purplePerson
+        |> Jpipe.required "people" (Jdec.array personElement )
+        |> Jpipe.required "differentThings" (Jdec.array differentThingElement )
+        |> Jpipe.required "mapValue" (Jdec.dict (Jdec.nullable Jdec.int))
+        |> Jpipe.required "nullableMapValue" (Jdec.dict (Jdec.nullable Jdec.int))
+
+encodeKitchenSink : KitchenSink -> Jenc.Value
+encodeKitchenSink x =
+    Jenc.object
+        [ ("stringValue", Jenc.string x.stringValue)
+        , ("dateValue", Jenc.string x.dateValue)
+        , ("uuidValue", Jenc.string x.uuidValue)
+        , ("name with spaces", always Jenc.null x.nameWithSpaces)
+        , ("doubleValue", Jenc.float x.doubleValue)
+        , ("intValue", Jenc.int x.intValue)
+        , ("booleanValue", Jenc.bool x.booleanValue)
+        , ("nullValue", always Jenc.null x.nullValue)
+        , ("tuples", Jenc.array (Jenc.array encodeIntOrString) x.tuples)
+        , ("person", encodePurplePerson x.person)
+        , ("people", Jenc.array encodePersonElement x.people)
+        , ("differentThings", Jenc.array encodeDifferentThingElement x.differentThings)
+        , ("mapValue", Jenc.dict identity (makeNullableEncoder Jenc.int) x.mapValue)
+        , ("nullableMapValue", Jenc.dict identity (makeNullableEncoder Jenc.int) x.nullableMapValue)
+        ]
+
+differentThingElement : Jdec.Decoder DifferentThingElement
+differentThingElement =
+    Jdec.oneOf
+        [ Jdec.map IntegerInDifferentThingElement Jdec.int
+        , Jdec.map StringInDifferentThingElement Jdec.string
+        , Jdec.map DifferentThingClassInDifferentThingElement differentThingClass
+        ]
+
+encodeDifferentThingElement : DifferentThingElement -> Jenc.Value
+encodeDifferentThingElement x = case x of
+    IntegerInDifferentThingElement y -> Jenc.int y
+    StringInDifferentThingElement y -> Jenc.string y
+    DifferentThingClassInDifferentThingElement y -> encodeDifferentThingClass y
+
+differentThingClass : Jdec.Decoder DifferentThingClass
+differentThingClass =
+    Jdec.succeed DifferentThingClass
+        |> Jpipe.required "name" Jdec.string
+
+encodeDifferentThingClass : DifferentThingClass -> Jenc.Value
+encodeDifferentThingClass x =
+    Jenc.object
+        [ ("name", Jenc.string x.name)
+        ]
+
+personElement : Jdec.Decoder PersonElement
+personElement =
+    Jdec.succeed PersonElement
+        |> Jpipe.required "name" Jdec.string
+        |> Jpipe.required "intOrString" intOrString
+        |> Jpipe.custom (optionalField "optionalValue" (Jdec.map Just Jdec.bool) Nothing)
+
+encodePersonElement : PersonElement -> Jenc.Value
+encodePersonElement x =
+    Jenc.object
+        [ ("name", Jenc.string x.name)
+        , ("intOrString", encodeIntOrString x.intOrString)
+        , ("optionalValue", makeNullableEncoder Jenc.bool x.optionalValue)
+        ]
+
+intOrString : Jdec.Decoder IntOrString
+intOrString =
+    Jdec.oneOf
+        [ Jdec.map IntegerInIntOrString Jdec.int
+        , Jdec.map StringInIntOrString Jdec.string
+        ]
+
+encodeIntOrString : IntOrString -> Jenc.Value
+encodeIntOrString x = case x of
+    IntegerInIntOrString y -> Jenc.int y
+    StringInIntOrString y -> Jenc.string y
+
+purplePerson : Jdec.Decoder PurplePerson
+purplePerson =
+    Jdec.succeed PurplePerson
+        |> Jpipe.required "name" Jdec.string
+        |> Jpipe.required "intOrString" Jdec.int
+
+encodePurplePerson : PurplePerson -> Jenc.Value
+encodePurplePerson x =
+    Jenc.object
+        [ ("name", Jenc.string x.name)
+        , ("intOrString", Jenc.int x.intOrString)
+        ]
+
+--- encoder helpers
+
+makeNullableEncoder : (a -> Jenc.Value) -> Maybe a -> Jenc.Value
+makeNullableEncoder f m =
+    case m of
+    Just x -> f x
+    Nothing -> Jenc.null

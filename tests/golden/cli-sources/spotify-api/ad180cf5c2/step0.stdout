@@ -1,0 +1,562 @@
+// To parse this data:
+//
+//   import { Convert, Artist, Playlist, Track, UserProfile, Album, TopLevel } from "./file";
+//
+//   const artist = Convert.toArtist(json);
+//   const playlist = Convert.toPlaylist(json);
+//   const track = Convert.toTrack(json);
+//   const userProfile = Convert.toUserProfile(json);
+//   const album = Convert.toAlbum(json);
+//   const topLevel = Convert.toTopLevel(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
+export interface Artist {
+    external_urls: ExternalUrls;
+    followers:     Followers;
+    genres:        string[];
+    href:          string;
+    id:            string;
+    images:        ArtistImage[];
+    name:          string;
+    popularity:    number;
+    type:          Type;
+    uri:           string;
+}
+
+export interface ExternalUrls {
+    spotify: string;
+}
+
+export interface Followers {
+    href:  null;
+    total: number;
+}
+
+export interface ArtistImage {
+    height: number | null;
+    url:    string;
+    width:  number | null;
+}
+
+export type Type = "user" | "artist";
+
+export interface Playlist {
+    collaborative: boolean;
+    description:   string;
+    external_urls: ExternalUrls;
+    followers:     Followers;
+    href:          string;
+    id:            string;
+    images:        PlaylistImage[];
+    name:          string;
+    owner:         Owner;
+    public:        null;
+    snapshot_id:   string;
+    tracks:        PlaylistTracks;
+    type:          string;
+    uri:           string;
+}
+
+export interface PlaylistImage {
+    url: string;
+}
+
+export interface Owner {
+    external_urls: ExternalUrls;
+    href:          string;
+    id:            string;
+    type:          Type;
+    uri:           string;
+    name?:         string;
+}
+
+export interface PlaylistTracks {
+    href:     string;
+    items:    Item[];
+    limit:    number;
+    next:     string;
+    offset:   number;
+    previous: null;
+    total:    number;
+}
+
+export interface Item {
+    added_at: Date;
+    added_by: Owner;
+    is_local: boolean;
+    track:    Track;
+}
+
+export interface Track {
+    album?:            AlbumClass;
+    artists:           Owner[];
+    available_markets: string[];
+    disc_number:       number;
+    duration_ms:       number;
+    explicit:          boolean;
+    external_ids?:     TrackExternalIDS;
+    external_urls:     ExternalUrls;
+    href:              string;
+    id:                string;
+    name:              string;
+    popularity?:       number;
+    preview_url:       string;
+    track_number:      number;
+    type:              string;
+    uri:               string;
+}
+
+export interface AlbumClass {
+    album_type:        string;
+    available_markets: string[];
+    external_urls:     ExternalUrls;
+    href:              string;
+    id:                string;
+    images:            ArtistImage[];
+    name:              string;
+    type:              string;
+    uri:               string;
+    artists?:          Owner[];
+}
+
+export interface TrackExternalIDS {
+    isrc: string;
+}
+
+export interface UserProfile {
+    display_name:  string;
+    external_urls: ExternalUrls;
+    followers:     Followers;
+    href:          string;
+    id:            string;
+    images:        ArtistImage[];
+    type:          Type;
+    uri:           string;
+}
+
+export interface Album {
+    album_type:             string;
+    artists:                Owner[];
+    available_markets:      string[];
+    copyrights:             Copyright[];
+    external_ids:           AlbumExternalIDS;
+    external_urls:          ExternalUrls;
+    genres:                 unknown[];
+    href:                   string;
+    id:                     string;
+    images:                 ArtistImage[];
+    name:                   string;
+    popularity:             number;
+    release_date:           string;
+    release_date_precision: string;
+    tracks:                 AlbumTracks;
+    type:                   string;
+    uri:                    string;
+}
+
+export interface Copyright {
+    text: string;
+    type: string;
+}
+
+export interface AlbumExternalIDS {
+    upc: string;
+}
+
+export interface AlbumTracks {
+    href:     string;
+    items:    Track[];
+    limit:    number;
+    next:     null;
+    offset:   number;
+    previous: null;
+    total:    number;
+}
+
+export interface TopLevel {
+    greeting:     string;
+    instructions: string[];
+}
+
+// Converts JSON strings to/from your types
+// and asserts the results of JSON.parse at runtime
+export class Convert {
+    public static toArtist(json: string): Artist {
+        return cast(JSON.parse(json), r("Artist"));
+    }
+
+    public static artistToJson(value: Artist): string {
+        return JSON.stringify(uncast(value, r("Artist")), null, 2);
+    }
+
+    public static toPlaylist(json: string): Playlist {
+        return cast(JSON.parse(json), r("Playlist"));
+    }
+
+    public static playlistToJson(value: Playlist): string {
+        return JSON.stringify(uncast(value, r("Playlist")), null, 2);
+    }
+
+    public static toTrack(json: string): Track {
+        return cast(JSON.parse(json), r("Track"));
+    }
+
+    public static trackToJson(value: Track): string {
+        return JSON.stringify(uncast(value, r("Track")), null, 2);
+    }
+
+    public static toUserProfile(json: string): UserProfile {
+        return cast(JSON.parse(json), r("UserProfile"));
+    }
+
+    public static userProfileToJson(value: UserProfile): string {
+        return JSON.stringify(uncast(value, r("UserProfile")), null, 2);
+    }
+
+    public static toAlbum(json: string): Album {
+        return cast(JSON.parse(json), r("Album"));
+    }
+
+    public static albumToJson(value: Album): string {
+        return JSON.stringify(uncast(value, r("Album")), null, 2);
+    }
+
+    public static toTopLevel(json: string): TopLevel {
+        return cast(JSON.parse(json), r("TopLevel"));
+    }
+
+    public static topLevelToJson(value: TopLevel): string {
+        return JSON.stringify(uncast(value, r("TopLevel")), null, 2);
+    }
+}
+
+function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
+    const prettyTyp = prettyTypeName(typ);
+    const parentText = parent ? ` on ${parent}` : '';
+    const keyText = key ? ` for key "${key}"` : '';
+    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);
+}
+
+function prettyTypeName(typ: any): string {
+    if (Array.isArray(typ)) {
+        if (typ.length === 2 && typ[0] === undefined) {
+            return `an optional ${prettyTypeName(typ[1])}`;
+        } else {
+            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(", ")}]`;
+        }
+    } else if (typeof typ === "object" && typ.literal !== undefined) {
+        return typ.literal;
+    } else {
+        return typeof typ;
+    }
+}
+
+function jsonToJSProps(typ: any): any {
+    if (typ.jsonToJS === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });
+        typ.jsonToJS = map;
+    }
+    return typ.jsonToJS;
+}
+
+function jsToJSONProps(typ: any): any {
+    if (typ.jsToJSON === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });
+        typ.jsToJSON = map;
+    }
+    return typ.jsToJSON;
+}
+
+function transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {
+    function transformPrimitive(typ: string, val: any): any {
+        if (typeof typ === typeof val) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+
+    function transformUnion(typs: any[], val: any): any {
+        // val must validate against one typ in typs
+        const l = typs.length;
+        for (let i = 0; i < l; i++) {
+            const typ = typs[i];
+            try {
+                return transform(val, typ, getProps);
+            } catch (_) {}
+        }
+        return invalidValue(typs, val, key, parent);
+    }
+
+    function transformEnum(cases: string[], val: any): any {
+        if (cases.indexOf(val) !== -1) return val;
+        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);
+    }
+
+    function transformArray(typ: any, val: any): any {
+        // val must be an array with no invalid elements
+        if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
+
+        return val.map(el => transform(el, typ, getProps));
+    }
+
+    function transformDate(val: any): any {
+        if (val === null) {
+            return null;
+        }
+        const d = new Date(val);
+        if (isNaN(d.valueOf())) {
+            return invalidValue(l("Date"), val, key, parent);
+        }
+        return d;
+    }
+
+    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {
+        if (val === null || typeof val !== "object" || Array.isArray(val)) {
+            return invalidValue(l(ref || "object"), val, key, parent);
+        }
+        const result: any = {};
+        Object.getOwnPropertyNames(props).forEach(key => {
+            const prop = props[key];
+            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
+            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+        });
+        Object.getOwnPropertyNames(val).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) {
+                result[key] = transform(val[key], additional, getProps, key, ref);
+            }
+        });
+        return result;
+    }
+
+    if (typ === "any") return val;
+    if (typ === null) {
+        if (val === null) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+    if (typ === false) return invalidValue(typ, val, key, parent);
+    let ref: any = undefined;
+    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }
+    if (Array.isArray(typ)) return transformEnum(typ, val);
+    if (typeof typ === "object") {
+        return typ.hasOwnProperty("pattern")      ? typeof val === "string" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("string")       ? typeof val === "string" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("number")       ? typeof val === "number" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("integer")      ? typeof val === "number" && val % 1 === 0 ? val : invalidValue(l("integer"), val, key, parent)
+            : typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
+            : invalidValue(typ, val, key, parent);
+    }
+    // Numbers can be parsed by Date but shouldn't be.
+    if (typ === Date && (typeof val === "string" || val instanceof Date)) return transformDate(val);
+    return transformPrimitive(typ, val);
+}
+
+function cast<T>(val: any, typ: any): T {
+    return transform(val, typ, jsonToJSProps);
+}
+
+function uncast<T>(val: T, typ: any): any {
+    return transform(val, typ, jsToJSONProps);
+}
+
+function l(typ: any) {
+    return { literal: typ };
+}
+
+function a(typ: any) {
+    return { arrayItems: typ };
+}
+
+function i(typ: any) {
+    return { integer: typ };
+}
+
+function p(pattern: any) {
+    return { pattern };
+}
+
+function s(typ: any, min: any, max: any) {
+    return { string: typ, min, max };
+}
+
+function n(typ: any, min: any, max: any) {
+    return { number: typ, min, max };
+}
+
+function u(...typs: any[]) {
+    return { unionMembers: typs };
+}
+
+function o(props: any[], additional: any) {
+    return { props, additional };
+}
+
+function m(additional: any) {
+    const props: any[] = [];
+    return { props, additional };
+}
+
+function r(name: string) {
+    return { ref: name };
+}
+
+const typeMap: any = {
+    "Artist": o([
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "followers", js: "followers", typ: r("Followers") },
+        { json: "genres", js: "genres", typ: a("") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "images", js: "images", typ: a(r("ArtistImage")) },
+        { json: "name", js: "name", typ: "" },
+        { json: "popularity", js: "popularity", typ: i(0) },
+        { json: "type", js: "type", typ: r("Type") },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "ExternalUrls": o([
+        { json: "spotify", js: "spotify", typ: "" },
+    ], false),
+    "Followers": o([
+        { json: "href", js: "href", typ: null },
+        { json: "total", js: "total", typ: i(0) },
+    ], false),
+    "ArtistImage": o([
+        { json: "height", js: "height", typ: u(i(0), null) },
+        { json: "url", js: "url", typ: "" },
+        { json: "width", js: "width", typ: u(i(0), null) },
+    ], false),
+    "Playlist": o([
+        { json: "collaborative", js: "collaborative", typ: true },
+        { json: "description", js: "description", typ: "" },
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "followers", js: "followers", typ: r("Followers") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "images", js: "images", typ: a(r("PlaylistImage")) },
+        { json: "name", js: "name", typ: "" },
+        { json: "owner", js: "owner", typ: r("Owner") },
+        { json: "public", js: "public", typ: null },
+        { json: "snapshot_id", js: "snapshot_id", typ: "" },
+        { json: "tracks", js: "tracks", typ: r("PlaylistTracks") },
+        { json: "type", js: "type", typ: "" },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "PlaylistImage": o([
+        { json: "url", js: "url", typ: "" },
+    ], false),
+    "Owner": o([
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "type", js: "type", typ: r("Type") },
+        { json: "uri", js: "uri", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
+    ], false),
+    "PlaylistTracks": o([
+        { json: "href", js: "href", typ: "" },
+        { json: "items", js: "items", typ: a(r("Item")) },
+        { json: "limit", js: "limit", typ: i(0) },
+        { json: "next", js: "next", typ: "" },
+        { json: "offset", js: "offset", typ: i(0) },
+        { json: "previous", js: "previous", typ: null },
+        { json: "total", js: "total", typ: i(0) },
+    ], false),
+    "Item": o([
+        { json: "added_at", js: "added_at", typ: Date },
+        { json: "added_by", js: "added_by", typ: r("Owner") },
+        { json: "is_local", js: "is_local", typ: true },
+        { json: "track", js: "track", typ: r("Track") },
+    ], false),
+    "Track": o([
+        { json: "album", js: "album", typ: u(undefined, r("AlbumClass")) },
+        { json: "artists", js: "artists", typ: a(r("Owner")) },
+        { json: "available_markets", js: "available_markets", typ: a("") },
+        { json: "disc_number", js: "disc_number", typ: i(0) },
+        { json: "duration_ms", js: "duration_ms", typ: i(0) },
+        { json: "explicit", js: "explicit", typ: true },
+        { json: "external_ids", js: "external_ids", typ: u(undefined, r("TrackExternalIDS")) },
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "name", js: "name", typ: "" },
+        { json: "popularity", js: "popularity", typ: u(undefined, i(0)) },
+        { json: "preview_url", js: "preview_url", typ: "" },
+        { json: "track_number", js: "track_number", typ: i(0) },
+        { json: "type", js: "type", typ: "" },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "AlbumClass": o([
+        { json: "album_type", js: "album_type", typ: "" },
+        { json: "available_markets", js: "available_markets", typ: a("") },
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "images", js: "images", typ: a(r("ArtistImage")) },
+        { json: "name", js: "name", typ: "" },
+        { json: "type", js: "type", typ: "" },
+        { json: "uri", js: "uri", typ: "" },
+        { json: "artists", js: "artists", typ: u(undefined, a(r("Owner"))) },
+    ], false),
+    "TrackExternalIDS": o([
+        { json: "isrc", js: "isrc", typ: "" },
+    ], false),
+    "UserProfile": o([
+        { json: "display_name", js: "display_name", typ: "" },
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "followers", js: "followers", typ: r("Followers") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "images", js: "images", typ: a(r("ArtistImage")) },
+        { json: "type", js: "type", typ: r("Type") },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "Album": o([
+        { json: "album_type", js: "album_type", typ: "" },
+        { json: "artists", js: "artists", typ: a(r("Owner")) },
+        { json: "available_markets", js: "available_markets", typ: a("") },
+        { json: "copyrights", js: "copyrights", typ: a(r("Copyright")) },
+        { json: "external_ids", js: "external_ids", typ: r("AlbumExternalIDS") },
+        { json: "external_urls", js: "external_urls", typ: r("ExternalUrls") },
+        { json: "genres", js: "genres", typ: a("any") },
+        { json: "href", js: "href", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "images", js: "images", typ: a(r("ArtistImage")) },
+        { json: "name", js: "name", typ: "" },
+        { json: "popularity", js: "popularity", typ: i(0) },
+        { json: "release_date", js: "release_date", typ: "" },
+        { json: "release_date_precision", js: "release_date_precision", typ: "" },
+        { json: "tracks", js: "tracks", typ: r("AlbumTracks") },
+        { json: "type", js: "type", typ: "" },
+        { json: "uri", js: "uri", typ: "" },
+    ], false),
+    "Copyright": o([
+        { json: "text", js: "text", typ: "" },
+        { json: "type", js: "type", typ: "" },
+    ], false),
+    "AlbumExternalIDS": o([
+        { json: "upc", js: "upc", typ: "" },
+    ], false),
+    "AlbumTracks": o([
+        { json: "href", js: "href", typ: "" },
+        { json: "items", js: "items", typ: a(r("Track")) },
+        { json: "limit", js: "limit", typ: i(0) },
+        { json: "next", js: "next", typ: null },
+        { json: "offset", js: "offset", typ: i(0) },
+        { json: "previous", js: "previous", typ: null },
+        { json: "total", js: "total", typ: i(0) },
+    ], false),
+    "TopLevel": o([
+        { json: "greeting", js: "greeting", typ: "" },
+        { json: "instructions", js: "instructions", typ: a("") },
+    ], false),
+    "Type": [
+        "user",
+        "artist",
+    ],
+};

@@ -1,0 +1,29 @@
+// To parse this data:
+//
+//   import { Convert, DateTime } from "./file";
+//
+//   const dateTime = Convert.toDateTime(json);
+
+export interface DateTime {
+    "complex-union-array":     Array<Date | ComplexUnionArrayEnum | number>;
+    date:                      Date;
+    "date-time":               Date;
+    "local-date-class"?:       object;
+    "offset-date-time-class"?: object;
+    "offset-time-class"?:      object;
+    time:                      string;
+    "union-array":             string[];
+}
+
+export type ComplexUnionArrayEnum = "foo" | "bar";
+
+// Converts JSON strings to/from your types
+export class Convert {
+    public static toDateTime(json: string): DateTime {
+        return JSON.parse(json);
+    }
+
+    public static dateTimeToJson(value: DateTime): string {
+        return JSON.stringify(value);
+    }
+}

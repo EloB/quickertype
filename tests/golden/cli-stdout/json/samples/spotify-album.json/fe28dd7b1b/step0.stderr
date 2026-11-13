@@ -1,0 +1,36 @@
+
+Issue in line 227: The only value for this in the input is null, which means you probably need a more complete input sample.
+227:         nlohmann::json next;
+
+Issue in line 229: The only value for this in the input is null, which means you probably need a more complete input sample.
+229:         nlohmann::json previous;
+
+Issue in line 245: The only value for this in the input is null, which means you probably need a more complete input sample.
+245:         const nlohmann::json & get_next() const { return next; }
+
+Issue in line 246: The only value for this in the input is null, which means you probably need a more complete input sample.
+246:         nlohmann::json & get_mutable_next() { return next; }
+
+Issue in line 247: The only value for this in the input is null, which means you probably need a more complete input sample.
+247:         void set_next(const nlohmann::json & value) { this->next = value; }
+
+Issue in line 253: The only value for this in the input is null, which means you probably need a more complete input sample.
+253:         const nlohmann::json & get_previous() const { return previous; }
+
+Issue in line 254: The only value for this in the input is null, which means you probably need a more complete input sample.
+254:         nlohmann::json & get_mutable_previous() { return previous; }
+
+Issue in line 255: The only value for this in the input is null, which means you probably need a more complete input sample.
+255:         void set_previous(const nlohmann::json & value) { this->previous = value; }
+
+Issue in line 274: quicktype cannot infer this type because there is no data about it in the input.
+274:         std::vector<nlohmann::json> genres;
+
+Issue in line 311: quicktype cannot infer this type because there is no data about it in the input.
+311:         const std::vector<nlohmann::json> & get_genres() const { return genres; }
+
+Issue in line 312: quicktype cannot infer this type because there is no data about it in the input.
+312:         std::vector<nlohmann::json> & get_mutable_genres() { return genres; }
+
+Issue in line 313: quicktype cannot infer this type because there is no data about it in the input.
+313:         void set_genres(const std::vector<nlohmann::json> & value) { this->genres = value; }

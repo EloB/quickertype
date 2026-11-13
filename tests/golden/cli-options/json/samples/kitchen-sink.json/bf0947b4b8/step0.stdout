@@ -1,0 +1,116 @@
+// To parse this JSON data, do
+//
+//     final kitchenSink = kitchenSinkFromJson(jsonString);
+
+import 'package:json_annotation/json_annotation.dart';
+import 'dart:convert';
+
+part 'kitchen_sink.g.dart';
+
+KitchenSink kitchenSinkFromJson(String str) => KitchenSink.fromJson(json.decode(str));
+
+String kitchenSinkToJson(KitchenSink data) => json.encode(data.toJson());
+
+@JsonSerializable()
+class KitchenSink {
+    @JsonKey(name: "stringValue")
+    final String stringValue;
+    @JsonKey(name: "dateValue")
+    final String dateValue;
+    @JsonKey(name: "uuidValue")
+    final String uuidValue;
+    @JsonKey(name: "name with spaces")
+    final dynamic nameWithSpaces;
+    @JsonKey(name: "doubleValue")
+    final double doubleValue;
+    @JsonKey(name: "intValue")
+    final int intValue;
+    @JsonKey(name: "booleanValue")
+    final bool booleanValue;
+    @JsonKey(name: "nullValue")
+    final dynamic nullValue;
+    @JsonKey(name: "tuples")
+    final List<List<dynamic>> tuples;
+    @JsonKey(name: "person")
+    final PurplePerson person;
+    @JsonKey(name: "people")
+    final List<PersonElement> people;
+    @JsonKey(name: "differentThings")
+    final List<dynamic> differentThings;
+    @JsonKey(name: "mapValue")
+    final Map<String, int?> mapValue;
+    @JsonKey(name: "nullableMapValue")
+    final Map<String, int?> nullableMapValue;
+
+    KitchenSink({
+        required this.stringValue,
+        required this.dateValue,
+        required this.uuidValue,
+        required this.nameWithSpaces,
+        required this.doubleValue,
+        required this.intValue,
+        required this.booleanValue,
+        required this.nullValue,
+        required this.tuples,
+        required this.person,
+        required this.people,
+        required this.differentThings,
+        required this.mapValue,
+        required this.nullableMapValue,
+    });
+
+    factory KitchenSink.fromJson(Map<String, dynamic> json) => _$KitchenSinkFromJson(json);
+
+    Map<String, dynamic> toJson() => _$KitchenSinkToJson(this);
+}
+
+@JsonSerializable()
+class DifferentThingClass {
+    @JsonKey(name: "name")
+    final String name;
+
+    DifferentThingClass({
+        required this.name,
+    });
+
+    factory DifferentThingClass.fromJson(Map<String, dynamic> json) => _$DifferentThingClassFromJson(json);
+
+    Map<String, dynamic> toJson() => _$DifferentThingClassToJson(this);
+}
+
+@JsonSerializable()
+class PersonElement {
+    @JsonKey(name: "name")
+    final String name;
+    @JsonKey(name: "intOrString")
+    final dynamic intOrString;
+    @JsonKey(name: "optionalValue")
+    final bool? optionalValue;
+
+    PersonElement({
+        required this.name,
+        required this.intOrString,
+        this.optionalValue,
+    });
+
+    factory PersonElement.fromJson(Map<String, dynamic> json) => _$PersonElementFromJson(json);
+
+    Map<String, dynamic> toJson() => _$PersonElementToJson(this);
+}
+
+@JsonSerializable()
+class PurplePerson {
+    @JsonKey(name: "name")
+    final String name;
+    @JsonKey(name: "intOrString")
+    final int intOrString;
+
+    PurplePerson({
+        required this.name,
+        required this.intOrString,
+    });
+
+    factory PurplePerson.fromJson(Map<String, dynamic> json) => _$PurplePersonFromJson(json);
+
+    Map<String, dynamic> toJson() => _$PurplePersonToJson(this);
+}

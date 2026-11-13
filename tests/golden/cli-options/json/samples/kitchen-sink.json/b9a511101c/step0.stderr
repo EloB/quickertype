@@ -1,0 +1,6 @@
+
+Issue in line 38: The only value for this in the input is null, which means you probably need a more complete input sample.
+38:         public object NameWithSpaces { get; set; }
+
+Issue in line 50: The only value for this in the input is null, which means you probably need a more complete input sample.
+50:         public object NullValue { get; set; }

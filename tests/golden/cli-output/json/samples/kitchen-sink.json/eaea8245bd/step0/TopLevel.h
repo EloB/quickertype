@@ -1,0 +1,54 @@
+// To parse this JSON:
+//
+//   NSError *error;
+//   QTTopLevel *topLevel = [QTTopLevel fromJSON:json encoding:NSUTF8Encoding error:&error];
+
+#import <Foundation/Foundation.h>
+
+@class QTTopLevel;
+@class QTDifferentThingClass;
+@class QTPersonElement;
+@class QTPurplePerson;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Object interfaces
+
+@interface QTTopLevel : NSObject
+@property (nonatomic, copy)           NSString *stringValue;
+@property (nonatomic, copy)           NSString *dateValue;
+@property (nonatomic, copy)           NSString *uuidValue;
+@property (nonatomic, nullable, copy) id nameWithSpaces;
+@property (nonatomic, assign)         double doubleValue;
+@property (nonatomic, assign)         NSInteger intValue;
+@property (nonatomic, assign)         BOOL isBooleanValue;
+@property (nonatomic, nullable, copy) id nullValue;
+@property (nonatomic, copy)           NSArray<NSArray<id> *> *tuples;
+@property (nonatomic, strong)         QTPurplePerson *person;
+@property (nonatomic, copy)           NSArray<QTPersonElement *> *people;
+@property (nonatomic, copy)           NSArray<id> *differentThings;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *mapValue;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *nullableMapValue;
+
++ (_Nullable instancetype)fromJSON:(NSString *)json encoding:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
++ (_Nullable instancetype)fromData:(NSData *)data error:(NSError *_Nullable *)error;
+- (NSString *_Nullable)toJSON:(NSStringEncoding)encoding error:(NSError *_Nullable *)error;
+- (NSData *_Nullable)toData:(NSError *_Nullable *)error;
+@end
+
+@interface QTDifferentThingClass : NSObject
+@property (nonatomic, copy) NSString *name;
+@end
+
+@interface QTPersonElement : NSObject
+@property (nonatomic, copy)             NSString *name;
+@property (nonatomic, copy)             id intOrString;
+@property (nonatomic, nullable, strong) NSNumber *optionalValue;
+@end
+
+@interface QTPurplePerson : NSObject
+@property (nonatomic, copy)   NSString *name;
+@property (nonatomic, assign) NSInteger intOrString;
+@end
+
+NS_ASSUME_NONNULL_END

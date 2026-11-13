@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "--out",
+        "x.ts"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

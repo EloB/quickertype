@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "cs",
+        "--framework"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

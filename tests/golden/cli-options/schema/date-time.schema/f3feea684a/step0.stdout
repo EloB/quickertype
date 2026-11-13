@@ -1,0 +1,36 @@
+defmodule LocalDate do
+  defstruct []
+
+  @type t :: %__MODULE__{
+        }
+end
+
+defmodule OffsetDateTime do
+  defstruct []
+
+  @type t :: %__MODULE__{
+        }
+end
+
+defmodule OffsetTime do
+  defstruct []
+
+  @type t :: %__MODULE__{
+        }
+end
+
+defmodule DateTime1 do
+  @enforce_keys [:complex_union_array, :date, :date_time, :time, :union_array]
+  defstruct [:complex_union_array, :date, :date_time, :local_date_class, :offset_date_time_class, :offset_time_class, :time, :union_array]
+
+  @type t :: %__MODULE__{
+          complex_union_array: [integer() | String.t()],
+          date: String.t(),
+          date_time: String.t(),
+          local_date_class: LocalDate.t() | nil,
+          offset_date_time_class: OffsetDateTime.t() | nil,
+          offset_time_class: OffsetTime.t() | nil,
+          time: String.t(),
+          union_array: [String.t()]
+        }
+end

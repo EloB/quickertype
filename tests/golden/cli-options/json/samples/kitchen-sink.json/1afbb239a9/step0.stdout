@@ -1,0 +1,85 @@
+// To parse this JSON data, do
+//
+//     final kitchenSink = kitchenSinkFromJson(jsonString);
+
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'dart:convert';
+
+part 'kitchen_sink.freezed.dart';
+part 'kitchen_sink.g.dart';
+
+KitchenSink kitchenSinkFromJson(String str) => KitchenSink.fromJson(json.decode(str));
+
+String kitchenSinkToJson(KitchenSink data) => json.encode(data.toJson());
+
+@freezed
+abstract class KitchenSink with _$KitchenSink {
+    const factory KitchenSink({
+        @JsonKey(name: "stringValue")
+        required String stringValue,
+        @JsonKey(name: "dateValue")
+        required String dateValue,
+        @JsonKey(name: "uuidValue")
+        required String uuidValue,
+        @JsonKey(name: "name with spaces")
+        required dynamic nameWithSpaces,
+        @JsonKey(name: "doubleValue")
+        required double doubleValue,
+        @JsonKey(name: "intValue")
+        required int intValue,
+        @JsonKey(name: "booleanValue")
+        required bool booleanValue,
+        @JsonKey(name: "nullValue")
+        required dynamic nullValue,
+        @JsonKey(name: "tuples")
+        required List<List<dynamic>> tuples,
+        @JsonKey(name: "person")
+        required PurplePerson person,
+        @JsonKey(name: "people")
+        required List<PersonElement> people,
+        @JsonKey(name: "differentThings")
+        required List<dynamic> differentThings,
+        @JsonKey(name: "mapValue")
+        required Map<String, int?> mapValue,
+        @JsonKey(name: "nullableMapValue")
+        required Map<String, int?> nullableMapValue,
+    }) = _KitchenSink;
+
+    factory KitchenSink.fromJson(Map<String, dynamic> json) => _$KitchenSinkFromJson(json);
+}
+
+@freezed
+abstract class DifferentThingClass with _$DifferentThingClass {
+    const factory DifferentThingClass({
+        @JsonKey(name: "name")
+        required String name,
+    }) = _DifferentThingClass;
+
+    factory DifferentThingClass.fromJson(Map<String, dynamic> json) => _$DifferentThingClassFromJson(json);
+}
+
+@freezed
+abstract class PersonElement with _$PersonElement {
+    const factory PersonElement({
+        @JsonKey(name: "name")
+        required String name,
+        @JsonKey(name: "intOrString")
+        required dynamic intOrString,
+        @JsonKey(name: "optionalValue")
+        bool? optionalValue,
+    }) = _PersonElement;
+
+    factory PersonElement.fromJson(Map<String, dynamic> json) => _$PersonElementFromJson(json);
+}
+
+@freezed
+abstract class PurplePerson with _$PurplePerson {
+    const factory PurplePerson({
+        @JsonKey(name: "name")
+        required String name,
+        @JsonKey(name: "intOrString")
+        required int intOrString,
+    }) = _PurplePerson;
+
+    factory PurplePerson.fromJson(Map<String, dynamic> json) => _$PurplePersonFromJson(json);
+}

@@ -1,0 +1,32 @@
+{
+  "fixture": "cli-output",
+  "input": "json/samples/kitchen-sink.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--out",
+        "First.ts",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [
+        "First.ts"
+      ],
+      "exit": 0
+    },
+    {
+      "args": [
+        "--lang",
+        "go",
+        "--out",
+        "Second.go",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [
+        "Second.go"
+      ],
+      "exit": 0
+    }
+  ]
+}
