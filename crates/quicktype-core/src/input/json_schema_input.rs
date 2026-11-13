@@ -2088,6 +2088,13 @@ impl JsonSchemaInput {
         self.top_levels.insert(name, r);
     }
 
+    /// `_topLevels`: the top-levels added with
+    /// [`add_top_level`](Self::add_top_level) and by
+    /// [`add_types`](Self::add_types), in insertion order.
+    pub fn top_levels(&self) -> impl Iterator<Item = (&str, &Ref)> {
+        self.top_levels.iter().map(|(name, r)| (name.as_str(), r))
+    }
+
     /// `addTypes(ctx, typeBuilder)`: resolves every source and builds the
     /// types of its top-levels with `type_builder`.
     ///
