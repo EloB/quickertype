@@ -380,6 +380,29 @@ fn deep_inputs_do_not_overflow_the_stack() {
     assert!(stdout(&output).contains("pub type Deep = Vec<Vec<"));
 }
 
+#[test]
+fn inputs_too_deep_for_node_fail_like_node() {
+    // TypeScript's inference overflows V8's stack within about 1,000
+    // levels. A million levels used to overflow even the generation
+    // thread's stack (an abort); now inference stops at the same
+    // `RangeError`.
+    let dir = work_dir("deeper");
+    let depth = 1_000_000;
+    let arrays = format!("{}{}", "[".repeat(depth), "]".repeat(depth));
+    let objects = format!("{}1{}", r#"{"a":"#.repeat(depth), "}".repeat(depth));
+    for (name, json) in [("arrays.json", arrays), ("objects.json", objects)] {
+        fs::write(dir.join(name), json).unwrap();
+        let output = quicktype_in(&dir, &["--lang", "rust", name], None);
+        assert_eq!(output.status.code(), Some(1), "{name}");
+        assert_eq!(stdout(&output), "", "{name}");
+        assert_eq!(
+            stderr(&output),
+            "Error: Maximum call stack size exceeded.\n",
+            "{name}"
+        );
+    }
+}
+
 /// Runs `args` on TypeScript sources written to a fresh directory (the
 /// TypeScript input only accepts files below the working directory).
 /// `None` (with a note) without the TypeScript 7 compiler, or while the

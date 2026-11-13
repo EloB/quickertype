@@ -24,6 +24,7 @@ use super::compressed_json::{CompressedJson, Value};
 use crate::attributes::string_types::{StringTypes, infer_transformed_string_type_kind_for_string};
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::messages::{ErrorKind, Result, message_error};
+use crate::support::recursion::guard;
 use crate::support::support::{defined, panic};
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
 use crate::ty::ty::{ClassProperty, Type};
@@ -137,6 +138,11 @@ impl<'c> TypeInference<'c> {
     }
 
     /// `inferType(typeAttributes, valueArray, fixed, forwardingRef)`.
+    ///
+    /// Recurses once per nesting level of the input, as in TypeScript,
+    /// where V8's stack overflows within about 1,000 levels: past
+    /// [`MAX_DEPTH`](crate::support::recursion::MAX_DEPTH) levels this fails
+    /// with the same `RangeError` instead of overflowing the native stack.
     pub fn infer_type(
         &self,
         builder: &mut TypeBuilder<'_>,
@@ -145,14 +151,16 @@ impl<'c> TypeInference<'c> {
         fixed: bool,
         forwarding_ref: Option<TypeRef>,
     ) -> Result<TypeRef> {
-        let accumulator = self.accumulator_for_array(values)?;
-        self.make_type_from_accumulator(
-            builder,
-            &accumulator,
-            type_attributes,
-            fixed,
-            forwarding_ref,
-        )
+        guard(|| {
+            let accumulator = self.accumulator_for_array(values)?;
+            self.make_type_from_accumulator(
+                builder,
+                &accumulator,
+                type_attributes,
+                fixed,
+                forwarding_ref,
+            )
+        })
     }
 
     /// `resolveRef(ref, topLevel)`: follows a `#/a/0/b` JSON reference

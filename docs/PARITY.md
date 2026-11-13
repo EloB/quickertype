@@ -262,12 +262,29 @@ the others name the fix they need.
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
 - **Very deeply nested JSON.** Both JSON readers are iterative, but
-  inference recurses once per nesting level, as in TypeScript. There the
-  JavaScript stack runs out somewhere between 500 and 1,000 levels
-  (`Maximum call stack size exceeded`, depending on Node's stack size); the
-  port goes much deeper (the CLI generates on a thread with a 256 MB
-  stack) but eventually overflows the native stack and aborts. Fix: an
-  explicit depth limit reporting the `RangeError`, or iterative inference.
+  inference recurses once per nesting level, as in TypeScript, where the
+  JavaScript stack runs out somewhere between 800 and 1,000 levels
+  (`Maximum call stack size exceeded`; for nested arrays the CLI failed
+  from 798 levels with `--lang ts` and from 852 with `--lang go`, varying
+  between runs). The port models this with one rule per reader, which
+  any inference path must follow:
+  - Inference: every `inferType` call (one for the top-level's samples,
+    one for the values of each nested array or object) runs under
+    `support::recursion::guard`, so a sample whose arrays and objects nest
+    1,000 deep fails with that `RangeError`, and 999 levels are inferred
+    (`[` × 999 + `]` × 999, or `{"a":` × 999 + `1` + `}` × 999). Between
+    Node's limit and 1,000 levels the port still generates code. (A
+    million levels used to overflow the native stack and abort the CLI.)
+  - `JSON.parse` semantics (the API): TypeScript's
+    `CompressedJSONFromString.process` recurses over the parsed value
+    first and overflows at the 4,579th nested value (counting the sample
+    itself; Node 24, fresh process), which it reports as the sample's
+    parse error (`Syntax error in input JSON <name>: Maximum call stack
+    size exceeded`). The port's `process` fails the same way past depth
+    4,578 (`PROCESS_MAX_DEPTH` in `input/compressed_json.rs`). Samples
+    between 1,000 and 4,578 levels deep reach inference and fail there.
+  `crates/quicktype-core/tests/deep_json.rs` and the CLI's
+  `inputs_too_deep_for_node_fail_like_node` pin these rules end to end.
 - **Endless recursion over the type graph.** On a graph that cycles
   through a nullable union (`T = T[] | null`), TypeScript's
   type-to-source functions (and C#'s `needTransformerForType`) recurse until
@@ -344,7 +361,8 @@ the others name the fix they need.
   itself overflows somewhere between about 750 and 1,200 levels. The
   generation stages (inference, rewrites, rendering) recurse on the native
   stack; the CLI runs them on a thread with a 256 MB stack (`STACK_SIZE`
-  in `crates/quicktype-cli/src/main.rs`). See "Very deeply nested JSON"
+  in `crates/quicktype-cli/src/main.rs`), and inference, whose depth the
+  input decides, is limited like Node's. See "Very deeply nested JSON"
   and "Endless recursion over the type graph".
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
