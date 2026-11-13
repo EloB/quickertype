@@ -98,8 +98,6 @@ pub const RUST_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RustTargetLanguage;
 
-// TODO(renderer): port the hooks RustTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for RustTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &RUST_LANGUAGE_CONFIG
@@ -129,4 +127,33 @@ impl TargetLanguage for RustTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::rust_renderer::RustOptions::parse(renderer_options)?;
+        let renderer = super::rust_renderer::RustRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
+}
+
+/// TS `IntegerType`: the values of the `integer-type` option.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IntegerType {
+    /// `"conservative"`: `i32` only if schema bounds prove it fits.
+    Conservative,
+    /// `"force-i32"`.
+    ForceI32,
+    /// `"force-i64"`.
+    ForceI64,
 }

@@ -1,0 +1,363 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "cookies",
+      1,
+      false
+     ],
+     [
+      "people",
+      20,
+      false
+     ],
+     [
+      "data",
+      6,
+      false
+     ],
+     [
+      "mixed",
+      15,
+      false
+     ],
+     [
+      "other",
+      18,
+      false
+     ],
+     [
+      "statuses",
+      23,
+      false
+     ],
+     [
+      "matrices",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "flavor",
+      5,
+      false
+     ],
+     [
+      "bakers",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 4
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "items",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      8,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "age",
+      9,
+      false
+     ],
+     [
+      "name",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 11
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "cells",
+      12,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 13
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      14,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 16
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     9,
+     17,
+     5
+    ]
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "three",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "data",
+      19,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "items",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 21
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 22
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "age",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 24
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "code",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    cookies <- \"cookies\"\n    people <- \"people\"\n    data <- \"data\"\n    mixed <- \"mixed\"\n    other <- \"other\"\n    statuses <- \"statuses\"\n    matrices <- \"matrices\"\nclass Cooky (cooky)\n    flavor <- \"flavor\"\n    bakers <- \"bakers\"\nclass Baker (baker)\n    name <- \"name\"\nclass TopLevelData (data)\n    items <- \"items\"\nclass Items (items)\n    x <- \"x\"\nclass X (x)\n    age <- \"age\"\n    name <- \"name\"\nclass Matrix (matrix)\n    cells <- \"cells\"\nclass Cell (cell)\n    v <- \"v\"\nunion MixedElement\n    Integer <- integer\n    MixedClass <- class\n    String <- string\nclass MixedClass (mixed)\n    three <- \"three\"\nclass Other (other)\n    data <- \"data\"\nclass OtherData (data)\n    items <- \"items\"\nclass Person (person)\n    age <- \"age\"\nclass Status (status)\n    code <- \"code\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    cookies <- \"cookies\"\n    data <- \"data\"\n    matrices <- \"matrices\"\n    mixed <- \"mixed\"\n    other <- \"other\"\n    people <- \"people\"\n    statuses <- \"statuses\"\nclass Cooky (cooky)\n    bakers <- \"bakers\"\n    flavor <- \"flavor\"\nclass Baker (baker)\n    name <- \"name\"\nclass TopLevelData (data)\n    items <- \"items\"\nclass Items (items)\n    x <- \"x\"\nclass X (x)\n    age <- \"age\"\n    name <- \"name\"\nclass Matrix (matrix)\n    cells <- \"cells\"\nclass Cell (cell)\n    v <- \"v\"\nunion MixedElement\n    Integer <- integer\n    MixedClass <- class\n    String <- string\nclass MixedClass (mixed)\n    three <- \"three\"\nclass Other (other)\n    data <- \"data\"\nclass OtherData (data)\n    items <- \"items\"\nclass Person (person)\n    age <- \"age\"\nclass Status (status)\n    code <- \"code\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    pub cookies: Vec<Cooky>,\n\n    pub people: Vec<Vec<Person>>,\n\n    pub data: TopLevelData,\n\n    pub mixed: Vec<MixedElement>,\n\n    pub other: Other,\n\n    pub statuses: Vec<Status>,\n\n    pub matrices: Vec<Matrix>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Cooky {\n    pub flavor: String,\n\n    pub bakers: Vec<Baker>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Baker {\n    pub name: String,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevelData {\n    pub items: Items,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Items {\n    pub x: X,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X {\n    pub age: i64,\n\n    pub name: String,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Matrix {\n    pub cells: Vec<Cell>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Cell {\n    pub v: bool,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum MixedElement {\n    Integer(i64),\n\n    MixedClass(MixedClass),\n\n    PurpleString(String),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct MixedClass {\n    pub three: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Other {\n    pub data: OtherData,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct OtherData {\n    pub items: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Person {\n    pub age: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Status {\n    pub code: i64,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "gather-names"
+}

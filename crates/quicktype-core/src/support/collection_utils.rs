@@ -471,3 +471,148 @@ mod tests {
         );
     }
 }
+
+/// `mapSortBy`/`setSortBy`/`arraySortByInto` with a string sort key that
+/// may fail: computes each key once, then sorts stably by the keys in
+/// UTF-16 code unit order. For pure key functions this is exactly the
+/// JavaScript result, which recomputes the key on every comparison; like
+/// JavaScript, fewer than two items are returned without computing keys.
+pub fn sort_by_cached_string_key<T, E>(
+    items: Vec<T>,
+    mut key: impl FnMut(&T) -> Result<String, E>,
+) -> Result<Vec<T>, E> {
+    if items.len() < 2 {
+        return Ok(items);
+    }
+    let mut keyed: Vec<(String, T)> = Vec::with_capacity(items.len());
+    for item in items {
+        keyed.push((key(&item)?, item));
+    }
+    sort_by(&mut keyed, |a, b| compare_utf16(&a.0, &b.0));
+    Ok(keyed.into_iter().map(|(_, item)| item).collect())
+}
+
+/// How a JavaScript `Map` or `Set` compares a key (SameValueZero): see
+/// [`SameValueZeroKey`].
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum SameValueZero {
+    /// A string, compared by value.
+    String(String),
+    /// A number, compared by value; all NaNs are one key and `-0` is `0`.
+    Number(u64),
+    /// A boolean.
+    Bool(bool),
+    /// An object identified by an id (e.g. a `Name`): equal to itself only.
+    Identity(u64),
+    /// A fresh object (an array, a sourcelike tree): equal to nothing.
+    Unique,
+}
+
+/// A value usable as a JavaScript `Map` key, compared like JavaScript does
+/// (SameValueZero): primitives by value, objects by identity. Wrap a value
+/// that stands for a fresh JavaScript object or array in [`JsObject`].
+pub trait SameValueZeroKey {
+    /// The key this value is compared by.
+    fn same_value_zero_key(&self) -> SameValueZero;
+}
+
+impl SameValueZeroKey for String {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        SameValueZero::String(self.clone())
+    }
+}
+
+impl SameValueZeroKey for &str {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        SameValueZero::String((*self).to_owned())
+    }
+}
+
+impl SameValueZeroKey for f64 {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        if self.is_nan() {
+            SameValueZero::Number(f64::NAN.to_bits())
+        } else if *self == 0.0 {
+            SameValueZero::Number(0f64.to_bits())
+        } else {
+            SameValueZero::Number(self.to_bits())
+        }
+    }
+}
+
+impl SameValueZeroKey for usize {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        (*self as f64).same_value_zero_key()
+    }
+}
+
+impl SameValueZeroKey for i64 {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        (*self as f64).same_value_zero_key()
+    }
+}
+
+impl SameValueZeroKey for bool {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        SameValueZero::Bool(*self)
+    }
+}
+
+/// A value that is a fresh JavaScript object or array: as a `Map` key it
+/// equals nothing, not even an equal-looking value.
+#[derive(Clone, Debug)]
+pub struct JsObject<T>(pub T);
+
+impl<T> SameValueZeroKey for JsObject<T> {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        SameValueZero::Unique
+    }
+}
+
+/// A JavaScript `Map` built with `if (!m.has(k)) m.set(k, v)`: the first
+/// value for each key (SameValueZero), in insertion order.
+pub fn first_by_same_value_zero<K: SameValueZeroKey, V>(
+    entries: impl IntoIterator<Item = (K, V)>,
+) -> Vec<(K, V)> {
+    let mut seen: std::collections::HashSet<SameValueZero> = std::collections::HashSet::new();
+    let mut result = Vec::new();
+    for (k, v) in entries {
+        let key = k.same_value_zero_key();
+        if key == SameValueZero::Unique || seen.insert(key) {
+            result.push((k, v));
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod renderer_helper_tests {
+    use super::*;
+
+    #[test]
+    fn sorts_by_cached_utf16_keys_stably() {
+        let items = vec!["b1", "a", "b2", "\u{ff61}", "😀"];
+        let sorted = sort_by_cached_string_key(items, |s| {
+            Ok::<_, ()>(s.chars().next().unwrap().to_string())
+        })
+        .unwrap();
+        assert_eq!(sorted, ["a", "b1", "b2", "😀", "\u{ff61}"]);
+        let failed = sort_by_cached_string_key(vec![1, 2], |_| Err::<String, _>("no key"));
+        assert_eq!(failed, Err("no key"));
+    }
+
+    #[test]
+    fn map_keys_compare_like_same_value_zero() {
+        let firsts = first_by_same_value_zero(vec![
+            ("a".to_owned(), 1),
+            ("a".to_owned(), 2),
+            ("b".to_owned(), 3),
+        ]);
+        assert_eq!(firsts, [("a".to_owned(), 1), ("b".to_owned(), 3)]);
+        let numbers =
+            first_by_same_value_zero(vec![(0.0, 1), (-0.0, 2), (f64::NAN, 3), (f64::NAN, 4)]);
+        assert_eq!(numbers.iter().map(|(_, v)| *v).collect::<Vec<_>>(), [1, 3]);
+        let objects = first_by_same_value_zero(vec![(JsObject("a"), 1), (JsObject("a"), 2)]);
+        assert_eq!(objects.len(), 2);
+    }
+}
