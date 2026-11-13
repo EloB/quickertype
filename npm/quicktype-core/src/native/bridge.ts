@@ -33,8 +33,56 @@ import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
 
-/** How many runs each engine did, for tests (`QUICKTYPE_ENGINE`). */
-export const engineStats = { wasm: 0, ts: 0 };
+/**
+ * Which engine ran what, for tests and debugging: `wasm` counts runs the
+ * WebAssembly engine did, `ts` runs the TypeScript engine did (for any
+ * reason), and `unsupported` those of the latter that were eligible but
+ * that the engine declined because it lacks a feature (a renderer not
+ * ported yet), by feature in `unsupportedBy`.
+ */
+export const engineStats = {
+    wasm: 0,
+    ts: 0,
+    unsupported: 0,
+    unsupportedBy: {} as Record<string, number>,
+};
+
+/** The engine lacks `feature`: the run goes to the TypeScript engine. */
+function declined(feature: string): undefined {
+    engineStats.ts++;
+    engineStats.unsupported++;
+    engineStats.unsupportedBy[feature] = (engineStats.unsupportedBy[feature] ?? 0) + 1;
+    return undefined;
+}
+
+const supportedLanguages = new WeakMap<WasmGlue, Map<string, boolean>>();
+
+/**
+ * Whether the engine has the language's renderer (asked once per
+ * instance), so that runs it would decline go to the TypeScript engine
+ * before they have any side effects.
+ */
+function engineSupports(glue: WasmGlue, lang: string): boolean {
+    let known = supportedLanguages.get(glue);
+    if (known === undefined) {
+        known = new Map();
+        supportedLanguages.set(glue, known);
+    }
+
+    let supported = known.get(lang);
+    if (supported === undefined) {
+        try {
+            supported = glue.supportsLanguage(lang);
+        } catch (e) {
+            engineFailure(glue, e);
+            supported = false;
+        }
+
+        known.set(lang, supported);
+    }
+
+    return supported;
+}
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
@@ -201,7 +249,13 @@ function decodeFiles(files: any[]): MultiFileRenderResult {
     return result;
 }
 
-function decodeOutcome(outcome: any): MultiFileRenderResult {
+/**
+ * The result the engine's outcome stands for (or the error it throws), or
+ * `undefined` if the engine declined the run as unsupported.
+ */
+function decodeOutcome(outcome: any): MultiFileRenderResult | undefined {
+    if (outcome.unsupported !== undefined) return declined(outcome.unsupported);
+    engineStats.wasm++;
     if (outcome.files !== undefined) return decodeFiles(outcome.files);
     if (outcome.error !== undefined) return throwEngineError(outcome.error);
     throw outcome.thrown;
@@ -327,7 +381,7 @@ function runOnEngine(
     encoded: EncodedRun,
     run: RunContext,
     options: any,
-): Promise<MultiFileRenderResult> {
+): Promise<MultiFileRenderResult | undefined> {
     return new Promise((resolve, reject) => {
         let settled = false;
         const driver: Driver = {
@@ -336,6 +390,7 @@ function runOnEngine(
             fail(e) {
                 if (settled) return;
                 settled = true;
+                engineStats.wasm++;
                 reject(e);
             },
             step() {
@@ -372,7 +427,8 @@ function runOnEngine(
 /**
  * `run()` on the WebAssembly engine: `undefined` if the run is not
  * eligible (the caller then uses the TypeScript engine), else a promise of
- * the result, or of `undefined` if the engine could not be loaded.
+ * the result, or of `undefined` if the engine could not be loaded or does
+ * not support the run (a language whose renderer is not ported yet).
  */
 export function runNative(
     run: RunContext,
@@ -399,7 +455,10 @@ export function runNative(
             return undefined;
         }
 
-        engineStats.wasm++;
+        if (!engineSupports(glue, encoded.request.lang as string)) {
+            return declined(`${targetLanguage.displayName} renderer`);
+        }
+
         return runOnEngine(glue, encoded, run, options);
     });
 }
@@ -433,7 +492,10 @@ export function runNativeSync(
         return undefined;
     }
 
-    engineStats.wasm++;
+    if (!engineSupports(glue, encoded.request.lang as string)) {
+        return declined(`${targetLanguage.displayName} renderer`);
+    }
+
     let outcome: unknown;
     try {
         outcome = glue.runSync(
@@ -441,6 +503,7 @@ export function runNativeSync(
             makeHost(run, options, encoded, undefined),
         );
     } catch (e) {
+        engineStats.wasm++;
         throw engineFailure(glue, e);
     }
 

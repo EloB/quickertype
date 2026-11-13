@@ -40,16 +40,22 @@ same results by construction:
 - `JSONSchemaInput`s with extra attribute producers;
 - option values outside what quicktype's options read (a number for a string
   option, `"toString"` for an enum option, a `Name` in `leadingComments`, …);
-- GraphQL input (`quicktype-graphql-input`, not ported yet).
+- GraphQL input (`quicktype-graphql-input`, not ported yet);
+- languages whose renderer the engine does not have yet: the engine says
+  so (`supportsLanguage`, and an `{ unsupported }` outcome should a run
+  hit a missing feature midway), never with an error.
 
 `QUICKTYPE_ENGINE=ts` (or `globalThis[Symbol.for("quicktype-core.engine")] =
 "ts"`) runs everything on the TypeScript engine; `wasm` makes a failure to
-load the engine an error instead of a fallback.
+load the engine an error instead of a fallback. `engineStats` in
+`dist/native/bridge.js` counts the runs on each engine (`wasm`, `ts`) and
+the runs the engine declined (`unsupported`, by feature in
+`unsupportedBy`).
 
 ## Loading
 
 The engine is one `.wasm` file, `dist/native/wasm/quicktype_wasm_bg.wasm`
-(3.8 MiB, 1.3 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
+(4.8 MiB, 1.6 MiB gzipped), shared by the CommonJS (`dist/`) and ES module
 (`dist/esm/`) builds.
 
 - **Node**: nothing happens at import. The first run reads and compiles the
@@ -94,6 +100,7 @@ options, ports of quicktype's API-level unit tests, JSON Schema store paths
 (lazy fetch order, failures, concurrency, re-entrancy), errors and options.
 The reference is the built `packages/quicktype-core` of a quicktype checkout
 (`$QUICKTYPE_REFERENCE`, or `../quicktype` / `../../quicktype` next to the
-repository), else this package's own TypeScript engine. Renderers the Rust
-engine does not have yet fail with `Internal error: The X renderer is not
-ported yet` and are reported separately.
+repository), else this package's own TypeScript engine. Identical results
+are reported by where they ran: on WebAssembly, on the TypeScript fallback
+(declined by the engine as unsupported), or on TypeScript because the run
+was not eligible.

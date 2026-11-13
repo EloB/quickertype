@@ -82,7 +82,7 @@ function buildWasm() {
 }
 
 /** Exports of the glue that the facade uses (src/native/wasm/glue.d.ts). */
-const glueExports = ["initSync", "runSync", "start", "poll", "settle", "engineVersion", "__pow", "__panicForTests"];
+const glueExports = ["initSync", "runSync", "start", "poll", "settle", "supportsLanguage", "engineVersion", "__pow", "__panicForTests"];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */
 function glueFactory() {

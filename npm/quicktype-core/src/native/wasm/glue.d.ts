@@ -12,6 +12,7 @@ export interface WasmGlue {
     start(request: unknown, host: unknown): number;
     poll(id: number): unknown;
     settle(id: number, callId: number, ok: boolean, value: unknown): void;
+    supportsLanguage(name: string): boolean;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
