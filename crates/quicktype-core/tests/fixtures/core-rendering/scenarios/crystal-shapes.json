@@ -1,0 +1,732 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "#tag",
+       [
+        "A hash key."
+       ]
+      ],
+      [
+       "choice",
+       [
+        "Int, string or null."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "#tag",
+      1,
+      false
+     ],
+     [
+      "anything",
+      2,
+      true
+     ],
+     [
+      "choice",
+      3,
+      false
+     ],
+     [
+      "counts",
+      6,
+      true
+     ],
+     [
+      "emoji😀",
+      8,
+      true
+     ],
+     [
+      "kind",
+      10,
+      false
+     ],
+     [
+      "matrix",
+      11,
+      false
+     ],
+     [
+      "maybe",
+      14,
+      true
+     ],
+     [
+      "nothing",
+      5,
+      true
+     ],
+     [
+      "say \"hi\"",
+      16,
+      true
+     ],
+     [
+      "self",
+      17,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     4,
+     5,
+     1
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "say \"hi\"",
+       "Number",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "counts"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     7,
+     5
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "counts"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 4
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "emoji😀"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     9,
+     5
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "emoji😀"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 12
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    },
+    "items": 13
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 8
+     }
+    },
+    "members": [
+     4,
+     9
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybe"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     15,
+     5
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybe"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "say \"hi\"",
+       "Number",
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     4,
+     5
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "self",
+       "TopLeve"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "#tag",
+       [
+        "A hash key."
+       ]
+      ],
+      [
+       "choice",
+       [
+        "Int, string or null."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "members": [
+     18,
+     5
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "self",
+       "TopLeve"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "propertyDescriptions": [
+      [
+       "#tag",
+       [
+        "A hash key."
+       ]
+      ],
+      [
+       "choice",
+       [
+        "Int, string or null."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level.\nSecond line."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "#tag",
+      1,
+      false
+     ],
+     [
+      "anything",
+      2,
+      true
+     ],
+     [
+      "choice",
+      3,
+      false
+     ],
+     [
+      "counts",
+      6,
+      true
+     ],
+     [
+      "emoji😀",
+      8,
+      true
+     ],
+     [
+      "kind",
+      10,
+      false
+     ],
+     [
+      "matrix",
+      11,
+      false
+     ],
+     [
+      "maybe",
+      14,
+      true
+     ],
+     [
+      "nothing",
+      5,
+      true
+     ],
+     [
+      "say \"hi\"",
+      16,
+      true
+     ],
+     [
+      "self",
+      17,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Kind"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "x",
+     "y"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Numbers"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 4
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Kind",
+    19
+   ],
+   [
+    "Alias",
+    1
+   ],
+   [
+    "Numbers",
+    20
+   ],
+   [
+    "Choice",
+    3
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "crystal",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "require \"json\"\n\nalias Kind = String\nalias Alias = String\nalias Numbers = Array(Int64)\n\n# The top level.\n# Second line.\nclass TopLevel\n  include JSON::Serializable\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  @[JSON::Field(key: \"self\")]\n  property top_level_self : Self?\nend\n\n# The top level.\n# Second line.\nclass Self\n  include JSON::Serializable\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  @[JSON::Field(key: \"self\")]\n  property self_self : Self?\nend\n\nalias Choice = Int64 | String\n\nalias Matrix = Int64 | Bool\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       15,
+       22,
+       15,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       31,
+       21,
+       31,
+       24
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       49,
+       22,
+       49,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       65,
+       21,
+       65,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "crystal",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "require \"json\"\n\nalias Kind = String\nalias Alias = String\nalias Numbers = Array(Int64)\n\n# The top level.\n# Second line.\nclass TopLevel\n  include JSON::Serializable\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\n\n  @[JSON::Field(key: \"self\")]\n  property top_level_self : Self?\nend\n\n# The top level.\n# Second line.\nclass Self\n  include JSON::Serializable\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  @[JSON::Field(key: \"self\")]\n  property self_self : Self?\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\nend\n\nalias Choice = Int64 | String\n\nalias Matrix = Int64 | Bool\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       11,
+       22,
+       11,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       27,
+       21,
+       27,
+       24
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       45,
+       22,
+       45,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       61,
+       21,
+       61,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "crystal",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "string comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    },
+    {
+     "descriptionBlock": [
+      "block",
+      "two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# string comment\n\n# line one\n# line two\n\n# block\n# two\n\nrequire \"json\"\n\nalias Kind = String\nalias Alias = String\nalias Numbers = Array(Int64)\n\n# The top level.\n# Second line.\nclass TopLevel\n  include JSON::Serializable\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  @[JSON::Field(key: \"self\")]\n  property top_level_self : Self?\nend\n\n# The top level.\n# Second line.\nclass Self\n  include JSON::Serializable\n\n  # A hash key.\n  @[JSON::Field(key: \"\\u{0023}tag\")]\n  property tag : String\n\n  property anything : JSON::Any?\n\n  # Int, string or null.\n  property choice : Choice?\n\n  property counts : Hash(String, Int64)?\n\n  @[JSON::Field(key: \"emoji\\u{01f600}\")]\n  property emoji : Bool?\n\n  property kind : String\n\n  property matrix : Array(Array(Matrix))\n\n  property maybe : Float64?\n\n  property nothing : Nil\n\n  @[JSON::Field(key: \"say \\\"hi\\\"\")]\n  property say_hi : Int64?\n\n  @[JSON::Field(key: \"self\")]\n  property self_self : Self?\nend\n\nalias Choice = Int64 | String\n\nalias Matrix = Int64 | Bool\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       23,
+       22,
+       23,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       39,
+       21,
+       39,
+       24
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       57,
+       22,
+       57,
+       32
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       73,
+       21,
+       73,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "crystal",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "\t",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "require \"json\"\n\nalias Kind = String\nalias Alias = String\nalias Numbers = Array(Int64)\n\n# The top level.\n# Second line.\nclass TopLevel\n\tinclude JSON::Serializable\n\n\t# A hash key.\n\t@[JSON::Field(key: \"\\u{0023}tag\")]\n\tproperty tag : String\n\n\tproperty anything : JSON::Any?\n\n\t# Int, string or null.\n\tproperty choice : Choice?\n\n\tproperty counts : Hash(String, Int64)?\n\n\t@[JSON::Field(key: \"emoji\\u{01f600}\")]\n\tproperty emoji : Bool?\n\n\tproperty kind : String\n\n\tproperty matrix : Array(Array(Matrix))\n\n\tproperty maybe : Float64?\n\n\tproperty nothing : Nil\n\n\t@[JSON::Field(key: \"say \\\"hi\\\"\")]\n\tproperty say_hi : Int64?\n\n\t@[JSON::Field(key: \"self\")]\n\tproperty top_level_self : Self?\nend\n\n# The top level.\n# Second line.\nclass Self\n\tinclude JSON::Serializable\n\n\t# A hash key.\n\t@[JSON::Field(key: \"\\u{0023}tag\")]\n\tproperty tag : String\n\n\tproperty anything : JSON::Any?\n\n\t# Int, string or null.\n\tproperty choice : Choice?\n\n\tproperty counts : Hash(String, Int64)?\n\n\t@[JSON::Field(key: \"emoji\\u{01f600}\")]\n\tproperty emoji : Bool?\n\n\tproperty kind : String\n\n\tproperty matrix : Array(Array(Matrix))\n\n\tproperty maybe : Float64?\n\n\tproperty nothing : Nil\n\n\t@[JSON::Field(key: \"say \\\"hi\\\"\")]\n\tproperty say_hi : Int64?\n\n\t@[JSON::Field(key: \"self\")]\n\tproperty self_self : Self?\nend\n\nalias Choice = Int64 | String\n\nalias Matrix = Int64 | Bool\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       15,
+       21,
+       15,
+       31
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       31,
+       20,
+       31,
+       23
+      ],
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       49,
+       21,
+       49,
+       31
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       65,
+       20,
+       65,
+       23
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "crystal-shapes"
+}

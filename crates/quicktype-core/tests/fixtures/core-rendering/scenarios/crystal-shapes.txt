@@ -1,0 +1,15 @@
+# The Crystal renderer on paths the golden corpus does not reach: leading
+# comments, top-level enums and primitives (aliases), unions with null,
+# descriptions, keys that need escaping (`#`, quotes, non-BMP) and
+# alphabetized properties.
+input schema TopLevel {"type": "object", "description": "The top level.\nSecond line.", "properties": {"#tag": {"type": "string", "description": "A hash key."}, "say \"hi\"": {"type": "integer"}, "emoji😀": {"type": "boolean"}, "kind": {"enum": ["a", "b"]}, "choice": {"description": "Int, string or null.", "anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "maybe": {"anyOf": [{"type": "number"}, {"type": "null"}]}, "matrix": {"type": "array", "items": {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "boolean"}]}}}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "anything": {}, "nothing": {"type": "null"}, "self": {"$ref": "#"}}, "required": ["#tag", "kind", "choice", "matrix"]}
+input schema Kind {"enum": ["x", "y"]}
+input schema Alias {"type": "string"}
+input schema Numbers {"type": "array", "items": {"type": "integer"}}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+pipeline {"lang": "crystal"}
+
+render crystal {}
+render crystal {"alphabetize": true}
+render crystal {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block", "two"]}]}
+render crystal {"indentation": "\t"}

@@ -1,0 +1,13 @@
+# C++ on graphs without named types or with only unions/enums, single- and
+# multi-source: the helper-only output, the umbrella header of unnamed
+# top-levels, and union-only adl_serializers.
+input schema Numbers {"type": "array", "items": {"type": "integer"}}
+input schema Mixed {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "string"}]}}
+input schema Kind {"enum": ["x", "y"]}
+pipeline {"lang": "cplusplus"}
+
+render cplusplus {}
+render cplusplus {"rendererOptions": {"just-types": true}}
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "out.hpp"}
+render cplusplus {"rendererOptions": {"source-style": "multi-source", "just-types": true}, "filename": "out.hpp"}
+render cplusplus {"rendererOptions": {"source-style": "multi-source", "wstring": "use-wstring"}, "filename": "Kind.hpp"}

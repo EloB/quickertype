@@ -1,0 +1,7 @@
+# quicktype's test/unit/cplusplus-multi-source.test.ts: two JSON top-levels
+# rendered as multi-source C++; cplusplus_vitest.rs checks its assertions.
+input json ChunkCache {"chunks":["one"],"size":1}
+input json BufferPath {"path":"somewhere","maxSize":2}
+pipeline {"lang": "cplusplus"}
+
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}
