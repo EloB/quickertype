@@ -4,6 +4,12 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- `feat/wasm-js-api` (Phase 6): `npm/quicktype-core` runs quicktype-core's
+  API on the WebAssembly engine. Differential suite against the reference
+  quicktype-core: 18,713 scenarios, 12,037 identical, 6,675 in renderers
+  not ported yet, 0 different (1 documented known gap). `**` on `wasm32`
+  is the host's `Math.pow`. Engine: 3.8 MiB (1.3 MiB gzipped).
+
 - **Parity 7,331 / 11,177 (65.6%), 0 regressions.** Merged
   `feat/run-and-cli` (Phase 3: Run, the public Rust API, the CLI generation
   path); every ported language now passes its golden cases end to end.

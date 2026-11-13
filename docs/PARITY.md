@@ -40,12 +40,23 @@ findings per area, with file and line references.
   the same for hand-written scenarios, rendered with real languages or a
   configurable probe renderer that exercises the framework directly. See
   `docs/RENDERERS.md`.
-- **JS API:** a differential suite (planned, `npm/`) runs the same API calls
-  against npm `quicktype-core` and our WASM package and compares results.
+- **JS API:** `npm/quicktype-core/test/differential` runs the same API
+  calls against the reference `quicktype-core` (the built
+  `packages/quicktype-core` of a quicktype checkout) and our package on
+  WebAssembly, and compares results (every file, line and annotation),
+  errors (class, `messageName`, message, properties) and console output:
+  the golden corpus replayed through the API (samples as strings, so
+  `JSON.parse` semantics), every input × every language with default
+  options, ports of quicktype's API-level unit tests, JSON Schema store
+  paths (lazy fetch order, failures, concurrency, re-entrancy), errors and
+  options. Without a checkout (CI) the reference is the package's own,
+  vendored TypeScript engine. Renderers not ported yet are reported
+  separately.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
-rather than the CLI, so it has no CLI recording; it will be covered by the
-JS API differential suite.
+rather than the CLI, so it has no CLI recording; the JS API differential
+suite covers `leadingComments` for every ported language (Go itself is not
+ported yet).
 
 ## Rules
 
@@ -107,7 +118,8 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     `y == 2 → x*x` and `y == 0.5 → sqrt(x)`. Natively use `f64::powf` plus
     those cases (verified identical on 300k samples), as
     `quicktype_js_compat::number::pow` does; the `libm` crate is not (7–9%
-    mismatches). WASM needs a correctly rounded `pow` port.
+    mismatches). On `wasm32` (feature `js-host-math`, which the WebAssembly
+    bindings enable) it calls the JavaScript host's own `Math.pow`.
 13. **`JSON.stringify`** escaping and number output differ from
     `serde_json`; use `quicktype_js_compat::json`.
 
@@ -149,6 +161,7 @@ semantics were verified.
 | Node's `fetch` (undici, Node 24), as `NodeIO` uses it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`), undici's default headers and case-insensitive header combining (`3, 2`), `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, header names/values and `ByteString`s, the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case |
 | Node's stack depth (`RangeError: Maximum call stack size exceeded`) | a model of the JavaScript stack in `JSONSchemaInput` (per-keyword costs, reset after every `await`) and a depth limit for `addIDs`, with `stacker` 0.1 growing the native stack on demand | `xtask/core-json-schema-input/measure-stack-depth.mjs` measures Node 24 per recursion path in fresh processes; `tests/deep_schemas.rs` pins the same last-good and first-failing depths (items 322, tuples 198, properties 161, `allOf` 200, `oneOf`/`anyOf` 170, properties plus items 107, `addIDs` 4,150) and runs on 2 MB test-thread stacks |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
+| V8 `Math.pow` on `wasm32` | the host's `Math.pow`, imported with `wasm-bindgen` (feature `js-host-math` of `quicktype-js-compat`) | it *is* V8's `Math.pow` in Node (and the very `pow` the TypeScript quicktype uses in any other JavaScript host). `npm/quicktype-core/test/engine.test.mjs` runs the 2,969 `pow` vectors recorded from Node 24 (`xtask/js-compat/gen-vectors.mjs`) and 200,000 `MarkovChain`/`InferMaps`-shaped inputs through the WebAssembly engine's `**`: all bit-identical. (`libm`'s port, `f64::powf` on `wasm32`, differs on ~7%.) |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
 
 ## Known gaps
@@ -157,13 +170,38 @@ Known divergences from the reference that no golden case exercises. Some are
 deliberate (behavior of the JavaScript runtime rather than of quicktype);
 the others name the fix they need.
 
-- **`pow` on WASM (Phase 6 blocker).** `quicktype_js_compat::number::pow`
-  matches V8 natively because both call the platform `pow`. On `wasm32`
-  there is none: `f64::powf` is compiler-builtins' port of `libm`, which
-  disagrees with Node in the last bit on about 7% of inputs. Through
-  `markov_chain::evaluate` this can flip `InferMaps`' class-versus-map
-  decision for names near the threshold. Fix: a correctly rounded `pow` for
-  `wasm32` (marked `TODO(wasm)` in `number.rs`).
+- **`pow` on `wasm32` without a JavaScript host.** With the
+  `js-host-math` feature (on in the WebAssembly bindings), `**` is the
+  host's `Math.pow`, exact by construction. A `wasm32` build of the core
+  without it (e.g. for a non-JavaScript WebAssembly runtime) falls back to
+  `f64::powf`, compiler-builtins' port of `libm`, which disagrees with Node
+  in the last bit on about 7% of inputs; through `markov_chain::evaluate`
+  that can flip `InferMaps`' class-versus-map decision near its threshold.
+- **The JavaScript facade (`npm/quicktype-core`).** Runs the engine does
+  not model use the TypeScript engine (see its README), so only these
+  differ:
+  - a custom `JSONSchemaStore` can return documents holding `undefined`
+    (or functions, symbols, bigints), which `JSON.parse` and YAML never
+    produce; the engine reads such a property as absent and such an array
+    item as `null`, where TypeScript fails (a `TypeError`, or `Value of
+    type undefined is not valid JSON Schema`);
+  - when a run fails inside `JSONSchemaInput.addTypes`, the top-levels it
+    had found are not added to the input object (TypeScript adds them one
+    by one, so a later run on the same `InputData` starts from them);
+  - a run started from inside another run's callback (a store, `onTiming`)
+    runs to its first schema fetch synchronously, where TypeScript runs
+    only up to its first `await`; only the interleaving of the two runs'
+    `--debug` output and `onTiming` calls can show it;
+  - an `onTiming` (or a replaced `console.log`) that throws stops the
+    TypeScript engine at once; the engine finishes the run silently
+    (no more output or callbacks) and then rethrows the exception;
+  - the engine prints the TypeScript Zod renderer's `console.warn` with
+    `console.error` (the same stream in Node);
+  - `console.log` replaced by a function that runs quicktype synchronously
+    would re-enter the engine's console sink (a `RefCell`) and trap; the
+    instance is then discarded and the run fails with an `InternalError`;
+  - GraphQL input (`quicktype-graphql-input`) is not ported yet, so its
+    runs use the TypeScript engine.
 - **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
   surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
   `String`s cannot. Wherever the TypeScript produces one, the port drops it:

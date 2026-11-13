@@ -104,7 +104,7 @@ Schema enters the normal pipeline. Parity with the reference (which runs
 cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 (TypeScript as an *output* language is just another renderer.)
 
-## Phase 6 — JavaScript API and distribution
+## Phase 6 — JavaScript API and distribution — 🚧 JS API done (npm/quicktype-core)
 
 - The JS API runs on WebAssembly in both Node.js and browsers, behind
   quicktype's own TypeScript API as a thin facade:
@@ -125,9 +125,16 @@ cases. Feasibility spike: `docs/research/07-typescript-input.md`.
   `ConvenienceRenderer`) cannot render inside WASM. The facade keeps the
   original TypeScript engine as a fallback for those only; all built-in
   languages go through WASM.
-- Differential API test suite against the reference npm package (including
-  ports of quicktype's API-level Vitest tests)
-- npm distribution of the native CLI (per-platform binary packages)
+- [x] `crates/quicktype-wasm` (one call per run, schema fetches through
+      the facade's stores, structured errors) and `npm/quicktype-core`
+      (quicktype-core's own sources with `Run.ts` dispatching to the
+      engine; Node and browsers; identical `.d.ts` files)
+- [x] `**` on `wasm32` = the host's `Math.pow` (`js-host-math`)
+- [x] Differential API test suite against the reference npm package
+      (including ports of quicktype's API-level Vitest tests), in CI
+      against the package's own TypeScript engine
+- [ ] `quicktype-graphql-input` on the engine (after Phase 5's GraphQL input)
+- [ ] npm distribution of the native CLI (per-platform binary packages)
 
 ## Phase 7 — Performance
 
