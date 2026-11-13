@@ -64,8 +64,11 @@ parsing) and `pipeline` (JSON to every language with arbitrary run and
 renderer options). Each file in `fuzz/fuzz_targets` describes its input
 format, `fuzz/dicts` has token dictionaries for them (see
 `.github/workflows/fuzz.yml` for which goes with which, and for the
-lengths and timeouts). `-s none` turns off AddressSanitizer: the code has no `unsafe`, and
-ASan misreads `stacker`'s stack switching.
+lengths and timeouts). `-s none` turns off AddressSanitizer, which adds
+little to code without `unsafe` and slows the runs down. The inputs are
+at most 16 KB, so nesting a few thousand levels deep is out of the
+fuzzers' reach: try such inputs by hand against the TypeScript CLI (see
+"Stack depth" in `docs/PARITY.md`).
 
 A finding is written to `fuzz/artifacts/<target>/`. Minimize it with
 `cargo +nightly fuzz tmin -s none <target> <file>`. For `pipeline`,
