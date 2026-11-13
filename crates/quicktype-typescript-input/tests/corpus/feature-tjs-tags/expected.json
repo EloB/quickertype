@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"items\":{\"type\":\"integer\",\"minimum\":1},\"type\":\"array\",\"title\":\"a\"},\"b\":{\"additionalProperties\":true,\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"string\",\"title\":\"x\"}},\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"title\":\"b\"},\"c\":{\"pattern\":\"^x\",\"type\":\"string\",\"title\":\"c\"},\"d\":{\"format\":\"email\",\"type\":\"string\",\"title\":\"d\"},\"e\":{\"anyOf\":[{\"$ref\":\"#/definitions/Other\"},{\"type\":\"null\"}],\"title\":\"e\"},\"f\":{\"minItems\":2,\"maxItems\":3,\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"f\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"],\"required\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]},\"Other\":{\"title\":\"Other\",\"type\":\"object\",\"properties\":{\"o\":{\"type\":\"number\",\"const\":1,\"title\":\"o\"}},\"additionalProperties\":false,\"propertyOrder\":[\"o\"],\"required\":[\"o\"],\"quicktypePropertyOrder\":[\"o\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

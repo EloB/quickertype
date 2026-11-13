@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Point\":{\"title\":\"Point\",\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"title\":\"x\"},\"y\":{\"type\":\"number\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"Line\":{\"type\":\"object\",\"properties\":{\"from\":{\"$ref\":\"#/definitions/Point\",\"title\":\"from\"},\"to\":{\"$ref\":\"#/definitions/Point\",\"title\":\"to\"}},\"additionalProperties\":false,\"propertyOrder\":[\"from\",\"to\"],\"required\":[\"from\",\"to\"],\"quicktypePropertyOrder\":[\"from\",\"to\"]},\"Shape\":{\"title\":\"Shape\",\"type\":\"object\",\"properties\":{\"lines\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"$ref\":\"#/definitions/Point\",\"title\":\"from\"},\"to\":{\"$ref\":\"#/definitions/Point\",\"title\":\"to\"}},\"additionalProperties\":false,\"propertyOrder\":[\"from\",\"to\"],\"required\":[\"from\",\"to\"]},\"title\":\"lines\"}},\"additionalProperties\":false,\"propertyOrder\":[\"lines\"],\"required\":[\"lines\"],\"quicktypePropertyOrder\":[\"lines\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

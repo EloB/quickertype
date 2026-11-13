@@ -155,11 +155,13 @@ fn keys_of(v: &Value) -> Vec<String> {
     }
 }
 
-/// `unique(arr).sort()` for string arrays.
+/// `unique(arr).sort()` for string arrays. `unique` collects the items as
+/// keys of a plain object, where `temp["__proto__"] = true` sets the
+/// prototype instead of adding a key, so `"__proto__"` is dropped.
 fn unique_sorted(items: Vec<String>) -> Value {
     let mut seen: Vec<String> = Vec::new();
     for i in items {
-        if !seen.contains(&i) {
+        if i != "__proto__" && !seen.contains(&i) {
             seen.push(i);
         }
     }

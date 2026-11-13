@@ -1,0 +1,15 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\"},\"b\":{\"type\":\"string\",\"format\":\"date-time\",\"title\":\"b\"},\"c\":{\"type\":\"number\",\"title\":\"c\"},\"d\":{\"type\":\"number\",\"title\":\"d\",\"default\":3},\"e\":{\"type\":\"number\",\"title\":\"e\",\"default\":-5},\"f\":{\"type\":\"array\",\"items\":{\"type\":[\"null\",\"string\",\"number\"]},\"title\":\"f\",\"default\":[1,\"x\",null]},\"g\":{\"type\":\"object\",\"properties\":{\"k\":{\"type\":\"number\",\"title\":\"k\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"k\"],\"required\":[\"k\"],\"title\":\"g\"},\"i\":{\"type\":\"number\",\"title\":\"i\",\"default\":null},\"j\":{\"type\":\"number\",\"title\":\"j\"},\"k\":{\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"title\":\"k\"},\"l\":{\"type\":\"string\",\"title\":\"l\",\"default\":\"a1\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"i\",\"j\",\"k\",\"l\"],\"required\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"i\",\"j\",\"k\",\"l\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"i\",\"j\",\"k\",\"l\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ],
+  "warnings": [
+    "initializer is expression for property a",
+    "initializer is expression for property b",
+    "initializer is expression for property c",
+    "unknown initializer for property g: [object Object]",
+    "exception evaluating initializer for property j",
+    "unknown initializer for property k: () => 1"
+  ]
+}

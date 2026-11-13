@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Kind\":{\"title\":\"Kind\",\"enum\":[\"a\",\"b\"],\"type\":\"string\"},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"k\":{\"$ref\":\"#/definitions/Kind\",\"title\":\"k\"},\"ks\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Kind\"},\"title\":\"ks\"},\"opt\":{\"enum\":[\"a\",\"b\"],\"type\":\"string\",\"title\":\"opt\"}},\"additionalProperties\":false,\"propertyOrder\":[\"k\",\"ks\",\"opt\"],\"required\":[\"k\",\"ks\"],\"quicktypePropertyOrder\":[\"k\",\"ks\",\"opt\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
