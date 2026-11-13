@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"maxOnly\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"title\":\"maxOnly\"},\"minAndMax\":{\"type\":\"array\",\"items\":[{\"type\":\"number\"}],\"minItems\":1,\"additionalItems\":{\"type\":\"number\"},\"title\":\"minAndMax\"},\"minOnly\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"},{\"type\":\"string\"}],\"minItems\":2,\"additionalItems\":{\"type\":\"string\"},\"title\":\"minOnly\"},\"plain\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"plain\"},\"unionItems\":{\"type\":\"array\",\"items\":[{\"$ref\":\"#/definitions/UnionItem\"},{\"$ref\":\"#/definitions/UnionItem\"}],\"minItems\":2,\"additionalItems\":{\"$ref\":\"#/definitions/UnionItem\"},\"title\":\"unionItems\"}},\"propertyOrder\":[\"maxOnly\",\"minAndMax\",\"minOnly\",\"plain\",\"unionItems\"],\"required\":[\"maxOnly\",\"minAndMax\",\"minOnly\",\"plain\",\"unionItems\"],\"quicktypePropertyOrder\":[\"maxOnly\",\"minAndMax\",\"minOnly\",\"plain\",\"unionItems\"]},\"UnionItem\":{\"title\":\"UnionItem\",\"type\":[\"string\",\"number\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

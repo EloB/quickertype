@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"above_i32_max\":{\"type\":\"number\",\"title\":\"above_i32_max\"},\"below_i32_min\":{\"type\":\"number\",\"title\":\"below_i32_min\"},\"i32_range\":{\"type\":\"number\",\"title\":\"i32_range\"},\"large_bounds\":{\"type\":\"number\",\"title\":\"large_bounds\"},\"only_maximum\":{\"type\":\"number\",\"title\":\"only_maximum\"},\"only_minimum\":{\"type\":\"number\",\"title\":\"only_minimum\"},\"small_negative\":{\"type\":\"number\",\"title\":\"small_negative\"},\"small_positive\":{\"type\":\"number\",\"title\":\"small_positive\"},\"unbounded\":{\"type\":\"number\",\"title\":\"unbounded\"}},\"propertyOrder\":[\"above_i32_max\",\"below_i32_min\",\"i32_range\",\"large_bounds\",\"only_maximum\",\"only_minimum\",\"small_negative\",\"small_positive\",\"unbounded\"],\"required\":[\"above_i32_max\",\"below_i32_min\",\"i32_range\",\"large_bounds\",\"only_maximum\",\"only_minimum\",\"small_negative\",\"small_positive\",\"unbounded\"],\"quicktypePropertyOrder\":[\"above_i32_max\",\"below_i32_min\",\"i32_range\",\"large_bounds\",\"only_maximum\",\"only_minimum\",\"small_negative\",\"small_positive\",\"unbounded\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

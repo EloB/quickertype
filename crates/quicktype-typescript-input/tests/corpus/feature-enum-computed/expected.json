@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"E\":{\"title\":\"E\",\"type\":[\"number\",\"string\"],\"enum\":[4,5,\"c\"]},\"F\":{\"type\":\"string\",\"const\":\"x\",\"qt-accessors\":{\"x\":\"X\"}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"e\":{\"$ref\":\"#/definitions/E\",\"title\":\"e\"},\"f\":{\"type\":\"string\",\"const\":\"x\",\"title\":\"f\"}},\"additionalProperties\":false,\"propertyOrder\":[\"e\",\"f\"],\"required\":[\"e\",\"f\"],\"quicktypePropertyOrder\":[\"e\",\"f\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"IsStr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"const\":\"yes\",\"title\":\"a\"},\"b\":{\"type\":\"string\",\"const\":\"no\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"required\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

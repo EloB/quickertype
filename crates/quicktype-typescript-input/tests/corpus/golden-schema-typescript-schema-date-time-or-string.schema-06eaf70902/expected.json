@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"bar\":{\"$ref\":\"#/definitions/BarUnion\",\"title\":\"bar\"},\"foo\":{\"type\":\"string\",\"title\":\"foo\"}},\"propertyOrder\":[\"bar\",\"foo\"],\"required\":[\"bar\",\"foo\"],\"quicktypePropertyOrder\":[\"bar\",\"foo\"]},\"BarUnion\":{\"title\":\"BarUnion\",\"anyOf\":[{\"type\":\"string\",\"format\":\"date-time\"},{\"const\":\"quux\",\"type\":\"string\"}]},\"BarEnum\":{\"type\":\"string\",\"const\":\"quux\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

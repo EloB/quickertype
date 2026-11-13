@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"weekdays\":{\"$ref\":\"#/definitions/Weekdays\",\"title\":\"weekdays\"}},\"propertyOrder\":[\"weekdays\"],\"required\":[\"weekdays\"],\"quicktypePropertyOrder\":[\"weekdays\"]},\"Weekdays\":{\"title\":\"Weekdays\",\"enum\":[\"Friday\",\"Monday\",\"Saturday\",\"Sunday\",\"Thursday\",\"Tuesday\",\"Wednesday\"],\"type\":\"string\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

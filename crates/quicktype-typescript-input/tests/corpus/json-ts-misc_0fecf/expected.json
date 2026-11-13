@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"countries\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"countries\"}},\"additionalProperties\":false,\"propertyOrder\":[\"countries\"],\"required\":[\"countries\"],\"quicktypePropertyOrder\":[\"countries\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

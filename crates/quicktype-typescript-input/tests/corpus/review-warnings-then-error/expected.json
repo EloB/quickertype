@@ -1,0 +1,6 @@
+{
+  "error": "TypeScript error: quicktype's TypeScript input does not support 'Set<string>' - use an array type instead",
+  "warnings": [
+    "initializer is expression for property a"
+  ]
+}

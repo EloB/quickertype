@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"Hints\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":true,\"title\":\"Hints\"},\"Labels\":{\"$ref\":\"#/definitions/Labels\",\"title\":\"Labels\"}},\"additionalProperties\":false,\"propertyOrder\":[\"Hints\",\"Labels\"],\"required\":[\"Hints\",\"Labels\"],\"quicktypePropertyOrder\":[\"Hints\",\"Labels\"]},\"Labels\":{\"title\":\"Labels\",\"type\":\"object\",\"properties\":{\"AccountNumber\":{\"type\":\"string\",\"title\":\"AccountNumber\"},\"Title\":{\"type\":\"string\",\"title\":\"Title\"}},\"additionalProperties\":false,\"propertyOrder\":[\"AccountNumber\",\"Title\"],\"required\":[\"AccountNumber\",\"Title\"],\"quicktypePropertyOrder\":[\"AccountNumber\",\"Title\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

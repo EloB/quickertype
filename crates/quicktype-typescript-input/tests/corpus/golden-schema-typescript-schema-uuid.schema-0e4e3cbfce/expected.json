@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"arrNullable\":{\"type\":\"array\",\"items\":{\"type\":[\"null\",\"string\"]},\"title\":\"arrNullable\"},\"arrOne\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"arrOne\"},\"nullable\":{\"type\":[\"null\",\"string\"],\"title\":\"nullable\"},\"one\":{\"type\":\"string\",\"title\":\"one\"},\"optional\":{\"type\":\"string\",\"title\":\"optional\"},\"unionWithEnum\":{\"type\":\"string\",\"title\":\"unionWithEnum\"}},\"propertyOrder\":[\"arrNullable\",\"arrOne\",\"nullable\",\"one\",\"optional\",\"unionWithEnum\"],\"required\":[\"nullable\",\"one\",\"unionWithEnum\"],\"quicktypePropertyOrder\":[\"arrNullable\",\"arrOne\",\"nullable\",\"one\",\"optional\",\"unionWithEnum\"]},\"UnionWithEnumUnion\":{\"type\":\"string\"},\"UnionWithEnumEnum\":{\"type\":\"string\",\"const\":\"foo\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

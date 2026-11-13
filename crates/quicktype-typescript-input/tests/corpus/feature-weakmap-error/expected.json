@@ -1,0 +1,3 @@
+{
+  "error": "TypeScript error: quicktype's TypeScript input does not support 'WeakMap<object, string>' - it cannot be represented in JSON"
+}

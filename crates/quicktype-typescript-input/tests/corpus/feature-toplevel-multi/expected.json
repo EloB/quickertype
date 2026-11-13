@@ -1,0 +1,8 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"X\":{\"description\":\"\",\"title\":\"X\",\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"string\",\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\"]},\"Y\":{\"description\":\"Second \",\"title\":\"Y\",\"type\":\"object\",\"properties\":{\"y\":{\"type\":\"number\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"y\"],\"required\":[\"y\"],\"quicktypePropertyOrder\":[\"y\"]}}}",
+  "name": "X",
+  "uris": [
+    "#/definitions/X",
+    "#/definitions/Y"
+  ]
+}

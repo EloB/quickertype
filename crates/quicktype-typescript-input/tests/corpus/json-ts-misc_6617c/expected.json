@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"iss_position\":{\"$ref\":\"#/definitions/IssPosition\",\"title\":\"iss_position\"},\"message\":{\"type\":\"string\",\"title\":\"message\"},\"timestamp\":{\"type\":\"number\",\"title\":\"timestamp\"}},\"additionalProperties\":false,\"propertyOrder\":[\"iss_position\",\"message\",\"timestamp\"],\"required\":[\"iss_position\",\"message\",\"timestamp\"],\"quicktypePropertyOrder\":[\"iss_position\",\"message\",\"timestamp\"]},\"IssPosition\":{\"title\":\"IssPosition\",\"type\":\"object\",\"properties\":{\"latitude\":{\"type\":\"string\",\"title\":\"latitude\"},\"longitude\":{\"type\":\"string\",\"title\":\"longitude\"}},\"additionalProperties\":false,\"propertyOrder\":[\"latitude\",\"longitude\"],\"required\":[\"latitude\",\"longitude\"],\"quicktypePropertyOrder\":[\"latitude\",\"longitude\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

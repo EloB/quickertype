@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"WithBigint\":{\"title\":\"WithBigint\",\"type\":\"object\",\"properties\":{\"big\":{\"type\":\"number\",\"properties\":{},\"additionalProperties\":false,\"title\":\"big\"}},\"additionalProperties\":false,\"propertyOrder\":[\"big\"],\"required\":[\"big\"],\"quicktypePropertyOrder\":[\"big\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

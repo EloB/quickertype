@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"user-agent\":{\"type\":\"string\",\"title\":\"user-agent\"}},\"additionalProperties\":false,\"propertyOrder\":[\"user-agent\"],\"required\":[\"user-agent\"],\"quicktypePropertyOrder\":[\"user-agent\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

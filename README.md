@@ -25,6 +25,8 @@ crates/
   quicktype-core/              the engine (port of packages/quicktype-core)
   quicktype-cli/               the `quicktype` binary (port of src/)
   quicktype-graphql-input/     GraphQL input (port of packages/quicktype-graphql-input)
+  quicktype-typescript-input/  TypeScript input via the TypeScript 7 native checker
+                               (port of packages/quicktype-typescript-input + typescript-json-schema)
   quicktype-wasm/              WebAssembly bindings for the JS API
 npm/                           JS packages wrapping quicktype-wasm (same API as npm quicktype-core)
 xtask/                         dev tasks: parity runner, golden recorder

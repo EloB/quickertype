@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"boolean\":{\"type\":\"boolean\",\"title\":\"boolean\"},\"integer\":{\"type\":\"number\",\"title\":\"integer\"},\"integers\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"title\":\"integers\"},\"number\":{\"type\":\"number\",\"title\":\"number\"},\"string\":{\"type\":\"string\",\"title\":\"string\"}},\"additionalProperties\":false,\"propertyOrder\":[\"boolean\",\"integer\",\"integers\",\"number\",\"string\"],\"required\":[\"boolean\",\"integer\",\"integers\",\"number\",\"string\"],\"quicktypePropertyOrder\":[\"boolean\",\"integer\",\"integers\",\"number\",\"string\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

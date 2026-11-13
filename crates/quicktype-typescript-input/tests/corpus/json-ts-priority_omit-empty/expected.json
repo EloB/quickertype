@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"results\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Result\"},\"title\":\"results\"}},\"additionalProperties\":false,\"propertyOrder\":[\"results\"],\"required\":[\"results\"],\"quicktypePropertyOrder\":[\"results\"]},\"Result\":{\"title\":\"Result\",\"type\":\"object\",\"properties\":{\"age\":{\"type\":\"number\",\"title\":\"age\"},\"name\":{\"type\":\"null\",\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"age\",\"name\"],\"required\":[\"age\"],\"quicktypePropertyOrder\":[\"age\",\"name\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

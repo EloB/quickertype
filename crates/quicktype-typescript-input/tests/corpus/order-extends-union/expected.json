@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Base\":{\"title\":\"Base\",\"type\":\"object\",\"properties\":{\"x\":{\"anyOf\":[{\"$ref\":\"#/definitions/Q\"},{\"$ref\":\"#/definitions/P\"}],\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\"]},\"P\":{\"title\":\"P\",\"type\":\"object\",\"properties\":{\"p\":{\"type\":\"string\",\"title\":\"p\"}},\"additionalProperties\":false,\"propertyOrder\":[\"p\"],\"required\":[\"p\"],\"quicktypePropertyOrder\":[\"p\"]},\"Q\":{\"title\":\"Q\",\"type\":\"object\",\"properties\":{\"q\":{\"type\":\"string\",\"title\":\"q\"}},\"additionalProperties\":false,\"propertyOrder\":[\"q\"],\"required\":[\"q\"],\"quicktypePropertyOrder\":[\"q\"]},\"D\":{\"title\":\"D\",\"type\":\"object\",\"properties\":{\"y\":{\"anyOf\":[{\"$ref\":\"#/definitions/Q\"},{\"$ref\":\"#/definitions/P\"},{\"type\":\"null\"}],\"title\":\"y\"},\"z\":{\"anyOf\":[{\"$ref\":\"#/definitions/P\"},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Q\"}}],\"title\":\"z\"},\"x\":{\"anyOf\":[{\"$ref\":\"#/definitions/Q\"},{\"$ref\":\"#/definitions/P\"}],\"title\":\"x\"}},\"additionalProperties\":false,\"propertyOrder\":[\"y\",\"z\",\"x\"],\"required\":[\"x\",\"y\",\"z\"],\"quicktypePropertyOrder\":[\"y\",\"z\",\"x\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

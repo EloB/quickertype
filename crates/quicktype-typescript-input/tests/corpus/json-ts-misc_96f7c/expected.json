@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"git\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"git\"},\"github_services_sha\":{\"type\":\"string\",\"title\":\"github_services_sha\"},\"hooks\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"hooks\"},\"importer\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"importer\"},\"pages\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"pages\"},\"verifiable_password_authentication\":{\"type\":\"boolean\",\"title\":\"verifiable_password_authentication\"}},\"additionalProperties\":false,\"propertyOrder\":[\"git\",\"github_services_sha\",\"hooks\",\"importer\",\"pages\",\"verifiable_password_authentication\"],\"required\":[\"git\",\"github_services_sha\",\"hooks\",\"importer\",\"pages\",\"verifiable_password_authentication\"],\"quicktypePropertyOrder\":[\"git\",\"github_services_sha\",\"hooks\",\"importer\",\"pages\",\"verifiable_password_authentication\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

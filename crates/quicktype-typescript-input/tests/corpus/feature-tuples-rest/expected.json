@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"}],\"minItems\":1,\"additionalItems\":{\"type\":\"number\"},\"title\":\"a\"},\"b\":{\"type\":\"array\",\"items\":[{\"type\":\"string\",\"title\":\"first\"}],\"minItems\":1,\"additionalItems\":{\"type\":\"boolean\",\"title\":\"rest\"},\"title\":\"b\"},\"c\":{\"type\":\"array\",\"minItems\":0,\"maxItems\":0,\"title\":\"c\"},\"d\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"}],\"minItems\":0,\"maxItems\":1,\"title\":\"d\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\"],\"required\":[\"a\",\"b\",\"c\",\"d\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

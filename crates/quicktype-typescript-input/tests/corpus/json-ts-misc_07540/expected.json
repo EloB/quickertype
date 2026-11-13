@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"cookies\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":true,\"title\":\"cookies\"}},\"additionalProperties\":false,\"propertyOrder\":[\"cookies\"],\"required\":[\"cookies\"],\"quicktypePropertyOrder\":[\"cookies\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
