@@ -1,0 +1,72 @@
+name: Fuzz
+
+# Runs every fuzz target in fuzz/ for a few minutes: weekly, and on demand.
+# Not on pushes: a run takes a while and finds new inputs only over time.
+# A crash, hang or out-of-memory fails the target's job and uploads the
+# input that caused it (reproduce with `cargo +nightly fuzz run <target>
+# -s none <file>`; see "Fuzzing" in CONTRIBUTING.md).
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds to run each target
+        default: "300"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: json_stream, max_len: 16384, timeout: 10 }
+          - { target: json_parse, max_len: 16384, timeout: 10 }
+          - { target: json_schema, max_len: 16384, timeout: 30 }
+          - { target: graphql_parse, max_len: 16384, timeout: 10 }
+          - { target: graphql_input, max_len: 16384, timeout: 30 }
+          - { target: yaml, max_len: 16384, timeout: 10 }
+          - { target: uri, max_len: 1024, timeout: 10 }
+          - { target: number, max_len: 256, timeout: 10 }
+          - { target: cli_args, max_len: 2048, timeout: 20 }
+          - { target: pipeline, max_len: 16384, timeout: 30 }
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml pins the workspace's toolchain; cargo-fuzz needs
+      # nightly, so every cargo call below names it (`+nightly`).
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The corpus grows from run to run; the seeds come from the test inputs.
+      - uses: actions/cache@v4
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: fuzz-corpus-${{ matrix.target }}-
+      - run: node fuzz/seed-corpora.mjs
+      - name: Fuzz ${{ matrix.target }}
+        run: >-
+          cargo +nightly fuzz run ${{ matrix.target }} -s none --
+          -max_total_time=${{ inputs.seconds || '300' }}
+          -max_len=${{ matrix.max_len }}
+          -timeout=${{ matrix.timeout }}
+          -rss_limit_mb=4096
+          -print_final_stats=1
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore
