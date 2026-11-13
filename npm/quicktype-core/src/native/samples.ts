@@ -32,7 +32,7 @@
 // The README ("JSON samples") has the argument for why this cannot be told
 // apart from TypeScript reading the samples.
 
-import { CompressedJSONFromString } from "../input/CompressedJSON.js";
+import { CompressedJSONFromString, Tag, valueTag } from "../input/CompressedJSON.js";
 
 import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
@@ -63,6 +63,11 @@ interface NativeSamples {
     readonly glue: WasmGlue;
     readonly id: number;
     readonly config: Config;
+    /**
+     * How many own properties it had when the engine started on it,
+     * without the fields a read creates (see `readsAsStarted`).
+     */
+    readonly ownProperties: number;
     /**
      * Every sample the engine read into these tables, in order, while they
      * add up to at most `keptTexts` code units; `undefined` after that.
@@ -135,14 +140,41 @@ function configOf(cjson: any): Config | undefined {
     return { recognizer, dateTime, handleRefs: cjson.handleRefs, range: copy };
 }
 
-/** Whether samples read with `b` are read as with `a`. */
-function sameConfig(a: Config, b: Config): boolean {
+/**
+ * Whether `cjson` reads its next sample as with `config`, which `configOf`
+ * made: compared with it, without making another (strings equal to its
+ * range's are well-formed, too).
+ */
+function sameConfig(config: Config, cjson: any): boolean {
+    const range = cjson.supportedIntegerRange;
     return (
-        a.dateTime === b.dateTime &&
-        !!a.handleRefs === !!b.handleRefs &&
-        (a.range === null
-            ? b.range === null
-            : b.range !== null && a.range.min === b.range.min && a.range.max === b.range.max)
+        dateTimeKind(cjson.dateTimeRecognizer) === config.dateTime &&
+        !!cjson.handleRefs === !!config.handleRefs &&
+        (range === null
+            ? config.range === null
+            : config.range !== null &&
+              typeof range === "object" &&
+              range.min === config.range.min &&
+              range.max === config.range.max)
+    );
+}
+
+/** The own properties of `cjson`, without the fields a read creates. */
+function ownProperties(cjson: object): number {
+    const own = (name: string): number => (Object.prototype.hasOwnProperty.call(cjson, name) ? 1 : 0);
+    return Object.getOwnPropertyNames(cjson).length - own("_ctx") - own("_rootValue");
+}
+
+/**
+ * Whether `cjson` still reads samples as when the engine started on it
+ * (`start` checked it then): the same prototype, no own property added
+ * since (a method replaced on the instance), and the same configuration.
+ */
+function readsAsStarted(cjson: any, state: NativeSamples): boolean {
+    return (
+        Object.getPrototypeOf(cjson) === CompressedJSONFromString.prototype &&
+        ownProperties(cjson) === state.ownProperties &&
+        sameConfig(state.config, cjson)
     );
 }
 
@@ -200,12 +232,21 @@ function engineForSample(length: number): WasmGlue | undefined {
 }
 
 /**
- * Starts reading `cjson`'s samples on the engine: a compressed form in
- * the engine, and the table fields replaced by accessors that fill them
- * on first use.
+ * Starts reading `cjson`'s samples on the engine, if it is exactly a
+ * fresh `CompressedJSONFromString` (see the top), for a sample of
+ * `length` code units: a compressed form in the engine, and the table
+ * fields replaced by accessors that fill them on first use. What is
+ * checked here holds for the later samples as long as `readsAsStarted`.
  */
-function start(cjson: any, config: Config, glue: WasmGlue): NativeSamples | undefined {
-    if (!isFresh(cjson)) return undefined;
+function start(cjson: any, length: number): NativeSamples | undefined {
+    if (Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype || !hasOnlyBuiltinFields(cjson)) {
+        return undefined;
+    }
+
+    const config = configOf(cjson);
+    if (config === undefined || !isFresh(cjson)) return undefined;
+    const glue = engineForSample(length);
+    if (glue === undefined) return undefined;
     let id: number | undefined;
     try {
         id = glue.jsonCreate(config.dateTime, !!config.handleRefs, config.range?.min, config.range?.max);
@@ -217,7 +258,15 @@ function start(cjson: any, config: Config, glue: WasmGlue): NativeSamples | unde
     // As many inputs at once as the engine takes: TypeScript reads this one.
     if (id === undefined) return undefined;
     const fields: Array<[string, PropertyDescriptor]> = [];
-    const state: NativeSamples = { glue, id, config, texts: [], textLength: 0, fields };
+    const state: NativeSamples = {
+        glue,
+        id,
+        config,
+        ownProperties: ownProperties(cjson),
+        texts: [],
+        textLength: 0,
+        fields,
+    };
     for (const name of tableFields) {
         const descriptor = Object.getOwnPropertyDescriptor(cjson, name) as PropertyDescriptor;
         fields.push([name, descriptor]);
@@ -363,18 +412,19 @@ function replay(cjson: any, config: Config, texts: string[]): void {
     }
 }
 
-/** The tags of `Value`s that do not refer to the string table. */
+/** Whether `value` is one the engine returns: not a string's index. */
 function isSharedRoot(value: number): boolean {
-    switch (value & 15) {
-        case 1: // Null
-        case 2: // False
-        case 3: // True
-        case 4: // Integer
-        case 5: // Double
-        case 7: // UninternedString
-        case 8: // Object
-        case 9: // Array
-            return value > 0;
+    if (value <= 0) return false;
+    switch (valueTag(value)) {
+        case Tag.Null:
+        case Tag.False:
+        case Tag.True:
+        case Tag.Integer:
+        case Tag.Double:
+        case Tag.UninternedString:
+        case Tag.Object:
+        case Tag.Array:
+            return true;
         default:
             return false;
     }
@@ -395,14 +445,11 @@ function isSharedRoot(value: number): boolean {
 export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: number[]): number | undefined {
     const state = states.get(cjson);
     if (state === undefined) return undefined;
-    const config = configOf(cjson);
     if (
         glue === undefined ||
         state.glue !== glue ||
         isDiscarded(glue) ||
-        config === undefined ||
-        !sameConfig(state.config, config) ||
-        !hasOnlyBuiltinFields(cjson) ||
+        !readsAsStarted(cjson, state) ||
         !roots.every(isSharedRoot)
     ) {
         materialize(cjson);
@@ -444,20 +491,12 @@ function declined(cjson: object): undefined {
 /** The reader `CompressedJSONFromString.parseSync` asks first (see the top). */
 function readSample(cjson: any, text: unknown): number | undefined {
     let state = states.get(cjson);
-    if (state === undefined && (typeof text !== "string" || registry === undefined)) return undefined;
-    if (typeof text !== "string" || engineMode() === "ts") return declined(cjson);
-    if (Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype || !hasOnlyBuiltinFields(cjson)) {
-        return declined(cjson);
-    }
-
-    const config = configOf(cjson);
-    if (config === undefined || !isWellFormed(text)) return declined(cjson);
+    if (typeof text !== "string" || engineMode() === "ts" || !isWellFormed(text)) return declined(cjson);
     if (state === undefined) {
-        const glue = engineForSample(text.length);
-        if (glue === undefined) return undefined;
-        state = start(cjson, config, glue);
+        if (registry === undefined) return undefined;
+        state = start(cjson, text.length);
         if (state === undefined) return undefined;
-    } else if (isDiscarded(state.glue) || !sameConfig(state.config, config)) {
+    } else if (isDiscarded(state.glue) || !readsAsStarted(cjson, state)) {
         return declined(cjson);
     }
 
@@ -478,7 +517,8 @@ function readSample(cjson: any, text: unknown): number | undefined {
 
         engineStats.samplesRead++;
         // The fields TypeScript's `process` would have created.
-        if ((value & 15) >= 8 && !Object.prototype.hasOwnProperty.call(cjson, "_ctx")) {
+        const tag = valueTag(value);
+        if ((tag === Tag.Object || tag === Tag.Array) && !Object.prototype.hasOwnProperty.call(cjson, "_ctx")) {
             cjson._ctx = undefined;
         }
 

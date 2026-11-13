@@ -141,6 +141,11 @@ function startCompiling(): Promise<void> {
     return compiling;
 }
 
+/**
+ * The instance runs use: the current one, or a new one of the compiled
+ * module; `undefined` if there is no module (yet), or it does not
+ * instantiate as this engine.
+ */
 function instantiate(): WasmGlue | undefined {
     if (current !== undefined) return current;
     if (compiledModule === undefined || compiledModule === failedModule) return undefined;
@@ -187,8 +192,6 @@ export async function engineAsync(): Promise<WasmGlue | undefined> {
  * never compiles it.
  */
 export function engineIfCompiled(): WasmGlue | undefined {
-    if (current !== undefined) return current;
-    if (compiledModule === undefined || compiledModule === failedModule) return undefined;
     return instantiate();
 }
 

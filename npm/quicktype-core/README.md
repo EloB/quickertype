@@ -105,8 +105,10 @@ for every run are both skipped.
 
 **Design.** `parseSync` first asks `src/native/samples.ts`. For a
 `CompressedJSONFromString` that is exactly quicktype's (its prototype and
-own fields, a built-in date/time recognizer, a valid integer range) and a
-string sample that is well-formed UTF-16, while the engine is compiled
+own fields, a built-in date/time recognizer, a valid integer range: all
+checked at its first sample; for the later ones, only that its prototype,
+the number of its own properties and its configuration are unchanged) and
+a string sample that is well-formed UTF-16, while the engine is compiled
 (see below) and not forced off, that is **one engine call per sample**:
 `jsonRead(id, text)` reads the text with the port's `JSON.parse`-semantics
 reader (`CompressedJson::read_string_sample` in quicktype-core: V8's
