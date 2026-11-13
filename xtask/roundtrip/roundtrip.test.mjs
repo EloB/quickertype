@@ -104,6 +104,20 @@ test("a fixture with no passing test with TS fails", () => {
     assert.equal(compare(results(a, ...skips), results(a, ...skips)).code, 1);
 });
 
+test("a fixture known to fail every test upstream is still compared", () => {
+    // graphql-php fails every test with quicktype's own output: not a
+    // broken toolchain, so the comparison passes when both CLIs agree.
+    const fails = [r("graphql-php", "g1.graphql", "fail"), r("graphql-php", "g2.graphql", "fail")];
+    let { code, out } = compare(results(a, ...fails), results(a, ...fails));
+    assert.equal(code, 0, out);
+    assert.match(out, /graphql-php: no test passes with TS, known broken upstream/);
+
+    // ...but a test that passes with TS and fails with ours still fails.
+    const tsPasses = [r("graphql-php", "g1.graphql", "pass"), r("graphql-php", "g2.graphql", "fail")];
+    ({ code, out } = compare(results(a, ...tsPasses), results(a, ...fails)));
+    assert.equal(code, 1, out);
+});
+
 test("a malformed or missing results file is an error", () => {
     assert.equal(compare(results({ nonsense: true }), results(a)).code, 2);
     assert.equal(compare(join(dir, "missing.jsonl"), results(a)).code, 2);

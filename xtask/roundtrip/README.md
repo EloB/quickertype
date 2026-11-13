@@ -77,7 +77,11 @@ passes with TypeScript and fails or times out with ours, or ran with only
 one of them, and also when the results cannot show that: either file is
 empty, a fixture has no test that passes with TypeScript (as when its
 compiler is missing), or a fixture named with `--fixtures` has no results in
-either file. `--fixtures` takes the names as the results have them, not
+either file. Fixtures whose every test fails with quicktype's own output at
+the reference commit are listed in `knownBrokenUpstream` in `compare.mjs`
+with the reason (today: `graphql-php`, which quicktype's CI does not run);
+they are exempt from the "no test passes" check only and are still
+compared test by test. `--fixtures` takes the names as the results have them, not
 `run`'s groups such as `schema`.
 
 The golden corpus records only each fixture's first quicktype run. The
