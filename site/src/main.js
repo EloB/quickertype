@@ -3,18 +3,21 @@
 // file only handles the page and its state.
 //
 // State that can be shared lives in the URL hash, in the form of quicktype's
-// README links (`#l=rust`), plus `s` (an unmodified sample), `n` (a typed
-// top-level name), `c=1` (compare mode), the general options that are on
-// (`no-enums=true`) and renderer options by their CLI names
-// (`#l=cs&density=dense`). A renderer option is in the hash when it differs
-// from the page's default: quicktype's, or the language's preset (see
-// site/build.mjs), so moving a preset back to quicktype's default is
-// explicit (`#l=rust&density=normal`). The input text is kept in
-// localStorage when the browser allows it.
+// README links (`#l=rust`), plus `v` (the hash format, see hash.js), `s` (an
+// unmodified sample), `n` (a typed top-level name), `c=1` (compare mode),
+// the general options that are on (`no-enums=true`) and renderer options
+// by their CLI names (`#v=2&l=cs&density=dense`). A renderer option is in
+// the hash when it differs from the page's default: the language's preset
+// (see site/build.mjs), else quicktype's default; so moving a preset back to
+// quicktype's default is explicit (`#v=2&l=rust&density=normal`). A link
+// without `v` is older than the presets, and is read with quicktype's
+// defaults. The input text is kept in localStorage when the browser allows
+// it.
 
 /* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
 
 import { EngineClient } from "./engine-client.js";
+import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
 
@@ -115,7 +118,7 @@ const state = {
     /** What the top-level name field holds ("" or `autoName` unless the user typed a name). */
     name: "",
     lang: languageNamed(defaultLanguage),
-    /** Renderer options that differ from quicktype's defaults (presets included), by CLI name. */
+    /** Renderer options that differ from the page's defaults (presets, else quicktype's), by CLI name. */
     options: {},
     /** The general options that are on, by CLI name (all are off by default). */
     general: {},
@@ -130,9 +133,22 @@ const typedName = () => (state.name.trim() !== "" && state.name.trim() !== state
 /** An option's default on this page: the language's preset, else quicktype's default. */
 const pageDefault = (definition) => definition.preset ?? definition.defaultValue;
 
-/** The renderer options a language starts with: its presets. */
-const presetOptions = (lang) =>
-    Object.fromEntries(lang.options.filter((o) => o.preset !== undefined).map((o) => [o.name, o.preset]));
+/** An option's value: as set, else the page's default. */
+const optionValue = (definition) => state.options[definition.name] ?? pageDefault(definition);
+
+/**
+ * The renderer options as quicktype's API and CLI take them: every value
+ * that differs from quicktype's default, presets included.
+ */
+function rendererOptions() {
+    const options = {};
+    for (const definition of state.lang.options) {
+        const value = optionValue(definition);
+        if (value !== definition.defaultValue) options[definition.name] = value;
+    }
+
+    return options;
+}
 
 function parseOption(definition, raw) {
     if (raw === null || raw === undefined) return undefined;
@@ -143,11 +159,14 @@ function parseOption(definition, raw) {
 
 function readHash() {
     const params = new URLSearchParams(location.hash.slice(1));
-    const lang = languageNamed(params.get("l")) ?? languageNamed(defaultLanguage);
+    // A link from before the presets: what it leaves out is quicktype's default.
+    const old = [...params.keys()].length > 0 && !params.has(hashKeys.version);
+    const lang = languageNamed(params.get(hashKeys.language)) ?? languageNamed(defaultLanguage);
     const options = {};
     for (const definition of lang.options) {
-        const value = parseOption(definition, params.get(definition.name)) ?? pageDefault(definition);
-        if (value !== definition.defaultValue) options[definition.name] = value;
+        const value =
+            parseOption(definition, params.get(definition.name)) ?? (old ? definition.defaultValue : pageDefault(definition));
+        if (value !== pageDefault(definition)) options[definition.name] = value;
     }
 
     const on = {};
@@ -156,22 +175,22 @@ function readHash() {
         lang,
         options,
         general: on,
-        name: params.get("n") ?? "",
-        sample: sampleWithId(params.get("s")),
-        compare: params.get("c") === "1",
+        name: params.get(hashKeys.name) ?? "",
+        sample: sampleWithId(params.get(hashKeys.sample)),
+        compare: params.get(hashKeys.compare) === "1",
     };
 }
 
 function writeHash() {
     const params = new URLSearchParams();
-    params.set("l", state.lang.names[0]);
-    if (state.source.type === "sample") params.set("s", state.source.id);
-    if (typedName() !== "") params.set("n", typedName());
-    if (state.compare) params.set("c", "1");
+    params.set(hashKeys.version, hashVersion);
+    params.set(hashKeys.language, state.lang.names[0]);
+    if (state.source.type === "sample") params.set(hashKeys.sample, state.source.id);
+    if (typedName() !== "") params.set(hashKeys.name, typedName());
+    if (state.compare) params.set(hashKeys.compare, "1");
     for (const g of general) if (state.general[g.name]) params.set(g.name, "true");
     for (const definition of state.lang.options) {
-        const value = state.options[definition.name] ?? definition.defaultValue;
-        if (value !== pageDefault(definition)) params.set(definition.name, String(value));
+        if (definition.name in state.options) params.set(definition.name, String(state.options[definition.name]));
     }
     const hash = `#${params}`;
     if (location.hash !== hash) history.replaceState(null, "", hash);
@@ -233,8 +252,8 @@ function renderSamples() {
     els.sample.innerHTML = `<option value="">Load a sample…</option>${group("json", "JSON")}${group("schema", "JSON Schema")}`;
 }
 
+/** Whether "More options" is open; it is re-rendered with the language's options. */
 let moreOpen = false;
-let generalOpen = false;
 
 /** What leaving `just-types` off gives, next to it: quicktype's default is more than types. */
 const justTypesHint = "Off: types plus runtime conversion code (quicktype's default)";
@@ -250,7 +269,7 @@ function presetMark(definition) {
 
 function optionControl(definition) {
     const id = `opt-${definition.name}`;
-    const value = state.options[definition.name] ?? definition.defaultValue;
+    const value = optionValue(definition);
     const flag = `--${definition.name}`;
     const label = escapeHtml(definition.description) + presetMark(definition);
     if (definition.type === "boolean") {
@@ -277,10 +296,8 @@ function renderGeneralCount() {
     els.generalCount.classList.toggle("on", on > 0);
 }
 
-/** The General section: collapsed unless an option in it is on (from a link). */
+/** The General section's options (it is opened or closed by the user, or by a link; see applyHash). */
 function renderGeneral() {
-    if (general.some((g) => state.general[g.name])) generalOpen = true;
-    els.general.open = generalOpen;
     renderGeneralCount();
     els.generalOptions.innerHTML = general
         .map(
@@ -294,7 +311,6 @@ function renderOptions() {
     const { options, displayName } = state.lang;
     const primary = options.filter((o) => o.kind === "primary");
     const secondary = options.filter((o) => o.kind !== "primary");
-    if (secondary.some((o) => o.name in state.options)) moreOpen = true;
     let html = "";
     if (options.length === 0) {
         html = `<p class="no-options">${escapeHtml(displayName)} has no options.</p>`;
@@ -337,9 +353,10 @@ function cliCommand() {
     if (state.kind === "schema") args.push("--src-lang", "schema");
     args.push("--lang", state.lang.names[0], "--top-level", topLevelName());
     for (const g of general) if (state.general[g.name]) args.push(`--${g.name}`);
+    const options = rendererOptions();
     for (const definition of state.lang.options) {
-        if (!(definition.name in state.options)) continue;
-        const value = state.options[definition.name];
+        if (!(definition.name in options)) continue;
+        const value = options[definition.name];
         if (definition.type === "boolean") args.push(value ? `--${definition.name}` : `--no-${definition.name}`);
         else args.push(`--${definition.name}`, value);
     }
@@ -422,7 +439,7 @@ function request() {
         lang: state.lang.names[0],
         name: topLevelName(),
         text: state.text,
-        rendererOptions: { ...state.options },
+        rendererOptions: rendererOptions(),
         options: runOptions(),
     };
 }
@@ -885,7 +902,7 @@ let infoTimer;
 function bind() {
     els.lang.addEventListener("change", () => {
         state.lang = languageNamed(els.lang.value);
-        state.options = presetOptions(state.lang);
+        state.options = {};
         renderOptions();
         renderCli();
         writeHash();
@@ -925,7 +942,7 @@ function bind() {
         if (control === null) return;
         const definition = state.lang.options.find((o) => o.name === control.dataset.option);
         const value = definition.type === "boolean" ? control.checked : control.value;
-        if (value === definition.defaultValue) delete state.options[definition.name];
+        if (value === pageDefault(definition)) delete state.options[definition.name];
         else state.options[definition.name] = value;
         renderCli();
         writeHash();
@@ -941,9 +958,6 @@ function bind() {
         renderCli();
         writeHash();
         schedule(0);
-    });
-    els.general.addEventListener("toggle", () => {
-        generalOpen = els.general.open;
     });
 
     for (const radio of document.querySelectorAll('input[name="kind"]')) {
@@ -1051,6 +1065,9 @@ async function applyHash(hash) {
     state.lang = hash.lang;
     state.options = hash.options;
     state.general = hash.general;
+    // A link opens the sections that hold what it sets; otherwise they stay as the user left them.
+    if (hash.lang.options.some((o) => o.kind !== "primary" && o.name in hash.options)) moreOpen = true;
+    if (general.some((g) => hash.general[g.name])) els.general.open = true;
     state.name = hash.name;
     state.compare = hash.compare;
     if (state.compare) void engines.ts.start();

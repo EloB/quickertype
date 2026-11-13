@@ -15,9 +15,10 @@
 // on an uploaded file with `$ref`s, Rust's `--integer-type force-i32` on one
 // with integers beyond 32 bits, renderer options given in the URL hash,
 // and an uploaded file too large for the editor; that the URL hash brings all
-// of those back; that the general options are labelled as in the CLI's
-// --help; that the footer links the quicktype commit in tests/golden/REFERENCE;
-// that compare mode reports identical output with each engine in its own
+// of those back, while a link from before the presets (no `v`) gets
+// quicktype's defaults; that the general options are labelled as in the
+// CLI's --help, and that a section the user closed stays closed; that the
+// footer links the quicktype commit in tests/golden/REFERENCE; that compare mode reports identical output with each engine in its own
 // worker; that invalid JSON shows quicktype's error; that the input survives
 // a reload (localStorage); and that 360 px and 390 px widths do not scroll
 // sideways. And three things that once went wrong: the code shown after a
@@ -381,7 +382,7 @@ try {
         on: [...document.querySelectorAll("#general-options input")].filter((i) => i.checked).length,
     })`);
     assert.deepEqual(defaults, {
-        hash: "#l=typescript&s=pokedex",
+        hash: "#v=2&l=typescript&s=pokedex",
         justTypes: false,
         hint: "Off: types plus runtime conversion code (quicktype's default)",
         general: false,
@@ -400,14 +401,14 @@ try {
         "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json",
     );
     assert.doesNotMatch(justTypes, /Convert/);
-    assert.equal(await hashNow(), "#l=typescript&s=pokedex&just-types=true");
-    await page.navigate(`${url}#l=typescript&s=pokedex&just-types=true`);
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&just-types=true");
+    await page.navigate(`${url}#v=2&l=typescript&s=pokedex&just-types=true`);
     await page.waitFor(settled, "the run with just-types from the hash");
     assert.equal(await page.evaluate("document.getElementById('opt-just-types').checked"), true);
     await sameAsCli("just-types from the hash", "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json");
     await click("opt-just-types");
     assert.equal(await sameAsCli("just-types off again", "quicktype --lang typescript --top-level Pokedex pokedex.json"), defaultTs);
-    assert.equal(await hashNow(), "#l=typescript&s=pokedex");
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
 
     // A language without a boolean just-types option: quicktype's defaults,
     // no just-types control or hint, no preset.
@@ -419,22 +420,22 @@ try {
         hints: document.querySelectorAll("#options .hint").length,
         presets: document.querySelectorAll("#options .preset").length,
     })`);
-    assert.deepEqual(zod, { hash: "#l=typescript-zod&s=pokedex", justTypes: false, hints: 0, presets: 0 });
+    assert.deepEqual(zod, { hash: "#v=2&l=typescript-zod&s=pokedex", justTypes: false, hints: 0, presets: 0 });
     console.log("ok: TypeScript Zod (no just-types option) keeps quicktype's defaults");
 
     // The presets the page shares with app.quicktype.io, as flags in the
     // command; moving one back to quicktype's default is explicit in the
     // hash, and a link without the key gets the preset.
-    await page.navigate(`${url}#l=rust&s=pokedex`);
+    await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");
     await sameAsCli("pokedex.json → Rust (preset)", "quicktype --lang rust --top-level Pokedex --density dense pokedex.json");
-    assert.equal(await hashNow(), "#l=rust&s=pokedex");
+    assert.equal(await hashNow(), "#v=2&l=rust&s=pokedex");
     assert.equal(await page.evaluate("document.getElementById('opt-density').closest('label').querySelectorAll('.preset').length"), 1);
     await page.screenshot("preset-rust.png");
     await select("opt-density", "normal");
     await sameAsCli("pokedex.json → Rust, density back to normal", "quicktype --lang rust --top-level Pokedex pokedex.json");
-    assert.equal(await hashNow(), "#l=rust&s=pokedex&density=normal");
-    await page.navigate(`${url}#l=rust&s=pokedex&density=normal`);
+    assert.equal(await hashNow(), "#v=2&l=rust&s=pokedex&density=normal");
+    await page.navigate(`${url}#v=2&l=rust&s=pokedex&density=normal`);
     await page.waitFor(settled, "the run with density=normal from the hash");
     assert.equal(await page.evaluate("document.getElementById('opt-density').value"), "normal");
     await sameAsCli("density=normal from the hash", "quicktype --lang rust --top-level Pokedex pokedex.json");
@@ -443,11 +444,30 @@ try {
     assert.equal(await page.evaluate("document.getElementById('opt-initializers').checked"), false);
     await click("opt-initializers");
     await sameAsCli("pokedex.json → Swift, initializers back on", "quicktype --lang swift --top-level Pokedex pokedex.json");
-    assert.equal(await hashNow(), "#l=swift&s=pokedex&initializers=true");
+    assert.equal(await hashNow(), "#v=2&l=swift&s=pokedex&initializers=true");
     await select("lang", "objc");
     await sameAsCli("pokedex.json → Objective-C (preset)", "quicktype --lang objc --top-level Pokedex --extra-comments pokedex.json");
-    assert.equal(await hashNow(), "#l=objc&s=pokedex");
+    assert.equal(await hashNow(), "#v=2&l=objc&s=pokedex");
+    assert.equal(await page.evaluate("document.querySelector('#options .more')?.open ?? false"), false, "More options opened");
     console.log("ok: presets as on app.quicktype.io (Rust, Swift, Objective-C); one moved back is explicit in the hash");
+
+    // A link from before the presets (no `v`) means quicktype's defaults,
+    // and is rewritten as a link that says so; a new link gets the presets.
+    for (const [old, command, rewritten] of [
+        ["#l=rust&s=pokedex", "quicktype --lang rust --top-level Pokedex pokedex.json", "#v=2&l=rust&s=pokedex&density=normal"],
+        ["#l=swift&s=pokedex", "quicktype --lang swift --top-level Pokedex pokedex.json", "#v=2&l=swift&s=pokedex&initializers=true"],
+        ["#l=objc&s=pokedex&extra-comments=true", "quicktype --lang objc --top-level Pokedex --extra-comments pokedex.json", "#v=2&l=objc&s=pokedex"],
+    ]) {
+        await page.navigate(`${url}${old}`);
+        await page.waitFor(settled, `the run for the old link ${old}`);
+        await sameAsCli(`old link ${old}`, command);
+        assert.equal(await hashNow(), rewritten);
+    }
+
+    await page.navigate(`${url}#v=2&l=swift&s=pokedex`);
+    await page.waitFor(settled, "the run for a new Swift link");
+    await sameAsCli("new link #v=2&l=swift&s=pokedex", "quicktype --lang swift --top-level Pokedex --no-initializers pokedex.json");
+    console.log("ok: links without v= get quicktype's defaults (and are rewritten with v=2); links with it get the presets");
 
     // The general options: labelled as in the CLI's --help, all off there
     // too; each one alone, and combined, gives the CLI's output with the
@@ -463,7 +483,7 @@ try {
     }
     console.log(`ok: general options labelled as in --help: ${generalControls.map((c) => c.flag).join(" ")}`);
 
-    await page.navigate(`${url}#l=typescript&s=pokedex`);
+    await page.navigate(`${url}#v=2&l=typescript&s=pokedex`);
     await page.waitFor(settled, "the run on TypeScript");
     await page.evaluate("document.querySelector('#general summary').click()");
     const generalCases = [
@@ -489,7 +509,7 @@ try {
             `quicktype --lang typescript --top-level ${name} --${flag} ${sample}.json`,
         );
         assert.notEqual(withFlag, without, `--${flag} changed nothing`);
-        assert.equal(await hashNow(), `#l=typescript&s=${sample}&${flag}=true`);
+        assert.equal(await hashNow(), `#v=2&l=typescript&s=${sample}&${flag}=true`);
         assert.equal(await page.evaluate("document.getElementById('general-count').textContent"), "1 on");
         await click(`general-${flag}`);
     }
@@ -505,7 +525,7 @@ try {
         "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
     );
     const twoHash = await hashNow();
-    assert.equal(twoHash, "#l=typescript&s=pokedex&all-properties-optional=true&no-enums=true");
+    assert.equal(twoHash, "#v=2&l=typescript&s=pokedex&all-properties-optional=true&no-enums=true");
     await page.navigate(`${url}${twoHash}`);
     await page.waitFor(settled, "the run with two general options from the hash");
     const restoredGeneral = await page.evaluate(`({
@@ -519,7 +539,22 @@ try {
         "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
     );
     await page.screenshot("general-open.png");
-    await page.navigate(`${url}#l=rust&s=github-events&alphabetize-properties=true&no-date-times=true`);
+    // Closed by the user, General stays closed through re-renders (another
+    // sample, another kind of input) and while its options change.
+    await page.evaluate("document.querySelector('#general summary').click()");
+    await select("sample", "kitchen-sink");
+    await andRun("document.getElementById('general-no-maps').click()", "a run with a third general option");
+    const closed = await page.evaluate(`({
+        open: document.getElementById("general").open,
+        count: document.getElementById("general-count").textContent,
+    })`);
+    assert.deepEqual(closed, { open: false, count: "3 on" });
+    await sameAsCli(
+        "kitchen-sink.json → TypeScript, three general options, General closed",
+        "quicktype --lang typescript --top-level KitchenSink --all-properties-optional --no-maps --no-enums kitchen-sink.json",
+    );
+    console.log("ok: a link with general options opens General; closed by the user, it stays closed");
+    await page.navigate(`${url}#v=2&l=rust&s=github-events&alphabetize-properties=true&no-date-times=true`);
     await page.waitFor(settled, "the run on Rust with two general options");
     await sameAsCli(
         "github-events.json → Rust, --alphabetize-properties --no-date-times and the preset",
@@ -527,7 +562,7 @@ try {
     );
 
     // --no-ignore-json-refs: `$ref`s in an uploaded JSON file are references.
-    await page.navigate(`${url}#l=typescript`);
+    await page.navigate(`${url}#v=2&l=typescript`);
     await page.waitFor(settled, "the run before the upload");
     await upload(path.join(repositoryRoot, sampleFiles["2465e.json"]));
     const refsIgnored = await sameAsCli("uploaded 2465e.json → TypeScript", "quicktype --lang typescript --top-level T2465e 2465e.json");
@@ -541,7 +576,7 @@ try {
     // The renderer options set the range of integers read from JSON, as on
     // the CLI: with Rust's `integer-type: force-i32`, whole numbers beyond
     // 32 bits are read as doubles.
-    await page.navigate(`${url}#l=rust&integer-type=force-i32`);
+    await page.navigate(`${url}#v=2&l=rust&integer-type=force-i32`);
     await page.waitFor(settled, "the run before the upload");
     await upload(path.join(repositoryRoot, sampleFiles["32431.json"]));
     const forceI32 = await sameAsCli(
@@ -576,7 +611,7 @@ try {
         `ok: footer: ${version.text}${commitDate === undefined ? " (no quicktype checkout to check the date against)" : ` (date checked in ${checkout})`}`,
     );
 
-    await page.navigate(`${url}#l=rust&s=pokedex`);
+    await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");
     await select("lang", "typescript");
     await sameAsCli("pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
@@ -664,7 +699,7 @@ try {
     // Renderer options from the hash: an enum, a string and both booleans,
     // one of them a secondary option ("More options").
     await page.navigate(
-        `${url}#l=cs&s=pokedex&namespace=Pokemon.Models&framework=NewtonSoft&density=dense&virtual=true&dateonly-timeonly-converters=false&bogus=1`,
+        `${url}#v=2&l=cs&s=pokedex&namespace=Pokemon.Models&framework=NewtonSoft&density=dense&virtual=true&dateonly-timeonly-converters=false&bogus=1`,
     );
     await page.waitFor(settled, "the run with options");
     await sameAsCli(
@@ -683,7 +718,7 @@ try {
         density: "dense",
         virtual: true,
         more: true,
-        hash: "#l=cs&s=pokedex&framework=NewtonSoft&density=dense&namespace=Pokemon.Models&virtual=true&dateonly-timeonly-converters=false",
+        hash: "#v=2&l=cs&s=pokedex&framework=NewtonSoft&density=dense&namespace=Pokemon.Models&virtual=true&dateonly-timeonly-converters=false",
     });
 
     // A file too large for the editor, opened with the file picker.
@@ -788,7 +823,7 @@ try {
     // Phones: stacked, no sideways scrolling.
     for (const width of [360, 390]) {
         await page.viewport(width, 844, { mobile: true });
-        await page.navigate(`${url}#l=rust&s=pokedex`);
+        await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
         await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run on a phone");
         const scrollWidth = await page.evaluate("document.documentElement.scrollWidth");
         assert.ok(scrollWidth <= width, `${width} px: the page is ${scrollWidth} px wide`);
