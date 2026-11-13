@@ -1,0 +1,236 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 2
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Score"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Maybe"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     4,
+     5
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Maybe"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Maybe"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Alias",
+    0
+   ],
+   [
+    "Scores",
+    1
+   ],
+   [
+    "Maybe",
+    3
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n\n    using Alias = std::string;\n    using Scores = std::map<std::string, double>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "wstring": "use-wstring"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Alias);\n//     std::wcout << wdump((nlohmann::json) Scores);\n//     std::wcout << wdump((nlohmann::json) Maybe);\n\n#pragma once\n\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n#include <codecvt>\n#include <locale>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    template<typename T>\n    struct tag {};\n\n    template<typename fromType, typename toType>\n    class Utf16_Utf8 {\n        private:\n        template<typename TF, typename TT>\n        static toType convert(tag<std::shared_ptr<TF> >, tag<std::shared_ptr<TT> >, fromType ptr) {\n            if (ptr == nullptr) return std::unique_ptr<TT>(); else return std::unique_ptr<TT>(new TT(Utf16_Utf8<TF,TT>::convert(*ptr)));\n        }\n\n        template<typename TF, typename TT>\n        static toType convert(tag<std::vector<TF> >, tag<std::vector<TT> >, fromType v) {\n            auto it = v.begin();\n            auto newVector = std::vector<TT>();\n            while (it != v.end()) {\n                newVector.push_back(Utf16_Utf8<TF,TT>::convert(*it));\n                it++;\n            }\n            return newVector;\n        }\n\n        template<typename KF, typename VF, typename KT, typename VT>\n        static toType convert(tag<std::map<KF,VF> >, tag<std::map<KT,VT> >, fromType m) {\n            auto it = m.begin();\n            auto newMap = std::map<KT, VT>();\n            while (it != m.end()) {\n                newMap.insert(std::pair<KT, VT>(Utf16_Utf8<KF, KT>::convert(it->first), Utf16_Utf8<VF, VT>::convert(it->second)));\n                it++;\n            }\n            return newMap;\n        }\n\n        template<typename TF, typename TT>\n        static fromType convert(tag<TF>, tag<TT>, fromType from) {\n            return from;\n        }\n\n        static std::wstring convert(tag<std::string>, tag<std::wstring>, std::string str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.from_bytes(str.data());\n        }\n\n        static std::string convert(tag<std::wstring>, tag<std::string>, std::wstring str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.to_bytes(str.data());\n        }\n\n        public:\n        static toType convert(fromType in) {\n            return convert(tag<fromType>(), tag<toType>(), in);\n        }\n    };\n\n    template<typename T>\n    std::wstring wdump(const T& j) {\n        std::ostringstream s;\n        s << j;\n        return Utf16_Utf8<std::string, std::wstring>::convert(s.str()); \n    }\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n\n    using Alias = std::wstring;\n    using Scores = std::map<std::wstring, double>;\n}\n\nnamespace nlohmann {\n    struct adl_serializer<quicktype::Scores> {\n        template <>\n        static void from_json(const json & j, quicktype::Scores & x);\n        static void to_json(json & j, const quicktype::Scores & x);\n    };\n\n    inline void adl_serializer<quicktype::Scores>::from_json(const json & j, quicktype::Scores& x) {\n        x = quicktype::Utf16_Utf8<std::map<std::string, double>, std::map<std::wstring, double>>::convert(j.get<std::map<std::string, double>>());\n    }\n    inline void adl_serializer<quicktype::Scores>::to_json(json & j, const quicktype::Scores & x) {\n        j = quicktype::Utf16_Utf8<std::map<std::wstring, double>, std::map<std::string, double>>::convert(x);\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "#pragma once\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\nnamespace quicktype {\n    using Alias = std::string;\n    using Scores = std::map<std::string, double>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "helper.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\n#include <sstream>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::optional<T>>();\n        }\n        return std::optional<T>();\n    }\n\n    template <typename T>\n    inline std::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n}\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<std::optional<T>> {\n        static void to_json(json & j, const std::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::optional<T> from_json(const json & j) {\n            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n",
+     "annotations": []
+    },
+    {
+     "name": "out.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using Alias = std::string;\n    using Scores = std::map<std::string, double>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source",
+    "wstring": "use-wstring",
+    "boost": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "helper.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      Boost     http://www.boost.org\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Alias);\n//     std::wcout << wdump((nlohmann::json) Scores);\n//     std::wcout << wdump((nlohmann::json) Maybe);\n\n#pragma once\n\n#include \"json.hpp\"\n\n#include <boost/optional.hpp>\n#include <stdexcept>\n#include <regex>\n#include <codecvt>\n#include <locale>\n\n#include <sstream>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    template<typename T>\n    struct tag {};\n\n    template<typename fromType, typename toType>\n    class Utf16_Utf8 {\n        private:\n        template<typename TF, typename TT>\n        static toType convert(tag<std::shared_ptr<TF> >, tag<std::shared_ptr<TT> >, fromType ptr) {\n            if (ptr == nullptr) return std::unique_ptr<TT>(); else return std::unique_ptr<TT>(new TT(Utf16_Utf8<TF,TT>::convert(*ptr)));\n        }\n\n        template<typename TF, typename TT>\n        static toType convert(tag<std::vector<TF> >, tag<std::vector<TT> >, fromType v) {\n            auto it = v.begin();\n            auto newVector = std::vector<TT>();\n            while (it != v.end()) {\n                newVector.push_back(Utf16_Utf8<TF,TT>::convert(*it));\n                it++;\n            }\n            return newVector;\n        }\n\n        template<typename KF, typename VF, typename KT, typename VT>\n        static toType convert(tag<std::map<KF,VF> >, tag<std::map<KT,VT> >, fromType m) {\n            auto it = m.begin();\n            auto newMap = std::map<KT, VT>();\n            while (it != m.end()) {\n                newMap.insert(std::pair<KT, VT>(Utf16_Utf8<KF, KT>::convert(it->first), Utf16_Utf8<VF, VT>::convert(it->second)));\n                it++;\n            }\n            return newMap;\n        }\n\n        template<typename TF, typename TT>\n        static fromType convert(tag<TF>, tag<TT>, fromType from) {\n            return from;\n        }\n\n        static std::wstring convert(tag<std::string>, tag<std::wstring>, std::string str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.from_bytes(str.data());\n        }\n\n        static std::string convert(tag<std::wstring>, tag<std::string>, std::wstring str) {\n            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::little_endian>, wchar_t>{}.to_bytes(str.data());\n        }\n\n        public:\n        static toType convert(fromType in) {\n            return convert(tag<fromType>(), tag<toType>(), in);\n        }\n    };\n\n    template<typename T>\n    std::wstring wdump(const T& j) {\n        std::ostringstream s;\n        s << j;\n        return Utf16_Utf8<std::string, std::wstring>::convert(s.str()); \n    }\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n\n    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER\n    #define NLOHMANN_OPTIONAL_quicktype_HELPER\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<std::shared_ptr<T>>();\n        }\n        return std::shared_ptr<T>();\n    }\n\n    template <typename T>\n    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {\n        return get_heap_optional<T>(j, property.data());\n    }\n    template <typename T>\n    inline boost::optional<T> get_stack_optional(const json & j, const char * property) {\n        auto it = j.find(property);\n        if (it != j.end() && !it->is_null()) {\n            return j.at(property).get<boost::optional<T>>();\n        }\n        return boost::optional<T>();\n    }\n\n    template <typename T>\n    inline boost::optional<T> get_stack_optional(const json & j, std::string property) {\n        return get_stack_optional<T>(j, property.data());\n    }\n    #endif\n}\n\n#ifndef NLOHMANN_OPT_HELPER\n#define NLOHMANN_OPT_HELPER\nnamespace nlohmann {\n    template <typename T>\n    struct adl_serializer<std::shared_ptr<T>> {\n        static void to_json(json & j, const std::shared_ptr<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static std::shared_ptr<T> from_json(const json & j) {\n            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());\n        }\n    };\n    template <typename T>\n    struct adl_serializer<boost::optional<T>> {\n        static void to_json(json & j, const boost::optional<T> & opt) {\n            if (!opt) j = nullptr; else j = *opt;\n        }\n\n        static boost::optional<T> from_json(const json & j) {\n            if (j.is_null()) return boost::optional<T>(); else return boost::optional<T>(j.get<T>());\n        }\n    };\n}\n#endif\n",
+     "annotations": []
+    },
+    {
+     "name": "out.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      Boost     http://www.boost.org\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     Alias data = nlohmann::json::parse(jsonString);\n//     Scores data = nlohmann::json::parse(jsonString);\n//     Maybe data = nlohmann::json::parse(jsonString);\n//\n//  You can get std::wstring data back out using\n//\n//     std::wcout << wdump((nlohmann::json) Alias);\n//     std::wcout << wdump((nlohmann::json) Scores);\n//     std::wcout << wdump((nlohmann::json) Maybe);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using Alias = std::wstring;\n    using Scores = std::map<std::wstring, double>;\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "cplusplus-primitives"
+}

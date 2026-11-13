@@ -244,17 +244,12 @@ pub trait PythonRenderer<'a>: ConvenienceRenderer<'a> {
     python_renderer_methods!([declare python_methods]);
 }
 
-// TODO: use array_intercalate
-/// `arrayIntercalate(separator, items)`.
+/// `arrayIntercalate(separator, items)` as a source sequence.
 pub(crate) fn intercalate(separator: &str, items: Vec<Source>) -> Source {
-    let mut result = Vec::with_capacity(items.len() * 2);
-    for (i, item) in items.into_iter().enumerate() {
-        if i > 0 {
-            result.push(Source::from(separator));
-        }
-        result.push(item);
-    }
-    Source::Sequence(result)
+    Source::Sequence(crate::support::collection_utils::array_intercalate(
+        Source::from(separator),
+        items,
+    ))
 }
 
 /// The bodies of TS `PythonRenderer`'s methods: the defaults of

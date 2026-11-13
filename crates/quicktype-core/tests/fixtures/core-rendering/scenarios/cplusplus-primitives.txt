@@ -1,0 +1,13 @@
+# C++ with no named types at all: primitives, a map and an array, in single-
+# and multi-source output (the multi-source helper comes from the
+# "nothing generated yet" branch).
+input schema Alias {"type": "string"}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Maybe {"anyOf": [{"type": "integer"}, {"type": "null"}]}
+pipeline {"lang": "cplusplus"}
+
+render cplusplus {}
+render cplusplus {"rendererOptions": {"wstring": "use-wstring"}}
+render cplusplus {"rendererOptions": {"just-types": true}}
+render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "out.hpp"}
+render cplusplus {"rendererOptions": {"source-style": "multi-source", "wstring": "use-wstring", "boost": true}, "filename": "out.hpp"}

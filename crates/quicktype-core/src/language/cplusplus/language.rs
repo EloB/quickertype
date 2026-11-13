@@ -2,12 +2,31 @@
 //!
 //! Language metadata and renderer option declarations.
 
+use crate::messages::Result;
 use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
+use crate::support::strings::NamingStyle;
+use crate::support::support::panic;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
+
+/// TS `namingStyles`: the naming style of a `type-style`, `member-style`
+/// or `enumerator-style` value. The values are those the option declares,
+/// so anything else is an internal error.
+pub fn naming_style_for_option(value: &str) -> Result<NamingStyle> {
+    Ok(match value {
+        "pascal-case" => NamingStyle::Pascal,
+        "original-case" => NamingStyle::Original,
+        "underscore-case" => NamingStyle::Underscore,
+        "camel-case" => NamingStyle::Camel,
+        "upper-underscore-case" => NamingStyle::UpperUnderscore,
+        "pascal-case-upper-acronyms" => NamingStyle::PascalUpperAcronyms,
+        "camel-case-upper-acronyms" => NamingStyle::CamelUpperAcronyms,
+        _ => return panic(format!("Unknown naming style option value {value}")),
+    })
+}
 
 /// TS `cPlusPlusOptions.typeSourceStyle`.
 pub const TYPE_SOURCE_STYLE: EnumOption = EnumOption::new(
@@ -171,8 +190,6 @@ pub const C_PLUS_PLUS_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CPlusPlusTargetLanguage;
 
-// TODO(renderer): port the hooks CPlusPlusTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for CPlusPlusTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_PLUS_PLUS_LANGUAGE_CONFIG
@@ -205,4 +222,50 @@ impl TargetLanguage for CPlusPlusTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::c_plus_plus_renderer::CPlusPlusOptions::parse(renderer_options)?;
+        let renderer =
+            super::c_plus_plus_renderer::CPlusPlusRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_every_declared_naming_style_and_rejects_others() {
+        let styles: Vec<NamingStyle> = TYPE_NAMING_STYLE
+            .values
+            .iter()
+            .map(|v| naming_style_for_option(v).unwrap())
+            .collect();
+        assert_eq!(
+            styles,
+            [
+                NamingStyle::Pascal,
+                NamingStyle::Original,
+                NamingStyle::Underscore,
+                NamingStyle::Camel,
+                NamingStyle::UpperUnderscore,
+                NamingStyle::PascalUpperAcronyms,
+                NamingStyle::CamelUpperAcronyms,
+            ]
+        );
+        assert!(naming_style_for_option("kebab-case").is_err());
+    }
 }

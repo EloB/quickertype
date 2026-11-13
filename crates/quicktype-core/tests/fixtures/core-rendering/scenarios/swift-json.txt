@@ -1,0 +1,15 @@
+# The Swift renderer on inferred JSON: Swift's own date-time recognizer
+# (ISO 8601 as Swift's decoder accepts it), UUIDs, nulls, empty arrays
+# (JSONAny), maps and unions of classes, with the multi-file output and a
+# top-level whose name is a Swift keyword.
+input json TopLevel {"id": "6c8a2e5e-6c1a-4f7c-9a2b-1f3f2a0b9c11", "when": "2018-08-14T02:45:50+00", "whenNot": "2018-08-14T02:45:50", "day": "2018-08-14", "nothing": null, "empty": [], "values": [1, 2.5, "three", true, null, {"x": 1}], "maps": {"aaaa": {"x": 1, "y": 2}, "bbbb": {"x": 3, "y": 4}, "cccc": {"x": 5, "y": 6}, "dddd": {"x": 7, "y": 8}, "eeee": {"x": 9, "y": 10}, "ffff": {"x": 11, "y": 12}, "gggg": {"x": 13, "y": 14}, "hhhh": {"x": 15, "y": 16}, "iiii": {"x": 17, "y": 18}, "jjjj": {"x": 19, "y": 20}}, "items": [{"name": "a", "count": 1}, {"name": "b", "count": null, "extra": [1, 2]}]}
+input json Protocol [1, 2, 3]
+input json Data {"self": 1, "Type": "x", "init": true}
+pipeline {"lang": "swift"}
+
+render swift {}
+render swift {"rendererOptions": {"just-types": true}}
+render swift {"rendererOptions": {"multi-file-output": true}}
+render swift {"rendererOptions": {"multi-file-output": true, "objective-c-support": true, "struct-or-class": "class"}}
+render swift {"rendererOptions": {"density": "dense", "struct-or-class": "class", "final-classes": true}}
+render swift {"rendererOptions": {"alamofire": true, "access-level": "public"}}

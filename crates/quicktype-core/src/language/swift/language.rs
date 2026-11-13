@@ -185,8 +185,6 @@ pub const SWIFT_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SwiftTargetLanguage;
 
-// TODO(renderer): port the hooks SwiftTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for SwiftTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SWIFT_LANGUAGE_CONFIG
@@ -224,4 +222,42 @@ impl TargetLanguage for SwiftTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer` + `render`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::swift_renderer::SwiftOptions::parse(renderer_options)?;
+        let renderer = super::swift_renderer::SwiftRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
+}
+
+/// The values of the `access-level` option.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AccessLevel {
+    /// `"internal"`: Swift's default, emitted as nothing.
+    Internal,
+    /// `"public"`.
+    Public,
+}
+
+/// The values of the `protocol` option: `none` (neither), `equatable` or
+/// `hashable`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SwiftProtocol {
+    /// `equatable`.
+    pub equatable: bool,
+    /// `hashable`.
+    pub hashable: bool,
 }

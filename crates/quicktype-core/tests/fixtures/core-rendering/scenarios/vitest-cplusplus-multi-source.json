@@ -1,0 +1,137 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "ChunkCache"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "chunks",
+      1,
+      false
+     ],
+     [
+      "size",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "BufferPath"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "path",
+      2,
+      false
+     ],
+     [
+      "maxSize",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "ChunkCache",
+    0
+   ],
+   [
+    "BufferPath",
+    4
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "cplusplus",
+   "filename": "quicktype.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "helper.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     ChunkCache data = nlohmann::json::parse(jsonString);\n//     BufferPath data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n\n#include <optional>\n#include <stdexcept>\n#include <regex>\n\n#include <sstream>\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER\n    #define NLOHMANN_UNTYPED_quicktype_HELPER\n    inline json get_untyped(const json & j, const char * property) {\n        if (j.find(property) != j.end()) {\n            return j.at(property).get<json>();\n        }\n        return json();\n    }\n\n    inline json get_untyped(const json & j, std::string property) {\n        return get_untyped(j, property.data());\n    }\n    #endif\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Generators.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     ChunkCache data = nlohmann::json::parse(jsonString);\n//     BufferPath data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\n#include \"BufferPath.hpp\"\n#include \"ChunkCache.hpp\"\n\nnamespace quicktype {\n    void from_json(const json & j, ChunkCache & x);\n    void to_json(json & j, const ChunkCache & x);\n\n    void from_json(const json & j, BufferPath & x);\n    void to_json(json & j, const BufferPath & x);\n\n    inline void from_json(const json & j, ChunkCache& x) {\n        if (!j.is_object()) throw std::runtime_error(\"Expected object\");\n        x.set_chunks(j.at(\"chunks\").get<std::vector<std::string>>());\n        if (j.find(\"size\") != j.end() && !j.at(\"size\").is_number_integer()) throw std::runtime_error(\"Expected integer\");\n        x.set_size(j.at(\"size\").get<int64_t>());\n    }\n\n    inline void to_json(json & j, const ChunkCache & x) {\n        j = json::object();\n        j[\"chunks\"] = x.get_chunks();\n        j[\"size\"] = x.get_size();\n    }\n\n    inline void from_json(const json & j, BufferPath& x) {\n        if (!j.is_object()) throw std::runtime_error(\"Expected object\");\n        x.set_path(j.at(\"path\").get<std::string>());\n        if (j.find(\"maxSize\") != j.end() && !j.at(\"maxSize\").is_number_integer()) throw std::runtime_error(\"Expected integer\");\n        x.set_max_size(j.at(\"maxSize\").get<int64_t>());\n    }\n\n    inline void to_json(json & j, const BufferPath & x) {\n        j = json::object();\n        j[\"path\"] = x.get_path();\n        j[\"maxSize\"] = x.get_max_size();\n    }\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ChunkCache.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     ChunkCache data = nlohmann::json::parse(jsonString);\n//     BufferPath data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    class ChunkCache {\n        public:\n        ChunkCache() = default;\n        virtual ~ChunkCache() = default;\n\n        private:\n        std::vector<std::string> chunks;\n        int64_t size;\n\n        public:\n        const std::vector<std::string> & get_chunks() const { return chunks; }\n        std::vector<std::string> & get_mutable_chunks() { return chunks; }\n        void set_chunks(const std::vector<std::string> & value) { this->chunks = value; }\n\n        const int64_t & get_size() const { return size; }\n        int64_t & get_mutable_size() { return size; }\n        void set_size(const int64_t & value) { this->size = value; }\n    };\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "BufferPath.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     ChunkCache data = nlohmann::json::parse(jsonString);\n//     BufferPath data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\nnamespace quicktype {\n    using nlohmann::json;\n\n    class BufferPath {\n        public:\n        BufferPath() = default;\n        virtual ~BufferPath() = default;\n\n        private:\n        std::string path;\n        int64_t max_size;\n\n        public:\n        const std::string & get_path() const { return path; }\n        std::string & get_mutable_path() { return path; }\n        void set_path(const std::string & value) { this->path = value; }\n\n        const int64_t & get_max_size() const { return max_size; }\n        int64_t & get_mutable_max_size() { return max_size; }\n        void set_max_size(const int64_t & value) { this->max_size = value; }\n    };\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "quicktype.hpp",
+     "text": "//  To parse this JSON data, first install\n//\n//      json.hpp  https://github.com/nlohmann/json\n//\n//  Then include this file, and then do\n//\n//     ChunkCache data = nlohmann::json::parse(jsonString);\n//     BufferPath data = nlohmann::json::parse(jsonString);\n\n#pragma once\n\n#include \"json.hpp\"\n#include \"helper.hpp\"\n\n#include \"Generators.hpp\"\n#include \"ChunkCache.hpp\"\n#include \"BufferPath.hpp\"\nnamespace quicktype {\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-cplusplus-multi-source"
+}
