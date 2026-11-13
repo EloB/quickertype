@@ -290,6 +290,20 @@ impl<K: JsHash + JsEquals, V> EqualityMap<K, V> {
         }
     }
 
+    /// The value for a key equal to `k`, mutably (the JavaScript code
+    /// mutates the stored value object in place).
+    pub fn get_mut(&mut self, k: &K) -> Option<&mut V> {
+        let mut h = int32(k.hash_code());
+        loop {
+            match self.map.get(&h) {
+                None => return None,
+                Some(kvp) if k.js_equals(&kvp.0) => break,
+                Some(_) => h = h.wrapping_add(1),
+            }
+        }
+        self.map.get_mut(&h).map(|kvp| &mut kvp.1)
+    }
+
     /// `has(k)`.
     pub fn has(&self, k: &K) -> bool {
         self.get(k).is_some()
@@ -408,7 +422,10 @@ mod tests {
         assert_eq!(m.get(&"Aa".into()), Some(&4));
         assert_eq!(m.get(&"BB".into()), Some(&2));
         assert_eq!(m.get(&"C".into()), None);
-        assert_eq!(m.values().copied().collect::<Vec<_>>(), vec![4, 2, 3]);
+        *m.get_mut(&"BB".into()).unwrap() += 10;
+        assert_eq!(m.get(&"BB".into()), Some(&12));
+        assert!(m.get_mut(&"C".into()).is_none());
+        assert_eq!(m.values().copied().collect::<Vec<_>>(), vec![4, 12, 3]);
     }
 
     #[test]

@@ -5,6 +5,7 @@
 //! and output.
 
 use crate::attributes::type_attributes::AttributeKind;
+use crate::messages::Result;
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash};
 use crate::support::js_shim;
 use crate::ty::type_graph::TypeGraph;
@@ -79,10 +80,10 @@ pub(crate) fn stringify(value: &DefaultValue) -> String {
 }
 
 /// `defaultValueForType(t)`.
-pub fn default_value_for_type(graph: &TypeGraph, t: TypeRef) -> Option<DefaultValue> {
-    DefaultValueTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t))
-        .cloned()
+pub fn default_value_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<DefaultValue>> {
+    Ok(DefaultValueTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .cloned())
 }
 
 #[cfg(test)]

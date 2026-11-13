@@ -571,8 +571,8 @@ impl<'g> TypeBuilder<'g> {
         }
 
         let original = self.original_graph()?;
-        let original_type = original.type_at(original_ref);
-        let original_attributes = original.attributes(original_ref);
+        let original_type = original.type_at(original_ref)?;
+        let original_attributes = original.attributes(original_ref)?;
         let index = original_ref.index();
 
         if self.debug_print() {
@@ -636,8 +636,8 @@ impl<'g> TypeBuilder<'g> {
             }
 
             let original = b.original_graph()?;
-            let original_type = original.type_at(original_ref);
-            let original_attributes = original.attributes(original_ref);
+            let original_type = original.type_at(original_ref)?;
+            let original_attributes = original.attributes(original_ref)?;
 
             let sources = match &b.rewrite_state()?.mode {
                 RewriteMode::Remap {
@@ -648,8 +648,10 @@ impl<'g> TypeBuilder<'g> {
             let source_attributes = match sources {
                 None => original_attributes.clone(),
                 Some(sources) => {
-                    let all: Vec<&TypeAttributes> =
-                        sources.iter().map(|&s| original.attributes(s)).collect();
+                    let all: Vec<&TypeAttributes> = sources
+                        .iter()
+                        .map(|&s| original.attributes(s))
+                        .collect::<Result<_>>()?;
                     combine_type_attributes(CombinationKind::Union, &all)?
                 }
             };

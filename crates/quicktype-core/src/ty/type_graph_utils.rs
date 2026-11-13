@@ -26,8 +26,10 @@ pub fn none_to_any(
     debug_print_reconstitution: bool,
 ) -> Result<Option<TypeGraph>> {
     let none_types: Vec<TypeRef> = graph
-        .all_types_unordered()
-        .filter(|&t| graph.kind(t) == TypeKind::None)
+        .types()
+        .iter()
+        .filter(|t| t.kind() == TypeKind::None)
+        .map(|t| t.type_ref())
         .collect();
     if none_types.is_empty() {
         return Ok(None);
@@ -62,7 +64,7 @@ fn rewrite_class(
     forwarding_ref: TypeRef,
 ) -> Result<TypeRef> {
     let original = builder.original_graph()?;
-    let class = original.type_at(c);
+    let class = original.type_at(c)?;
     let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
     for (name, p) in class.properties()? {
         let t = p.type_ref;
@@ -71,8 +73,8 @@ fn rewrite_class(
         } else {
             let null_type = builder.get_primitive_type(TypeKind::Null, Default::default(), None)?;
             let mut members: IndexSet<TypeRef> = IndexSet::new();
-            if original.kind(t) == TypeKind::Union {
-                for &m in original.type_at(t).members()? {
+            if original.kind(t)? == TypeKind::Union {
+                for &m in original.type_at(t)?.members()? {
                     members.insert(builder.reconstitute_type(m, Default::default(), None)?);
                 }
                 members.insert(null_type);
@@ -81,7 +83,7 @@ fn rewrite_class(
                 members.insert(null_type);
             }
             let attributes =
-                NamesTypeAttributeKind.set_default_in_attributes(original.attributes(t), || {
+                NamesTypeAttributeKind.set_default_in_attributes(original.attributes(t)?, || {
                     TypeNames::make(
                         [name.clone()].into_iter().collect(),
                         Some(IndexSet::new()),
@@ -92,7 +94,7 @@ fn rewrite_class(
         };
         properties.insert(name.clone(), builder.make_class_property(r, p.is_optional));
     }
-    let attributes = original.attributes(c).clone();
+    let attributes = original.attributes(c)?.clone();
     if class.is_fixed() {
         builder.get_unique_class_type(attributes, true, Some(properties), Some(forwarding_ref))
     } else {
@@ -110,7 +112,7 @@ pub fn optional_to_nullable(
 ) -> Result<Option<TypeGraph>> {
     let mut replacement_groups: Vec<Vec<TypeRef>> = Vec::new();
     for t in graph.all_types_unordered() {
-        let ty = graph.type_at(t);
+        let ty = graph.type_at(t)?;
         if ty.is_class() && ty.properties()?.values().any(|p| p.is_optional) {
             replacement_groups.push(vec![t]);
         }
@@ -146,18 +148,18 @@ pub fn remove_indirection_intersections(
     let mut map: IndexMap<TypeRef, TypeRef> = IndexMap::new();
 
     for t in graph.all_types_unordered() {
-        if graph.kind(t) != TypeKind::Intersection {
+        if graph.kind(t)? != TypeKind::Intersection {
             continue;
         }
         let mut seen: IndexSet<TypeRef> = [t].into_iter().collect();
         let mut current = t;
         loop {
-            let members = graph.type_at(current).members()?;
+            let members = graph.type_at(current)?.members()?;
             if members.len() != 1 {
                 break;
             }
             let member = members[0];
-            if graph.kind(member) != TypeKind::Intersection {
+            if graph.kind(member)? != TypeKind::Intersection {
                 map.insert(t, member);
                 break;
             }

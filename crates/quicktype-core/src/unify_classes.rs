@@ -35,16 +35,19 @@ pub type UnifyTypesCallback<'g> =
 /// `getCliqueProperties(clique, builder, makePropertyType)`: the union of the
 /// properties of a set of objects. The additional properties are unified
 /// first, then each property in name order.
+///
+/// The TypeScript version also returns a `lostTypeAttributes` flag, but it is
+/// always `false` (dead code there, and the caller's `setLostTypeAttributes`
+/// branch never runs), so it is left out.
 fn get_clique_properties<'g>(
     graph: &TypeGraph,
     clique: &[TypeRef],
     builder: &mut TypeBuilder<'g>,
     mut make_property_type: impl FnMut(&mut TypeBuilder<'g>, &IndexSet<TypeRef>) -> Result<TypeRef>,
-) -> Result<(IndexMap<String, ClassProperty>, Option<TypeRef>, bool)> {
-    let lost_type_attributes = false;
+) -> Result<(IndexMap<String, ClassProperty>, Option<TypeRef>)> {
     let mut property_names: IndexSet<String> = IndexSet::new();
     for &o in clique {
-        property_names.extend(graph.type_at(o).properties()?.keys().cloned());
+        property_names.extend(graph.type_at(o)?.properties()?.keys().cloned());
     }
 
     let mut properties: Vec<(String, IndexSet<TypeRef>, bool)> = property_names
@@ -53,7 +56,7 @@ fn get_clique_properties<'g>(
         .collect();
     let mut additional_properties: Option<IndexSet<TypeRef>> = None;
     for &o in clique {
-        let object = graph.type_at(o);
+        let object = graph.type_at(o)?;
         let additional = object.additional_properties()?;
         if let Some(additional) = additional {
             additional_properties
@@ -66,7 +69,7 @@ fn get_clique_properties<'g>(
                 None => {
                     *is_optional = true;
                     if let Some(additional) = additional
-                        && graph.kind(additional) != TypeKind::Any
+                        && graph.kind(additional)? != TypeKind::Any
                     {
                         types.insert(additional);
                     }
@@ -92,11 +95,7 @@ fn get_clique_properties<'g>(
         unified_properties.insert(name, builder.make_class_property(t, is_optional));
     }
 
-    Ok((
-        unified_properties,
-        unified_additional_properties,
-        lost_type_attributes,
-    ))
+    Ok((unified_properties, unified_additional_properties))
 }
 
 struct PropertyCounts {
@@ -113,13 +112,13 @@ fn count_properties(graph: &TypeGraph, clique: &[TypeRef]) -> Result<PropertyCou
         has_non_any_additional_properties: false,
     };
     for &o in clique {
-        let object = graph.type_at(o);
+        let object = graph.type_at(o)?;
         if !object.properties()?.is_empty() {
             counts.has_properties = true;
         }
         if let Some(additional) = object.additional_properties()? {
             counts.has_additional_properties = true;
-            if graph.kind(additional) != TypeKind::Any {
+            if graph.kind(additional)? != TypeKind::Any {
                 counts.has_non_any_additional_properties = true;
             }
         }
@@ -197,14 +196,14 @@ impl<'g> UnionBuilder<'g> for UnifyUnionBuilder<'g> {
             for &o in object_refs {
                 property_types.extend(
                     graph
-                        .type_at(o)
+                        .type_at(o)?
                         .properties()?
                         .values()
                         .map(|cp| cp.type_ref),
                 );
             }
             for &o in object_refs {
-                if let Some(additional) = graph.type_at(o).additional_properties()? {
+                if let Some(additional) = graph.type_at(o)?.additional_properties()? {
                     property_types.insert(additional);
                 }
             }
@@ -212,15 +211,12 @@ impl<'g> UnionBuilder<'g> for UnifyUnionBuilder<'g> {
             let values = self.unify(builder, &types)?;
             builder.get_map_type(type_attributes, values, forwarding_ref)
         } else {
-            let (properties, additional_properties, lost_type_attributes) =
+            let (properties, additional_properties) =
                 get_clique_properties(graph, object_refs, builder, |b, types| {
                     assert(!types.is_empty(), "Property has no type")?;
                     let types: Vec<TypeRef> = types.iter().copied().collect();
                     self.unify(b, &types)
                 })?;
-            if lost_type_attributes {
-                builder.set_lost_type_attributes();
-            }
 
             if self.make_object_types {
                 builder.get_unique_object_type(
@@ -296,7 +292,7 @@ pub fn unify_types<'g>(
     let graph = type_builder.original_graph()?;
     match types.first() {
         None => return panic("Cannot unify empty set of types"),
-        Some(&first) if types.len() == 1 && graph.kind(first) != TypeKind::Union => {
+        Some(&first) if types.len() == 1 && graph.kind(first)? != TypeKind::Union => {
             return type_builder.reconstitute_type_ref(
                 first,
                 type_attributes,

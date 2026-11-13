@@ -6,7 +6,9 @@
 
 use indexmap::{IndexMap, IndexSet};
 
+use crate::messages::Result;
 use crate::support::collection_utils::{JsEquals, JsHash, add_hash_code, set_intersect};
+use crate::support::support::assert;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
 
@@ -41,15 +43,18 @@ impl StringTypes {
     }
 
     /// `new StringTypes(cases, transformations)`. An unrestricted string
-    /// cannot have transformations; `None` if that is violated.
+    /// cannot have transformations.
     pub fn new(
         cases: Option<IndexMap<String, u64>>,
         transformations: IndexSet<TypeKind>,
-    ) -> Option<StringTypes> {
-        if cases.is_none() && !transformations.is_empty() {
-            return None;
+    ) -> Result<StringTypes> {
+        if cases.is_none() {
+            assert(
+                transformations.is_empty(),
+                "We can't have an unrestricted string that also allows transformations",
+            )?;
         }
-        Some(StringTypes {
+        Ok(StringTypes {
             cases,
             transformations,
         })
@@ -319,6 +324,11 @@ mod tests {
         assert_eq!(st.to_string(), "1 enums: hello (1), ...,date");
         assert_eq!(StringTypes::unrestricted().to_string(), "unrestricted");
         let empty = StringTypes::new(Some(IndexMap::new()), IndexSet::new()).unwrap();
+        let e = StringTypes::new(None, [TypeKind::Date].into_iter().collect()).unwrap_err();
+        assert_eq!(
+            e.user_message(),
+            "Internal error: We can't have an unrestricted string that also allows transformations"
+        );
         assert_eq!(empty.to_string(), "enum with no cases");
     }
 

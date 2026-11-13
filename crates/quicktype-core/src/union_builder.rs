@@ -420,12 +420,12 @@ fn attributes_for_types(
             path: &mut Vec<UnionOrFaux>,
             is_equivalent_to_root: bool,
         ) -> Result<()> {
-            if graph.kind(t) == TypeKind::Union {
+            if graph.kind(t)? == TypeKind::Union {
                 self.unions.insert(t);
                 if is_equivalent_to_root {
                     self.unions_equivalent_to_root.insert(t);
                 }
-                let members = graph.type_at(t).members()?;
+                let members = graph.type_at(t)?.members()?;
                 let is_equivalent_to_root = is_equivalent_to_root && members.len() == 1;
                 path.push(UnionOrFaux::Union(t));
                 for &m in members {
@@ -457,10 +457,11 @@ fn attributes_for_types(
         unions_equivalent_to_root,
     } = traversal;
 
-    let union_attributes_of = |u: UnionOrFaux| -> TypeAttributes {
+    let empty = TypeAttributes::new();
+    let union_attributes_of = |u: UnionOrFaux| -> Result<&TypeAttributes> {
         match u {
-            UnionOrFaux::Faux => TypeAttributes::new(),
-            UnionOrFaux::Union(u) => graph.attributes(u).clone(),
+            UnionOrFaux::Faux => Ok(&empty),
+            UnionOrFaux::Union(u) => graph.attributes(u),
         }
     };
 
@@ -477,10 +478,11 @@ fn attributes_for_types(
                 .all(|u| types_for_union.get(u).is_some_and(|s| s.contains(&t))),
             "We messed up bookkeeping",
         )?;
-        let mut all: Vec<TypeAttributes> = vec![graph.attributes(t).clone()];
-        all.extend(single_ancestors.iter().map(|&u| union_attributes_of(u)));
-        let refs: Vec<&TypeAttributes> = all.iter().collect();
-        result_attributes.insert(t, combine_type_attributes(CombinationKind::Union, &refs)?);
+        let mut all: Vec<&TypeAttributes> = vec![graph.attributes(t)?];
+        for &u in &single_ancestors {
+            all.push(union_attributes_of(u)?);
+        }
+        result_attributes.insert(t, combine_type_attributes(CombinationKind::Union, &all)?);
     }
 
     let mut union_attributes: Vec<TypeAttributes> = Vec::with_capacity(unions.len());
@@ -490,7 +492,7 @@ fn attributes_for_types(
             union_attributes.push(TypeAttributes::new());
             continue;
         }
-        let attributes = graph.attributes(u);
+        let attributes = graph.attributes(u)?;
         if unions_equivalent_to_root.contains(&u) {
             union_attributes.push(attributes.clone());
         } else {
@@ -516,7 +518,7 @@ impl UnionAccumulator<TypeRef, TypeRef> {
         t: TypeRef,
         attributes: TypeAttributes,
     ) -> Result<()> {
-        let ty = graph.type_at(t);
+        let ty = graph.type_at(t)?;
         match ty.kind() {
             TypeKind::None => self.add_none(attributes),
             TypeKind::Any => self.add_any(attributes),

@@ -162,31 +162,31 @@ pub(crate) fn combine_patterns(arr: &[&String]) -> String {
 }
 
 /// `minMaxValueForType(t)`.
-pub fn min_max_value_for_type(graph: &TypeGraph, t: TypeRef) -> Option<MinMaxConstraint> {
-    MinMaxTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t))
-        .copied()
+pub fn min_max_value_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<MinMaxConstraint>> {
+    Ok(MinMaxTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .copied())
 }
 
 /// `minMaxLengthForType(t)`.
-pub fn min_max_length_for_type(graph: &TypeGraph, t: TypeRef) -> Option<MinMaxConstraint> {
-    MinMaxLengthTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t))
-        .copied()
+pub fn min_max_length_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<MinMaxConstraint>> {
+    Ok(MinMaxLengthTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .copied())
 }
 
 /// `minMaxItemsForType(t)`.
-pub fn min_max_items_for_type(graph: &TypeGraph, t: TypeRef) -> Option<MinMaxConstraint> {
-    MinMaxItemsTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t))
-        .copied()
+pub fn min_max_items_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<MinMaxConstraint>> {
+    Ok(MinMaxItemsTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .copied())
 }
 
 /// `patternForType(t)`.
-pub fn pattern_for_type(graph: &TypeGraph, t: TypeRef) -> Option<String> {
-    PatternTypeAttributeKind
-        .try_get_in_attributes(graph.attributes(t))
-        .cloned()
+pub fn pattern_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<String>> {
+    Ok(PatternTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .cloned())
 }
 
 #[cfg(test)]

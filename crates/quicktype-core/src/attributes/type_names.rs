@@ -124,8 +124,9 @@ fn combine_names(names: &IndexSet<String>) -> Result<String> {
         combined.extend_from_slice(&first[first.len() - suffix_length..]);
     }
     if combined.len() > 2 {
-        // A prefix or suffix can split a surrogate pair; Node writes the lone
-        // surrogate as U+FFFD, which is what the lossy conversion produces.
+        // A prefix or suffix can split a surrogate pair. TypeScript keeps
+        // the lone surrogate; here it becomes U+FFFD (see "Known gaps" in
+        // docs/PARITY.md).
         return Ok(String::from_utf16_lossy(&combined));
     }
     Ok(names_set[0].clone())

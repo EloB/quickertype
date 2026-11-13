@@ -112,3 +112,17 @@ semantics were verified.
 | JS library | Rust replacement | Verified how |
 |---|---|---|
 | `collection-utils` (sets/maps) | `indexmap` | insertion-ordered, as is collection-utils (research 06) |
+
+## Known gaps
+
+Deliberate, documented divergences from the TypeScript implementation. None
+of them is exercised by the golden corpus.
+
+- **Lone surrogates in combined type names.** `combineNames`
+  (`attributes/TypeNames.ts`) cuts the common prefix/suffix of a type's
+  names in UTF-16 code units. If the names contain astral characters and the
+  cut splits a surrogate pair, TypeScript keeps the lone surrogate, while the
+  port (`attributes/type_names.rs`, which stores names as Rust `String`s)
+  turns it into U+FFFD. Output only differs if a later step inspects that
+  character instead of writing it out (Node also writes a lone surrogate as
+  U+FFFD). No golden input has such names.

@@ -22,7 +22,7 @@ use crate::ty::type_ref::TypeRef;
 
 /// `assertIsObject(t)`.
 pub fn assert_is_object(graph: &TypeGraph, t: TypeRef) -> Result<&Type> {
-    let ty = graph.type_at(t);
+    let ty = graph.type_at(t)?;
     if ty.is_object_type() {
         Ok(ty)
     } else {
@@ -32,7 +32,7 @@ pub fn assert_is_object(graph: &TypeGraph, t: TypeRef) -> Result<&Type> {
 
 /// `assertIsClass(t)`.
 pub fn assert_is_class(graph: &TypeGraph, t: TypeRef) -> Result<&Type> {
-    let ty = graph.type_at(t);
+    let ty = graph.type_at(t)?;
     if ty.is_class() {
         Ok(ty)
     } else {
@@ -53,7 +53,7 @@ pub fn set_operation_members_recursively(
     let Some(&first) = set_operations.first() else {
         return panic("Defined value expected, but got undefined");
     };
-    let kind = graph.kind(first);
+    let kind = graph.kind(first)?;
     let include_any = kind != TypeKind::Intersection;
     let mut processed: IndexSet<TypeRef> = IndexSet::new();
     let mut members: IndexSet<TypeRef> = IndexSet::new();
@@ -62,21 +62,21 @@ pub fn set_operation_members_recursively(
     // An explicit stack instead of recursion, visiting in the same order.
     let mut stack: Vec<TypeRef> = set_operations.iter().rev().copied().collect();
     while let Some(t) = stack.pop() {
-        let t_kind = graph.kind(t);
+        let t_kind = graph.kind(t)?;
         if t_kind == kind {
             if !processed.insert(t) {
                 continue;
             }
             if let Some(ck) = combination_kind {
-                attributes = combine_type_attributes2(ck, &attributes, graph.attributes(t))?;
+                attributes = combine_type_attributes2(ck, &attributes, graph.attributes(t)?)?;
             }
-            for &m in graph.type_at(t).members()?.iter().rev() {
+            for &m in graph.type_at(t)?.members()?.iter().rev() {
                 stack.push(m);
             }
         } else if include_any || t_kind != TypeKind::Any {
             members.insert(t);
         } else if let Some(ck) = combination_kind {
-            attributes = combine_type_attributes2(ck, &attributes, graph.attributes(t))?;
+            attributes = combine_type_attributes2(ck, &attributes, graph.attributes(t)?)?;
         }
     }
 
@@ -105,16 +105,16 @@ pub fn make_groups_to_flatten(
             continue;
         }
 
-        let mut set = match type_groups.get(&members) {
-            Some(set) => set.clone(),
-            None => {
-                let mut set = IndexSet::new();
-                if members.len() == 1 {
-                    set.insert(members[0]);
-                }
-                set
-            }
-        };
+        // `set` on an existing key keeps the key and replaces the value with
+        // the same, now extended, set, so extending it in place is the same.
+        if let Some(set) = type_groups.get_mut(&members) {
+            set.insert(u);
+            continue;
+        }
+        let mut set = IndexSet::new();
+        if members.len() == 1 {
+            set.insert(members[0]);
+        }
         set.insert(u);
         type_groups.set(members, set);
     }
@@ -131,13 +131,16 @@ pub fn combine_type_attributes_of_types(
     combination_kind: CombinationKind,
     types: impl IntoIterator<Item = TypeRef>,
 ) -> Result<TypeAttributes> {
-    let attributes: Vec<&TypeAttributes> = types.into_iter().map(|t| graph.attributes(t)).collect();
+    let attributes: Vec<&TypeAttributes> = types
+        .into_iter()
+        .map(|t| graph.attributes(t))
+        .collect::<Result<_>>()?;
     combine_type_attributes(combination_kind, &attributes)
 }
 
 /// `isAnyOrNull(t)`.
-pub fn is_any_or_null(graph: &TypeGraph, t: TypeRef) -> bool {
-    matches!(graph.kind(t), TypeKind::Any | TypeKind::Null)
+pub fn is_any_or_null(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
+    Ok(matches!(graph.kind(t)?, TypeKind::Any | TypeKind::Null))
 }
 
 /// How [`remove_null_from_union`] sorts the non-null members.
@@ -157,31 +160,21 @@ pub fn remove_null_from_union(
     t: TypeRef,
     sort_by: NullRemovalSort<'_>,
 ) -> Result<(Option<TypeRef>, IndexSet<TypeRef>)> {
-    let sort = |s: IndexSet<TypeRef>| -> IndexSet<TypeRef> {
-        let mut v: Vec<TypeRef> = s.into_iter().collect();
-        match &sort_by {
-            NullRemovalSort::None => {}
-            NullRemovalSort::ByKind => sort_by_string_key(&mut v, |m| graph.kind(*m).as_str()),
-            NullRemovalSort::By(key) => sort_by_string_key(&mut v, |m| key(*m)),
-        }
-        v.into_iter().collect()
-    };
-
-    let members = graph.type_at(t).members()?;
+    let members = graph.type_at(t)?.members()?;
     let null_type = find_member(graph, t, TypeKind::Null)?;
-    match null_type {
-        None => Ok((None, sort(members.clone()))),
-        Some(null_type) => Ok((
-            Some(null_type),
-            sort(
-                members
-                    .iter()
-                    .copied()
-                    .filter(|&m| graph.kind(m) != TypeKind::Null)
-                    .collect(),
-            ),
-        )),
+    let mut rest: Vec<(TypeRef, TypeKind)> = Vec::with_capacity(members.len());
+    for &m in members {
+        let kind = graph.kind(m)?;
+        if null_type.is_none() || kind != TypeKind::Null {
+            rest.push((m, kind));
+        }
     }
+    match sort_by {
+        NullRemovalSort::None => {}
+        NullRemovalSort::ByKind => sort_by_string_key(&mut rest, |(_, k)| k.as_str()),
+        NullRemovalSort::By(key) => sort_by_string_key(&mut rest, |(m, _)| key(*m)),
+    }
+    Ok((null_type, rest.into_iter().map(|(m, _)| m).collect()))
 }
 
 /// `removeNullFromType(t)`.
@@ -189,7 +182,7 @@ pub fn remove_null_from_type(
     graph: &TypeGraph,
     t: TypeRef,
 ) -> Result<(Option<TypeRef>, IndexSet<TypeRef>)> {
-    match graph.kind(t) {
+    match graph.kind(t)? {
         TypeKind::Null => Ok((Some(t), IndexSet::new())),
         TypeKind::Union => remove_null_from_union(graph, t, NullRemovalSort::None),
         _ => Ok((None, [t].into_iter().collect())),
@@ -243,19 +236,26 @@ pub struct SeparatedNamedTypes {
 }
 
 /// `separateNamedTypes(types)`, keeping the order.
-pub fn separate_named_types(graph: &TypeGraph, types: &IndexSet<TypeRef>) -> SeparatedNamedTypes {
-    let of_kind = |pred: &dyn Fn(TypeKind) -> bool| -> IndexSet<TypeRef> {
-        types
-            .iter()
-            .copied()
-            .filter(|&t| pred(graph.kind(t)))
-            .collect()
-    };
-    SeparatedNamedTypes {
-        objects: of_kind(&|k| k == TypeKind::Object || k == TypeKind::Class),
-        enums: of_kind(&|k| k == TypeKind::Enum),
-        unions: of_kind(&|k| k == TypeKind::Union),
+pub fn separate_named_types(
+    graph: &TypeGraph,
+    types: &IndexSet<TypeRef>,
+) -> Result<SeparatedNamedTypes> {
+    let mut separated = SeparatedNamedTypes::default();
+    for &t in types {
+        match graph.kind(t)? {
+            TypeKind::Object | TypeKind::Class => {
+                separated.objects.insert(t);
+            }
+            TypeKind::Enum => {
+                separated.enums.insert(t);
+            }
+            TypeKind::Union => {
+                separated.unions.insert(t);
+            }
+            _ => {}
+        }
     }
+    Ok(separated)
 }
 
 /// `directlyReachableTypes(t, setForType)`.
@@ -280,7 +280,7 @@ pub fn directly_reachable_single_named_type(
     t: TypeRef,
 ) -> Result<Option<TypeRef>> {
     let defined_types = directly_reachable_types(graph, t, &mut |t| {
-        let ty = graph.type_at(t);
+        let ty = graph.type_at(t)?;
         let is_union = ty.is_union();
         if (!is_union && is_named_type(ty))
             || (is_union && nullable_from_union(graph, t)?.is_none())
@@ -299,10 +299,10 @@ pub fn directly_reachable_single_named_type(
 /// `stringTypesForType(t)`: the string types of a `string`.
 pub fn string_types_for_type(graph: &TypeGraph, t: TypeRef) -> Result<&StringTypes> {
     assert(
-        graph.kind(t) == TypeKind::String,
+        graph.kind(t)? == TypeKind::String,
         "Only strings can have string types",
     )?;
-    match StringTypesTypeAttributeKind.try_get_in_attributes(graph.attributes(t)) {
+    match StringTypesTypeAttributeKind.try_get_in_attributes(graph.attributes(t)?) {
         Some(st) => Ok(st),
         None => panic("All strings must have a string type attribute"),
     }
@@ -310,38 +310,39 @@ pub fn string_types_for_type(graph: &TypeGraph, t: TypeRef) -> Result<&StringTyp
 
 /// `UnionType.findMember(kind)`: the first member of that kind.
 pub fn find_member(graph: &TypeGraph, union: TypeRef, kind: TypeKind) -> Result<Option<TypeRef>> {
-    Ok(graph
-        .type_at(union)
-        .members()?
-        .iter()
-        .copied()
-        .find(|&m| graph.kind(m) == kind))
+    for &m in graph.type_at(union)?.members()? {
+        if graph.kind(m)? == kind {
+            return Ok(Some(m));
+        }
+    }
+    Ok(None)
 }
 
 /// `UnionType.stringTypeMembers`: members that are primitive strings or
 /// enums.
 pub fn string_type_members(graph: &TypeGraph, union: TypeRef) -> Result<IndexSet<TypeRef>> {
-    Ok(graph
-        .type_at(union)
-        .members()?
-        .iter()
-        .copied()
-        .filter(|&m| {
-            let k = graph.kind(m);
-            k.is_primitive_string_type_kind() || k == TypeKind::Enum
-        })
-        .collect())
+    let mut result = IndexSet::new();
+    for &m in graph.type_at(union)?.members()? {
+        let k = graph.kind(m)?;
+        if k.is_primitive_string_type_kind() || k == TypeKind::Enum {
+            result.insert(m);
+        }
+    }
+    Ok(result)
 }
 
 /// `UnionType.isCanonical`: more than one member, all of distinct kinds, no
 /// nested set operations, no `none`/`any`, not both `string` and `enum`,
 /// at most one object kind.
 pub fn union_is_canonical(graph: &TypeGraph, union: TypeRef) -> Result<bool> {
-    let members = graph.type_at(union).members()?;
+    let members = graph.type_at(union)?.members()?;
     if members.len() <= 1 {
         return Ok(false);
     }
-    let kinds: IndexSet<TypeKind> = members.iter().map(|&m| graph.kind(m)).collect();
+    let kinds: IndexSet<TypeKind> = members
+        .iter()
+        .map(|&m| graph.kind(m))
+        .collect::<Result<_>>()?;
     if kinds.len() < members.len() {
         return Ok(false);
     }
@@ -364,7 +365,7 @@ pub fn union_is_canonical(graph: &TypeGraph, union: TypeRef) -> Result<bool> {
 /// `t.isNullable`: `null`, `any` and `none` are nullable, and unions with a
 /// `null` member. Errors for intersections, like TypeScript.
 pub fn is_nullable(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
-    let ty = graph.type_at(t);
+    let ty = graph.type_at(t)?;
     match ty.kind() {
         TypeKind::Null | TypeKind::Any | TypeKind::None => Ok(true),
         TypeKind::Union => Ok(find_member(graph, t, TypeKind::Null)?.is_some()),

@@ -211,8 +211,7 @@ impl Interpreter {
                             (k.to_owned(), n.parse().unwrap_or(1))
                         })
                         .collect();
-                    StringTypes::new(Some(cases), IndexSet::new())
-                        .ok_or_else(|| err("bad cases"))?
+                    StringTypes::new(Some(cases), IndexSet::new())?
                 };
                 let r = self.builder()?.get_string_type(a, Some(st), fwd)?;
                 self.vars.insert(arg(0)?.to_owned(), r);

@@ -196,9 +196,18 @@ impl<'g> TypeBuilder<'g> {
         filtered
     }
 
-    fn commit_type(&mut self, tref: TypeRef, t: Type) -> Result<()> {
+    /// The arena index of a reserved or committed `tref` of this builder.
+    fn index_of(&self, tref: TypeRef) -> Result<usize> {
         self.assert_type_ref_graph(tref)?;
         let index = tref.index();
+        if index >= self.types.len() {
+            return panic("Trying to deref an undefined type in a type builder");
+        }
+        Ok(index)
+    }
+
+    fn commit_type(&mut self, tref: TypeRef, t: Type) -> Result<()> {
+        let index = self.index_of(tref)?;
         assert(
             self.types[index].is_none(),
             "A type index was committed twice",
@@ -228,7 +237,7 @@ impl<'g> TypeBuilder<'g> {
             None => self.reserve_type_ref()?,
         };
         if let Some(attributes) = attributes {
-            let index = tref.index();
+            let index = self.index_of(tref)?;
             self.type_attributes[index] = combine_type_attributes2(
                 CombinationKind::Union,
                 &self.type_attributes[index],
@@ -267,8 +276,7 @@ impl<'g> TypeBuilder<'g> {
     /// `addAttributes(tref, attributes)`: adds non-identity attributes to an
     /// existing type. Identity attributes must already be present and equal.
     pub fn add_attributes(&mut self, tref: TypeRef, attributes: &TypeAttributes) -> Result<()> {
-        self.assert_type_ref_graph(tref)?;
-        let index = tref.index();
+        let index = self.index_of(tref)?;
         let existing_attributes = &self.type_attributes[index];
         assert(
             attributes.iter().all(|v| {
@@ -411,7 +419,7 @@ impl<'g> TypeBuilder<'g> {
             // The remap builder never looks identities up.
             return Ok(());
         }
-        let index = tref.index();
+        let index = self.index_of(tref)?;
         let t = self.type_at_index(index)?;
         let identity = t.identity(&self.type_attributes[index])?;
         self.register_type_for_identity(identity, tref);
@@ -911,6 +919,45 @@ mod tests {
             b.get_string_type(TypeAttributes::new(), None, None)
                 .is_err(),
             "a string needs string types"
+        );
+    }
+
+    #[test]
+    fn graph_accessors_check_the_graph() {
+        let mut b = builder(false);
+        let i = b
+            .get_primitive_type(TypeKind::Integer, TypeAttributes::new(), None)
+            .unwrap();
+        b.add_top_level("top", i).unwrap();
+        let mut g = b.finish().unwrap();
+        assert_eq!(g.kind(i).unwrap(), TypeKind::Integer);
+        let other_graph = TypeRef::new(1, 0).unwrap();
+        for e in [
+            g.type_at(other_graph).unwrap_err(),
+            g.attributes(other_graph).unwrap_err(),
+            g.children(other_graph).unwrap_err(),
+        ] {
+            assert_eq!(
+                e.user_message(),
+                "Internal error: Mixing the wrong type reference and graph"
+            );
+        }
+        let out_of_range = TypeRef::new(0, 5).unwrap();
+        assert!(g.type_at(out_of_range).is_err());
+        assert!(
+            g.set_attribute_value(ProvenanceTypeAttributeKind, out_of_range, IndexSet::new())
+                .is_err()
+        );
+        let mut b = builder(false);
+        assert_eq!(
+            b.add_attributes(other_graph, &TypeAttributes::new())
+                .unwrap_err()
+                .user_message(),
+            "Internal error: Mixing the wrong type reference and graph"
+        );
+        assert!(
+            b.add_attributes(out_of_range, &TypeAttributes::new())
+                .is_err()
         );
     }
 

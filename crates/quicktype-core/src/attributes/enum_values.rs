@@ -21,8 +21,8 @@ pub fn enum_case_values(
     e: TypeRef,
     language: &str,
 ) -> Result<IndexMap<String, Option<(String, bool)>>> {
-    let enum_values = EnumValuesTypeAttributeKind.try_get_in_attributes(graph.attributes(e));
-    let cases = graph.type_at(e).cases()?;
+    let enum_values = EnumValuesTypeAttributeKind.try_get_in_attributes(graph.attributes(e)?);
+    let cases = graph.type_at(e)?.cases()?;
     Ok(cases
         .iter()
         .map(|c| {

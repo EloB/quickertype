@@ -89,8 +89,8 @@ pub fn object_property_names(
     o: TypeRef,
     language: &str,
 ) -> Result<IndexMap<String, Option<(String, bool)>>> {
-    let accessors = AccessorNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(o));
-    let properties = graph.type_at(o).properties()?;
+    let accessors = AccessorNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(o)?);
+    let properties = graph.type_at(o)?.properties()?;
     Ok(properties
         .keys()
         .map(|n| {
@@ -108,8 +108,8 @@ pub fn enum_case_names(
     e: TypeRef,
     language: &str,
 ) -> Result<IndexMap<String, Option<(String, bool)>>> {
-    let accessors = AccessorNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(e));
-    let cases = graph.type_at(e).cases()?;
+    let accessors = AccessorNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(e)?);
+    let cases = graph.type_at(e)?.cases()?;
     Ok(cases
         .iter()
         .map(|c| {
@@ -186,12 +186,12 @@ pub fn union_member_name(
     language: &str,
 ) -> Result<(Option<String>, bool)> {
     let Some(identifiers) =
-        UnionIdentifierTypeAttributeKind.try_get_in_attributes(graph.attributes(u))
+        UnionIdentifierTypeAttributeKind.try_get_in_attributes(graph.attributes(u)?)
     else {
         return Ok((None, false));
     };
     let Some(member_names) =
-        UnionMemberNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(member))
+        UnionMemberNamesTypeAttributeKind.try_get_in_attributes(graph.attributes(member)?)
     else {
         return Ok((None, false));
     };

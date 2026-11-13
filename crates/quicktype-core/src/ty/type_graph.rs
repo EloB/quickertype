@@ -33,8 +33,8 @@ use crate::attributes::type_names::NamesTypeAttributeKind;
 use crate::graph::Graph;
 use crate::graph_rewriting::{Replacer, make_replacer};
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
-use crate::support::collection_utils::{map_sort_by_key, set_subtract};
-use crate::support::support::{assert, console_log, defined, must_not_happen};
+use crate::support::collection_utils::set_subtract;
+use crate::support::support::{assert, console_log, defined, must_not_happen, panic};
 use crate::ty::provenance_type_attribute_kind::ProvenanceTypeAttributeKind;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::ty::{Type, TypeData, sort_members_by_kind};
@@ -121,39 +121,50 @@ impl TypeGraph {
         self.types.iter().map(Type::type_ref)
     }
 
-    /// `derefTypeRef(tref, graph)`.
-    pub fn type_at(&self, r: TypeRef) -> &Type {
-        debug_assert!(
-            r.belongs_to(self.serial),
-            "Mixing the wrong type reference and graph"
-        );
-        &self.types[r.index()]
+    /// The arena index of `r`, checking that `r` belongs to this graph
+    /// (`assertTypeRefGraph`).
+    fn index_of(&self, r: TypeRef) -> Result<usize> {
+        assert_type_ref_graph(r, self.serial)?;
+        let index = r.index();
+        if index >= self.types.len() {
+            return panic("Defined value expected, but got undefined");
+        }
+        Ok(index)
+    }
+
+    /// `derefTypeRef(tref, graph)`. Errors with `Mixing the wrong type
+    /// reference and graph` for a ref of another graph.
+    pub fn type_at(&self, r: TypeRef) -> Result<&Type> {
+        Ok(&self.types[self.index_of(r)?])
     }
 
     /// The kind of the type `r`.
-    pub fn kind(&self, r: TypeRef) -> TypeKind {
-        self.type_at(r).kind()
+    pub fn kind(&self, r: TypeRef) -> Result<TypeKind> {
+        Ok(self.type_at(r)?.kind())
     }
 
     /// `attributesForTypeRef(tref, graph)` / `t.getAttributes()`.
-    pub fn attributes(&self, r: TypeRef) -> &TypeAttributes {
-        debug_assert!(
-            r.belongs_to(self.serial),
-            "Mixing the wrong type reference and graph"
-        );
-        &self.attributes[r.index()]
+    pub fn attributes(&self, r: TypeRef) -> Result<&TypeAttributes> {
+        Ok(&self.attributes[self.index_of(r)?])
     }
 
     /// `TypeAttributeStore.set(kind, t, value)`: sets an attribute after
     /// freezing (used by `GatherNames`).
-    pub fn set_attribute(&mut self, r: TypeRef, value: TypeAttributeValue) {
-        self.attributes[r.index()].insert(value);
+    pub fn set_attribute(&mut self, r: TypeRef, value: TypeAttributeValue) -> Result<()> {
+        let index = self.index_of(r)?;
+        self.attributes[index].insert(value);
+        Ok(())
     }
 
     /// Typed [`set_attribute`](Self::set_attribute)
     /// (`TypeAttributeStoreView.set`).
-    pub fn set_attribute_value<K: AttributeKind>(&mut self, kind: K, r: TypeRef, value: K::Value) {
-        self.set_attribute(r, kind.wrap_value(value));
+    pub fn set_attribute_value<K: AttributeKind>(
+        &mut self,
+        kind: K,
+        r: TypeRef,
+        value: K::Value,
+    ) -> Result<()> {
+        self.set_attribute(r, kind.wrap_value(value))
     }
 
     /// `TypeAttributeStore.attributesForTopLevel(name)`.
@@ -173,36 +184,37 @@ impl TypeGraph {
     }
 
     /// `t.hasNames`.
-    pub fn has_names(&self, r: TypeRef) -> bool {
-        NamesTypeAttributeKind
-            .try_get_in_attributes(self.attributes(r))
-            .is_some()
+    pub fn has_names(&self, r: TypeRef) -> Result<bool> {
+        Ok(NamesTypeAttributeKind
+            .try_get_in_attributes(self.attributes(r)?)
+            .is_some())
     }
 
     /// `t.getCombinedName()`.
     pub fn combined_name(&self, r: TypeRef) -> Result<String> {
-        defined(NamesTypeAttributeKind.try_get_in_attributes(self.attributes(r)))?.combined_name()
+        defined(NamesTypeAttributeKind.try_get_in_attributes(self.attributes(r)?))?.combined_name()
     }
 
     /// `getNonAttributeChildren()`: array items; object property types
     /// sorted by property name, then additional properties; set operation
     /// members sorted by kind. Deduplicated, in that order.
     pub fn non_attribute_children(&self, r: TypeRef) -> Result<IndexSet<TypeRef>> {
-        let t = self.type_at(r);
+        let t = self.type_at(r)?;
         Ok(match t.data() {
             TypeData::Primitive | TypeData::Enum { .. } => IndexSet::new(),
             TypeData::Array { .. } => [t.items()?].into_iter().collect(),
             TypeData::Object { .. } => {
-                let mut children: IndexSet<TypeRef> = map_sort_by_key(t.properties()?)
-                    .values()
-                    .map(|p| p.type_ref)
+                let mut children: IndexSet<TypeRef> = t
+                    .sorted_property_refs()?
+                    .into_iter()
+                    .map(|(_, p)| p.type_ref)
                     .collect();
                 if let Some(additional) = t.additional_properties()? {
                     children.insert(additional);
                 }
                 children
             }
-            TypeData::SetOperation { .. } => sort_members_by_kind(self, t.members()?),
+            TypeData::SetOperation { .. } => sort_members_by_kind(self, t.members()?)?,
         })
     }
 
@@ -210,8 +222,12 @@ impl TypeGraph {
     /// attributes (transformations) in attribute order.
     pub fn children(&self, r: TypeRef) -> Result<IndexSet<TypeRef>> {
         let mut result = self.non_attribute_children(r)?;
-        for value in self.attributes(r).iter() {
+        for value in self.attributes(r)?.iter() {
             result.extend(value.children());
+        }
+        // TypeScript derefs every child, which asserts it is in this graph.
+        for &c in &result {
+            self.index_of(c)?;
         }
         Ok(result)
     }
@@ -221,7 +237,7 @@ impl TypeGraph {
     /// satisfy `predicate`.
     pub fn filter_types(
         &self,
-        mut predicate: impl FnMut(&TypeGraph, TypeRef) -> bool,
+        mut predicate: impl FnMut(&TypeGraph, TypeRef) -> Result<bool>,
     ) -> Result<IndexSet<TypeRef>> {
         let mut seen: HashSet<TypeRef> = HashSet::new();
         let mut types: IndexSet<TypeRef> = IndexSet::new();
@@ -235,7 +251,7 @@ impl TypeGraph {
                 if !seen.insert(t) {
                     return Ok(());
                 }
-                if predicate(self, t) {
+                if predicate(self, t)? {
                     types.insert(t);
                 }
                 stack.push((self.children(t)?, 0));
@@ -260,13 +276,13 @@ impl TypeGraph {
     /// `allNamedTypes()`: classes, objects, enums and unions reachable from
     /// the top-levels, in depth-first order.
     pub fn all_named_types(&self) -> Result<IndexSet<TypeRef>> {
-        self.filter_types(|g, t| is_named_type(g.type_at(t)))
+        self.filter_types(|g, t| Ok(is_named_type(g.type_at(t)?)))
     }
 
     /// `allNamedTypesSeparated()`.
     pub fn all_named_types_separated(&self) -> Result<SeparatedNamedTypes> {
         let types = self.all_named_types()?;
-        Ok(separate_named_types(self, &types))
+        separate_named_types(self, &types)
     }
 
     /// `getParentsOfType(t)`: the types that have `t` as a child, in index
@@ -276,12 +292,13 @@ impl TypeGraph {
             let mut parents: Vec<IndexSet<TypeRef>> = vec![IndexSet::new(); self.types.len()];
             for p in self.all_types_unordered() {
                 for c in self.children(p)? {
-                    parents[c.index()].insert(p);
+                    parents[self.index_of(c)?].insert(p);
                 }
             }
             let _ = self.parents.set(parents);
         }
-        Ok(&defined(self.parents.get())?[r.index()])
+        let index = self.index_of(r)?;
+        Ok(&defined(self.parents.get())?[index])
     }
 
     /// `makeGraph(invertDirection, childrenOfType)`: a [`Graph`] over all
@@ -294,7 +311,15 @@ impl TypeGraph {
         let nodes: Vec<TypeRef> = self.all_types_unordered().collect();
         let mut edges: Vec<Vec<usize>> = Vec::with_capacity(nodes.len());
         for &n in &nodes {
-            edges.push(children_of_type(n)?.iter().map(|c| c.index()).collect());
+            let mut successors = Vec::new();
+            for c in children_of_type(n)? {
+                // `defined(this._indexByNode.get(s))`
+                if !c.belongs_to(self.serial) || c.index() >= nodes.len() {
+                    return panic("Defined value expected, but got undefined");
+                }
+                successors.push(c.index());
+            }
+            edges.push(successors);
         }
         Graph::with_edges(nodes, invert_direction, edges)
     }
@@ -508,7 +533,7 @@ impl TypeGraph {
         let t = defined(self.types.get(index))?;
         let r = t.type_ref();
         let mut parts: Vec<String> = Vec::new();
-        let name = if self.has_names(r) {
+        let name = if self.has_names(r)? {
             format!(" {}", self.combined_name(r)?)
         } else {
             String::new()
@@ -525,7 +550,7 @@ impl TypeGraph {
                     .join(",")
             ));
         }
-        for value in self.attributes(r).iter() {
+        for value in self.attributes(r)?.iter() {
             if let Some(s) = value.stringify()? {
                 parts.push(s);
             }

@@ -300,6 +300,13 @@ impl Type {
         Ok(map_sort_by_key(self.properties()?))
     }
 
+    /// The properties sorted by name (UTF-16 order), borrowed.
+    pub fn sorted_property_refs(&self) -> Result<Vec<(&String, &ClassProperty)>> {
+        let mut sorted: Vec<(&String, &ClassProperty)> = self.properties()?.iter().collect();
+        sorted.sort_by(|a, b| compare_string_keys(a.0, b.0));
+        Ok(sorted)
+    }
+
     /// `ObjectType.getAdditionalProperties()` (as a ref).
     pub fn additional_properties(&self) -> Result<Option<TypeRef>> {
         match &self.data {
@@ -627,11 +634,15 @@ pub fn intersection_type_identity(
 
 /// `triviallyStructurallyCompatible(x, y)`: the same type, or either is
 /// `none`.
-pub fn trivially_structurally_compatible(graph: &TypeGraph, x: TypeRef, y: TypeRef) -> bool {
+pub fn trivially_structurally_compatible(
+    graph: &TypeGraph,
+    x: TypeRef,
+    y: TypeRef,
+) -> Result<bool> {
     if x.index() == y.index() {
-        return true;
+        return Ok(true);
     }
-    graph.kind(x) == TypeKind::None || graph.kind(y) == TypeKind::None
+    Ok(graph.kind(x)? == TypeKind::None || graph.kind(y)? == TypeKind::None)
 }
 
 /// `setOperationCasesEqual(typesA, typesB, conflateNumbers, membersEqual)`:
@@ -642,33 +653,34 @@ pub fn set_operation_cases_equal(
     types_a: &IndexSet<TypeRef>,
     types_b: &IndexSet<TypeRef>,
     conflate_numbers: bool,
-    mut members_equal: impl FnMut(TypeRef, TypeRef) -> bool,
-) -> bool {
+    mut members_equal: impl FnMut(TypeRef, TypeRef) -> Result<bool>,
+) -> Result<bool> {
     if types_a.len() != types_b.len() {
-        return false;
+        return Ok(false);
     }
-    types_a.iter().all(|&ta| {
-        let kind_a = graph.kind(ta);
-        let tb = types_b.iter().copied().find(|&t| graph.kind(t) == kind_a);
+    let kinds_b: Vec<(TypeRef, TypeKind)> = types_b
+        .iter()
+        .map(|&t| Ok((t, graph.kind(t)?)))
+        .collect::<Result<_>>()?;
+    for &ta in types_a {
+        let kind_a = graph.kind(ta)?;
+        let tb = kinds_b.iter().find(|(_, k)| *k == kind_a).map(|(t, _)| *t);
         if let Some(tb) = tb
-            && members_equal(ta, tb)
+            && members_equal(ta, tb)?
         {
-            return true;
+            continue;
         }
         if conflate_numbers {
-            if kind_a == TypeKind::Integer
-                && types_b.iter().any(|&t| graph.kind(t) == TypeKind::Double)
-            {
-                return true;
+            if kind_a == TypeKind::Integer && kinds_b.iter().any(|(_, k)| *k == TypeKind::Double) {
+                continue;
             }
-            if kind_a == TypeKind::Double
-                && types_b.iter().any(|&t| graph.kind(t) == TypeKind::Integer)
-            {
-                return true;
+            if kind_a == TypeKind::Double && kinds_b.iter().any(|(_, k)| *k == TypeKind::Integer) {
+                continue;
             }
         }
-        false
-    })
+        return Ok(false);
+    }
+    Ok(true)
 }
 
 /// `structurallyCompatible(this, other, conflateNumbers)`: whether two types
@@ -693,10 +705,10 @@ pub fn structurally_compatible(
         }
     };
 
-    if trivially_structurally_compatible(graph, this, other) {
+    if trivially_structurally_compatible(graph, this, other)? {
         return Ok(true);
     }
-    if !kinds_compatible(graph.kind(this), graph.kind(other)) {
+    if !kinds_compatible(graph.kind(this)?, graph.kind(other)?) {
         return Ok(false);
     }
 
@@ -709,7 +721,7 @@ pub fn structurally_compatible(
             std::mem::swap(&mut a, &mut b);
         }
 
-        if !graph.type_at(a).is_primitive() {
+        if !graph.type_at(a)?.is_primitive() {
             let ai = a.index();
             let bi = b.index();
             if done.iter().any(|&(dai, dbi)| dai == ai && dbi == bi) {
@@ -719,23 +731,24 @@ pub fn structurally_compatible(
         }
 
         let mut failed = false;
-        let mut queue = |x: TypeRef, y: TypeRef, work_list: &mut Vec<(TypeRef, TypeRef)>| -> bool {
-            if trivially_structurally_compatible(graph, x, y) {
-                return true;
-            }
-            if !kinds_compatible(graph.kind(x), graph.kind(y)) {
-                failed = true;
-                return false;
-            }
-            work_list.push((x, y));
-            true
-        };
+        let mut queue =
+            |x: TypeRef, y: TypeRef, work_list: &mut Vec<(TypeRef, TypeRef)>| -> Result<bool> {
+                if trivially_structurally_compatible(graph, x, y)? {
+                    return Ok(true);
+                }
+                if !kinds_compatible(graph.kind(x)?, graph.kind(y)?) {
+                    failed = true;
+                    return Ok(false);
+                }
+                work_list.push((x, y));
+                Ok(true)
+            };
 
-        let ta = graph.type_at(a);
-        let tb = graph.type_at(b);
+        let ta = graph.type_at(a)?;
+        let tb = graph.type_at(b)?;
         let step_ok = match ta.data() {
             TypeData::Primitive => true,
-            TypeData::Array { .. } => queue(ta.items()?, tb.items()?, &mut work_list),
+            TypeData::Array { .. } => queue(ta.items()?, tb.items()?, &mut work_list)?,
             TypeData::Object { .. } => {
                 let pa = ta.properties()?;
                 let pb = tb.properties()?;
@@ -748,7 +761,7 @@ pub fn structurally_compatible(
                             None => false,
                             Some(cpb) => {
                                 cpa.is_optional == cpb.is_optional
-                                    && queue(cpa.type_ref, cpb.type_ref, &mut work_list)
+                                    && queue(cpa.type_ref, cpb.type_ref, &mut work_list)?
                             }
                         };
                         if !matched {
@@ -763,20 +776,20 @@ pub fn structurally_compatible(
                         let other_additional = tb.additional_properties()?;
                         match (this_additional, other_additional) {
                             (None, None) => true,
-                            (Some(x), Some(y)) => queue(x, y, &mut work_list),
+                            (Some(x), Some(y)) => queue(x, y, &mut work_list)?,
                             _ => false,
                         }
                     }
                 }
             }
             TypeData::Enum { cases } => cases.js_equals(tb.cases()?),
-            TypeData::SetOperation { .. } => {
-                let ma = ta.members()?.clone();
-                let mb = tb.members()?.clone();
-                set_operation_cases_equal(graph, &ma, &mb, conflate_numbers, |x, y| {
-                    queue(x, y, &mut work_list)
-                })
-            }
+            TypeData::SetOperation { .. } => set_operation_cases_equal(
+                graph,
+                ta.members()?,
+                tb.members()?,
+                conflate_numbers,
+                |x, y| queue(x, y, &mut work_list),
+            )?,
         };
         if !step_ok {
             return Ok(false);
@@ -819,15 +832,32 @@ pub(crate) fn reconstitute(
         } => {
             let is_fixed = *is_fixed;
             let additional_properties = *additional_properties;
-            let sorted_properties = t.sorted_properties()?;
-            let properties_in_new_order = if canonical_order {
-                sorted_properties.clone()
-            } else {
-                t.properties()?.clone()
-            };
-            let sorted_refs: IndexMap<String, TypeRef> = sorted_properties
+            // Borrowed views of the properties: by name (the order children
+            // are looked up and reconstituted in) and in the new type's order.
+            let sorted_properties = t.sorted_property_refs()?;
+            let original_properties = t.properties()?;
+            let new_properties =
+                |types: &IndexMap<&str, TypeRef>| -> Result<IndexMap<String, ClassProperty>> {
+                    let property =
+                        |n: &String, cp: &ClassProperty| -> Result<(String, ClassProperty)> {
+                            let t = *defined(types.get(n.as_str()))?;
+                            Ok((n.clone(), ClassProperty::new(t, cp.is_optional)))
+                        };
+                    if canonical_order {
+                        sorted_properties
+                            .iter()
+                            .map(|(n, cp)| property(n, cp))
+                            .collect()
+                    } else {
+                        original_properties
+                            .iter()
+                            .map(|(n, cp)| property(n, cp))
+                            .collect()
+                    }
+                };
+            let sorted_refs: IndexMap<&str, TypeRef> = sorted_properties
                 .iter()
-                .map(|(n, cp)| (n.clone(), cp.type_ref))
+                .map(|(n, cp)| (n.as_str(), cp.type_ref))
                 .collect();
             let maybe_property_types = r.lookup_map(&sorted_refs)?;
             let maybe_additional_properties = match additional_properties {
@@ -838,13 +868,7 @@ pub(crate) fn reconstitute(
             if let Some(property_types) = maybe_property_types
                 && (maybe_additional_properties.is_some() || additional_properties.is_none())
             {
-                let mut properties = IndexMap::new();
-                for (n, cp) in &properties_in_new_order {
-                    properties.insert(
-                        n.clone(),
-                        ClassProperty::new(*defined(property_types.get(n))?, cp.is_optional),
-                    );
-                }
+                let properties = new_properties(&property_types)?;
                 match t.kind() {
                     TypeKind::Object => {
                         assert_default(is_fixed)?;
@@ -871,18 +895,8 @@ pub(crate) fn reconstitute(
                     kind => return panic(format!("Invalid object type kind {kind}")),
                 }
 
-                let mut reconstituted_types: IndexMap<String, TypeRef> = IndexMap::new();
-                for (n, cp) in &sorted_properties {
-                    let reconstituted = r.reconstitute(cp.type_ref)?;
-                    reconstituted_types.insert(n.clone(), reconstituted);
-                }
-                let mut properties = IndexMap::new();
-                for (n, cp) in &properties_in_new_order {
-                    properties.insert(
-                        n.clone(),
-                        ClassProperty::new(*defined(reconstituted_types.get(n))?, cp.is_optional),
-                    );
-                }
+                let reconstituted_types = r.reconstitute_map(&sorted_refs)?;
+                let properties = new_properties(&reconstituted_types)?;
                 let additional = match additional_properties {
                     None => None,
                     Some(a) => Some(r.reconstitute(a)?),
@@ -894,7 +908,7 @@ pub(crate) fn reconstitute(
         TypeData::SetOperation { .. } => {
             let is_union = t.kind() == TypeKind::Union;
             let members = t.members()?;
-            let sorted_members = sort_members_by_kind(original, members);
+            let sorted_members = sort_members_by_kind(original, members)?;
             let members_in_order: Vec<TypeRef> = if canonical_order {
                 sorted_members.iter().copied().collect()
             } else {
@@ -936,10 +950,13 @@ pub(crate) fn reconstitute(
 pub(crate) fn sort_members_by_kind(
     graph: &TypeGraph,
     members: &IndexSet<TypeRef>,
-) -> IndexSet<TypeRef> {
-    let mut sorted: Vec<TypeRef> = members.iter().copied().collect();
-    sorted.sort_by(|a, b| compare_string_keys(graph.kind(*a).as_str(), graph.kind(*b).as_str()));
-    sorted.into_iter().collect()
+) -> Result<IndexSet<TypeRef>> {
+    let mut sorted: Vec<(TypeRef, TypeKind)> = members
+        .iter()
+        .map(|&m| Ok((m, graph.kind(m)?)))
+        .collect::<Result<_>>()?;
+    sorted.sort_by(|a, b| compare_string_keys(a.1.as_str(), b.1.as_str()));
+    Ok(sorted.into_iter().map(|(m, _)| m).collect())
 }
 
 #[cfg(test)]
