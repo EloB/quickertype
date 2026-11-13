@@ -614,11 +614,12 @@ struct NamingContext<'n> {
 }
 
 impl NamingContext<'_> {
-    fn forbidden_nameds(&mut self, namespace: NamespaceId) -> &IndexSet<Name> {
+    /// Computes `namespace.forbiddenNameds` into the cache if needed.
+    fn cache_forbidden_nameds(&mut self, namespace: NamespaceId) {
         let naming = self.naming;
         self.forbidden_nameds
             .entry(namespace)
-            .or_insert_with(|| naming.forbidden_nameds(namespace))
+            .or_insert_with(|| naming.forbidden_nameds(namespace));
     }
 
     fn is_ready_to_be_named(&self, named: Name) -> bool {
@@ -626,23 +627,21 @@ impl NamingContext<'_> {
     }
 
     fn are_forbiddens_fully_named(&mut self, namespace: NamespaceId) -> bool {
+        self.cache_forbidden_nameds(namespace);
         let names = &self.names;
-        let naming = self.naming;
-        self.forbidden_nameds
-            .entry(namespace)
-            .or_insert_with(|| naming.forbidden_nameds(namespace))
+        self.forbidden_nameds[&namespace]
             .iter()
             .all(|&n| names.has(n))
     }
 
     fn is_conflicting(&mut self, namespace: NamespaceId, proposed: &str) -> bool {
+        self.cache_forbidden_nameds(namespace);
         let Some(nameds) = self.nameds_for_name.get(proposed) else {
             // If the name is not assigned at all, there is no conflict.
             return false;
         };
-        let nameds = nameds.clone();
         let members = self.naming.members(namespace);
-        let forbidden = self.forbidden_nameds(namespace);
+        let forbidden = &self.forbidden_nameds[&namespace];
         // The name is assigned, but it might still not be forbidden.
         nameds
             .iter()
@@ -726,7 +725,8 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
 
         let members = naming.members(namespace);
         let mut forbidden_names: IndexSet<String> = IndexSet::new();
-        let forbidden_nameds = ctx.forbidden_nameds(namespace).clone();
+        ctx.cache_forbidden_nameds(namespace);
+        let forbidden_nameds = &ctx.forbidden_nameds[&namespace];
         let mut seen: HashSet<Name> = HashSet::new();
         for &n in members.iter().chain(forbidden_nameds.iter()) {
             if !seen.insert(n) {

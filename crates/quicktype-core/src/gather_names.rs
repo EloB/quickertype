@@ -37,7 +37,9 @@
 //! Singular names come from `pluralize.singular` directly (so `cookies`
 //! becomes `cooky`, unlike `TypeNames.singularize`).
 
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::rc::Rc;
 
 use indexmap::IndexSet;
 use quicktype_js_compat::pluralize;
@@ -75,19 +77,21 @@ impl UniqueQueue {
     }
 }
 
-/// A set of names, or `None` for "too many" (TS `null`).
-type NameSet = Option<IndexSet<String>>;
+/// A set of names, or `None` for "too many" (TS `null`). Shared, because
+/// TypeScript passes the same set object to several types.
+type NameSet = Option<Rc<IndexSet<String>>>;
 
-fn set_union(a: &IndexSet<String>, b: impl IntoIterator<Item = String>) -> IndexSet<String> {
-    let mut result = a.clone();
-    result.extend(b);
-    result
-}
+/// A set of alternative names, or `None` for "too many" (TS `null`).
+type Alternatives = Option<IndexSet<String>>;
 
 fn singular_names(names: &NameSet) -> NameSet {
     names
         .as_ref()
-        .map(|names| names.iter().map(|n| pluralize::singular(n)).collect())
+        .map(|names| Rc::new(names.iter().map(|n| pluralize::singular(n)).collect()))
+}
+
+fn single_name(name: &str) -> NameSet {
+    Some(Rc::new([name.to_owned()].into_iter().collect()))
 }
 
 /// The kind of `t` as a sort key (TS `member.kind`).
@@ -102,13 +106,31 @@ fn members_sorted_by_kind(graph: &TypeGraph, t: TypeRef) -> Result<Vec<TypeRef>>
     Ok(members.into_iter().map(|(m, _)| m).collect())
 }
 
+/// `addAlternatives(existing, alternatives)` on a stored value (`None`:
+/// TS `undefined`): extends the set in place; it becomes `null` (TS) once
+/// it reaches the threshold.
+fn add_alternatives(
+    existing: Option<Alternatives>,
+    alternatives: Vec<String>,
+) -> Option<Alternatives> {
+    if alternatives.is_empty() {
+        return existing;
+    }
+    let mut set = existing.flatten().unwrap_or_default();
+    set.extend(alternatives);
+    if set.len() < TOO_MANY_NAMES_THRESHOLD {
+        return Some(Some(set));
+    }
+    Some(None)
+}
+
 struct Gatherer<'g> {
     graph: &'g TypeGraph,
     queue: UniqueQueue,
     /// `namesForType`: absent is `undefined`, `None` is `null`.
     names_for_type: HashMap<TypeRef, NameSet>,
-    direct_alternatives_for_type: HashMap<TypeRef, NameSet>,
-    ancestor_alternatives_for_type: HashMap<TypeRef, NameSet>,
+    direct_alternatives_for_type: HashMap<TypeRef, Alternatives>,
+    ancestor_alternatives_for_type: HashMap<TypeRef, Alternatives>,
     pairs_processed: HashMap<Option<TypeRef>, HashSet<TypeRef>>,
 }
 
@@ -121,7 +143,7 @@ impl Gatherer<'_> {
             NamesTypeAttributeKind.try_get_in_attributes(self.graph.attributes(t)?)
         {
             if !original_names.are_inferred() {
-                names = Some(original_names.names().clone());
+                names = Some(Rc::new(original_names.names().clone()));
             }
         }
 
@@ -132,9 +154,12 @@ impl Gatherer<'_> {
 
         let mut new_names: NameSet = match (&old_names, &names) {
             (None, _) => names.clone(),
-            (Some(_), None) => None,
-            (Some(Some(old)), Some(n)) => Some(set_union(old, n.iter().cloned())),
-            (Some(None), Some(_)) => None,
+            (Some(Some(old)), Some(n)) => {
+                let mut union = IndexSet::clone(old);
+                union.extend(n.iter().cloned());
+                Some(Rc::new(union))
+            }
+            (Some(_), None) | (Some(None), Some(_)) => None,
         };
 
         if new_names
@@ -144,37 +169,20 @@ impl Gatherer<'_> {
             new_names = None;
         }
 
-        self.names_for_type.insert(t, new_names.clone());
+        let unchanged = matches!(
+            (&old_names, &new_names),
+            (Some(Some(old)), Some(new)) if old.len() == new.len()
+        );
+        self.names_for_type.insert(t, new_names);
 
         if let Some(transformation) = transformation_for_type(self.graph, t)? {
             self.add_names(transformation.target_type(), names)?;
         }
 
-        if let (Some(Some(old)), Some(new)) = (&old_names, &new_names) {
-            if old.len() == new.len() {
-                return Ok(());
-            }
+        if !unchanged {
+            self.queue.push(t);
         }
-
-        self.queue.push(t);
         Ok(())
-    }
-
-    /// `addAlternatives(existing, alternatives)`: `None` (TS `null`) once
-    /// there are too many.
-    fn add_alternatives(existing: Option<NameSet>, alternatives: Vec<String>) -> Option<NameSet> {
-        if alternatives.is_empty() {
-            return existing;
-        }
-        let existing = match existing {
-            Some(Some(set)) => set,
-            _ => IndexSet::new(),
-        };
-        let existing = set_union(&existing, alternatives);
-        if existing.len() < TOO_MANY_NAMES_THRESHOLD {
-            return Some(Some(existing));
-        }
-        Some(None)
     }
 
     /// `processType(ancestor, t, alternativeSuffix)`.
@@ -192,23 +200,26 @@ impl Gatherer<'_> {
     ) -> Result<()> {
         enum Step {
             Enter(Option<TypeRef>, TypeRef, Option<&'static str>),
-            Visit(Option<TypeRef>, TypeRef, Option<&'static str>, NameSet),
+            Visit(Option<TypeRef>, TypeRef, Option<&'static str>),
         }
         let mut stack = vec![Step::Enter(ancestor, t, alternative_suffix)];
         while let Some(step) = stack.pop() {
             match step {
                 Step::Enter(ancestor, t, suffix) => {
-                    let names = defined(self.names_for_type.get(&t).cloned())?;
+                    // `defined(namesForType.get(t))`
+                    if !self.names_for_type.contains_key(&t) {
+                        return panic("Defined value expected, but got undefined");
+                    }
                     if !self.pairs_processed.entry(ancestor).or_default().insert(t) {
                         continue;
                     }
-                    stack.push(Step::Visit(ancestor, t, suffix, names));
+                    stack.push(Step::Visit(ancestor, t, suffix));
                     if let Some(transformation) = transformation_for_type(self.graph, t)? {
                         stack.push(Step::Enter(ancestor, transformation.target_type(), suffix));
                     }
                 }
-                Step::Visit(ancestor, t, suffix, names) => {
-                    self.add_type_alternatives(ancestor, t, suffix, &names)?;
+                Step::Visit(ancestor, t, suffix) => {
+                    self.add_type_alternatives(ancestor, t, suffix)?;
                     let children = self.children_to_process(ancestor, t)?;
                     for (a, c, s) in children.into_iter().rev() {
                         stack.push(Step::Enter(a, c, s));
@@ -226,12 +237,13 @@ impl Gatherer<'_> {
         ancestor: Option<TypeRef>,
         t: TypeRef,
         alternative_suffix: Option<&str>,
-        names: &NameSet,
     ) -> Result<()> {
         let kind = self.graph.kind(t)?;
-        let mut ancestor_alternatives = self.ancestor_alternatives_for_type.get(&t).cloned();
-        let mut direct_alternatives = self.direct_alternatives_for_type.get(&t).cloned();
-        match names {
+        // Taken out of the maps and put back below, so that they can be
+        // extended in place.
+        let mut ancestor_alternatives = self.ancestor_alternatives_for_type.remove(&t);
+        let mut direct_alternatives = self.direct_alternatives_for_type.remove(&t);
+        match self.names_for_type.get(&t).and_then(Option::as_ref) {
             None => {
                 ancestor_alternatives = Some(None);
                 direct_alternatives = Some(None);
@@ -243,7 +255,7 @@ impl Gatherer<'_> {
                             Some(None) => ancestor_alternatives = Some(None),
                             Some(Some(ancestor_names)) => {
                                 let mut alternatives = Vec::new();
-                                for name in names {
+                                for name in names.iter() {
                                     alternatives.extend(
                                         ancestor_names.iter().map(|an| format!("{an}_{name}")),
                                     );
@@ -254,7 +266,7 @@ impl Gatherer<'_> {
                                     );
                                 }
                                 ancestor_alternatives =
-                                    Self::add_alternatives(ancestor_alternatives, alternatives);
+                                    add_alternatives(ancestor_alternatives, alternatives);
                             }
                             None => {}
                         }
@@ -267,8 +279,7 @@ impl Gatherer<'_> {
                             .iter()
                             .map(|name| format!("{name}_{suffix}"))
                             .collect();
-                        direct_alternatives =
-                            Self::add_alternatives(direct_alternatives, alternatives);
+                        direct_alternatives = add_alternatives(direct_alternatives, alternatives);
                     }
                 }
             }
@@ -363,7 +374,7 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
         .map(|(n, &t)| (n.clone(), t))
         .collect();
     for (name, t) in &top_levels {
-        gatherer.add_names(*t, Some([name.clone()].into_iter().collect()))?;
+        gatherer.add_names(*t, single_name(name))?;
     }
 
     while let Some(t) = gatherer.queue.unshift() {
@@ -371,10 +382,7 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
         let ty = gatherer.graph.type_at(t)?;
         if ty.is_object_type() {
             for (property_name, property) in ty.sorted_property_refs()? {
-                gatherer.add_names(
-                    property.type_ref,
-                    Some([property_name.clone()].into_iter().collect()),
-                )?;
+                gatherer.add_names(property.type_ref, single_name(property_name))?;
             }
             if let Some(values) = ty.additional_properties()? {
                 gatherer.add_names(values, singular_names(&names))?;
@@ -410,35 +418,33 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
         gatherer.process_type(None, *t, None)?;
     }
 
+    let Gatherer {
+        names_for_type,
+        mut direct_alternatives_for_type,
+        mut ancestor_alternatives_for_type,
+        ..
+    } = gatherer;
+
     for &t in &all_types {
-        let Some(names) = gatherer.names_for_type.get(&t) else {
+        let Some(names) = names_for_type.get(&t) else {
             continue;
         };
         let Some(names) = names else {
-            gatherer.direct_alternatives_for_type.insert(t, None);
+            direct_alternatives_for_type.insert(t, None);
             continue;
         };
-        let kind = gatherer.graph.kind(t)?;
-        let alternatives = match gatherer.direct_alternatives_for_type.get(&t) {
-            Some(None) => continue,
-            Some(Some(a)) => a.clone(),
-            None => IndexSet::new(),
-        };
-        let alternatives = set_union(
-            &alternatives,
-            names.iter().map(|name| format!("{name}_{kind}")),
-        );
-        gatherer
-            .direct_alternatives_for_type
-            .insert(t, Some(alternatives));
+        let kind = graph.kind(t)?;
+        let alternatives = names.iter().map(|name| format!("{name}_{kind}"));
+        match direct_alternatives_for_type.entry(t) {
+            Entry::Occupied(mut e) => match e.get_mut() {
+                None => continue,
+                Some(set) => set.extend(alternatives),
+            },
+            Entry::Vacant(e) => {
+                e.insert(Some(alternatives.collect()));
+            }
+        }
     }
-
-    let Gatherer {
-        names_for_type,
-        direct_alternatives_for_type,
-        ancestor_alternatives_for_type,
-        ..
-    } = gatherer;
 
     for &t in &all_types {
         let Some(names) = names_for_type.get(&t) else {
@@ -448,23 +454,20 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
         let type_names = match names {
             None => TypeNames::TooMany(TooManyTypeNames::new(1, None)),
             Some(names) => {
-                let ancestor_alternatives = ancestor_alternatives_for_type.get(&t);
-                let direct_alternatives = direct_alternatives_for_type.get(&t);
+                let ancestor_alternatives = ancestor_alternatives_for_type.remove(&t);
+                let direct_alternatives = direct_alternatives_for_type.remove(&t);
                 let alternatives =
-                    if ancestor_alternatives == Some(&None) && direct_alternatives == Some(&None) {
+                    if ancestor_alternatives == Some(None) && direct_alternatives == Some(None) {
                         None
                     } else {
-                        let mut alternatives = match direct_alternatives {
-                            Some(Some(d)) => d.clone(),
-                            _ => IndexSet::new(),
-                        };
+                        let mut alternatives = direct_alternatives.flatten().unwrap_or_default();
                         if let Some(Some(a)) = ancestor_alternatives {
-                            alternatives.extend(a.iter().cloned());
+                            alternatives.extend(a);
                         }
                         Some(alternatives)
                     };
                 TypeNames::make_with_distance(
-                    names.clone(),
+                    IndexSet::clone(names),
                     alternatives,
                     if destructive { 1 } else { 10 },
                 )
