@@ -100,10 +100,15 @@ pub enum JsonSample {
 }
 
 /// The byte stream of a [`JsonSample::Reader`]. It is shared, so that a
-/// [`JsonSample`] can be cloned, and compares by identity; the first sample
-/// that reads it consumes it.
+/// [`JsonSample`] can be cloned, and compares by identity.
+///
+/// A stream can be read once. In TypeScript, a sample whose `Readable` was
+/// already consumed (the same stream added twice) reads as empty input and
+/// fails with stream-json's `Parser has expected a value`; here reading a
+/// `SampleReader` (or a clone of it) a second time is an error that says
+/// so. The CLI opens a new stream for every sample, so it never does.
 #[derive(Clone)]
-pub struct SampleReader(Rc<RefCell<Box<dyn Read>>>);
+pub struct SampleReader(Rc<RefCell<Option<Box<dyn Read>>>>);
 
 impl SampleReader {
     /// A sample read from `reader`. To report a failed read as Node's
@@ -111,7 +116,12 @@ impl SampleReader {
     /// [`IoError`](crate::input::io::node_io::IoError) (see
     /// [`CompressedJson::parse_stream_reader`]).
     pub fn new(reader: impl Read + 'static) -> Self {
-        SampleReader(Rc::new(RefCell::new(Box::new(reader))))
+        SampleReader(Rc::new(RefCell::new(Some(Box::new(reader)))))
+    }
+
+    /// The stream, unless it was read already.
+    fn take(&self) -> Option<Box<dyn Read>> {
+        self.0.borrow_mut().take()
     }
 }
 
@@ -665,10 +675,12 @@ impl CompressedJson {
         match sample {
             JsonSample::String(text) => self.parse_string(&text),
             JsonSample::Stream(bytes) => self.parse_stream(&bytes),
-            JsonSample::Reader(reader) => {
-                let mut reader = reader.0.borrow_mut();
-                self.parse_stream_reader(&mut **reader)
-            }
+            JsonSample::Reader(reader) => match reader.take() {
+                Some(mut stream) => self.parse_stream_reader(&mut *stream),
+                None => Err(ParseError::Read(QuickTypeError::internal(
+                    "This JsonSample::Reader's stream was already read; a SampleReader can be read once",
+                ))),
+            },
         }
     }
 
@@ -1115,6 +1127,21 @@ mod tests {
             assert_eq!(r.intern_string(text), index);
             assert_eq!(r.string_at(index).unwrap(), text);
         }
+    }
+
+    /// A stream sample can be read once; reading it again (or a clone of
+    /// it) is an error, not empty input.
+    #[test]
+    fn a_sample_reader_is_read_once() {
+        let mut r = cjson(None);
+        let sample = JsonSample::Reader(SampleReader::new(std::io::Cursor::new(b"[1]".to_vec())));
+        assert!(matches!(
+            r.parse_sample(sample.clone()),
+            Ok(Value::Array(_))
+        ));
+        let error = r.parse_sample(sample).unwrap_err();
+        assert!(matches!(error, ParseError::Read(_)), "{error:?}");
+        assert!(error.message().contains("already read"), "{error:?}");
     }
 
     #[test]
