@@ -1,0 +1,15 @@
+resolving # relative to tests/inputs/schema/comment-injection-nested-comment.schema# (tests/inputs/schema/comment-injection-nested-comment.schema#)
+trying to fetch tests/inputs/schema/comment-injection-nested-comment.schema
+successully fetched tests/inputs/schema/comment-injection-nested-comment.schema
+resolved to # (tests/inputs/schema/comment-injection-nested-comment.schema#)
+resolving # relative to tests/inputs/schema/comment-injection-nested-comment.schema# (tests/inputs/schema/comment-injection-nested-comment.schema#)
+resolved to # (tests/inputs/schema/comment-injection-nested-comment.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 5 | 0 | given TopLevel () | Neste...
+1: intersection value | children 3 | 1 | distance 2 value ()
+2: string value | 2 | distance 3 value () | unrestricted
+3: union value | children 2 | 3 | distance 3 value ()
+4: object TopLevel | children 1 | 4 | distance 1 TopLevel () | prop descs: 1
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

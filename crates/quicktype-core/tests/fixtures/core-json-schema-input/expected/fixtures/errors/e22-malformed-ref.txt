@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema#)
+error: URI malformed

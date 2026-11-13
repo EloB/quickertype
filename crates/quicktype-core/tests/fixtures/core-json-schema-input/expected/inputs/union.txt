@@ -1,0 +1,32 @@
+resolving # relative to tests/inputs/schema/union.schema# (tests/inputs/schema/union.schema#)
+trying to fetch tests/inputs/schema/union.schema
+successully fetched tests/inputs/schema/union.schema
+resolved to # (tests/inputs/schema/union.schema#)
+resolving # relative to tests/inputs/schema/union.schema# (tests/inputs/schema/union.schema#)
+resolved to # (tests/inputs/schema/union.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 22 | 0 | given TopLevel ()
+1: intersection TopLevel | children 20 | 1 | distance 2 TopLevel ()
+2: intersection TopLevel | children 11 | 2 | distance 5 TopLevel ()
+3: intersection one | children 5 | 3 | distance 2 one ()
+4: integer | 4
+5: union one | children 4 | 5 | distance 3 one ()
+6: intersection two | children 8 | 6 | distance 2 two ()
+7: bool | 7
+8: union two | children 7 | 8 | distance 3 two ()
+9: any | 9
+10: object TopLevel | children 3,6,9 | 10 | distance 6 TopLevel ()
+11: union TopLevel | children 10 | 11 | distance 6 TopLevel ()
+12: intersection TopLevel | children 19 | 12 | distance 5 TopLevel ()
+13: intersection three | children 15 | 13 | distance 2 three ()
+14: double | 14
+15: union three | children 14 | 15 | distance 3 three ()
+16: intersection two | children 17 | 16 | distance 2 two ()
+17: union two | children 7 | 17 | distance 3 two ()
+18: object TopLevel | children 13,16,9 | 18 | distance 6 TopLevel ()
+19: union TopLevel | children 18 | 19 | distance 6 TopLevel ()
+20: union TopLevel | children 2,12 | 20 | distance 4 TopLevel ()
+21: array | children 1 | 21
+22: union TopLevel | children 21 | 22 | distance 1 TopLevel ()
+# attributes

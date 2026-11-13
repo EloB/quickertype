@@ -1,0 +1,16 @@
+resolving # relative to tests/inputs/schema/description-with-double-quotes.schema# (tests/inputs/schema/description-with-double-quotes.schema#)
+trying to fetch tests/inputs/schema/description-with-double-quotes.schema
+successully fetched tests/inputs/schema/description-with-double-quotes.schema
+resolved to # (tests/inputs/schema/description-with-double-quotes.schema#)
+resolving # relative to tests/inputs/schema/description-with-double-quotes.schema# (tests/inputs/schema/description-with-double-quotes.schema#)
+resolved to # (tests/inputs/schema/description-with-double-quotes.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 6 | 0 | given TopLevel () | Cool ...
+1: intersection foo | children 3 | 1 | distance 2 foo ()
+2: bool | 2
+3: union foo | children 2 | 3 | distance 3 foo ()
+4: any | 4
+5: object TopLevel | children 1,4 | 5 | distance 1 TopLevel ()
+6: union TopLevel | children 5 | 6 | distance 1 TopLevel ()
+# attributes

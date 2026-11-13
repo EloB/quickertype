@@ -1,0 +1,57 @@
+resolving # relative to tests/inputs/schema/uuid.schema# (tests/inputs/schema/uuid.schema#)
+trying to fetch tests/inputs/schema/uuid.schema
+successully fetched tests/inputs/schema/uuid.schema
+resolved to # (tests/inputs/schema/uuid.schema#)
+resolving # relative to tests/inputs/schema/uuid.schema# (tests/inputs/schema/uuid.schema#)
+resolved to # (tests/inputs/schema/uuid.schema#)
+resolving #/properties/nullable relative to #/properties/arrNullable/items (tests/inputs/schema/uuid.schema#/properties/arrNullable/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/nullable (tests/inputs/schema/uuid.schema#/properties/nullable)
+resolving #/properties/one relative to #/properties/nullable/oneOf/1 (tests/inputs/schema/uuid.schema#/properties/nullable/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/uuid.schema#/properties/one)
+resolving #/properties/one relative to #/properties/arrOne/items (tests/inputs/schema/uuid.schema#/properties/arrOne/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/uuid.schema#/properties/one)
+resolving #/properties/one relative to #/properties/optional (tests/inputs/schema/uuid.schema#/properties/optional)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/uuid.schema#/properties/one)
+resolving #/properties/one relative to #/properties/unionWithEnum/oneOf/0 (tests/inputs/schema/uuid.schema#/properties/unionWithEnum/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/uuid.schema#/properties/one)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 27 | 0 | given TopLevel ()
+1: intersection arrNullable | children 13 | 1 | distance 2 arrNullable ()
+2: intersection arrNullable | children 3 | 2 | distance 4 arrNullable ()
+3: intersection uuid | children 11 | 3 | distance 2 uuid ()
+4: intersection uuid | children 6 | 4 | distance 4 uuid ()
+5: null | 5
+6: union uuid | children 5 | 6 | distance 5 uuid ()
+7: intersection uuid | children 8 | 7 | distance 4 uuid ()
+8: intersection uuid | children 10 | 8 | distance 2 uuid ()
+9: string uuid | 9 | distance 3 uuid () | unrestricted
+10: union uuid | children 9 | 10 | distance 3 uuid ()
+11: union uuid | children 4,7 | 11 | distance 3 uuid ()
+12: array | children 2 | 12
+13: union arrNullable | children 12 | 13 | distance 3 arrNullable ()
+14: intersection arrOne | children 17 | 14 | distance 2 arrOne ()
+15: intersection arrOne | children 8 | 15 | distance 4 arrOne ()
+16: array | children 15 | 16
+17: union arrOne | children 16 | 17 | distance 3 arrOne ()
+18: intersection optional | children 8 | 18 | distance 2 optional ()
+19: intersection unionWithEnum | children 24 | 19 | distance 2 unionWithEnum ()
+20: intersection unionWithEnum | children 8 | 20 | distance 4 unionWithEnum ()
+21: intersection unionWithEnum | children 23 | 21 | distance 4 unionWithEnum ()
+22: string unionWithEnum | 22 | distance 5 unionWithEnum () | 1 enums: foo (1), ...
+23: union unionWithEnum | children 22 | 23 | distance 5 unionWithEnum ()
+24: union unionWithEnum | children 20,21 | 24 | distance 3 unionWithEnum ()
+25: any | 25
+26: object TopLevel | children 1,14,3,8,18,19,25 | 26 | distance 1 TopLevel ()
+27: union TopLevel | children 26 | 27 | distance 1 TopLevel ()
+# attributes

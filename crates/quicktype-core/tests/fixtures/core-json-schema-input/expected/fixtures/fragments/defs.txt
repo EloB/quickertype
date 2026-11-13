@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | 0 | given TopLevel ()
+# attributes

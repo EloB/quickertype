@@ -1,0 +1,8 @@
+{
+  "n": null,
+  "properties": {
+    "x": {
+      "$ref": "#/n"
+    }
+  }
+}

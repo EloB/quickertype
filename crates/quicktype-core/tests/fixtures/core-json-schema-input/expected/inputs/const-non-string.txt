@@ -1,0 +1,27 @@
+resolving # relative to tests/inputs/schema/const-non-string.schema# (tests/inputs/schema/const-non-string.schema#)
+trying to fetch tests/inputs/schema/const-non-string.schema
+successully fetched tests/inputs/schema/const-non-string.schema
+resolved to # (tests/inputs/schema/const-non-string.schema#)
+resolving # relative to tests/inputs/schema/const-non-string.schema# (tests/inputs/schema/const-non-string.schema#)
+resolved to # (tests/inputs/schema/const-non-string.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 17 | 0 | given TopLevel ()
+1: intersection amount | children 3 | 1 | distance 2 amount ()
+2: integer | 2
+3: union amount | children 2 | 3 | distance 3 amount ()
+4: intersection enabled | children 6 | 4 | distance 2 enabled ()
+5: bool | 5
+6: union enabled | children 5 | 6 | distance 3 enabled ()
+7: intersection kind | children 9 | 7 | distance 2 kind ()
+8: string kind | 8 | distance 3 kind () | 1 enums: widget (1), ...
+9: union kind | children 8 | 9 | distance 3 kind ()
+10: intersection ratio | children 12 | 10 | distance 2 ratio ()
+11: double | 11
+12: union ratio | children 11 | 12 | distance 3 ratio ()
+13: intersection version | children 14 | 13 | distance 2 version ()
+14: union version | children 11 | 14 | distance 3 version ()
+15: any | 15
+16: object TopLevel | children 1,4,7,10,13,15 | 16 | distance 1 TopLevel ()
+17: union TopLevel | children 16 | 17 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,107 @@
+resolving # relative to tests/inputs/schema/direct-union.schema# (tests/inputs/schema/direct-union.schema#)
+trying to fetch tests/inputs/schema/direct-union.schema
+successully fetched tests/inputs/schema/direct-union.schema
+resolved to # (tests/inputs/schema/direct-union.schema#)
+resolving # relative to tests/inputs/schema/direct-union.schema# (tests/inputs/schema/direct-union.schema#)
+resolved to # (tests/inputs/schema/direct-union.schema#)
+resolving #/definitions/ArrayNode relative to #/properties/arrayNode (tests/inputs/schema/direct-union.schema#/properties/arrayNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/ArrayNode (tests/inputs/schema/direct-union.schema#/definitions/ArrayNode)
+resolving #/definitions/BooleanNode relative to #/properties/booleanNode (tests/inputs/schema/direct-union.schema#/properties/booleanNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/BooleanNode (tests/inputs/schema/direct-union.schema#/definitions/BooleanNode)
+resolving #/definitions/DoubleNode relative to #/properties/doubleNode (tests/inputs/schema/direct-union.schema#/properties/doubleNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/DoubleNode (tests/inputs/schema/direct-union.schema#/definitions/DoubleNode)
+resolving #/definitions/IntNode relative to #/properties/intNode (tests/inputs/schema/direct-union.schema#/properties/intNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/IntNode (tests/inputs/schema/direct-union.schema#/definitions/IntNode)
+resolving #/definitions/LongNode relative to #/properties/longNode (tests/inputs/schema/direct-union.schema#/properties/longNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/LongNode (tests/inputs/schema/direct-union.schema#/definitions/LongNode)
+resolving #/definitions/NullNode relative to #/properties/nullNode (tests/inputs/schema/direct-union.schema#/properties/nullNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/NullNode (tests/inputs/schema/direct-union.schema#/definitions/NullNode)
+resolving #/definitions/ObjectNode relative to #/properties/objectNode (tests/inputs/schema/direct-union.schema#/properties/objectNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/ObjectNode (tests/inputs/schema/direct-union.schema#/definitions/ObjectNode)
+resolving #/definitions/thing relative to #/properties/stuff/additionalProperties (tests/inputs/schema/direct-union.schema#/properties/stuff/additionalProperties)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/thing (tests/inputs/schema/direct-union.schema#/definitions/thing)
+resolving #/definitions/anything relative to #/definitions/thing/properties/optional (tests/inputs/schema/direct-union.schema#/definitions/thing/properties/optional)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/anything (tests/inputs/schema/direct-union.schema#/definitions/anything)
+resolving #/definitions/anything relative to #/definitions/thing/properties/required (tests/inputs/schema/direct-union.schema#/definitions/thing/properties/required)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/anything (tests/inputs/schema/direct-union.schema#/definitions/anything)
+resolving #/definitions/TextNode relative to #/properties/textNode (tests/inputs/schema/direct-union.schema#/properties/textNode)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/TextNode (tests/inputs/schema/direct-union.schema#/definitions/TextNode)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 53 | 0 | given TopLevel ()
+1: intersection arrayNode | children 2 | 1 | distance 2 arrayNode ()
+2: intersection ArrayNode | children 4 | 2 | given ArrayNode ()
+3: object ArrayNode | 3 | distance 1 ArrayNode ()
+4: union ArrayNode | children 3 | 4 | distance 1 ArrayNode ()
+5: intersection booleanNode | children 6 | 5 | distance 2 booleanNode ()
+6: intersection BooleanNode | children 8 | 6 | given BooleanNode ()
+7: object BooleanNode | 7 | distance 1 BooleanNode ()
+8: union BooleanNode | children 7 | 8 | distance 1 BooleanNode ()
+9: intersection doubleNode | children 10 | 9 | distance 2 doubleNode ()
+10: intersection DoubleNode | children 12 | 10 | given DoubleNode ()
+11: object DoubleNode | 11 | distance 1 DoubleNode ()
+12: union DoubleNode | children 11 | 12 | distance 1 DoubleNode ()
+13: intersection intNode | children 14 | 13 | distance 2 intNode ()
+14: intersection IntNode | children 16 | 14 | given IntNode ()
+15: object IntNode | 15 | distance 1 IntNode ()
+16: union IntNode | children 15 | 16 | distance 1 IntNode ()
+17: intersection longNode | children 18 | 17 | distance 2 longNode ()
+18: intersection LongNode | children 20 | 18 | given LongNode ()
+19: object LongNode | 19 | distance 1 LongNode ()
+20: union LongNode | children 19 | 20 | distance 1 LongNode ()
+21: intersection nullNode | children 22 | 21 | distance 2 nullNode ()
+22: intersection NullNode | children 24 | 22 | given NullNode ()
+23: object NullNode | 23 | distance 1 NullNode ()
+24: union NullNode | children 23 | 24 | distance 1 NullNode ()
+25: intersection objectNode | children 26 | 25 | distance 2 objectNode ()
+26: intersection ObjectNode | children 28 | 26 | given ObjectNode ()
+27: object ObjectNode | 27 | distance 1 ObjectNode ()
+28: union ObjectNode | children 27 | 28 | distance 1 ObjectNode ()
+29: intersection stuff | children 47 | 29 | distance 2 stuff ()
+30: intersection stuff | children 31 | 30 | distance 5 stuff ()
+31: intersection thing | children 45 | 31 | given thing ()
+32: intersection optional | children 33 | 32 | distance 2 optional ()
+33: intersection anything | children 42 | 33 | given anything ()
+34: null | 34
+35: double | 35
+36: integer | 36
+37: bool | 37
+38: string anything | 38 | distance 1 anything () | unrestricted
+39: any | 39
+40: array | children 39 | 40
+41: object anything | children 39 | 41 | distance 1 anything ()
+42: union anything | children 40,37,35,36,34,41,38 | 42 | distance 1 anything ()
+43: intersection required | children 33 | 43 | distance 2 required ()
+44: object thing | children 32,43 | 44 | distance 1 thing ()
+45: union thing | children 44 | 45 | distance 1 thing ()
+46: object stuff | children 30 | 46 | distance 3 stuff ()
+47: union stuff | children 46 | 47 | distance 3 stuff ()
+48: intersection textNode | children 49 | 48 | distance 2 textNode ()
+49: intersection TextNode | children 51 | 49 | given TextNode ()
+50: object TextNode | 50 | distance 1 TextNode ()
+51: union TextNode | children 50 | 51 | distance 1 TextNode ()
+52: object TopLevel | children 1,5,9,13,17,21,25,29,48 | 52 | distance 1 TopLevel ()
+53: union TopLevel | children 52 | 53 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "x": {
+      "$ref": "#/definitions/X"
+    }
+  },
+  "definitions": {
+    "X": true
+  }
+}

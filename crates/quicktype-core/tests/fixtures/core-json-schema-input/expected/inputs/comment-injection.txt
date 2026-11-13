@@ -1,0 +1,21 @@
+resolving # relative to tests/inputs/schema/comment-injection.schema# (tests/inputs/schema/comment-injection.schema#)
+trying to fetch tests/inputs/schema/comment-injection.schema
+successully fetched tests/inputs/schema/comment-injection.schema
+resolved to # (tests/inputs/schema/comment-injection.schema#)
+resolving # relative to tests/inputs/schema/comment-injection.schema# (tests/inputs/schema/comment-injection.schema#)
+resolved to # (tests/inputs/schema/comment-injection.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 11 | 0 | given TopLevel () | Comme...
+1: intersection trailingBackslash | children 3 | 1 | distance 2 trailingBackslash ()
+2: string trailing_backslash | 2 | distance 3 trailingBackslash,trailingQuote,trailingTripleQuote,value () | unrestricted
+3: union trailingBackslash | children 2 | 3 | distance 3 trailingBackslash ()
+4: intersection trailingQuote | children 5 | 4 | distance 2 trailingQuote ()
+5: union trailingQuote | children 2 | 5 | distance 3 trailingQuote ()
+6: intersection trailingTripleQuote | children 7 | 6 | distance 2 trailingTripleQuote ()
+7: union trailingTripleQuote | children 2 | 7 | distance 3 trailingTripleQuote ()
+8: intersection value | children 9 | 8 | distance 2 value ()
+9: union value | children 2 | 9 | distance 3 value ()
+10: object TopLevel | children 1,4,6,8 | 10 | distance 1 TopLevel () | prop descs: 4
+11: union TopLevel | children 10 | 11 | distance 1 TopLevel ()
+# attributes

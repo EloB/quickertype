@@ -1,0 +1,40 @@
+resolving # relative to tests/inputs/schema/integer-type.schema# (tests/inputs/schema/integer-type.schema#)
+trying to fetch tests/inputs/schema/integer-type.schema
+successully fetched tests/inputs/schema/integer-type.schema
+resolved to # (tests/inputs/schema/integer-type.schema#)
+resolving # relative to tests/inputs/schema/integer-type.schema# (tests/inputs/schema/integer-type.schema#)
+resolved to # (tests/inputs/schema/integer-type.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 30 | 0 | given TopLevel ()
+1: intersection above_i32_max | children 3 | 1 | distance 2 above_i32_max ()
+2: integer | 2 | 0-2147483648
+3: union above_i32_max | children 2 | 3 | distance 3 above_i32_max ()
+4: intersection below_i32_min | children 6 | 4 | distance 2 below_i32_min ()
+5: integer | 5 | -2147483649-0
+6: union below_i32_min | children 5 | 6 | distance 3 below_i32_min ()
+7: intersection i32_range | children 9 | 7 | distance 2 i32_range ()
+8: integer | 8 | -2147483648-2147483647
+9: union i32_range | children 8 | 9 | distance 3 i32_range ()
+10: intersection large_bounds | children 12 | 10 | distance 2 large_bounds ()
+11: integer | 11 | -9007199254740991-9007199254740991
+12: union large_bounds | children 11 | 12 | distance 3 large_bounds ()
+13: intersection only_maximum | children 15 | 13 | distance 2 only_maximum ()
+14: integer | 14 | undefined-0
+15: union only_maximum | children 14 | 15 | distance 3 only_maximum ()
+16: intersection only_minimum | children 18 | 16 | distance 2 only_minimum ()
+17: integer | 17 | 0-undefined
+18: union only_minimum | children 17 | 18 | distance 3 only_minimum ()
+19: intersection small_negative | children 21 | 19 | distance 2 small_negative ()
+20: integer | 20 | -100-0
+21: union small_negative | children 20 | 21 | distance 3 small_negative ()
+22: intersection small_positive | children 24 | 22 | distance 2 small_positive ()
+23: integer | 23 | 0-100
+24: union small_positive | children 23 | 24 | distance 3 small_positive ()
+25: intersection unbounded | children 27 | 25 | distance 2 unbounded ()
+26: integer | 26
+27: union unbounded | children 26 | 27 | distance 3 unbounded ()
+28: any | 28
+29: object TopLevel | children 1,4,7,10,13,16,19,22,25,28 | 29 | distance 1 TopLevel ()
+30: union TopLevel | children 29 | 30 | distance 1 TopLevel ()
+# attributes

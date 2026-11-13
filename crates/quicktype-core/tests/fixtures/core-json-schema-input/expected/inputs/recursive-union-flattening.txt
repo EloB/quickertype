@@ -1,0 +1,66 @@
+resolving # relative to tests/inputs/schema/recursive-union-flattening.schema# (tests/inputs/schema/recursive-union-flattening.schema#)
+trying to fetch tests/inputs/schema/recursive-union-flattening.schema
+successully fetched tests/inputs/schema/recursive-union-flattening.schema
+resolved to # (tests/inputs/schema/recursive-union-flattening.schema#)
+resolving # relative to tests/inputs/schema/recursive-union-flattening.schema# (tests/inputs/schema/recursive-union-flattening.schema#)
+resolved to # (tests/inputs/schema/recursive-union-flattening.schema#)
+resolving #/definitions/a relative to #/items/anyOf/0 (tests/inputs/schema/recursive-union-flattening.schema#/items/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/a (tests/inputs/schema/recursive-union-flattening.schema#/definitions/a)
+resolving #/definitions/a relative to #/definitions/a/properties/x/items (tests/inputs/schema/recursive-union-flattening.schema#/definitions/a/properties/x/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/a (tests/inputs/schema/recursive-union-flattening.schema#/definitions/a)
+resolving # relative to #/items/anyOf/1/additionalProperties (tests/inputs/schema/recursive-union-flattening.schema#/items/anyOf/1/additionalProperties)
+trying to fetch 
+couldn't fetch 
+resolved to # (tests/inputs/schema/recursive-union-flattening.schema#)
+resolving #/definitions/a relative to #items/anyOf/0 (tests/inputs/schema/recursive-union-flattening.schema#items/anyOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/a (tests/inputs/schema/recursive-union-flattening.schema#/definitions/a)
+resolving # relative to #items/anyOf/1/additionalProperties (tests/inputs/schema/recursive-union-flattening.schema#items/anyOf/1/additionalProperties)
+trying to fetch 
+couldn't fetch 
+resolved to # (tests/inputs/schema/recursive-union-flattening.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 36 | 0 | given TopLevel ()
+1: null | 1
+2: double | 2
+3: integer | 3
+4: bool | 4
+5: string top_level | 5 | distance 1 TopLevel,a () | unrestricted
+6: intersection TopLevel | children 33 | 6 | distance 2 TopLevel ()
+7: intersection TopLevel | children 8 | 7 | distance 5 TopLevel ()
+8: intersection a | children 17 | 8 | given a ()
+9: any | 9
+10: array | children 9 | 10
+11: intersection x | children 15 | 11 | distance 2 x ()
+12: intersection x | children 8 | 12 | distance 4 x ()
+13: array | children 12 | 13
+14: object x | children 9 | 14 | distance 3 x ()
+15: union x | children 13,4,2,3,1,14,5 | 15 | distance 3 x ()
+16: object a | children 11,9 | 16 | distance 1 a ()
+17: union a | children 10,4,2,3,1,16,5 | 17 | distance 1 a ()
+18: intersection TopLevel | children 32 | 18 | distance 5 TopLevel ()
+19: intersection TopLevel | children 20 | 19 | distance 8 TopLevel ()
+20: intersection recursive-union-flattening | children 30 | 20 | distance 2 recursive-union-flattening ()
+21: intersection recursive-union-flattening | children 27 | 21 | distance 4 recursive-union-flattening ()
+22: intersection recursive-union-flattening | children 8 | 22 | distance 7 recursive-union-flattening ()
+23: intersection recursive-union-flattening | children 26 | 23 | distance 7 recursive-union-flattening ()
+24: intersection recursive-union-flattening | children 20 | 24 | distance 10 recursive-union-flattening ()
+25: object recursive-union-flattening | children 24 | 25 | distance 8 recursive-union-flattening ()
+26: union recursive-union-flattening | children 10,4,2,3,1,25,5 | 26 | distance 8 recursive-union-flattening ()
+27: union recursive-union-flattening | children 22,23 | 27 | distance 6 recursive-union-flattening ()
+28: array | children 21 | 28
+29: object recursive-union-flattening | children 9 | 29 | distance 3 recursive-union-flattening ()
+30: union recursive-union-flattening | children 28,4,2,3,1,29,5 | 30 | distance 3 recursive-union-flattening ()
+31: object TopLevel | children 19 | 31 | distance 6 TopLevel ()
+32: union TopLevel | children 10,4,2,3,1,31,5 | 32 | distance 6 TopLevel ()
+33: union TopLevel | children 7,18 | 33 | distance 4 TopLevel ()
+34: array | children 6 | 34
+35: object TopLevel | children 9 | 35 | distance 1 TopLevel ()
+36: union TopLevel | children 34,4,2,3,1,35,5 | 36 | distance 1 TopLevel ()
+# attributes

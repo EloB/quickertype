@@ -1,0 +1,29 @@
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema
+adding mapping http://example.com/extra.json# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+adding mapping http://example.com/extra.json#/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions)
+adding mapping http://example.com/extra.json#/definitions/Extra (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra)
+adding mapping http://example.com/extra.json#/definitions/Extra/properties (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra/properties)
+adding mapping http://example.com/extra.json#/definitions/Extra/properties/e (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra/properties/e)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolving http://example.com/extra.json#/definitions/Extra relative to #/properties/extra (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#/properties/extra)
+resolved to http://example.com/extra.json#/definitions/Extra (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 10 | 0 | given TopLevel ()
+1: intersection extra | children 2 | 1 | distance 2 extra ()
+2: intersection Extra | children 8 | 2 | given Extra ()
+3: intersection e | children 5 | 3 | distance 2 e ()
+4: double | 4
+5: union e | children 4 | 5 | distance 3 e ()
+6: any | 6
+7: object Extra | children 3,6 | 7 | distance 1 Extra ()
+8: union Extra | children 7 | 8 | distance 1 Extra ()
+9: object TopLevel | children 1,6 | 9 | distance 1 TopLevel ()
+10: union TopLevel | children 9 | 10 | distance 1 TopLevel ()
+# attributes

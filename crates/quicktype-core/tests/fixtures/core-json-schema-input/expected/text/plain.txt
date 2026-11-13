@@ -1,0 +1,16 @@
+resolving # relative to Text# (Text#)
+trying to fetch Text
+successully fetched Text
+resolved to # (Text#)
+resolving # relative to Text# (Text#)
+resolved to # (Text#)
+# needIR true; single string source "{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\"}}}"
+# graph
+0: intersection Text | children 6 | 0 | given Text ()
+1: intersection a | children 3 | 1 | distance 2 a ()
+2: string a | 2 | distance 3 a () | unrestricted
+3: union a | children 2 | 3 | distance 3 a ()
+4: any | 4
+5: object Text | children 1,4 | 5 | distance 1 Text ()
+6: union Text | children 5 | 6 | distance 1 Text ()
+# attributes

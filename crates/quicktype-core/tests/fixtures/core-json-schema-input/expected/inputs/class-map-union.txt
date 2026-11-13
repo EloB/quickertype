@@ -1,0 +1,42 @@
+resolving # relative to tests/inputs/schema/class-map-union.schema# (tests/inputs/schema/class-map-union.schema#)
+trying to fetch tests/inputs/schema/class-map-union.schema
+successully fetched tests/inputs/schema/class-map-union.schema
+resolved to # (tests/inputs/schema/class-map-union.schema#)
+resolving # relative to tests/inputs/schema/class-map-union.schema# (tests/inputs/schema/class-map-union.schema#)
+resolved to # (tests/inputs/schema/class-map-union.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 32 | 0 | given TopLevel ()
+1: intersection union | children 30 | 1 | distance 2 union ()
+2: intersection union | children 7 | 2 | distance 4 union ()
+3: intersection foo | children 5 | 3 | distance 2 foo ()
+4: double | 4
+5: union foo | children 4 | 5 | distance 3 foo ()
+6: object union | children 3 | 6 | distance 5 union ()
+7: union union | children 6 | 7 | distance 5 union ()
+8: intersection union | children 13 | 8 | distance 4 union ()
+9: intersection bar | children 11 | 9 | distance 2 bar ()
+10: string bar | 10 | distance 3 bar () | unrestricted
+11: union bar | children 10 | 11 | distance 3 bar ()
+12: object union | children 9 | 12 | distance 5 union ()
+13: union union | children 12 | 13 | distance 5 union ()
+14: intersection union | children 19 | 14 | distance 4 union ()
+15: intersection union | children 17 | 15 | distance 7 union ()
+16: bool | 16
+17: union union | children 16 | 17 | distance 8 union ()
+18: object union | children 15 | 18 | distance 5 union ()
+19: union union | children 18 | 19 | distance 5 union ()
+20: intersection union | children 29 | 20 | distance 4 union ()
+21: intersection union | children 27 | 21 | distance 7 union ()
+22: intersection quux | children 24 | 22 | distance 2 quux ()
+23: integer | 23
+24: union quux | children 23 | 24 | distance 3 quux ()
+25: any | 25
+26: object union | children 22,25 | 26 | distance 8 union ()
+27: union union | children 26 | 27 | distance 8 union ()
+28: object union | children 21 | 28 | distance 5 union ()
+29: union union | children 28 | 29 | distance 5 union ()
+30: union union | children 2,8,14,20 | 30 | distance 3 union ()
+31: object TopLevel | children 1 | 31 | distance 1 TopLevel ()
+32: union TopLevel | children 31 | 32 | distance 1 TopLevel ()
+# attributes

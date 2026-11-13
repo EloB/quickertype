@@ -1,0 +1,23 @@
+resolving #/definitions/Bar relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+resolved to #/definitions/Bar (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Bar)
+resolving #/definitions/Foo relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Foo (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Foo)
+resolving #/definitions/Bar relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Bar (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Bar)
+resolving #/definitions/Foo relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Foo (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Foo)
+# needIR true; single string source null
+# graph
+0: intersection Bar | children 2 | 0 | given Bar ()
+1: integer | 1
+2: union Bar | children 1 | 2 | distance 1 Bar ()
+3: intersection Foo | children 9 | 3 | given Foo ()
+4: intersection f | children 6 | 4 | distance 2 f ()
+5: string f | 5 | distance 3 f () | unrestricted
+6: union f | children 5 | 6 | distance 3 f ()
+7: any | 7
+8: object Foo | children 4,7 | 8 | distance 1 Foo ()
+9: union Foo | children 8 | 9 | distance 1 Foo ()
+# attributes

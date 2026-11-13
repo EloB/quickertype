@@ -1,0 +1,17 @@
+resolving # relative to tests/inputs/schema/intersection-nested.schema# (tests/inputs/schema/intersection-nested.schema#)
+trying to fetch tests/inputs/schema/intersection-nested.schema
+successully fetched tests/inputs/schema/intersection-nested.schema
+resolved to # (tests/inputs/schema/intersection-nested.schema#)
+resolving # relative to tests/inputs/schema/intersection-nested.schema# (tests/inputs/schema/intersection-nested.schema#)
+resolved to # (tests/inputs/schema/intersection-nested.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 7 | 0 | given TopLevel ()
+1: intersection intersection | children 2 | 1 | distance 2 intersection ()
+2: intersection intersection | children 3 | 2 | distance 4 intersection ()
+3: intersection intersection | children 5 | 3 | distance 6 intersection ()
+4: double | 4
+5: union intersection | children 4 | 5 | distance 7 intersection ()
+6: object TopLevel | children 1 | 6 | distance 1 TopLevel ()
+7: union TopLevel | children 6 | 7 | distance 1 TopLevel ()
+# attributes

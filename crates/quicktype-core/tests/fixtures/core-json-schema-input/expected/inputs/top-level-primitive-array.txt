@@ -1,0 +1,15 @@
+resolving # relative to tests/inputs/schema/top-level-primitive-array.schema# (tests/inputs/schema/top-level-primitive-array.schema#)
+trying to fetch tests/inputs/schema/top-level-primitive-array.schema
+successully fetched tests/inputs/schema/top-level-primitive-array.schema
+resolved to # (tests/inputs/schema/top-level-primitive-array.schema#)
+resolving # relative to tests/inputs/schema/top-level-primitive-array.schema# (tests/inputs/schema/top-level-primitive-array.schema#)
+resolved to # (tests/inputs/schema/top-level-primitive-array.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 5 | 0 | given TopLevel ()
+1: intersection TopLevel | children 3 | 1 | distance 2 TopLevel ()
+2: string TopLevel | 2 | distance 4 TopLevel () | unrestricted
+3: union TopLevel | children 2 | 3 | distance 4 TopLevel ()
+4: array | children 1 | 4
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

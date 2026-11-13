@@ -1,0 +1,16 @@
+resolving # relative to tests/inputs/schema/keyword-enum.schema# (tests/inputs/schema/keyword-enum.schema#)
+trying to fetch tests/inputs/schema/keyword-enum.schema
+successully fetched tests/inputs/schema/keyword-enum.schema
+resolved to # (tests/inputs/schema/keyword-enum.schema#)
+resolving # relative to tests/inputs/schema/keyword-enum.schema# (tests/inputs/schema/keyword-enum.schema#)
+resolved to # (tests/inputs/schema/keyword-enum.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 6 | 0 | given TopLevel ()
+1: intersection enum | children 3 | 1 | given enum ()
+2: string enum | 2 | distance 1 enum () | 358 enums: _ (1), ...
+3: union enum | children 2 | 3 | distance 1 enum ()
+4: any | 4
+5: object TopLevel | children 1,4 | 5 | distance 1 TopLevel ()
+6: union TopLevel | children 5 | 6 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,23 @@
+resolving #/definitions relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema
+resolved to #/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions)
+resolving #/definitions/Foo relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Foo (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Foo)
+resolving #/definitions/Bar relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Bar (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Bar)
+resolving #/definitions/Baz relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#)
+resolved to #/definitions/Baz (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Baz)
+# needIR true; single string source null
+# graph
+0: intersection Foo | children 6 | 0 | given Foo ()
+1: intersection f | children 3 | 1 | distance 2 f ()
+2: string f | 2 | distance 3 f () | unrestricted
+3: union f | children 2 | 3 | distance 3 f ()
+4: any | 4
+5: object Foo | children 1,4 | 5 | distance 1 Foo ()
+6: union Foo | children 5 | 6 | distance 1 Foo ()
+7: intersection Bar | children 9 | 7 | given Bar ()
+8: integer | 8
+9: union Bar | children 8 | 9 | distance 1 Bar ()
+# attributes

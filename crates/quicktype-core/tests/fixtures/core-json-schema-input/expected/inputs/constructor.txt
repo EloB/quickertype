@@ -1,0 +1,21 @@
+resolving # relative to tests/inputs/schema/constructor.schema# (tests/inputs/schema/constructor.schema#)
+trying to fetch tests/inputs/schema/constructor.schema
+successully fetched tests/inputs/schema/constructor.schema
+resolved to # (tests/inputs/schema/constructor.schema#)
+resolving # relative to tests/inputs/schema/constructor.schema# (tests/inputs/schema/constructor.schema#)
+resolved to # (tests/inputs/schema/constructor.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 11 | 0 | given TopLevel ()
+1: intersection union_constructor | children 8 | 1 | given union_constructor ()
+2: intersection union_constructor | children 4 | 2 | distance 2 union_constructor ()
+3: double | 3
+4: union union_constructor | children 3 | 4 | distance 3 union_constructor ()
+5: intersection constructor | children 7 | 5 | given constructor ()
+6: object constructor | 6 | distance 1 constructor ()
+7: union constructor | children 6 | 7 | distance 1 constructor ()
+8: union union_constructor | children 2,5 | 8 | distance 1 union_constructor ()
+9: any | 9
+10: object TopLevel | children 1,9 | 10 | distance 1 TopLevel ()
+11: union TopLevel | children 10 | 11 | distance 1 TopLevel ()
+# attributes

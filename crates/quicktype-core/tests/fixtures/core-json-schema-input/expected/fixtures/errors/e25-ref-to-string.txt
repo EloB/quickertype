@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#)
+resolving #/description relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: Value of type string is not valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema#

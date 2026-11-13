@@ -1,0 +1,57 @@
+resolving # relative to tests/inputs/schema/postman-collection.schema# (tests/inputs/schema/postman-collection.schema#)
+trying to fetch tests/inputs/schema/postman-collection.schema
+successully fetched tests/inputs/schema/postman-collection.schema
+resolved to # (tests/inputs/schema/postman-collection.schema#)
+resolving # relative to tests/inputs/schema/postman-collection.schema# (tests/inputs/schema/postman-collection.schema#)
+resolved to # (tests/inputs/schema/postman-collection.schema#)
+resolving #/definitions/collection relative to # (tests/inputs/schema/postman-collection.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/collection (tests/inputs/schema/postman-collection.schema#/definitions/collection)
+resolving #/definitions/group relative to #/definitions/collection/oneOf/0 (tests/inputs/schema/postman-collection.schema#/definitions/collection/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/group (tests/inputs/schema/postman-collection.schema#/definitions/group)
+resolving #/definitions/collection relative to #/definitions/group/properties/item/items (tests/inputs/schema/postman-collection.schema#/definitions/group/properties/item/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/collection (tests/inputs/schema/postman-collection.schema#/definitions/collection)
+resolving #/definitions/item relative to #/definitions/collection/oneOf/1 (tests/inputs/schema/postman-collection.schema#/definitions/collection/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/item (tests/inputs/schema/postman-collection.schema#/definitions/item)
+resolving #/definitions/response relative to #/definitions/item/properties/response/items (tests/inputs/schema/postman-collection.schema#/definitions/item/properties/response/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/response (tests/inputs/schema/postman-collection.schema#/definitions/response)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel () | Postm...
+1: intersection TopLevel | children 27 | 1 | given TopLevel () | Postm...
+2: intersection TopLevel | children 3 | 2 | distance 2 TopLevel ()
+3: intersection group | children 10 | 3 | given group ()
+4: intersection item | children 7 | 4 | distance 2 item ()
+5: intersection item | children 1 | 5 | distance 4 item ()
+6: array | children 5 | 6
+7: union item | children 6 | 7 | distance 3 item ()
+8: any | 8
+9: object group | children 4,8 | 9 | distance 1 group ()
+10: union group | children 9 | 10 | distance 1 group ()
+11: intersection TopLevel | children 12 | 11 | distance 2 TopLevel ()
+12: intersection item | children 26 | 12 | given item ()
+13: intersection name | children 15 | 13 | distance 2 name ()
+14: string name | 14 | distance 3 name,body () | unrestricted
+15: union name | children 14 | 15 | distance 3 name ()
+16: intersection response | children 24 | 16 | distance 2 response ()
+17: intersection response | children 18 | 17 | distance 4 response ()
+18: intersection response | children 22 | 18 | given response ()
+19: intersection body | children 20 | 19 | distance 2 body ()
+20: union body | children 14 | 20 | distance 3 body ()
+21: object response | children 19,8 | 21 | distance 1 response ()
+22: union response | children 21 | 22 | distance 1 response ()
+23: array | children 17 | 23
+24: union response | children 23 | 24 | distance 3 response ()
+25: object item | children 13,16,8 | 25 | distance 1 item ()
+26: union item | children 25 | 26 | distance 1 item ()
+27: union TopLevel | children 2,11 | 27 | distance 1 TopLevel ()
+# attributes
