@@ -14,6 +14,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     is_letter_or_underscore, split_into_words, string_escape, utf16_string_escape,
@@ -106,40 +107,43 @@ fn extract_underlying_typerefs(
     graph: &crate::ty::type_graph::TypeGraph,
     t: TypeRef,
 ) -> Result<Vec<TypeRef>> {
-    let mut type_refs = Vec::new();
-    let ty = graph.type_at(t)?;
-    // Ignore enums and primitives
-    if !ty.is_primitive() && ty.kind() != TypeKind::Enum {
-        // need to extract constituent types for unions and intersections
-        // and can ignore the union/intersection itself
-        if ty.is_set_operation() {
-            for &member in ty.members()? {
-                type_refs.extend(extract_underlying_typerefs(graph, member)?);
+    // Endless on a cycle through a nullable union (V8 overflows its stack).
+    guard(|| {
+        let mut type_refs = Vec::new();
+        let ty = graph.type_at(t)?;
+        // Ignore enums and primitives
+        if !ty.is_primitive() && ty.kind() != TypeKind::Enum {
+            // need to extract constituent types for unions and intersections
+            // and can ignore the union/intersection itself
+            if ty.is_set_operation() {
+                for &member in ty.members()? {
+                    type_refs.extend(extract_underlying_typerefs(graph, member)?);
+                }
+            }
+
+            // need to extract additional properties for object, class and map
+            // types
+            if ty.is_object_type() {
+                if let Some(additional) = ty.additional_properties()? {
+                    type_refs.extend(extract_underlying_typerefs(graph, additional)?);
+                }
+            }
+
+            // need to extract items types for ArrayType
+            if ty.is_array() {
+                type_refs.extend(extract_underlying_typerefs(graph, ty.items()?)?);
+            }
+
+            // Finally return the reference to a class as that will need to be
+            // defined (where objects, maps, unions, intersections and arrays
+            // do not)
+            if ty.is_class() {
+                type_refs.push(t);
             }
         }
 
-        // need to extract additional properties for object, class and map
-        // types
-        if ty.is_object_type() {
-            if let Some(additional) = ty.additional_properties()? {
-                type_refs.extend(extract_underlying_typerefs(graph, additional)?);
-            }
-        }
-
-        // need to extract items types for ArrayType
-        if ty.is_array() {
-            type_refs.extend(extract_underlying_typerefs(graph, ty.items()?)?);
-        }
-
-        // Finally return the reference to a class as that will need to be
-        // defined (where objects, maps, unions, intersections and arrays
-        // do not)
-        if ty.is_class() {
-            type_refs.push(t);
-        }
-    }
-
-    Ok(type_refs)
+        Ok(type_refs)
+    })
 }
 
 impl<'a> TypeScriptZodRenderer<'a> {
@@ -229,98 +233,109 @@ impl<'a> TypeScriptZodRenderer<'a> {
 
     /// `typeMapTypeFor(t, required)`: the zod schema of `t`.
     fn type_map_type_for(&self, t: TypeRef, required: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            return Ok(sl![self.name_for_named_type(t)?, "Schema"]);
-        }
-
-        let matched: Source = match kind {
-            TypeKind::Any => "z.any()".into(),
-            TypeKind::Null => "z.null()".into(),
-            TypeKind::Bool => "z.boolean()".into(),
-            TypeKind::Integer => self.number_type(t, true)?,
-            TypeKind::Double => self.number_type(t, false)?,
-            TypeKind::String => self.string_type(t)?,
-            TypeKind::Array => {
-                let (min_items, max_items) = match min_max_items_for_type(graph, t)? {
-                    Some(m) => (m.0, m.1),
-                    None => (None, None),
-                };
-
-                let mut array_source: Vec<Source> = vec![
-                    "z.array(".into(),
-                    self.type_map_type_for(ty.items()?, false)?,
-                    ")".into(),
-                ];
-                if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
-                    array_source.extend([".min(".into(), js_number(min_items).into(), ")".into()]);
-                }
-
-                if let Some(max_items) = max_items {
-                    array_source.extend([".max(".into(), js_number(max_items).into(), ")".into()]);
-                }
-
-                Source::Sequence(array_source)
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                return Ok(sl![self.name_for_named_type(t)?, "Schema"]);
             }
-            TypeKind::Map => sl![
-                "z.record(z.string(), ",
-                self.type_map_type_for(ty.map_values()?, false)?,
-                ")"
-            ],
-            TypeKind::Union => {
-                // Coercing schemas can accept null, so handle it first.
-                let rank = |x: TypeRef| -> Result<u8> {
-                    Ok(match graph.kind(x)? {
-                        TypeKind::Null => 0,
-                        TypeKind::DateTime => 2,
-                        _ => 1,
-                    })
-                };
-                let mut children: Vec<(u8, TypeRef)> = Vec::new();
-                for c in graph.children(t)? {
-                    children.push((rank(c)?, c));
-                }
-                children.sort_by_key(|&(r, _)| r);
 
-                let mut parts: Vec<Source> = vec!["z.union([".into()];
-                for (i, &(_, member)) in children.iter().enumerate() {
-                    if i > 0 {
-                        parts.push(", ".into());
+            let matched: Source = match kind {
+                TypeKind::Any => "z.any()".into(),
+                TypeKind::Null => "z.null()".into(),
+                TypeKind::Bool => "z.boolean()".into(),
+                TypeKind::Integer => self.number_type(t, true)?,
+                TypeKind::Double => self.number_type(t, false)?,
+                TypeKind::String => self.string_type(t)?,
+                TypeKind::Array => {
+                    let (min_items, max_items) = match min_max_items_for_type(graph, t)? {
+                        Some(m) => (m.0, m.1),
+                        None => (None, None),
+                    };
+
+                    let mut array_source: Vec<Source> = vec![
+                        "z.array(".into(),
+                        self.type_map_type_for(ty.items()?, false)?,
+                        ")".into(),
+                    ];
+                    if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
+                        array_source.extend([
+                            ".min(".into(),
+                            js_number(min_items).into(),
+                            ")".into(),
+                        ]);
                     }
-                    let schema = self.type_map_type_for(member, false)?;
-                    let member_kind = graph.kind(member)?;
-                    parts.push(
-                        if member_kind == TypeKind::BoolString
-                            && find_member(graph, t, TypeKind::Bool)?.is_some()
-                        {
-                            sl![schema, ".transform(x => x === \"true\")"]
-                        } else if member_kind == TypeKind::IntegerString
-                            && find_member(graph, t, TypeKind::Integer)?.is_some()
-                        {
-                            sl![schema, ".transform(Number)"]
-                        } else {
-                            schema
-                        },
-                    );
+
+                    if let Some(max_items) = max_items {
+                        array_source.extend([
+                            ".max(".into(),
+                            js_number(max_items).into(),
+                            ")".into(),
+                        ]);
+                    }
+
+                    Source::Sequence(array_source)
                 }
-                parts.push("])".into());
-                Source::Sequence(parts)
+                TypeKind::Map => sl![
+                    "z.record(z.string(), ",
+                    self.type_map_type_for(ty.map_values()?, false)?,
+                    ")"
+                ],
+                TypeKind::Union => {
+                    // Coercing schemas can accept null, so handle it first.
+                    let rank = |x: TypeRef| -> Result<u8> {
+                        Ok(match graph.kind(x)? {
+                            TypeKind::Null => 0,
+                            TypeKind::DateTime => 2,
+                            _ => 1,
+                        })
+                    };
+                    let mut children: Vec<(u8, TypeRef)> = Vec::new();
+                    for c in graph.children(t)? {
+                        children.push((rank(c)?, c));
+                    }
+                    children.sort_by_key(|&(r, _)| r);
+
+                    let mut parts: Vec<Source> = vec!["z.union([".into()];
+                    for (i, &(_, member)) in children.iter().enumerate() {
+                        if i > 0 {
+                            parts.push(", ".into());
+                        }
+                        let schema = self.type_map_type_for(member, false)?;
+                        let member_kind = graph.kind(member)?;
+                        parts.push(
+                            if member_kind == TypeKind::BoolString
+                                && find_member(graph, t, TypeKind::Bool)?.is_some()
+                            {
+                                sl![schema, ".transform(x => x === \"true\")"]
+                            } else if member_kind == TypeKind::IntegerString
+                                && find_member(graph, t, TypeKind::Integer)?.is_some()
+                            {
+                                sl![schema, ".transform(Number)"]
+                            } else {
+                                schema
+                            },
+                        );
+                    }
+                    parts.push("])".into());
+                    Source::Sequence(parts)
+                }
+                TypeKind::DateTime => "z.string().pipe(z.coerce.date())".into(),
+                TypeKind::Uuid => "z.string().uuid()".into(),
+                TypeKind::BoolString => "z.enum([\"true\", \"false\"])".into(),
+                TypeKind::IntegerString => "z.string().regex(/^-?\\d+$/)".into(),
+                k if k.is_transformed_string_type_kind() => "z.string()".into(),
+                kind => return type_not_supported(kind),
+            };
+
+            if required {
+                return Ok(sl![matched]);
             }
-            TypeKind::DateTime => "z.string().pipe(z.coerce.date())".into(),
-            TypeKind::Uuid => "z.string().uuid()".into(),
-            TypeKind::BoolString => "z.enum([\"true\", \"false\"])".into(),
-            TypeKind::IntegerString => "z.string().regex(/^-?\\d+$/)".into(),
-            k if k.is_transformed_string_type_kind() => "z.string()".into(),
-            kind => return type_not_supported(kind),
-        };
 
-        if required {
-            return Ok(sl![matched]);
-        }
-
-        Ok(matched)
+            Ok(matched)
+        })
     }
 
     /// `underlyingTypeFor(t)`: the TypeScript type of `t`, used to annotate
@@ -333,38 +348,41 @@ impl<'a> TypeScriptZodRenderer<'a> {
     /// `sourceFor` is shaped by ts/flow-specific options like
     /// `preferConstValues` and `declareUnions` that don't exist here.
     fn underlying_type_for(&self, t: TypeRef) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            return Ok(self.name_for_named_type(t)?.into());
-        }
-
-        Ok(match kind {
-            TypeKind::Any => "any".into(),
-            TypeKind::Null => "null".into(),
-            TypeKind::Bool => "boolean".into(),
-            TypeKind::Integer | TypeKind::Double => "number".into(),
-            TypeKind::String => "string".into(),
-            TypeKind::Array => sl!["Array<", self.underlying_type_for(ty.items()?)?, ">"],
-            TypeKind::Map => sl![
-                "Record<string, ",
-                self.underlying_type_for(ty.map_values()?)?,
-                ">"
-            ],
-            TypeKind::Union => {
-                let mut parts: Vec<Source> = Vec::new();
-                for (i, c) in graph.children(t)?.into_iter().enumerate() {
-                    if i > 0 {
-                        parts.push(" | ".into());
-                    }
-                    parts.push(self.underlying_type_for(c)?);
-                }
-                Source::Sequence(parts)
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                return Ok(self.name_for_named_type(t)?.into());
             }
-            TypeKind::DateTime => "Date".into(),
-            k if k.is_transformed_string_type_kind() => "string".into(),
-            kind => return type_not_supported(kind),
+
+            Ok(match kind {
+                TypeKind::Any => "any".into(),
+                TypeKind::Null => "null".into(),
+                TypeKind::Bool => "boolean".into(),
+                TypeKind::Integer | TypeKind::Double => "number".into(),
+                TypeKind::String => "string".into(),
+                TypeKind::Array => sl!["Array<", self.underlying_type_for(ty.items()?)?, ">"],
+                TypeKind::Map => sl![
+                    "Record<string, ",
+                    self.underlying_type_for(ty.map_values()?)?,
+                    ">"
+                ],
+                TypeKind::Union => {
+                    let mut parts: Vec<Source> = Vec::new();
+                    for (i, c) in graph.children(t)?.into_iter().enumerate() {
+                        if i > 0 {
+                            parts.push(" | ".into());
+                        }
+                        parts.push(self.underlying_type_for(c)?);
+                    }
+                    Source::Sequence(parts)
+                }
+                TypeKind::DateTime => "Date".into(),
+                k if k.is_transformed_string_type_kind() => "string".into(),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
