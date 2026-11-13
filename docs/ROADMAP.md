@@ -80,16 +80,16 @@ same files:
 GraphQL (`quicktype-graphql-input`), Postman collections, URL sources and
 `--graphql-introspect`.
 
-## Deferred — TypeScript input
+## Phase 5b — TypeScript input (via the TypeScript 7 native compiler)
 
-`--src-lang typescript` (TypeScript type definitions as an *input*) is out of
-scope for now: it is a niche feature, and reproducing it needs a real
-TypeScript type checker. The native CLI reports it as unsupported. If it is
-wanted later, the route is the TypeScript 7 native compiler's type-checker
-API (MessagePack over stdio to `tsc`, no Node) plus a port of
-`typescript-json-schema`, with parity proven against recorded TS-input
-cases. (TypeScript as an *output* language is unaffected: it is just another
-renderer.)
+`--src-lang typescript` needs a real type checker. Route: drive the
+TypeScript 7 native compiler's type-checker API (MessagePack over stdio to
+`tsc`, no Node) from a `quicktype-typescript-input` crate, plus a port of
+the `typescript-json-schema` subset quicktype uses; the resulting JSON
+Schema enters the normal pipeline. Parity with the reference (which runs
+`typescript-json-schema` on TS 5.9.3) is proven against recorded TS-input
+cases. Feasibility spike: `docs/research/07-typescript-input.md`.
+(TypeScript as an *output* language is just another renderer.)
 
 ## Phase 6 — JavaScript API and distribution
 
