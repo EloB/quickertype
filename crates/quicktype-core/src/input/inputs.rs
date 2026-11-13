@@ -19,6 +19,7 @@
 use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
+use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
 
@@ -380,7 +381,9 @@ pub struct CompressedTopLevel {
 /// ```
 #[derive(Debug)]
 pub struct JsonInput {
-    compressed_json: CompressedJson,
+    /// Shared with other inputs only when made with
+    /// [`from_shared`](Self::from_shared).
+    compressed_json: Rc<CompressedJson>,
     top_levels: IndexMap<String, JsonTopLevel>,
 }
 
@@ -388,9 +391,46 @@ impl JsonInput {
     /// `new JSONInput(compressedJSON)`.
     pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
-            compressed_json,
+            compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::new(),
         }
+    }
+
+    /// A JSON input over samples read already, into a compressed form
+    /// that other inputs may share: the WebAssembly engine reads the
+    /// samples of a JavaScript `JSONInput` as they are added and keeps them
+    /// for every run that uses the input. `top_levels` are its
+    /// `_topLevels`, the samples encoded as in TypeScript; they cannot be
+    /// strings (whose index in TypeScript's string table this compressed
+    /// form does not know). The input cannot take more samples while the
+    /// compressed form is shared.
+    pub fn from_shared(
+        compressed_json: Rc<CompressedJson>,
+        top_levels: Vec<CompressedTopLevel>,
+    ) -> Result<Self> {
+        let (objects, arrays) = compressed_json.counts();
+        let mut input = JsonInput {
+            compressed_json,
+            top_levels: IndexMap::new(),
+        };
+        for top_level in top_levels {
+            let values = top_level
+                .samples
+                .iter()
+                .map(
+                    |&v| match input.compressed_json.decode_value(v, objects, arrays)? {
+                        Value::InternedString(_)
+                        | Value::StringFormat(_)
+                        | Value::TransformedString(_) => {
+                            panic("A shared JSON sample cannot be an interned string")
+                        }
+                        value => Ok(value),
+                    },
+                )
+                .collect::<Result<Vec<Value>>>()?;
+            input.add_samples(&top_level.name, values, top_level.description.as_deref());
+        }
+        Ok(input)
     }
 
     /// A JSON input from the tables and top-levels a JavaScript
@@ -475,9 +515,12 @@ impl JsonInput {
                 vec![("name", name.into())],
             );
         }
+        let Some(compressed_json) = Rc::get_mut(&mut self.compressed_json) else {
+            return panic("Samples cannot be added to a JSON input whose samples are shared");
+        };
         let mut values = Vec::with_capacity(samples.len());
         for sample in samples {
-            match self.compressed_json.parse_sample(sample) {
+            match compressed_json.parse_sample(sample) {
                 Ok(value) => values.push(value),
                 Err(ParseError::Read(e)) => return Err(e),
                 Err(e) => return Err(message_parse_error(&name, description.as_deref(), &e)),

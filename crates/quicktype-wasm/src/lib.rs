@@ -48,6 +48,7 @@
 
 pub mod assemble;
 pub mod js;
+pub mod samples;
 pub mod wire;
 
 use std::cell::{Cell, RefCell};
