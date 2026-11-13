@@ -105,7 +105,7 @@ impl TargetLanguage for KotlinTargetLanguage {
         given_output_filename: &str,
         alphabetize_properties: bool,
     ) -> crate::messages::Result<crate::renderer::RenderResult> {
-        use super::kotlin_renderer::{Framework, KotlinOptions, KotlinPlainRenderer};
+        use super::kotlin_renderer::{KotlinOptions, KotlinPlainRenderer};
         use crate::convenience_renderer::render_with;
 
         let options = KotlinOptions::parse(renderer_options)?;
@@ -140,4 +140,15 @@ impl TargetLanguage for KotlinTargetLanguage {
             ),
         }
     }
+}
+
+/// TS `kotlinOptions.framework` values: the serialization framework.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Framework {
+    /// `"jackson"` (the default).
+    Jackson,
+    /// `"klaxon"`.
+    Klaxon,
+    /// `"kotlinx"`: kotlinx.serialization.
+    KotlinX,
 }

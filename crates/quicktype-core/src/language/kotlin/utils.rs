@@ -5,6 +5,7 @@
 //! which unions try their members.
 
 use crate::date_time::{Cursor, DateTimeRecognizer, default_is_date, parse_date};
+use crate::source::Source;
 use crate::support::strings::{
     all_lower_word_style, all_upper_word_style, combine_words, escape_non_printable_mapper,
     first_upper_word_style, int_to_hex, is_digit, is_letter_or_underscore, is_numeric,
@@ -68,6 +69,24 @@ fn unicode_escape(code_point: u32) -> String {
 pub fn string_escape(s: &str) -> String {
     utf16_concat_map(s, escape_non_printable_mapper(is_printable, unicode_escape))
         .replace('$', "\\$")
+}
+
+/// `arrayIntercalate(separator, items)` (collection-utils): the items with
+/// `separator` between them.
+pub fn array_intercalate(separator: &str, items: Vec<Source>) -> Source {
+    let mut result = Vec::with_capacity(items.len() * 2);
+    for (i, item) in items.into_iter().enumerate() {
+        if i > 0 {
+            result.push(separator.into());
+        }
+        result.push(item);
+    }
+    Source::Sequence(result)
+}
+
+/// `${n}`: a constraint bound as JavaScript prints it.
+pub fn js_number(n: f64) -> String {
+    quicktype_js_compat::number::to_string(n)
 }
 
 /// `unionMemberMatchPriority(t)`: when several union members are guarded

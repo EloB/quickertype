@@ -15,11 +15,10 @@ use crate::support::support::{must_not_happen, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::nullable_from_union;
 
-use super::kotlin_jackson_renderer::{intercalate, js_number};
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{string_escape, union_member_match_priority};
+use super::utils::{array_intercalate, js_number, string_escape, union_member_match_priority};
 
 /// TS `KotlinKlaxonRenderer`.
 pub struct KotlinKlaxonRenderer<'a> {
@@ -43,8 +42,8 @@ impl<'a> KotlinKlaxonRenderer<'a> {
         options: KotlinOptions,
     ) -> Self {
         KotlinKlaxonRenderer {
+            kotlin: KotlinState::new(options, render_context.type_graph),
             core: ConvenienceRendererCore::new(target_language, render_context),
-            kotlin: KotlinState::new(options),
         }
     }
 
@@ -209,7 +208,7 @@ impl<'a> KotlinKlaxonRenderer<'a> {
         Ok(if properties.is_empty() {
             None
         } else {
-            Some(sl!["@Json(", intercalate(", ", properties), ")"])
+            Some(sl!["@Json(", array_intercalate(", ", properties), ")"])
         })
     }
 
@@ -330,6 +329,9 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
 
         self.emit_line("import com.beust.klaxon.*");
 
+        // TS computes these in both KotlinJacksonRenderer.emitHeader and
+        // KotlinKlaxonRenderer.emitHeader (not in KotlinRenderer); the port
+        // keeps both copies, each mirroring its TypeScript.
         let graph = self.type_graph();
         let mut has_unions = false;
         let mut has_empty_objects = false;
@@ -746,6 +748,10 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                     " = when (jv.inside) {"
                 ]);
                 r.indent(|r| {
+                    // TS duplicates this grouping in KotlinJacksonRenderer (it is not in
+                    // KotlinRenderer), so the port keeps both copies, each
+                    // mirroring its TypeScript.
+                    //
                     // Members whose JSON representations share a value type
                     // (several transformed string types, or a transformed
                     // string type and an enum, are all strings) must share a

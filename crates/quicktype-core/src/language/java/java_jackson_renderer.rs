@@ -12,17 +12,20 @@ use crate::ty::type_utils::{
     NullRemovalSort, find_member, nullable_from_union, remove_null_from_union,
 };
 
-use super::date_time_provider::DateTimeProviderKind;
 use super::java_renderer::{
     JavaOptions, JavaRenderer, JavaState, UnionField, base_emit_class_attributes,
     base_imports_for_type, java_hooks,
 };
+use super::language::DateTimeProviderKind;
 use super::utils::string_escape;
 
 /// TS `JacksonRenderer`.
 pub struct JacksonRenderer<'a> {
     core: ConvenienceRendererCore<'a>,
     java: JavaState,
+    /// Whether the graph has any `integer` type (computed once per
+    /// render).
+    have_integers: bool,
 }
 
 impl std::fmt::Debug for JacksonRenderer<'_> {
@@ -40,9 +43,15 @@ impl<'a> JacksonRenderer<'a> {
         render_context: RenderContext<'a>,
         options: JavaOptions,
     ) -> Self {
+        let have_integers = render_context
+            .type_graph
+            .types()
+            .iter()
+            .any(|t| t.kind() == TypeKind::Integer);
         JacksonRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             java: JavaState::new(options),
+            have_integers,
         }
     }
 
@@ -56,14 +65,6 @@ impl<'a> JacksonRenderer<'a> {
             ]);
         }
         Ok(sl![self.java_type_without_generics(false, t)?, ".class"])
-    }
-
-    /// Whether the graph has any `integer` type.
-    fn have_integers(&self) -> bool {
-        self.type_graph()
-            .types()
-            .iter()
-            .any(|t| t.kind() == TypeKind::Integer)
     }
 
     /// One `module.addDeserializer(...)` block of
@@ -275,7 +276,7 @@ impl<'a> JacksonRenderer<'a> {
                             r.emit_line(
                                 "mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);",
                             );
-                            if r.have_integers() {
+                            if r.have_integers {
                                 r.emit_line(
                                     "mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);",
                                 );

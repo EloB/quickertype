@@ -140,3 +140,13 @@ impl TargetLanguage for JavaTargetLanguage {
         )
     }
 }
+
+/// TS `javaOptions.dateTimeProvider` values: which date-time API the
+/// generated code uses.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DateTimeProviderKind {
+    /// `"java8"`: `java.time` (TS `Java8DateTimeProvider`).
+    Java8,
+    /// `"legacy"`: `java.util.Date` (TS `JavaLegacyDateTimeProvider`).
+    Legacy,
+}

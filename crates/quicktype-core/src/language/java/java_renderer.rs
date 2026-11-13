@@ -26,10 +26,10 @@ use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
-use super::date_time_provider::{DateTimeProviderKind, JavaDateTimeProvider};
+use super::date_time_provider::JavaDateTimeProvider;
 use super::language::{
-    ACRONYM_STYLE, DATE_TIME_PROVIDER, JUST_TYPES, LOMBOK, LOMBOK_COPY_ANNOTATIONS, PACKAGE_NAME,
-    USE_LIST,
+    ACRONYM_STYLE, DATE_TIME_PROVIDER, DateTimeProviderKind, JUST_TYPES, LOMBOK,
+    LOMBOK_COPY_ANNOTATIONS, PACKAGE_NAME, USE_LIST,
 };
 use super::utils::{java_name_style, string_escape};
 
@@ -159,13 +159,8 @@ pub fn base_imports_for_type<'a, R: JavaRenderer<'a>>(r: &R, t: TypeRef) -> Resu
 /// of each import.
 fn sorted_unique(mut imports: Vec<String>) -> Vec<String> {
     sort_strings(&mut imports);
-    let mut unique: Vec<String> = Vec::with_capacity(imports.len());
-    for import in imports {
-        if !unique.contains(&import) {
-            unique.push(import);
-        }
-    }
-    unique
+    imports.dedup();
+    imports
 }
 
 /// The methods of TS `JavaRenderer` that are not `ConvenienceRenderer`

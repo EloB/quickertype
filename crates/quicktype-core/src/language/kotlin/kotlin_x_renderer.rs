@@ -79,8 +79,8 @@ impl<'a> KotlinXRenderer<'a> {
         options: KotlinOptions,
     ) -> Self {
         KotlinXRenderer {
+            kotlin: KotlinState::new(options, render_context.type_graph),
             core: ConvenienceRendererCore::new(target_language, render_context),
-            kotlin: KotlinState::new(options),
         }
     }
 

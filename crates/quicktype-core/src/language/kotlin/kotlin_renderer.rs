@@ -23,21 +23,11 @@ use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::AcronymStyleOptions;
 use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
+use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
-use super::language::{ACRONYM_STYLE, FRAMEWORK, JUST_TYPES, PACKAGE_NAME};
+use super::language::{ACRONYM_STYLE, FRAMEWORK, Framework, JUST_TYPES, PACKAGE_NAME};
 use super::utils::string_escape;
-
-/// The `framework` option.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Framework {
-    /// `"jackson"` (the default).
-    Jackson,
-    /// `"klaxon"`.
-    Klaxon,
-    /// `"kotlinx"`: kotlinx.serialization.
-    KotlinX,
-}
 
 /// The option values of the Kotlin renderers (TS
 /// `OptionValues<typeof kotlinOptions>`).
@@ -74,17 +64,38 @@ impl KotlinOptions {
     }
 }
 
-/// The fields of TS `KotlinRenderer`.
+/// The fields of TS `KotlinRenderer`, and which `java.time` types the
+/// graph has (`haveTransformedStringType`, computed once per render).
 #[derive(Debug)]
 pub struct KotlinState {
     /// `_kotlinOptions`.
     pub options: KotlinOptions,
+    uses_date_time: bool,
+    uses_date: bool,
+    uses_time: bool,
 }
 
 impl KotlinState {
-    /// The constructor of TS `KotlinRenderer`.
-    pub fn new(options: KotlinOptions) -> Self {
-        KotlinState { options }
+    /// The constructor of TS `KotlinRenderer`, for a render of `graph`.
+    pub fn new(options: KotlinOptions, graph: &TypeGraph) -> Self {
+        let has = |kind: TypeKind| graph.types().iter().any(|t| t.kind() == kind);
+        KotlinState {
+            options,
+            uses_date_time: has(TypeKind::DateTime),
+            uses_date: has(TypeKind::Date),
+            uses_time: has(TypeKind::Time),
+        }
+    }
+
+    /// `haveTransformedStringType(kind)` for `date-time`, `date` and
+    /// `time`; false for any other kind.
+    pub fn have_transformed_string_type(&self, kind: TypeKind) -> bool {
+        match kind {
+            TypeKind::DateTime => self.uses_date_time,
+            TypeKind::Date => self.uses_date,
+            TypeKind::Time => self.uses_time,
+            _ => false,
+        }
     }
 }
 
@@ -335,7 +346,7 @@ pub trait KotlinRenderer<'a>: ConvenienceRenderer<'a> {
     /// `haveTransformedStringType(kind)`: whether the graph has a `date`,
     /// `time` or `date-time` type.
     fn have_transformed_string_type(&self, kind: TypeKind) -> bool {
-        self.type_graph().types().iter().any(|t| t.kind() == kind)
+        self.kotlin().have_transformed_string_type(kind)
     }
 
     // ---- Header -----------------------------------------------------------------
@@ -767,8 +778,8 @@ impl<'a> KotlinPlainRenderer<'a> {
         options: KotlinOptions,
     ) -> Self {
         KotlinPlainRenderer {
+            kotlin: KotlinState::new(options, render_context.type_graph),
             core: ConvenienceRendererCore::new(target_language, render_context),
-            kotlin: KotlinState::new(options),
         }
     }
 }

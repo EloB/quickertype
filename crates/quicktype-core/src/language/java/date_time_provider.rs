@@ -8,16 +8,7 @@
 use crate::convenience_renderer::prelude::*;
 
 use super::java_renderer::JavaRenderer;
-
-/// Which date-time API the generated code uses (the `datetime-provider`
-/// option).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DateTimeProviderKind {
-    /// `"java8"`: `java.time` (TS `Java8DateTimeProvider`).
-    Java8,
-    /// `"legacy"`: `java.util.Date` (TS `JavaLegacyDateTimeProvider`).
-    Legacy,
-}
+use super::language::DateTimeProviderKind;
 
 /// `JavaDateTimeProvider`: the date-time helpers of one render.
 #[derive(Clone, Debug, PartialEq, Eq)]

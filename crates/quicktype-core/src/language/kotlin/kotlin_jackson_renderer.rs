@@ -5,7 +5,6 @@
 //! `java.time` types. It is the default Kotlin renderer.
 
 use indexmap::IndexSet;
-use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
@@ -20,7 +19,7 @@ use crate::ty::type_utils::{is_nullable, nullable_from_union};
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{string_escape, union_member_match_priority};
+use super::utils::{array_intercalate, js_number, string_escape, union_member_match_priority};
 
 /// TS `KotlinJacksonRenderer`.
 pub struct KotlinJacksonRenderer<'a> {
@@ -36,19 +35,6 @@ impl std::fmt::Debug for KotlinJacksonRenderer<'_> {
     }
 }
 
-/// `arrayIntercalate(separator, items)`: the items with `separator`
-/// between them.
-pub(super) fn intercalate(separator: &str, items: Vec<Source>) -> Source {
-    let mut result = Vec::with_capacity(items.len() * 2);
-    for (i, item) in items.into_iter().enumerate() {
-        if i > 0 {
-            result.push(separator.into());
-        }
-        result.push(item);
-    }
-    Source::Sequence(result)
-}
-
 /// `/^[a-z][A-Z]/.test(s)`.
 fn starts_lower_then_upper(s: &str) -> bool {
     let mut units = s.encode_utf16();
@@ -56,11 +42,6 @@ fn starts_lower_then_upper(s: &str) -> bool {
         u.is_some_and(|u| u < 128 && range.contains(&(u as u8)))
     };
     is(units.next(), b'a'..=b'z') && is(units.next(), b'A'..=b'Z')
-}
-
-/// The `${n}` of a constraint bound.
-pub(super) fn js_number(n: f64) -> String {
-    number::to_string(n)
 }
 
 impl<'a> KotlinJacksonRenderer<'a> {
@@ -71,8 +52,8 @@ impl<'a> KotlinJacksonRenderer<'a> {
         options: KotlinOptions,
     ) -> Self {
         KotlinJacksonRenderer {
+            kotlin: KotlinState::new(options, render_context.type_graph),
             core: ConvenienceRendererCore::new(target_language, render_context),
-            kotlin: KotlinState::new(options),
         }
     }
 
@@ -131,12 +112,12 @@ impl<'a> KotlinJacksonRenderer<'a> {
         if !property_opts.is_empty() {
             properties.push(sl![
                 "@get:JsonProperty(",
-                intercalate(", ", property_opts.clone()),
+                array_intercalate(", ", property_opts.clone()),
                 ")"
             ]);
             properties.push(sl![
                 "@field:JsonProperty(",
-                intercalate(", ", property_opts),
+                array_intercalate(", ", property_opts),
                 ")"
             ]);
         }
@@ -243,6 +224,9 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.module.kotlin.*",
         )?;
 
+        // TS computes these in both KotlinJacksonRenderer.emitHeader and
+        // KotlinKlaxonRenderer.emitHeader (not in KotlinRenderer); the port
+        // keeps both copies, each mirroring its TypeScript.
         let graph = self.type_graph();
         let named_types = graph.all_named_types()?;
         let mut has_unions = false;
@@ -578,6 +562,10 @@ import com.fasterxml.jackson.module.kotlin.*",
                     " = when (jn) {"
                 ]);
                 r.indent(|r| {
+                    // TS duplicates this grouping in KotlinKlaxonRenderer (it is not in
+                    // KotlinRenderer), so the port keeps both copies, each
+                    // mirroring its TypeScript.
+                    //
                     // Members whose JSON representations share a node type
                     // (several transformed string types, or a transformed
                     // string type and an enum, are all TextNode) must share
