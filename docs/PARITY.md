@@ -131,6 +131,7 @@ semantics were verified.
 | V8 `Array.prototype.sort` | port of `array-sort.tq` (`quicktype_js_compat::sort`) | 210 seeded comparator runs (consistent, fully inconsistent, noisy, run-shaped, NaN) up to 2,000 elements, 41 mixed number/string `<` tables and 60 default string sorts compared to Node 24 |
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
 | `urijs` 1.19.11 (with its bundled punycode.js `toASCII` and `IPv6.best`), `encodeURIComponent`/`decodeURIComponent` | hand port of the used subset (`quicktype_js_compat::uri`) | `xtask/core-json-schema-input/gen-uri-vectors.mjs`: 1,411 URIs (curated edge cases, every `$ref`/`$id` and a sample of the URL strings in `tests/inputs`, seeded fuzz) through parse, every accessor, `clone`, `normalize`, `URI.decode`, `absoluteTo` against 8 bases and the setters (33,703 checks), 381 `equals` pairs and 321 strings through the component coders, all identical to Node 24 |
+| `yaml` 2.9.0 `YAML.parse` (default options) | `saphyr-parser` 0.3 (YAML 1.2 events) plus a port of `yaml`'s composer and `toJS` (`quicktype_js_compat::yaml`): core-schema tag resolution in `yaml`'s order, unique keys by `===`, key stringification, JS object key order, alias expansion with `maxAliasCount` 100, multiple documents rejected | `xtask/core-json-schema-input/gen-yaml-vectors.mjs`: 764 committed cases (218 curated, every `tests/inputs` file that `JSON.parse` rejects, seeded mutations of JSON inputs) identical to Node, including key order, `-0`, `NaN` and `Infinity`; a 6,182-case run differs only on 12 malformed inputs (see Known gaps) |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 
 ## Known gaps
@@ -163,6 +164,18 @@ the others name the fix they need.
   trace on stderr and exit code 1. The Rust CLI prints
   `Error: cannot write to <stream>: <error>.` and exits 1. (EPIPE is exact:
   exit 0, no output.)
+- **YAML.** `quicktype_js_compat::yaml` reports `saphyr-parser`'s error
+  messages, not `yaml`'s (they only surface through `parseJSON` for
+  Postman, GraphQL-schema and URL-grammar files; JSON Schema fetch errors
+  are swallowed), does not print `yaml`'s warnings (Node writes them to
+  stderr with a process id), ignores `%YAML 1.1` (which switches `yaml` to
+  its YAML 1.1 schema), treats the YAML 1.1 tags `!!binary`,
+  `!!timestamp`, `!!set`, `!!omap` and `!!pairs` as unknown tags, rejects
+  recursive aliases and nesting deeper than 1,000, and stringifies
+  collection-valued keys approximately. On malformed input the lexers
+  disagree in a few corner cases: a tag or anchor directly followed by a
+  quoted scalar or collection (`!"x"`, `![…]`), `?`/`:` directly before a
+  flow collection inside a flow sequence, and `{?}`.
 - **chalk-template features quicktype never uses.** Style arguments and hex
   colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
   exit 2 as not implemented. Style names that are other properties of the

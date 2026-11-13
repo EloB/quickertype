@@ -22,3 +22,4 @@ pub mod uri;
 pub mod utf16;
 pub mod whitespace;
 pub mod wordwrap;
+pub mod yaml;

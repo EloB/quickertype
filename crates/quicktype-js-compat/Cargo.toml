@@ -15,6 +15,7 @@ name = "quicktype_js_compat"
 indexmap.workspace = true
 regex.workspace = true
 ryu.workspace = true
+saphyr-parser.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
