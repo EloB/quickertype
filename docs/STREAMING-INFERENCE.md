@@ -403,6 +403,17 @@ from exactly 1,000 levels on.
 - `cargo test` checks 3,000 seeds, each with five graphs and a whole
   run.
 
+Results when this landed: `cargo xtask streaming-fuzz` over seeds 0 to
+1,999,999 (two runs of a million, the second after merging main) found 0
+differences in 4,000,000 graphs and 199,842 whole runs (15,871 of them
+failed identically, mostly `$ref`s that do not resolve; 158 skipped for
+a `$ref` cycle through a union, below), with 318,693 sources failing
+identically (broken samples). `cargo xtask diff` found our CLI identical
+to the TypeScript CLI on all 2,000 dumped documents (20 groups of 100:
+Rust, TypeScript, Go, C#, Python, Java, Swift and Kotlin with the default
+options, each option set above, `--no-ignore-json-refs`, Elm) and on 50
+directories of three documents (one top-level, three samples).
+
 Two kinds of whole run are left out, both for problems after inference
 that are the same on both paths. A case with a sample nested near the
 depth limit runs with `--no-combine-classes` (combining classes compares
