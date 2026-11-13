@@ -35,7 +35,9 @@ function truncate(value) {
 async function runSeed(seed) {
     const kase = generateCase(seed, definitions, { languages: config.languages, src: config.src });
     const results = [];
-    for (const mode of modesFor(seed, kase, config)) {
+    const modes = modesFor(seed, kase, config);
+    for (let m = 0; m < modes.length; m++) {
+        const mode = modes[m];
         let r;
         let checked = kase;
         let checkedMode = mode;
@@ -52,6 +54,9 @@ async function runSeed(seed) {
         }
 
         results.push({ mode, status: r.status, engine: r.engine, detail: r.detail });
+        // The engine ran out of V8's stack and TypeScript redid the run: check
+        // the native port on the same input through the CLI.
+        if (r.engine === "rerun-stack" && mode !== "chain" && !modes.includes("cli") && config.modes.includes("cli")) modes.push("cli");
         if (r.status === "diff") {
             // A chained case is saved as the schema case it became (mode api).
             const file = path.join(config.outDir, `${seed}-${mode}.json`);
