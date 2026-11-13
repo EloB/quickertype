@@ -35,8 +35,11 @@ publish-jobs = ["homebrew", "npm", "./publish-crates", "./publish-npm-core"]
 # The custom publish jobs check the repository out and get an OIDC token
 # (crates.io trusted publishing, npm provenance)
 github-custom-job-permissions = { "publish-crates" = { contents = "read", id-token = "write" }, "publish-npm-core" = { contents = "read", id-token = "write" } }
-# Build and upload every artifact on pull requests, without releasing
-pr-run-mode = "upload"
+# On pull requests, only run `dist plan` (CI's `dist` job does too): the
+# six targets and the MSI take about 13 minutes. For a full release build
+# without releasing, a branch can set "upload" and run `dist generate`
+# (docs/RELEASING.md, "Dry runs").
+pr-run-mode = "plan"
 # Build with `cargo build --package quickertype` instead of `--workspace`:
 # the same build as `cargo build --release -p quickertype` (no WASM
 # bindings or xtask, no features unified from other members)

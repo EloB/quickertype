@@ -83,7 +83,12 @@ Targets (`targets` in `dist-workspace.toml`):
 | `x86_64-pc-windows-msvc` | Windows Server 2022 | also the MSI |
 
 A version with a prerelease suffix (`v0.2.0-rc.1`) makes a GitHub
-prerelease and skips Homebrew, npm and crates.io.
+prerelease and nothing else: release.yml skips every publish job for it
+(dist's `publish-prereleases` is off), Homebrew, both npm packages and
+crates.io alike. Turning `publish-prereleases` on would publish a
+prerelease as `latest` on npm (dist's `publish-npm` job sets no dist-tag)
+and as the Homebrew formula, so it stays off; `publish-npm-core.yml`
+publishes as `latest` only.
 
 ## The `quicktype` name
 
@@ -198,8 +203,11 @@ repository that change it.
 
 ## Cutting a release
 
-1. Start from a green `main`: CI, the Release workflow's pull-request
-   builds and the publish dry runs (below) pass.
+1. Start from a green `main`: CI, the Release workflow's plan and the
+   publish dry runs (below) pass. If anything since the last release
+   changed how the CLI is built or packaged (dist-workspace.toml, the
+   targets, `[profile.release]`, the dist version), get a
+   [full release build](#a-full-release-build-without-releasing) first.
 2. On a branch, set the new version in `[workspace.package]` **and** in the
    four path dependencies of `[workspace.dependencies]` in `Cargo.toml`
    (`version = "=X.Y.Z"`), run `cargo build` to update `Cargo.lock`, and
@@ -252,22 +260,21 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 
 ## Dry runs
 
-- **Every pull request** runs:
-  - the Release workflow in upload mode (`pr-run-mode = "upload"`): `plan`,
-    all `build-local-artifacts` jobs (the MSI included) and
-    `build-global-artifacts`, without `host`, the publish jobs or
-    `announce`. The artifacts are attached to the run:
-
-    ```sh
-    gh run list --workflow Release --branch <branch> --limit 1
-    gh run download <run-id> --name artifacts-build-local-aarch64-apple-darwin
-    gh run download <run-id> --name artifacts-build-global   # installers, formula, npm package
-    ```
-
-  - `publish-crates.yml` as `cargo publish --dry-run` of all five crates
-    (each compiled from its `.crate`, as crates.io would);
-  - `publish-npm-core.yml` up to `npm publish --dry-run` (build, tests,
-    `npm pack --dry-run`).
+- **Pull requests** run:
+  - the Release workflow in plan mode (`pr-run-mode = "plan"` in
+    dist-workspace.toml): only `plan`, which checks the config and lists
+    every artifact a release would build. The builds themselves (six
+    targets and the MSI, about 13 minutes) run only for a tag, or on demand
+    ([below](#a-full-release-build-without-releasing));
+  - `publish-crates.yml`, when the pull request changes what the crates are
+    built or packaged from (`Cargo.toml`, `Cargo.lock`, `crates/`,
+    `README.md`, the toolchain, the workflow): the version checks, then
+    `cargo publish --dry-run` of all five crates (each compiled from its
+    `.crate`, as crates.io would);
+  - `publish-npm-core.yml`, when it changes `npm/quicktype-core`, the
+    engine's sources (`crates/`, `Cargo.toml`, `Cargo.lock`, the toolchain)
+    or the workflow: the version checks, then everything up to
+    `npm publish --dry-run` (build, tests, `npm pack --dry-run`).
 - **Locally**, with dist installed (`cargo install cargo-dist --locked
   --version <cargo-dist-version>`):
 
@@ -282,6 +289,33 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
 
   The MSI needs Windows and the WiX v3 toolset, so only CI builds it.
 - **Secrets:** the [Release preflight](#release-preflight).
+
+### A full release build without releasing
+
+dist 0.34 builds on pull requests only in upload mode (its
+`dispatch-releases` would replace the tag trigger with a manual one, so it
+is not used). To get every archive, installer and the MSI without
+releasing, on a branch with an open pull request:
+
+```sh
+sed -i.bak 's/^pr-run-mode = "plan"/pr-run-mode = "upload"/' dist-workspace.toml && rm dist-workspace.toml.bak
+dist generate        # upload mode also caches builds: release.yml gains a rust-cache step
+git commit -am "ci: full release build (revert before merging)" && git push
+```
+
+The pull request's Release run then has `plan`, every
+`build-local-artifacts` job and `build-global-artifacts`, without `host`,
+the publish jobs or `announce`, and attaches the artifacts:
+
+```sh
+gh run list --workflow Release --branch <branch> --limit 1
+gh run download <run-id> --name artifacts-build-local-aarch64-apple-darwin
+gh run download <run-id> --name artifacts-build-global   # installers, formula, npm package
+```
+
+Revert that commit before merging (`git revert <commit>`), so that `main`
+stays in plan mode; `dist generate --check` passes in both modes as long as
+release.yml is regenerated with the config.
 
 ## Changing the pipeline
 

@@ -34,6 +34,8 @@ jobs:
 
   # The CLI and the tests on the other platforms the release builds for
   # (docs/RELEASING.md). The parity corpus runs on Linux only (`parity`).
+  # The CLI's integration tests build the binary themselves
+  # (`CARGO_BIN_EXE_quicktype`).
   test-platforms:
     name: test (${{ matrix.os }})
     strategy:
@@ -47,7 +49,6 @@ jobs:
         with:
           toolchain: "1.99"
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build -p quickertype
       - run: cargo test --workspace --no-fail-fast
 
   # .github/workflows/release.yml and crates/quicktype-cli/wix/main.wxs are

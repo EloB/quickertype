@@ -6,8 +6,9 @@
 #   order; a version already on crates.io is skipped, so re-running after a
 #   partial failure is safe. Authentication: the CARGO_REGISTRY_TOKEN secret
 #   when it is set, otherwise crates.io trusted publishing (OIDC).
-# - Pull requests: the same packaging as a dry run (`cargo publish --dry-run`
-#   of every crate, each compiled from its .crate as crates.io would).
+# - Pull requests that change what the crates are packaged from: the same
+#   packaging as a dry run (`cargo publish --dry-run` of every crate, each
+#   compiled from its .crate as crates.io would).
 name: Publish crates
 
 on:
@@ -17,6 +18,15 @@ on:
         required: true
         type: string
   pull_request:
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .cargo/**
+      - crates/**
+      # Every crate's readme (`readme.workspace = true`).
+      - README.md
+      - .github/workflows/publish-crates.yml
 
 permissions:
   contents: read
