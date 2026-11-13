@@ -336,6 +336,8 @@ cargo xtask bench --in-process        # + the engine in process vs warm TypeScri
 cargo xtask bench --filter json -n 20 # a subset, more runs
 cargo xtask bench --no-ref            # without the TypeScript CLI
 cargo xtask bench --out report.md     # also write the Markdown table
+cargo xtask bench --corpus --in-process --json site/data/benchmarks.json
+                                      # the playground's numbers, as JSON
 
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
@@ -366,3 +368,11 @@ Notes:
 - The corpus run replays every step of every case in `tests/golden` with
   as many jobs as cores and does not check outputs (`cargo xtask parity`
   does). TypeScript's wall time there is CPU-bound on 12 cores.
+- `--json` writes what the playground's benchmarks page shows
+  (`site/data/benchmarks.json`), which `site/build.mjs` checks first. The
+  commit of a `--bin` or `--baseline` CLI is the HEAD of the work tree
+  whose `target` directory holds it, if it was built after that commit,
+  and null otherwise; `commits.<id>_source` says which. Why a CLI's corpus
+  runs exited unexpectedly is added by hand when the snapshot is made, as
+  `corpus.results.<id>.unexpected_exits_note` (a sentence); without one,
+  the page shows the number as a warning.
