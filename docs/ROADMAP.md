@@ -100,6 +100,11 @@ Cross-cutting items each language package must pick up:
 - One name for the reference checkout's environment variable
   (`QUICKTYPE_REF`, `QUICKTYPE_REFERENCE`, `QUICKTYPE_DIR` today), and a
   recorder for `crates/quicktype-core/tests/data/target_languages.json`.
+- The clippy lints that `rust-version = "1.88"` turns on
+  (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
+  places in 30 files) are allowed in `[workspace.lints.clippy]` until the
+  open branches have merged. Then fix them (`cargo clippy --fix`) and
+  remove the two `allow`s.
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 

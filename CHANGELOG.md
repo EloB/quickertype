@@ -40,8 +40,9 @@ and installers.
   with SHA-256 checksums, shell and PowerShell installers, a Homebrew
   formula (`brew install EloB/tap/quickertype`), an npm package
   (`npm install -g quickertype`), an MSI, and the `quickertype` crate
-  (`cargo install quickertype`). Each of these installs a binary named
-  `quicktype`, which conflicts with the TypeScript quicktype's, see
+  (`cargo install quickertype`, with Rust 1.88 or newer). Each of these
+  installs a binary named `quicktype`, which conflicts with the TypeScript
+  quicktype's, see
   [docs/RELEASING.md](https://github.com/EloB/quickertype/blob/main/docs/RELEASING.md#the-quicktype-name).
 - **The JavaScript API on npm** as
   [`quickertype-core`](https://www.npmjs.com/package/quickertype-core):
