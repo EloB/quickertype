@@ -99,7 +99,14 @@ pub(super) struct StringReaderState {
     serial: u32,
     /// The tape of the last sample, emptied, if it was small.
     spare_nodes: Vec<Node>,
+    /// By position in an object: the string index of the last key read
+    /// there. Objects of one shape (an array of records) have the same key
+    /// at the same position, which is then found without hashing it.
+    key_cache: Vec<u32>,
 }
+
+/// How many positions [`StringReaderState::key_cache`] remembers keys at.
+const KEY_CACHE: usize = 64;
 
 /// Tapes up to this many nodes are kept for the next sample.
 const SPARE_NODES: usize = 1 << 16;
@@ -177,6 +184,8 @@ struct OpenObject {
     /// Whether a key that is not an array index has been seen.
     has_name: bool,
     reordered: bool,
+    /// How many members it has so far.
+    members: usize,
 }
 
 enum Open {
@@ -197,6 +206,31 @@ const STRING_STOP: [bool; 256] = {
     table[b'\\' as usize] = true;
     table
 };
+
+/// `internString(key)` for the key at member position `position`: the key
+/// read last at that position, if it is the same text, else interned (and
+/// remembered there).
+fn intern_key(cjson: &mut CompressedJson, position: usize, key: &str) -> u32 {
+    // "__proto__" is interned anew every time.
+    if key == "__proto__" {
+        return cjson.strings.intern(key);
+    }
+    let cached = cjson.string_reader.key_cache.get(position).copied();
+    if let Some(index) = cached
+        && cjson.strings.get(index as usize) == Some(key)
+    {
+        return index;
+    }
+    let index = cjson.strings.intern(key);
+    let cache = &mut cjson.string_reader.key_cache;
+    if position < KEY_CACHE {
+        if position >= cache.len() {
+            cache.resize(position + 1, u32::MAX);
+        }
+        cache[position] = index;
+    }
+    index
+}
 
 /// Whether a byte of `word` is `"`, `\\` or a control character.
 fn has_string_stop(word: u64) -> bool {
@@ -336,6 +370,7 @@ impl<'t> Recorder<'t> {
                             last_index: None,
                             has_name: false,
                             reordered: false,
+                            members: 0,
                         };
                         self.member_key(cjson, &mut object)?;
                         stack.push(Open::Object(object));
@@ -452,7 +487,8 @@ impl<'t> Recorder<'t> {
 
     /// Interns `key` and notes whether it makes `object` reordered.
     fn check_key(&self, cjson: &mut CompressedJson, object: &mut OpenObject, key: &str) -> u32 {
-        let index = cjson.strings.intern(key);
+        let index = intern_key(cjson, object.members, key);
+        object.members += 1;
         if object.reordered {
             return index;
         }

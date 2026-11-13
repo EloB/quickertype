@@ -225,11 +225,21 @@ fn is_integer_string(s: &str) -> bool {
 
 /// `UUID` (`/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`).
 fn is_uuid(s: &str) -> bool {
-    s.len() == 36
-        && s.bytes().enumerate().all(|(i, b)| match i {
-            8 | 13 | 18 | 23 => b == b'-',
-            _ => b.is_ascii_digit() || (b'a'..=b'f').contains(&b),
-        })
+    let hex = |part: &[u8]| {
+        part.iter()
+            .all(|&b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    };
+    let b = s.as_bytes();
+    b.len() == 36
+        && b[8] == b'-'
+        && b[13] == b'-'
+        && b[18] == b'-'
+        && b[23] == b'-'
+        && hex(&b[..8])
+        && hex(&b[9..13])
+        && hex(&b[14..18])
+        && hex(&b[19..23])
+        && hex(&b[24..])
 }
 
 /// `URI` (`/^(https?|ftp):\/\/[^{}]+$/`).
@@ -246,8 +256,9 @@ pub fn infer_transformed_string_type_kind_for_string(
     s: &str,
     recognizer: &dyn DateTimeRecognizer,
 ) -> Option<TypeKind> {
-    let first = s.chars().next()?;
-    if !"0123456789-abcdefth".contains(first) {
+    // The first character is one of "0123456789-abcdefth" (all ASCII).
+    let &first = s.as_bytes().first()?;
+    if !matches!(first, b'0'..=b'9' | b'-' | b'a'..=b'f' | b't' | b'h') {
         return None;
     }
     if recognizer.is_date(s) {
