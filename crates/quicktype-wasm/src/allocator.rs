@@ -23,6 +23,10 @@
 //! only these show what the engine holds and what an operation needed.
 //! Counting costs about 2% of a run's time, so release builds leave it out.
 
+// A global allocator cannot be written without unsafe code (`GlobalAlloc`
+// is an unsafe trait, and it calls `System`'s unsafe methods): the one
+// module in the workspace that allows it, against the workspace's `deny`
+// (Cargo.toml, [workspace.lints.rust]).
 #![allow(unsafe_code)]
 
 use std::alloc::{GlobalAlloc, Layout, System};
