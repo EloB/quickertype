@@ -178,15 +178,17 @@ It checks that:
   (`git push --dry-run` after the same checkout the release does);
 - `NPM_TOKEN` authenticates (`npm whoami`), that `quickertype` and
   `quickertype-core` are unclaimed or owned by that npm user, that packages
-  with those names pass `npm publish --dry-run`, and, where npm lists the
-  token, that it is not read-only;
+  with those names pass `npm publish --dry-run`, and, from npm's token
+  list (found by its abbreviated form `npm_abcd...wxyz`), that it is not
+  revoked, expired, read-only or stage-only, and that it bypasses 2FA (it
+  warns two weeks before it expires);
 - `CARGO_REGISTRY_TOKEN`, if set, authenticates with crates.io, and that
   the five crate names are unclaimed or owned by the repository owner.
 
 Every missing permission fails with its own message. What it cannot see
-without publishing: whether the npm token bypasses 2FA and which scopes the
-crates.io token has (check both on the registries' websites). It also runs
-on pull requests from this repository that change it.
+without publishing: which scopes and crate pattern the crates.io token has
+(check them on crates.io). It also runs on pull requests from this
+repository that change it.
 
 ## Cutting a release
 

@@ -143,39 +143,70 @@ jobs:
             echo "module.exports = {};" > "$dir/index.js"
             (cd "$dir" && npm publish --dry-run --access public)
           done
-      # `npm publish --dry-run` does not send the token. npm lists the
-      # account's tokens with an abbreviated form and a key (a hash of the
-      # token); find this one by either and check that it may write. Only
-      # non-secret fields are printed.
-      - name: The token is not read-only (npm token list)
+      # `npm publish --dry-run` does not send the token, but npm lists the
+      # account's granular tokens, each abbreviated as `npm_abcd...wxyz`;
+      # find this one by that form and check what publishing needs: not
+      # revoked or expired, write permission, and Bypass 2FA (without it
+      # `npm publish` from CI fails with EOTP). Only those fields are printed.
+      - name: The token may publish (npm token list)
         run: |
           if ! npm token list --json > tokens.json 2> tokens.err; then
-            echo "::warning::npm token list is not available with this token ($(grep -m1 -oE 'code E[0-9A-Z]+' tokens.err || echo 'no error code')), so its write permission cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
+            echo "::warning::npm token list is not available with this token ($(grep -m1 -oE 'code E[0-9A-Z]+' tokens.err || echo 'no error code')), so its permissions cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
             exit 0
           fi
-          sha512=$(printf %s "$NODE_AUTH_TOKEN" | sha512sum | cut -d' ' -f1)
-          sha256=$(printf %s "$NODE_AUTH_TOKEN" | sha256sum | cut -d' ' -f1)
           match=""
           for i in $(seq 0 $(( $(jq length tokens.json) - 1 ))); do
-            key=$(jq -r ".[$i].key // \"\"" tokens.json)
-            abbreviated=$(jq -r ".[$i].token // \"\"" tokens.json | sed 's/[.…]*$//')
-            if [ "$key" = "$sha512" ] || [ "$key" = "$sha256" ] ||
-              { [ ${#abbreviated} -ge 6 ] && [ "${NODE_AUTH_TOKEN#"$abbreviated"}" != "$NODE_AUTH_TOKEN" ]; }; then
+            abbreviated=$(jq -r ".[$i].token // \"\"" tokens.json)
+            prefix=${abbreviated%%...*}
+            suffix=${abbreviated##*...}
+            if [ "$prefix" != "$abbreviated" ] && [ -n "$prefix" ] && [ -n "$suffix" ] &&
+              [ "${NODE_AUTH_TOKEN#"$prefix"}" != "$NODE_AUTH_TOKEN" ] &&
+              [ "${NODE_AUTH_TOKEN%"$suffix"}" != "$NODE_AUTH_TOKEN" ]; then
               match=$i
             fi
           done
           if [ -z "$match" ]; then
             echo "Tokens npm lists (field names; the abbreviated token's shape only):"
-            jq -c 'map({fields: keys, token: ((.token // "") | gsub("[A-Za-z0-9]"; "x")), key_length: ((.key // "") | length)})' tokens.json
-            echo "::warning::NPM_TOKEN is not among the $(jq length tokens.json) tokens npm lists for $NPM_USER, so its write permission cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
+            jq -c 'map({fields: keys, token: ((.token // "") | gsub("[A-Za-z0-9]"; "x"))})' tokens.json
+            echo "::warning::NPM_TOKEN is not among the $(jq length tokens.json) tokens npm lists for $NPM_USER, so its permissions cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
             exit 0
           fi
-          jq "(.[$match] | del(.token, .key))" tokens.json
-          if [ "$(jq -r ".[$match].readonly" tokens.json)" = true ]; then
-            echo "::error::NPM_TOKEN is read-only: create a granular token with Read and write for packages and Bypass 2FA."
-            exit 1
+          token=$(jq ".[$match]" tokens.json)
+          jq '{bypass_2fa, expiry, revoked, readonly, permissions}' <<<"$token"
+          failed=0
+          if [ "$(jq -r '.revoked // false' <<<"$token")" != false ]; then
+            echo "::error::NPM_TOKEN is revoked."
+            failed=1
           fi
-          echo "NPM_TOKEN is not read-only."
+          expiry=$(jq -r '.expiry // empty' <<<"$token")
+          if [ -n "$expiry" ]; then
+            if [ "$(date -d "$expiry" +%s)" -le "$(date +%s)" ]; then
+              echo "::error::NPM_TOKEN expired on $expiry."
+              failed=1
+            elif [ "$(date -d "$expiry" +%s)" -le "$(date -d '+14 days' +%s)" ]; then
+              echo "::warning::NPM_TOKEN expires on $expiry: renew it before releasing after that."
+            else
+              echo "NPM_TOKEN expires on $expiry."
+            fi
+          fi
+          if [ "$(jq -r '.bypass_2fa // false' <<<"$token")" != true ]; then
+            echo "::error::NPM_TOKEN does not bypass 2FA, so npm publish from CI fails with EOTP: create a granular token with Bypass 2FA."
+            failed=1
+          else
+            echo "NPM_TOKEN bypasses 2FA."
+          fi
+          if jq -e '.permissions | tostring | test("stage"; "i")' <<<"$token" > /dev/null; then
+            echo "::error::NPM_TOKEN is a stage-only token, which cannot npm publish: create one with Read and write for packages."
+            failed=1
+          elif [ "$(jq -r '.readonly // false' <<<"$token")" = true ]; then
+            echo "::error::NPM_TOKEN is read-only: create a granular token with Read and write for packages."
+            failed=1
+          elif ! jq -e '.permissions | tostring | test("write"; "i")' <<<"$token" > /dev/null; then
+            echo "::warning::NPM_TOKEN's permissions above do not mention write: check on npmjs.com that it has Read and write (not stage only) for packages."
+          else
+            echo "NPM_TOKEN has write permission."
+          fi
+          exit $failed
 
   # publish-crates.yml publishes with CARGO_REGISTRY_TOKEN when it is set,
   # otherwise with crates.io trusted publishing (which needs each crate to
