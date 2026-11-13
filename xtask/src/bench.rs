@@ -21,7 +21,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::diff::find_reference;
-use crate::parity::{Case, build_cli, find_cases, snapshot};
+use crate::parity::{base_command, build_cli, find_cases, prepare_case, snapshot, step_command};
 
 pub const USAGE: &str = "\
 cargo xtask bench [options]
@@ -532,17 +532,9 @@ fn median(sorted: &[f64]) -> f64 {
 }
 
 fn command(cmd: &[String], args: &[String], work: &Path) -> Command {
-    let mut c = Command::new(&cmd[0]);
-    c.args(&cmd[1..])
-        .args(args)
-        .current_dir(work)
-        .stdin(Stdio::null())
-        .env("TZ", "UTC")
-        .env("NODE_NO_WARNINGS", "1")
-        .env_remove("NODE_OPTIONS")
-        .env_remove("FORCE_COLOR")
-        .env_remove("NO_COLOR");
-    c
+    let mut command = base_command(cmd, work);
+    command.args(args);
+    command
 }
 
 fn run_once(cmd: &[String], args: &[String], work: &Path) -> Result<Duration, String> {
@@ -684,44 +676,19 @@ fn corpus_case(
     case_dir: &Path,
     work: &Path,
 ) -> (Duration, usize, usize) {
-    let Ok(bytes) = fs::read(case_dir.join("case.json")) else {
+    let Ok(case) = prepare_case(case_dir, work) else {
         return (Duration::ZERO, 0, 1);
     };
-    let Ok(case) = serde_json::from_slice::<Case>(&bytes) else {
-        return (Duration::ZERO, 0, 1);
-    };
-    let _ = fs::remove_dir_all(work);
-    if fs::create_dir_all(work).is_err() {
-        return (Duration::ZERO, 0, 1);
-    }
-    for dir in &case.dirs {
-        let _ = fs::create_dir_all(work.join(dir));
-    }
     let mut busy = Duration::ZERO;
     let mut failed = 0;
     for step in &case.steps {
-        let args: Vec<String> = step
-            .args
-            .iter()
-            .map(|a| a.replace("{INPUTS}", inputs))
-            .collect();
-        let stdin = match &step.stdin {
-            Some(path) => match fs::File::open(path.replace("{INPUTS}", inputs)) {
-                Ok(f) => Stdio::from(f),
-                Err(_) => {
-                    failed += 1;
-                    continue;
-                }
-            },
-            None => Stdio::null(),
+        let Ok(mut command) = step_command(cmd, inputs, &case, step, work) else {
+            failed += 1;
+            continue;
         };
-        let mut c = command(cmd, &args, work);
-        c.stdin(stdin)
-            .envs(&case.env)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null());
+        command.stdout(Stdio::null()).stderr(Stdio::null());
         let start = Instant::now();
-        let status = c.status();
+        let status = command.status();
         busy += start.elapsed();
         let expected_ok = step.exit.map_or(!step.expect_failure, |code| code == 0);
         match status {
