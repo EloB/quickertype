@@ -7,6 +7,7 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, RendererOptions,
 };
 use crate::support::integer_range::IntegerRange;
+use crate::support::recursion::guard;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
@@ -61,8 +62,6 @@ pub const PYTHON_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PythonTargetLanguage;
 
-// TODO(renderer): port the hooks PythonTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for PythonTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &PYTHON_LANGUAGE_CONFIG
@@ -104,20 +103,56 @@ impl TargetLanguage for PythonTargetLanguage {
     /// TS `needsTransformerForType`: a union if any member needs one,
     /// otherwise stringified integers and booleans.
     fn needs_transformer_for_type(&self, graph: &TypeGraph, t: TypeRef) -> Result<bool> {
-        let ty = graph.type_at(t)?;
-        if ty.is_union() {
-            for &member in ty.members()? {
-                if self.needs_transformer_for_type(graph, member)? {
-                    return Ok(true);
+        // Recurses into union members; guarded like every recursion over
+        // the type graph (docs/RENDERERS.md).
+        guard(|| {
+            let ty = graph.type_at(t)?;
+            if ty.is_union() {
+                for &member in ty.members()? {
+                    if self.needs_transformer_for_type(graph, member)? {
+                        return Ok(true);
+                    }
                 }
+                return Ok(false);
             }
-            return Ok(false);
-        }
-        Ok(matches!(
-            ty.kind(),
-            TypeKind::IntegerString | TypeKind::BoolString
-        ))
+            Ok(matches!(
+                ty.kind(),
+                TypeKind::IntegerString | TypeKind::BoolString
+            ))
+        })
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: a [`PythonPlainRenderer`](super::python_renderer::PythonPlainRenderer)
+    /// with `just-types`, otherwise a
+    /// [`JsonPythonRenderer`](super::json_python_renderer::JsonPythonRenderer).
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> Result<crate::renderer::RenderResult> {
+        let options = super::python_renderer::PythonOptions::parse(renderer_options)?;
+        if options.just_types {
+            let renderer =
+                super::python_renderer::PythonPlainRenderer::new(self, render_context, options);
+            return crate::convenience_renderer::render_with(
+                renderer,
+                given_output_filename,
+                alphabetize_properties,
+            );
+        }
+
+        let renderer =
+            super::json_python_renderer::JsonPythonRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

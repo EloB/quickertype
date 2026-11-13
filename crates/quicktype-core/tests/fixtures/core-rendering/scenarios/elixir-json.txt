@@ -1,0 +1,11 @@
+# The Elixir renderer on inferred JSON: heterogeneous arrays (unions of
+# classes, arrays and maps), nullable members and a top-level array of
+# classes.
+input json TopLevel [{"mixed": [1, "two", true, null, 1.5, {"nested": "object"}, [1, 2]], "maybe": null, "deep": {"deeper": {"deepest": [[1]]}}, "map": {"a": {"v": 1}, "b": {"v": 2}, "c": {"v": 3}, "d": {"v": 4}, "e": {"v": 5}, "f": {"v": 6}, "g": {"v": 7}, "h": {"v": 8}}}, {"mixed": [], "maybe": "x", "deep": {"deeper": {"deepest": []}}, "map": {}}]
+input json Empty {}
+input json Strings ["a", "b"]
+pipeline {"lang": "elixir", "inferMaps": true}
+
+render elixir {}
+render elixir {"rendererOptions": {"just-types": true}}
+render elixir {"rendererOptions": {"namespace": "A.B"}}

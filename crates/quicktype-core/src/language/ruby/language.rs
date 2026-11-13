@@ -50,9 +50,6 @@ pub const RUBY_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RubyTargetLanguage;
 
-// TODO(renderer): port the hooks RubyTargetLanguage overrides:
-// - makeRenderer
-// - defaultIndentation: "  "
 impl TargetLanguage for RubyTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &RUBY_LANGUAGE_CONFIG
@@ -88,4 +85,28 @@ impl TargetLanguage for RubyTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `defaultIndentation`.
+    fn default_indentation(&self) -> &'static str {
+        "  "
+    }
+
+    /// TS `makeRenderer`: a [`RubyRenderer`](super::ruby_renderer::RubyRenderer).
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::ruby_renderer::RubyOptions::parse(renderer_options)?;
+        let renderer = super::ruby_renderer::RubyRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }
