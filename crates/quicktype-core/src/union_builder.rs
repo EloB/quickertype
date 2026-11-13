@@ -32,8 +32,9 @@ pub trait UnionTypeProvider {
     fn array_data(&self) -> &Self::ArrayData;
     /// `objectData`.
     fn object_data(&self) -> &Self::ObjectData;
-    /// `enumCases`.
-    fn enum_cases(&self) -> &IndexSet<String>;
+    /// `enumCases`: errors where TypeScript's getter panics (intersections
+    /// can't have enums).
+    fn enum_cases(&self) -> Result<&IndexSet<String>>;
     /// `getMemberKinds()`: the member kinds and their attributes, in order.
     fn get_member_kinds(&self) -> Result<IndexMap<TypeKind, TypeAttributes>>;
     /// `lostTypeAttributes`.
@@ -371,8 +372,8 @@ impl<TArray, TObject> UnionTypeProvider for UnionAccumulator<TArray, TObject> {
         &self.object_data
     }
 
-    fn enum_cases(&self) -> &IndexSet<String> {
-        &self.enum_cases
+    fn enum_cases(&self) -> Result<&IndexSet<String>> {
+        Ok(&self.enum_cases)
     }
 
     fn get_member_kinds(&self) -> Result<IndexMap<TypeKind, TypeAttributes>> {
@@ -599,7 +600,7 @@ pub trait UnionBuilder<'g> {
             TypeKind::String => builder.get_string_type(type_attributes, None, forwarding_ref),
             TypeKind::Enum => builder.get_enum_type(
                 type_attributes,
-                type_provider.enum_cases().clone(),
+                type_provider.enum_cases()?.clone(),
                 forwarding_ref,
             ),
             TypeKind::Object => self.make_object(

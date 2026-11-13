@@ -1,0 +1,29 @@
+# FlattenStrings: in a union with a plain string, the other string-like
+# members (enums, transformed strings) merge into the string.
+builder prov
+str s unrestricted n=Str desc=plain
+prim dt date-time n=When
+prim uuid uuid
+enum e a,b n=E
+prim i integer
+union u1 s,dt,e,i n=U1
+union u2 s,uuid n=U2
+union u3 dt,uuid,i n=NoString
+cls top a:u1,b:u2,c:u3 n=Top
+top Top top
+finish printonrewrite
+query named
+flattenstrings debug
+gc
+print
+flattenstrings
+
+# Only restricted strings are an error.
+builder
+str s cases=a:1
+prim dt date-time
+union u s,dt n=U
+cls top u:u n=Top
+top Top top
+finish
+flattenstrings

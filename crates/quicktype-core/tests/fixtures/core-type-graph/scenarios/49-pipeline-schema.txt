@@ -1,0 +1,44 @@
+# Run.processGraph for a JSON-Schema-like graph and Python: remove
+# indirection intersections, the resolve-intersections/flatten-unions loop,
+# replace object type, flatten, infer maps, expand strings (all), flatten,
+# flatten strings, none to any, optional to nullable, fixed point, make
+# transformations, flatten, GC.
+builder prov stm=date,time,date-time,uuid,integer-string,bool-string
+prim i integer
+prim d double
+prim nul null
+prim b bool
+str s unrestricted
+str kind cases=circle:1,square:1 n=Kind
+str when cases=/date-time
+prim is integer-string n=Count
+obj base id:s,kind:kind - n=Base
+obj ext radius?:d,count:is s n=Ext
+inter shape base,ext n=Shape
+union nested shape,nul n=MaybeShape
+uunion multi n=Multi
+members multi i,d,s,when
+union u2 multi,nul,b n=Value
+obj meta {} u2 n=Meta
+arr shapes nested
+cls top shapes:shapes,meta:meta,v:u2,c?:is n=Top
+top Top top
+finish printonrewrite
+rmind
+resolve
+flatten objects
+resolve
+flatten objects
+replaceobj
+flatten
+infermaps conflate
+expand all
+flatten
+flattenstrings
+nonetoany
+opt2null
+fixedpoint
+maketx python
+flatten
+gc
+print

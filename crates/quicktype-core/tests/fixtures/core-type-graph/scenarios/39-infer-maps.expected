@@ -1,0 +1,102 @@
+(forwarding intersections: false)
+
+# infer maps
+reconstituting 15
+reconstituted 15 as 0
+replacing set 5 as 1
+replaced set 5 as 1
+reconstituting 8
+reconstituted 8 as 6
+reconstituting 0
+reconstituted 0 as 3
+reconstituting 14
+reconstituted 14 as 7
+reconstituting 9
+reconstituted 9 as 8
+reconstituting 2
+reconstituted 2 as 5
+replacing set 11 as 9
+replaced set 11 as 9
+replacing set 12 as 12
+replaced set 12 as 12
+reconstituting 13
+reconstituted 13 as 15
+replacing set 7 as 16
+replaced set 7 as 16
+reconstituting 6
+reconstituted 6 as 17
+0: class Top | children 1,6,7,8,9,12,15,16,17 | 15 | given Top ()
+1: map Digits | children 2 | 5 | given Digits ()
+2: union Digits | children 4,3,5 | 5 | given Digits ()
+3: integer Random | 0,7 | given Random ()
+4: bool | 4
+5: string | 2 | unrestricted
+6: class English | children 3 | 8 | given English ()
+7: class Fixed | children 3 | 14 | given Fixed ()
+8: class Mixed | children 5,3 | 9 | given Mixed ()
+9: map Nulls | children 10 | 11 | given Nulls ()
+10: union Nulls | children 3,11 | 10,11 | given Nulls ()
+11: null | 3
+12: map Numbers | children 13 | 12 | given Numbers ()
+13: union Numbers | children 14,3 | 12 | given Numbers ()
+14: double | 1
+15: class One | children 3 | 13 | given One ()
+16: map Random | children 3 | 7 | given Random ()
+17: class Strings | children 5 | 6 | given Strings ()
+
+# infer maps
+(infermaps: unchanged)
+
+# infer maps
+(infermaps: unchanged)
+
+# GC
+0: class Top | children 1,6,7,8,9,12,15,16,17 | 15 | given Top ()
+1: map Digits | children 2 | 5 | given Digits ()
+2: union Digits | children 3,4,5 | 5 | given Digits ()
+3: bool | 4
+4: integer Random | 0,7 | given Random ()
+5: string | 2 | unrestricted
+6: class English | children 4 | 8 | given English ()
+7: class Fixed | children 4 | 14 | given Fixed ()
+8: class Mixed | children 5,4 | 9 | given Mixed ()
+9: map Nulls | children 10 | 11 | given Nulls ()
+10: union Nulls | children 4,11 | 10,11 | given Nulls ()
+11: null | 3
+12: map Numbers | children 13 | 12 | given Numbers ()
+13: union Numbers | children 14,4 | 12 | given Numbers ()
+14: double | 1
+15: class One | children 4 | 13 | given One ()
+16: map Random | children 4 | 7 | given Random ()
+17: class Strings | children 5 | 6 | given Strings ()
+0: class Top | children 1,6,7,8,9,12,15,16,17 | 15 | given Top ()
+1: map Digits | children 2 | 5 | given Digits ()
+2: union Digits | children 3,4,5 | 5 | given Digits ()
+3: bool | 4
+4: integer Random | 0,7 | given Random ()
+5: string | 2 | unrestricted
+6: class English | children 4 | 8 | given English ()
+7: class Fixed | children 4 | 14 | given Fixed ()
+8: class Mixed | children 5,4 | 9 | given Mixed ()
+9: map Nulls | children 10 | 11 | given Nulls ()
+10: union Nulls | children 4,11 | 10,11 | given Nulls ()
+11: null | 3
+12: map Numbers | children 13 | 12 | given Numbers ()
+13: union Numbers | children 14,4 | 12 | given Numbers ()
+14: double | 1
+15: class One | children 4 | 13 | given One ()
+16: map Random | children 4 | 7 | given Random ()
+17: class Strings | children 5 | 6 | given Strings ()
+(forwarding intersections: false)
+reconstituting 3
+reconstituted 3 as 0
+replacing set 2 as 1
+  reconstituting 1
+  reconstituted 1 as 2
+  reconstituting 0
+  reconstituted 0 as 3
+replaced set 2 as 1
+0: class Top | children 1 | given Top ()
+1: map Outer | children 2 | given Outer ()
+2: class outer | children 3 | given Outer,In1,In2 ()
+3: integer

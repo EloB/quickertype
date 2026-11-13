@@ -1,0 +1,22 @@
+(forwarding intersections: false)
+0: union DaySchema | children 1 | given DaySchema ()
+1: enum
+cases 1: Monday,Tuesday,Friday,Sunday
+0: any | children 4,3,1 | transformation
+1: string | children 3,2 | transformation | unrestricted
+2: enum
+3: string | unrestricted
+4: any
+cases 2: Monday,Tuesday,Friday,Sunday
+(forwarding intersections: false)
+(rmind: unchanged)
+(flatten: unchanged)
+(flatten done: true)
+(replaceobj: unchanged)
+(flatten: unchanged)
+(flatten done: true)
+(fixedpoint: unchanged)
+0: class Node | children 1,3 | given Node ()
+1: union Next | children 0,2,3 | given Next ()
+2: null
+3: string | unrestricted

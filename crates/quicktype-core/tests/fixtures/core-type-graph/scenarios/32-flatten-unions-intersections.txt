@@ -1,0 +1,28 @@
+# Unions with intersection members are skipped (done = false), and unions
+# whose members contain intersections are reconstituted as they are and
+# need another pass.
+builder
+prim i integer
+str s unrestricted
+obj a x:i - n=A
+obj b y:s - n=B
+inter x a,b n=X
+union u x,s n=WithIntersection
+union nested u,i n=Nested
+union plain i,s n=Plain
+uunion v n=V
+members v plain,i
+arr av v
+union w av,s n=W
+cls top u:u,n:nested,w:w n=Top
+top Top top
+finish
+flatten debug
+print
+resolve
+print
+flatten
+print
+resolve
+flatten
+print

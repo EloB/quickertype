@@ -83,13 +83,18 @@ pub fn set_operation_members_recursively(
     Ok((members, attributes))
 }
 
-/// The `include` predicate of [`make_groups_to_flatten`].
-pub type MemberSetFilter<'a> = &'a mut dyn FnMut(&IndexSet<TypeRef>) -> bool;
+/// The `include` predicate of [`make_groups_to_flatten`]: whether to group
+/// a member set; an error ends the grouping.
+pub type MemberSetFilter<'a> = &'a mut dyn FnMut(&IndexSet<TypeRef>) -> Result<bool>;
 
 /// `makeGroupsToFlatten(setOperations, include)`: groups the set operations
 /// by their recursive member sets (order-insensitively). A group whose
 /// member set has a single member includes that member first. Groups are
 /// returned in first-seen order.
+///
+/// Member sets `include` rejects are skipped; the first error it returns
+/// ends the grouping, like an exception thrown by the TypeScript predicate
+/// (`FlattenUnions` asserts there are no empty unions).
 pub fn make_groups_to_flatten(
     graph: &TypeGraph,
     set_operations: impl IntoIterator<Item = TypeRef>,
@@ -100,7 +105,7 @@ pub fn make_groups_to_flatten(
         let (members, _) = set_operation_members_recursively(graph, &[u], None)?;
 
         if let Some(include) = include.as_mut()
-            && !include(&members)
+            && !include(&members)?
         {
             continue;
         }
