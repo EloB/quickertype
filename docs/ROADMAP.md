@@ -134,3 +134,8 @@ cases. Feasibility spike: `docs/research/07-typescript-input.md`.
 
 Benchmarks against the TypeScript implementation (startup, small and large
 inputs, the full corpus), profiling, and optimization without changing output.
+
+- [x] `cargo xtask bench` (CLI vs TypeScript CLI, corpus, in process vs
+      warm TypeScript) and the first round of profiling-driven
+      optimizations: see [BENCHMARKS.md](BENCHMARKS.md) (CLI 8–96× faster
+      than TypeScript, the engine 2.4× faster in process).
