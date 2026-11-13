@@ -397,6 +397,7 @@ version = "24.0.0"
 dependencies = [
  "indexmap",
  "regex",
+ "regex-automata",
  "ryu",
  "saphyr-parser",
  "serde_json",

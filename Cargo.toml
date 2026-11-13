@@ -20,6 +20,8 @@ quicktype-js-compat = { path = "crates/quicktype-js-compat" }
 quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
 indexmap = "2"
 regex = "1"
+# The engine under `regex`, used directly for multi-pattern searches.
+regex-automata = { version = "0.4", default-features = false, features = ["std", "meta", "syntax"] }
 ryu = "1"
 saphyr-parser = "0.3.4"
 stacker = "0.1.25"
