@@ -185,8 +185,22 @@ pub struct CompressedJson {
 /// The number of items a block of [`Runs`] or [`Strings`] holds at least.
 const BLOCK: usize = 1 << 16;
 
-/// How many emptied buffers [`CompressedJson`] keeps for reuse.
+/// How many emptied buffers [`CompressedJson`] keeps for reuse while a
+/// sample is read, and the largest capacity (in items) it keeps.
 const SPARE_BUFFERS: usize = 64;
+const SPARE_CAPACITY: usize = 4096;
+
+/// Keeps an emptied buffer for reuse, unless there are enough or it is
+/// large.
+fn keep_spare<T>(spares: &mut Vec<Vec<T>>, spare: Option<Vec<T>>) {
+    if let Some(mut spare) = spare
+        && spares.len() < SPARE_BUFFERS
+        && spare.capacity() <= SPARE_CAPACITY
+    {
+        spare.clear();
+        spares.push(spare);
+    }
+}
 
 /// Where a run is: its block, and its start and length in it.
 #[derive(Clone, Copy, Debug)]
@@ -583,6 +597,9 @@ impl CompressedJson {
 
     /// `finish()`: the root value of the sample just read.
     pub fn finish(&mut self) -> Result<Value> {
+        // The buffers are kept for one sample at a time.
+        self.spare_objects = Vec::new();
+        self.spare_arrays = Vec::new();
         let Some(value) = self.root_value.take() else {
             return panic("Finished without root document");
         };
@@ -631,10 +648,7 @@ impl CompressedJson {
         };
         self.pop_context()?;
         let (index, spare) = self.objects.push(object)?;
-        if let Some(mut spare) = spare.filter(|_| self.spare_objects.len() < SPARE_BUFFERS) {
-            spare.clear();
-            self.spare_objects.push(spare);
-        }
+        keep_spare(&mut self.spare_objects, spare);
         self.commit_value(Value::Object(index))
     }
 
@@ -654,10 +668,7 @@ impl CompressedJson {
         };
         self.pop_context()?;
         let (index, spare) = self.arrays.push(array)?;
-        if let Some(mut spare) = spare.filter(|_| self.spare_arrays.len() < SPARE_BUFFERS) {
-            spare.clear();
-            self.spare_arrays.push(spare);
-        }
+        keep_spare(&mut self.spare_arrays, spare);
         self.commit_value(Value::Array(index))
     }
 
@@ -665,6 +676,8 @@ impl CompressedJson {
     /// read further samples (the TypeScript leaves the state as is; it is
     /// never used again because the error ends the run).
     pub fn reset_partial_sample(&mut self) {
+        self.spare_objects = Vec::new();
+        self.spare_arrays = Vec::new();
         self.root_value = None;
         self.ctx = None;
         self.context_stack.clear();
