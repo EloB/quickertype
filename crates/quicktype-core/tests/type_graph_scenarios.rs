@@ -27,6 +27,7 @@ use quicktype_core::attributes::type_attributes::{
 };
 use quicktype_core::attributes::type_names::{
     NamesTypeAttributeKind, TypeNames, init_type_names, make_names_type_attributes,
+    singularize_type_names,
 };
 use quicktype_core::graph_rewriting::make_replacer;
 use quicktype_core::messages::{QuickTypeError, Result};
@@ -94,6 +95,9 @@ impl Interpreter {
             match key {
                 "n" => parts.push(make_names_type_attributes(v, false)),
                 "in" => parts.push(make_names_type_attributes(v, true)),
+                "sing" => parts.push(singularize_type_names(&make_names_type_attributes(
+                    v, false,
+                ))),
                 "many" => {
                     let (prefix, count) = v.split_once(':').unwrap_or((v, "0"));
                     let count: usize = count.parse().map_err(|_| err("bad count"))?;

@@ -18,8 +18,9 @@ use indexmap::IndexSet;
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::Result;
 use crate::support::chance::Chance;
-use crate::support::js_shim;
+use crate::support::strings::snake_case;
 use crate::support::support::panic;
+use quicktype_js_compat::utf16;
 
 /// `namesTypeAttributeKind`: the `names` attribute.
 #[derive(Clone, Copy, Debug, Default)]
@@ -74,7 +75,7 @@ pub fn singularize_name(name: &str) -> String {
     if bytes.len() >= 7 && bytes[bytes.len() - 7..].eq_ignore_ascii_case(b"cookies") {
         return name[..name.len() - 1].to_owned();
     }
-    js_shim::pluralize_singular(name)
+    quicktype_js_compat::pluralize::singular(name)
 }
 
 /// `combineNames(names)`: one name for a set of names. Several names are
@@ -89,7 +90,7 @@ fn combine_names(names: &IndexSet<String>) -> Result<String> {
         return Ok(original_first.clone());
     }
 
-    let names_set: IndexSet<String> = names.iter().map(|s| js_shim::snake_case(s)).collect();
+    let names_set: IndexSet<String> = names.iter().map(|s| snake_case(s)).collect();
     let first: Vec<u16> = names_set[0].encode_utf16().collect();
     if names_set.len() == 1 {
         return Ok(names_set[0].clone());
@@ -125,9 +126,9 @@ fn combine_names(names: &IndexSet<String>) -> Result<String> {
     }
     if combined.len() > 2 {
         // A prefix or suffix can split a surrogate pair. TypeScript keeps
-        // the lone surrogate; here it becomes U+FFFD (see "Known gaps" in
+        // the lone surrogate; it is dropped here (see "Known gaps" in
         // docs/PARITY.md).
-        return Ok(String::from_utf16_lossy(&combined));
+        return Ok(utf16::units_to_string(&combined));
     }
     Ok(names_set[0].clone())
 }

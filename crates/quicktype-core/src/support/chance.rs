@@ -136,7 +136,7 @@ impl Chance {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::support::js_shim::number_to_string;
+    use quicktype_js_compat::number::to_string as number_to_string;
 
     /// `chance.txt` is generated from the reference implementation by
     /// `xtask/core-type-graph/gen-fixtures.mjs`.

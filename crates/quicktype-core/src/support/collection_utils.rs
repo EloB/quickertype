@@ -25,7 +25,7 @@ use std::hash::Hash;
 
 use indexmap::{IndexMap, IndexSet};
 
-use crate::support::js_shim;
+use quicktype_js_compat::sort::{compare_utf16, sort_by};
 
 /// `hashCodeInit`.
 pub const HASH_CODE_INIT: i64 = 17;
@@ -327,13 +327,13 @@ impl<K: JsHash + JsEquals, V> EqualityMap<K, V> {
 
 /// `compareKeys` for strings: JavaScript `<`, i.e. UTF-16 code unit order.
 pub fn compare_string_keys(a: &str, b: &str) -> Ordering {
-    js_shim::utf16_cmp(a, b)
+    compare_utf16(a, b)
 }
 
 /// `mapSortByKey(m)` for string keys: a stable sort by UTF-16 code units.
 pub fn map_sort_by_key<V: Clone>(m: &IndexMap<String, V>) -> IndexMap<String, V> {
     let mut entries: Vec<(&String, &V)> = m.iter().collect();
-    entries.sort_by(|a, b| compare_string_keys(a.0, b.0));
+    sort_by(&mut entries, |a, b| compare_string_keys(a.0, b.0));
     entries
         .into_iter()
         .map(|(k, v)| (k.clone(), v.clone()))
@@ -343,7 +343,9 @@ pub fn map_sort_by_key<V: Clone>(m: &IndexMap<String, V>) -> IndexMap<String, V>
 /// `setSortBy(s, key)` / `arraySortByInto` with a string sort key: a stable
 /// sort by UTF-16 code units.
 pub fn sort_by_string_key<T, K: AsRef<str>>(items: &mut [T], mut key: impl FnMut(&T) -> K) {
-    items.sort_by(|a, b| compare_string_keys(key(a).as_ref(), key(b).as_ref()));
+    sort_by(items, |a, b| {
+        compare_string_keys(key(a).as_ref(), key(b).as_ref())
+    });
 }
 
 /// `setUnionInto(dest, src)`: appends `src`'s new elements in order.

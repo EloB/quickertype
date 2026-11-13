@@ -16,7 +16,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::support::js_shim;
+use quicktype_js_compat::{json, number};
 
 /// The result type used throughout the engine.
 pub type Result<T, E = QuickTypeError> = std::result::Result<T, E>;
@@ -193,13 +193,8 @@ impl MessageValue {
             MessageValue::Undefined => "undefined".to_owned(),
             MessageValue::Null => "null".to_owned(),
             MessageValue::Bool(b) => b.to_string(),
-            MessageValue::Number(n) => {
-                if n.is_finite() {
-                    js_shim::number_to_string(*n)
-                } else {
-                    "null".to_owned()
-                }
-            }
+            // `JSON.stringify(number)`.
+            MessageValue::Number(n) => json::number(*n),
         }
     }
 
@@ -209,7 +204,7 @@ impl MessageValue {
             MessageValue::Undefined => "undefined".to_owned(),
             MessageValue::Null => "null".to_owned(),
             MessageValue::Bool(b) => b.to_string(),
-            MessageValue::Number(n) => js_shim::number_to_string(*n),
+            MessageValue::Number(n) => number::to_string(*n),
             MessageValue::String(s) | MessageValue::Display(s) => s.clone(),
             MessageValue::Object(_) => "[object Object]".to_owned(),
             MessageValue::Array(items) => items

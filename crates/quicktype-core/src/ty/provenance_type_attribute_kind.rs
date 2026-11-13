@@ -21,7 +21,7 @@ pub(crate) fn combine(arr: &[&IndexSet<u32>]) -> IndexSet<u32> {
 /// default `Array.prototype.sort`, i.e. as strings (`1,10,9`).
 pub(crate) fn stringify(p: &IndexSet<u32>) -> String {
     let mut strings: Vec<String> = p.iter().map(u32::to_string).collect();
-    strings.sort();
+    quicktype_js_compat::sort::sort_strings(&mut strings);
     strings.join(",")
 }
 

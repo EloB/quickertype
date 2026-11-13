@@ -9,7 +9,6 @@
 use crate::attributes::type_attributes::AttributeKind;
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
-use crate::support::js_shim;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
@@ -149,7 +148,12 @@ pub(crate) fn intersect_min_max(arr: &[MinMaxConstraint]) -> Result<Option<MinMa
 
 /// `stringify([min, max])`: `${min}-${max}`.
 pub(crate) fn stringify_min_max(c: &MinMaxConstraint) -> String {
-    let side = |x: Option<f64>| x.map_or_else(|| "undefined".to_owned(), js_shim::number_to_string);
+    let side = |x: Option<f64>| {
+        x.map_or_else(
+            || "undefined".to_owned(),
+            quicktype_js_compat::number::to_string,
+        )
+    };
     format!("{}-{}", side(c.0), side(c.1))
 }
 

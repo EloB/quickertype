@@ -6,7 +6,7 @@
 
 use indexmap::{IndexMap, IndexSet};
 
-use crate::support::js_shim;
+use quicktype_js_compat::utf16;
 
 /// `descriptionTypeAttributeKind`: a type's descriptions.
 #[derive(Clone, Copy, Debug, Default)]
@@ -44,9 +44,10 @@ pub(crate) fn combine_property_descriptions(
 /// there are more.
 pub(crate) fn stringify_description(descriptions: &IndexSet<String>) -> Option<String> {
     let first = descriptions.first()?;
-    let mut result = if js_shim::utf16_len(first) > 5 + 3 {
-        let units: Vec<u16> = first.encode_utf16().take(5).collect();
-        format!("{}...", String::from_utf16_lossy(&units))
+    let mut result = if utf16::len(first) > 5 + 3 {
+        // `result.slice(0, 5)`; a cut surrogate pair is dropped (see "Known
+        // gaps" in docs/PARITY.md).
+        format!("{}...", utf16::slice(first, 0, Some(5)))
     } else {
         first.clone()
     };

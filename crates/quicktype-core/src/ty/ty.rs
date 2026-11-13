@@ -13,6 +13,7 @@
 //! duplicates are found as in TypeScript.
 
 use indexmap::{IndexMap, IndexSet};
+use quicktype_js_compat::sort as js_sort;
 
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::TypeReconstituter;
@@ -303,7 +304,7 @@ impl Type {
     /// The properties sorted by name (UTF-16 order), borrowed.
     pub fn sorted_property_refs(&self) -> Result<Vec<(&String, &ClassProperty)>> {
         let mut sorted: Vec<(&String, &ClassProperty)> = self.properties()?.iter().collect();
-        sorted.sort_by(|a, b| compare_string_keys(a.0, b.0));
+        js_sort::sort_by(&mut sorted, |a, b| compare_string_keys(a.0, b.0));
         Ok(sorted)
     }
 
@@ -955,7 +956,9 @@ pub(crate) fn sort_members_by_kind(
         .iter()
         .map(|&m| Ok((m, graph.kind(m)?)))
         .collect::<Result<_>>()?;
-    sorted.sort_by(|a, b| compare_string_keys(a.1.as_str(), b.1.as_str()));
+    js_sort::sort_by(&mut sorted, |a, b| {
+        compare_string_keys(a.1.as_str(), b.1.as_str())
+    });
     Ok(sorted.into_iter().map(|(m, _)| m).collect())
 }
 

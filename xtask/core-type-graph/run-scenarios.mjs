@@ -44,7 +44,8 @@
 //                                         nonnull I, reachable I
 //
 // PROPS = name:V,name?:V (optional with ?), MEMBERS = V,V (`-` for none). ATTRS are any of
-// n=Name (given name), in=Name (inferred name), many=prefix:count (that many
+// n=Name (given name), in=Name (inferred name), sing=Name (given name,
+// singularized), many=prefix:count (that many
 // inferred names), desc=Text, mm=lo:hi, ml=lo:hi (either side may be empty),
 // pat=re, def=s:text|n:1.5|b:true|null, fwd=V (forwarding ref).
 // Each command's console output is captured; an error prints `error: <message>`
@@ -63,9 +64,13 @@ const { TypeBuilder } = load("Type/TypeBuilder.js");
 const { TypeGraph } = load("Type/TypeGraph.js");
 const { getNoStringTypeMapping } = load("Type/TypeBuilderUtils.js");
 const { combineTypeAttributes, emptyTypeAttributes } = load("attributes/TypeAttributes.js");
-const { TypeNames, makeNamesTypeAttributes, initTypeNames, namesTypeAttributeKind } = load(
-    "attributes/TypeNames.js",
-);
+const {
+    TypeNames,
+    makeNamesTypeAttributes,
+    initTypeNames,
+    namesTypeAttributeKind,
+    singularizeTypeNames,
+} = load("attributes/TypeNames.js");
 const { descriptionTypeAttributeKind } = load("attributes/Description.js");
 const { minMaxTypeAttributeKind, minMaxLengthTypeAttributeKind, patternTypeAttributeKind } =
     load("attributes/Constraints.js");
@@ -106,6 +111,9 @@ function parseAttributes(tokens, vars) {
                 break;
             case "in":
                 parts.push(makeNamesTypeAttributes(v, true));
+                break;
+            case "sing":
+                parts.push(singularizeTypeNames(makeNamesTypeAttributes(v, false)));
                 break;
             case "many": {
                 const [prefix, count] = v.split(":");

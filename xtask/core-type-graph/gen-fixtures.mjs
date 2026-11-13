@@ -54,6 +54,12 @@ mkdirSync(outDir, { recursive: true });
         ["dataPoint", "data-point", "data point"],
         ["ABCDef", "ABCdef"],
         ["a1b2", "a1b3"],
+        ["größeWert", "größeListe"],
+        ["ÉtatCivil", "étatCivil", "étatCivilCode"],
+        ["naïveData", "NaïveData"],
+        ["ΑλφαΒήτα", "αλφαΓάμμα"],
+        ["日本語名", "日本語"],
+        ["🙂smile", "🙂frown"],
     ];
     const lines = sets.map(
         (names) => `${names.join("\t")}\t=\t${TypeNames.make(new Set(names), undefined, false).combinedName}`,

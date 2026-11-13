@@ -7,9 +7,9 @@
 use crate::attributes::type_attributes::AttributeKind;
 use crate::messages::Result;
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash};
-use crate::support::js_shim;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
+use quicktype_js_compat::json;
 
 /// `DefaultValue`: `boolean | number | string | null`.
 #[derive(Clone, Debug, PartialEq)]
@@ -73,8 +73,8 @@ pub(crate) fn combine(values: &[DefaultValue]) -> Option<DefaultValue> {
 pub(crate) fn stringify(value: &DefaultValue) -> String {
     match value {
         DefaultValue::Bool(b) => b.to_string(),
-        DefaultValue::Number(n) => js_shim::json_stringify_number(*n),
-        DefaultValue::String(s) => js_shim::json_stringify_string(s),
+        DefaultValue::Number(n) => json::number(*n),
+        DefaultValue::String(s) => json::quote(s),
         DefaultValue::Null => "null".to_owned(),
     }
 }
