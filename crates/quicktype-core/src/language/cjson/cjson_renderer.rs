@@ -22,6 +22,7 @@ use crate::attributes::enum_values::enum_case_values;
 use crate::convenience_renderer::prelude::*;
 use crate::declaration_ir::DeclarationKind;
 use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, all_upper_word_style, make_name_style, string_escape};
@@ -692,9 +693,6 @@ impl<'a> CJsonRenderer<'a> {
         let rendered = self.sourcelike_to_string(&union_name.into())?;
         let mut checks: Vec<Source> = Vec::new();
         for &t in self.type_graph().type_at(u)?.members()? {
-            if !checks.is_empty() {
-                checks.push(" || ".into());
-            }
             let is_type = self.quicktype_type_to_cjson(t, false, false)?.is_type;
             checks.push(sl![is_type, "(j)"]);
         }
@@ -703,7 +701,7 @@ impl<'a> CJsonRenderer<'a> {
             "#define cJSON_Is",
             union_name,
             "(j) (",
-            Source::Sequence(checks),
+            array_intercalate(" || ".into(), checks),
             ")"
         ]);
         self.emit_line(sl![

@@ -21,7 +21,9 @@ pub use quicktype_js_compat::json::quote;
 use quicktype_js_compat::json::{JsonValue, is_array_index};
 pub use quicktype_js_compat::number::to_string as number_to_string;
 pub use quicktype_js_compat::sort::compare_utf16;
-pub use quicktype_js_compat::whitespace::{is_whitespace as is_js_whitespace, trim};
+pub use quicktype_js_compat::whitespace::{
+    is_line_terminator, is_whitespace as is_js_whitespace, trim,
+};
 
 /// A shared, mutable JavaScript object.
 pub type Obj = Rc<RefCell<JsObject>>;

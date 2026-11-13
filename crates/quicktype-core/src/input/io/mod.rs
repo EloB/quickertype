@@ -7,8 +7,9 @@
 //! error comes first). So I/O is asynchronous at exactly the places it is
 //! in TypeScript: [`JsonSchemaStore`](crate::input::json_schema_store::JsonSchemaStore)
 //! and [`Io`](node_io::Io) return [`LocalBoxFuture`]s. Natively the futures
-//! do blocking I/O and complete immediately; [`block_on`] runs them. A
-//! WebAssembly host can implement the same traits with JavaScript promises.
+//! do blocking I/O and complete immediately; [`block_on`] runs them. The
+//! WebAssembly build implements only `JsonSchemaStore`, with JavaScript
+//! promises (quicktype-wasm's `HostSchemaStore`), and has no `Io`.
 
 use std::future::Future;
 use std::pin::Pin;

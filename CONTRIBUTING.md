@@ -41,3 +41,12 @@
 - Unit tests for a module live next to it (`#[cfg(test)] mod tests`). When
   quicktype has a Vitest test for the behavior (`test/unit/*.test.ts`), port
   it and keep its name.
+
+## Releases
+
+Releases are cut from `main` by pushing a version tag; the version, the
+changelog and the steps are in [docs/RELEASING.md](docs/RELEASING.md).
+Add user-visible changes under `## [Unreleased]` in
+[CHANGELOG.md](CHANGELOG.md). `.github/workflows/release.yml` is generated
+by dist from `dist-workspace.toml`: change the config and run
+`dist generate`, never the workflow.

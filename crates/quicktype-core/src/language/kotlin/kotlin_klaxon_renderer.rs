@@ -4,21 +4,23 @@
 //! converters for enums, unions, empty objects and `java.time` types.
 
 use indexmap::IndexSet;
+use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::support::collection_utils::array_intercalate;
 use crate::support::strings::camel_case;
-use crate::support::support::{must_not_happen, panic};
+use crate::support::support::must_not_happen;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::nullable_from_union;
 
 use super::kotlin_renderer::{
     Delimiter, KotlinOptions, KotlinRenderer, KotlinState, Meta, base_emit_header, kotlin_hooks,
 };
-use super::utils::{array_intercalate, js_number, string_escape, union_member_match_priority};
+use super::utils::{string_escape, union_member_match_priority};
 
 /// TS `KotlinKlaxonRenderer`.
 pub struct KotlinKlaxonRenderer<'a> {
@@ -88,8 +90,7 @@ impl<'a> KotlinKlaxonRenderer<'a> {
             TypeKind::Date => sl![e, ".string?.let { LocalDate.parse(it) }"],
             TypeKind::Time => sl![e, ".string?.let { OffsetTime.parse(it) }"],
             kind if kind.is_transformed_string_type_kind() => sl![e, ".string"],
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -125,8 +126,7 @@ impl<'a> KotlinKlaxonRenderer<'a> {
             TypeKind::Enum => "is String".into(),
             TypeKind::Union => return must_not_happen(),
             kind if kind.is_transformed_string_type_kind() => "is String".into(),
-            TypeKind::Intersection => return panic("Unknown type intersection"),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -208,7 +208,11 @@ impl<'a> KotlinKlaxonRenderer<'a> {
         Ok(if properties.is_empty() {
             None
         } else {
-            Some(sl!["@Json(", array_intercalate(", ", properties), ")"])
+            Some(sl![
+                "@Json(",
+                array_intercalate(", ".into(), properties),
+                ")"
+            ])
         })
     }
 
@@ -567,10 +571,10 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                         if p.is_optional {
                             format!(
                                 "{value}?.let {{ require(it {operator} {}) }}",
-                                js_number(bound)
+                                number::to_string(bound)
                             )
                         } else {
-                            format!("require({value} {operator} {})", js_number(bound))
+                            format!("require({value} {operator} {})", number::to_string(bound))
                         }
                     };
                     if let Some(m) = min_max_value_for_type(graph, t)? {
@@ -588,10 +592,16 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                     };
                     if let Some(m) = min_max_length_for_type(graph, t)? {
                         if let Some(min) = m.0 {
-                            r.emit_validation(format!("{length} >= {}{close}", js_number(min)))?;
+                            r.emit_validation(format!(
+                                "{length} >= {}{close}",
+                                number::to_string(min)
+                            ))?;
                         }
                         if let Some(max) = m.1 {
-                            r.emit_validation(format!("{length} <= {}{close}", js_number(max)))?;
+                            r.emit_validation(format!(
+                                "{length} <= {}{close}",
+                                number::to_string(max)
+                            ))?;
                         }
                     }
                     let array = if p.is_optional {
@@ -601,10 +611,16 @@ impl<'a> KotlinRenderer<'a> for KotlinKlaxonRenderer<'a> {
                     };
                     if let Some(m) = min_max_items_for_type(graph, t)? {
                         if let Some(min) = m.0 {
-                            r.emit_validation(format!("{array} >= {}{close}", js_number(min)))?;
+                            r.emit_validation(format!(
+                                "{array} >= {}{close}",
+                                number::to_string(min)
+                            ))?;
                         }
                         if let Some(max) = m.1 {
-                            r.emit_validation(format!("{array} <= {}{close}", js_number(max)))?;
+                            r.emit_validation(format!(
+                                "{array} <= {}{close}",
+                                number::to_string(max)
+                            ))?;
                         }
                     }
                     if let Some(pattern) = pattern_for_type(graph, t)? {

@@ -8,8 +8,9 @@
 //
 // Each identical scenario is counted by the engine that produced it: on
 // WebAssembly, on the TypeScript fallback (the engine reported the run as
-// unsupported, e.g. a renderer not ported yet), or on the TypeScript engine
-// because the facade did not consider it eligible (or no run happened).
+// unsupported, e.g. for a language without a renderer, which no built-in
+// language is), or on the TypeScript engine because the facade did not
+// consider it eligible (or no run happened).
 // Exits 1 if anything differs, apart from documented known gaps.
 
 import { fork } from "node:child_process";

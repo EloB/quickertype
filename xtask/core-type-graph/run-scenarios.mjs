@@ -74,7 +74,9 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const quicktype = resolve(process.argv[2] ?? "../quicktype");
+import { referenceCheckout } from "../reference.mjs";
+
+const quicktype = referenceCheckout(process.argv[2]);
 const require = createRequire(join(quicktype, "package.json"));
 const dist = join(quicktype, "packages/quicktype-core/dist");
 const load = (p) => require(join(dist, p));

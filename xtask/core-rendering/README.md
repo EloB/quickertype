@@ -8,11 +8,13 @@ differential renderer tests. They need a built quicktype checkout
 |---|---|---|
 | `record-render-cases.mjs <quicktype> [lang...]` | `crates/quicktype-core/tests/fixtures/core-rendering/cases/*.json` | `tests/render_cases.rs` |
 | `run-render-scenarios.mjs <quicktype>` | `crates/quicktype-core/tests/fixtures/core-rendering/scenarios/*.json` from the `*.txt` next to them | `tests/render_scenarios.rs` |
+| `record-target-languages.mjs <quicktype>` | `crates/quicktype-core/tests/data/target_languages.json`: every language's names, extension, renderer options and their CLI expansion | `tests/target_languages.rs` |
 
 ```sh
 node xtask/core-rendering/record-render-cases.mjs ../quicktype rust
 node xtask/core-rendering/run-render-scenarios.mjs ../quicktype
-cargo test -p quicktype-core --test render_cases --test render_scenarios
+node xtask/core-rendering/record-target-languages.mjs ../quicktype
+cargo test -p quickertype-core --test render_cases --test render_scenarios --test target_languages
 ```
 
 ## Render cases

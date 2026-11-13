@@ -8,7 +8,7 @@ is minimized and kept as a regression case in `tests/fuzz-regressions/`.
 Needs a built quicktype checkout (`npm ci && npm run build`; found as
 `--reference`, `$QUICKTYPE_REFERENCE`, `../quicktype` or `../../quicktype`), the
 built npm package (`cd npm/quicktype-core && npm ci && npm run build`) and the
-release CLI (`cargo build --release -p quicktype-cli`).
+release CLI (`cargo build --release -p quickertype`).
 
 ```sh
 node xtask/fuzz/fuzz.mjs --seed 1 --count 5000 -j 3       # seeds 1..5000

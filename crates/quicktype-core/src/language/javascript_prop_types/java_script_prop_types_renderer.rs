@@ -13,6 +13,7 @@ use crate::language::javascript::unicode_maps::is_es3_identifier_start;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
 use crate::support::fast_hash::HashMap;
@@ -23,7 +24,7 @@ use crate::support::strings::{
 };
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{directly_reachable_single_named_type, find_member};
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::{ACRONYM_STYLE, CONVERTERS, MODULE_SYSTEM};
 
@@ -156,11 +157,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             "(props, name) => { const value = props[name]; return value == null || (typeof value === 'string'",
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && [...value].length >= ", js_number(min)],
+                Some(min) => sl![" && [...value].length >= ", number::to_string(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && [...value].length <= ", js_number(max)],
+                Some(max) => sl![" && [...value].length <= ", number::to_string(max)],
             },
             match pattern {
                 None => Source::from(""),
@@ -197,11 +198,11 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             },
             match min {
                 None => Source::from(""),
-                Some(min) => sl![" && value >= ", js_number(min)],
+                Some(min) => sl![" && value >= ", number::to_string(min)],
             },
             match max {
                 None => Source::from(""),
-                Some(max) => sl![" && value <= ", js_number(max)],
+                Some(max) => sl![" && value <= ", number::to_string(max)],
             },
             ") ? null : new Error(\"Expected bounded number\"); }"
         ])
@@ -246,12 +247,12 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                         "(props, name, ...args) => { const value = props[name]; if (value != null && (",
                         match min {
                             None => Source::from("false"),
-                            Some(min) => sl!["value.length < ", js_number(min)],
+                            Some(min) => sl!["value.length < ", number::to_string(min)],
                         },
                         " || ",
                         match max {
                             None => Source::from("false"),
-                            Some(max) => sl!["value.length > ", js_number(max)],
+                            Some(max) => sl!["value.length > ", number::to_string(max)],
                         },
                         ")) return new Error(\"Expected bounded array\"); return PropTypes.arrayOf(",
                         item,
@@ -267,12 +268,9 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             TypeKind::Union => {
                 let is_nullable_enum = find_member(graph, t, TypeKind::Enum)?.is_some()
                     && find_member(graph, t, TypeKind::Null)?.is_some();
-                let mut parts: Vec<Source> = vec!["PropTypes.oneOfType([".into()];
-                for (i, member) in graph.children(t)?.into_iter().enumerate() {
-                    if i > 0 {
-                        parts.push(", ".into());
-                    }
-                    parts.push(
+                let mut children: Vec<Source> = Vec::new();
+                for member in graph.children(t)? {
+                    children.push(
                         if is_nullable_enum && graph.kind(member)? == TypeKind::Null {
                             "PropTypes.oneOf([null])".into()
                         } else {
@@ -280,13 +278,16 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
                         },
                     );
                 }
-                parts.push("])".into());
-                Source::Sequence(parts)
+                sl![
+                    "PropTypes.oneOfType([",
+                    array_intercalate(", ".into(), children),
+                    "])"
+                ]
             }
             TypeKind::Uuid => "(props, name) => props[name] == null || /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(props[name]) ? null : new Error(\"Expected UUID\")".into(),
             TypeKind::DateTime => "(props, name) => props[name] == null || typeof props[name] === \"string\" && !Number.isNaN(Date.parse(props[name])) ? null : new Error(\"Expected date-time\")".into(),
             k if k.is_transformed_string_type_kind() => "PropTypes.string".into(),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         };
 
             let allows_null = kind == TypeKind::Null

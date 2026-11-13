@@ -188,10 +188,7 @@ impl<'a> RustRenderer<'a> {
                         name
                     }
                 }
-                TypeKind::Intersection => {
-                    return crate::support::support::panic("Unknown type intersection");
-                }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }

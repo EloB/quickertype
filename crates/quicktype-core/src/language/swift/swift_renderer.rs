@@ -13,6 +13,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::camel_case;
@@ -597,6 +598,8 @@ impl<'a> SwiftRenderer<'a> {
                 "let "
             }
         ]];
+        // Mirrors TS, which writes this loop out (`lastNames.forEach`)
+        // instead of calling `arrayIntercalate`.
         for (i, &n) in last_names.iter().enumerate() {
             if i > 0 {
                 sources.push(", ".into());
@@ -689,14 +692,11 @@ impl<'a> SwiftRenderer<'a> {
                         if let Some(label) = label {
                             r.emit_line(sl!["case ", name, " = \"", label, "\""]);
                         } else {
-                            let mut names: Vec<Source> = Vec::new();
-                            for (i, (n, _)) in group.iter().enumerate() {
-                                if i > 0 {
-                                    names.push(", ".into());
-                                }
-                                names.push(n.into());
-                            }
-                            r.emit_line(sl!["case ", Source::Sequence(names)]);
+                            let names = array_intercalate(
+                                ", ".into(),
+                                group.iter().map(|(n, _)| Source::from(n)),
+                            );
+                            r.emit_line(sl!["case ", names]);
                         }
                     }
                     Ok(())
@@ -715,6 +715,8 @@ impl<'a> SwiftRenderer<'a> {
             self.ensure_blank_line();
             let init_properties = self.initializable_properties(c)?;
             let mut properties_lines: Vec<Source> = vec!["init(".into()];
+            // Mirrors TS, which writes this loop out (`propertiesLines`)
+            // instead of calling `arrayIntercalate`.
             for (i, property) in init_properties.iter().enumerate() {
                 if i > 0 {
                     properties_lines.push(", ".into());
@@ -926,6 +928,8 @@ impl<'a> SwiftRenderer<'a> {
                         ]);
                     }
 
+                    // Mirrors TS, which writes this loop out (`args`) instead
+                    // of calling `arrayIntercalate`.
                     let mut args: Vec<Source> = vec!["self.init(".into()];
                     let mut first = true;
                     r.for_each_class_property(c, BlankLinePosition::None, |_, name, _, _, _| {

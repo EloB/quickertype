@@ -15,6 +15,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, annotated, multi_word, paren_if_needed, single_word};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
@@ -22,7 +23,7 @@ use crate::support::strings::decapitalize;
 use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{is_nullable, nullable_from_union};
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::constants::FORBIDDEN_NAMES;
 use super::language::{JUST_TYPES, MODULE_NAME, USE_LIST};
@@ -178,7 +179,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -216,11 +217,11 @@ impl<'a> ElmRenderer<'a> {
         }
         let min_check = min.map_or_else(
             || "True".to_owned(),
-            |min| format!("x >= {}", js_number(min)),
+            |min| format!("x >= {}", number::to_string(min)),
         );
         let max_check = max.map_or_else(
             || "True".to_owned(),
-            |max| format!("x <= {}", js_number(max)),
+            |max| format!("x <= {}", number::to_string(max)),
         );
         Ok(single_word(vec![
             format!(
@@ -242,11 +243,11 @@ impl<'a> ElmRenderer<'a> {
         let length = format!("{}.length x", self.array_type());
         let min_check = min.map_or_else(
             || "True".to_owned(),
-            |min| format!("{length} >= {}", js_number(min)),
+            |min| format!("{length} >= {}", number::to_string(min)),
         );
         let max_check = max.map_or_else(
             || "True".to_owned(),
-            |max| format!("{length} <= {}", js_number(max)),
+            |max| format!("{length} <= {}", number::to_string(max)),
         );
         Ok(format!(
             "|> Jdec.andThen (\\x -> if {min_check} && {max_check} then Jdec.succeed x else Jdec.fail \"Array length out of range\")"
@@ -265,11 +266,11 @@ impl<'a> ElmRenderer<'a> {
         let length = "List.length (String.toList x)";
         let min_check = min.map_or_else(
             || "True".to_owned(),
-            |min| format!("{length} >= {}", js_number(min)),
+            |min| format!("{length} >= {}", number::to_string(min)),
         );
         let max_check = max.map_or_else(
             || "True".to_owned(),
-            |max| format!("{length} <= {}", js_number(max)),
+            |max| format!("{length} <= {}", number::to_string(max)),
         );
         Ok(single_word(vec![
             format!(
@@ -324,7 +325,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.decoder_name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -403,7 +404,7 @@ impl<'a> ElmRenderer<'a> {
 
                     single_word(vec![self.encoder_name_for_named_type(t)?.into()])
                 }
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
@@ -929,18 +930,11 @@ impl<'a> ConvenienceRenderer<'a> for ElmRenderer<'a> {
             .map(Source::from)
             .collect();
             self.emit_comment_lines(&lines, &CommentOptions::default())?;
-            let mut decoders: Vec<Source> = Vec::new();
-            for (i, decoder) in top_level_decoders.iter().enumerate() {
-                if i > 0 {
-                    decoders.push(", ".into());
-                }
-                decoders.push((*decoder).into());
-            }
             self.emit_line(sl![
                 "--     import ",
                 module_name.clone(),
                 " exposing (",
-                Source::Sequence(decoders),
+                array_intercalate(", ".into(), top_level_decoders.iter().map(Source::from)),
                 ")"
             ]);
             self.emit_multiline("--\n-- and you're off to the races with\n--")?;

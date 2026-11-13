@@ -134,8 +134,9 @@ impl<K: Into<String>, V: Into<OptionValue>> FromIterator<(K, V)> for RendererOpt
 /// An enum option was given a value it does not declare.
 ///
 /// The message is quicktype's `RendererUnknownOptionValue`:
-/// `Unknown value ${value} for option ${name}`.
-// TODO(messages): return quicktype_core::messages' error kind once ported.
+/// `Unknown value ${value} for option ${name}`, the
+/// [`QuickTypeError`](crate::messages::QuickTypeError) this converts into
+/// (`From`, in `renderer.rs`) when a renderer parses its options.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UnknownOptionValue {
     /// The rejected value, as JS `String(value)`.
@@ -618,30 +619,6 @@ pub fn get_option_values(
             Ok((option.name(), value))
         })
         .collect()
-}
-
-/// TS `acronymOption(defaultOption)` from `support/Acronyms.ts`.
-// TODO(support): move next to the acronym styles in `support::acronyms`.
-pub const fn acronym_option(default_value: &'static str) -> EnumOption {
-    EnumOption::new(
-        "acronym-style",
-        "Acronym naming style",
-        &["original", "pascal", "camel", "lowerCase"],
-        default_value,
-        OptionKind::Secondary,
-    )
-}
-
-/// TS `convertersOption()` from `support/Converters.ts`.
-// TODO(support): move next to `ConvertersOptions` in `support::converters`.
-pub const fn converters_option() -> EnumOption {
-    EnumOption::new(
-        "converters",
-        "Which converters to generate (top-level by default)",
-        &["top-level", "all-objects"],
-        "top-level",
-        OptionKind::Secondary,
-    )
 }
 
 #[cfg(test)]

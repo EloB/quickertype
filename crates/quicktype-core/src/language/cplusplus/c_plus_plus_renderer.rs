@@ -2599,7 +2599,7 @@ impl<'a> CPlusPlusRenderer<'a> {
             }
             r.emit_line(sl![
                 ") : ",
-                Source::Sequence(array_intercalate(sl![", "], args)),
+                Source::Sequence(array_intercalate(", ".into(), args)),
                 " {}"
             ]);
 

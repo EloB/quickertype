@@ -7,8 +7,11 @@
 // Usage: node xtask/core-type-graph/gen-infer-maps-scenario.mjs ../quicktype \
 //            > crates/quicktype-core/tests/fixtures/core-type-graph/scenarios/40-infer-maps-threshold.txt
 import { createRequire } from "node:module";
-import { join, resolve } from "node:path";
-const quicktype = resolve(process.argv[2]);
+import { join } from "node:path";
+
+import { referenceCheckout } from "../reference.mjs";
+
+const quicktype = referenceCheckout(process.argv[2]);
 const require = createRequire(join(quicktype, "package.json"));
 const { load, evaluate } = require(join(quicktype, "packages/quicktype-core/dist/MarkovChain.js"));
 const mc = load();

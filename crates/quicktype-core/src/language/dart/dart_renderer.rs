@@ -5,6 +5,8 @@
 //! freezed and Hive annotation variants. Unions other than `T | null` are
 //! `dynamic`.
 
+use quicktype_js_compat::number;
+
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
@@ -331,8 +333,8 @@ impl<'a> DartRenderer<'a> {
                 return value;
             }
             let conditions: Vec<String> = [
-                min.map(|min| format!("x.length < {}", js_number(min))),
-                max.map(|max| format!("x.length > {}", js_number(max))),
+                min.map(|min| format!("x.length < {}", number::to_string(min))),
+                max.map(|max| format!("x.length > {}", number::to_string(max))),
             ]
             .into_iter()
             .flatten()
@@ -464,12 +466,12 @@ impl<'a> DartRenderer<'a> {
                     "((x) => ",
                     c.0.map_or("true".to_owned(), |min| format!(
                         "x.runes.length >= {}",
-                        js_number(min)
+                        number::to_string(min)
                     )),
                     " && ",
                     c.1.map_or("true".to_owned(), |max| format!(
                         "x.runes.length <= {}",
-                        js_number(max)
+                        number::to_string(max)
                     )),
                     " ? x : throw FormatException(\"Expected bounded string\"))(",
                     value,
@@ -503,9 +505,15 @@ impl<'a> DartRenderer<'a> {
                 Ok(sl![
                     null_check(&value),
                     "((x) => ",
-                    c.0.map_or("true".to_owned(), |min| format!("x >= {}", js_number(min))),
+                    c.0.map_or("true".to_owned(), |min| format!(
+                        "x >= {}",
+                        number::to_string(min)
+                    )),
                     " && ",
-                    c.1.map_or("true".to_owned(), |max| format!("x <= {}", js_number(max))),
+                    c.1.map_or("true".to_owned(), |max| format!(
+                        "x <= {}",
+                        number::to_string(max)
+                    )),
                     " ? x : throw FormatException(\"Expected bounded number\"))(",
                     value,
                     ")"
@@ -1080,11 +1088,6 @@ impl<'a> DartRenderer<'a> {
         })?;
         Ok(())
     }
-}
-
-/// `${n}`: a constraint bound as JavaScript prints it.
-fn js_number(n: f64) -> String {
-    quicktype_js_compat::number::to_string(n)
 }
 
 /// The comma after an enum case: `","` for the first and middle cases,
