@@ -1,0 +1,245 @@
+(forwarding intersections: false)
+
+# replace object type
+(replaceobj: unchanged)
+
+# flatten unions
+0: class Top | children 1,6,7,9,15,19 | 21 | given Top ()
+1: class Boss | children 2,3,4,5 | 15 | given Boss ()
+2: integer | 0
+3: string Color | 5 | given Color () | 3 enums: red (6), ...
+4: string Id | 7 | given Id () | enum with no cases,uuid
+5: string Name | 10 | given Name () | 3 enums: Ann (1), ...
+6: string Count | 9 | given Count () | enum with no cases,integer-string
+7: array | children 8 | 20
+8: none | 4
+9: array | children 10 | 18
+10: class Friend | children 11,12,13,4,5,14 | 13,14,17 | given Friend ()
+11: double | 0,1
+12: string Color | 5,6 | distance 1 Color () | 3 enums: red (9), ...
+13: bool | 3
+14: string When | 8 | given When () | enum with no cases,date-time
+15: array | children 16 | 16
+16: class Person | children 17,3,4,5,14 | 12 | given Person ()
+17: union Age | children 2,18 | 11 | given Age ()
+18: null | 2
+19: class Scores | children 2 | 19 | given Scores ()
+(flatten done: true)
+
+# combine classes
+0: class Top | children 1,9,10,12,17,18 | 21 | given Top ()
+1: class boss | children 2,5,6,7,8 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer | 0
+4: null | 2
+5: string Color | 5 | given Color () | 3 enums: red (6), ...
+6: string Id | 7 | given Id () | enum with no cases,uuid
+7: string Name | 10 | given Name () | 3 enums: Ann (1), ...
+8: string When | 8 | given When () | enum with no cases,date-time
+9: string Count | 9 | given Count () | enum with no cases,integer-string
+10: array | children 11 | 20
+11: none | 4
+12: array | children 13 | 18
+13: class Friend | children 14,15,16,6,7,8 | 13,14,17 | given Friend ()
+14: double | 0,1
+15: string Color | 5,6 | distance 1 Color () | 3 enums: red (9), ...
+16: bool | 3
+17: array | children 1 | 16
+18: class Scores | children 3 | 19 | given Scores ()
+
+# combine classes
+(combine: unchanged)
+
+# infer maps
+0: class Top | children 1,9,10,12,17,18 | 21 | given Top ()
+1: class boss | children 2,5,6,7,8 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: string Color | 5 | given Color () | 3 enums: red (6), ...
+6: string Id | 7 | given Id () | enum with no cases,uuid
+7: string Name | 10 | given Name () | 3 enums: Ann (1), ...
+8: string When | 8 | given When () | enum with no cases,date-time
+9: string Count | 9 | given Count () | enum with no cases,integer-string
+10: array | children 11 | 20
+11: none | 4
+12: array | children 13 | 18
+13: class Friend | children 14,15,16,6,7,8 | 13,14,17 | given Friend ()
+14: double | 0,1
+15: string Color | 5,6 | distance 1 Color () | 3 enums: red (9), ...
+16: bool | 3
+17: array | children 1 | 16
+18: map Scores | children 3 | 19 | given Scores ()
+
+# infer maps
+(infermaps: unchanged)
+
+# expand strings
+0: class Top | children 1,10,11,13,18,19 | 21 | given Top ()
+1: class boss | children 2,5,7,8,9 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: union Color | children 6 | 5 | given Color ()
+6: enum
+7: uuid Id | 7 | given Id ()
+8: string Name | 10 | given Name () | unrestricted
+9: date-time When | 8 | given When ()
+10: integer-string Count | 9 | given Count ()
+11: array | children 12 | 20
+12: none | 4
+13: array | children 14 | 18
+14: class Friend | children 15,16,17,7,8,9 | 13,14,17 | given Friend ()
+15: double | 0,1
+16: intersection Color | children 5 | 5,6 | distance 1 Color ()
+17: bool | 3
+18: array | children 1 | 16
+19: map Scores | children 3 | 19 | given Scores ()
+
+# remove indirection intersections
+0: class Top | children 1,10,11,13,17,18 | 21 | given Top ()
+1: class boss | children 2,5,7,8,9 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: union Color | children 6 | 5,6 | given Color ()
+6: enum
+7: uuid Id | 7 | given Id ()
+8: string Name | 10 | given Name () | unrestricted
+9: date-time When | 8 | given When ()
+10: integer-string Count | 9 | given Count ()
+11: array | children 12 | 20
+12: none | 4
+13: array | children 14 | 18
+14: class Friend | children 15,5,16,7,8,9 | 13,14,17 | given Friend ()
+15: double | 0,1
+16: bool | 3
+17: array | children 1 | 16
+18: map Scores | children 3 | 19 | given Scores ()
+
+# flatten unions
+0: class Top | children 1,9,10,12,16,17 | 21 | given Top ()
+1: class boss | children 2,5,6,7,8 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: enum Color | 5,6 | distance 1 Color ()
+6: uuid Id | 7 | given Id ()
+7: string Name | 10 | given Name () | unrestricted
+8: date-time When | 8 | given When ()
+9: integer-string Count | 9 | given Count ()
+10: array | children 11 | 20
+11: none | 4
+12: array | children 13 | 18
+13: class Friend | children 14,5,15,6,7,8 | 13,14,17 | given Friend ()
+14: double | 0,1
+15: bool | 3
+16: array | children 1 | 16
+17: map Scores | children 3 | 19 | given Scores ()
+(flatten done: true)
+
+# none to any
+0: class Top | children 1,9,10,12,16,17 | 21 | given Top ()
+1: class boss | children 2,5,6,7,8 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: enum Color | 5,6 | distance 1 Color ()
+6: uuid Id | 7 | given Id ()
+7: string Name | 10 | given Name () | unrestricted
+8: date-time When | 8 | given When ()
+9: integer-string Count | 9 | given Count ()
+10: array | children 11 | 20
+11: any | 4
+12: array | children 13 | 18
+13: class Friend | children 14,5,15,6,7,8 | 13,14,17 | given Friend ()
+14: double | 0,1
+15: bool | 3
+16: array | children 1 | 16
+17: map Scores | children 3 | 19 | given Scores ()
+
+# fixed-point
+0: class Top | children 1,9,10,12,16,17 | 21 | given Top ()
+1: class boss | children 2,5,6,7,8 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer Scores | 0,19 | given Scores ()
+4: null | 2
+5: enum Color | 5,6 | distance 1 Color ()
+6: uuid Id | 7 | given Id ()
+7: string Name | 10 | given Name () | unrestricted
+8: date-time When | 8 | given When ()
+9: integer-string Count | 9 | given Count ()
+10: array | children 11 | 20
+11: any | 4
+12: array | children 13 | 18
+13: class Friend | children 14,5,15,6,7,8 | 13,14,17 | given Friend ()
+14: double | 0,1
+15: bool | 3
+16: array | children 1 | 16
+17: map Scores | children 3 | 19 | given Scores ()
+(fixedpoint: unchanged)
+
+# make-transformations
+0: class Top | children 1,10,11,13,17,18 | 21 | given Top ()
+1: class boss | children 2,5,8,6,9 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer scores | 0,19,9 | given Scores,Count ()
+4: null | 2
+5: string | children 6,7 | transformation | unrestricted
+6: string Name | unrestricted | 10 | given Name ()
+7: enum Color | 5,6 | distance 1 Color ()
+8: uuid Id | 7 | given Id ()
+9: date-time When | 8 | given When ()
+10: string | children 6,3 | transformation | unrestricted
+11: array | children 12 | 20
+12: any | 4
+13: array | children 14 | 18
+14: class Friend | children 15,5,16,8,6,9 | 13,14,17 | given Friend ()
+15: double | 0,1
+16: bool | 3
+17: array | children 1 | 16
+18: map Scores | children 3 | 19 | given Scores ()
+
+# flatten unions
+(flatten: unchanged)
+(flatten done: true)
+
+# GC
+0: class Top | children 1,10,11,13,17,18 | 21 | given Top ()
+1: class boss | children 2,5,8,7,9 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer scores | 0,19,9 | given Scores,Count ()
+4: null | 2
+5: string | children 7,6 | transformation | unrestricted
+6: enum Color | 5,6 | distance 1 Color ()
+7: string Name | unrestricted | 10 | given Name ()
+8: uuid Id | 7 | given Id ()
+9: date-time When | 8 | given When ()
+10: string | children 7,3 | transformation | unrestricted
+11: array | children 12 | 20
+12: any | 4
+13: array | children 14 | 18
+14: class Friend | children 15,5,16,8,7,9 | 13,14,17 | given Friend ()
+15: double | 0,1
+16: bool | 3
+17: array | children 1 | 16
+18: map Scores | children 3 | 19 | given Scores ()
+0: class Top | children 1,10,11,13,17,18 | 21 | given Top ()
+1: class boss | children 2,5,8,7,9 | 12,15 | given Boss,Person ()
+2: union Age | children 3,4 | 11 | distance 1 Age ()
+3: integer scores | 0,19,9 | given Scores,Count ()
+4: null | 2
+5: string | children 7,6 | transformation | unrestricted
+6: enum Color | 5,6 | distance 1 Color ()
+7: string Name | unrestricted | 10 | given Name ()
+8: uuid Id | 7 | given Id ()
+9: date-time When | 8 | given When ()
+10: string | children 7,3 | transformation | unrestricted
+11: array | children 12 | 20
+12: any | 4
+13: array | children 14 | 18
+14: class Friend | children 15,5,16,8,7,9 | 13,14,17 | given Friend ()
+15: double | 0,1
+16: bool | 3
+17: array | children 1 | 16
+18: map Scores | children 3 | 19 | given Scores ()

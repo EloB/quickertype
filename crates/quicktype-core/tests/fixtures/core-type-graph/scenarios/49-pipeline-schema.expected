@@ -1,0 +1,212 @@
+(forwarding intersections: false)
+
+# remove indirection intersections
+(rmind: unchanged)
+
+# resolve intersections
+0: class Top | children 1,2,11,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: object Meta | children 3 | 14 | given Meta ()
+3: union Value | children 4,5,6 | 13 | given Value ()
+4: bool | 3
+5: null | 2
+6: union Multi | children 7,8,9,10 | 12 | given Multi ()
+7: double | 1
+8: integer | 0
+9: string | 4 | unrestricted
+10: string | 6 | enum with no cases,date-time
+11: array | children 12 | 15
+12: union MaybeShape | children 5,13 | 11 | given MaybeShape ()
+13: object Shape | children 1,9,15,7 | 10,8,9 | given Shape ()
+14: string Kind | 5 | given Kind () | 2 enums: circle (1), ...
+15: intersection | children 14,9
+(resolve done: false)
+
+# flatten unions
+0: class Top | children 1,2,9,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: object Meta | children 3 | 14 | given Meta ()
+3: union Value | children 7,5,4,6,8 | 12,13 | given Value ()
+4: integer | 0
+5: double | 1
+6: null | 2
+7: bool | 3
+8: string | 4,6 | unrestricted
+9: array | children 10 | 15
+10: union MaybeShape | children 6,11 | 11 | given MaybeShape ()
+11: object Shape | children 1,8,12,5 | 10,8,9 | given Shape ()
+12: intersection | children 13,8
+13: string Kind | 5 | given Kind () | 2 enums: circle (1), ...
+(flatten done: true)
+
+# resolve intersections
+0: class Top | children 1,2,9,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: object Meta | children 3 | 14 | given Meta ()
+3: union Value | children 4,5,6,7,8 | 12,13 | given Value ()
+4: bool | 3
+5: double | 1
+6: integer | 0
+7: null | 2
+8: string | 4,6 | unrestricted
+9: array | children 10 | 15
+10: union MaybeShape | children 7,11 | 11 | given MaybeShape ()
+11: object Shape | children 1,8,12,5 | 10,8,9 | given Shape ()
+12: string Kind | 4,5,6 | distance 1 Kind () | 2 enums: circle (1), ...
+(resolve done: true)
+
+# flatten unions
+(flatten: unchanged)
+(flatten done: true)
+
+# replace object type
+0: class Top | children 1,2,9,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: map Meta | children 3 | 14 | given Meta ()
+3: union Value | children 4,5,6,7,8 | 12,13 | given Value ()
+4: bool | 3
+5: double | 1
+6: integer | 0
+7: null | 2
+8: string | 4,6 | unrestricted
+9: array | children 10 | 15
+10: union MaybeShape | children 11,7 | 11 | given MaybeShape ()
+11: class Shape | children 1,8,12,5 | 10,8,9 | given Shape ()
+12: string Kind | 4,5,6 | distance 1 Kind () | 2 enums: circle (1), ...
+
+# flatten unions
+(flatten: unchanged)
+(flatten done: true)
+
+# infer maps
+(infermaps: unchanged)
+
+# expand strings
+0: class Top | children 1,2,9,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: map Meta | children 3 | 14 | given Meta ()
+3: union Value | children 4,5,6,7,8 | 12,13 | given Value ()
+4: bool | 3
+5: double | 1
+6: integer | 0
+7: null | 2
+8: string | 4,6 | unrestricted
+9: array | children 10 | 15
+10: union MaybeShape | children 11,7 | 11 | given MaybeShape ()
+11: class Shape | children 1,8,12,5 | 10,8,9 | given Shape ()
+12: union Kind | children 13 | 4,5,6 | distance 1 Kind ()
+13: enum
+
+# flatten unions
+0: class Top | children 1,2,9,3 | 16 | given Top ()
+1: integer-string Count | 7 | given Count ()
+2: map Meta | children 3 | 14 | given Meta ()
+3: union Value | children 4,5,6,7,8 | 12,13 | given Value ()
+4: bool | 3
+5: double | 1
+6: integer | 0
+7: null | 2
+8: string | 4,6 | unrestricted
+9: array | children 10 | 15
+10: union MaybeShape | children 11,7 | 11 | given MaybeShape ()
+11: class Shape | children 1,8,12,5 | 10,8,9 | given Shape ()
+12: enum Kind | 4,5,6 | distance 2 Kind ()
+(flatten done: true)
+
+# flatten strings
+(flattenstrings: unchanged)
+(nonetoany: unchanged)
+
+# optional to nullable
+0: class Top | children 14,10,1,11 | 16 | given Top ()
+1: array | children 2 | 15
+2: union MaybeShape | children 3,6 | 11 | given MaybeShape ()
+3: class Shape | children 9,4,5,8 | 10,8,9 | given Shape ()
+4: string | 4,6 | unrestricted
+5: enum Kind | 4,5,6 | distance 2 Kind ()
+6: null | 2
+7: double | 1
+8: union radius | children 7,6 | 1 | distance 1 radius ()
+9: integer-string Count | 7 | given Count ()
+10: map Meta | children 11 | 14 | given Meta ()
+11: union Value | children 12,7,13,6,4 | 12,13 | given Value ()
+12: bool | 3
+13: integer | 0
+14: union Count | children 9,6 | 7 | given Count ()
+
+# fixed-point
+0: class Top | children 1,4,10,5 | 16 | given Top ()
+1: union Count | children 2,3 | 7 | given Count ()
+2: integer-string Count | 7 | given Count ()
+3: null | 2
+4: map Meta | children 5 | 14 | given Meta ()
+5: union Value | children 6,7,8,3,9 | 12,13 | given Value ()
+6: bool | 3
+7: double | 1
+8: integer | 0
+9: string | 4,6 | unrestricted
+10: array | children 11 | 15
+11: union MaybeShape | children 12,3 | 11 | given MaybeShape ()
+12: class Shape | children 2,9,13,14 | 10,8,9 | given Shape ()
+13: enum Kind | 4,5,6 | distance 2 Kind ()
+14: union radius | children 7,3 | 1 | distance 1 radius ()
+(fixedpoint: unchanged)
+
+# make-transformations
+0: class Top | children 1,7,11,8 | 16 | given Top ()
+1: any | children 6,3,5,2,4 | transformation | 7
+2: integer Count | 0,7 | given Count ()
+3: null | 2
+4: union Count | children 2,3 | 7 | given Count ()
+5: string | unrestricted | 4,6
+6: any
+7: map Meta | children 8 | 14 | given Meta ()
+8: union Value | children 9,10,2,3,5 | 12,13 | given Value ()
+9: bool | 3
+10: double | 1
+11: array | children 12 | 15
+12: union MaybeShape | children 13,3 | 11 | given MaybeShape ()
+13: class Shape | children 14,5,15,16 | 10,8,9 | given Shape ()
+14: string | children 5,2 | transformation | unrestricted
+15: enum Kind | 4,5,6 | distance 2 Kind ()
+16: union radius | children 10,3 | 1 | distance 1 radius ()
+
+# flatten unions
+(flatten: unchanged)
+(flatten done: true)
+
+# GC
+0: class Top | children 1,7,11,8 | 16 | given Top ()
+1: any | children 5,4,6,3,2 | transformation | 7
+2: union Count | children 3,4 | 7 | given Count ()
+3: integer Count | 0,7 | given Count ()
+4: null | 2
+5: any
+6: string | unrestricted | 4,6
+7: map Meta | children 8 | 14 | given Meta ()
+8: union Value | children 9,10,3,4,6 | 12,13 | given Value ()
+9: bool | 3
+10: double | 1
+11: array | children 12 | 15
+12: union MaybeShape | children 13,4 | 11 | given MaybeShape ()
+13: class Shape | children 14,6,15,16 | 10,8,9 | given Shape ()
+14: string | children 6,3 | transformation | unrestricted
+15: enum Kind | 4,5,6 | distance 2 Kind ()
+16: union radius | children 10,4 | 1 | distance 1 radius ()
+0: class Top | children 1,7,11,8 | 16 | given Top ()
+1: any | children 5,4,6,3,2 | transformation | 7
+2: union Count | children 3,4 | 7 | given Count ()
+3: integer Count | 0,7 | given Count ()
+4: null | 2
+5: any
+6: string | unrestricted | 4,6
+7: map Meta | children 8 | 14 | given Meta ()
+8: union Value | children 9,10,3,4,6 | 12,13 | given Value ()
+9: bool | 3
+10: double | 1
+11: array | children 12 | 15
+12: union MaybeShape | children 13,4 | 11 | given MaybeShape ()
+13: class Shape | children 14,6,15,16 | 10,8,9 | given Shape ()
+14: string | children 6,3 | transformation | unrestricted
+15: enum Kind | 4,5,6 | distance 2 Kind ()
+16: union radius | children 10,4 | 1 | distance 1 radius ()
