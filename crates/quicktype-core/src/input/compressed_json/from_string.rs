@@ -198,6 +198,38 @@ const STRING_STOP: [bool; 256] = {
     table
 };
 
+/// Whether a byte of `word` is `"`, `\\` or a control character.
+fn has_string_stop(word: u64) -> bool {
+    const ONES: u64 = u64::from_ne_bytes([1; 8]);
+    const HIGH: u64 = ONES << 7;
+    // A byte below `n` (for `n` at most 0x80), and a zero byte.
+    let below = |v: u64, n: u8| v.wrapping_sub(ONES * u64::from(n)) & !v & HIGH;
+    let zero = |v: u64| below(v, 1);
+    (zero(word ^ (ONES * u64::from(b'"')))
+        | zero(word ^ (ONES * u64::from(b'\\')))
+        | below(word, 0x20))
+        != 0
+}
+
+/// Where the run of string characters from `pos` ends: the first byte
+/// that is `"`, `\\` or a control character, or the end; eight bytes at a
+/// time.
+fn plain_run(bytes: &[u8], mut pos: usize) -> usize {
+    while let Some(chunk) = bytes.get(pos..pos + 8) {
+        let Ok(chunk) = <[u8; 8]>::try_from(chunk) else {
+            break;
+        };
+        if has_string_stop(u64::from_le_bytes(chunk)) {
+            break;
+        }
+        pos += 8;
+    }
+    while bytes.get(pos).is_some_and(|&b| !STRING_STOP[b as usize]) {
+        pos += 1;
+    }
+    pos
+}
+
 /// The first pass over one sample.
 struct Recorder<'t> {
     text: &'t str,
@@ -475,15 +507,12 @@ impl<'t> Recorder<'t> {
     /// buffer, and `None` is returned.
     fn string(&mut self, key: bool) -> Result<Option<(u32, u32)>, Stop> {
         let start = self.pos;
-        loop {
+        self.pos = plain_run(self.bytes, self.pos);
+        {
             let Some(&b) = self.bytes.get(self.pos) else {
                 return Err(Stop::Syntax);
             };
-            if !STRING_STOP[b as usize] {
-                self.pos += 1;
-                continue;
-            }
-            return match b {
+            match b {
                 b'"' => {
                     let range = (start as u32, (self.pos - start) as u32);
                     self.pos += 1;
@@ -505,7 +534,7 @@ impl<'t> Recorder<'t> {
                     result.map(|()| None)
                 }
                 _ => Err(Stop::Syntax),
-            };
+            }
         }
     }
 
@@ -547,13 +576,7 @@ impl<'t> Recorder<'t> {
                 _ if b < 0x20 => return Err(Stop::Syntax),
                 _ => {
                     let run = self.pos;
-                    while self
-                        .bytes
-                        .get(self.pos)
-                        .is_some_and(|&b| !STRING_STOP[b as usize])
-                    {
-                        self.pos += 1;
-                    }
+                    self.pos = plain_run(self.bytes, self.pos);
                     self.flush_high(out, &mut pending_high)?;
                     out.push_str(&self.text[run..self.pos]);
                 }
