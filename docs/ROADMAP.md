@@ -173,11 +173,12 @@ inputs, the full corpus), profiling, and optimization without changing output.
 - [x] Streamed JSON samples (64 KiB chunks, Node's chunked UTF-8
       decoding) and `CompressedJSON` in blocks: 2.6 GB input 7.2 → 6.2 GB
       peak memory, output identical.
-- [ ] Share identical per-string attribute sets during inference (about
+- [x] Share identical per-string attribute sets during inference (about
       2–3 GB of a 2.6 GB input's peak), keeping the exact counts enum
-      inference needs.
+      inference needs: superseded by Phase 8a, which keeps one combined
+      set per place.
 
-## Phase 8 — Big inputs (planned)
+## Phase 8 — Big inputs (in progress: 8a done)
 
 Inference from running tallies instead of a full copy of the document, then
 parallel chunks (threads in the CLI, workers in browsers) whose tallies merge
@@ -187,3 +188,20 @@ what it computes from the full value lists. The current path stays as the
 reference: every test and a seeded random-document generator run both paths
 and require identical output. Memory then grows with the number of distinct
 fields and strings instead of the file size.
+
+- [x] 8a — Streaming inference (`feat/streaming-inference`): the readers
+      emit into a `JsonSink`; `input/tallies.rs` counts, per place in the
+      samples, what `Inference.ts` reads from its value lists, and
+      `input/tally_inference.rs` runs `Inference.ts`'s decisions on them.
+      The CLI and `JsonInput` use it; `JsonInput::from_compressed` (the
+      WebAssembly facade's tables) keeps inferring from `CompressedJSON`,
+      the reference. The equivalence argument, one section per tally
+      operation, is [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md);
+      `cargo xtask streaming-fuzz` compares both paths on generated inputs
+      (graphs after inference and whole runs), and generated documents are
+      compared with the TypeScript CLI. 2.6 GB input: peak RSS 5.0–5.8 GiB
+      → 82 MiB, as for the 40 MB input it repeats; a quarter to a third
+      less CPU time (see
+      [BENCHMARKS.md](BENCHMARKS.md#streaming-inference-phase-8a)).
+- [ ] 8b — Parallel chunks: tallies of chunks read on several threads (or
+      workers) and merged in file order (`Tallies::merge` is the merge).
