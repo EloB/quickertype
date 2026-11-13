@@ -27,6 +27,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { cliCommands, cliCompatible, cliInvocation, findReference, repoRoot, runCli } from "./engines.mjs";
+import { unportablePaths } from "./file-names.mjs";
 
 const args = process.argv.slice(2);
 const option = (name) => {
@@ -49,29 +50,41 @@ if (saved === undefined || name === undefined || description === undefined || !/
 
 const kase = saved.case ?? saved;
 const dir = path.join(casesDir, name);
-fs.rmSync(dir, { recursive: true, force: true });
-fs.mkdirSync(dir, { recursive: true });
-
 const record = { description, seed: saved.seed, foundIn: saved.mode ?? saved.foundIn, case: kase };
+/** What goes into the case directory besides case.json: relative path → bytes. */
+const files = new Map();
 if (cliCompatible(kase)) {
     const invocation = cliInvocation(kase);
     const result = await runCli(cliCommands(reference).ref, invocation);
     if (typeof result.exit !== "number") throw new Error(`reference CLI: ${result.exit}`);
-    for (const [f, text] of invocation.files) {
-        fs.mkdirSync(path.join(dir, path.dirname(f)), { recursive: true });
-        fs.writeFileSync(path.join(dir, f), text);
-    }
-
+    for (const [f, text] of invocation.files) files.set(f, Buffer.from(text, "utf8"));
     record.cli = { args: invocation.args, dirs: invocation.dirs, exit: result.exit };
-    if (result.stdout !== "") fs.writeFileSync(path.join(dir, "cli.stdout"), Buffer.from(result.stdout, "latin1"));
-    if (result.stderr !== "") fs.writeFileSync(path.join(dir, "cli.stderr"), Buffer.from(result.stderr, "latin1"));
-    for (const [f, content] of Object.entries(result.files)) {
-        const target = path.join(dir, "expected", f);
-        fs.mkdirSync(path.dirname(target), { recursive: true });
-        fs.writeFileSync(target, Buffer.from(content, "latin1"));
-    }
+    if (result.stdout !== "") files.set("cli.stdout", Buffer.from(result.stdout, "latin1"));
+    if (result.stderr !== "") files.set("cli.stderr", Buffer.from(result.stderr, "latin1"));
+    const written = Object.entries(result.files).map(([f, content]) => [f.split(path.sep).join("/"), content]);
+    for (const [f, content] of written) files.set(`expected/${f}`, Buffer.from(content, "latin1"));
+    record.cli.files = written.map(([f]) => f).sort();
+}
 
-    record.cli.files = Object.keys(result.files).sort();
+// The case is checked out on Windows, macOS and Linux: every name in it
+// must be one all three can hold (cliCompatible saw to the inputs; the
+// reference's output files are named after types), and Windows' 260
+// characters must fit the whole path below a checkout.
+const paths = [...files.keys()];
+const unportable = unportablePaths(paths);
+const tooLong = paths.filter((p) => `tests/fuzz-regressions/${name}/${p}`.length > 200);
+if (unportable.length > 0 || tooLong.length > 0) {
+    console.error(`cannot record ${name}: file names Windows, macOS or Linux cannot check out:`);
+    for (const p of [...unportable, ...tooLong.map((p) => `${p} (path too long)`)]) console.error(`  ${JSON.stringify(p)}`);
+    console.error("rename what they come from in the case (top-levels, --out) and minimize again");
+    process.exit(1);
+}
+
+fs.rmSync(dir, { recursive: true, force: true });
+fs.mkdirSync(dir, { recursive: true });
+for (const [f, bytes] of files) {
+    fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true });
+    fs.writeFileSync(path.join(dir, f), bytes);
 }
 
 fs.writeFileSync(path.join(dir, "case.json"), `${JSON.stringify(record, undefined, 2)}\n`);

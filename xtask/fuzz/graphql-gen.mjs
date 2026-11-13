@@ -4,6 +4,8 @@
 // and a query document over it with aliases, `@include`/`@skip`, named and
 // inline fragments, nested lists and non-nulls, and one or more operations.
 
+import { isDeviceName } from "./file-names.mjs";
+
 const SCALARS = ["String", "Int", "Float", "Boolean", "ID"];
 const CUSTOM_SCALARS = ["DateTime", "URI", "JSON", "Date", "BigInt"];
 const NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
@@ -217,6 +219,13 @@ export function genGraphQL(rng, genKey, description) {
     const queries = [];
     for (let i = 0; i < count; i++) {
         let name = graphqlName(rng, genKey, true);
+        if (count > 1) {
+            // Several queries are files named after them: names every
+            // platform can hold (file-names.mjs).
+            name = name.slice(0, 90);
+            if (isDeviceName(name)) name = `${name}_`;
+        }
+
         while (queries.some((q) => q.name.toLowerCase() === name.toLowerCase())) name = `${name}${i}`;
         queries.push({ name, query: genQuery(rng, genKey, schema) });
     }

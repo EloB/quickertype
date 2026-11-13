@@ -26,6 +26,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { portableName } from "./file-names.mjs";
 import { genGraphQL } from "./graphql-gen.mjs";
 import { arr, lit, num, obj, str, toText } from "./json-text.mjs";
 import { Rng } from "./rng.mjs";
@@ -576,8 +577,9 @@ function genJsonTopLevels(rng, lang) {
     for (let t = 0; t < n; t++) {
         let name = n === 1 && rng.chance(0.55) ? "TopLevel" : rng.chance(0.65) ? capitalize(compoundName(rng)) : rng.chance(0.7) ? genKey(rng) : rng.pick(ODD_KEYS);
         if (n > 1) {
-            // CLI runs pass several top-levels as files in a directory.
-            name = name.replace(/[/\\\0\n\r\t.]/g, "") || `T${t}`;
+            // CLI runs pass several top-levels as files in a directory, so
+            // these names must be file names on every platform.
+            name = portableName(name, `T${t}`);
             if (names.has(name.toLowerCase())) name = `${name}${t}`;
         }
 

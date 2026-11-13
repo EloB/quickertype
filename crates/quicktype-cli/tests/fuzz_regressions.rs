@@ -236,3 +236,76 @@ fn fuzz_regressions_match_reference() {
         failures.join("\n")
     );
 }
+
+/// Why `name` (one path component) cannot be checked out on every platform
+/// CI tests on, if it cannot: the rules of `xtask/fuzz/file-names.mjs`
+/// (which the recorder applies, also checking that names are in NFC).
+fn unportable_file_name(name: &str) -> Option<&'static str> {
+    const DEVICE_NAMES: [&str; 6] = ["con", "prn", "aux", "nul", "conin$", "conout$"];
+    if name.is_empty() || name == "." || name == ".." {
+        return Some("empty, . or ..");
+    }
+    if name
+        .chars()
+        .any(|c| c.is_control() || "/\\:*?\"<>|".contains(c))
+    {
+        return Some("a character Windows does not allow");
+    }
+    if name.ends_with(' ') || name.ends_with('.') {
+        return Some("ends in a space or a dot");
+    }
+    let stem = name
+        .split('.')
+        .next()
+        .unwrap_or("")
+        .trim_end_matches(' ')
+        .to_lowercase();
+    let numbered = ["com", "lpt"].iter().any(|prefix| {
+        stem.strip_prefix(prefix).is_some_and(|rest| {
+            let mut chars = rest.chars();
+            matches!(
+                (chars.next(), chars.next()),
+                (Some('0'..='9' | '¹' | '²' | '³'), None)
+            )
+        })
+    });
+    if DEVICE_NAMES.contains(&stem.as_str()) || numbered {
+        return Some("a Windows device name");
+    }
+    if name.encode_utf16().count() > 120 || name.len() > 240 {
+        return Some("too long");
+    }
+    None
+}
+
+#[test]
+fn fuzz_regression_file_names_are_portable() {
+    let mut all = Vec::new();
+    files(&cases_dir(), &cases_dir(), &mut all);
+    let mut problems = Vec::new();
+    let mut folded = std::collections::HashMap::new();
+    for (rel, _) in &all {
+        let rel = rel.replace('\\', "/");
+        let components: Vec<&str> = rel.split('/').collect();
+        for component in &components {
+            if let Some(why) = unportable_file_name(component) {
+                problems.push(format!("{rel:?}: {component:?} is {why}"));
+            }
+        }
+        for i in 1..=components.len() {
+            let prefix = components[..i].join("/");
+            if let Some(other) = folded.insert(prefix.to_lowercase(), prefix.clone()) {
+                if other != prefix {
+                    problems.push(format!("{prefix:?} and {other:?} differ only in case"));
+                }
+            }
+        }
+    }
+    problems.sort();
+    problems.dedup();
+    assert!(
+        problems.is_empty(),
+        "tests/fuzz-regressions has file names Windows, macOS or Linux cannot check out:\n{}",
+        problems.join("\n")
+    );
+}
