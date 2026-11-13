@@ -201,7 +201,12 @@ the others name the fix they need.
     would re-enter the engine's console sink (a `RefCell`) and trap; the
     instance is then discarded and the run fails with an `InternalError`;
   - GraphQL input (`quicktype-graphql-input`) is not ported yet, so its
-    runs use the TypeScript engine.
+    runs use the TypeScript engine;
+  - a JSON Schema nested deeper than Node's stack allows (see "Stack
+    depth") makes the TypeScript quicktype-core overflow inside a promise
+    callback, which takes the whole process down (`Exception in
+    PromiseRejectCallback`); the engine rejects the run with the same
+    `RangeError: Maximum call stack size exceeded`.
 - **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
   surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
   `String`s cannot. Wherever the TypeScript produces one, the port drops it:

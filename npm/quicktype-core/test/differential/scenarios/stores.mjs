@@ -245,6 +245,30 @@ export function scenarios() {
             });
             return schemaRun(qt, store, [{ name: "U", uris: ["u.json"] }]);
         }),
+        // 161 is the deepest nesting Node 24 gets through (docs/PARITY.md);
+        // one more overflows the reference's stack inside a promise callback,
+        // which takes the whole process down, so it cannot be compared here.
+        ...[100, 161].map((depth) =>
+            scenario(`properties nested ${depth} deep`, async (qt) => {
+                let schema = { type: "string" };
+                for (let i = 0; i < depth; i++) schema = { type: "object", properties: { [`p${i % 7}`]: schema } };
+                return schemaRun(qt, mapStore(qt, { "deep.json": schema }), [{ name: "Deep", uris: ["deep.json"] }]);
+            }),
+        ),
+        ...[50, 3000].map((length) =>
+            scenario(`$ref chain of ${length} documents`, async (qt) => {
+                const documents = {};
+                for (let i = 0; i < length; i++) {
+                    documents[`d${i}.json`] =
+                        i === length - 1
+                            ? { type: "object", properties: { end: { type: "boolean" } } }
+                            : { type: "object", properties: { [`next${i % 5}`]: { $ref: `d${i + 1}.json` } } };
+                }
+
+                const result = await schemaRun(qt, mapStore(qt, documents), [{ name: "Chain", uris: ["d0.json"] }]);
+                return [...result].map(([name, r]) => [name, r.lines.length, r.lines.slice(0, 40)]);
+            }),
+        ),
         scenario("debug traces of schema resolving", async (qt) =>
             schemaRun(qt, mapStore(qt, documents), [{ name: "Person", uris: ["person.json"] }], {
                 debugPrintSchemaResolving: true,
