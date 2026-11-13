@@ -5,11 +5,16 @@
 //! `JsonConverter<T>` per named transformation, generated from its
 //! transformer tree, and the DateOnly/TimeOnly and `DateTimeOffset`
 //! converters.
+//!
+//! The transformer interpreter (`emitDecodeTransformer`, `emitTransformer`
+//! and the converter classes) is a separate copy from the Newtonsoft
+//! renderer's on purpose: TypeScript has two near-identical copies that
+//! differ in details, and mirroring each keeps upstream changes portable
+//! one to one.
 
 use std::cell::Cell;
 use std::rc::Rc;
 
-use indexmap::IndexMap;
 use quicktype_js_compat::number;
 
 use crate::convenience_renderer::ConvenienceRendererCore;
@@ -18,19 +23,19 @@ use crate::support::strings::{camel_case, utf16_string_escape};
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::transformers::{
-    Transformation, Transformer, TransformerData, downcast_transformation, follow_target_type,
+    Transformer, TransformerData, downcast_transformation, follow_target_type,
     transformation_for_type,
 };
 use crate::ty::type_utils::{is_nullable, nullable_from_union};
 
-use super::c_sharp_renderer::{CSharpOptions, CSharpRenderer, CSharpState, Follow, emit_usings};
+use super::c_sharp_renderer::{
+    CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings, intercalate_and,
+    transformation_of,
+};
 use super::utils::{
     AccessModifier, DENSE_JSON_PROPERTY_NAME, DENSE_NULL_VALUE_HANDLING_ENUM_NAME,
     always_apply_transformation, is_value_type,
 };
-
-/// `emitFinish`: what to do with a decoded or encoded value.
-type Finish<'f, R> = &'f dyn Fn(&mut R, Source) -> Result<()>;
 
 /// `SystemTextJsonCSharpRenderer`.
 pub struct SystemTextJsonCSharpRenderer<'a> {
@@ -39,8 +44,6 @@ pub struct SystemTextJsonCSharpRenderer<'a> {
     /// `_options.dateTimeOnlyConverters` (the one option beyond
     /// `cSharpOptions`).
     date_time_only_converters: bool,
-    /// `_enumExtensionsNames`.
-    enum_extensions_names: IndexMap<Name, Name>,
     /// `_needHelpers`.
     need_helpers: bool,
     /// `_needAttributes`.
@@ -55,15 +58,6 @@ impl std::fmt::Debug for SystemTextJsonCSharpRenderer<'_> {
             .field("cs", &self.cs)
             .finish_non_exhaustive()
     }
-}
-
-/// The transformation of `t`, which must have one.
-fn transformation_of(
-    graph: &crate::ty::type_graph::TypeGraph,
-    t: TypeRef,
-) -> Result<Transformation> {
-    let xf = defined(transformation_for_type(graph, t)?)?;
-    Ok(defined(downcast_transformation(xf.as_ref()))?.clone())
 }
 
 impl<'a> SystemTextJsonCSharpRenderer<'a> {
@@ -83,7 +77,6 @@ impl<'a> SystemTextJsonCSharpRenderer<'a> {
             core: ConvenienceRendererCore::new(target_language, render_context),
             cs: CSharpState::new(options),
             date_time_only_converters,
-            enum_extensions_names: IndexMap::new(),
             need_helpers,
             need_attributes,
             need_namespaces,
@@ -556,6 +549,8 @@ impl<'a> SystemTextJsonCSharpRenderer<'a> {
                                 var_gen,
                             )?;
                             if !all_handled {
+                                // No `;`: faithful to quicktype, which emits
+                                // `break` without one here.
                                 r.emit_line("break");
                             }
                             Ok(())
@@ -1241,18 +1236,6 @@ impl<'a> SystemTextJsonCSharpRenderer<'a> {
     }
 }
 
-/// `arrayIntercalate([" && "], conditions)`.
-fn intercalate_and(conditions: Vec<Source>) -> Source {
-    let mut result = Vec::with_capacity(conditions.len() * 2);
-    for (i, condition) in conditions.into_iter().enumerate() {
-        if i > 0 {
-            result.push(sl![" && "]);
-        }
-        result.push(condition);
-    }
-    Source::Sequence(result)
-}
-
 /// The hooks `SystemTextJsonCSharpRenderer` overrides, on top of
 /// [`c_sharp_hooks`](super::c_sharp_renderer::c_sharp_hooks).
 mod system_text_json_hooks {
@@ -1373,7 +1356,8 @@ mod system_text_json_hooks {
                 .dependency_name(Some(&naming_function), order, move |lookup| {
                     format!("{}_extensions", lookup(name))
                 });
-        r.enum_extensions_names.insert(name, extensions_name);
+        // TypeScript also records it in `_enumExtensionsNames`, which
+        // nothing reads.
         Ok(vec![extensions_name])
     }
 }

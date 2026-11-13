@@ -11,8 +11,11 @@ use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
 use crate::support::recursion::guard;
-use crate::support::support::assert;
-use crate::transformers::follow_target_type;
+use crate::support::support::{assert, defined};
+use crate::transformers::{
+    Transformation, downcast_transformation, follow_target_type, transformation_for_type,
+};
+use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_utils::{
     NullRemovalSort, find_member, nullable_from_union, remove_null_from_union,
 };
@@ -191,6 +194,29 @@ pub fn emit_usings<'a, R: CSharpRenderer<'a>>(r: &mut R) -> Result<()> {
         r.emit_using(ns);
     }
     Ok(())
+}
+
+/// `emitFinish` of the leaves' transformer interpreters: what to do with a
+/// decoded or encoded value.
+pub(crate) type Finish<'f, R> = &'f dyn Fn(&mut R, Source) -> Result<()>;
+
+/// `defined(transformationForType(t))`: the transformation of `t`, which
+/// must have one.
+pub(crate) fn transformation_of(graph: &TypeGraph, t: TypeRef) -> Result<Transformation> {
+    let xf = defined(transformation_for_type(graph, t)?)?;
+    Ok(defined(downcast_transformation(xf.as_ref()))?.clone())
+}
+
+/// `arrayIntercalate([" && "], conditions)`.
+pub(crate) fn intercalate_and(conditions: Vec<Source>) -> Source {
+    let mut result = Vec::with_capacity(conditions.len() * 2);
+    for (i, condition) in conditions.into_iter().enumerate() {
+        if i > 0 {
+            result.push(sl![" && "]);
+        }
+        result.push(condition);
+    }
+    Source::Sequence(result)
 }
 
 /// The methods of TS `CSharpRenderer` that are not `ConvenienceRenderer`
