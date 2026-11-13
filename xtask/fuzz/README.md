@@ -1,0 +1,93 @@
+# Differential fuzzing
+
+Seeded random inputs and options, run through quicktype (the reference
+checkout in `tests/golden/REFERENCE`) and through the port, compared byte for
+byte. It finds parity bugs the recorded corpus does not cover; each one found
+is minimized and kept as a regression case in `tests/fuzz-regressions/`.
+
+Needs a built quicktype checkout (`npm ci && npm run build`; found as
+`--reference`, `$QUICKTYPE_REFERENCE`, `../quicktype` or `../../quicktype`), the
+built npm package (`cd npm/quicktype-core && npm ci && npm run build`) and the
+release CLI (`cargo build --release -p quicktype-cli`).
+
+```sh
+node xtask/fuzz/fuzz.mjs --seed 1 --count 5000 -j 6       # seeds 1..5000
+node xtask/fuzz/fuzz.mjs --seed 100000 --minutes 120 -j 6 # as many as fit
+node xtask/fuzz/fuzz.mjs --print 1234                     # the case of seed 1234
+node xtask/fuzz/fuzz.mjs --replay target/fuzz/run-1/1234-api.json
+node xtask/fuzz/minimize.mjs target/fuzz/run-1/1234-api.json
+node xtask/fuzz/record.mjs target/fuzz/run-1/1234-api.min.json <name> "<what it checks>"
+```
+
+## Cases
+
+A case is a pure function of its seed (`generate.mjs`): a target language,
+renderer options drawn from that language's option definitions (booleans,
+legal enum values and the odd illegal one, string values from a list of
+awkward names), general options (`--no-maps`, `--no-enums`, `--no-uuids`,
+`--no-date-times`, `--no-integer-strings`, `--no-boolean-strings`,
+`--no-combine-classes`, `--no-ignore-json-refs`, `--all-properties-optional`,
+`--alphabetize-properties`, `--quiet`, `--out`) and API-only options
+(`indentation`, `leadingComments`, `outputFilename`), and one of:
+
+- **JSON samples**, from random shapes instantiated several times per
+  sample (and 1–5 samples per top-level, 1–3 top-levels): classes with
+  optional and nullable properties, arrays, unions of kinds, recursive
+  trees, maps with 0–6, about 20, about 50, about 500 and more than 500
+  keys, enums whose case count sits around the `cases < sqrt(values)`
+  threshold (words, numeric strings, case variants, odd strings), date,
+  time, date-time, UUID, integer, boolean and URI strings and near misses,
+  number literals at the integer-range edges and in every spelling (`1.0`,
+  `1E+2`, `-0`, `1e400`, 30-digit integers), nulls, empty containers,
+  duplicate keys, `$ref` objects, and keys and names taken from target
+  language keywords (`tests/keywords.txt`), acronyms (`tests/acronyms.txt`),
+  integer-like strings, `__proto__` and other `Object.prototype` names,
+  the empty string, whitespace, unicode and astral characters.
+- **A JSON Schema**: objects (`properties`, `required` with the odd
+  unknown name, `additionalProperties` as `false`, `true` or a schema,
+  `patternProperties`, `quicktypePropertyOrder`), arrays (`items`, tuples,
+  `prefixItems`, `minItems`/`maxItems`), `anyOf`/`oneOf`/`allOf`, `enum`
+  and `const` of every JSON type, `$ref` to `definitions`/`$defs` (also
+  recursive and to `#`), formats, patterns, `minimum`/`maximum`,
+  `minLength`/`maxLength`, type lists with `null`, `nullable`, boolean
+  schemas, titles, descriptions (comment terminators, line breaks, unicode),
+  `default` and `examples`.
+
+## Modes
+
+Each case runs in up to three modes (`--modes`, chosen per seed):
+
+- **api** (always): `quicktypeMultiFile` on the reference quicktype-core and
+  on our npm package with the WebAssembly engine forced
+  (`QUICKTYPE_ENGINE=wasm`); JSON samples are strings (`JSON.parse`
+  semantics). Results, errors and console output are compared as the npm
+  differential suite does (`npm/quicktype-core/test/differential/compare.mjs`).
+- **stream** (JSON, `--stream-rate`, default 35%): the same, but samples are
+  read by the CLI's `CompressedJSONFromStream` (stream-json: `1.0` is a double,
+  duplicate keys kept, source key order), the CLI's reading path. Our package
+  gets that class compiled against itself and registered as a native input,
+  so these runs still go to the WebAssembly engine.
+- **cli** (`--cli-rate`, default 8%): `node <reference>/dist/index.js` and
+  `target/release/quicktype` with the same arguments, each in a fresh
+  directory holding the same input files (one top-level: its samples as
+  files; several: a directory of `<name>.json`); exit code, stdout, stderr
+  and written files are compared. This covers the native-only code: argument
+  parsing, the Rust stream-json reader, file output.
+
+A run that our package does not run on WebAssembly is counted ("not on
+wasm"); one where the WebAssembly engine failed (trapped or overflowed the
+stack) and the facade redid it on TypeScript is a divergence even if the
+result matches.
+
+## Output
+
+`target/fuzz/run-<seed>/` (or `--out`) gets `<seed>-<mode>.json` for every
+divergence (the case, the first difference, both outcomes) and
+`summary.json` (seed range, counts per mode and language, divergences).
+`minimize.mjs` shrinks a divergence while it keeps diverging the same way
+(same mode, same kind of reference outcome): options, top-levels and
+samples first, then each JSON sample or schema as a lossless syntax tree
+(`json-text.mjs`). `record.mjs` writes the shrunk case to
+`tests/fuzz-regressions/<name>/` with the reference CLI's output;
+`crates/quicktype-cli/tests/fuzz_regressions.rs` replays it with our binary
+and the npm differential suite (`fuzz` category) through the API.

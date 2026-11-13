@@ -63,6 +63,15 @@ findings per area, with file and line references.
   the TypeScript engine and are reported separately from those identical
   on WebAssembly.
 
+- **Differential fuzzing:** `xtask/fuzz/` generates seeded random JSON
+  samples and JSON Schemas with random renderer and general options for
+  every language, and compares the reference with the port in-process
+  (quicktype-core against our package on WebAssembly, with `JSON.parse` and
+  with the CLI's stream reader) and through both CLIs. Divergences are
+  minimized and kept in `tests/fuzz-regressions/`, which
+  `quicktype-cli/tests/fuzz_regressions.rs` and the differential suite's
+  `fuzz` scenarios replay. See `xtask/fuzz/README.md`.
+
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
 rather than the CLI, so it has no CLI recording. The `golang-leading-comments`
 render scenario reproduces its renders (`leadingComments: []`, one file and
