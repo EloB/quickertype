@@ -43,7 +43,7 @@
 //!
 //! The query is parsed with a port of graphql-js 16.14.2's parser
 //! ([`graphql`]), so syntax errors read exactly like graphql-js's. The
-//! schema is read with JavaScript's semantics ([`js`]): a malformed schema
+//! schema is read with JavaScript's semantics (module `js`): a malformed schema
 //! fails with the `TypeError` the TypeScript fails with. The types are
 //! built in the same order with the same `TypeBuilder` calls, so the graph
 //! (type indexes, names, unreachable leftovers included) is identical.
