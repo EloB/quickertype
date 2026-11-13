@@ -1,0 +1,106 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Sensordata"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "sensor",
+      3,
+      false
+     ],
+     [
+      "data",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Sensordata",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "from-map": "true"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this JSON data, do\n//\n//     final sensordata = sensordataFromJson(jsonString);\n\nimport 'dart:convert';\n\nSensordata sensordataFromJson(String str) => Sensordata.fromMap(json.decode(str));\n\nString sensordataToJson(Sensordata data) => json.encode(data.toMap());\n\nclass Sensordata {\n    final String sensor;\n    final List<int> data;\n\n    Sensordata({\n        required this.sensor,\n        required this.data,\n    });\n\n    factory Sensordata.fromMap(Map<String, dynamic> json) => Sensordata(\n        sensor: json[\"sensor\"],\n        data: List<int>.from(json[\"data\"].map((x) => x)),\n    );\n\n    Map<String, dynamic> toMap() => {\n        \"sensor\": sensor,\n        \"data\": List<dynamic>.from(data.map((x) => x)),\n    };\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "dart",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this JSON data, do\n//\n//     final sensordata = sensordataFromJson(jsonString);\n\nimport 'dart:convert';\n\nSensordata sensordataFromJson(String str) => Sensordata.fromJson(json.decode(str));\n\nString sensordataToJson(Sensordata data) => json.encode(data.toJson());\n\nclass Sensordata {\n    final String sensor;\n    final List<int> data;\n\n    Sensordata({\n        required this.sensor,\n        required this.data,\n    });\n\n    factory Sensordata.fromJson(Map<String, dynamic> json) => Sensordata(\n        sensor: json[\"sensor\"],\n        data: List<int>.from(json[\"data\"].map((x) => x)),\n    );\n\n    Map<String, dynamic> toJson() => {\n        \"sensor\": sensor,\n        \"data\": List<dynamic>.from(data.map((x) => x)),\n    };\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-dart-method-names"
+}

@@ -142,3 +142,33 @@ fn swift_json_null_implements_modern_hashable() {
     assert!(output.contains("hasher.combine(0)"));
     assert!(!output.contains("public var hashValue: Int"));
 }
+
+#[test]
+fn dart_from_map_only_renames_class_level_map_methods() {
+    let lines = render_scenario("vitest-dart-method-names", 0);
+    for expected in [
+        "Sensordata sensordataFromJson(String str) => Sensordata.fromMap(json.decode(str));",
+        "String sensordataToJson(Sensordata data) => json.encode(data.toMap());",
+        "    factory Sensordata.fromMap(Map<String, dynamic> json) => Sensordata(",
+        "    Map<String, dynamic> toMap() => {",
+    ] {
+        assert!(lines.iter().any(|line| line == expected), "{expected}");
+    }
+    assert!(!lines.iter().any(|line| line.contains("sensordataFromMap")));
+    assert!(!lines.iter().any(|line| line.contains("sensordataToMap")));
+}
+
+#[test]
+fn dart_uses_json_names_at_both_levels_by_default() {
+    let lines = render_scenario("vitest-dart-method-names", 1);
+    for expected in [
+        "Sensordata sensordataFromJson(String str) => Sensordata.fromJson(json.decode(str));",
+        "String sensordataToJson(Sensordata data) => json.encode(data.toJson());",
+        "    factory Sensordata.fromJson(Map<String, dynamic> json) => Sensordata(",
+        "    Map<String, dynamic> toJson() => {",
+    ] {
+        assert!(lines.iter().any(|line| line == expected), "{expected}");
+    }
+    assert!(!lines.iter().any(|line| line.contains("fromMap")));
+    assert!(!lines.iter().any(|line| line.contains("toMap")));
+}

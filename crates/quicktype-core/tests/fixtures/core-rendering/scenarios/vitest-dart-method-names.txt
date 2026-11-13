@@ -1,0 +1,8 @@
+# Port of quicktype's test/unit/dart-method-names.test.ts: --from-map
+# renames only the class-level map methods; by default both levels use Json
+# names (checked in tests/vitest_swift_dart.rs).
+input json Sensordata {"sensor":"temp","data":[1,2,3]}
+pipeline {"lang": "dart"}
+
+render dart {"rendererOptions": {"from-map": "true"}}
+render dart {}
