@@ -44,6 +44,7 @@ const GatherNames = load("GatherNames.js");
 const { Chance } = load("support/Chance.js");
 const { RegularTypeNames, TooManyTypeNames } = load("attributes/TypeNames.js");
 const { IssueAnnotationData } = load("Annotation.js");
+const { typeRefIndex } = load("Type/TypeRef.js");
 const core = load("index.js");
 const cli = require(join(quicktype, "dist/index.js"));
 
@@ -70,6 +71,84 @@ Chance.prototype.animal = function (...args) {
 function accessorEntry(entry) {
     if (typeof entry === "string") return entry;
     return Array.from(entry);
+}
+
+// A transformer tree (`Transformers.ts`) as JSON: `k` is the transformer's
+// kind, `s` the index of its source type, and the other keys hold the
+// kind-specific fields (child transformers are dumped the same way, absent
+// ones as null):
+//
+//   decode, parse-string, stringify   { c: consumer }
+//   string-producer                   { c, result }
+//   min-max-length-check              { c, min, max }   (minLength, maxLength)
+//   min-max-value-check               { c, min, max }   (minimum, maximum)
+//   decode-array                      { c, item: itemTargetType, x: itemTransformer }
+//   encode-array                      { item, x }
+//   choice                            { xs: [transformer, ...] }
+//   decoding-choice                   { null, integer, double, bool, string, array, object }
+//   union-member-match                { x: transformer, member: memberType }
+//   string-match                      { x: transformer, case: stringCase }
+//   encode, union-instantiation       {}
+function dumpTransformer(xfer) {
+    if (xfer === undefined) return null;
+    const d = { k: xfer.kind, s: typeRefIndex(xfer.sourceTypeRef) };
+    const bound = (n) => (n === undefined ? null : n);
+    switch (xfer.kind) {
+        case "decode":
+        case "parse-string":
+        case "stringify":
+            d.c = dumpTransformer(xfer.consumer);
+            break;
+        case "string-producer":
+            d.c = dumpTransformer(xfer.consumer);
+            d.result = xfer.result;
+            break;
+        case "min-max-length-check":
+            d.c = dumpTransformer(xfer.consumer);
+            d.min = bound(xfer.minLength);
+            d.max = bound(xfer.maxLength);
+            break;
+        case "min-max-value-check":
+            d.c = dumpTransformer(xfer.consumer);
+            d.min = bound(xfer.minimum);
+            d.max = bound(xfer.maximum);
+            break;
+        case "decode-array":
+            d.c = dumpTransformer(xfer.consumer);
+            d.item = typeRefIndex(xfer._itemTargetTypeRef);
+            d.x = dumpTransformer(xfer.itemTransformer);
+            break;
+        case "encode-array":
+            d.item = typeRefIndex(xfer._itemTargetTypeRef);
+            d.x = dumpTransformer(xfer.itemTransformer);
+            break;
+        case "choice":
+            d.xs = xfer.transformers.map(dumpTransformer);
+            break;
+        case "decoding-choice":
+            d.null = dumpTransformer(xfer.nullTransformer);
+            d.integer = dumpTransformer(xfer.integerTransformer);
+            d.double = dumpTransformer(xfer.doubleTransformer);
+            d.bool = dumpTransformer(xfer.boolTransformer);
+            d.string = dumpTransformer(xfer.stringTransformer);
+            d.array = dumpTransformer(xfer.arrayTransformer);
+            d.object = dumpTransformer(xfer.objectTransformer);
+            break;
+        case "union-member-match":
+            d.x = dumpTransformer(xfer.transformer);
+            d.member = typeRefIndex(xfer.memberTypeRef);
+            break;
+        case "string-match":
+            d.x = dumpTransformer(xfer.transformer);
+            d.case = xfer.stringCase;
+            break;
+        case "encode":
+        case "union-instantiation":
+            break;
+        default:
+            throw new Error(`cannot dump transformer ${xfer.kind}`);
+    }
+    return d;
 }
 
 function dumpAttributes(attributes) {
@@ -128,6 +207,13 @@ function dumpAttributes(attributes) {
                 break;
             case "uriAttributes":
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
+                break;
+            case "transformation":
+                // A Transformation: its target type and its transformer tree.
+                result.transformation = {
+                    target: typeRefIndex(value._targetTypeRef),
+                    xfer: dumpTransformer(value.transformer),
+                };
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);
@@ -366,6 +452,102 @@ async function recordApi(spec) {
     writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
 }
 
+// quicktype's C# unit tests (test/unit/csharp-*.test.ts): each renders one
+// JSON sample (`json`, through jsonInputForTargetLanguage) or JSON Schema
+// (`schema`) with the given renderer options. Their assertions are ported in
+// crates/quicktype-core/tests/csharp_vitest.rs.
+const csharpPersonSample = '{"name":"Alice","age":37}';
+const csharpApiCases = [
+    ...[
+        ["default", {}],
+        ["disabled", { "dateonly-timeonly-converters": "false" }],
+    ].map(([variant, options]) => ({
+        id: `unit/csharp-dateonly-timeonly-converters/${variant}`,
+        schema: {
+            name: "TopLevel",
+            schema: {
+                type: "object",
+                properties: { name: { type: "string" }, count: { type: "integer" } },
+                required: ["name", "count"],
+            },
+        },
+        rendererOptions: { framework: "SystemTextJson", ...options },
+    })),
+    ...["NewtonSoft", "SystemTextJson"].map((framework) => ({
+        id: `unit/csharp-partial-helpers/${framework}`,
+        json: { name: "Something", sample: '{"some_property":"hello"}' },
+        rendererOptions: { framework },
+    })),
+    ...["NewtonSoft", "SystemTextJson"].map((framework) => ({
+        id: `unit/csharp-records/${framework}`,
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { framework, "use-records": true },
+    })),
+    {
+        id: "unit/csharp-records/default",
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { framework: "SystemTextJson" },
+    },
+    {
+        id: "unit/csharp-records/record-member-names",
+        json: { name: "Person", sample: '{"clone":"copy","equalityContract":"contract","printMembers":"members"}' },
+        rendererOptions: { "use-records": true },
+    },
+    {
+        id: "unit/csharp-records/just-types",
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { "use-records": true, "just-types": true },
+    },
+    ...[
+        ["NewtonSoft-attributes-only", { framework: "NewtonSoft", features: "attributes-only" }],
+        ["SystemTextJson-attributes-only", { framework: "SystemTextJson", features: "attributes-only" }],
+        ["NewtonSoft-complete", { framework: "NewtonSoft" }],
+        ["SystemTextJson-complete", { framework: "SystemTextJson" }],
+    ].map(([variant, rendererOptions]) => ({
+        id: `unit/csharp-superfluous-usings/${variant}`,
+        json: { name: "Sample", sample: '{"name":"Alice","age":30,"active":true}' },
+        rendererOptions,
+    })),
+    {
+        id: "unit/csharp-system-text-json-exceptions/union",
+        schema: {
+            name: "TopLevel",
+            schema: {
+                type: "object",
+                properties: { mixed: { oneOf: [{ type: "integer" }, { type: "string" }] } },
+                required: ["mixed"],
+            },
+        },
+        rendererOptions: { framework: "SystemTextJson" },
+    },
+];
+
+async function recordCSharpApi(spec) {
+    const inputData = new core.InputData();
+    if (spec.json !== undefined) {
+        const jsonInput = core.jsonInputForTargetLanguage("csharp");
+        await jsonInput.addSource({ name: spec.json.name, samples: [spec.json.sample] });
+        inputData.addInput(jsonInput);
+    } else {
+        const schemaInput = new core.JSONSchemaInput(undefined);
+        await schemaInput.addSource({ name: spec.schema.name, schema: JSON.stringify(spec.schema.schema) });
+        inputData.addInput(schemaInput);
+    }
+    captured = {};
+    drawnNames = new Set();
+    await core.quicktypeMultiFile({ inputData, lang: "csharp", rendererOptions: spec.rendererOptions });
+    const rec = captured;
+    captured = undefined;
+    const fixture = {
+        id: spec.id,
+        graph: rec.graph,
+        gather: rec.gather,
+        render: rec.render,
+        files: rec.files.map((f) => ({ name: f.name, text: f.text, annotations: f.annotations })),
+    };
+    writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
+}
+
 mkdirSync(outDir, { recursive: true });
 const counts = {};
 for (const id of goldenCases(goldenDir)) {
@@ -378,6 +560,12 @@ for (const id of goldenCases(goldenDir)) {
 if (languages.includes("rust")) {
     for (const spec of apiCases) {
         await recordApi(spec);
+        counts["recorded (api)"] = (counts["recorded (api)"] ?? 0) + 1;
+    }
+}
+if (languages.includes("csharp")) {
+    for (const spec of csharpApiCases) {
+        await recordCSharpApi(spec);
         counts["recorded (api)"] = (counts["recorded (api)"] ?? 0) + 1;
     }
 }

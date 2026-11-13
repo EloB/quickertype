@@ -30,6 +30,11 @@ and compares every file and, for cases without `--quiet`, the issue
 annotations the CLI prints to stderr. A few cases from quicktype's unit tests
 (API calls) carry their expected output inline.
 
+A `transformation` attribute (C# and Python make transformations) is dumped
+as `{ target, xfer }`: the index of the target type and the transformer tree,
+whose JSON shape is documented at `dumpTransformer` in the recorder;
+`tests/render_support` rebuilds it with `quicktype_core::transformers`.
+
 ## Scenarios
 
 A scenario (`scenarios/*.txt`) lists inputs (`input json|schema NAME <json>`),

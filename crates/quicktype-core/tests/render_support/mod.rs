@@ -6,6 +6,10 @@
 //! kind's structure) and the top-levels. Every type is created at its
 //! reserved index, so the rebuilt graph has the same type indexes, which
 //! decide naming priorities and declaration order.
+//!
+//! A `transformation` attribute (C#, Python) is dumped as its target type's
+//! index and its transformer tree; the format is documented at
+//! `dumpTransformer` in `xtask/core-rendering/record-render-cases.mjs`.
 
 #![allow(dead_code)]
 
@@ -21,6 +25,7 @@ use quicktype_core::language::all::{ALL, language_named};
 use quicktype_core::messages::{QuickTypeError, Result};
 use quicktype_core::renderer_options::{OptionValue, RendererOptions};
 use quicktype_core::target_language::MultiFileRenderResult;
+use quicktype_core::transformers::{DecodingChoiceCases, Transformation, Transformer};
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::ClassProperty;
 use quicktype_core::ty::type_builder::TypeBuilder;
@@ -99,8 +104,106 @@ fn kind_of(name: &str) -> Result<TypeKind> {
     TypeKind::from_str(name).ok_or_else(|| err(format!("unknown kind {name}")))
 }
 
-/// The attributes of a dumped type.
+/// The type at a dumped index.
+fn type_ref_at(v: &Value, refs: &[TypeRef]) -> Result<TypeRef> {
+    let i = index(v)?;
+    refs.get(i)
+        .copied()
+        .ok_or_else(|| err(format!("type index {i} out of range")))
+}
+
+fn optional_number(v: &Value) -> Result<Option<f64>> {
+    if v.is_null() {
+        Ok(None)
+    } else {
+        Ok(Some(number(v)?))
+    }
+}
+
+/// A dumped transformer, or `None` for `null`.
+fn optional_transformer(v: &Value, refs: &[TypeRef]) -> Result<Option<Rc<Transformer>>> {
+    if v.is_null() {
+        Ok(None)
+    } else {
+        Ok(Some(transformer(v, refs)?))
+    }
+}
+
+/// A dumped transformer tree (`dumpTransformer` in the recorder).
+pub fn transformer(v: &Value, refs: &[TypeRef]) -> Result<Rc<Transformer>> {
+    let source = type_ref_at(&v["s"], refs)?;
+    let consumer = || optional_transformer(&v["c"], refs);
+    let child = || transformer(&v["x"], refs);
+    Ok(match str_of(&v["k"])? {
+        "decode" => Transformer::decoding(source, consumer()?),
+        "encode" => Transformer::encoding(source),
+        "decode-array" => Transformer::array_decoding(
+            source,
+            consumer()?,
+            type_ref_at(&v["item"], refs)?,
+            child()?,
+        ),
+        "encode-array" => {
+            Transformer::array_encoding(source, type_ref_at(&v["item"], refs)?, child()?)
+        }
+        "choice" => Transformer::choice(
+            source,
+            array_of(&v["xs"])?
+                .iter()
+                .map(|x| transformer(x, refs))
+                .collect::<Result<_>>()?,
+        )?,
+        "decoding-choice" => {
+            let case = |key: &str| optional_transformer(&v[key], refs);
+            Transformer::decoding_choice(
+                source,
+                DecodingChoiceCases {
+                    null: case("null")?,
+                    integer: case("integer")?,
+                    double: case("double")?,
+                    bool: case("bool")?,
+                    string: case("string")?,
+                    array: case("array")?,
+                    object: case("object")?,
+                },
+            )
+        }
+        "union-member-match" => {
+            Transformer::union_member_match(source, child()?, type_ref_at(&v["member"], refs)?)
+        }
+        "string-match" => {
+            Transformer::string_match(source, child()?, str_of(&v["case"])?.to_owned())
+        }
+        "union-instantiation" => Transformer::union_instantiation(source),
+        "string-producer" => {
+            Transformer::string_producer(source, consumer()?, str_of(&v["result"])?.to_owned())
+        }
+        "parse-string" => Transformer::parse_string(source, consumer()?),
+        "stringify" => Transformer::stringify(source, consumer()?),
+        "min-max-length-check" => Transformer::min_max_length_check(
+            source,
+            consumer()?,
+            optional_number(&v["min"])?,
+            optional_number(&v["max"])?,
+        ),
+        "min-max-value-check" => Transformer::min_max_value(
+            source,
+            consumer()?,
+            optional_number(&v["min"])?,
+            optional_number(&v["max"])?,
+        ),
+        other => return Err(err(format!("unknown transformer {other}"))),
+    })
+}
+
+/// The attributes of a dumped type that has no `transformation` attribute.
 pub fn attributes(v: &Value) -> Result<TypeAttributes> {
+    attributes_in_graph(v, &[])
+}
+
+/// The attributes of a dumped type in a graph whose types are `refs` (in
+/// index order); a `transformation` refers to types by index.
+pub fn attributes_in_graph(v: &Value, refs: &[TypeRef]) -> Result<TypeAttributes> {
     let mut result = TypeAttributes::new();
     let Some(object) = v.as_object() else {
         return Ok(result);
@@ -189,6 +292,10 @@ pub fn attributes(v: &Value) -> Result<TypeAttributes> {
                 let pair = array_of(value)?;
                 TypeAttributeValue::UriAttributes(Rc::new((strings(&pair[0])?, strings(&pair[1])?)))
             }
+            "transformation" => TypeAttributeValue::Transformation(Rc::new(Transformation::new(
+                type_ref_at(&value["target"], refs)?,
+                transformer(&value["xfer"], refs)?,
+            ))),
             other => return Err(err(format!("unknown attribute {other}"))),
         };
         result.insert(attribute);
@@ -217,7 +324,7 @@ pub fn build_graph(dump: &Value) -> Result<TypeGraph> {
 
     for (i, t) in types.iter().enumerate() {
         let kind = kind_of(str_of(&t["k"])?)?;
-        let attrs = attributes(&t["a"])?;
+        let attrs = attributes_in_graph(&t["a"], &refs)?;
         let fwd = Some(refs[i]);
         let fixed = t["fixed"].as_bool().unwrap_or(false);
         let r = match kind {

@@ -247,8 +247,8 @@ needed only to record fixtures.
    `render_cases.rs` rebuilds each graph, runs `gather_names` and your
    renderer, and compares every file and (without `--quiet`) the issue
    annotations. This tests the renderer in isolation, before the JSON input
-   and pipeline are wired end to end. (Graphs with `transformation`
-   attributes, i.e. C# and Python, need the dump extended first.)
+   and pipeline are wired end to end. Graphs with `transformation`
+   attributes (C#, Python) are dumped too.
 2. **Scenarios** for options and paths the corpus doesn't cover: add a
    `.txt` to `crates/quicktype-core/tests/fixtures/core-rendering/scenarios/`
    with `input json|schema NAME <json>` lines and `render <lang> {"rendererOptions": {...}}`
