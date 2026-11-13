@@ -17,26 +17,222 @@ use crate::messages::DriverError;
 /// `defaultDefaultTargetLanguageName`.
 const DEFAULT_TARGET_LANGUAGE_NAME: &str = "go";
 
-/// The CLI switches that turn off an inference flag, in
-/// `inferenceFlagNames` order, with the flag's `negationDescription`.
-// TODO(core): derive from quicktype_core::inference once Inference.ts is
-// ported (the CLI name is `no` + the flag name without `infer`, dashed).
-pub const NEGATED_INFERENCE_FLAGS: [(&str, &str); 8] = [
-    ("no-maps", "Don't infer maps, always use classes"),
-    ("no-enums", "Don't infer enums, always use strings"),
-    ("no-uuids", "Don't convert UUIDs to UUID objects"),
-    ("no-date-times", "Don't infer dates or times"),
-    (
-        "no-integer-strings",
-        "Don't convert stringified integers to integers",
-    ),
-    (
-        "no-boolean-strings",
-        "Don't convert stringified booleans to booleans",
-    ),
-    ("no-combine-classes", "Don't combine similar classes"),
-    ("no-ignore-json-refs", "Treat $ref as a reference in JSON"),
+/// Declares [`GlobalOption`] together with `GlobalOption::ALL`, so the list
+/// of options can never miss a variant.
+macro_rules! global_options {
+    ($($variant:ident),* $(,)?) => {
+        /// One of the CLI's own options (`kind: "cli"`).
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        enum GlobalOption {
+            $($variant),*
+        }
+
+        impl GlobalOption {
+            /// Every global option, in `makeOptionDefinitions` (help) order.
+            const ALL: &'static [Self] = &[$(Self::$variant),*];
+        }
+    };
+}
+
+global_options![
+    Out,
+    TopLevel,
+    Lang,
+    SrcLang,
+    Src,
+    SrcUrls,
+    NoMaps,
+    NoEnums,
+    NoUuids,
+    NoDateTimes,
+    NoIntegerStrings,
+    NoBooleanStrings,
+    NoCombineClasses,
+    NoIgnoreJsonRefs,
+    GraphqlSchema,
+    GraphqlIntrospect,
+    HttpMethod,
+    HttpHeader,
+    AdditionalSchema,
+    NoRender,
+    AlphabetizeProperties,
+    AllPropertiesOptional,
+    BuildMarkovChain,
+    Quiet,
+    Debug,
+    Telemetry,
+    Help,
+    Version,
 ];
+
+impl GlobalOption {
+    /// The option's definition (one entry of TS `makeOptionDefinitions`).
+    ///
+    /// The `--no-*` inference switches are `no` + the inference flag name
+    /// without `infer`, dashed; their description is the flag's
+    /// `negationDescription` plus a period.
+    // TODO(core): take the inference flags from quicktype_core::inference
+    // once Inference.ts is ported.
+    fn definition(self) -> OptionDefinition {
+        use OptionType::{Boolean, String};
+        let cli = |name, option_type, description| {
+            OptionDefinition::new(name, option_type, description, OptionKind::Cli)
+        };
+        match self {
+            Self::Out => cli("out", String, "The output file. Determines --lang and --top-level.")
+                .with_alias('o')
+                .with_type_label("FILE"),
+            Self::TopLevel => cli("top-level", String, "The name for the top level type.")
+                .with_alias('t')
+                .with_type_label("NAME"),
+            Self::Lang => cli("lang", String, "The target language.")
+                .with_alias('l')
+                .with_type_label("LANG"),
+            Self::SrcLang => cli("src-lang", String, "The source language (default is json).")
+                .with_alias('s')
+                .with_type_label("SRC_LANG"),
+            Self::Src => cli("src", String, "The file, url, or data directory to type.")
+                .multiple()
+                .default_option()
+                .with_type_label("FILE|URL|DIRECTORY"),
+            Self::SrcUrls => cli("src-urls", String, "Tracery grammar describing URLs to crawl.")
+                .with_type_label("FILE"),
+            Self::NoMaps => cli("no-maps", Boolean, "Don't infer maps, always use classes."),
+            Self::NoEnums => cli("no-enums", Boolean, "Don't infer enums, always use strings."),
+            Self::NoUuids => cli("no-uuids", Boolean, "Don't convert UUIDs to UUID objects."),
+            Self::NoDateTimes => cli("no-date-times", Boolean, "Don't infer dates or times."),
+            Self::NoIntegerStrings => cli(
+                "no-integer-strings",
+                Boolean,
+                "Don't convert stringified integers to integers.",
+            ),
+            Self::NoBooleanStrings => cli(
+                "no-boolean-strings",
+                Boolean,
+                "Don't convert stringified booleans to booleans.",
+            ),
+            Self::NoCombineClasses => {
+                cli("no-combine-classes", Boolean, "Don't combine similar classes.")
+            }
+            Self::NoIgnoreJsonRefs => cli(
+                "no-ignore-json-refs",
+                Boolean,
+                "Treat $ref as a reference in JSON.",
+            ),
+            Self::GraphqlSchema => {
+                cli("graphql-schema", String, "GraphQL introspection file.").with_type_label("FILE")
+            }
+            Self::GraphqlIntrospect => cli(
+                "graphql-introspect",
+                String,
+                "Introspect GraphQL schema from a server.",
+            )
+            .with_type_label("URL"),
+            Self::HttpMethod => cli(
+                "http-method",
+                String,
+                "HTTP method to use for the GraphQL introspection query.",
+            )
+            .with_type_label("METHOD"),
+            Self::HttpHeader => cli(
+                "http-header",
+                String,
+                "Header(s) to attach to all HTTP requests, including the GraphQL introspection query.",
+            )
+            .multiple()
+            .with_type_label("HEADER"),
+            Self::AdditionalSchema => cli(
+                "additional-schema",
+                String,
+                "Register the $id's of additional JSON Schema files.",
+            )
+            .with_alias('S')
+            .multiple()
+            .with_type_label("FILE"),
+            Self::NoRender => cli("no-render", Boolean, "Don't render output."),
+            Self::AlphabetizeProperties => cli(
+                "alphabetize-properties",
+                Boolean,
+                "Alphabetize order of class properties.",
+            ),
+            Self::AllPropertiesOptional => cli(
+                "all-properties-optional",
+                Boolean,
+                "Make all class properties optional.",
+            ),
+            Self::BuildMarkovChain => {
+                cli("build-markov-chain", String, "Markov chain corpus filename.")
+                    .with_type_label("FILE")
+            }
+            Self::Quiet => cli("quiet", Boolean, "Don't show issues in the generated code."),
+            Self::Debug => cli(
+                "debug",
+                String,
+                "Comma separated debug options: print-graph, print-reconstitution, print-gather-names, print-transformations, print-schema-resolving, print-times, provenance",
+            )
+            .with_type_label("OPTIONS or all"),
+            Self::Telemetry => cli(
+                "telemetry",
+                String,
+                "Enable anonymous telemetry to help improve quicktype",
+            )
+            .with_type_label("enable|disable"),
+            Self::Help => cli("help", Boolean, "Get some help.").with_alias('h'),
+            Self::Version => {
+                cli("version", Boolean, "Display the version of quicktype").with_alias('v')
+            }
+        }
+    }
+
+    /// Stores a parsed value in the matching field (the camel-cased key in
+    /// TS `parseOptions`).
+    fn store(self, value: &ArgValue, options: &mut PartialCliOptions) {
+        let string = || Some(value.to_js_string());
+        let list = || Some(as_list(value));
+        let flag = || Some(as_bool(value));
+        let negated = &mut options.negated_inference_flags;
+        match self {
+            Self::Out => options.out = string(),
+            Self::TopLevel => options.top_level = string(),
+            Self::Lang => options.lang = string(),
+            Self::SrcLang => options.src_lang = string(),
+            Self::Src => options.src = list(),
+            Self::SrcUrls => options.src_urls = string(),
+            Self::NoMaps => negated[0] = flag(),
+            Self::NoEnums => negated[1] = flag(),
+            Self::NoUuids => negated[2] = flag(),
+            Self::NoDateTimes => negated[3] = flag(),
+            Self::NoIntegerStrings => negated[4] = flag(),
+            Self::NoBooleanStrings => negated[5] = flag(),
+            Self::NoCombineClasses => negated[6] = flag(),
+            Self::NoIgnoreJsonRefs => negated[7] = flag(),
+            Self::GraphqlSchema => options.graphql_schema = string(),
+            Self::GraphqlIntrospect => options.graphql_introspect = string(),
+            Self::HttpMethod => options.http_method = string(),
+            Self::HttpHeader => options.http_header = list(),
+            Self::AdditionalSchema => options.additional_schema = list(),
+            Self::NoRender => options.no_render = flag(),
+            Self::AlphabetizeProperties => options.alphabetize_properties = flag(),
+            Self::AllPropertiesOptional => options.all_properties_optional = flag(),
+            Self::BuildMarkovChain => options.build_markov_chain = string(),
+            Self::Quiet => options.quiet = flag(),
+            Self::Debug => options.debug = string(),
+            Self::Telemetry => options.telemetry = string(),
+            Self::Help => options.help = flag(),
+            Self::Version => options.version = flag(),
+        }
+    }
+}
+
+/// The global options for `target_languages`, in help order: `lang` only
+/// exists when there is more than one target language.
+fn global_options(target_languages: &[&'static dyn TargetLanguage]) -> Vec<GlobalOption> {
+    GlobalOption::ALL
+        .iter()
+        .copied()
+        .filter(|o| *o != GlobalOption::Lang || target_languages.len() >= 2)
+        .collect()
+}
 
 /// The fully parsed command line (TS `CLIOptions`): what the engine
 /// consumes. Renderer options keep every value the parser produced,
@@ -89,7 +285,10 @@ pub struct CliOptions {
     pub debug: Option<String>,
     /// `--telemetry`.
     pub telemetry: Option<String>,
-    /// Whether each of [`NEGATED_INFERENCE_FLAGS`] was given (`noMaps`, …).
+    /// Whether each inference switch was given, in `inferenceFlagNames`
+    /// order: `--no-maps`, `--no-enums`, `--no-uuids`, `--no-date-times`,
+    /// `--no-integer-strings`, `--no-boolean-strings`,
+    /// `--no-combine-classes`, `--no-ignore-json-refs`.
     pub negated_inference_flags: [bool; 8],
 }
 
@@ -120,118 +319,21 @@ struct PartialCliOptions {
     renderer_options: RendererOptions,
 }
 
-fn cli(name: &'static str, option_type: OptionType, description: &'static str) -> OptionDefinition {
-    OptionDefinition::new(name, option_type, description, OptionKind::Cli)
-}
-
-/// The global options (TS `makeOptionDefinitions`), in help order. `lang`
-/// only exists when there is more than one target language.
+/// The global option definitions (TS `makeOptionDefinitions`), in help
+/// order.
 pub fn make_option_definitions(
     target_languages: &[&'static dyn TargetLanguage],
 ) -> Vec<OptionDefinition> {
-    use OptionType::{Boolean, String};
-
-    let mut definitions = vec![
-        cli(
-            "out",
-            String,
-            "The output file. Determines --lang and --top-level.",
-        )
-        .with_alias('o')
-        .with_type_label("FILE"),
-        cli("top-level", String, "The name for the top level type.")
-            .with_alias('t')
-            .with_type_label("NAME"),
-    ];
-    if target_languages.len() >= 2 {
-        definitions.push(
-            cli("lang", String, "The target language.")
-                .with_alias('l')
-                .with_type_label("LANG"),
-        );
-    }
-    definitions.extend([
-        cli("src-lang", String, "The source language (default is json).")
-            .with_alias('s')
-            .with_type_label("SRC_LANG"),
-        cli("src", String, "The file, url, or data directory to type.")
-            .multiple()
-            .default_option()
-            .with_type_label("FILE|URL|DIRECTORY"),
-        cli(
-            "src-urls",
-            String,
-            "Tracery grammar describing URLs to crawl.",
-        )
-        .with_type_label("FILE"),
-    ]);
-    for (name, negation) in NEGATED_INFERENCE_FLAGS {
-        definitions.push(OptionDefinition {
-            description: format!("{negation}.").into(),
-            ..cli(name, Boolean, "")
-        });
-    }
-    definitions.extend([
-        cli("graphql-schema", String, "GraphQL introspection file.").with_type_label("FILE"),
-        cli("graphql-introspect", String, "Introspect GraphQL schema from a server.")
-            .with_type_label("URL"),
-        cli(
-            "http-method",
-            String,
-            "HTTP method to use for the GraphQL introspection query.",
-        )
-        .with_type_label("METHOD"),
-        cli(
-            "http-header",
-            String,
-            "Header(s) to attach to all HTTP requests, including the GraphQL introspection query.",
-        )
-        .multiple()
-        .with_type_label("HEADER"),
-        cli(
-            "additional-schema",
-            String,
-            "Register the $id's of additional JSON Schema files.",
-        )
-        .with_alias('S')
-        .multiple()
-        .with_type_label("FILE"),
-        cli("no-render", Boolean, "Don't render output."),
-        cli("alphabetize-properties", Boolean, "Alphabetize order of class properties."),
-        cli("all-properties-optional", Boolean, "Make all class properties optional."),
-        cli("build-markov-chain", String, "Markov chain corpus filename.").with_type_label("FILE"),
-        cli("quiet", Boolean, "Don't show issues in the generated code."),
-        cli(
-            "debug",
-            String,
-            "Comma separated debug options: print-graph, print-reconstitution, print-gather-names, print-transformations, print-schema-resolving, print-times, provenance",
-        )
-        .with_type_label("OPTIONS or all"),
-        cli(
-            "telemetry",
-            String,
-            "Enable anonymous telemetry to help improve quicktype",
-        )
-        .with_type_label("enable|disable"),
-        cli("help", Boolean, "Get some help.").with_alias('h'),
-        cli("version", Boolean, "Display the version of quicktype").with_alias('v'),
-    ]);
-    definitions
+    global_options(target_languages)
+        .into_iter()
+        .map(GlobalOption::definition)
+        .collect()
 }
 
-fn as_string(value: ArgValue) -> String {
+fn as_list(value: &ArgValue) -> Vec<String> {
     match value {
-        ArgValue::String(s) => s,
-        ArgValue::Bool(b) => b.to_string(),
-        ArgValue::Null => "null".to_owned(),
-        ArgValue::List(items) => items.join(","),
-    }
-}
-
-fn as_list(value: ArgValue) -> Vec<String> {
-    match value {
-        ArgValue::List(items) => items,
-        other => vec![as_string(other)],
+        ArgValue::List(items) => items.iter().map(ArgValue::to_js_string).collect(),
+        other => vec![other.to_js_string()],
     }
 }
 
@@ -244,15 +346,19 @@ fn as_bool(value: &ArgValue) -> bool {
     }
 }
 
-/// Parses `argv` against `definitions` and splits the result into global and
-/// renderer options (TS `parseOptions`). In strict mode (`partial == false`)
-/// unknown options are errors.
+/// Parses `argv` against the global options followed by `renderer`
+/// definitions and splits the result into global and renderer options (TS
+/// `parseOptions`). In strict mode (`partial == false`) unknown options are
+/// errors.
 fn parse_options(
-    definitions: &[OptionDefinition],
+    globals: &[GlobalOption],
+    renderer: &[OptionDefinition],
     argv: &[String],
     partial: bool,
 ) -> Result<PartialCliOptions, DriverError> {
-    let parsed = command_line_args::parse(definitions, argv, partial).map_err(|e| {
+    let mut definitions: Vec<OptionDefinition> = globals.iter().map(|o| o.definition()).collect();
+    definitions.extend_from_slice(renderer);
+    let parsed = command_line_args::parse(&definitions, argv, partial).map_err(|e| {
         DriverError::CliOptionParsingFailed {
             message: e.to_string(),
         }
@@ -265,49 +371,20 @@ fn parse_options(
     }
 
     let mut options = PartialCliOptions::default();
-    for definition in definitions {
-        let Some(value) = parsed.get(&definition.name).cloned() else {
-            continue;
-        };
-        if definition.kind != OptionKind::Cli {
+    for (option, definition) in globals.iter().zip(&definitions) {
+        if let Some(value) = parsed.get(&definition.name) {
+            option.store(value, &mut options);
+        }
+    }
+    for definition in renderer {
+        if let Some(value) = parsed.get(&definition.name) {
             let value = match value {
-                ArgValue::Bool(b) => OptionValue::Bool(b),
-                other => OptionValue::String(as_string(other)),
+                ArgValue::Bool(b) => OptionValue::Bool(*b),
+                other => OptionValue::String(other.to_js_string()),
             };
             options
                 .renderer_options
                 .set(definition.name.to_string(), value);
-            continue;
-        }
-        if let Some(i) = NEGATED_INFERENCE_FLAGS
-            .iter()
-            .position(|(name, _)| *name == definition.name)
-        {
-            options.negated_inference_flags[i] = Some(as_bool(&value));
-            continue;
-        }
-        match definition.name.as_ref() {
-            "out" => options.out = Some(as_string(value)),
-            "top-level" => options.top_level = Some(as_string(value)),
-            "lang" => options.lang = Some(as_string(value)),
-            "src-lang" => options.src_lang = Some(as_string(value)),
-            "src" => options.src = Some(as_list(value)),
-            "src-urls" => options.src_urls = Some(as_string(value)),
-            "graphql-schema" => options.graphql_schema = Some(as_string(value)),
-            "graphql-introspect" => options.graphql_introspect = Some(as_string(value)),
-            "http-method" => options.http_method = Some(as_string(value)),
-            "http-header" => options.http_header = Some(as_list(value)),
-            "additional-schema" => options.additional_schema = Some(as_list(value)),
-            "no-render" => options.no_render = Some(as_bool(&value)),
-            "alphabetize-properties" => options.alphabetize_properties = Some(as_bool(&value)),
-            "all-properties-optional" => options.all_properties_optional = Some(as_bool(&value)),
-            "build-markov-chain" => options.build_markov_chain = Some(as_string(value)),
-            "quiet" => options.quiet = Some(as_bool(&value)),
-            "debug" => options.debug = Some(as_string(value)),
-            "telemetry" => options.telemetry = Some(as_string(value)),
-            "help" => options.help = Some(as_bool(&value)),
-            "version" => options.version = Some(as_bool(&value)),
-            _ => {}
         }
     }
     Ok(options)
@@ -427,15 +504,14 @@ pub fn parse_cli_options(argv: &[String]) -> Result<CliOptions, DriverError> {
         return infer_cli_options(options, None);
     }
 
-    let target_languages = default_target_languages();
-    let mut definitions = make_option_definitions(target_languages);
+    let globals = global_options(default_target_languages());
 
-    let incomplete = infer_cli_options(parse_options(&definitions, argv, true)?, None)?;
+    let incomplete = infer_cli_options(parse_options(&globals, &[], argv, true)?, None)?;
     let target_language = incomplete.lang;
 
-    definitions.extend(target_language.cli_option_definitions().actual);
+    let renderer = target_language.cli_option_definitions().actual;
     infer_cli_options(
-        parse_options(&definitions, argv, false)?,
+        parse_options(&globals, &renderer, argv, false)?,
         Some(target_language),
     )
 }
@@ -447,6 +523,41 @@ mod tests {
     fn parse(args: &[&str]) -> Result<CliOptions, String> {
         let args: Vec<String> = args.iter().map(|s| (*s).to_owned()).collect();
         parse_cli_options(&args).map_err(|e| e.to_string())
+    }
+
+    #[test]
+    fn global_options_are_unique_and_complete() {
+        let names: Vec<String> = GlobalOption::ALL
+            .iter()
+            .map(|o| o.definition().name.into_owned())
+            .collect();
+        assert_eq!(names.len(), 28);
+        for (i, name) in names.iter().enumerate() {
+            assert!(!names[..i].contains(name), "duplicate option {name}");
+        }
+        assert_eq!(names[0], "out");
+        assert_eq!(names[27], "version");
+        let single: Vec<&'static dyn TargetLanguage> = vec![default_target_languages()[0]];
+        assert_eq!(make_option_definitions(&single).len(), 27);
+    }
+
+    #[test]
+    fn every_global_option_is_stored() {
+        for option in GlobalOption::ALL {
+            let definition = option.definition();
+            let mut args = vec![format!("--{}", definition.name)];
+            if definition.option_type != OptionType::Boolean {
+                args.push("v".to_owned());
+            }
+            let parsed = parse_options(GlobalOption::ALL, &[], &args, false)
+                .unwrap_or_else(|e| panic!("{}: {e}", definition.name));
+            let stored = format!("{parsed:?}");
+            assert!(
+                stored.contains("Some(true)") || stored.contains("\"v\""),
+                "--{} was not stored: {stored}",
+                definition.name
+            );
+        }
     }
 
     #[test]

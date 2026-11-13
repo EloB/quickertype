@@ -4,7 +4,7 @@
 
 use quicktype_core::target_language::TargetLanguage;
 
-use crate::chalk::Chalk;
+use crate::chalk::{Chalk, TemplateError};
 use crate::cli_options::make_option_definitions;
 use crate::command_line_usage::{
     ColumnOptions, Content, Section, TableOptions, command_line_usage,
@@ -118,8 +118,11 @@ fn sections_after_renderers(chalk: &Chalk) -> Vec<Section> {
 
 /// The usage guide for `target_languages` (TS `usage`, minus the
 /// `console.log`): the global options, then one section per language that
-/// has options.
-pub fn usage(chalk: &Chalk, target_languages: &[&'static dyn TargetLanguage]) -> String {
+/// has options. Fails like command-line-usage on an invalid chalk template.
+pub fn usage(
+    chalk: &Chalk,
+    target_languages: &[&'static dyn TargetLanguage],
+) -> Result<String, TemplateError> {
     let mut sections = make_sections_before_renderers(chalk, target_languages);
     for language in target_languages {
         let definitions = language.cli_option_definitions().display;

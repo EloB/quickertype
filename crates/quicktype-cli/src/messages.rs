@@ -6,6 +6,7 @@
 
 use std::fmt;
 
+use crate::chalk::TemplateError;
 use crate::js;
 
 /// A `QuickTypeError` raised by the CLI front end.
@@ -90,16 +91,19 @@ impl std::error::Error for DriverError {}
 pub enum CliError {
     /// A quicktype error, printed as `Error: <message>.` with exit code 1.
     Driver(DriverError),
+    /// A plain JS `Error` thrown by a library (e.g. chalk-template),
+    /// printed as `Error: <message>.` with exit code 1.
+    Thrown(String),
     /// Something the Rust port cannot do yet; printed as an internal error
     /// with exit code 2, which quicktype itself never uses.
-    NotImplemented(&'static str),
+    NotImplemented(String),
 }
 
 impl CliError {
     /// The process exit code for this error.
     pub fn exit_code(&self) -> u8 {
         match self {
-            Self::Driver(_) => 1,
+            Self::Driver(_) | Self::Thrown(_) => 1,
             Self::NotImplemented(_) => 2,
         }
     }
@@ -109,6 +113,7 @@ impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Driver(e) => e.fmt(f),
+            Self::Thrown(message) => f.write_str(message),
             Self::NotImplemented(what) => {
                 write!(
                     f,
@@ -124,6 +129,15 @@ impl std::error::Error for CliError {}
 impl From<DriverError> for CliError {
     fn from(e: DriverError) -> Self {
         Self::Driver(e)
+    }
+}
+
+impl From<TemplateError> for CliError {
+    fn from(e: TemplateError) -> Self {
+        match e {
+            TemplateError::Thrown(message) => Self::Thrown(message),
+            TemplateError::Unsupported(_) => Self::NotImplemented(e.to_string()),
+        }
     }
 }
 

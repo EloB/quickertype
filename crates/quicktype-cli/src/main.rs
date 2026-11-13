@@ -38,6 +38,10 @@ const SOURCE_LANGUAGES: [&str; 5] = ["graphql", "json", "schema", "typescript", 
 
 /// `console.log` / `console.error` with quicktype's EPIPE handling: a closed
 /// stdout or stderr ends the process with exit code 0.
+///
+/// Any other write error makes Node throw an uncaught exception (a stack
+/// trace on stderr, exit code 1). That trace cannot be reproduced; we print a
+/// one-line error instead and exit 1 (a known gap, see docs/PARITY.md).
 struct Console {
     stdout: BufWriter<io::Stdout>,
 }
@@ -49,30 +53,31 @@ impl Console {
         }
     }
 
-    fn check(result: io::Result<()>) {
-        if let Err(e) = result {
-            let code = if e.kind() == ErrorKind::BrokenPipe {
-                0
-            } else {
-                1
-            };
-            std::process::exit(code);
+    fn check(result: io::Result<()>, stream: &str) {
+        let Err(e) = result else {
+            return;
+        };
+        if e.kind() == ErrorKind::BrokenPipe {
+            std::process::exit(0);
         }
+        // Best effort: stderr itself may be the stream that failed.
+        let _ = writeln!(io::stderr(), "Error: cannot write to {stream}: {e}.");
+        std::process::exit(1);
     }
 
     /// `console.log(text)`.
     fn log(&mut self, text: &str) {
-        Self::check(writeln!(self.stdout, "{text}"));
+        Self::check(writeln!(self.stdout, "{text}"), "stdout");
     }
 
     /// `console.error(text)`; flushes stdout first to keep the order.
     fn error(&mut self, text: &str) {
         self.flush();
-        Self::check(writeln!(io::stderr(), "{text}"));
+        Self::check(writeln!(io::stderr(), "{text}"), "stderr");
     }
 
     fn flush(&mut self) {
-        Self::check(self.stdout.flush());
+        Self::check(self.stdout.flush(), "stdout");
     }
 }
 
@@ -84,7 +89,7 @@ fn make_quicktype_options(
     console: &mut Console,
 ) -> Result<(), CliError> {
     if options.help {
-        console.log(&usage::usage(chalk, default_target_languages()));
+        console.log(&usage::usage(chalk, default_target_languages())?);
         return Ok(());
     }
     if options.version {
@@ -94,7 +99,7 @@ fn make_quicktype_options(
     }
     if options.build_markov_chain.is_some() {
         // TODO(engine): trainMarkovChain + JSON.stringify.
-        return Err(CliError::NotImplemented("--build-markov-chain"));
+        return Err(CliError::NotImplemented("--build-markov-chain".to_owned()));
     }
     if !SOURCE_LANGUAGES.contains(&options.src_lang.as_str()) {
         // The `default` branch of the source-language switch, which runs
@@ -108,7 +113,7 @@ fn make_quicktype_options(
     // GraphQL introspection, TypeScript, Postman), parse --debug, build the
     // InputData and run quicktypeMultiFile with `options`, then writeOutput.
     Err(CliError::NotImplemented(
-        "reading sources and generating code",
+        "reading sources and generating code".to_owned(),
     ))
 }
 

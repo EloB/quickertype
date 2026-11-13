@@ -33,18 +33,27 @@ pub enum ArgValue {
     Bool(bool),
     /// A single string value.
     String(String),
-    /// The values of a `multiple` option.
-    List(Vec<String>),
+    /// The values of a `multiple` option: strings (or booleans for a
+    /// boolean option), plus whatever `arrayify(defaultValue)` produced.
+    List(Vec<ArgValue>),
 }
 
 impl ArgValue {
-    /// JS `String(value)`.
-    fn to_js_string(&self) -> String {
+    /// JS `String(value)`; arrays join their items with `,`, with `null`
+    /// items as empty strings.
+    pub(crate) fn to_js_string(&self) -> String {
         match self {
             Self::Null => "null".to_owned(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => s.clone(),
-            Self::List(items) => items.join(","),
+            Self::List(items) => items
+                .iter()
+                .map(|item| match item {
+                    Self::Null => String::new(),
+                    item => item.to_js_string(),
+                })
+                .collect::<Vec<_>>()
+                .join(","),
         }
     }
 }
@@ -122,9 +131,10 @@ fn opt_equals(arg: &str) -> Option<(&str, &str)> {
     if !arg.starts_with("--") {
         return None;
     }
-    let mut previous_is_space = true;
+    // The first `=` after at least one non-whitespace character; any
+    // whitespace before it means no match.
     for (i, c) in arg.char_indices().skip(2) {
-        if i > 2 && c == '=' && !previous_is_space {
+        if i > 2 && c == '=' {
             let value = &arg[i + 1..];
             let value_end = value.find(js::is_line_terminator).unwrap_or(value.len());
             return Some((&arg[..i], &value[..value_end]));
@@ -132,7 +142,6 @@ fn opt_equals(arg: &str) -> Option<(&str, &str)> {
         if js::is_whitespace(c) {
             return None;
         }
-        previous_is_space = false;
     }
     None
 }
@@ -251,10 +260,11 @@ impl OutputOption {
                     OptionValue::Bool(b) => ArgValue::Bool(*b),
                     OptionValue::String(s) => ArgValue::String(s.clone()),
                 };
-                match (multiple, value) {
-                    (true, ArgValue::String(s)) => ArgValue::List(vec![s]),
-                    (true, other) => ArgValue::List(vec![other.to_js_string()]),
-                    (false, value) => value,
+                // `arrayify(defaultValue).slice()` keeps the raw value.
+                if multiple {
+                    ArgValue::List(vec![value])
+                } else {
+                    value
                 }
             }
             None if multiple => ArgValue::List(vec![]),
@@ -281,8 +291,13 @@ impl OutputOption {
                 if self.state == State::Default {
                     self.value = ArgValue::List(vec![]);
                 }
+                // `arr.push(def.type(val))`: booleans stay booleans.
+                let item = match value {
+                    ArgValue::Bool(b) => ArgValue::Bool(b),
+                    other => ArgValue::String(other.to_js_string()),
+                };
                 if let ArgValue::List(items) = &mut self.value {
-                    items.push(value.to_js_string());
+                    items.push(item);
                 }
                 self.state = State::Set;
             }
@@ -432,7 +447,7 @@ pub fn parse(
         if option.def.is_none() {
             if let ArgValue::List(items) = option.value {
                 if partial {
-                    result.unknown = items;
+                    result.unknown = items.iter().map(ArgValue::to_js_string).collect();
                 }
             }
         } else {
@@ -461,6 +476,14 @@ mod tests {
                 ..OptionDefinition::new("namespace", OptionType::String, "", OptionKind::Primary)
             },
         ]
+    }
+
+    fn list(xs: &[&str]) -> ArgValue {
+        ArgValue::List(
+            xs.iter()
+                .map(|s| ArgValue::String((*s).to_owned()))
+                .collect(),
+        )
     }
 
     fn args(xs: &[&str]) -> Vec<String> {
@@ -498,10 +521,7 @@ mod tests {
             parsed.values,
             vec![
                 ("namespace".to_owned(), ArgValue::String("QuickType".into())),
-                (
-                    "src".to_owned(),
-                    ArgValue::List(vec!["a.json".into(), "b.json".into()])
-                ),
+                ("src".to_owned(), list(&["a.json", "b.json"])),
                 ("quiet".to_owned(), ArgValue::Bool(true)),
                 ("out".to_owned(), ArgValue::String("x.ts".into())),
             ]
@@ -511,10 +531,7 @@ mod tests {
     #[test]
     fn multiple_options_are_greedy() {
         let parsed = strict(&["--header", "a", "b"]).unwrap();
-        assert_eq!(
-            parsed.get("header"),
-            Some(&ArgValue::List(vec!["a".into(), "b".into()]))
-        );
+        assert_eq!(parsed.get("header"), Some(&list(&["a", "b"])));
         assert_eq!(parsed.get("src"), None);
     }
 
@@ -560,7 +577,38 @@ mod tests {
     fn partial_mode_collects_unknowns() {
         let parsed = parse(&defs(), &args(&["--foo", "bar", "--x=1", "-é"]), true).unwrap();
         assert_eq!(parsed.unknown, ["--foo", "--x=1", "-é"]);
-        assert_eq!(parsed.get("src"), Some(&ArgValue::List(vec!["bar".into()])));
+        assert_eq!(parsed.get("src"), Some(&list(&["bar"])));
+    }
+
+    #[test]
+    fn multiple_defaults_keep_their_raw_value() {
+        let with_default = |default: OptionValue| {
+            vec![OptionDefinition {
+                default_value: Some(default),
+                ..OptionDefinition::new("tags", OptionType::String, "", OptionKind::Cli).multiple()
+            }]
+        };
+        let parsed = parse(&with_default(OptionValue::Bool(true)), &[], false).unwrap();
+        assert_eq!(
+            parsed.get("tags"),
+            Some(&ArgValue::List(vec![ArgValue::Bool(true)]))
+        );
+        let parsed = parse(&with_default(OptionValue::Null), &[], false).unwrap();
+        assert_eq!(
+            parsed.get("tags"),
+            Some(&ArgValue::List(vec![ArgValue::Null]))
+        );
+        // Setting a value replaces the default.
+        let parsed = parse(
+            &with_default(OptionValue::Bool(true)),
+            &args(&["--tags", "a"]),
+            false,
+        )
+        .unwrap();
+        assert_eq!(parsed.get("tags"), Some(&list(&["a"])));
+        // `[null, "a"].toString()`
+        let mixed = ArgValue::List(vec![ArgValue::Null, ArgValue::String("a".into())]);
+        assert_eq!(mixed.to_js_string(), ",a");
     }
 
     #[test]

@@ -3,53 +3,92 @@
 //! 4.1.2 (style application) and `chalk-template` (the `{bold text}` syntax
 //! command-line-usage 7.0.1 runs every string through).
 //!
-//! Only the styles quicktype's output uses are supported (`bold`, `dim`,
-//! `underline`, `red`); the detection logic is ported completely, because it
-//! decides which of two different help layouts is printed.
+//! The detection logic is ported completely, because it decides which of
+//! two different help layouts is printed. chalk-template supports every
+//! `ansi-styles` 4 style name, `visible` and the `~` (inverse) prefix, and
+//! throws chalk-template's errors; style arguments and hex colours
+//! (`rgb(…)`, `#ff0000`) are reported as not implemented.
 
+use std::fmt;
 use std::io::IsTerminal;
 
 use crate::js;
 
-/// A text style (an `ansi-styles` modifier or colour).
+/// A text style: an `ansi-styles` modifier or colour, as its SGR open and
+/// close codes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Style {
-    /// `\x1b[1m … \x1b[22m`.
-    Bold,
-    /// `\x1b[2m … \x1b[22m`.
-    Dim,
-    /// `\x1b[4m … \x1b[24m`.
-    Underline,
-    /// `\x1b[31m … \x1b[39m`.
-    Red,
+pub struct Style {
+    open: u8,
+    close: u8,
 }
 
 impl Style {
-    fn from_name(name: &str) -> Option<Self> {
-        match name {
-            "bold" => Some(Self::Bold),
-            "dim" => Some(Self::Dim),
-            "underline" => Some(Self::Underline),
-            "red" => Some(Self::Red),
-            _ => None,
-        }
+    /// `bold`.
+    pub const BOLD: Self = Self::new(1, 22);
+    /// `dim`.
+    pub const DIM: Self = Self::new(2, 22);
+    /// `red`.
+    pub const RED: Self = Self::new(31, 39);
+
+    const fn new(open: u8, close: u8) -> Self {
+        Self { open, close }
     }
 
-    fn open(self) -> &'static str {
-        match self {
-            Self::Bold => "\u{1b}[1m",
-            Self::Dim => "\u{1b}[2m",
-            Self::Underline => "\u{1b}[4m",
-            Self::Red => "\u{1b}[31m",
-        }
+    /// The `ansi-styles` 4 style called `name` (the style names chalk
+    /// exposes, including the `gray`/`grey` aliases).
+    pub fn named(name: &str) -> Option<Self> {
+        let (open, close) = match name {
+            "reset" => (0, 0),
+            "bold" => (1, 22),
+            "dim" => (2, 22),
+            "italic" => (3, 23),
+            "underline" => (4, 24),
+            "inverse" => (7, 27),
+            "hidden" => (8, 28),
+            "strikethrough" => (9, 29),
+            "black" => (30, 39),
+            "red" => (31, 39),
+            "green" => (32, 39),
+            "yellow" => (33, 39),
+            "blue" => (34, 39),
+            "magenta" => (35, 39),
+            "cyan" => (36, 39),
+            "white" => (37, 39),
+            "blackBright" | "gray" | "grey" => (90, 39),
+            "redBright" => (91, 39),
+            "greenBright" => (92, 39),
+            "yellowBright" => (93, 39),
+            "blueBright" => (94, 39),
+            "magentaBright" => (95, 39),
+            "cyanBright" => (96, 39),
+            "whiteBright" => (97, 39),
+            "bgBlack" => (40, 49),
+            "bgRed" => (41, 49),
+            "bgGreen" => (42, 49),
+            "bgYellow" => (43, 49),
+            "bgBlue" => (44, 49),
+            "bgMagenta" => (45, 49),
+            "bgCyan" => (46, 49),
+            "bgWhite" => (47, 49),
+            "bgBlackBright" | "bgGray" | "bgGrey" => (100, 49),
+            "bgRedBright" => (101, 49),
+            "bgGreenBright" => (102, 49),
+            "bgYellowBright" => (103, 49),
+            "bgBlueBright" => (104, 49),
+            "bgMagentaBright" => (105, 49),
+            "bgCyanBright" => (106, 49),
+            "bgWhiteBright" => (107, 49),
+            _ => return None,
+        };
+        Some(Self::new(open, close))
     }
 
-    fn close(self) -> &'static str {
-        match self {
-            Self::Bold | Self::Dim => "\u{1b}[22m",
-            Self::Underline => "\u{1b}[24m",
-            Self::Red => "\u{1b}[39m",
-        }
+    fn open(self) -> String {
+        format!("\u{1b}[{}m", self.open)
+    }
+
+    fn close(self) -> String {
+        format!("\u{1b}[{}m", self.close)
     }
 }
 
@@ -243,7 +282,21 @@ impl Chalk {
 
     /// `chalk.<styles…>(text)`: `styles` are outermost first.
     pub fn apply(&self, styles: &[Style], text: &str) -> String {
-        if !self.enabled() || text.is_empty() || styles.is_empty() {
+        self.apply_chain(styles, false, text)
+    }
+
+    /// chalk's `applyStyle` for a builder chain of `styles` (outermost
+    /// first); `is_empty` marks a chain containing `visible`, which renders
+    /// nothing when colours are off.
+    fn apply_chain(&self, styles: &[Style], is_empty: bool, text: &str) -> String {
+        if !self.enabled() || text.is_empty() {
+            return if is_empty {
+                String::new()
+            } else {
+                text.to_owned()
+            };
+        }
+        if styles.is_empty() {
             return text.to_owned();
         }
         let open_all: String = styles.iter().map(|s| s.open()).collect();
@@ -252,7 +305,7 @@ impl Chalk {
         if text.contains('\u{1b}') {
             // Re-open each style after any of its own close codes.
             for style in styles.iter().rev() {
-                text = string_replace_all(&text, style.close(), style.open());
+                text = string_replace_all(&text, &style.close(), &style.open());
             }
         }
         if text.contains('\n') {
@@ -263,17 +316,17 @@ impl Chalk {
 
     /// `chalk.bold(text)`.
     pub fn bold(&self, text: &str) -> String {
-        self.apply(&[Style::Bold], text)
+        self.apply(&[Style::BOLD], text)
     }
 
     /// `chalk.dim(text)`.
     pub fn dim(&self, text: &str) -> String {
-        self.apply(&[Style::Dim], text)
+        self.apply(&[Style::DIM], text)
     }
 
     /// `chalk.red(text)`.
     pub fn red(&self, text: &str) -> String {
-        self.apply(&[Style::Red], text)
+        self.apply(&[Style::RED], text)
     }
 }
 
@@ -362,50 +415,159 @@ fn match_escape(s: &str) -> Option<&str> {
     (!js::is_line_terminator(first)).then(|| &s[..first.len_utf8()])
 }
 
-/// Matches the style-opening alternative of `TEMPLATE_REGEX` at the start of
-/// `s` (just after `{`): returns the style names and the consumed length.
-/// Only plain, dotted style names are supported (no arguments or hex colours).
-fn match_style_open(s: &str) -> Option<(Vec<&str>, usize)> {
-    let body = s.strip_prefix('~').unwrap_or(s);
-    let offset = s.len() - body.len();
-    let end = body
-        .find(|c: char| !(js::is_word_char(c) || c == ':' || c == '.'))
-        .unwrap_or(body.len());
-    let names = &body[..end];
-    if names.is_empty() || names.starts_with('.') || names.ends_with('.') || names.contains("..") {
+/// An error from chalk-template.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TemplateError {
+    /// A JS `Error` chalk-template throws, with its message.
+    Thrown(String),
+    /// A style with arguments, a hex colour or a colour-model style, which
+    /// the port does not implement.
+    Unsupported(String),
+}
+
+impl fmt::Display for TemplateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Thrown(message) => f.write_str(message),
+            Self::Unsupported(style) => write!(f, "chalk-template style `{style}`"),
+        }
+    }
+}
+
+impl std::error::Error for TemplateError {}
+
+/// chalk's colour-model styles, which take arguments.
+const MODEL_STYLES: [&str; 16] = [
+    "rgb",
+    "hex",
+    "keyword",
+    "hsl",
+    "hsv",
+    "hwb",
+    "ansi",
+    "ansi256",
+    "bgRgb",
+    "bgHex",
+    "bgKeyword",
+    "bgHsl",
+    "bgHsv",
+    "bgHwb",
+    "bgAnsi",
+    "bgAnsi256",
+];
+
+/// Length of one `#?[\w:]+(?:\([^)]*\))?` item at the start of `s`.
+fn style_item_len(s: &str) -> Option<usize> {
+    let hash = usize::from(s.starts_with('#'));
+    let name = s[hash..]
+        .find(|c: char| !(js::is_word_char(c) || c == ':'))
+        .unwrap_or(s.len() - hash);
+    if name == 0 {
         return None;
     }
-    let after = &body[end..];
+    let mut len = hash + name;
+    if s[len..].starts_with('(') {
+        if let Some(close) = s[len..].find(')') {
+            len += close + 1;
+        }
+    }
+    Some(len)
+}
+
+/// Matches the style-opening alternative of `TEMPLATE_REGEX` at the start of
+/// `s` (just after `{`): `(~)?(item(?:\.item)*)(?:[ \t]|(?=\r?\n))`. Returns
+/// whether the block is inverse, the style group and the consumed length.
+fn match_style_open(s: &str) -> Option<(bool, &str, usize)> {
+    let inverse = s.starts_with('~');
+    let start = usize::from(inverse);
+    let mut end = start + style_item_len(&s[start..])?;
+    while let Some(rest) = s[end..].strip_prefix('.') {
+        match style_item_len(rest) {
+            Some(len) => end += 1 + len,
+            None => break,
+        }
+    }
+    let after = &s[end..];
     let consumed = if after.starts_with([' ', '\t']) {
-        offset + end + 1
+        end + 1
     } else if after.starts_with('\n') || after.starts_with("\r\n") {
-        offset + end
+        end
     } else {
         return None;
     };
-    Some((names.split('.').collect(), consumed))
+    Some((inverse, &s[start..end], consumed))
+}
+
+/// chalk-template's `parseStyle` for groups without arguments or hex
+/// colours: the leading `\w+` of each `.`-separated item.
+fn parse_style(group: &str) -> Result<Vec<&str>, TemplateError> {
+    if group.contains(['(', '#']) {
+        return Err(TemplateError::Unsupported(group.to_owned()));
+    }
+    Ok(group
+        .split('.')
+        .filter_map(|item| {
+            let end = item
+                .find(|c: char| !js::is_word_char(c))
+                .unwrap_or(item.len());
+            (end > 0).then(|| &item[..end])
+        })
+        .collect())
+}
+
+/// One open `{style …}` block.
+struct Layer<'a> {
+    inverse: bool,
+    names: Vec<&'a str>,
+}
+
+/// chalk-template's `buildStyle(styles)(text)`: the styles of all open
+/// blocks, in order of first appearance, where an inverse block turns a
+/// style off.
+fn build_style(chalk: &Chalk, layers: &[Layer<'_>], text: &str) -> Result<String, TemplateError> {
+    let mut enabled: Vec<(&str, bool)> = vec![];
+    for layer in layers {
+        for name in &layer.names {
+            match enabled.iter_mut().find(|(n, _)| n == name) {
+                Some(entry) => entry.1 = !layer.inverse,
+                None => enabled.push((name, !layer.inverse)),
+            }
+        }
+    }
+    let mut styles = vec![];
+    let mut is_empty = false;
+    for (name, active) in enabled {
+        if !active {
+            continue;
+        }
+        if name == "visible" {
+            is_empty = true;
+        } else if let Some(style) = Style::named(name) {
+            styles.push(style);
+        } else if MODEL_STYLES.contains(&name) {
+            return Err(TemplateError::Unsupported(name.to_owned()));
+        } else {
+            // TODO(chalk): names of other properties of the chalk object
+            // (`level`, `toString`, …) fail in other ways in JS.
+            return Err(TemplateError::Thrown(format!(
+                "Unknown Chalk style: {name}"
+            )));
+        }
+    }
+    Ok(chalk.apply_chain(&styles, is_empty, text))
 }
 
 /// command-line-usage's `chalkFormat`: escapes backticks and runs the string
 /// through chalk-template, which interprets `{style text}` blocks and
-/// backslash escapes.
-pub fn chalk_format(chalk: &Chalk, text: &str) -> String {
+/// backslash escapes, and throws on unbalanced braces and unknown styles.
+pub fn chalk_format(chalk: &Chalk, text: &str) -> Result<String, TemplateError> {
     if text.is_empty() {
-        return String::new();
+        return Ok(String::new());
     }
     let text = text.replace('`', "\\`");
-    let mut layers: Vec<Vec<Style>> = vec![];
+    let mut layers: Vec<Layer<'_>> = vec![];
     let mut chunks: Vec<String> = vec![];
     let mut chunk = String::new();
-    let styled = |layers: &[Vec<Style>], text: &str| -> String {
-        let mut enabled: Vec<Style> = vec![];
-        for style in layers.iter().flatten() {
-            if !enabled.contains(style) {
-                enabled.push(*style);
-            }
-        }
-        chalk.apply(&enabled, text)
-    };
     let mut rest = text.as_str();
     while let Some(c) = rest.chars().next() {
         if c == '\\' {
@@ -415,23 +577,28 @@ pub fn chalk_format(chalk: &Chalk, text: &str) -> String {
                 continue;
             }
         } else if c == '{' {
-            if let Some((names, consumed)) = match_style_open(&rest[1..]) {
-                let text = std::mem::take(&mut chunk);
+            if let Some((inverse, group, consumed)) = match_style_open(&rest[1..]) {
+                let pending = std::mem::take(&mut chunk);
                 chunks.push(if layers.is_empty() {
-                    text
+                    pending
                 } else {
-                    styled(&layers, &text)
+                    build_style(chalk, &layers, &pending)?
                 });
-                // TODO(chalk): unknown style names throw in chalk-template;
-                // quicktype only uses the supported ones.
-                layers.push(names.into_iter().filter_map(Style::from_name).collect());
+                layers.push(Layer {
+                    inverse,
+                    names: parse_style(group)?,
+                });
                 rest = &rest[1 + consumed..];
                 continue;
             }
         } else if c == '}' {
-            // An unmatched `}` throws in chalk-template; quicktype never has one.
-            let text = std::mem::take(&mut chunk);
-            chunks.push(styled(&layers, &text));
+            if layers.is_empty() {
+                return Err(TemplateError::Thrown(
+                    "Found extraneous } in Chalk template literal".to_owned(),
+                ));
+            }
+            let pending = std::mem::take(&mut chunk);
+            chunks.push(build_style(chalk, &layers, &pending)?);
             layers.pop();
             rest = &rest[1..];
             continue;
@@ -443,7 +610,14 @@ pub fn chalk_format(chalk: &Chalk, text: &str) -> String {
         rest = &rest[c.len_utf8()..];
     }
     chunks.push(chunk);
-    chunks.concat()
+    if !layers.is_empty() {
+        let n = layers.len();
+        return Err(TemplateError::Thrown(format!(
+            "Chalk template literal is missing {n} closing bracket{} (`}}`)",
+            if n == 1 { "" } else { "s" }
+        )));
+    }
+    Ok(chunks.concat())
 }
 
 #[cfg(test)]
@@ -494,20 +668,90 @@ mod tests {
         assert_eq!(on.dim("a\nb"), "\u{1b}[2ma\u{1b}[22m\n\u{1b}[2mb\u{1b}[22m");
         assert_eq!(on.bold(""), "");
         assert_eq!(Chalk::new(0).bold("x"), "x");
+        assert_eq!(Style::named("grey"), Style::named("blackBright"));
+        assert_eq!(Style::named("bgGray"), Some(Style::new(100, 49)));
+        assert_eq!(Style::named("visible"), None);
+    }
+
+    fn format(level: i64, text: &str) -> Result<String, String> {
+        chalk_format(&Chalk::new(level), text).map_err(|e| e.to_string())
     }
 
     #[test]
     fn template() {
-        let on = Chalk::new(1);
-        let off = Chalk::new(0);
         assert_eq!(
-            chalk_format(&off, "{bold -o}, {bold --out} FILE"),
+            format(0, "{bold -o}, {bold --out} FILE").unwrap(),
             "-o, --out FILE"
         );
-        assert_eq!(chalk_format(&on, "{bold x}"), "\u{1b}[1mx\u{1b}[22m");
-        assert_eq!(chalk_format(&off, "Use `part`"), "Use `part`");
-        assert_eq!(chalk_format(&off, "a\\tb {x"), "a\tb {x");
-        assert_eq!(chalk_format(&off, "{underline string[]}"), "string[]");
-        assert_eq!(chalk_format(&off, ""), "");
+        assert_eq!(format(1, "{bold x}").unwrap(), "\u{1b}[1mx\u{1b}[22m");
+        assert_eq!(format(0, "Use `part`").unwrap(), "Use `part`");
+        assert_eq!(format(0, "a\\tb {x").unwrap(), "a\tb {x");
+        assert_eq!(format(0, "{underline string[]}").unwrap(), "string[]");
+        assert_eq!(format(0, "").unwrap(), "");
+        assert_eq!(
+            format(1, "{bold.red x}").unwrap(),
+            "\u{1b}[1m\u{1b}[31mx\u{1b}[39m\u{1b}[22m"
+        );
+        assert_eq!(
+            format(1, "{a:b.italic x}"),
+            Err("Unknown Chalk style: a".to_owned())
+        );
+    }
+
+    #[test]
+    fn template_inverse_turns_styles_off() {
+        assert_eq!(
+            format(1, "{bold a {~bold b}}").unwrap(),
+            "\u{1b}[1ma \u{1b}[22mb"
+        );
+        assert_eq!(
+            format(1, "{~bold a {bold b}}").unwrap(),
+            "a \u{1b}[1mb\u{1b}[22m"
+        );
+        assert_eq!(format(0, "{bold a {~bold b}}").unwrap(), "a b");
+    }
+
+    #[test]
+    fn template_visible() {
+        assert_eq!(format(0, "x{visible y}"), Ok("x".to_owned()));
+        assert_eq!(format(1, "x{visible y}"), Ok("xy".to_owned()));
+        assert_eq!(
+            format(1, "{bold.visible y}"),
+            Ok("\u{1b}[1my\u{1b}[22m".to_owned())
+        );
+    }
+
+    #[test]
+    fn template_errors() {
+        assert_eq!(
+            format(0, "a}"),
+            Err("Found extraneous } in Chalk template literal".to_owned())
+        );
+        assert_eq!(
+            format(0, "{bold a"),
+            Err("Chalk template literal is missing 1 closing bracket (`}`)".to_owned())
+        );
+        assert_eq!(
+            format(0, "{bold {dim a"),
+            Err("Chalk template literal is missing 2 closing brackets (`}`)".to_owned())
+        );
+        assert_eq!(
+            format(0, "{foo a}"),
+            Err("Unknown Chalk style: foo".to_owned())
+        );
+        // The unknown style is only looked up when the block is used.
+        assert_eq!(
+            format(0, "{foo a"),
+            Err("Chalk template literal is missing 1 closing bracket (`}`)".to_owned())
+        );
+        assert_eq!(format(0, "{~foo a}"), Ok("a".to_owned()));
+        assert_eq!(
+            format(0, "{bold. x}"),
+            Err("Found extraneous } in Chalk template literal".to_owned())
+        );
+        assert_eq!(
+            format(0, "{rgb(1,2,3) a}"),
+            Err("chalk-template style `rgb(1,2,3)`".to_owned())
+        );
     }
 }

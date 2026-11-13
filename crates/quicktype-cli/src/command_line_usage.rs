@@ -9,7 +9,7 @@
 
 use quicktype_core::renderer_options::{OptionDefinition, OptionType};
 
-use crate::chalk::{Chalk, chalk_format};
+use crate::chalk::{Chalk, TemplateError, chalk_format};
 use crate::js;
 
 /// `os.EOL`, which joins the lines inside a section.
@@ -133,6 +133,33 @@ fn remove_ansi(input: &str) -> String {
     out
 }
 
+/// The visible width of a piece of text, kept so that appending text does
+/// not need a rescan.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Measure {
+    /// UTF-16 length without ANSI escape codes.
+    visible: i64,
+    /// Whether an escape that is not (yet) followed by an `m` is still open,
+    /// so that appended text could complete it.
+    open_escape: bool,
+}
+
+impl Measure {
+    fn of(s: &str) -> Self {
+        // Only the last escape can be open: an `m` after it would also
+        // close any earlier one (unless a line terminator is in between,
+        // which nothing appended can bridge).
+        let open_escape = s.rfind('\u{1b}').is_some_and(|esc| {
+            let after = &s[esc + 1..];
+            !after.contains('m') && !after.contains(js::is_line_terminator)
+        });
+        Self {
+            visible: visible_len(s),
+            open_escape,
+        }
+    }
+}
+
 /// UTF-16 length without ANSI escape codes.
 fn visible_len(s: &str) -> i64 {
     to_i64(js::len(&remove_ansi(s)))
@@ -200,16 +227,28 @@ fn wrap_lines(text: &str, width: i64) -> Vec<String> {
         } else {
             chunks(line)
         };
-        let mut lines = vec![String::new()];
+        // The current line and its measure, updated as words are appended
+        // (only an escape left open by the line forces a rescan).
+        let mut current = String::new();
+        let mut current_measure = Measure::of("");
         for word in words {
-            let current = lines.last_mut().expect("lines starts non-empty");
-            if visible_len(word) + visible_len(current) > width {
-                lines.push(word.to_owned());
+            let word_measure = Measure::of(word);
+            if word_measure.visible + current_measure.visible > width {
+                wrapped.push(std::mem::replace(&mut current, word.to_owned()));
+                current_measure = word_measure;
             } else {
                 current.push_str(word);
+                current_measure = if current_measure.open_escape {
+                    Measure::of(&current)
+                } else {
+                    Measure {
+                        visible: current_measure.visible + word_measure.visible,
+                        open_escape: word_measure.open_escape,
+                    }
+                };
             }
         }
-        wrapped.extend(lines);
+        wrapped.push(current);
         match next {
             Some(next) => rest = next,
             None => break,
@@ -378,8 +417,8 @@ fn render_table(rows: &[Vec<(&str, String)>], options: &TableOptions) -> Vec<Str
             }
         }
     }
-    auto_size(&mut columns, options.max_width);
-    // `getWrapped` sizes the columns again; the result is the same.
+    // `getWrapped` runs autoSize a second time; it is idempotent, so once
+    // is enough.
     auto_size(&mut columns, options.max_width);
 
     let mut lines = vec![];
@@ -420,7 +459,7 @@ fn render_table(rows: &[Vec<(&str, String)>], options: &TableOptions) -> Vec<Str
 
 /// `getOptionNames(definition)`; the type comes from `optionType` like in
 /// quicktype's `optionDefinitionsForUsage`.
-fn option_names(chalk: &Chalk, definition: &OptionDefinition) -> String {
+fn option_names(chalk: &Chalk, definition: &OptionDefinition) -> Result<String, TemplateError> {
     let type_name = if definition.option_type == OptionType::Boolean {
         String::new()
     } else {
@@ -431,7 +470,7 @@ fn option_names(chalk: &Chalk, definition: &OptionDefinition) -> String {
         Some(label) if !label.is_empty() => label.to_owned(),
         _ => type_name,
     };
-    let label = chalk_format(chalk, &label);
+    let label = chalk_format(chalk, &label)?;
     let template = match definition.alias {
         Some(alias) => format!("{{bold -{alias}}}, {{bold --{}}} {label}", definition.name),
         None => format!("{{bold --{}}} {label}", definition.name),
@@ -439,28 +478,33 @@ fn option_names(chalk: &Chalk, definition: &OptionDefinition) -> String {
     chalk_format(chalk, &template)
 }
 
-fn header_lines(chalk: &Chalk, header: Option<&str>, lines: &mut Vec<String>) {
+fn header_lines(
+    chalk: &Chalk,
+    header: Option<&str>,
+    lines: &mut Vec<String>,
+) -> Result<(), TemplateError> {
     if let Some(header) = header.filter(|h| !h.is_empty()) {
-        lines.push(chalk_format(chalk, &format!("{{bold {header}}}")));
+        lines.push(chalk_format(chalk, &format!("{{bold {header}}}"))?);
         lines.push(String::new());
     }
+    Ok(())
 }
 
-fn section_lines(chalk: &Chalk, section: &Section) -> Vec<String> {
+fn section_lines(chalk: &Chalk, section: &Section) -> Result<Vec<String>, TemplateError> {
     let mut lines = vec![];
     match section {
         Section::Content { header, content } => {
-            header_lines(chalk, header.as_deref(), &mut lines);
+            header_lines(chalk, header.as_deref(), &mut lines)?;
             let texts: Option<Vec<&str>> = match content {
                 Some(Content::Text(text)) if !text.is_empty() => Some(vec![text.as_str()]),
                 Some(Content::Lines(texts)) => Some(texts.iter().map(String::as_str).collect()),
                 _ => None,
             };
             if let Some(texts) = texts {
-                let rows: Vec<Vec<(&str, String)>> = texts
+                let rows = texts
                     .iter()
-                    .map(|text| vec![("column", chalk_format(chalk, text))])
-                    .collect();
+                    .map(|text| Ok(vec![("column", chalk_format(chalk, text)?)]))
+                    .collect::<Result<Vec<_>, TemplateError>>()?;
                 let options = TableOptions {
                     padding: Padding::new("  ", " "),
                     ..TableOptions::default()
@@ -475,17 +519,17 @@ fn section_lines(chalk: &Chalk, section: &Section) -> Vec<String> {
             hide,
             table_options,
         } => {
-            header_lines(chalk, header.as_deref(), &mut lines);
-            let rows: Vec<Vec<(&str, String)>> = options
+            header_lines(chalk, header.as_deref(), &mut lines)?;
+            let rows = options
                 .iter()
                 .filter(|d| !hide.iter().any(|h| *h == d.name))
                 .map(|d| {
-                    vec![
-                        ("option", option_names(chalk, d)),
-                        ("description", chalk_format(chalk, &d.description)),
-                    ]
+                    Ok(vec![
+                        ("option", option_names(chalk, d)?),
+                        ("description", chalk_format(chalk, &d.description)?),
+                    ])
                 })
-                .collect();
+                .collect::<Result<Vec<_>, TemplateError>>()?;
             let default_options;
             let table_options = match table_options {
                 Some(options) => options,
@@ -513,19 +557,20 @@ fn section_lines(chalk: &Chalk, section: &Section) -> Vec<String> {
             lines.push(String::new());
         }
     }
-    lines
+    Ok(lines)
 }
 
 /// `commandLineUsage(sections)`: the usage guide, starting with a newline.
-pub fn command_line_usage(chalk: &Chalk, sections: &[Section]) -> String {
+/// Fails like the original when a string is not a valid chalk template.
+pub fn command_line_usage(chalk: &Chalk, sections: &[Section]) -> Result<String, TemplateError> {
     if sections.is_empty() {
-        return String::new();
+        return Ok(String::new());
     }
-    let sections: Vec<String> = sections
+    let sections = sections
         .iter()
-        .map(|s| section_lines(chalk, s).join(EOL))
-        .collect();
-    format!("\n{}", sections.join("\n"))
+        .map(|s| Ok(section_lines(chalk, s)?.join(EOL)))
+        .collect::<Result<Vec<String>, TemplateError>>()?;
+    Ok(format!("\n{}", sections.join("\n")))
 }
 
 #[cfg(test)]
@@ -559,6 +604,45 @@ mod tests {
     }
 
     #[test]
+    fn wrapping_measures_escapes() {
+        let bold = "\u{1b}[1maaa\u{1b}[22m";
+        assert_eq!(
+            wrap_lines(&format!("{bold} {bold}"), 7),
+            [format!("{bold} {bold}")]
+        );
+        assert_eq!(wrap_lines(&format!("{bold} {bold}"), 6), [bold, bold]);
+        // An escape split across words is only complete on the joined line:
+        // "\e[" + " " + "1m" is one escape, so the line stays narrow.
+        assert_eq!(
+            Measure::of("x\u{1b}["),
+            Measure {
+                visible: 3,
+                open_escape: true
+            }
+        );
+        assert_eq!(
+            wrap_lines("x\u{1b}[ 1m yyyyyyyy", 10),
+            ["x\u{1b}[ 1m yyyyyyyy"]
+        );
+        assert_eq!(
+            Measure::of("\u{1b}[1m"),
+            Measure {
+                visible: 0,
+                open_escape: false
+            }
+        );
+    }
+
+    #[test]
+    fn long_text_wraps_in_linear_time() {
+        let text = "word ".repeat(200_000);
+        let lines = wrap_lines(&text, 78);
+        assert!(lines.iter().all(|l| l.len() <= 78));
+        let words: usize = lines.iter().map(|l| l.split(' ').count()).sum();
+        assert_eq!(words, 200_000);
+    }
+
+    #[test]
     fn content_section() {
         let chalk = Chalk::new(0);
         let usage = command_line_usage(
@@ -568,6 +652,27 @@ mod tests {
                 content: Some(Content::Text("Hello".into())),
             }],
         );
-        assert_eq!(usage, "\nTitle\n\n  Hello \n");
+        assert_eq!(usage, Ok("\nTitle\n\n  Hello \n".to_owned()));
+    }
+
+    #[test]
+    fn template_errors_propagate() {
+        let chalk = Chalk::new(0);
+        let section = |description: &'static str| Section::OptionList {
+            header: None,
+            options: vec![OptionDefinition::new(
+                "x",
+                OptionType::Boolean,
+                description,
+                quicktype_core::renderer_options::OptionKind::Cli,
+            )],
+            hide: vec![],
+            table_options: None,
+        };
+        assert_eq!(
+            command_line_usage(&chalk, &[section("a {foo b}")]),
+            Err(TemplateError::Thrown("Unknown Chalk style: foo".to_owned()))
+        );
+        assert!(command_line_usage(&chalk, &[section("a {bold b}")]).is_ok());
     }
 }

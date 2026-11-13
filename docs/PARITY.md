@@ -119,3 +119,20 @@ semantics were verified.
 | JS library | Rust replacement | Verified how |
 |---|---|---|
 | `collection-utils` (sets/maps) | `indexmap` | insertion-ordered, as is collection-utils (research 06) |
+
+## Known gaps
+
+Behavior the port deliberately does not reproduce, because it depends on the
+JavaScript runtime rather than on quicktype. None of it is reachable through
+the golden corpus.
+
+- **Write errors other than EPIPE.** Node turns a failed write to stdout or
+  stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
+  trace on stderr and exit code 1. The Rust CLI prints
+  `Error: cannot write to <stream>: <error>.` and exits 1. (EPIPE is exact:
+  exit 0, no output.)
+- **chalk-template features quicktype never uses.** Style arguments and hex
+  colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
+  exit 2 as not implemented. Style names that are other properties of the
+  chalk object (`level`, `toString`, …) fail with JS `TypeError`s in the
+  original; the port reports them as `Unknown Chalk style`.
