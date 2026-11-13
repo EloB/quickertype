@@ -1,8 +1,8 @@
 # Endless recursion over the type graph: a nullable union whose member is an
 # array of the union itself makes the renderers' type-to-source functions
 # (C# csType, Pike sourceFor, Ruby dryType, Elixir elixirType, Python
-# pythonType, Swift swiftType, Dart dartType, ...) recurse until V8's stack
-# overflows, a
+# pythonType, Swift swiftType, Dart dartType, Go goType, JSON Schema
+# schemaForType, ...) recurse until V8's stack overflows, a
 # RangeError (support::recursion::guard in Rust). The graph comes from the
 # default (Rust) pipeline: C#'s own pipeline already overflows in
 # needTransformerForType.
@@ -30,3 +30,5 @@ render dart {"rendererOptions": {"just-types": true}}
 render crystal {}
 render cplusplus {}
 render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}
+render golang {}
+render schema {}

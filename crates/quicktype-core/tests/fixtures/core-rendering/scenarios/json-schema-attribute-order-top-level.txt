@@ -1,0 +1,7 @@
+# A top-level string keeps its description, written after its default and
+# constraints in the root ("default", "minLength", "pattern", then
+# "description"; see json-schema-attribute-order).
+input schema Name {"type": "string", "description": "A name.", "default": "none", "minLength": 1, "pattern": "^[a-z]+$"}
+pipeline {"lang": "schema"}
+
+render schema {}

@@ -27,7 +27,11 @@ brotli-decompressor = { workspace = true, optional = true }
 
 [dev-dependencies]
 flate2.workspace = true
-serde_json.workspace = true
+# `preserve_order`: the differential tests rebuild type graphs from fixture
+# dumps whose attribute objects list the attributes in JavaScript `Map`
+# order, which the JSON Schema output depends on. Only the tests read
+# fixtures with serde_json; the library does not use it.
+serde_json = { workspace = true, features = ["preserve_order"] }
 
 [lints]
 workspace = true

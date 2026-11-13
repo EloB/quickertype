@@ -1,0 +1,390 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "complex-union-array",
+      1,
+      false
+     ],
+     [
+      "date",
+      6,
+      false
+     ],
+     [
+      "date-time",
+      3,
+      false
+     ],
+     [
+      "local-date-class",
+      7,
+      true
+     ],
+     [
+      "offset-date-time-class",
+      8,
+      true
+     ],
+     [
+      "offset-time-class",
+      9,
+      true
+     ],
+     [
+      "time",
+      6,
+      false
+     ],
+     [
+      "union-array",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "complex-union-array"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 2
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "complex-union-array"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     5,
+     4,
+     3
+    ]
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "date-time"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "complex-union-array"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    },
+    "cases": [
+     "foo",
+     "bar"
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "complex-union-array"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "date",
+       "time",
+       "date-time"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "LocalDate"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "OffsetDateTime"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "OffsetTime"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union-array"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 6
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package main\n\nimport \"bytes\"\nimport \"errors\"\nimport \"time\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TopLevel struct {\n\tComplexUnionArray   []ComplexUnionArrayElement `json:\"complex-union-array\"`\n\tDate                string                     `json:\"date\"`\n\tDateTime            time.Time                  `json:\"date-time\"`\n\tLocalDateClass      *LocalDate                 `json:\"local-date-class,omitempty\"`\n\tOffsetDateTimeClass *OffsetDateTime            `json:\"offset-date-time-class,omitempty\"`\n\tOffsetTimeClass     *OffsetTime                `json:\"offset-time-class,omitempty\"`\n\tTime                string                     `json:\"time\"`\n\tUnionArray          []string                   `json:\"union-array\"`\n}\n\ntype LocalDate struct {\n}\n\ntype OffsetDateTime struct {\n}\n\ntype OffsetTime struct {\n}\n\ntype ComplexUnionArrayEnum string\n\nconst (\n\tFoo ComplexUnionArrayEnum = \"foo\"\n\tBar ComplexUnionArrayEnum = \"bar\"\n)\n\ntype ComplexUnionArrayElement struct {\n\tDateTime *time.Time\n\tEnum     *ComplexUnionArrayEnum\n\tInteger  *int64\n}\n\nfunc (x *ComplexUnionArrayElement) UnmarshalJSON(data []byte) error {\n\tx.Enum = nil\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, true, &x.Enum, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *ComplexUnionArrayElement) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, x.Enum != nil, x.Enum, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": [],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.go",
+     "text": "package main\n\nimport \"encoding/json\"\nimport \"time\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TopLevel struct {\n\tComplexUnionArray   []ComplexUnionArrayElement `json:\"complex-union-array\"`\n\tDate                string                     `json:\"date\"`\n\tDateTime            time.Time                  `json:\"date-time\"`\n\tLocalDateClass      *LocalDate                 `json:\"local-date-class,omitempty\"`\n\tOffsetDateTimeClass *OffsetDateTime            `json:\"offset-date-time-class,omitempty\"`\n\tOffsetTimeClass     *OffsetTime                `json:\"offset-time-class,omitempty\"`\n\tTime                string                     `json:\"time\"`\n\tUnionArray          []string                   `json:\"union-array\"`\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "LocalDate.go",
+     "text": "package main\n\ntype LocalDate struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "OffsetDateTime.go",
+     "text": "package main\n\ntype OffsetDateTime struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "OffsetTime.go",
+     "text": "package main\n\ntype OffsetTime struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ComplexUnionArrayEnum.go",
+     "text": "package main\n\nimport \"encoding/json\"\n\ntype ComplexUnionArrayEnum string\n\nconst (\n\tFoo ComplexUnionArrayEnum = \"foo\"\n\tBar ComplexUnionArrayEnum = \"bar\"\n)\n",
+     "annotations": []
+    },
+    {
+     "name": "ComplexUnionArrayElement.go",
+     "text": "package main\n\nimport \"time\"\n\ntype ComplexUnionArrayElement struct {\n\tDateTime *time.Time\n\tEnum     *ComplexUnionArrayEnum\n\tInteger  *int64\n}\n\nfunc (x *ComplexUnionArrayElement) UnmarshalJSON(data []byte) error {\n\tx.Enum = nil\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, true, &x.Enum, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *ComplexUnionArrayElement) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, x.Enum != nil, x.Enum, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.go",
+     "text": "package main\n\nimport \"bytes\"\nimport \"encoding/json\"\nimport \"errors\"\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file TopLevel.go more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "Generated.",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Generated.\n\n// line one\n// line two\n\npackage main\n\nimport \"bytes\"\nimport \"errors\"\nimport \"time\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TopLevel struct {\n\tComplexUnionArray   []ComplexUnionArrayElement `json:\"complex-union-array\"`\n\tDate                string                     `json:\"date\"`\n\tDateTime            time.Time                  `json:\"date-time\"`\n\tLocalDateClass      *LocalDate                 `json:\"local-date-class,omitempty\"`\n\tOffsetDateTimeClass *OffsetDateTime            `json:\"offset-date-time-class,omitempty\"`\n\tOffsetTimeClass     *OffsetTime                `json:\"offset-time-class,omitempty\"`\n\tTime                string                     `json:\"time\"`\n\tUnionArray          []string                   `json:\"union-array\"`\n}\n\ntype LocalDate struct {\n}\n\ntype OffsetDateTime struct {\n}\n\ntype OffsetTime struct {\n}\n\ntype ComplexUnionArrayEnum string\n\nconst (\n\tFoo ComplexUnionArrayEnum = \"foo\"\n\tBar ComplexUnionArrayEnum = \"bar\"\n)\n\ntype ComplexUnionArrayElement struct {\n\tDateTime *time.Time\n\tEnum     *ComplexUnionArrayEnum\n\tInteger  *int64\n}\n\nfunc (x *ComplexUnionArrayElement) UnmarshalJSON(data []byte) error {\n\tx.Enum = nil\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, true, &x.Enum, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *ComplexUnionArrayElement) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, x.Enum != nil, x.Enum, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": [
+    "Generated."
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.go",
+     "text": "// Generated.\n\npackage main\n\nimport \"encoding/json\"\nimport \"time\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TopLevel struct {\n\tComplexUnionArray   []ComplexUnionArrayElement `json:\"complex-union-array\"`\n\tDate                string                     `json:\"date\"`\n\tDateTime            time.Time                  `json:\"date-time\"`\n\tLocalDateClass      *LocalDate                 `json:\"local-date-class,omitempty\"`\n\tOffsetDateTimeClass *OffsetDateTime            `json:\"offset-date-time-class,omitempty\"`\n\tOffsetTimeClass     *OffsetTime                `json:\"offset-time-class,omitempty\"`\n\tTime                string                     `json:\"time\"`\n\tUnionArray          []string                   `json:\"union-array\"`\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "LocalDate.go",
+     "text": "package main\n\ntype LocalDate struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "OffsetDateTime.go",
+     "text": "package main\n\ntype OffsetDateTime struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "OffsetTime.go",
+     "text": "package main\n\ntype OffsetTime struct {\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "ComplexUnionArrayEnum.go",
+     "text": "package main\n\nimport \"encoding/json\"\n\ntype ComplexUnionArrayEnum string\n\nconst (\n\tFoo ComplexUnionArrayEnum = \"foo\"\n\tBar ComplexUnionArrayEnum = \"bar\"\n)\n",
+     "annotations": []
+    },
+    {
+     "name": "ComplexUnionArrayElement.go",
+     "text": "package main\n\nimport \"time\"\n\ntype ComplexUnionArrayElement struct {\n\tDateTime *time.Time\n\tEnum     *ComplexUnionArrayEnum\n\tInteger  *int64\n}\n\nfunc (x *ComplexUnionArrayElement) UnmarshalJSON(data []byte) error {\n\tx.Enum = nil\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, true, &x.Enum, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *ComplexUnionArrayElement) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, nil, false, nil, false, nil, false, nil, x.Enum != nil, x.Enum, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.go",
+     "text": "package main\n\nimport \"bytes\"\nimport \"encoding/json\"\nimport \"errors\"\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file TopLevel.go more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  }
+ ],
+ "id": "golang-leading-comments"
+}

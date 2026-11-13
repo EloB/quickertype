@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/json-schema-definitions.test.ts: a type
+# under $defs keeps its definition name (issue #2778).
+# tests/vitest_golang_json_schema.rs checks the TypeScript declarations.
+input schema LightSchema {"$schema": "https://json-schema.org/draft/2020-12/schema", "$defs": {"LightParams": {"type": "object", "properties": {"outlet_id": {"type": "string"}, "app_id": {"type": "string"}, "rgba": {"type": "string"}}, "additionalProperties": false, "required": ["outlet_id", "app_id", "rgba"]}}, "type": "object", "properties": {"LightParams": {"$ref": "#/$defs/LightParams"}}, "additionalProperties": false, "required": ["LightParams"]}
+pipeline {"lang": "typescript"}
+
+render typescript {"rendererOptions": {"just-types": "true"}}

@@ -1,0 +1,95 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "description": [
+      "Scores by name."
+     ]
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      0,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "Score"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "Scores",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{\n    \"$schema\": \"http://json-schema.org/draft-06/schema#\",\n    \"type\": \"object\",\n    \"additionalProperties\": {\n        \"type\": \"integer\",\n        \"minimum\": 0\n    },\n    \"description\": \"Scores by name.\",\n    \"definitions\": {}\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    scores, err := UnmarshalScores(bytes)\n//    bytes, err = scores.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\ntype Scores map[string]int64\n\nfunc UnmarshalScores(data []byte) (Scores, error) {\n\tvar r Scores\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Scores) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "json-schema-top-level-map"
+}
