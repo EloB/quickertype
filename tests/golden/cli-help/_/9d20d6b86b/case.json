@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-help",
+  "input": "_",
+  "env": {
+    "FORCE_COLOR": "3"
+  },
+  "steps": [
+    {
+      "args": [
+        "--help"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

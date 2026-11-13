@@ -1,0 +1,209 @@
+// Code generated from JSON Schema using quicktype. DO NOT EDIT.
+// To parse and unparse this JSON data, add this code to your project and do:
+//
+//    kitchenSink, err := UnmarshalKitchenSink(bytes)
+//    bytes, err = kitchenSink.Marshal()
+
+package main
+
+import "bytes"
+import "errors"
+
+import "encoding/json"
+
+func UnmarshalKitchenSink(data []byte) (KitchenSink, error) {
+	var r KitchenSink
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *KitchenSink) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+type KitchenSink struct {
+	StringValue      string                  `json:"stringValue" yaml:"stringValue"`
+	DateValue        string                  `json:"dateValue" yaml:"dateValue"`
+	UUIDValue        string                  `json:"uuidValue" yaml:"uuidValue"`
+	NameWithSpaces   interface{}             `json:"name with spaces" yaml:"name with spaces"`
+	DoubleValue      float64                 `json:"doubleValue" yaml:"doubleValue"`
+	IntValue         int64                   `json:"intValue" yaml:"intValue"`
+	BooleanValue     bool                    `json:"booleanValue" yaml:"booleanValue"`
+	NullValue        interface{}             `json:"nullValue" yaml:"nullValue"`
+	Tuples           [][]IntOrString         `json:"tuples" yaml:"tuples"`
+	Person           PurplePerson            `json:"person" yaml:"person"`
+	People           []PersonElement         `json:"people" yaml:"people"`
+	DifferentThings  []DifferentThingElement `json:"differentThings" yaml:"differentThings"`
+	MapValue         map[string]*int64       `json:"mapValue" yaml:"mapValue"`
+	NullableMapValue map[string]*int64       `json:"nullableMapValue" yaml:"nullableMapValue"`
+}
+
+type DifferentThingClass struct {
+	Name string `json:"name" yaml:"name"`
+}
+
+type PersonElement struct {
+	Name          string       `json:"name" yaml:"name"`
+	IntOrString   *IntOrString `json:"intOrString" yaml:"intOrString"`
+	OptionalValue *bool        `json:"optionalValue,omitempty" yaml:"optionalValue,omitempty"`
+}
+
+type PurplePerson struct {
+	Name        string `json:"name" yaml:"name"`
+	IntOrString int64  `json:"intOrString" yaml:"intOrString"`
+}
+
+type DifferentThingElement struct {
+	DifferentThingClass *DifferentThingClass
+	Integer             *int64
+	String              *string
+}
+
+func (x *DifferentThingElement) UnmarshalJSON(data []byte) error {
+	x.DifferentThingClass = nil
+	var c DifferentThingClass
+	object, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, true, &c, false, nil, false, nil, false)
+	if err != nil {
+		return err
+	}
+	if object {
+		x.DifferentThingClass = &c
+	}
+	return nil
+}
+
+func (x *DifferentThingElement) MarshalJSON() ([]byte, error) {
+	return marshalUnion(x.Integer, nil, nil, x.String, false, nil, x.DifferentThingClass != nil, x.DifferentThingClass, false, nil, false, nil, false)
+}
+
+type IntOrString struct {
+	Integer *int64
+	String  *string
+}
+
+func (x *IntOrString) UnmarshalJSON(data []byte) error {
+	object, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)
+	if err != nil {
+		return err
+	}
+	if object {
+	}
+	return nil
+}
+
+func (x *IntOrString) MarshalJSON() ([]byte, error) {
+	return marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)
+}
+
+func unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {
+	if pi != nil {
+			*pi = nil
+	}
+	if pf != nil {
+			*pf = nil
+	}
+	if pb != nil {
+			*pb = nil
+	}
+	if ps != nil {
+			*ps = nil
+	}
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+			return false, err
+	}
+
+	switch v := tok.(type) {
+	case json.Number:
+			if pi != nil {
+					i, err := v.Int64()
+					if err == nil {
+							*pi = &i
+							return false, nil
+					}
+			}
+			if pf != nil {
+					f, err := v.Float64()
+					if err == nil {
+							*pf = &f
+							return false, nil
+					}
+					return false, errors.New("Unparsable number")
+			}
+			return false, errors.New("Union does not contain number")
+	case float64:
+			return false, errors.New("Decoder should not return float64")
+	case bool:
+			if pb != nil {
+					*pb = &v
+					return false, nil
+			}
+			return false, errors.New("Union does not contain bool")
+	case string:
+			if haveEnum {
+					return false, json.Unmarshal(data, pe)
+			}
+			if ps != nil {
+					*ps = &v
+					return false, nil
+			}
+			return false, errors.New("Union does not contain string")
+	case nil:
+			if nullable {
+					return false, nil
+			}
+			return false, errors.New("Union does not contain null")
+	case json.Delim:
+			if v == '{' {
+					if haveObject {
+							return true, json.Unmarshal(data, pc)
+					}
+					if haveMap {
+							return false, json.Unmarshal(data, pm)
+					}
+					return false, errors.New("Union does not contain object")
+			}
+			if v == '[' {
+					if haveArray {
+							return false, json.Unmarshal(data, pa)
+					}
+					return false, errors.New("Union does not contain array")
+			}
+			return false, errors.New("Cannot handle delimiter")
+	}
+	return false, errors.New("Cannot unmarshal union")
+}
+
+func marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {
+	if pi != nil {
+			return json.Marshal(*pi)
+	}
+	if pf != nil {
+			return json.Marshal(*pf)
+	}
+	if pb != nil {
+			return json.Marshal(*pb)
+	}
+	if ps != nil {
+			return json.Marshal(*ps)
+	}
+	if haveArray {
+			return json.Marshal(pa)
+	}
+	if haveObject {
+			return json.Marshal(pc)
+	}
+	if haveMap {
+			return json.Marshal(pm)
+	}
+	if haveEnum {
+			return json.Marshal(pe)
+	}
+	if nullable {
+			return json.Marshal(nil)
+	}
+	return nil, errors.New("Union must not be null")
+}

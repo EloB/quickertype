@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-sources",
+  "input": "spotify-api",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "{INPUTS}/spotify-api",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

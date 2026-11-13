@@ -1,0 +1,6 @@
+
+Issue in line 30: The only value for this in the input is null, which means you probably need a more complete input sample.
+30:         [J("name with spaces")] public object NameWithSpaces { get; set; }                     
+
+Issue in line 34: The only value for this in the input is null, which means you probably need a more complete input sample.
+34:         [J("nullValue")]        public object NullValue { get; set; }                          

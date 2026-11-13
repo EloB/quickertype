@@ -1,0 +1,381 @@
+//  To parse this JSON data, first install
+//
+//      Boost     http://www.boost.org
+//      json.hpp  https://github.com/nlohmann/json
+//
+//  Then include this file, and then do
+//
+//     KitchenSink data = nlohmann::json::parse(jsonString);
+
+#pragma once
+
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
+#include "json.hpp"
+
+#include <boost/optional.hpp>
+#include <stdexcept>
+#include <regex>
+
+#ifndef NLOHMANN_OPT_HELPER
+#define NLOHMANN_OPT_HELPER
+namespace nlohmann {
+    template <typename T>
+    struct adl_serializer<std::shared_ptr<T>> {
+        static void to_json(json & j, const std::shared_ptr<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static std::shared_ptr<T> from_json(const json & j) {
+            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());
+        }
+    };
+    template <typename T>
+    struct adl_serializer<boost::optional<T>> {
+        static void to_json(json & j, const boost::optional<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static boost::optional<T> from_json(const json & j) {
+            if (j.is_null()) return boost::optional<T>(); else return boost::optional<T>(j.get<T>());
+        }
+    };
+}
+#endif
+
+namespace quicktype {
+    using nlohmann::json;
+
+    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER
+    #define NLOHMANN_UNTYPED_quicktype_HELPER
+    inline json get_untyped(const json & j, const char * property) {
+        if (j.find(property) != j.end()) {
+            return j.at(property).get<json>();
+        }
+        return json();
+    }
+
+    inline json get_untyped(const json & j, std::string property) {
+        return get_untyped(j, property.data());
+    }
+    #endif
+
+    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER
+    #define NLOHMANN_OPTIONAL_quicktype_HELPER
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<std::shared_ptr<T>>();
+        }
+        return std::shared_ptr<T>();
+    }
+
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {
+        return get_heap_optional<T>(j, property.data());
+    }
+    template <typename T>
+    inline boost::optional<T> get_stack_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<boost::optional<T>>();
+        }
+        return boost::optional<T>();
+    }
+
+    template <typename T>
+    inline boost::optional<T> get_stack_optional(const json & j, std::string property) {
+        return get_stack_optional<T>(j, property.data());
+    }
+    #endif
+
+    class DifferentThingClass {
+        public:
+        DifferentThingClass() = default;
+        virtual ~DifferentThingClass() = default;
+
+        private:
+        std::string name;
+
+        public:
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+    };
+
+    using DifferentThingElement = boost::variant<DifferentThingClass, int64_t, std::string>;
+
+    using IntOrString = boost::variant<int64_t, std::string>;
+
+    class PersonElement {
+        public:
+        PersonElement() = default;
+        virtual ~PersonElement() = default;
+
+        private:
+        std::string name;
+        IntOrString int_or_string;
+        boost::optional<bool> optional_value;
+
+        public:
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+
+        const IntOrString & get_int_or_string() const { return int_or_string; }
+        IntOrString & get_mutable_int_or_string() { return int_or_string; }
+        void set_int_or_string(const IntOrString & value) { this->int_or_string = value; }
+
+        const boost::optional<bool> & get_optional_value() const { return optional_value; }
+        boost::optional<bool> & get_mutable_optional_value() { return optional_value; }
+        void set_optional_value(const boost::optional<bool> & value) { this->optional_value = value; }
+    };
+
+    class PurplePerson {
+        public:
+        PurplePerson() = default;
+        virtual ~PurplePerson() = default;
+
+        private:
+        std::string name;
+        int64_t int_or_string;
+
+        public:
+        const std::string & get_name() const { return name; }
+        std::string & get_mutable_name() { return name; }
+        void set_name(const std::string & value) { this->name = value; }
+
+        const int64_t & get_int_or_string() const { return int_or_string; }
+        int64_t & get_mutable_int_or_string() { return int_or_string; }
+        void set_int_or_string(const int64_t & value) { this->int_or_string = value; }
+    };
+
+    class KitchenSink {
+        public:
+        KitchenSink() = default;
+        virtual ~KitchenSink() = default;
+
+        private:
+        std::string string_value;
+        std::string date_value;
+        std::string uuid_value;
+        nlohmann::json name_with_spaces;
+        double double_value;
+        int64_t int_value;
+        bool boolean_value;
+        nlohmann::json null_value;
+        std::vector<std::vector<IntOrString>> tuples;
+        PurplePerson person;
+        std::vector<PersonElement> people;
+        std::vector<DifferentThingElement> different_things;
+        std::map<std::string, boost::optional<int64_t>> map_value;
+        std::map<std::string, boost::optional<int64_t>> nullable_map_value;
+
+        public:
+        const std::string & get_string_value() const { return string_value; }
+        std::string & get_mutable_string_value() { return string_value; }
+        void set_string_value(const std::string & value) { this->string_value = value; }
+
+        const std::string & get_date_value() const { return date_value; }
+        std::string & get_mutable_date_value() { return date_value; }
+        void set_date_value(const std::string & value) { this->date_value = value; }
+
+        const std::string & get_uuid_value() const { return uuid_value; }
+        std::string & get_mutable_uuid_value() { return uuid_value; }
+        void set_uuid_value(const std::string & value) { this->uuid_value = value; }
+
+        const nlohmann::json & get_name_with_spaces() const { return name_with_spaces; }
+        nlohmann::json & get_mutable_name_with_spaces() { return name_with_spaces; }
+        void set_name_with_spaces(const nlohmann::json & value) { this->name_with_spaces = value; }
+
+        const double & get_double_value() const { return double_value; }
+        double & get_mutable_double_value() { return double_value; }
+        void set_double_value(const double & value) { this->double_value = value; }
+
+        const int64_t & get_int_value() const { return int_value; }
+        int64_t & get_mutable_int_value() { return int_value; }
+        void set_int_value(const int64_t & value) { this->int_value = value; }
+
+        const bool & get_boolean_value() const { return boolean_value; }
+        bool & get_mutable_boolean_value() { return boolean_value; }
+        void set_boolean_value(const bool & value) { this->boolean_value = value; }
+
+        const nlohmann::json & get_null_value() const { return null_value; }
+        nlohmann::json & get_mutable_null_value() { return null_value; }
+        void set_null_value(const nlohmann::json & value) { this->null_value = value; }
+
+        const std::vector<std::vector<IntOrString>> & get_tuples() const { return tuples; }
+        std::vector<std::vector<IntOrString>> & get_mutable_tuples() { return tuples; }
+        void set_tuples(const std::vector<std::vector<IntOrString>> & value) { this->tuples = value; }
+
+        const PurplePerson & get_person() const { return person; }
+        PurplePerson & get_mutable_person() { return person; }
+        void set_person(const PurplePerson & value) { this->person = value; }
+
+        const std::vector<PersonElement> & get_people() const { return people; }
+        std::vector<PersonElement> & get_mutable_people() { return people; }
+        void set_people(const std::vector<PersonElement> & value) { this->people = value; }
+
+        const std::vector<DifferentThingElement> & get_different_things() const { return different_things; }
+        std::vector<DifferentThingElement> & get_mutable_different_things() { return different_things; }
+        void set_different_things(const std::vector<DifferentThingElement> & value) { this->different_things = value; }
+
+        const std::map<std::string, boost::optional<int64_t>> & get_map_value() const { return map_value; }
+        std::map<std::string, boost::optional<int64_t>> & get_mutable_map_value() { return map_value; }
+        void set_map_value(const std::map<std::string, boost::optional<int64_t>> & value) { this->map_value = value; }
+
+        const std::map<std::string, boost::optional<int64_t>> & get_nullable_map_value() const { return nullable_map_value; }
+        std::map<std::string, boost::optional<int64_t>> & get_mutable_nullable_map_value() { return nullable_map_value; }
+        void set_nullable_map_value(const std::map<std::string, boost::optional<int64_t>> & value) { this->nullable_map_value = value; }
+    };
+}
+
+namespace quicktype {
+void from_json(const json & j, DifferentThingClass & x);
+void to_json(json & j, const DifferentThingClass & x);
+
+void from_json(const json & j, PersonElement & x);
+void to_json(json & j, const PersonElement & x);
+
+void from_json(const json & j, PurplePerson & x);
+void to_json(json & j, const PurplePerson & x);
+
+void from_json(const json & j, KitchenSink & x);
+void to_json(json & j, const KitchenSink & x);
+}
+namespace nlohmann {
+template <>
+struct adl_serializer<boost::variant<quicktype::DifferentThingClass, int64_t, std::string>> {
+    static void from_json(const json & j, boost::variant<quicktype::DifferentThingClass, int64_t, std::string> & x);
+    static void to_json(json & j, const boost::variant<quicktype::DifferentThingClass, int64_t, std::string> & x);
+};
+
+template <>
+struct adl_serializer<boost::variant<int64_t, std::string>> {
+    static void from_json(const json & j, boost::variant<int64_t, std::string> & x);
+    static void to_json(json & j, const boost::variant<int64_t, std::string> & x);
+};
+}
+namespace quicktype {
+    inline void from_json(const json & j, DifferentThingClass& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_name(j.at("name").get<std::string>());
+    }
+
+    inline void to_json(json & j, const DifferentThingClass & x) {
+        j = json::object();
+        j["name"] = x.get_name();
+    }
+
+    inline void from_json(const json & j, PersonElement& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_name(j.at("name").get<std::string>());
+        x.set_int_or_string(j.at("intOrString").get<IntOrString>());
+        if (j.find("optionalValue") != j.end() && j.at("optionalValue").is_null()) throw std::runtime_error("Unexpected null");
+        x.set_optional_value(get_stack_optional<bool>(j, "optionalValue"));
+    }
+
+    inline void to_json(json & j, const PersonElement & x) {
+        j = json::object();
+        j["name"] = x.get_name();
+        j["intOrString"] = x.get_int_or_string();
+        j["optionalValue"] = x.get_optional_value();
+    }
+
+    inline void from_json(const json & j, PurplePerson& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_name(j.at("name").get<std::string>());
+        if (j.find("intOrString") != j.end() && !j.at("intOrString").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_int_or_string(j.at("intOrString").get<int64_t>());
+    }
+
+    inline void to_json(json & j, const PurplePerson & x) {
+        j = json::object();
+        j["name"] = x.get_name();
+        j["intOrString"] = x.get_int_or_string();
+    }
+
+    inline void from_json(const json & j, KitchenSink& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.set_string_value(j.at("stringValue").get<std::string>());
+        x.set_date_value(j.at("dateValue").get<std::string>());
+        x.set_uuid_value(j.at("uuidValue").get<std::string>());
+        x.set_name_with_spaces(get_untyped(j, "name with spaces"));
+        x.set_double_value(j.at("doubleValue").get<double>());
+        if (j.find("intValue") != j.end() && !j.at("intValue").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.set_int_value(j.at("intValue").get<int64_t>());
+        x.set_boolean_value(j.at("booleanValue").get<bool>());
+        x.set_null_value(get_untyped(j, "nullValue"));
+        x.set_tuples(j.at("tuples").get<std::vector<std::vector<IntOrString>>>());
+        x.set_person(j.at("person").get<PurplePerson>());
+        x.set_people(j.at("people").get<std::vector<PersonElement>>());
+        x.set_different_things(j.at("differentThings").get<std::vector<DifferentThingElement>>());
+        x.set_map_value(j.at("mapValue").get<std::map<std::string, boost::optional<int64_t>>>());
+        x.set_nullable_map_value(j.at("nullableMapValue").get<std::map<std::string, boost::optional<int64_t>>>());
+    }
+
+    inline void to_json(json & j, const KitchenSink & x) {
+        j = json::object();
+        j["stringValue"] = x.get_string_value();
+        j["dateValue"] = x.get_date_value();
+        j["uuidValue"] = x.get_uuid_value();
+        j["name with spaces"] = x.get_name_with_spaces();
+        j["doubleValue"] = x.get_double_value();
+        j["intValue"] = x.get_int_value();
+        j["booleanValue"] = x.get_boolean_value();
+        j["nullValue"] = x.get_null_value();
+        j["tuples"] = x.get_tuples();
+        j["person"] = x.get_person();
+        j["people"] = x.get_people();
+        j["differentThings"] = x.get_different_things();
+        j["mapValue"] = x.get_map_value();
+        j["nullableMapValue"] = x.get_nullable_map_value();
+    }
+}
+namespace nlohmann {
+    inline void adl_serializer<boost::variant<quicktype::DifferentThingClass, int64_t, std::string>>::from_json(const json & j, boost::variant<quicktype::DifferentThingClass, int64_t, std::string> & x) {
+        if (j.is_number_integer())
+            x = j.get<int64_t>();
+        else if (j.is_string())
+            x = j.get<std::string>();
+        else if (j.is_object())
+            x = j.get<quicktype::DifferentThingClass>();
+        else throw std::runtime_error("Could not deserialise!");
+    }
+
+    inline void adl_serializer<boost::variant<quicktype::DifferentThingClass, int64_t, std::string>>::to_json(json & j, const boost::variant<quicktype::DifferentThingClass, int64_t, std::string> & x) {
+        switch (x.which()) {
+            case 0:
+                j = boost::get<quicktype::DifferentThingClass>(x);
+                break;
+            case 1:
+                j = boost::get<int64_t>(x);
+                break;
+            case 2:
+                j = boost::get<std::string>(x);
+                break;
+            default: throw std::runtime_error("Input JSON does not conform to schema!");
+        }
+    }
+
+    inline void adl_serializer<boost::variant<int64_t, std::string>>::from_json(const json & j, boost::variant<int64_t, std::string> & x) {
+        if (j.is_number_integer())
+            x = j.get<int64_t>();
+        else if (j.is_string())
+            x = j.get<std::string>();
+        else throw std::runtime_error("Could not deserialise!");
+    }
+
+    inline void adl_serializer<boost::variant<int64_t, std::string>>::to_json(json & j, const boost::variant<int64_t, std::string> & x) {
+        switch (x.which()) {
+            case 0:
+                j = boost::get<int64_t>(x);
+                break;
+            case 1:
+                j = boost::get<std::string>(x);
+                break;
+            default: throw std::runtime_error("Input JSON does not conform to schema!");
+        }
+    }
+}

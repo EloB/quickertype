@@ -1,0 +1,18 @@
+{
+  "fixture": "cli-options",
+  "input": "schema/date-time.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "go",
+        "--no-just-types",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/date-time.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "fixture": "cli-sources",
+  "input": "graphql/github1.graphql",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "{INPUTS}/graphql/github1.graphql",
+        "{INPUTS}/graphql/github2.graphql"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

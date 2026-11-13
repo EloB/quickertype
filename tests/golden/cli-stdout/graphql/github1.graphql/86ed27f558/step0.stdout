@@ -1,0 +1,24 @@
+import * as z from "zod";
+
+
+export const UserSchema = z.object({
+    "login": z.string(),
+    "realName": z.union([z.null(), z.string()]),
+});
+export type User = z.infer<typeof UserSchema>;
+
+export const ErrorElementSchema = z.object({
+    "message": z.string(),
+});
+export type ErrorElement = z.infer<typeof ErrorElementSchema>;
+
+export const DataSchema = z.object({
+    "viewer": UserSchema,
+});
+export type Data = z.infer<typeof DataSchema>;
+
+export const Github1Schema = z.object({
+    "data": z.union([z.null(), DataSchema]),
+    "errors": z.array(ErrorElementSchema).optional(),
+});
+export type Github1 = z.infer<typeof Github1Schema>;

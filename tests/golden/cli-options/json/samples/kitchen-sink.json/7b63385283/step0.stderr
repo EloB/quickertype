@@ -1,0 +1,18 @@
+
+Issue in line 13: The only value for this in the input is null, which means you probably need a more complete input sample.
+13:     let nameWithSpaces: JSONNull?
+
+Issue in line 17: The only value for this in the input is null, which means you probably need a more complete input sample.
+17:     let nullValue: JSONNull?
+
+Issue in line 42: The only value for this in the input is null, which means you probably need a more complete input sample.
+42:     init(stringValue: String, dateValue: String, uuidValue: String, nameWithSpaces: JSONNull?, doubleValue: Double, intValue: Int, booleanValue: Bool, nullValue: JSONNull?, tuples: [[IntOrString]], person: PurplePerson, people: [PersonElement], differentThings: [DifferentThingElement], mapValue: [String: Int?], nullableMapValue: [String: Int?]) {
+
+Issue in line 42: The only value for this in the input is null, which means you probably need a more complete input sample.
+42:     init(stringValue: String, dateValue: String, uuidValue: String, nameWithSpaces: JSONNull?, doubleValue: Double, intValue: Int, booleanValue: Bool, nullValue: JSONNull?, tuples: [[IntOrString]], person: PurplePerson, people: [PersonElement], differentThings: [DifferentThingElement], mapValue: [String: Int?], nullableMapValue: [String: Int?]) {
+
+Issue in line 83: The only value for this in the input is null, which means you probably need a more complete input sample.
+83:         nameWithSpaces: JSONNull?? = nil,
+
+Issue in line 87: The only value for this in the input is null, which means you probably need a more complete input sample.
+87:         nullValue: JSONNull?? = nil,

@@ -1,0 +1,44 @@
+package quicktype
+
+data class KitchenSink (
+    val stringValue: String,
+    val dateValue: String,
+    val uuidValue: String,
+    val nameWithSpaces: Any? = null,
+    val doubleValue: Double,
+    val intValue: Long,
+    val booleanValue: Boolean,
+    val nullValue: Any? = null,
+    val tuples: List<List<IntOrString>>,
+    val person: PurplePerson,
+    val people: List<PersonElement>,
+    val differentThings: List<DifferentThingElement>,
+    val mapValue: Map<String, Long?>,
+    val nullableMapValue: Map<String, Long?>
+)
+
+sealed class DifferentThingElement {
+    class DifferentThingClassValue(val value: DifferentThingClass) : DifferentThingElement()
+    class IntegerValue(val value: Long)                            : DifferentThingElement()
+    class StringValue(val value: String)                           : DifferentThingElement()
+}
+
+data class DifferentThingClass (
+    val name: String
+)
+
+data class PersonElement (
+    val name: String,
+    val intOrString: IntOrString,
+    val optionalValue: Boolean? = null
+)
+
+sealed class IntOrString {
+    class IntegerValue(val value: Long)  : IntOrString()
+    class StringValue(val value: String) : IntOrString()
+}
+
+data class PurplePerson (
+    val name: String,
+    val intOrString: Long
+)

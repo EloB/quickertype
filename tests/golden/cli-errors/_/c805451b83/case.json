@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--telemetry",
+        "enable",
+        "--lang",
+        "typescript",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

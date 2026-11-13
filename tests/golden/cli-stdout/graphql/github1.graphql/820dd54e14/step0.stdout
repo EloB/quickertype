@@ -1,0 +1,26 @@
+package quicktype
+
+import io.circe.syntax._
+import io.circe._
+import cats.syntax.functor._
+
+// If a union has a null in, then we'll need this too... 
+type NullValue = None.type
+
+case class Github1 (
+    val data : Option[Data] = None,
+    val errors : Option[Seq[Error]] = None
+) derives Encoder.AsObject, Decoder
+
+case class Data (
+    val viewer : User
+) derives Encoder.AsObject, Decoder
+
+case class User (
+    val login : String,
+    val realName : Option[String] = None
+) derives Encoder.AsObject, Decoder
+
+case class Error (
+    val message : String
+) derives Encoder.AsObject, Decoder

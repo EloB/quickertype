@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "cs",
+        "--namespace=Foo=Bar",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

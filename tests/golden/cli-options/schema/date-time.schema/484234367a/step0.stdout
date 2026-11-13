@@ -1,0 +1,39 @@
+class PurpleDateTime {
+    final List<dynamic> complexUnionArray;
+    final DateTime date;
+    final DateTime dateTime;
+    final LocalDate? localDateClass;
+    final OffsetDateTime? offsetDateTimeClass;
+    final OffsetTime? offsetTimeClass;
+    final String time;
+    final List<String> unionArray;
+
+    PurpleDateTime({
+        required this.complexUnionArray,
+        required this.date,
+        required this.dateTime,
+        this.localDateClass,
+        this.offsetDateTimeClass,
+        this.offsetTimeClass,
+        required this.time,
+        required this.unionArray,
+    });
+
+}
+
+enum ComplexUnionArrayEnum {
+    FOO,
+    BAR
+}
+
+class LocalDate {
+    LocalDate();
+}
+
+class OffsetDateTime {
+    OffsetDateTime();
+}
+
+class OffsetTime {
+    OffsetTime();
+}

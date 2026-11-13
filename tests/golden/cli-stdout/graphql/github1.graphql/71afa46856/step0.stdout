@@ -1,0 +1,81 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module QuickType
+    ( Github1 (..)
+    , ErrorElement (..)
+    , Data (..)
+    , User (..)
+    , decodeTopLevel
+    ) where
+
+import Data.Aeson
+import Data.Aeson.Types (emptyObject)
+import Data.ByteString.Lazy (ByteString)
+import Data.HashMap.Strict (HashMap)
+import Data.Text (Text)
+
+data Github1 = Github1
+    { github1DataGithub1 :: Maybe Data
+    , errorsGithub1 :: Maybe ([ErrorElement])
+    } deriving (Show)
+
+data ErrorElement = ErrorElement
+    { messageErrorElement :: Text
+    } deriving (Show)
+
+data Data = Data
+    { viewerData :: User
+    } deriving (Show)
+
+data User = User
+    { loginUser :: Text
+    , realNameUser :: Maybe Text
+    } deriving (Show)
+
+decodeTopLevel :: ByteString -> Maybe Github1
+decodeTopLevel = decode
+
+instance ToJSON Github1 where
+    toJSON (Github1 github1DataGithub1 errorsGithub1) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "data" .= github1DataGithub1
+        , ("errors" .=) <$> errorsGithub1
+        ]
+
+instance FromJSON Github1 where
+    parseJSON (Object v) = Github1
+        <$> v .: "data"
+        <*> v .:! "errors"
+
+instance ToJSON ErrorElement where
+    toJSON (ErrorElement messageErrorElement) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "message" .= messageErrorElement
+        ]
+
+instance FromJSON ErrorElement where
+    parseJSON (Object v) = ErrorElement
+        <$> v .: "message"
+
+instance ToJSON Data where
+    toJSON (Data viewerData) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "viewer" .= viewerData
+        ]
+
+instance FromJSON Data where
+    parseJSON (Object v) = Data
+        <$> v .: "viewer"
+
+instance ToJSON User where
+    toJSON (User loginUser realNameUser) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "login" .= loginUser
+        , Just $ "realName" .= realNameUser
+        ]
+
+instance FromJSON User where
+    parseJSON (Object v) = User
+        <$> v .: "login"
+        <*> v .: "realName"

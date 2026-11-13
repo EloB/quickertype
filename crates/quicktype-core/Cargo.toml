@@ -9,6 +9,7 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+indexmap.workspace = true
 quicktype-js-compat.workspace = true
 
 [dev-dependencies]

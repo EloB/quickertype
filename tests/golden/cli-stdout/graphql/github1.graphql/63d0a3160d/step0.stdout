@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Github1",
+    "definitions": {
+        "Github1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "data": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Data"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Error"
+                    }
+                }
+            },
+            "required": [
+                "data"
+            ],
+            "title": "Github1"
+        },
+        "Data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "viewer": {
+                    "$ref": "#/definitions/User"
+                }
+            },
+            "required": [
+                "viewer"
+            ],
+            "title": "Data"
+        },
+        "User": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "realName": {
+                    "anyOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "login",
+                "realName"
+            ],
+            "title": "User"
+        },
+        "Error": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "Error"
+        }
+    }
+}

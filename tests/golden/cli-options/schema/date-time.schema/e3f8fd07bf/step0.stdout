@@ -1,0 +1,265 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let qTDateTime = try QTDateTime(json)
+
+import Foundation
+
+// MARK: - QTDateTime
+struct QTDateTime: Codable {
+    let complexUnionArray: [QTComplexUnionArrayElement]
+    let date: String
+    let dateTime: Date
+    let localDateClass: QTLocalDate?
+    let offsetDateTimeClass: QTOffsetDateTime?
+    let offsetTimeClass: QTOffsetTime?
+    let time: String
+    let unionArray: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case complexUnionArray = "complex-union-array"
+        case date = "date"
+        case dateTime = "date-time"
+        case localDateClass = "local-date-class"
+        case offsetDateTimeClass = "offset-date-time-class"
+        case offsetTimeClass = "offset-time-class"
+        case time = "time"
+        case unionArray = "union-array"
+    }
+}
+
+// MARK: QTDateTime convenience initializers and mutators
+
+extension QTDateTime {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(QTDateTime.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+        complexUnionArray: [QTComplexUnionArrayElement]? = nil,
+        date: String? = nil,
+        dateTime: Date? = nil,
+        localDateClass: QTLocalDate?? = nil,
+        offsetDateTimeClass: QTOffsetDateTime?? = nil,
+        offsetTimeClass: QTOffsetTime?? = nil,
+        time: String? = nil,
+        unionArray: [String]? = nil
+    ) -> QTDateTime {
+        return QTDateTime(
+            complexUnionArray: complexUnionArray ?? self.complexUnionArray,
+            date: date ?? self.date,
+            dateTime: dateTime ?? self.dateTime,
+            localDateClass: localDateClass ?? self.localDateClass,
+            offsetDateTimeClass: offsetDateTimeClass ?? self.offsetDateTimeClass,
+            offsetTimeClass: offsetTimeClass ?? self.offsetTimeClass,
+            time: time ?? self.time,
+            unionArray: unionArray ?? self.unionArray
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+enum QTComplexUnionArrayElement: Codable {
+    case dateTime(Date)
+    case enumeration(QTComplexUnionArrayEnum)
+    case integer(Int)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(Date.self) {
+            self = .dateTime(x)
+            return
+        }
+        if let x = try? container.decode(QTComplexUnionArrayEnum.self) {
+            self = .enumeration(x)
+            return
+        }
+        throw DecodingError.typeMismatch(QTComplexUnionArrayElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for QTComplexUnionArrayElement"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .dateTime(let x):
+            try container.encode(x)
+        case .enumeration(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+enum QTComplexUnionArrayEnum: String, Codable {
+    case foo = "foo"
+    case bar = "bar"
+}
+
+// MARK: - QTLocalDate
+struct QTLocalDate: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}
+
+// MARK: QTLocalDate convenience initializers and mutators
+
+extension QTLocalDate {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(QTLocalDate.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+    ) -> QTLocalDate {
+        return QTLocalDate(
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - QTOffsetDateTime
+struct QTOffsetDateTime: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}
+
+// MARK: QTOffsetDateTime convenience initializers and mutators
+
+extension QTOffsetDateTime {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(QTOffsetDateTime.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+    ) -> QTOffsetDateTime {
+        return QTOffsetDateTime(
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - QTOffsetTime
+struct QTOffsetTime: Codable {
+    private enum K: String, CodingKey { case unused }
+    init(from decoder: Decoder) throws {
+        _ = try decoder.container(keyedBy: K.self)
+    }
+    init() {
+    }
+}
+
+// MARK: QTOffsetTime convenience initializers and mutators
+
+extension QTOffsetTime {
+    init(data: Data) throws {
+        self = try newJSONDecoder().decode(QTOffsetTime.self, from: data)
+    }
+
+    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
+        guard let data = json.data(using: encoding) else {
+            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        }
+        try self.init(data: data)
+    }
+
+    init(fromURL url: URL) throws {
+        try self.init(data: try Data(contentsOf: url))
+    }
+
+    func with(
+    ) -> QTOffsetTime {
+        return QTOffsetTime(
+        )
+    }
+
+    func jsonData() throws -> Data {
+        return try newJSONEncoder().encode(self)
+    }
+
+    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
+        return String(data: try self.jsonData(), encoding: encoding)
+    }
+}
+
+// MARK: - Helper functions for creating encoders and decoders
+
+func newJSONDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        decoder.dateDecodingStrategy = .iso8601
+    }
+    return decoder
+}
+
+func newJSONEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {
+        encoder.dateEncodingStrategy = .iso8601
+    }
+    return encoder
+}

@@ -1,0 +1,20 @@
+import * as S from "effect/Schema";
+
+
+export class ErrorElement extends S.Class<ErrorElement>("ErrorElement")({
+    "message": S.String,
+}) {}
+
+export class User extends S.Class<User>("User")({
+    "login": S.String,
+    "realName": S.NullOr(S.String),
+}) {}
+
+export class Data extends S.Class<Data>("Data")({
+    "viewer": User,
+}) {}
+
+export class Github1 extends S.Class<Github1>("Github1")({
+    "data": S.NullOr(Data),
+    "errors": S.optional(S.Array(ErrorElement)),
+}) {}

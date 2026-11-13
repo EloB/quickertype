@@ -1,0 +1,56 @@
+$version: "2"
+namespace quicktype
+
+document NullValue
+
+/**
+ * The top-level class.
+ * Its description has two lines.
+ */
+structure Description {
+    /**
+     * A pretty boolean
+     */
+    bar : Boolean,
+
+    /**
+     * An enumeration
+     */
+    @required enum : EnumEnum,
+
+    foo : Double,
+    @required `object-or-string` : ObjectOrStringUnion,
+
+    /**
+     * Either a number or a string
+     */
+    @required union : Union
+}
+
+/**
+ * An enumeration
+ */
+
+enum EnumEnum { 
+foo = "foo",
+bar = "bar"
+}
+@untagged union ObjectOrStringUnion { 
+    A : ObjectOrStringClass
+    B : String
+}
+
+structure ObjectOrStringClass {
+    /**
+     * This must not get lost
+     */
+    @required prop : Double
+}
+
+/**
+ * Either a number or a string
+ */
+@untagged union Union { 
+    A : Double
+    B : String
+}

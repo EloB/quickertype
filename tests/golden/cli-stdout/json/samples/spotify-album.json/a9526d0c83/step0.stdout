@@ -1,0 +1,86 @@
+$version: "2"
+namespace quicktype
+
+document NullValue
+
+structure SpotifyAlbum {
+    @required album_type : String,
+    @required artists : artistsList,
+    @required available_markets : available_marketsList,
+    @required copyrights : copyrightsList,
+    @required external_ids : ExternalIDS,
+    @required external_urls : ExternalUrls,
+    @required genres : genresList,
+    @required href : String,
+    @required id : String,
+    @required images : imagesList,
+    @required name : String,
+    @required popularity : Long,
+    @required release_date : String,
+    @required release_date_precision : String,
+    @required tracks : Tracks,
+    @required type : String,
+    @required uri : String
+}
+list artistsList{ member: Artist}
+list available_marketsList{ member: String}
+list copyrightsList{ member: Copyright}
+list genresList{ member: Document}
+list imagesList{ member: Image}
+
+structure Artist {
+    @required external_urls : ExternalUrls,
+    @required href : String,
+    @required id : String,
+    @required name : String,
+    @required type : String,
+    @required uri : String
+}
+
+structure ExternalUrls {
+    @required spotify : String
+}
+
+structure Copyright {
+    @required text : String,
+    @required type : String
+}
+
+structure ExternalIDS {
+    @required upc : String
+}
+
+structure Image {
+    @required height : Long,
+    @required url : String,
+    @required width : Long
+}
+
+structure Tracks {
+    @required href : String,
+    @required items : itemsList,
+    @required limit : Long,
+    next : Document,
+    @required offset : Long,
+    previous : Document,
+    @required total : Long
+}
+list itemsList{ member: Item}
+
+structure Item {
+    @required artists : artistsList,
+    @required available_markets : available_marketsList,
+    @required disc_number : Long,
+    @required duration_ms : Long,
+    @required explicit : Boolean,
+    @required external_urls : ExternalUrls,
+    @required href : String,
+    @required id : String,
+    @required name : String,
+    @required preview_url : String,
+    @required track_number : Long,
+    @required type : String,
+    @required uri : String
+}
+list artistsList{ member: Artist}
+list available_marketsList{ member: String}

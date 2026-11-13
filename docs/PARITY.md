@@ -12,6 +12,13 @@ findings per area, with file and line references.
   Schema and GraphQL inputs × renderer-option variants). A case is a list of
   steps; each step is an argv plus the exact files it must write.
   `cargo xtask parity` replays them in a temp dir and compares bytes.
+- **CLI behavior:** the `cli-*` fixtures (1,045 cases, recorded by
+  `xtask/golden/record-cli.mjs`) spawn the reference CLI directly and also
+  pin stdout, stderr and the exit code: `--help`/`--version`, default output
+  to stdout for every language, every renderer option value, directories,
+  stdin, multiple sources, `--out` inference and error paths. A step may
+  pipe a `stdin` file and a case may set `env` (e.g. `FORCE_COLOR`); paths
+  in the captured streams are normalized to `{INPUTS}` and `{CWD}`.
 - **Recording** (`xtask/golden/`): a preload hook intercepts the reference test
   harness's in-process CLI calls, converts each options object into the
   equivalent argv, runs the *real* CLI code path with that argv, and stores
@@ -126,8 +133,9 @@ semantics were verified.
 
 ## Known gaps
 
-Known divergences from JavaScript that no golden case exercises yet. Each
-names the fix it needs.
+Known divergences from the reference that no golden case exercises. Some are
+deliberate (behavior of the JavaScript runtime rather than of quicktype);
+the others name the fix they need.
 
 - **`pow` on WASM (Phase 6 blocker).** `quicktype_js_compat::number::pow`
   matches V8 natively because both call the platform `pow`. On `wasm32`
@@ -146,3 +154,13 @@ names the fix it needs.
   No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
+- **Write errors other than EPIPE.** Node turns a failed write to stdout or
+  stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
+  trace on stderr and exit code 1. The Rust CLI prints
+  `Error: cannot write to <stream>: <error>.` and exits 1. (EPIPE is exact:
+  exit 0, no output.)
+- **chalk-template features quicktype never uses.** Style arguments and hex
+  colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
+  exit 2 as not implemented. Style names that are other properties of the
+  chalk object (`level`, `toString`, …) fail with JS `TypeError`s in the
+  original; the port reports them as `Unknown Chalk style`.

@@ -1,0 +1,52 @@
+$version: "2"
+namespace com.example
+
+document NullValue
+
+structure KitchenSink {
+    @required stringValue : String,
+    @required dateValue : String,
+    @required uuidValue : String,
+    name with spaces : Document,
+    @required doubleValue : Double,
+    @required intValue : Long,
+    @required booleanValue : Boolean,
+    nullValue : Document,
+    @required tuples : tuplesList,
+    @required person : PurplePerson,
+    @required people : peopleList,
+    @required differentThings : differentThingsList,
+    @required mapValue : map_valueMap,
+    @required nullableMapValue : map_valueMap
+}
+list tuplesList{ member: tupleList}
+list peopleList{ member: PersonElement}
+list differentThingsList{ member: DifferentThingElement}
+map map_valueMap{ key: String , value: Long}
+map map_valueMap{ key: String , value: Long}
+
+@untagged union DifferentThingElement { 
+    A : DifferentThingClass
+    B : Long
+    C : String
+}
+
+structure DifferentThingClass {
+    @required name : String
+}
+
+structure PersonElement {
+    @required name : String,
+    @required intOrString : IntOrString,
+    optionalValue : Boolean
+}
+
+@untagged union IntOrString { 
+    A : Long
+    B : String
+}
+
+structure PurplePerson {
+    @required name : String,
+    @required intOrString : Long
+}

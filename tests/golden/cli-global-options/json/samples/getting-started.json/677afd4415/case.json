@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-global-options",
+  "input": "json/samples/getting-started.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--debug",
+        "print-transformations",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

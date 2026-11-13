@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-help",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--help",
+        "--out",
+        "Foo.kt"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

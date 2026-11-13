@@ -1,0 +1,35 @@
+package quicktype
+
+case class KitchenSink (
+    val stringValue : String,
+    val dateValue : String,
+    val uuidValue : String,
+    val `name with spaces` : Option[Any] = None,
+    val doubleValue : Double,
+    val intValue : Long,
+    val booleanValue : Boolean,
+    val nullValue : Option[Any] = None,
+    val tuples : Seq[Seq[IntOrString]],
+    val person : PurplePerson,
+    val people : Seq[PersonElement],
+    val differentThings : Seq[DifferentThingElement],
+    val mapValue : Map[String, Option[Long]],
+    val nullableMapValue : Map[String, Option[Long]]
+)
+
+type DifferentThingElement = DifferentThingClass | Long | String
+case class DifferentThingClass (
+    val name : String
+)
+
+case class PersonElement (
+    val name : String,
+    val intOrString : IntOrString,
+    val optionalValue : Option[Boolean] = None
+)
+
+type IntOrString = Long | String
+case class PurplePerson (
+    val name : String,
+    val intOrString : Long
+)

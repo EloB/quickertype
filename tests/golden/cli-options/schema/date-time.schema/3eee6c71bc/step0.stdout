@@ -1,0 +1,26 @@
+type alias DateTime =
+    { complexUnionArray : List ComplexUnionArray
+    , date : String
+    , dateTime : String
+    , localDateClass : Maybe LocalDate
+    , offsetDateTimeClass : Maybe OffsetDateTime
+    , offsetTimeClass : Maybe OffsetTime
+    , time : String
+    , unionArray : List String
+    }
+
+type ComplexUnionArray
+    = IntegerInComplexUnionArray Int
+    | StringInComplexUnionArray String
+
+type alias LocalDate =
+    {
+    }
+
+type alias OffsetDateTime =
+    {
+    }
+
+type alias OffsetTime =
+    {
+    }

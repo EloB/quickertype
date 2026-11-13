@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-options",
+  "input": "json/samples/kitchen-sink.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "ruby",
+        "--strictness",
+        "none",
+        "{INPUTS}/json/samples/kitchen-sink.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

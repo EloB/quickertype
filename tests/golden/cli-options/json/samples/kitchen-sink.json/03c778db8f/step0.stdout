@@ -1,0 +1,67 @@
+class KitchenSink {
+    final String stringValue;
+    final String dateValue;
+    final String uuidValue;
+    final dynamic nameWithSpaces;
+    final double doubleValue;
+    final int intValue;
+    final bool booleanValue;
+    final dynamic nullValue;
+    final List<List<dynamic>> tuples;
+    final PurplePerson person;
+    final List<PersonElement> people;
+    final List<dynamic> differentThings;
+    final Map<String, int?> mapValue;
+    final Map<String, int?> nullableMapValue;
+
+    KitchenSink({
+        required this.stringValue,
+        required this.dateValue,
+        required this.uuidValue,
+        required this.nameWithSpaces,
+        required this.doubleValue,
+        required this.intValue,
+        required this.booleanValue,
+        required this.nullValue,
+        required this.tuples,
+        required this.person,
+        required this.people,
+        required this.differentThings,
+        required this.mapValue,
+        required this.nullableMapValue,
+    });
+
+}
+
+class DifferentThingClass {
+    final String name;
+
+    DifferentThingClass({
+        required this.name,
+    });
+
+}
+
+class PersonElement {
+    final String name;
+    final dynamic intOrString;
+    final bool? optionalValue;
+
+    PersonElement({
+        required this.name,
+        required this.intOrString,
+        this.optionalValue,
+    });
+
+}
+
+class PurplePerson {
+    final String name;
+    final int intOrString;
+
+    PurplePerson({
+        required this.name,
+        required this.intOrString,
+    });
+
+}

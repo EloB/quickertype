@@ -1,0 +1,215 @@
+// Code generated from JSON Schema using quicktype. DO NOT EDIT.
+// To parse and unparse this JSON data, add this code to your project and do:
+//
+//    description, err := UnmarshalDescription(bytes)
+//    bytes, err = description.Marshal()
+
+package main
+
+import "bytes"
+import "errors"
+
+import "encoding/json"
+
+func UnmarshalDescription(data []byte) (Description, error) {
+	var r Description
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *Description) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+// The top-level class.
+// Its description has two lines.
+type Description struct {
+	// A pretty boolean                                
+	Bar                           *bool                `json:"bar,omitempty"`
+	// An enumeration                                  
+	Enum                          Enum                 `json:"enum"`
+	Foo                           *float64             `json:"foo,omitempty"`
+	ObjectOrString                *ObjectOrStringUnion `json:"object-or-string"`
+	// Either a number or a string                     
+	Union                         *Union               `json:"union"`
+}
+
+type ObjectOrStringClass struct {
+	// This must not get lost        
+	Prop                     float64 `json:"prop"`
+}
+
+// An enumeration
+type Enum string
+
+const (
+	Foo Enum = "foo"
+	Bar Enum = "bar"
+)
+
+type invalidEnum string
+func (x invalidEnum) Error() string { return "invalid Enum: " + string(x) }
+
+func (x *Enum) UnmarshalJSON(data []byte) error {
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil { return err }
+	switch Enum(value) {
+	case Foo, Bar: *x = Enum(value); return nil
+	}
+	return invalidEnum(value)
+}
+
+type ObjectOrStringUnion struct {
+	ObjectOrStringClass *ObjectOrStringClass
+	String              *string
+}
+
+func (x *ObjectOrStringUnion) UnmarshalJSON(data []byte) error {
+	x.ObjectOrStringClass = nil
+	var c ObjectOrStringClass
+	object, err := unmarshalUnion(data, nil, nil, nil, &x.String, false, nil, true, &c, false, nil, false, nil, false)
+	if err != nil {
+		return err
+	}
+	if object {
+		x.ObjectOrStringClass = &c
+	}
+	return nil
+}
+
+func (x *ObjectOrStringUnion) MarshalJSON() ([]byte, error) {
+	return marshalUnion(nil, nil, nil, x.String, false, nil, x.ObjectOrStringClass != nil, x.ObjectOrStringClass, false, nil, false, nil, false)
+}
+
+// Either a number or a string
+type Union struct {
+	Double *float64
+	String *string
+}
+
+func (x *Union) UnmarshalJSON(data []byte) error {
+	object, err := unmarshalUnion(data, nil, &x.Double, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)
+	if err != nil {
+		return err
+	}
+	if object {
+	}
+	return nil
+}
+
+func (x *Union) MarshalJSON() ([]byte, error) {
+	return marshalUnion(nil, x.Double, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)
+}
+
+func unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {
+	if pi != nil {
+			*pi = nil
+	}
+	if pf != nil {
+			*pf = nil
+	}
+	if pb != nil {
+			*pb = nil
+	}
+	if ps != nil {
+			*ps = nil
+	}
+
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	tok, err := dec.Token()
+	if err != nil {
+			return false, err
+	}
+
+	switch v := tok.(type) {
+	case json.Number:
+			if pi != nil {
+					i, err := v.Int64()
+					if err == nil {
+							*pi = &i
+							return false, nil
+					}
+			}
+			if pf != nil {
+					f, err := v.Float64()
+					if err == nil {
+							*pf = &f
+							return false, nil
+					}
+					return false, errors.New("Unparsable number")
+			}
+			return false, errors.New("Union does not contain number")
+	case float64:
+			return false, errors.New("Decoder should not return float64")
+	case bool:
+			if pb != nil {
+					*pb = &v
+					return false, nil
+			}
+			return false, errors.New("Union does not contain bool")
+	case string:
+			if haveEnum {
+					return false, json.Unmarshal(data, pe)
+			}
+			if ps != nil {
+					*ps = &v
+					return false, nil
+			}
+			return false, errors.New("Union does not contain string")
+	case nil:
+			if nullable {
+					return false, nil
+			}
+			return false, errors.New("Union does not contain null")
+	case json.Delim:
+			if v == '{' {
+					if haveObject {
+							return true, json.Unmarshal(data, pc)
+					}
+					if haveMap {
+							return false, json.Unmarshal(data, pm)
+					}
+					return false, errors.New("Union does not contain object")
+			}
+			if v == '[' {
+					if haveArray {
+							return false, json.Unmarshal(data, pa)
+					}
+					return false, errors.New("Union does not contain array")
+			}
+			return false, errors.New("Cannot handle delimiter")
+	}
+	return false, errors.New("Cannot unmarshal union")
+}
+
+func marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {
+	if pi != nil {
+			return json.Marshal(*pi)
+	}
+	if pf != nil {
+			return json.Marshal(*pf)
+	}
+	if pb != nil {
+			return json.Marshal(*pb)
+	}
+	if ps != nil {
+			return json.Marshal(*ps)
+	}
+	if haveArray {
+			return json.Marshal(pa)
+	}
+	if haveObject {
+			return json.Marshal(pc)
+	}
+	if haveMap {
+			return json.Marshal(pm)
+	}
+	if haveEnum {
+			return json.Marshal(pe)
+	}
+	if nullable {
+			return json.Marshal(nil)
+	}
+	return nil, errors.New("Union must not be null")
+}

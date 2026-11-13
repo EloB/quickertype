@@ -1,0 +1,380 @@
+//  To parse this JSON data, first install
+//
+//      json.hpp  https://github.com/nlohmann/json
+//
+//  Then include this file, and then do
+//
+//     KitchenSink data = nlohmann::json::parse(jsonString);
+
+#pragma once
+
+#include <optional>
+#include <variant>
+#include "json.hpp"
+
+#include <optional>
+#include <stdexcept>
+#include <regex>
+
+#ifndef NLOHMANN_OPT_HELPER
+#define NLOHMANN_OPT_HELPER
+namespace nlohmann {
+    template <typename T>
+    struct adl_serializer<std::shared_ptr<T>> {
+        static void to_json(json & j, const std::shared_ptr<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static std::shared_ptr<T> from_json(const json & j) {
+            if (j.is_null()) return std::shared_ptr<T>(); else return std::make_shared<T>(j.get<T>());
+        }
+    };
+    template <typename T>
+    struct adl_serializer<std::optional<T>> {
+        static void to_json(json & j, const std::optional<T> & opt) {
+            if (!opt) j = nullptr; else j = *opt;
+        }
+
+        static std::optional<T> from_json(const json & j) {
+            if (j.is_null()) return std::optional<T>(); else return std::make_optional<T>(j.get<T>());
+        }
+    };
+}
+#endif
+
+namespace quicktype {
+    using nlohmann::json;
+
+    #ifndef NLOHMANN_UNTYPED_quicktype_HELPER
+    #define NLOHMANN_UNTYPED_quicktype_HELPER
+    inline json get_untyped(const json & j, const char * property) {
+        if (j.find(property) != j.end()) {
+            return j.at(property).get<json>();
+        }
+        return json();
+    }
+
+    inline json get_untyped(const json & j, std::string property) {
+        return get_untyped(j, property.data());
+    }
+    #endif
+
+    #ifndef NLOHMANN_OPTIONAL_quicktype_HELPER
+    #define NLOHMANN_OPTIONAL_quicktype_HELPER
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<std::shared_ptr<T>>();
+        }
+        return std::shared_ptr<T>();
+    }
+
+    template <typename T>
+    inline std::shared_ptr<T> get_heap_optional(const json & j, std::string property) {
+        return get_heap_optional<T>(j, property.data());
+    }
+    template <typename T>
+    inline std::optional<T> get_stack_optional(const json & j, const char * property) {
+        auto it = j.find(property);
+        if (it != j.end() && !it->is_null()) {
+            return j.at(property).get<std::optional<T>>();
+        }
+        return std::optional<T>();
+    }
+
+    template <typename T>
+    inline std::optional<T> get_stack_optional(const json & j, std::string property) {
+        return get_stack_optional<T>(j, property.data());
+    }
+    #endif
+
+    class DifferentThingClass {
+        public:
+        DifferentThingClass() = default;
+        virtual ~DifferentThingClass() = default;
+
+        private:
+        std::string Name;
+
+        public:
+        const std::string & GetName() const { return Name; }
+        std::string & GetMutableName() { return Name; }
+        void SetName(const std::string & value) { this->Name = value; }
+    };
+
+    using DifferentThingElement = std::variant<DifferentThingClass, int64_t, std::string>;
+
+    using IntOrString = std::variant<int64_t, std::string>;
+
+    class PersonElement {
+        public:
+        PersonElement() = default;
+        virtual ~PersonElement() = default;
+
+        private:
+        std::string Name;
+        IntOrString IntOrString;
+        std::optional<bool> OptionalValue;
+
+        public:
+        const std::string & GetName() const { return Name; }
+        std::string & GetMutableName() { return Name; }
+        void SetName(const std::string & value) { this->Name = value; }
+
+        const IntOrString & GetIntOrString() const { return IntOrString; }
+        IntOrString & GetMutableIntOrString() { return IntOrString; }
+        void SetIntOrString(const IntOrString & value) { this->IntOrString = value; }
+
+        const std::optional<bool> & GetOptionalValue() const { return OptionalValue; }
+        std::optional<bool> & GetMutableOptionalValue() { return OptionalValue; }
+        void SetOptionalValue(const std::optional<bool> & value) { this->OptionalValue = value; }
+    };
+
+    class PurplePerson {
+        public:
+        PurplePerson() = default;
+        virtual ~PurplePerson() = default;
+
+        private:
+        std::string Name;
+        int64_t IntOrString;
+
+        public:
+        const std::string & GetName() const { return Name; }
+        std::string & GetMutableName() { return Name; }
+        void SetName(const std::string & value) { this->Name = value; }
+
+        const int64_t & GetIntOrString() const { return IntOrString; }
+        int64_t & GetMutableIntOrString() { return IntOrString; }
+        void SetIntOrString(const int64_t & value) { this->IntOrString = value; }
+    };
+
+    class KitchenSink {
+        public:
+        KitchenSink() = default;
+        virtual ~KitchenSink() = default;
+
+        private:
+        std::string StringValue;
+        std::string DateValue;
+        std::string UuidValue;
+        nlohmann::json NameWithSpaces;
+        double DoubleValue;
+        int64_t IntValue;
+        bool BooleanValue;
+        nlohmann::json NullValue;
+        std::vector<std::vector<IntOrString>> Tuples;
+        PurplePerson Person;
+        std::vector<PersonElement> People;
+        std::vector<DifferentThingElement> DifferentThings;
+        std::map<std::string, std::optional<int64_t>> MapValue;
+        std::map<std::string, std::optional<int64_t>> NullableMapValue;
+
+        public:
+        const std::string & GetStringValue() const { return StringValue; }
+        std::string & GetMutableStringValue() { return StringValue; }
+        void SetStringValue(const std::string & value) { this->StringValue = value; }
+
+        const std::string & GetDateValue() const { return DateValue; }
+        std::string & GetMutableDateValue() { return DateValue; }
+        void SetDateValue(const std::string & value) { this->DateValue = value; }
+
+        const std::string & GetUuidValue() const { return UuidValue; }
+        std::string & GetMutableUuidValue() { return UuidValue; }
+        void SetUuidValue(const std::string & value) { this->UuidValue = value; }
+
+        const nlohmann::json & GetNameWithSpaces() const { return NameWithSpaces; }
+        nlohmann::json & GetMutableNameWithSpaces() { return NameWithSpaces; }
+        void SetNameWithSpaces(const nlohmann::json & value) { this->NameWithSpaces = value; }
+
+        const double & GetDoubleValue() const { return DoubleValue; }
+        double & GetMutableDoubleValue() { return DoubleValue; }
+        void SetDoubleValue(const double & value) { this->DoubleValue = value; }
+
+        const int64_t & GetIntValue() const { return IntValue; }
+        int64_t & GetMutableIntValue() { return IntValue; }
+        void SetIntValue(const int64_t & value) { this->IntValue = value; }
+
+        const bool & GetBooleanValue() const { return BooleanValue; }
+        bool & GetMutableBooleanValue() { return BooleanValue; }
+        void SetBooleanValue(const bool & value) { this->BooleanValue = value; }
+
+        const nlohmann::json & GetNullValue() const { return NullValue; }
+        nlohmann::json & GetMutableNullValue() { return NullValue; }
+        void SetNullValue(const nlohmann::json & value) { this->NullValue = value; }
+
+        const std::vector<std::vector<IntOrString>> & GetTuples() const { return Tuples; }
+        std::vector<std::vector<IntOrString>> & GetMutableTuples() { return Tuples; }
+        void SetTuples(const std::vector<std::vector<IntOrString>> & value) { this->Tuples = value; }
+
+        const PurplePerson & GetPerson() const { return Person; }
+        PurplePerson & GetMutablePerson() { return Person; }
+        void SetPerson(const PurplePerson & value) { this->Person = value; }
+
+        const std::vector<PersonElement> & GetPeople() const { return People; }
+        std::vector<PersonElement> & GetMutablePeople() { return People; }
+        void SetPeople(const std::vector<PersonElement> & value) { this->People = value; }
+
+        const std::vector<DifferentThingElement> & GetDifferentThings() const { return DifferentThings; }
+        std::vector<DifferentThingElement> & GetMutableDifferentThings() { return DifferentThings; }
+        void SetDifferentThings(const std::vector<DifferentThingElement> & value) { this->DifferentThings = value; }
+
+        const std::map<std::string, std::optional<int64_t>> & GetMapValue() const { return MapValue; }
+        std::map<std::string, std::optional<int64_t>> & GetMutableMapValue() { return MapValue; }
+        void SetMapValue(const std::map<std::string, std::optional<int64_t>> & value) { this->MapValue = value; }
+
+        const std::map<std::string, std::optional<int64_t>> & GetNullableMapValue() const { return NullableMapValue; }
+        std::map<std::string, std::optional<int64_t>> & GetMutableNullableMapValue() { return NullableMapValue; }
+        void SetNullableMapValue(const std::map<std::string, std::optional<int64_t>> & value) { this->NullableMapValue = value; }
+    };
+}
+
+namespace quicktype {
+void from_json(const json & j, DifferentThingClass & x);
+void to_json(json & j, const DifferentThingClass & x);
+
+void from_json(const json & j, PersonElement & x);
+void to_json(json & j, const PersonElement & x);
+
+void from_json(const json & j, PurplePerson & x);
+void to_json(json & j, const PurplePerson & x);
+
+void from_json(const json & j, KitchenSink & x);
+void to_json(json & j, const KitchenSink & x);
+}
+namespace nlohmann {
+template <>
+struct adl_serializer<std::variant<quicktype::DifferentThingClass, int64_t, std::string>> {
+    static void from_json(const json & j, std::variant<quicktype::DifferentThingClass, int64_t, std::string> & x);
+    static void to_json(json & j, const std::variant<quicktype::DifferentThingClass, int64_t, std::string> & x);
+};
+
+template <>
+struct adl_serializer<std::variant<int64_t, std::string>> {
+    static void from_json(const json & j, std::variant<int64_t, std::string> & x);
+    static void to_json(json & j, const std::variant<int64_t, std::string> & x);
+};
+}
+namespace quicktype {
+    inline void from_json(const json & j, DifferentThingClass& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.SetName(j.at("name").get<std::string>());
+    }
+
+    inline void to_json(json & j, const DifferentThingClass & x) {
+        j = json::object();
+        j["name"] = x.GetName();
+    }
+
+    inline void from_json(const json & j, PersonElement& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.SetName(j.at("name").get<std::string>());
+        x.SetIntOrString(j.at("intOrString").get<IntOrString>());
+        if (j.find("optionalValue") != j.end() && j.at("optionalValue").is_null()) throw std::runtime_error("Unexpected null");
+        x.SetOptionalValue(get_stack_optional<bool>(j, "optionalValue"));
+    }
+
+    inline void to_json(json & j, const PersonElement & x) {
+        j = json::object();
+        j["name"] = x.GetName();
+        j["intOrString"] = x.GetIntOrString();
+        j["optionalValue"] = x.GetOptionalValue();
+    }
+
+    inline void from_json(const json & j, PurplePerson& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.SetName(j.at("name").get<std::string>());
+        if (j.find("intOrString") != j.end() && !j.at("intOrString").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.SetIntOrString(j.at("intOrString").get<int64_t>());
+    }
+
+    inline void to_json(json & j, const PurplePerson & x) {
+        j = json::object();
+        j["name"] = x.GetName();
+        j["intOrString"] = x.GetIntOrString();
+    }
+
+    inline void from_json(const json & j, KitchenSink& x) {
+        if (!j.is_object()) throw std::runtime_error("Expected object");
+        x.SetStringValue(j.at("stringValue").get<std::string>());
+        x.SetDateValue(j.at("dateValue").get<std::string>());
+        x.SetUuidValue(j.at("uuidValue").get<std::string>());
+        x.SetNameWithSpaces(get_untyped(j, "name with spaces"));
+        x.SetDoubleValue(j.at("doubleValue").get<double>());
+        if (j.find("intValue") != j.end() && !j.at("intValue").is_number_integer()) throw std::runtime_error("Expected integer");
+        x.SetIntValue(j.at("intValue").get<int64_t>());
+        x.SetBooleanValue(j.at("booleanValue").get<bool>());
+        x.SetNullValue(get_untyped(j, "nullValue"));
+        x.SetTuples(j.at("tuples").get<std::vector<std::vector<IntOrString>>>());
+        x.SetPerson(j.at("person").get<PurplePerson>());
+        x.SetPeople(j.at("people").get<std::vector<PersonElement>>());
+        x.SetDifferentThings(j.at("differentThings").get<std::vector<DifferentThingElement>>());
+        x.SetMapValue(j.at("mapValue").get<std::map<std::string, std::optional<int64_t>>>());
+        x.SetNullableMapValue(j.at("nullableMapValue").get<std::map<std::string, std::optional<int64_t>>>());
+    }
+
+    inline void to_json(json & j, const KitchenSink & x) {
+        j = json::object();
+        j["stringValue"] = x.GetStringValue();
+        j["dateValue"] = x.GetDateValue();
+        j["uuidValue"] = x.GetUuidValue();
+        j["name with spaces"] = x.GetNameWithSpaces();
+        j["doubleValue"] = x.GetDoubleValue();
+        j["intValue"] = x.GetIntValue();
+        j["booleanValue"] = x.GetBooleanValue();
+        j["nullValue"] = x.GetNullValue();
+        j["tuples"] = x.GetTuples();
+        j["person"] = x.GetPerson();
+        j["people"] = x.GetPeople();
+        j["differentThings"] = x.GetDifferentThings();
+        j["mapValue"] = x.GetMapValue();
+        j["nullableMapValue"] = x.GetNullableMapValue();
+    }
+}
+namespace nlohmann {
+    inline void adl_serializer<std::variant<quicktype::DifferentThingClass, int64_t, std::string>>::from_json(const json & j, std::variant<quicktype::DifferentThingClass, int64_t, std::string> & x) {
+        if (j.is_number_integer())
+            x = j.get<int64_t>();
+        else if (j.is_string())
+            x = j.get<std::string>();
+        else if (j.is_object())
+            x = j.get<quicktype::DifferentThingClass>();
+        else throw std::runtime_error("Could not deserialise!");
+    }
+
+    inline void adl_serializer<std::variant<quicktype::DifferentThingClass, int64_t, std::string>>::to_json(json & j, const std::variant<quicktype::DifferentThingClass, int64_t, std::string> & x) {
+        switch (x.index()) {
+            case 0:
+                j = std::get<quicktype::DifferentThingClass>(x);
+                break;
+            case 1:
+                j = std::get<int64_t>(x);
+                break;
+            case 2:
+                j = std::get<std::string>(x);
+                break;
+            default: throw std::runtime_error("Input JSON does not conform to schema!");
+        }
+    }
+
+    inline void adl_serializer<std::variant<int64_t, std::string>>::from_json(const json & j, std::variant<int64_t, std::string> & x) {
+        if (j.is_number_integer())
+            x = j.get<int64_t>();
+        else if (j.is_string())
+            x = j.get<std::string>();
+        else throw std::runtime_error("Could not deserialise!");
+    }
+
+    inline void adl_serializer<std::variant<int64_t, std::string>>::to_json(json & j, const std::variant<int64_t, std::string> & x) {
+        switch (x.index()) {
+            case 0:
+                j = std::get<int64_t>(x);
+                break;
+            case 1:
+                j = std::get<std::string>(x);
+                break;
+            default: throw std::runtime_error("Input JSON does not conform to schema!");
+        }
+    }
+}

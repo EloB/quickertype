@@ -1,0 +1,12 @@
+
+Issue in line 14: The only value for this in the input is null, which means you probably need a more complete input sample.
+14:     let nameWithSpaces: JSONNull?
+
+Issue in line 18: The only value for this in the input is null, which means you probably need a more complete input sample.
+18:     let nullValue: JSONNull?
+
+Issue in line 66: The only value for this in the input is null, which means you probably need a more complete input sample.
+66:         nameWithSpaces: JSONNull?? = nil,
+
+Issue in line 70: The only value for this in the input is null, which means you probably need a more complete input sample.
+70:         nullValue: JSONNull?? = nil,

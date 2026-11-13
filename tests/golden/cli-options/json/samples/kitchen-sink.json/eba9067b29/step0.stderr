@@ -1,0 +1,6 @@
+
+Issue in line 20: The only value for this in the input is null, which means you probably need a more complete input sample.
+20:     val nameWithSpaces: JsonElement? = null,
+
+Issue in line 25: The only value for this in the input is null, which means you probably need a more complete input sample.
+25:     val nullValue: JsonElement? = null,

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Regenerates tests/golden from the TypeScript reference implementation.
+# Regenerates tests/golden from the TypeScript reference implementation:
+# the fixture corpus (record-hook.cjs + finalize.mjs) and the CLI-behavior
+# cases tests/golden/cli-* (record-cli.mjs).
 #
 #   cargo xtask golden [path-to-quicktype-checkout]   (default: ../quicktype)
 #
@@ -35,6 +37,8 @@ rm -rf "$WORK/snap/schema-golang-leading-comments"
 node "$HERE/finalize.mjs" "$WORK/raw" "$REWRITE/tests/golden" "$WORK/snap" || {
     echo "(Java mismatches that are only the fixture driver's own TopLevel.java are expected)" >&2
 }
+echo "* recording CLI-behavior cases (tests/golden/cli-*)"
+node "$HERE/record-cli.mjs" "$REF" "$REWRITE/tests/golden" "$REWRITE/tests/inputs"
 {
     echo "quicktype_commit=$(git -C "$REF" rev-parse HEAD)"
     echo "node=$(node --version)"

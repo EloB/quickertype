@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "schema",
+        "nonexistent.schema"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

@@ -1,0 +1,339 @@
+// Converter.java
+
+// To use this code, add the following Maven dependency to your project:
+//
+//     org.projectlombok : lombok : 1.18.2
+//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0
+//     com.fasterxml.jackson.datatype : jackson-datatype-jsr310   : 2.9.0
+//
+// Import this package:
+//
+//     import io.quicktype.Converter;
+//
+// Then you can deserialize a JSON string with
+//
+//     DateTime data = Converter.fromJsonString(jsonString);
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+
+public class Converter {
+    // Date-time helpers
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ISO_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_INSTANT)
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SX"))
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssX"))
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .toFormatter()
+            .withZone(ZoneOffset.UTC);
+
+    public static OffsetDateTime parseDateTimeString(String str) {
+        return ZonedDateTime.from(Converter.DATE_TIME_FORMATTER.parse(str)).toOffsetDateTime();
+    }
+
+    private static final DateTimeFormatter TIME_FORMATTER = new DateTimeFormatterBuilder()
+            .appendOptional(DateTimeFormatter.ISO_TIME)
+            .appendOptional(DateTimeFormatter.ISO_OFFSET_TIME)
+            .parseDefaulting(ChronoField.YEAR, 2020)
+            .parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
+            .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+            .toFormatter()
+            .withZone(ZoneOffset.UTC);
+
+    public static OffsetTime parseTimeString(String str) {
+        return ZonedDateTime.from(Converter.TIME_FORMATTER.parse(str)).toOffsetDateTime().toOffsetTime();
+    }
+    // Serialize/deserialize helpers
+
+    public static DateTime fromJsonString(String json) throws IOException {
+        return getObjectReader().readValue(json);
+    }
+
+    public static String toJsonString(DateTime obj) throws JsonProcessingException {
+        return getObjectWriter().writeValueAsString(obj);
+    }
+
+    private static ObjectReader reader;
+    private static ObjectWriter writer;
+
+    private static void instantiateMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {
+            @Override
+            public OffsetDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        reader = mapper.readerFor(DateTime.class);
+        writer = mapper.writerFor(DateTime.class);
+    }
+
+    private static ObjectReader getObjectReader() {
+        if (reader == null) instantiateMapper();
+        return reader;
+    }
+
+    private static ObjectWriter getObjectWriter() {
+        if (writer == null) instantiateMapper();
+        return writer;
+    }
+}
+
+// DateTime.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.util.List;
+
+@lombok.Data
+public class DateTime {
+    @lombok.Getter(onMethod_ = {@JsonProperty("complex-union-array")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("complex-union-array")})
+    private List<ComplexUnionArrayElement> complexUnionArray;
+    @lombok.Getter(onMethod_ = {@JsonProperty("date")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("date")})
+    private LocalDate date;
+    @lombok.Getter(onMethod_ = {@JsonProperty("date-time")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("date-time"), @JsonSetter(nulls = Nulls.FAIL)})
+    private OffsetDateTime dateTime;
+    @lombok.Getter(onMethod_ = {@JsonProperty("local-date-class")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("local-date-class")})
+    private LocalDateClassClass localDateClass;
+    @lombok.Getter(onMethod_ = {@JsonProperty("offset-date-time-class")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("offset-date-time-class")})
+    private OffsetDateTimeClassClass offsetDateTimeClass;
+    @lombok.Getter(onMethod_ = {@JsonProperty("offset-time-class")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("offset-time-class")})
+    private OffsetTimeClassClass offsetTimeClass;
+    @lombok.Getter(onMethod_ = {@JsonProperty("time")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("time")})
+    private OffsetTime time;
+    @lombok.Getter(onMethod_ = {@JsonProperty("union-array")})
+    @lombok.Setter(onMethod_ = {@JsonProperty("union-array")})
+    private List<UnionArray> unionArray;
+}
+
+// ComplexUnionArrayElement.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+import java.time.OffsetDateTime;
+
+@JsonDeserialize(using = ComplexUnionArrayElement.Deserializer.class)
+@JsonSerialize(using = ComplexUnionArrayElement.Serializer.class)
+public class ComplexUnionArrayElement {
+    public Long integerValue;
+    public ComplexUnionArrayEnum enumValue;
+    public OffsetDateTime dateTimeValue;
+
+    static class Deserializer extends JsonDeserializer<ComplexUnionArrayElement> {
+        @Override
+        public ComplexUnionArrayElement deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            ComplexUnionArrayElement value = new ComplexUnionArrayElement();
+            switch (jsonParser.currentToken()) {
+                case VALUE_NUMBER_INT:
+                    value.integerValue = jsonParser.readValueAs(Long.class);
+                    break;
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    try {
+                        value.dateTimeValue = Converter.parseDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.enumValue = ComplexUnionArrayEnum.forValue(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    break;
+                default: throw new IOException("Cannot deserialize ComplexUnionArrayElement");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<ComplexUnionArrayElement> {
+        @Override
+        public void serialize(ComplexUnionArrayElement obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.integerValue != null) {
+                jsonGenerator.writeObject(obj.integerValue);
+                return;
+            }
+            if (obj.enumValue != null) {
+                jsonGenerator.writeObject(obj.enumValue);
+                return;
+            }
+            if (obj.dateTimeValue != null) {
+                jsonGenerator.writeObject(obj.dateTimeValue.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+                return;
+            }
+            throw new IOException("ComplexUnionArrayElement must not be null");
+        }
+    }
+}
+
+// ComplexUnionArrayEnum.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.annotation.*;
+
+public enum ComplexUnionArrayEnum {
+    FOO, BAR;
+
+    @JsonValue
+    public String toValue() {
+        switch (this) {
+            case FOO: return "foo";
+            case BAR: return "bar";
+        }
+        return null;
+    }
+
+    @JsonCreator
+    public static ComplexUnionArrayEnum forValue(String value) throws IOException {
+        if (value.equals("foo")) return FOO;
+        if (value.equals("bar")) return BAR;
+        throw new IOException("Cannot deserialize ComplexUnionArrayEnum");
+    }
+}
+
+// LocalDateClassClass.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+@lombok.Data
+public class LocalDateClassClass {
+}
+
+// OffsetDateTimeClassClass.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+@lombok.Data
+public class OffsetDateTimeClassClass {
+}
+
+// OffsetTimeClassClass.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+@lombok.Data
+public class OffsetTimeClassClass {
+}
+
+// UnionArray.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+
+@JsonDeserialize(using = UnionArray.Deserializer.class)
+@JsonSerialize(using = UnionArray.Serializer.class)
+public class UnionArray {
+    public LocalDate dateValue;
+    public OffsetTime timeValue;
+    public OffsetDateTime dateTimeValue;
+
+    static class Deserializer extends JsonDeserializer<UnionArray> {
+        @Override
+        public UnionArray deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            UnionArray value = new UnionArray();
+            switch (jsonParser.currentToken()) {
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    try {
+                        value.timeValue = Converter.parseTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.dateValue = LocalDate.parse(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.dateTimeValue = Converter.parseDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    break;
+                default: throw new IOException("Cannot deserialize UnionArray");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<UnionArray> {
+        @Override
+        public void serialize(UnionArray obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.dateValue != null) {
+                jsonGenerator.writeObject(obj.dateValue.format(java.time.format.DateTimeFormatter.ISO_DATE));
+                return;
+            }
+            if (obj.timeValue != null) {
+                jsonGenerator.writeObject(obj.timeValue.format(java.time.format.DateTimeFormatter.ISO_OFFSET_TIME));
+                return;
+            }
+            if (obj.dateTimeValue != null) {
+                jsonGenerator.writeObject(obj.dateTimeValue.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+                return;
+            }
+            throw new IOException("UnionArray must not be null");
+        }
+    }
+}

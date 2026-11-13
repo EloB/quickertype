@@ -1,0 +1,6 @@
+
+Issue in line 27: The only value for this in the input is null, which means you probably need a more complete input sample.
+27:     name_with_spaces: Option<serde_json::Value>,
+
+Issue in line 35: The only value for this in the input is null, which means you probably need a more complete input sample.
+35:     null_value: Option<serde_json::Value>,

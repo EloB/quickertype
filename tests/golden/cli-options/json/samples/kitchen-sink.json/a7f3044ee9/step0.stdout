@@ -1,0 +1,51 @@
+defmodule DifferentThingClass do
+  @enforce_keys [:name]
+  defstruct [:name]
+
+  @type t :: %__MODULE__{
+          name: String.t()
+        }
+end
+
+defmodule PersonElement do
+  @enforce_keys [:name, :int_or_string]
+  defstruct [:name, :int_or_string, :optional_value]
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          int_or_string: integer() | String.t(),
+          optional_value: boolean() | nil
+        }
+end
+
+defmodule Person1 do
+  @enforce_keys [:name, :int_or_string]
+  defstruct [:name, :int_or_string]
+
+  @type t :: %__MODULE__{
+          name: String.t(),
+          int_or_string: integer()
+        }
+end
+
+defmodule KitchenSink do
+  @enforce_keys [:string_value, :date_value, :uuid_value, :name_with_spaces, :double_value, :int_value, :boolean_value, :null_value, :tuples, :person, :people, :different_things, :map_value, :nullable_map_value]
+  defstruct [:string_value, :date_value, :uuid_value, :name_with_spaces, :double_value, :int_value, :boolean_value, :null_value, :tuples, :person, :people, :different_things, :map_value, :nullable_map_value]
+
+  @type t :: %__MODULE__{
+          string_value: String.t(),
+          date_value: String.t(),
+          uuid_value: String.t(),
+          name_with_spaces: nil,
+          double_value: float(),
+          int_value: integer(),
+          boolean_value: boolean(),
+          null_value: nil,
+          tuples: [[integer() | String.t()]],
+          person: Person1.t(),
+          people: [PersonElement.t()],
+          different_things: [DifferentThingClass.t() | integer() | String.t()],
+          map_value: %{String.t() => integer() | nil},
+          nullable_map_value: %{String.t() => integer() | nil}
+        }
+end

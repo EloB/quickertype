@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "env": {
+    "FORCE_COLOR": "1"
+  },
+  "steps": [
+    {
+      "args": [
+        "--telemetry",
+        "bad"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+// To parse the JSON, install jackson-module-kotlin and do:
+//
+//   val dateTime = DateTime.fromJson(jsonString)
+
+package com.example
+
+import java.time.OffsetDateTime
+import java.time.LocalDate
+import java.time.OffsetTime
+
+import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.core.*
+import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.*
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.module.kotlin.*
+
+
+@Suppress("UNCHECKED_CAST")
+private fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {
+    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {
+            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))
+    })
+    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {
+            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())
+    })
+})
+
+val mapper = jacksonObjectMapper().apply {
+    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == "empty") "" else name }
+    setSerializationInclusion(JsonInclude.Include.NON_NULL)
+    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+    convert(OffsetDateTime::class,           { OffsetDateTime.parse(it.asText()) },            { "\"${java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(it)}\"" })
+    convert(LocalDate::class,                { LocalDate.parse(it.asText()) },                 { "\"${java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.format(it)}\"" })
+    convert(OffsetTime::class,               { OffsetTime.parse(it.asText()) },                { "\"${java.time.format.DateTimeFormatter.ISO_OFFSET_TIME.format(it)}\"" })
+    convert(ComplexUnionArrayEnum::class,    { ComplexUnionArrayEnum.fromValue(it.asText()) }, { ObjectMapper().writeValueAsString(it.value) })
+    convert(ComplexUnionArrayElement::class, { ComplexUnionArrayElement.fromJson(it) },        { it.toJson() }, true)
+    convert(UnionArray::class,               { UnionArray.fromJson(it) },                      { it.toJson() }, true)
+}
+
+data class DateTime (
+    @get:JsonProperty("complex-union-array", required=true)@field:JsonProperty("complex-union-array", required=true)
+    val complexUnionArray: List<ComplexUnionArrayElement>,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val date: LocalDate,
+
+    @get:JsonProperty("date-time", required=true)@field:JsonProperty("date-time", required=true)
+    val dateTime: OffsetDateTime,
+
+    @get:JsonProperty("local-date-class")@field:JsonProperty("local-date-class")
+    val localDateClass: LocalDateClassClass? = null,
+
+    @get:JsonProperty("offset-date-time-class")@field:JsonProperty("offset-date-time-class")
+    val offsetDateTimeClass: OffsetDateTimeClassClass? = null,
+
+    @get:JsonProperty("offset-time-class")@field:JsonProperty("offset-time-class")
+    val offsetTimeClass: OffsetTimeClassClass? = null,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val time: OffsetTime,
+
+    @get:JsonProperty("union-array", required=true)@field:JsonProperty("union-array", required=true)
+    val unionArray: List<UnionArray>
+) {
+    fun toJson() = mapper.writeValueAsString(this)
+
+    companion object {
+        fun fromJson(json: String) = mapper.readValue<DateTime>(json)
+    }
+}
+
+sealed class ComplexUnionArrayElement {
+    class DateTimeValue(val value: OffsetDateTime)    : ComplexUnionArrayElement()
+    class EnumValue(val value: ComplexUnionArrayEnum) : ComplexUnionArrayElement()
+    class IntegerValue(val value: Long)               : ComplexUnionArrayElement()
+
+    fun toJson(): String = mapper.writeValueAsString(when (this) {
+        is DateTimeValue -> this.value
+        is EnumValue     -> this.value
+        is IntegerValue  -> this.value
+    })
+
+    companion object {
+        fun fromJson(jn: JsonNode): ComplexUnionArrayElement = when (jn) {
+            is TextNode             -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { EnumValue(mapper.convertValue(jn)) }
+            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))
+            else                    -> throw IllegalArgumentException()
+        }
+    }
+}
+
+enum class ComplexUnionArrayEnum(val value: String) {
+    Foo("foo"),
+    Bar("bar");
+
+    companion object {
+        fun fromValue(value: String): ComplexUnionArrayEnum = when (value) {
+            "foo" -> Foo
+            "bar" -> Bar
+            else  -> throw IllegalArgumentException()
+        }
+    }
+}
+
+typealias LocalDateClassClass = ObjectNode
+
+typealias OffsetDateTimeClassClass = ObjectNode
+
+typealias OffsetTimeClassClass = ObjectNode
+
+sealed class UnionArray {
+    class DateTimeValue(val value: OffsetDateTime) : UnionArray()
+    class DateValue(val value: LocalDate)          : UnionArray()
+    class TimeValue(val value: OffsetTime)         : UnionArray()
+
+    fun toJson(): String = mapper.writeValueAsString(when (this) {
+        is DateTimeValue -> this.value
+        is DateValue     -> this.value
+        is TimeValue     -> this.value
+    })
+
+    companion object {
+        fun fromJson(jn: JsonNode): UnionArray = when (jn) {
+            is TextNode -> try { DateTimeValue(mapper.convertValue(jn)) } catch (e: Exception) { try { DateValue(mapper.convertValue(jn)) } catch (e: Exception) { TimeValue(mapper.convertValue(jn)) } }
+            else        -> throw IllegalArgumentException()
+        }
+    }
+}

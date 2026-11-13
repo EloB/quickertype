@@ -1,0 +1,24 @@
+// Code generated from JSON Schema using quicktype. DO NOT EDIT.
+// To parse and unparse this JSON data, add this code to your project and do:
+//
+//    empty, err := UnmarshalEmpty(bytes)
+//    bytes, err = empty.Marshal()
+
+package main
+
+import "encoding/json"
+
+func UnmarshalEmpty(data []byte) (Empty, error) {
+	var r Empty
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *Empty) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+type Empty struct {
+	Greeting     string   `json:"greeting"`
+	Instructions []string `json:"instructions"`
+}

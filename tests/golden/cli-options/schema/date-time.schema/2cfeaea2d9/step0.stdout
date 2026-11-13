@@ -1,0 +1,47 @@
+package quicktype
+
+import java.time.OffsetDateTime
+import java.time.LocalDate
+import java.time.OffsetTime
+
+data class DateTime (
+    val complexUnionArray: List<ComplexUnionArrayElement>,
+    val date: LocalDate,
+    val dateTime: OffsetDateTime,
+    val localDateClass: LocalDateClassClass? = null,
+    val offsetDateTimeClass: OffsetDateTimeClassClass? = null,
+    val offsetTimeClass: OffsetTimeClassClass? = null,
+    val time: OffsetTime,
+    val unionArray: List<UnionArray>
+)
+
+sealed class ComplexUnionArrayElement {
+    class DateTimeValue(val value: OffsetDateTime)    : ComplexUnionArrayElement()
+    class EnumValue(val value: ComplexUnionArrayEnum) : ComplexUnionArrayElement()
+    class IntegerValue(val value: Long)               : ComplexUnionArrayElement()
+}
+
+enum class ComplexUnionArrayEnum(val value: String) {
+    Foo("foo"),
+    Bar("bar");
+
+    companion object {
+        fun fromValue(value: String): ComplexUnionArrayEnum = when (value) {
+            "foo" -> Foo
+            "bar" -> Bar
+            else  -> throw IllegalArgumentException()
+        }
+    }
+}
+
+class LocalDateClassClass()
+
+class OffsetDateTimeClassClass()
+
+class OffsetTimeClassClass()
+
+sealed class UnionArray {
+    class DateTimeValue(val value: OffsetDateTime) : UnionArray()
+    class DateValue(val value: LocalDate)          : UnionArray()
+    class TimeValue(val value: OffsetTime)         : UnionArray()
+}

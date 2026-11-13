@@ -1,0 +1,6 @@
+
+Issue in line 34: The only value for this in the input is null, which means you probably need a more complete input sample.
+34:     , nameWithSpaces : ()
+
+Issue in line 38: The only value for this in the input is null, which means you probably need a more complete input sample.
+38:     , nullValue : ()

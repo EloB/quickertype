@@ -1,0 +1,116 @@
+// DateTime.java
+
+package io.quicktype;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.util.List;
+
+public class DateTime {
+    private List<ComplexUnionArrayElement> complexUnionArray;
+    private LocalDate date;
+    private OffsetDateTime dateTime;
+    private LocalDateClassClass localDateClass;
+    private OffsetDateTimeClassClass offsetDateTimeClass;
+    private OffsetTimeClassClass offsetTimeClass;
+    private OffsetTime time;
+    private List<UnionArray> unionArray;
+
+    public List<ComplexUnionArrayElement> getComplexUnionArray() { return complexUnionArray; }
+    public void setComplexUnionArray(List<ComplexUnionArrayElement> value) { this.complexUnionArray = value; }
+
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate value) { this.date = value; }
+
+    public OffsetDateTime getDateTime() { return dateTime; }
+    public void setDateTime(OffsetDateTime value) { this.dateTime = value; }
+
+    public LocalDateClassClass getLocalDateClass() { return localDateClass; }
+    public void setLocalDateClass(LocalDateClassClass value) { this.localDateClass = value; }
+
+    public OffsetDateTimeClassClass getOffsetDateTimeClass() { return offsetDateTimeClass; }
+    public void setOffsetDateTimeClass(OffsetDateTimeClassClass value) { this.offsetDateTimeClass = value; }
+
+    public OffsetTimeClassClass getOffsetTimeClass() { return offsetTimeClass; }
+    public void setOffsetTimeClass(OffsetTimeClassClass value) { this.offsetTimeClass = value; }
+
+    public OffsetTime getTime() { return time; }
+    public void setTime(OffsetTime value) { this.time = value; }
+
+    public List<UnionArray> getUnionArray() { return unionArray; }
+    public void setUnionArray(List<UnionArray> value) { this.unionArray = value; }
+}
+
+// ComplexUnionArrayElement.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.time.OffsetDateTime;
+
+public class ComplexUnionArrayElement {
+    public Long integerValue;
+    public ComplexUnionArrayEnum enumValue;
+    public OffsetDateTime dateTimeValue;
+}
+
+// ComplexUnionArrayEnum.java
+
+package io.quicktype;
+
+import java.io.IOException;
+
+public enum ComplexUnionArrayEnum {
+    FOO, BAR;
+
+    public String toValue() {
+        switch (this) {
+            case FOO: return "foo";
+            case BAR: return "bar";
+        }
+        return null;
+    }
+
+    public static ComplexUnionArrayEnum forValue(String value) throws IOException {
+        if (value.equals("foo")) return FOO;
+        if (value.equals("bar")) return BAR;
+        throw new IOException("Cannot deserialize ComplexUnionArrayEnum");
+    }
+}
+
+// LocalDateClassClass.java
+
+package io.quicktype;
+
+public class LocalDateClassClass {
+}
+
+// OffsetDateTimeClassClass.java
+
+package io.quicktype;
+
+public class OffsetDateTimeClassClass {
+}
+
+// OffsetTimeClassClass.java
+
+package io.quicktype;
+
+public class OffsetTimeClassClass {
+}
+
+// UnionArray.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+
+public class UnionArray {
+    public LocalDate dateValue;
+    public OffsetTime timeValue;
+    public OffsetDateTime dateTimeValue;
+}
