@@ -14,6 +14,8 @@
 
 pub mod json;
 pub mod number;
+pub mod path;
+pub mod path_posix;
 pub mod path_win32;
 pub mod pluralize;
 pub mod sort;

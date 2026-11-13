@@ -332,7 +332,7 @@ Rust does not share, documented in its header. When to use which:
 | `wordwrap` | npm `wordwrap` 1.0.0 (`WordWrap`) |
 | `uri` | the urijs 1.19.11 subset quicktype uses, `encodeURIComponent`, `decodeURIComponent` |
 | `yaml` | `YAML.parse` of npm `yaml` 2.9.0, on `saphyr-parser` events |
-| `path_win32` | Node's `path.win32`, the `path` module on Windows (vectors by `xtask/js-compat/gen-path-win32-vectors.mjs`) |
+| `path`, `path_posix`, `path_win32` | Node's `path`: `path.posix`, or `path.win32` on Windows, as Node picks by platform (vectors by `xtask/js-compat/gen-path-vectors.mjs`) |
 
 The tests replay vectors recorded from Node
 (`crates/quicktype-js-compat/tests/vectors/`, by `xtask/js-compat/gen-vectors.mjs`

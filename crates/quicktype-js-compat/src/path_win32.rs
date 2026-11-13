@@ -7,8 +7,8 @@
 //! `basename` (without a suffix), `extname`, `normalize` and `join`. All
 //! indices are byte offsets; every character the algorithms compare is
 //! ASCII, so they find the same positions as Node's UTF-16 indices.
-//! `tests/path_win32.rs` replays vectors recorded from Node
-//! (`xtask/js-compat/gen-path-win32-vectors.mjs`).
+//! `tests/path.rs` replays vectors recorded from Node
+//! (`xtask/js-compat/gen-path-vectors.mjs`).
 
 const RESERVED_NAMES: [&str; 28] = [
     "CON",

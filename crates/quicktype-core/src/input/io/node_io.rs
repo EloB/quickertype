@@ -22,7 +22,7 @@ use std::fmt;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::json::insert_js_property;
-use quicktype_js_compat::whitespace;
+use quicktype_js_compat::{path, whitespace};
 
 use crate::input::io::LocalBoxFuture;
 use crate::input::io::request::check_request;
@@ -311,66 +311,6 @@ fn misc_read_error<T>(file_or_url: &str, message: String) -> Result<T> {
     )
 }
 
-/// Node's `path.dirname` (POSIX).
-fn posix_dirname(path: &str) -> String {
-    if path.is_empty() {
-        return ".".to_owned();
-    }
-    let has_root = path.starts_with('/');
-    let trimmed = path.trim_end_matches('/');
-    if trimmed.is_empty() {
-        return "/".to_owned();
-    }
-    match trimmed.rfind('/') {
-        None => ".".to_owned(),
-        Some(i) => {
-            let dir = trimmed[..i].trim_end_matches('/');
-            if dir.is_empty() && has_root {
-                "/".to_owned()
-            } else {
-                dir.to_owned()
-            }
-        }
-    }
-}
-
-/// Node's `path.join(a, b)` (POSIX): joined with `/` and normalized.
-fn posix_join(a: &str, b: &str) -> String {
-    let joined = match (a.is_empty(), b.is_empty()) {
-        (true, true) => return ".".to_owned(),
-        (true, false) => b.to_owned(),
-        (false, true) => a.to_owned(),
-        (false, false) => format!("{a}/{b}"),
-    };
-    let absolute = joined.starts_with('/');
-    let trailing = joined.ends_with('/');
-    let mut parts: Vec<&str> = Vec::new();
-    for segment in joined.split('/') {
-        match segment {
-            "" | "." => {}
-            ".." => {
-                if parts.last().is_some_and(|p| *p != "..") {
-                    parts.pop();
-                } else if !absolute {
-                    parts.push("..");
-                }
-            }
-            s => parts.push(s),
-        }
-    }
-    let mut result = parts.join("/");
-    if result.is_empty() && !absolute {
-        result.push('.');
-    }
-    if trailing && !result.is_empty() {
-        result.push('/');
-    }
-    if absolute {
-        result.insert(0, '/');
-    }
-    result
-}
-
 /// `resolveSymbolicLink(filePath)`: the target of a symbolic link (one
 /// level, relative targets resolved against the link's directory), or the
 /// path itself. Node's `path` is `path.win32` on Windows.
@@ -379,20 +319,10 @@ fn resolve_symbolic_link(io: &dyn Io, file_path: &str) -> std::result::Result<St
         return Ok(file_path.to_owned());
     }
     let link_path = io.read_link(file_path)?;
-    if cfg!(windows) {
-        use quicktype_js_compat::path_win32;
-        if path_win32::is_absolute(&link_path) {
-            return Ok(link_path);
-        }
-        return Ok(path_win32::join(&[
-            path_win32::dirname(file_path),
-            &link_path,
-        ]));
-    }
-    if link_path.starts_with('/') {
+    if path::is_absolute(&link_path) {
         return Ok(link_path);
     }
-    Ok(posix_join(&posix_dirname(file_path), &link_path))
+    Ok(path::join(&[path::dirname(file_path), &link_path]))
 }
 
 /// What `readableFromFileOrURL` opened (TS: a stream not read yet).
@@ -732,17 +662,6 @@ mod tests {
         ] {
             assert_eq!(is_url(s), expected, "{s:?}");
         }
-    }
-
-    #[test]
-    fn posix_paths() {
-        assert_eq!(posix_dirname("a/b/c.json"), "a/b");
-        assert_eq!(posix_dirname("/c.json"), "/");
-        assert_eq!(posix_dirname("c.json"), ".");
-        assert_eq!(posix_join("a/b", "../c.json"), "a/c.json");
-        assert_eq!(posix_join(".", "c.json"), "c.json");
-        assert_eq!(posix_join("/a", "../../c"), "/c");
-        assert_eq!(posix_join("a", "../.."), "..");
     }
 
     #[test]
