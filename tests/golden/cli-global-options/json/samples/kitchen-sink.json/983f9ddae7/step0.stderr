@@ -1,0 +1,6 @@
+
+Issue in line 28: The only value for this in the input is null, which means you probably need a more complete input sample.
+28: 	NameWithSpaces   interface{}             `json:"name with spaces"`
+
+Issue in line 32: The only value for this in the input is null, which means you probably need a more complete input sample.
+32: 	NullValue        interface{}             `json:"nullValue"`

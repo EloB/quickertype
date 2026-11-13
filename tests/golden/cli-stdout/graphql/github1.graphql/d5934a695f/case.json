@@ -1,0 +1,19 @@
+{
+  "fixture": "cli-stdout",
+  "input": "graphql/github1.graphql",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "ruby",
+        "--src-lang",
+        "graphql",
+        "--graphql-schema",
+        "{INPUTS}/graphql/github.gqlschema",
+        "{INPUTS}/graphql/github1.graphql"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

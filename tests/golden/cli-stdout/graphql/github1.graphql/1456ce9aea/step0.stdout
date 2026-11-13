@@ -1,0 +1,23 @@
+$version: "2"
+namespace quicktype
+
+document NullValue
+
+structure Github1 {
+    data : Data,
+    errors : errorsList
+}
+list errorsList{ member: Error}
+
+structure Data {
+    @required viewer : User
+}
+
+structure User {
+    @required login : String,
+    realName : String
+}
+
+structure Error {
+    @required message : String
+}

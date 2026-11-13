@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-stdout",
+  "input": "json/samples/spotify-album.json",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "rust",
+        "{INPUTS}/json/samples/spotify-album.json"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

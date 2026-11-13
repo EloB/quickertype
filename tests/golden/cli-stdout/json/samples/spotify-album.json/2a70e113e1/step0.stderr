@@ -1,0 +1,9 @@
+
+Issue in line 30: quicktype cannot infer this type because there is no data about it in the input.
+30:     pub genres: Vec<Option<serde_json::Value>>,
+
+Issue in line 105: The only value for this in the input is null, which means you probably need a more complete input sample.
+105:     pub next: Option<serde_json::Value>,
+
+Issue in line 109: The only value for this in the input is null, which means you probably need a more complete input sample.
+109:     pub previous: Option<serde_json::Value>,

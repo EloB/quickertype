@@ -1,0 +1,18 @@
+{
+  "fixture": "cli-sources",
+  "input": "schema/date-time.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/date-time.schema",
+        "{INPUTS}/schema/description.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

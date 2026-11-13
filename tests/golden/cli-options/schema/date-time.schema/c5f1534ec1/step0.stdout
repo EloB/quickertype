@@ -1,0 +1,176 @@
+# This code may look unusually verbose for Ruby (and it is), but
+# it performs some subtle and complex validation of JSON data.
+#
+# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:
+#
+#   date_time1 = DateTime1.from_json! "{…}"
+#   puts date_time1.union_array.first
+#
+# If from_json! succeeds, the value returned matches the schema.
+
+require 'json'
+require 'dry-types'
+require 'dry-struct'
+
+module Types
+  include Dry.Types(default: :nominal)
+
+  Integer               = Strict::Integer
+  Hash                  = Strict::Hash
+  String                = Strict::String
+  ComplexUnionArrayEnum = Strict::String.enum("foo", "bar")
+end
+
+module ComplexUnionArrayEnum
+  Foo = "foo"
+  Bar = "bar"
+end
+
+class ComplexUnionArrayElement < Dry::Struct
+  attribute :date_time, Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i).optional
+  attribute :enum_1,    Types::ComplexUnionArrayEnum.optional
+  attribute :integer,   Types::Integer.optional
+
+  def self.from_dynamic!(d)
+    if schema.key(:date_time).type.right.valid? d
+      return new(date_time: d, enum_1: nil, integer: nil)
+    end
+    if schema.key(:enum_1).type.right.valid? d
+      return new(enum_1: d, date_time: nil, integer: nil)
+    end
+    if schema.key(:integer).type.right.valid? d
+      return new(integer: d, date_time: nil, enum_1: nil)
+    end
+    raise "Invalid union"
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    if date_time != nil
+      date_time
+    elsif enum_1 != nil
+      enum_1
+    elsif integer != nil
+      integer
+    end
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class LocalDate < Dry::Struct
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class OffsetDateTime < Dry::Struct
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class OffsetTime < Dry::Struct
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end
+
+class DateTime1 < Dry::Struct
+  attribute :complex_union_array,    Types.Array(Types.Instance(ComplexUnionArrayElement))
+  attribute :date,                   Types::String
+  attribute :date_time,              Types::String.constrained(format: /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/i)
+  attribute :local_date_class,       LocalDate.optional
+  attribute :offset_date_time_class, OffsetDateTime.optional
+  attribute :offset_time_class,      OffsetTime.optional
+  attribute :time,                   Types::String
+  attribute :union_array,            Types.Array(Types::String)
+
+  def self.from_dynamic!(d)
+    d = Types::Hash[d]
+    new(
+      complex_union_array:    d.fetch("complex-union-array").map { |x| ComplexUnionArrayElement.from_dynamic!(x) },
+      date:                   d.fetch("date"),
+      date_time:              d.fetch("date-time"),
+      local_date_class:       d.key?("local-date-class") ? LocalDate.from_dynamic!(d["local-date-class"]) : nil,
+      offset_date_time_class: d.key?("offset-date-time-class") ? OffsetDateTime.from_dynamic!(d["offset-date-time-class"]) : nil,
+      offset_time_class:      d.key?("offset-time-class") ? OffsetTime.from_dynamic!(d["offset-time-class"]) : nil,
+      time:                   d.fetch("time"),
+      union_array:            d.fetch("union-array"),
+    )
+  end
+
+  def self.from_json!(json)
+    from_dynamic!(JSON.parse(json))
+  end
+
+  def to_dynamic
+    {
+      "complex-union-array"    => complex_union_array.map { |x| x.to_dynamic },
+      "date"                   => date,
+      "date-time"              => date_time,
+      "local-date-class"       => local_date_class&.to_dynamic,
+      "offset-date-time-class" => offset_date_time_class&.to_dynamic,
+      "offset-time-class"      => offset_time_class&.to_dynamic,
+      "time"                   => time,
+      "union-array"            => union_array,
+    }
+  end
+
+  def to_json(options = nil)
+    JSON.generate(to_dynamic, options)
+  end
+end

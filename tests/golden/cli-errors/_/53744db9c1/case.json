@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--quiet",
+        "nonexistent.json"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

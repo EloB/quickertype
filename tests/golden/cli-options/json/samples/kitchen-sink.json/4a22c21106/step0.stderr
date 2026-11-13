@@ -1,0 +1,24 @@
+
+Issue in line 232: The only value for this in the input is null, which means you probably need a more complete input sample.
+232:         nlohmann::json name_with_spaces;
+
+Issue in line 236: The only value for this in the input is null, which means you probably need a more complete input sample.
+236:         nlohmann::json null_value;
+
+Issue in line 257: The only value for this in the input is null, which means you probably need a more complete input sample.
+257:         const nlohmann::json & get_name_with_spaces() const { return name_with_spaces; }
+
+Issue in line 258: The only value for this in the input is null, which means you probably need a more complete input sample.
+258:         nlohmann::json & get_mutable_name_with_spaces() { return name_with_spaces; }
+
+Issue in line 259: The only value for this in the input is null, which means you probably need a more complete input sample.
+259:         void set_name_with_spaces(const nlohmann::json & value) { this->name_with_spaces = value; }
+
+Issue in line 273: The only value for this in the input is null, which means you probably need a more complete input sample.
+273:         const nlohmann::json & get_null_value() const { return null_value; }
+
+Issue in line 274: The only value for this in the input is null, which means you probably need a more complete input sample.
+274:         nlohmann::json & get_mutable_null_value() { return null_value; }
+
+Issue in line 275: The only value for this in the input is null, which means you probably need a more complete input sample.
+275:         void set_null_value(const nlohmann::json & value) { this->null_value = value; }

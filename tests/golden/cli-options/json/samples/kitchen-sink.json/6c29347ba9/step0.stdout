@@ -1,0 +1,164 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let kitchenSink = try? JSONDecoder().decode(KitchenSink.self, from: jsonData)
+
+import Foundation
+
+// MARK: - KitchenSink
+struct KitchenSink: Codable {
+    let stringValue: String
+    let dateValue: String
+    let uuidValue: String
+    let nameWithSpaces: JSONNull?
+    let doubleValue: Double
+    let intValue: Int
+    let booleanValue: Bool
+    let nullValue: JSONNull?
+    let tuples: [[IntOrString]]
+    let person: PurplePerson
+    let people: [PersonElement]
+    let differentThings: [DifferentThingElement]
+    let mapValue: [String: Int?]
+    let nullableMapValue: [String: Int?]
+
+    enum CodingKeys: String, CodingKey {
+        case stringValue = "stringValue"
+        case dateValue = "dateValue"
+        case uuidValue = "uuidValue"
+        case nameWithSpaces = "name with spaces"
+        case doubleValue = "doubleValue"
+        case intValue = "intValue"
+        case booleanValue = "booleanValue"
+        case nullValue = "nullValue"
+        case tuples = "tuples"
+        case person = "person"
+        case people = "people"
+        case differentThings = "differentThings"
+        case mapValue = "mapValue"
+        case nullableMapValue = "nullableMapValue"
+    }
+}
+
+enum DifferentThingElement: Codable {
+    case differentThingClass(DifferentThingClass)
+    case integer(Int)
+    case string(String)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        if let x = try? container.decode(DifferentThingClass.self) {
+            self = .differentThingClass(x)
+            return
+        }
+        throw DecodingError.typeMismatch(DifferentThingElement.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for DifferentThingElement"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .differentThingClass(let x):
+            try container.encode(x)
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - DifferentThingClass
+struct DifferentThingClass: Codable {
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case name = "name"
+    }
+}
+
+// MARK: - PersonElement
+struct PersonElement: Codable {
+    let name: String
+    let intOrString: IntOrString
+    let optionalValue: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case intOrString = "intOrString"
+        case optionalValue = "optionalValue"
+    }
+}
+
+enum IntOrString: Codable {
+    case integer(Int)
+    case string(String)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Int.self) {
+            self = .integer(x)
+            return
+        }
+        if let x = try? container.decode(String.self) {
+            self = .string(x)
+            return
+        }
+        throw DecodingError.typeMismatch(IntOrString.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for IntOrString"))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .integer(let x):
+            try container.encode(x)
+        case .string(let x):
+            try container.encode(x)
+        }
+    }
+}
+
+// MARK: - PurplePerson
+struct PurplePerson: Codable {
+    let name: String
+    let intOrString: Int
+
+    enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case intOrString = "intOrString"
+    }
+}
+
+// MARK: - Encode/decode helpers
+
+class JSONNull: Codable, Hashable {
+
+    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(0)
+    }
+
+    public init() {}
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if !container.decodeNil() {
+            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encodeNil()
+    }
+}

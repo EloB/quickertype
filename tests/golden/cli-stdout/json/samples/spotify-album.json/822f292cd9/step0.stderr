@@ -1,0 +1,9 @@
+
+Issue in line 18: quicktype cannot infer this type because there is no data about it in the input.
+18:     final List<dynamic> genres;
+
+Issue in line 207: The only value for this in the input is null, which means you probably need a more complete input sample.
+207:     final dynamic next;
+
+Issue in line 209: The only value for this in the input is null, which means you probably need a more complete input sample.
+209:     final dynamic previous;

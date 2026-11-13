@@ -1,0 +1,261 @@
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module QuickType
+    ( SpotifyAlbum (..)
+    , Artist (..)
+    , ExternalUrls (..)
+    , Copyright (..)
+    , ExternalIDS (..)
+    , Image (..)
+    , Tracks (..)
+    , Item (..)
+    , decodeTopLevel
+    ) where
+
+import Data.Aeson
+import Data.Aeson.Types (emptyObject)
+import Data.ByteString.Lazy (ByteString)
+import Data.HashMap.Strict (HashMap)
+import Data.Text (Text)
+
+data SpotifyAlbum = SpotifyAlbum
+    { albumTypeSpotifyAlbum :: Text
+    , artistsSpotifyAlbum :: [Artist]
+    , availableMarketsSpotifyAlbum :: [Text]
+    , copyrightsSpotifyAlbum :: [Copyright]
+    , externalIDSSpotifyAlbum :: ExternalIDS
+    , externalUrlsSpotifyAlbum :: ExternalUrls
+    , genresSpotifyAlbum :: [Value]
+    , hrefSpotifyAlbum :: Text
+    , spotifyAlbumIDSpotifyAlbum :: Text
+    , imagesSpotifyAlbum :: [Image]
+    , nameSpotifyAlbum :: Text
+    , popularitySpotifyAlbum :: Int
+    , releaseDateSpotifyAlbum :: Text
+    , releaseDatePrecisionSpotifyAlbum :: Text
+    , tracksSpotifyAlbum :: Tracks
+    , spotifyAlbumTypeSpotifyAlbum :: Text
+    , uriSpotifyAlbum :: Text
+    } deriving (Show)
+
+data Artist = Artist
+    { externalUrlsArtist :: ExternalUrls
+    , hrefArtist :: Text
+    , artistIDArtist :: Text
+    , nameArtist :: Text
+    , artistTypeArtist :: Text
+    , uriArtist :: Text
+    } deriving (Show)
+
+data ExternalUrls = ExternalUrls
+    { spotifyExternalUrls :: Text
+    } deriving (Show)
+
+data Copyright = Copyright
+    { copyrightTextCopyright :: Text
+    , copyrightTypeCopyright :: Text
+    } deriving (Show)
+
+data ExternalIDS = ExternalIDS
+    { upcExternalIDS :: Text
+    } deriving (Show)
+
+data Image = Image
+    { heightImage :: Int
+    , urlImage :: Text
+    , widthImage :: Int
+    } deriving (Show)
+
+data Tracks = Tracks
+    { hrefTracks :: Text
+    , itemsTracks :: [Item]
+    , limitTracks :: Int
+    , nextTracks :: Maybe Text
+    , offsetTracks :: Int
+    , previousTracks :: Maybe Text
+    , totalTracks :: Int
+    } deriving (Show)
+
+data Item = Item
+    { artistsItem :: [Artist]
+    , availableMarketsItem :: [Text]
+    , discNumberItem :: Int
+    , durationMSItem :: Int
+    , explicitItem :: Bool
+    , externalUrlsItem :: ExternalUrls
+    , hrefItem :: Text
+    , itemIDItem :: Text
+    , nameItem :: Text
+    , previewURLItem :: Text
+    , trackNumberItem :: Int
+    , itemTypeItem :: Text
+    , uriItem :: Text
+    } deriving (Show)
+
+decodeTopLevel :: ByteString -> Maybe SpotifyAlbum
+decodeTopLevel = decode
+
+instance ToJSON SpotifyAlbum where
+    toJSON (SpotifyAlbum albumTypeSpotifyAlbum artistsSpotifyAlbum availableMarketsSpotifyAlbum copyrightsSpotifyAlbum externalIDSSpotifyAlbum externalUrlsSpotifyAlbum genresSpotifyAlbum hrefSpotifyAlbum spotifyAlbumIDSpotifyAlbum imagesSpotifyAlbum nameSpotifyAlbum popularitySpotifyAlbum releaseDateSpotifyAlbum releaseDatePrecisionSpotifyAlbum tracksSpotifyAlbum spotifyAlbumTypeSpotifyAlbum uriSpotifyAlbum) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "album_type" .= albumTypeSpotifyAlbum
+        , Just $ "artists" .= artistsSpotifyAlbum
+        , Just $ "available_markets" .= availableMarketsSpotifyAlbum
+        , Just $ "copyrights" .= copyrightsSpotifyAlbum
+        , Just $ "external_ids" .= externalIDSSpotifyAlbum
+        , Just $ "external_urls" .= externalUrlsSpotifyAlbum
+        , Just $ "genres" .= genresSpotifyAlbum
+        , Just $ "href" .= hrefSpotifyAlbum
+        , Just $ "id" .= spotifyAlbumIDSpotifyAlbum
+        , Just $ "images" .= imagesSpotifyAlbum
+        , Just $ "name" .= nameSpotifyAlbum
+        , Just $ "popularity" .= popularitySpotifyAlbum
+        , Just $ "release_date" .= releaseDateSpotifyAlbum
+        , Just $ "release_date_precision" .= releaseDatePrecisionSpotifyAlbum
+        , Just $ "tracks" .= tracksSpotifyAlbum
+        , Just $ "type" .= spotifyAlbumTypeSpotifyAlbum
+        , Just $ "uri" .= uriSpotifyAlbum
+        ]
+
+instance FromJSON SpotifyAlbum where
+    parseJSON (Object v) = SpotifyAlbum
+        <$> v .: "album_type"
+        <*> v .: "artists"
+        <*> v .: "available_markets"
+        <*> v .: "copyrights"
+        <*> v .: "external_ids"
+        <*> v .: "external_urls"
+        <*> v .: "genres"
+        <*> v .: "href"
+        <*> v .: "id"
+        <*> v .: "images"
+        <*> v .: "name"
+        <*> v .: "popularity"
+        <*> v .: "release_date"
+        <*> v .: "release_date_precision"
+        <*> v .: "tracks"
+        <*> v .: "type"
+        <*> v .: "uri"
+
+instance ToJSON Artist where
+    toJSON (Artist externalUrlsArtist hrefArtist artistIDArtist nameArtist artistTypeArtist uriArtist) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "external_urls" .= externalUrlsArtist
+        , Just $ "href" .= hrefArtist
+        , Just $ "id" .= artistIDArtist
+        , Just $ "name" .= nameArtist
+        , Just $ "type" .= artistTypeArtist
+        , Just $ "uri" .= uriArtist
+        ]
+
+instance FromJSON Artist where
+    parseJSON (Object v) = Artist
+        <$> v .: "external_urls"
+        <*> v .: "href"
+        <*> v .: "id"
+        <*> v .: "name"
+        <*> v .: "type"
+        <*> v .: "uri"
+
+instance ToJSON ExternalUrls where
+    toJSON (ExternalUrls spotifyExternalUrls) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "spotify" .= spotifyExternalUrls
+        ]
+
+instance FromJSON ExternalUrls where
+    parseJSON (Object v) = ExternalUrls
+        <$> v .: "spotify"
+
+instance ToJSON Copyright where
+    toJSON (Copyright copyrightTextCopyright copyrightTypeCopyright) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "text" .= copyrightTextCopyright
+        , Just $ "type" .= copyrightTypeCopyright
+        ]
+
+instance FromJSON Copyright where
+    parseJSON (Object v) = Copyright
+        <$> v .: "text"
+        <*> v .: "type"
+
+instance ToJSON ExternalIDS where
+    toJSON (ExternalIDS upcExternalIDS) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "upc" .= upcExternalIDS
+        ]
+
+instance FromJSON ExternalIDS where
+    parseJSON (Object v) = ExternalIDS
+        <$> v .: "upc"
+
+instance ToJSON Image where
+    toJSON (Image heightImage urlImage widthImage) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "height" .= heightImage
+        , Just $ "url" .= urlImage
+        , Just $ "width" .= widthImage
+        ]
+
+instance FromJSON Image where
+    parseJSON (Object v) = Image
+        <$> v .: "height"
+        <*> v .: "url"
+        <*> v .: "width"
+
+instance ToJSON Tracks where
+    toJSON (Tracks hrefTracks itemsTracks limitTracks nextTracks offsetTracks previousTracks totalTracks) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "href" .= hrefTracks
+        , Just $ "items" .= itemsTracks
+        , Just $ "limit" .= limitTracks
+        , Just $ "next" .= nextTracks
+        , Just $ "offset" .= offsetTracks
+        , Just $ "previous" .= previousTracks
+        , Just $ "total" .= totalTracks
+        ]
+
+instance FromJSON Tracks where
+    parseJSON (Object v) = Tracks
+        <$> v .: "href"
+        <*> v .: "items"
+        <*> v .: "limit"
+        <*> v .: "next"
+        <*> v .: "offset"
+        <*> v .: "previous"
+        <*> v .: "total"
+
+instance ToJSON Item where
+    toJSON (Item artistsItem availableMarketsItem discNumberItem durationMSItem explicitItem externalUrlsItem hrefItem itemIDItem nameItem previewURLItem trackNumberItem itemTypeItem uriItem) =
+        object $ foldMap (maybe [] pure)
+        [ Just $ "artists" .= artistsItem
+        , Just $ "available_markets" .= availableMarketsItem
+        , Just $ "disc_number" .= discNumberItem
+        , Just $ "duration_ms" .= durationMSItem
+        , Just $ "explicit" .= explicitItem
+        , Just $ "external_urls" .= externalUrlsItem
+        , Just $ "href" .= hrefItem
+        , Just $ "id" .= itemIDItem
+        , Just $ "name" .= nameItem
+        , Just $ "preview_url" .= previewURLItem
+        , Just $ "track_number" .= trackNumberItem
+        , Just $ "type" .= itemTypeItem
+        , Just $ "uri" .= uriItem
+        ]
+
+instance FromJSON Item where
+    parseJSON (Object v) = Item
+        <$> v .: "artists"
+        <*> v .: "available_markets"
+        <*> v .: "disc_number"
+        <*> v .: "duration_ms"
+        <*> v .: "explicit"
+        <*> v .: "external_urls"
+        <*> v .: "href"
+        <*> v .: "id"
+        <*> v .: "name"
+        <*> v .: "preview_url"
+        <*> v .: "track_number"
+        <*> v .: "type"
+        <*> v .: "uri"

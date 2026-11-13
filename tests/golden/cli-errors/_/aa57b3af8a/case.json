@@ -1,0 +1,14 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--telemetry",
+        "bad"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

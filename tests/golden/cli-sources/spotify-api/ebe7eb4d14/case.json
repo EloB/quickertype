@@ -1,0 +1,16 @@
+{
+  "fixture": "cli-sources",
+  "input": "spotify-api",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "go",
+        "--src",
+        "{INPUTS}/spotify-api"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

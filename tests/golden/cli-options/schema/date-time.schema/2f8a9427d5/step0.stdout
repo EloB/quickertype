@@ -1,0 +1,383 @@
+// Converter.java
+
+// To use this code, add the following Maven dependency to your project:
+//
+//
+//     com.fasterxml.jackson.core     : jackson-databind          : 2.9.0
+//
+//
+// Import this package:
+//
+//     import io.quicktype.Converter;
+//
+// Then you can deserialize a JSON string with
+//
+//     DateTime data = Converter.fromJsonString(jsonString);
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.*;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+public class Converter {
+    // Date-time helpers
+
+    private static final String[] DATE_TIME_FORMATS = {
+            "yyyy-MM-dd'T'HH:mm:ss.SX",
+            "yyyy-MM-dd'T'HH:mm:ss.S",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss.SX",
+            "yyyy-MM-dd HH:mm:ss.S",
+            "yyyy-MM-dd HH:mm:ssX",
+            "yyyy-MM-dd HH:mm:ss",
+            "HH:mm:ss.SZ",
+            "HH:mm:ss.S",
+            "HH:mm:ssZ",
+            "HH:mm:ss",
+            "yyyy-MM-dd",
+    };
+
+    public static Date parseAllDateTimeString(String str) {
+        str = str.replaceFirst("(\\.\\d{3})\\d+", "$1");
+        for (String format : DATE_TIME_FORMATS) {
+            try {
+                return new SimpleDateFormat(format).parse(str);
+            } catch (Exception ex) {
+                // Ignored
+            }
+        }
+        return null;
+    }
+
+    public static String serializeDateTime(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ").format(datetime);
+    }
+
+    public static String serializeDate(Date datetime) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(datetime);
+    }
+
+    public static String serializeTime(Date datetime) {
+        return new SimpleDateFormat("hh:mm:ssZ").format(datetime);
+    }
+    // Serialize/deserialize helpers
+
+    public static DateTime fromJsonString(String json) throws IOException {
+        return getObjectReader().readValue(json);
+    }
+
+    public static String toJsonString(DateTime obj) throws JsonProcessingException {
+        return getObjectWriter().writeValueAsString(obj);
+    }
+
+    private static ObjectReader reader;
+    private static ObjectWriter writer;
+
+    private static void instantiateMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+            @Override
+            public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                String value = jsonParser.getText();
+                return Converter.parseAllDateTimeString(value);
+            }
+        });
+        mapper.registerModule(module);
+        reader = mapper.readerFor(DateTime.class);
+        writer = mapper.writerFor(DateTime.class);
+    }
+
+    private static ObjectReader getObjectReader() {
+        if (reader == null) instantiateMapper();
+        return reader;
+    }
+
+    private static ObjectWriter getObjectWriter() {
+        if (writer == null) instantiateMapper();
+        return writer;
+    }
+}
+
+// DateTime.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+import java.util.Date;
+import java.util.List;
+
+public class DateTime {
+    private List<ComplexUnionArrayElement> complexUnionArray;
+    private Date date;
+    private Date dateTime;
+    private LocalDate localDateClass;
+    private OffsetDateTime offsetDateTimeClass;
+    private OffsetTime offsetTimeClass;
+    private Date time;
+    private List<UnionArray> unionArray;
+
+    @JsonProperty("complex-union-array")
+    public List<ComplexUnionArrayElement> getComplexUnionArray() { return complexUnionArray; }
+    @JsonProperty("complex-union-array")
+    public void setComplexUnionArray(List<ComplexUnionArrayElement> value) { this.complexUnionArray = value; }
+
+    @JsonProperty("date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    public Date getDate() { return date; }
+    @JsonProperty("date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    public void setDate(Date value) { this.date = value; }
+
+    @JsonProperty("date-time")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "UTC")
+    public Date getDateTime() { return dateTime; }
+    @JsonProperty("date-time")
+    @JsonSetter(nulls = Nulls.FAIL)
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX", timezone = "UTC")
+    public void setDateTime(Date value) { this.dateTime = value; }
+
+    @JsonProperty("local-date-class")
+    public LocalDate getLocalDateClass() { return localDateClass; }
+    @JsonProperty("local-date-class")
+    public void setLocalDateClass(LocalDate value) { this.localDateClass = value; }
+
+    @JsonProperty("offset-date-time-class")
+    public OffsetDateTime getOffsetDateTimeClass() { return offsetDateTimeClass; }
+    @JsonProperty("offset-date-time-class")
+    public void setOffsetDateTimeClass(OffsetDateTime value) { this.offsetDateTimeClass = value; }
+
+    @JsonProperty("offset-time-class")
+    public OffsetTime getOffsetTimeClass() { return offsetTimeClass; }
+    @JsonProperty("offset-time-class")
+    public void setOffsetTimeClass(OffsetTime value) { this.offsetTimeClass = value; }
+
+    @JsonProperty("time")
+    @JsonFormat(pattern = "HH:mm:ssX", timezone = "UTC")
+    public Date getTime() { return time; }
+    @JsonProperty("time")
+    @JsonFormat(pattern = "HH:mm:ssX", timezone = "UTC")
+    public void setTime(Date value) { this.time = value; }
+
+    @JsonProperty("union-array")
+    public List<UnionArray> getUnionArray() { return unionArray; }
+    @JsonProperty("union-array")
+    public void setUnionArray(List<UnionArray> value) { this.unionArray = value; }
+}
+
+// ComplexUnionArrayElement.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+import java.util.Date;
+
+@JsonDeserialize(using = ComplexUnionArrayElement.Deserializer.class)
+@JsonSerialize(using = ComplexUnionArrayElement.Serializer.class)
+public class ComplexUnionArrayElement {
+    public Long integerValue;
+    public ComplexUnionArrayEnum enumValue;
+    public Date dateTimeValue;
+
+    static class Deserializer extends JsonDeserializer<ComplexUnionArrayElement> {
+        @Override
+        public ComplexUnionArrayElement deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            ComplexUnionArrayElement value = new ComplexUnionArrayElement();
+            switch (jsonParser.currentToken()) {
+                case VALUE_NUMBER_INT:
+                    value.integerValue = jsonParser.readValueAs(Long.class);
+                    break;
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    try {
+                        value.dateTimeValue = Converter.parseAllDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.enumValue = ComplexUnionArrayEnum.forValue(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    break;
+                default: throw new IOException("Cannot deserialize ComplexUnionArrayElement");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<ComplexUnionArrayElement> {
+        @Override
+        public void serialize(ComplexUnionArrayElement obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.integerValue != null) {
+                jsonGenerator.writeObject(obj.integerValue);
+                return;
+            }
+            if (obj.enumValue != null) {
+                jsonGenerator.writeObject(obj.enumValue);
+                return;
+            }
+            if (obj.dateTimeValue != null) {
+                jsonGenerator.writeObject(Converter.serializeDateTime(obj.dateTimeValue));
+                return;
+            }
+            throw new IOException("ComplexUnionArrayElement must not be null");
+        }
+    }
+}
+
+// ComplexUnionArrayEnum.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import com.fasterxml.jackson.annotation.*;
+
+public enum ComplexUnionArrayEnum {
+    FOO, BAR;
+
+    @JsonValue
+    public String toValue() {
+        switch (this) {
+            case FOO: return "foo";
+            case BAR: return "bar";
+        }
+        return null;
+    }
+
+    @JsonCreator
+    public static ComplexUnionArrayEnum forValue(String value) throws IOException {
+        if (value.equals("foo")) return FOO;
+        if (value.equals("bar")) return BAR;
+        throw new IOException("Cannot deserialize ComplexUnionArrayEnum");
+    }
+}
+
+// LocalDate.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+public class LocalDate {
+}
+
+// OffsetDateTime.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+public class OffsetDateTime {
+}
+
+// OffsetTime.java
+
+package io.quicktype;
+
+import com.fasterxml.jackson.annotation.*;
+
+@JsonAutoDetect(fieldVisibility=JsonAutoDetect.Visibility.NONE)
+public class OffsetTime {
+}
+
+// UnionArray.java
+
+package io.quicktype;
+
+import java.io.IOException;
+import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.type.*;
+import java.util.Date;
+
+@JsonDeserialize(using = UnionArray.Deserializer.class)
+@JsonSerialize(using = UnionArray.Serializer.class)
+public class UnionArray {
+    public Date dateValue;
+    public Date timeValue;
+    public Date dateTimeValue;
+
+    static class Deserializer extends JsonDeserializer<UnionArray> {
+        @Override
+        public UnionArray deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+            UnionArray value = new UnionArray();
+            switch (jsonParser.currentToken()) {
+                case VALUE_STRING:
+                    String string = jsonParser.readValueAs(String.class);
+                    try {
+                        value.timeValue = Converter.parseAllDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.dateValue = Converter.parseAllDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    try {
+                        value.dateTimeValue = Converter.parseAllDateTimeString(string);
+                    } catch (Exception ex) {
+                        // Ignored
+                    }
+                    break;
+                default: throw new IOException("Cannot deserialize UnionArray");
+            }
+            return value;
+        }
+    }
+
+    static class Serializer extends JsonSerializer<UnionArray> {
+        @Override
+        public void serialize(UnionArray obj, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if (obj.dateValue != null) {
+                jsonGenerator.writeObject(Converter.serializeDate(obj.dateValue));
+                return;
+            }
+            if (obj.timeValue != null) {
+                jsonGenerator.writeObject(Converter.serializeTime(obj.timeValue));
+                return;
+            }
+            if (obj.dateTimeValue != null) {
+                jsonGenerator.writeObject(Converter.serializeDateTime(obj.dateTimeValue));
+                return;
+            }
+            throw new IOException("UnionArray must not be null");
+        }
+    }
+}

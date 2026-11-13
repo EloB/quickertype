@@ -1,0 +1,36 @@
+package main
+
+import "time"
+
+type DateTime struct {
+	ComplexUnionArray   []ComplexUnionArrayElement `json:"complex-union-array"`
+	Date                string                     `json:"date"`
+	DateTime            time.Time                  `json:"date-time"`
+	LocalDateClass      *LocalDate                 `json:"local-date-class,omitempty"`
+	OffsetDateTimeClass *OffsetDateTime            `json:"offset-date-time-class,omitempty"`
+	OffsetTimeClass     *OffsetTime                `json:"offset-time-class,omitempty"`
+	Time                string                     `json:"time"`
+	UnionArray          []string                   `json:"union-array"`
+}
+
+type LocalDate struct {
+}
+
+type OffsetDateTime struct {
+}
+
+type OffsetTime struct {
+}
+
+type ComplexUnionArrayEnum string
+
+const (
+	Foo ComplexUnionArrayEnum = "foo"
+	Bar ComplexUnionArrayEnum = "bar"
+)
+
+type ComplexUnionArrayElement struct {
+	DateTime *time.Time
+	Enum     *ComplexUnionArrayEnum
+	Integer  *int64
+}

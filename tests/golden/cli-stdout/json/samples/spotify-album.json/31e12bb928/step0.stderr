@@ -1,0 +1,9 @@
+
+Issue in line 44: quicktype cannot infer this type because there is no data about it in the input.
+44:         public object[] Genres { get; set; }
+
+Issue in line 144: The only value for this in the input is null, which means you probably need a more complete input sample.
+144:         public object Next { get; set; }
+
+Issue in line 150: The only value for this in the input is null, which means you probably need a more complete input sample.
+150:         public object Previous { get; set; }

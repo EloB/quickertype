@@ -1,0 +1,15 @@
+{
+  "fixture": "cli-help",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--help",
+        "--lang",
+        "flow"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

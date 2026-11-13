@@ -1,0 +1,14 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--color",
+        "--help"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

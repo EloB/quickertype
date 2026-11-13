@@ -1,0 +1,145 @@
+// To parse the JSON, install jackson-module-kotlin and do:
+//
+//   val kitchenSink = KitchenSink.fromJson(jsonString)
+
+package quicktype
+
+import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.core.*
+import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.*
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.fasterxml.jackson.module.kotlin.*
+
+
+@Suppress("UNCHECKED_CAST")
+private fun <T> ObjectMapper.convert(k: kotlin.reflect.KClass<*>, fromJson: (JsonNode) -> T, toJson: (T) -> String, isUnion: Boolean = false) = registerModule(SimpleModule().apply {
+    addSerializer(k.java as Class<T>, object : StdSerializer<T>(k.java as Class<T>) {
+            override fun serialize(value: T, gen: JsonGenerator, provider: SerializerProvider) = gen.writeRawValue(toJson(value))
+    })
+    addDeserializer(k.java as Class<T>, object : StdDeserializer<T>(k.java as Class<T>) {
+            override fun deserialize(p: JsonParser, ctxt: DeserializationContext) = fromJson(p.readValueAsTree())
+    })
+})
+
+val mapper = jacksonObjectMapper().apply {
+    propertyNamingStrategy = object : PropertyNamingStrategy.PropertyNamingStrategyBase() { override fun translate(name: String) = if (name == "empty") "" else name }
+    setSerializationInclusion(JsonInclude.Include.NON_NULL)
+    disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+    convert(DifferentThingElement::class, { DifferentThingElement.fromJson(it) }, { it.toJson() }, true)
+    convert(IntOrString::class,           { IntOrString.fromJson(it) },           { it.toJson() }, true)
+}
+
+data class KitchenSink (
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val stringValue: String,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val dateValue: String,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val uuidValue: String,
+
+    @get:JsonProperty("name with spaces", required=true)@field:JsonProperty("name with spaces", required=true)
+    val nameWithSpaces: Any? = null,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val doubleValue: Double,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val intValue: Long,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val booleanValue: Boolean,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val nullValue: Any? = null,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val tuples: List<List<IntOrString>>,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val person: PurplePerson,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val people: List<PersonElement>,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val differentThings: List<DifferentThingElement>,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val mapValue: Map<String, Long>,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val nullableMapValue: Map<String, Long?>
+) {
+    fun toJson() = mapper.writeValueAsString(this)
+
+    companion object {
+        fun fromJson(json: String) = mapper.readValue<KitchenSink>(json)
+    }
+}
+
+sealed class DifferentThingElement {
+    class DifferentThingClassValue(val value: DifferentThingClass) : DifferentThingElement()
+    class IntegerValue(val value: Long)                            : DifferentThingElement()
+    class StringValue(val value: String)                           : DifferentThingElement()
+
+    fun toJson(): String = mapper.writeValueAsString(when (this) {
+        is DifferentThingClassValue -> this.value
+        is IntegerValue             -> this.value
+        is StringValue              -> this.value
+    })
+
+    companion object {
+        fun fromJson(jn: JsonNode): DifferentThingElement = when (jn) {
+            is ObjectNode           -> DifferentThingClassValue(mapper.convertValue(jn))
+            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))
+            is TextNode             -> StringValue(mapper.convertValue(jn))
+            else                    -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class DifferentThingClass (
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val name: String
+)
+
+data class PersonElement (
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val name: String,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val intOrString: IntOrString,
+
+    val optionalValue: Boolean? = null
+)
+
+sealed class IntOrString {
+    class IntegerValue(val value: Long)  : IntOrString()
+    class StringValue(val value: String) : IntOrString()
+
+    fun toJson(): String = mapper.writeValueAsString(when (this) {
+        is IntegerValue -> this.value
+        is StringValue  -> this.value
+    })
+
+    companion object {
+        fun fromJson(jn: JsonNode): IntOrString = when (jn) {
+            is IntNode, is LongNode -> IntegerValue(mapper.convertValue(jn))
+            is TextNode             -> StringValue(mapper.convertValue(jn))
+            else                    -> throw IllegalArgumentException()
+        }
+    }
+}
+
+data class PurplePerson (
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val name: String,
+
+    @get:JsonProperty(required=true)@field:JsonProperty(required=true)
+    val intOrString: Long
+)

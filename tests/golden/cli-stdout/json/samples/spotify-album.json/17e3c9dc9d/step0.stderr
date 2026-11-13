@@ -1,0 +1,9 @@
+
+Issue in line 17: quicktype cannot infer this type because there is no data about it in the input.
+17:     val genres : Seq[Option[Json]],
+
+Issue in line 62: The only value for this in the input is null, which means you probably need a more complete input sample.
+62:     val next : Option[Json] = None,
+
+Issue in line 64: The only value for this in the input is null, which means you probably need a more complete input sample.
+64:     val previous : Option[Json] = None,

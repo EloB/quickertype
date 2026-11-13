@@ -12,6 +12,13 @@ findings per area, with file and line references.
   Schema and GraphQL inputs × renderer-option variants). A case is a list of
   steps; each step is an argv plus the exact files it must write.
   `cargo xtask parity` replays them in a temp dir and compares bytes.
+- **CLI behavior:** the `cli-*` fixtures (1,045 cases, recorded by
+  `xtask/golden/record-cli.mjs`) spawn the reference CLI directly and also
+  pin stdout, stderr and the exit code: `--help`/`--version`, default output
+  to stdout for every language, every renderer option value, directories,
+  stdin, multiple sources, `--out` inference and error paths. A step may
+  pipe a `stdin` file and a case may set `env` (e.g. `FORCE_COLOR`); paths
+  in the captured streams are normalized to `{INPUTS}` and `{CWD}`.
 - **Recording** (`xtask/golden/`): a preload hook intercepts the reference test
   harness's in-process CLI calls, converts each options object into the
   equivalent argv, runs the *real* CLI code path with that argv, and stores

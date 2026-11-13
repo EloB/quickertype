@@ -1,0 +1,9 @@
+
+Issue in line 42: quicktype cannot infer this type because there is no data about it in the input.
+42:     val genres: List<Any?>,
+
+Issue in line 141: The only value for this in the input is null, which means you probably need a more complete input sample.
+141:     val next: Any? = null,
+
+Issue in line 147: The only value for this in the input is null, which means you probably need a more complete input sample.
+147:     val previous: Any? = null,

@@ -1,0 +1,18 @@
+{
+  "fixture": "cli-global-options",
+  "input": "schema/date-time.schema",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "typescript",
+        "--no-enums",
+        "--src-lang",
+        "schema",
+        "{INPUTS}/schema/date-time.schema"
+      ],
+      "files": [],
+      "exit": 0
+    }
+  ]
+}

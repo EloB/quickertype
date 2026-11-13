@@ -1,0 +1,18 @@
+
+Issue in line 93: The only value for this in the input is null, which means you probably need a more complete input sample.
+93: 	Href  interface{} `json:"href"`
+
+Issue in line 113: The only value for this in the input is null, which means you probably need a more complete input sample.
+113: 	Public        interface{}     `json:"public"`
+
+Issue in line 139: The only value for this in the input is null, which means you probably need a more complete input sample.
+139: 	Previous interface{} `json:"previous"`
+
+Issue in line 204: quicktype cannot infer this type because there is no data about it in the input.
+204: 	Genres               []interface{}    `json:"genres"`
+
+Issue in line 230: The only value for this in the input is null, which means you probably need a more complete input sample.
+230: 	Next     interface{} `json:"next"`
+
+Issue in line 232: The only value for this in the input is null, which means you probably need a more complete input sample.
+232: 	Previous interface{} `json:"previous"`

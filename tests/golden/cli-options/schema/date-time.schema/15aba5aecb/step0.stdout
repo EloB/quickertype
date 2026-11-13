@@ -1,0 +1,60 @@
+// QTDateTime.h
+
+#import <Foundation/Foundation.h>
+
+@class QTDateTime;
+@class QTComplexUnionArrayEnum;
+@class QTLocalDate;
+@class QTOffsetDateTime;
+@class QTOffsetTime;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Boxed enums
+
+@interface QTComplexUnionArrayEnum : NSObject
+@property (nonatomic, readonly, copy) NSString *value;
++ (instancetype _Nullable)withValue:(NSString *)value;
++ (QTComplexUnionArrayEnum *)foo;
++ (QTComplexUnionArrayEnum *)bar;
+@end
+
+#pragma mark - Object interfaces
+
+@interface QTDateTime : NSObject
+@property (nonatomic, copy)             NSArray<id> *complexUnionArray;
+@property (nonatomic, copy)             NSString *date;
+@property (nonatomic, copy)             NSString *dateTime;
+@property (nonatomic, nullable, strong) QTLocalDate *localDateClass;
+@property (nonatomic, nullable, strong) QTOffsetDateTime *offsetDateTimeClass;
+@property (nonatomic, nullable, strong) QTOffsetTime *offsetTimeClass;
+@property (nonatomic, copy)             NSString *time;
+@property (nonatomic, copy)             NSArray<NSString *> *unionArray;
+@end
+
+@interface QTLocalDate : NSObject
+@end
+
+@interface QTOffsetDateTime : NSObject
+@end
+
+@interface QTOffsetTime : NSObject
+@end
+
+NS_ASSUME_NONNULL_END
+
+// QTDateTime.m
+
+#import "QTDateTime.h"
+
+@implementation QTDateTime
+@end
+
+@implementation QTLocalDate
+@end
+
+@implementation QTOffsetDateTime
+@end
+
+@implementation QTOffsetTime
+@end

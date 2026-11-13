@@ -1,0 +1,28 @@
+$version: "2"
+namespace quicktype
+
+document NullValue
+
+structure DateTime {
+    @required `complex-union-array` : complex-union-arrayList,
+    @required date : String,
+    @required `date-time` : String,
+    `local-date-class` : LocalDate,
+    `offset-date-time-class` : OffsetDateTime,
+    `offset-time-class` : OffsetTime,
+    @required time : String,
+    @required `union-array` : union-arrayList
+}
+list complex-union-arrayList{ member: ComplexUnionArray}
+list union-arrayList{ member: String}
+
+@untagged union ComplexUnionArray { 
+    A : Long
+    B : String
+}
+
+structure LocalDate{}
+
+structure OffsetDateTime{}
+
+structure OffsetTime{}

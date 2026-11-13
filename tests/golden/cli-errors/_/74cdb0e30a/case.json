@@ -1,0 +1,17 @@
+{
+  "fixture": "cli-errors",
+  "input": "_",
+  "steps": [
+    {
+      "args": [
+        "--lang",
+        "go",
+        "--framework",
+        "NewtonSoft",
+        "{INPUTS}/json/samples/getting-started.json"
+      ],
+      "files": [],
+      "exit": 1
+    }
+  ]
+}

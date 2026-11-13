@@ -1,0 +1,19 @@
+// To parse this data:
+//
+//   const Convert = require("./file");
+//
+//   const dateTime = Convert.toDateTime(json);
+
+// Converts JSON strings to/from your types
+function toDateTime(json) {
+    return JSON.parse(json);
+}
+
+function dateTimeToJson(value) {
+    return JSON.stringify(value);
+}
+
+module.exports = {
+    "dateTimeToJson": dateTimeToJson,
+    "toDateTime": toDateTime,
+};

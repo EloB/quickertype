@@ -1,0 +1,62 @@
+// QTKitchenSink.h
+
+#import <Foundation/Foundation.h>
+
+@class QTKitchenSink;
+@class QTDifferentThingClass;
+@class QTPersonElement;
+@class QTPurplePerson;
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Object interfaces
+
+@interface QTKitchenSink : NSObject
+@property (nonatomic, copy)           NSString *stringValue;
+@property (nonatomic, copy)           NSString *dateValue;
+@property (nonatomic, copy)           NSString *uuidValue;
+@property (nonatomic, nullable, copy) id nameWithSpaces;
+@property (nonatomic, assign)         double doubleValue;
+@property (nonatomic, assign)         NSInteger intValue;
+@property (nonatomic, assign)         BOOL isBooleanValue;
+@property (nonatomic, nullable, copy) id nullValue;
+@property (nonatomic, copy)           NSArray<NSArray<id> *> *tuples;
+@property (nonatomic, strong)         QTPurplePerson *person;
+@property (nonatomic, copy)           NSArray<QTPersonElement *> *people;
+@property (nonatomic, copy)           NSArray<id> *differentThings;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *mapValue;
+@property (nonatomic, copy)           NSDictionary<NSString *, NSNumber *> *nullableMapValue;
+@end
+
+@interface QTDifferentThingClass : NSObject
+@property (nonatomic, copy) NSString *name;
+@end
+
+@interface QTPersonElement : NSObject
+@property (nonatomic, copy)             NSString *name;
+@property (nonatomic, copy)             id intOrString;
+@property (nonatomic, nullable, strong) NSNumber *optionalValue;
+@end
+
+@interface QTPurplePerson : NSObject
+@property (nonatomic, copy)   NSString *name;
+@property (nonatomic, assign) NSInteger intOrString;
+@end
+
+NS_ASSUME_NONNULL_END
+
+// QTKitchenSink.m
+
+#import "QTKitchenSink.h"
+
+@implementation QTKitchenSink
+@end
+
+@implementation QTDifferentThingClass
+@end
+
+@implementation QTPersonElement
+@end
+
+@implementation QTPurplePerson
+@end

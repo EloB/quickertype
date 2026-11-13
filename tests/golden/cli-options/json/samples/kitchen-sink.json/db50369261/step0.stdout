@@ -1,0 +1,53 @@
+// This file was generated from JSON Schema using quicktype, do not modify it directly.
+// To parse the JSON, add this file to your project and do:
+//
+//   let kitchenSink = try KitchenSink(json)
+
+import Foundation
+
+// MARK: - KitchenSink
+struct KitchenSink {
+    let stringValue: String
+    let dateValue: String
+    let uuidValue: String
+    let nameWithSpaces: NSNull
+    let doubleValue: Double
+    let intValue: Int
+    let booleanValue: Bool
+    let nullValue: NSNull
+    let tuples: [[IntOrString]]
+    let person: PurplePerson
+    let people: [PersonElement]
+    let differentThings: [DifferentThingElement]
+    let mapValue: [String: Int?]
+    let nullableMapValue: [String: Int?]
+}
+
+enum DifferentThingElement {
+    case differentThingClass(DifferentThingClass)
+    case integer(Int)
+    case string(String)
+}
+
+// MARK: - DifferentThingClass
+struct DifferentThingClass {
+    let name: String
+}
+
+// MARK: - PersonElement
+struct PersonElement {
+    let name: String
+    let intOrString: IntOrString
+    let optionalValue: Bool?
+}
+
+enum IntOrString {
+    case integer(Int)
+    case string(String)
+}
+
+// MARK: - PurplePerson
+struct PurplePerson {
+    let name: String
+    let intOrString: Int
+}
