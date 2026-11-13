@@ -1,0 +1,7 @@
+# An `Object.prototype` member as cJSON `integer-size` (see
+# enum-option-prototype-cjson) where no integer is emitted: the render
+# succeeds.
+input json TopLevel {"name": "x", "ratio": 1.5, "tags": ["a"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"integer-size": "toString", "source-style": "multi-source"}}

@@ -4,9 +4,14 @@
 //! `RendererOptions` port; its name, description and choices are exported
 //! here as constants.
 
+use std::cell::Cell;
+use std::rc::Rc;
+
 use super::strings::{
     all_lower_word_style, all_upper_word_style, first_upper_word_style, original_word,
 };
+use crate::messages::{JsErrorName, QuickTypeError, Result};
+use crate::renderer_options::EnumValue;
 
 /// `AcronymStyleOptions`: how the `acronym-style` renderer option styles
 /// acronyms.
@@ -45,6 +50,14 @@ impl AcronymStyleOptions {
     pub fn from_value(value: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|style| style.as_str() == value)
     }
+
+    /// The style an `acronym-style` option value selects, as TS
+    /// `acronymStyle(value)` looks it up: `None` (TS `undefined`) for an
+    /// `Object.prototype` member, whose `String(value)` is no key of the
+    /// style table.
+    pub fn from_enum_value(value: EnumValue) -> Option<Self> {
+        value.declared().and_then(Self::from_value)
+    }
 }
 
 /// The name of the option `acronymOption` creates.
@@ -73,9 +86,80 @@ pub fn acronym_style(style: AcronymStyleOptions) -> fn(&str) -> String {
     }
 }
 
+/// Calls of an `acronymStyle(style)` result that is `undefined`, in the
+/// renderers that call it without a fallback (the JavaScript family).
+///
+/// For an `Object.prototype` member as `acronym-style`,
+/// [`AcronymStyleOptions::from_enum_value`] is `None` (TS `undefined`), and
+/// the first acronym word styled with it throws `TypeError: <variable> is
+/// not a function`, `<variable>` being the name it is called through. That
+/// happens in namers, which cannot fail here, so the renderer's namers share
+/// one of these (a cheap clone): it records the first failing call and the
+/// renderer reports it with [`check`](Self::check) before emitting anything,
+/// where TS throws from `assignNames`.
+#[derive(Clone, Debug, Default)]
+pub struct AcronymStyleCalls(Rc<Cell<Option<&'static str>>>);
+
+impl AcronymStyleCalls {
+    /// `variable(word)`, `variable` holding `acronymStyle(style)`: the
+    /// styled word; for `None` the word as it is, after recording the call
+    /// (only the first one counts, TS stops there).
+    pub fn call(
+        &self,
+        style: Option<AcronymStyleOptions>,
+        variable: &'static str,
+        word: &str,
+    ) -> String {
+        match style {
+            Some(style) => acronym_style(style)(word),
+            None => {
+                if self.0.get().is_none() {
+                    self.0.set(Some(variable));
+                }
+                word.to_owned()
+            }
+        }
+    }
+
+    /// The `TypeError` of the first call of `undefined`, if there was one.
+    pub fn check(&self) -> Result<()> {
+        match self.0.get() {
+            None => Ok(()),
+            Some(variable) => Err(QuickTypeError::js_exception(
+                JsErrorName::TypeError,
+                format!("{variable} is not a function"),
+            )),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::renderer_options::PrototypeMember;
+
+    #[test]
+    fn prototype_members_select_no_style() {
+        let declared = EnumValue::Declared("camel");
+        assert_eq!(
+            AcronymStyleOptions::from_enum_value(declared),
+            Some(AcronymStyleOptions::Camel)
+        );
+        let member = EnumValue::Prototype(PrototypeMember::ToString);
+        assert_eq!(AcronymStyleOptions::from_enum_value(member), None);
+
+        let calls = AcronymStyleCalls::default();
+        assert_eq!(
+            calls.call(Some(AcronymStyleOptions::Pascal), "acronyms", "id"),
+            "ID"
+        );
+        assert!(calls.check().is_ok());
+        let shared = calls.clone();
+        assert_eq!(shared.call(None, "style", "id"), "id");
+        assert_eq!(calls.call(None, "acronyms", "url"), "url");
+        let err = calls.check().unwrap_err();
+        assert_eq!(err.to_string(), "style is not a function");
+    }
 
     #[test]
     fn styles() {

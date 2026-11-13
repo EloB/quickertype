@@ -47,7 +47,8 @@ impl ElmOptions {
     /// order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let just_types = JUST_TYPES.get_value(values);
-        let use_list = USE_LIST.get_enum_value(values)? == "list";
+        // TS truthiness: an `Object.prototype` member acts as `list`.
+        let use_list = USE_LIST.get_enum_value(values)?.flag("list");
         Ok(ElmOptions {
             just_types,
             use_list,

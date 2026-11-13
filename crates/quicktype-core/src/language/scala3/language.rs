@@ -111,6 +111,7 @@ impl TargetLanguage for Scala3TargetLanguage {
                     super::circe_renderer::CirceRenderer::new(self, render_context, options);
                 render_with(renderer, given_output_filename, alphabetize_properties)
             }
+            Framework::Other(member) => crate::support::support::assert_never(member),
         }
     }
 }

@@ -19,6 +19,7 @@ use quicktype_js_compat::number;
 
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::renderer_options::EnumValue;
 use crate::support::strings::{camel_case, utf16_string_escape};
 use crate::support::support::{defined, panic};
 use crate::target_language::TargetLanguage;
@@ -1284,7 +1285,8 @@ mod system_text_json_hooks {
             forbidden.extend(["J", "R", "N"].map(str::to_owned));
         }
 
-        if let Some(baseclass) = r.cs.options.baseclass {
+        // A prototype member (a function or object) never equals a name.
+        if let Some(baseclass) = r.cs.options.baseclass.and_then(|b| b.declared()) {
             forbidden.push(baseclass.to_owned());
         }
 
@@ -1407,14 +1409,17 @@ impl<'a> CSharpRenderer<'a> for SystemTextJsonCSharpRenderer<'a> {
             ]);
         }
 
-        if self.options().baseclass == Some("EntityData") {
+        if self.options().baseclass.is_some_and(|b| b.is("EntityData")) {
             self.emit_using("Microsoft.Azure.Mobile.Server");
         }
         Ok(())
     }
 
     fn baseclass_for_type(&self, _t: TypeRef) -> Option<Source> {
-        self.options().baseclass.map(Source::from)
+        self.options().baseclass.map(|baseclass| match baseclass {
+            EnumValue::Declared(baseclass) => Source::from(baseclass),
+            EnumValue::Prototype(member) => Source::from(member),
+        })
     }
 
     fn emit_default_following_comments(&mut self) -> Result<()> {

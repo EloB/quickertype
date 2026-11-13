@@ -5,12 +5,13 @@
 //! (`JSONNull`, `JSONAny`, encoder/decoder factories, Alamofire handlers).
 //! With `--multi-file-output` every named type gets its own file.
 
+use std::borrow::Cow;
 use std::cell::Cell;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
@@ -82,27 +83,35 @@ impl SwiftOptions {
         let coding_keys_protocol = CODING_KEYS_PROTOCOL.get_value(values).into_owned();
         let alamofire = ALAMOFIRE.get_value(values);
         let named_type_prefix = NAMED_TYPE_PREFIX.get_value(values).into_owned();
-        let use_classes = USE_CLASSES.get_enum_value(values)? == "class";
+        // The boolean-valued options are TS truthiness (an `Object.prototype`
+        // member acts as `true`), the record-valued `protocol` has none of
+        // the record's fields then.
+        let use_classes = USE_CLASSES.get_enum_value(values)?.flag("class");
         let final_classes = FINAL_CLASSES.get_value(values);
         let mutable_properties = MUTABLE_PROPERTIES.get_value(values);
-        let acronym_style = AcronymStyleOptions::from_value(ACRONYM_STYLE.get_enum_value(values)?)
-            .unwrap_or(AcronymStyleOptions::Pascal);
-        let dense = DENSE.get_enum_value(values)? == "dense";
+        // An `Object.prototype` member selects no style (`undefined`), so
+        // `swiftNameStyle`'s default parameter, `allUpperWordStyle` (the
+        // Pascal style), takes its place.
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?)
+                .unwrap_or(AcronymStyleOptions::Pascal);
+        let dense = DENSE.get_enum_value(values)?.flag("dense");
         let linux = LINUX.get_value(values);
         let objc_support = OBJC_SUPPORT.get_value(values);
         let optional_enums = OPTIONAL_ENUMS.get_value(values);
         let sendable = SENDABLE.get_value(values);
         let multi_file_output = MULTI_FILE_OUTPUT.get_value(values);
         let access_level = match ACCESS_LEVEL.get_enum_value(values)? {
-            "public" => AccessLevel::Public,
-            _ => AccessLevel::Internal,
+            EnumValue::Declared("public") => AccessLevel::Public,
+            EnumValue::Declared(_) => AccessLevel::Internal,
+            EnumValue::Prototype(member) => AccessLevel::Other(member),
         };
         let protocol = match PROTOCOL.get_enum_value(values)? {
-            "equatable" => SwiftProtocol {
+            EnumValue::Declared("equatable") => SwiftProtocol {
                 equatable: true,
                 hashable: false,
             },
-            "hashable" => SwiftProtocol {
+            EnumValue::Declared("hashable") => SwiftProtocol {
                 equatable: false,
                 hashable: true,
             },
@@ -494,11 +503,12 @@ impl<'a> SwiftRenderer<'a> {
 
     /// `accessLevel`: the access level with a trailing space (e.g.
     /// `"public "`), or the empty string.
-    fn access_level(&self) -> &'static str {
+    fn access_level(&self) -> Cow<'static, str> {
         match self.options.access_level {
             // internal is default, so we don't have to emit it
-            AccessLevel::Internal => "",
-            AccessLevel::Public => "public ",
+            AccessLevel::Internal => Cow::Borrowed(""),
+            AccessLevel::Public => Cow::Borrowed("public "),
+            AccessLevel::Other(member) => Cow::Owned(format!("{member} ")),
         }
     }
 
@@ -666,7 +676,7 @@ impl<'a> SwiftRenderer<'a> {
                 && !self.type_graph().type_at(c)?.properties()?.is_empty()
             {
                 self.ensure_blank_line();
-                let mut enum_declaration = self.access_level().to_owned();
+                let mut enum_declaration = self.access_level().into_owned();
                 enum_declaration.push_str("enum CodingKeys: String, CodingKey");
                 if !self.options.coding_keys_protocol.is_empty() {
                     enum_declaration.push_str(", ");

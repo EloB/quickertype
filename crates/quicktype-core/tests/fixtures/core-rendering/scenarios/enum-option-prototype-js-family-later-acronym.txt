@@ -1,0 +1,10 @@
+# An `Object.prototype` member as `acronym-style` in the JavaScript family
+# (see enum-option-prototype-js-family) where every acronym follows another
+# word: the TypeError names `combineWords`' `style` parameter.
+input json TopLevel {"myUrl": {"jsonId": 1}, "plain": {"value": 2}}
+pipeline {"lang": "typescript"}
+
+render javascript {"rendererOptions": {"acronym-style": "toString"}}
+render typescript {"rendererOptions": {"acronym-style": "toString"}}
+render flow {"rendererOptions": {"acronym-style": "toString", "nice-property-names": true}}
+render javascript-prop-types {"rendererOptions": {"acronym-style": "toString"}}

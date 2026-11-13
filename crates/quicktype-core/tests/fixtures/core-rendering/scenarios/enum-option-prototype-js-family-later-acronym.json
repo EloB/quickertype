@@ -1,0 +1,141 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "myUrl",
+      1,
+      false
+     ],
+     [
+      "plain",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "jsonId",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "value",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "javascript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "style is not a function",
+   "console": []
+  },
+  {
+   "lang": "typescript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "style is not a function",
+   "console": []
+  },
+  {
+   "lang": "flow",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString",
+    "nice-property-names": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "style is not a function",
+   "console": []
+  },
+  {
+   "lang": "javascript-prop-types",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "style is not a function",
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-js-family-later-acronym"
+}

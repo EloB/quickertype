@@ -1,0 +1,17 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as options
+# of the JavaScript family. `acronymStyle(value)` is `undefined` then, and
+# naming throws a TypeError at the first acronym it styles: through the
+# `acronyms` variable for the first word of an upper-case name (`Url`),
+# through `combineWords`' `style` parameter otherwise. `raw-type` is not
+# `"json"`, `converters` not `all-objects`, and `module-system` is truthy.
+input json TopLevel {"url": {"jsonId": 1, "kind": "a"}, "myUrl": "x", "plain": {"value": 2}}
+pipeline {"lang": "typescript"}
+
+render javascript {"rendererOptions": {"acronym-style": "toString"}}
+render typescript {"rendererOptions": {"acronym-style": "__proto__"}}
+render flow {"rendererOptions": {"acronym-style": "constructor"}}
+render javascript-prop-types {"rendererOptions": {"acronym-style": "valueOf"}}
+render javascript {"rendererOptions": {"raw-type": "toString", "converters": "constructor", "runtime-typecheck": true}}
+render typescript {"rendererOptions": {"raw-type": "__proto__", "converters": "valueOf"}}
+render flow {"rendererOptions": {"raw-type": "hasOwnProperty", "prefer-unknown": true}}
+render javascript-prop-types {"rendererOptions": {"module-system": "toString", "converters": "valueOf"}}

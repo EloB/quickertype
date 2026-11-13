@@ -13,8 +13,8 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::unicode_maps::is_es3_identifier_start;
 use crate::language::javascript::utils::legalize_name;
-use crate::renderer_options::RendererOptions;
-use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
 use crate::support::recursion::guard;
@@ -22,7 +22,6 @@ use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     split_into_words, utf16_string_escape,
 };
-use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{directly_reachable_single_named_type, find_member};
 use quicktype_js_compat::number::to_string as js_number;
@@ -33,8 +32,9 @@ use super::language::{ACRONYM_STYLE, CONVERTERS, MODULE_SYSTEM};
 /// `OptionValues<typeof javaScriptPropTypesOptions>`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct JavaScriptPropTypesOptions {
-    /// `acronymStyle`.
-    pub acronym_style: AcronymStyleOptions,
+    /// `acronymStyle`: `None` for an `Object.prototype` member, which
+    /// selects no style (see [`AcronymStyleCalls`]).
+    pub acronym_style: Option<AcronymStyleOptions>,
     /// `converters` (unused by the renderer).
     pub converters: ConvertersOptions,
     /// `moduleSystem`: `true` for `es6`, `false` for `common-js`.
@@ -45,13 +45,15 @@ impl JavaScriptPropTypesOptions {
     /// `getOptionValues(javaScriptPropTypesOptions, values)`: the options in
     /// declaration order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
-        let acronym_style = defined(AcronymStyleOptions::from_value(
-            ACRONYM_STYLE.get_enum_value(values)?,
-        ))?;
-        let converters = defined(ConvertersOptions::from_name(
-            CONVERTERS.get_enum_value(values)?,
-        ))?;
-        let module_system = MODULE_SYSTEM.get_enum_value(values)? == "es6";
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?);
+        // An `Object.prototype` member is not `AllObjects`, and truthy as
+        // `moduleSystem`.
+        let converters = match CONVERTERS.get_enum_value(values)? {
+            EnumValue::Declared("all-objects") => ConvertersOptions::AllObjects,
+            _ => ConvertersOptions::TopLevel,
+        };
+        let module_system = MODULE_SYSTEM.get_enum_value(values)?.flag("es6");
         Ok(JavaScriptPropTypesOptions {
             acronym_style,
             converters,
@@ -61,11 +63,17 @@ impl JavaScriptPropTypesOptions {
 }
 
 /// `nameStyle(original, upper)`: the TypeScript duplicates the JavaScript
-/// renderer's `nameStyle` here instead of sharing it, and so does the port.
-fn name_style(acronym_style_option: AcronymStyleOptions, original: &str, upper: bool) -> String {
-    let acronyms = acronym_style(acronym_style_option);
+/// renderer's `nameStyle` here instead of sharing it, and so does the port,
+/// down to recording calls of an `undefined` `acronyms` in `calls`.
+fn name_style(
+    acronym_style_option: Option<AcronymStyleOptions>,
+    calls: &AcronymStyleCalls,
+    original: &str,
+    upper: bool,
+) -> String {
+    let acronyms = |s: &str| calls.call(acronym_style_option, "style", s);
     let words = split_into_words(original);
-    let first_acronym = move |s: &str| capitalize(&acronyms(s));
+    let first_acronym = |s: &str| capitalize(&calls.call(acronym_style_option, "acronyms", s));
     let first_word_style: WordStyle<'_> = if upper {
         &first_upper_word_style
     } else {
@@ -111,6 +119,8 @@ pub struct JavaScriptPropTypesRenderer<'a> {
     options: JavaScriptPropTypesOptions,
     /// The module's `identityNamingFunction` (a singleton in TypeScript).
     identity_naming_function: Namer,
+    /// The calls of an `undefined` acronym style in the namers.
+    acronym_style_calls: AcronymStyleCalls,
 }
 
 impl std::fmt::Debug for JavaScriptPropTypesRenderer<'_> {
@@ -133,6 +143,7 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
             identity_naming_function: fun_prefix_namer("properties", str::to_owned),
+            acronym_style_calls: AcronymStyleCalls::default(),
         }
     }
 
@@ -524,7 +535,8 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
 
     fn make_named_type_namer(&mut self) -> Namer {
         let acronym_style = self.options.acronym_style;
-        fun_prefix_namer("types", move |s| name_style(acronym_style, s, true))
+        let calls = self.acronym_style_calls.clone();
+        fun_prefix_namer("types", move |s| name_style(acronym_style, &calls, s, true))
     }
 
     /// `namerForObjectProperty()`: the module's `identityNamingFunction`.
@@ -542,8 +554,9 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
 
     fn make_enum_case_namer(&mut self) -> Option<Namer> {
         let acronym_style = self.options.acronym_style;
+        let calls = self.acronym_style_calls.clone();
         Some(fun_prefix_namer("enum-cases", move |s| {
-            name_style(acronym_style, s, false)
+            name_style(acronym_style, &calls, s, false)
         }))
     }
 
@@ -569,6 +582,9 @@ impl<'a> ConvenienceRenderer<'a> for JavaScriptPropTypesRenderer<'a> {
     }
 
     fn emit_source_structure(&mut self, _given_output_filename: &str) -> Result<()> {
+        // What naming would have thrown.
+        self.acronym_style_calls.check()?;
+
         match self.leading_comments() {
             Some(leading_comments) => self.emit_comments(leading_comments)?,
             None => self.emit_usage_comments()?,

@@ -1,0 +1,146 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      6,
+      false
+     ],
+     [
+      "maybe",
+      5,
+      false
+     ],
+     [
+      "items",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      3,
+      false
+     ],
+     [
+      "note",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     5,
+     6
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object function toString() { [native code] }",
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "__proto__",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\ncase class TopLevel (\n    val name : String,\n    val maybe : Option[Any] = None,\n    val items : Seq[Item]\n)\n\ncase class Item (\n    val id : Long,\n    val note : Option[String] = None\n)\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       4,
+       16,
+       4,
+       27
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-scala3"
+}

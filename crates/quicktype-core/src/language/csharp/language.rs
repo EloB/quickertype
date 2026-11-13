@@ -279,6 +279,7 @@ impl TargetLanguage for CSharpTargetLanguage {
                     alphabetize_properties,
                 )
             }
+            Framework::Other(member) => crate::support::support::assert_never(member),
         }
     }
 }

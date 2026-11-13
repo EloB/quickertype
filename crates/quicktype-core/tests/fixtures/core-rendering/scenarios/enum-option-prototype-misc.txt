@@ -1,0 +1,16 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as the
+# remaining enum options: Rust's `===` comparisons fall back to normal
+# density, no visibility modifier (private) and conservative integers;
+# Python's and Objective-C's feature records have none of their fields;
+# Elm's and Haskell's `array-type` are truthy (`List`); PHP's
+# `acronym-style` leaves `phpNameStyle`'s default (the Pascal style).
+input json TopLevel {"myUrl": "x", "count": 1, "ratio": 1.5, "when": "2020-01-01T00:00:00Z", "items": [{"jsonId": 1, "kind": "a"}], "maybe": null}
+pipeline {"lang": "rust"}
+
+render rust {"rendererOptions": {"visibility": "toString", "density": "constructor", "integer-type": "__proto__"}}
+render python {"rendererOptions": {"python-version": "toString"}}
+render python {"rendererOptions": {"python-version": "__proto__", "just-types": true}}
+render objective-c {"rendererOptions": {"features": "toString"}}
+render elm {"rendererOptions": {"array-type": "constructor"}}
+render haskell {"rendererOptions": {"array-type": "valueOf"}}
+render php {"rendererOptions": {"acronym-style": "toString"}}

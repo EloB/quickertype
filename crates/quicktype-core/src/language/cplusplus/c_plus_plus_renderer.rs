@@ -82,19 +82,30 @@ impl CPlusPlusOptions {
     /// `getOptionValues(cPlusPlusOptions, values)`: the options in
     /// declaration order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
-        let type_source_style = TYPE_SOURCE_STYLE.get_enum_value(values)? == "single-source";
-        let include_location = INCLUDE_LOCATION.get_enum_value(values)? == "local-include";
-        let code_format = CODE_FORMAT.get_enum_value(values)? == "with-getter-setter";
-        let wstring = WSTRING.get_enum_value(values)? == "use-wstring";
-        let west_const = WEST_CONST.get_enum_value(values)? == "west-const";
+        // The boolean-valued options are TS truthiness: an
+        // `Object.prototype` member acts as `true`.
+        let type_source_style = TYPE_SOURCE_STYLE
+            .get_enum_value(values)?
+            .flag("single-source");
+        let include_location = INCLUDE_LOCATION
+            .get_enum_value(values)?
+            .flag("local-include");
+        let code_format = CODE_FORMAT
+            .get_enum_value(values)?
+            .flag("with-getter-setter");
+        let wstring = WSTRING.get_enum_value(values)?.flag("use-wstring");
+        let west_const = WEST_CONST.get_enum_value(values)?.flag("west-const");
         let just_types = JUST_TYPES.get_value(values);
         let namespace = NAMESPACE.get_value(values).into_owned();
         let enum_type = ENUM_TYPE.get_value(values).into_owned();
-        let type_naming_style = naming_style_for_option(TYPE_NAMING_STYLE.get_enum_value(values)?)?;
-        let member_naming_style =
-            naming_style_for_option(MEMBER_NAMING_STYLE.get_enum_value(values)?)?;
-        let enumerator_naming_style =
-            naming_style_for_option(ENUMERATOR_NAMING_STYLE.get_enum_value(values)?)?;
+        let type_naming_style = TYPE_NAMING_STYLE.get_enum_value(values)?;
+        let member_naming_style = MEMBER_NAMING_STYLE.get_enum_value(values)?;
+        let enumerator_naming_style = ENUMERATOR_NAMING_STYLE.get_enum_value(values)?;
+        // Every option is resolved before the constructor (type, member)
+        // and `makeEnumCaseNamer` (enumerator) make name styles of these.
+        let type_naming_style = naming_style_for_option(type_naming_style)?;
+        let member_naming_style = naming_style_for_option(member_naming_style)?;
+        let enumerator_naming_style = naming_style_for_option(enumerator_naming_style)?;
         Ok(CPlusPlusOptions {
             type_source_style,
             include_location,

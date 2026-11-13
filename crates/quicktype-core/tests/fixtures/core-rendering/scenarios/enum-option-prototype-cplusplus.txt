@@ -1,0 +1,12 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as C++
+# options: the boolean-valued ones are truthy and the naming styles fall
+# through `makeNameStyle` to `assertNever`, after every option is read.
+input json TopLevel {"name": "x", "count": 1, "tags": ["a"], "nested": {"deep": null}, "choice": [1, "a"]}
+pipeline {"lang": "cplusplus"}
+
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"source-style": "toString", "include-location": "constructor", "code-format": "__proto__", "wstring": "valueOf", "const-style": "hasOwnProperty"}}
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"code-format": "toString", "just-types": true}}
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"type-style": "toString"}}
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"member-style": "__proto__"}}
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"enumerator-style": "constructor", "member-style": "valueOf"}}
+render cplusplus {"filename": "TopLevel.hpp", "rendererOptions": {"type-style": "toString", "enumerator-style": "bogus"}}

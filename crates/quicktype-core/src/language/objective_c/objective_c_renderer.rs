@@ -12,7 +12,7 @@ use crate::attributes::constraints::{
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::naming::Namer;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::{guard, stack_overflow};
 use crate::support::strings::{camel_case, fast_is_upper_case, repeat_string, string_escape};
@@ -50,17 +50,23 @@ impl ObjectiveCOptions {
     /// declaration order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let features = match FEATURES.get_enum_value(values)? {
-            "interface" => Features {
+            EnumValue::Declared("interface") => Features {
                 interface: true,
                 implementation: false,
             },
-            "implementation" => Features {
+            EnumValue::Declared("implementation") => Features {
                 interface: false,
                 implementation: true,
             },
-            _ => Features {
+            EnumValue::Declared(_) => Features {
                 interface: true,
                 implementation: true,
+            },
+            // An `Object.prototype` member has none of the record's fields:
+            // both read as `undefined`, which is falsy.
+            EnumValue::Prototype(_) => Features {
+                interface: false,
+                implementation: false,
             },
         };
         Ok(ObjectiveCOptions {

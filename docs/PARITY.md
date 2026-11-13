@@ -84,6 +84,10 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
    ascending, then insertion order). This applies to `JSON.parse` results
    (API path), YAML, and JSON Schema output; a `"__proto__"` key is also
    special. The CLI's streaming parser keeps source order instead.
+   Lookups in plain objects (`name in obj`, `obj[name]`) also find
+   `Object.prototype` members: an enum option value such as `toString`
+   passes `getEnumValue` and reaches the renderer as a function
+   (`renderer_options::EnumValue`).
 3. **Type index order decides output.** Declaration order, duplicate
    resolution and name-suffix assignment follow the order in which types get
    created during graph rebuilding. Port `TypeBuilder`/`GraphRewriting`

@@ -1,0 +1,11 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as Swift
+# options: `struct-or-class` and `density` are truthy, `protocol` has none
+# of its fields, `acronym-style` leaves `swiftNameStyle`'s default (the
+# Pascal style), and `access-level` is not `"internal"`, so its source
+# text is interpolated in front of declarations, nor `"public"`.
+input json TopLevel {"myUrl": "x", "count": 1, "items": [{"jsonId": 1, "kind": "a"}], "maybe": null}
+pipeline {"lang": "swift"}
+
+render swift {"rendererOptions": {"access-level": "toString"}}
+render swift {"rendererOptions": {"access-level": "__proto__", "struct-or-class": "constructor", "density": "valueOf", "protocol": "hasOwnProperty", "acronym-style": "toLocaleString"}}
+render swift {"rendererOptions": {"access-level": "constructor", "just-types": true, "struct-or-class": "toString"}}

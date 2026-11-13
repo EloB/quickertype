@@ -21,11 +21,11 @@ use crate::attributes::constraints::{
 use crate::attributes::enum_values::enum_case_values;
 use crate::convenience_renderer::prelude::*;
 use crate::declaration_ir::DeclarationKind;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, all_upper_word_style, make_name_style, string_escape};
-use crate::support::support::{assert, defined, panic};
+use crate::support::support::{assert, assert_never, defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -153,8 +153,10 @@ pub struct CJsonOptions {
     /// `typeSourceStyle`: `true` for `single-source`, `false` for
     /// `multi-source`.
     pub type_source_style: bool,
-    /// `typeIntegerSize`: the C integer type.
-    pub type_integer_size: String,
+    /// `typeIntegerSize`: the C integer type (each value is its own name).
+    /// An `Object.prototype` member is emitted as it is, so serializing
+    /// it fails (see [`Source::Unexpected`]).
+    pub type_integer_size: EnumValue,
     /// `hashtableSize`: pasted verbatim into `hashtable_create` calls.
     pub hashtable_size: String,
     /// `addTypedefAlias`.
@@ -171,8 +173,14 @@ pub struct CJsonOptions {
     pub header_only: bool,
 }
 
-/// The naming style of a `*-style` option value (TS `namingStyles`).
-fn naming_style(value: &str) -> Result<NamingStyle> {
+/// The naming style of a `*-style` option value (TS `namingStyles`), as
+/// `makeNameStyle` takes it: an `Object.prototype` member falls through its
+/// `switch` to `assertNever`.
+fn naming_style(value: EnumValue) -> Result<NamingStyle> {
+    let value = match value {
+        EnumValue::Declared(value) => value,
+        EnumValue::Prototype(member) => return assert_never(member),
+    };
     Ok(match value {
         "pascal-case" => NamingStyle::Pascal,
         "underscore-case" => NamingStyle::Underscore,
@@ -186,17 +194,27 @@ fn naming_style(value: &str) -> Result<NamingStyle> {
 
 impl CJsonOptions {
     /// `getOptionValues(cJSONOptions, values)`: the options in declaration
-    /// order; the first unknown enum value is an error.
+    /// order; the first unknown enum value is an error. Then the naming
+    /// styles as the constructor (type, member) and `makeEnumCaseNamer`
+    /// (enumerator) turn them into name styles.
+    ///
+    /// The boolean-valued options are TS truthiness, so an
+    /// `Object.prototype` member acts as `true` there.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
-        let type_source_style = TYPE_SOURCE_STYLE.get_enum_value(values)? == "single-source";
-        let type_integer_size = TYPE_INTEGER_SIZE.get_enum_value(values)?.to_owned();
+        let type_source_style = TYPE_SOURCE_STYLE
+            .get_enum_value(values)?
+            .flag("single-source");
+        let type_integer_size = TYPE_INTEGER_SIZE.get_enum_value(values)?;
         let hashtable_size = HASHTABLE_SIZE.get_value(values).into_owned();
-        let add_typedef_alias = ADD_TYPEDEF_ALIAS.get_enum_value(values)? == "add-typedef";
-        let print_style = PRINT_STYLE.get_enum_value(values)? == "print-unformatted";
-        let type_naming_style = naming_style(TYPE_NAMING_STYLE.get_enum_value(values)?)?;
-        let member_naming_style = naming_style(MEMBER_NAMING_STYLE.get_enum_value(values)?)?;
-        let enumerator_naming_style =
-            naming_style(ENUMERATOR_NAMING_STYLE.get_enum_value(values)?)?;
+        let add_typedef_alias = ADD_TYPEDEF_ALIAS
+            .get_enum_value(values)?
+            .flag("add-typedef");
+        let print_style = PRINT_STYLE
+            .get_enum_value(values)?
+            .flag("print-unformatted");
+        let type_naming_style = TYPE_NAMING_STYLE.get_enum_value(values)?;
+        let member_naming_style = MEMBER_NAMING_STYLE.get_enum_value(values)?;
+        let enumerator_naming_style = ENUMERATOR_NAMING_STYLE.get_enum_value(values)?;
         let header_only = HEADER_ONLY.get_value(values);
         Ok(CJsonOptions {
             type_source_style,
@@ -204,9 +222,9 @@ impl CJsonOptions {
             hashtable_size,
             add_typedef_alias,
             print_style,
-            type_naming_style,
-            member_naming_style,
-            enumerator_naming_style,
+            type_naming_style: naming_style(type_naming_style)?,
+            member_naming_style: naming_style(member_naming_style)?,
+            enumerator_naming_style: naming_style(enumerator_naming_style)?,
             header_only,
         })
     }
@@ -3186,7 +3204,10 @@ if (NULL == validated) {{
                     is_nullable,
                 },
                 TypeKind::Integer => TypeCJSON {
-                    c_type: self.options.type_integer_size.as_str().into(),
+                    c_type: match self.options.type_integer_size {
+                        EnumValue::Declared(size) => size.into(),
+                        EnumValue::Prototype(member) => member.into(),
+                    },
                     optional_qualifier: optional,
                     cjson_type: "cJSON_Integer",
                     is_type: "quicktype_cJSON_IsInteger".into(),

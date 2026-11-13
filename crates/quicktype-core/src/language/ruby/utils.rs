@@ -6,12 +6,15 @@
 //! `Elixir/utils.ts` has its own copies of the escaping and naming helpers,
 //! so `elixir::utils` duplicates them as the TypeScript does.
 
+use std::borrow::Cow;
 use std::sync::LazyLock;
 
 use indexmap::IndexSet;
 use quicktype_js_compat::unicode::{self, GeneralCategory};
 
 use super::constants::{KEYWORDS, RESERVED_PROPERTIES};
+use crate::renderer_options::PrototypeMember;
+use crate::source::Source;
 use crate::support::strings::{
     all_lower_word_style, all_upper_word_style, combine_words, escape_non_printable_mapper,
     first_upper_word_style, int_to_hex, is_letter_or_underscore, is_printable, legalize_characters,
@@ -28,15 +31,30 @@ pub enum Strictness {
     Coercible,
     /// `"Types::"`.
     None,
+    /// An `Object.prototype` member given as `--strictness` (see
+    /// [`PrototypeMember`]): it is none of the above.
+    Other(PrototypeMember),
 }
 
 impl Strictness {
-    /// The enum's string value, e.g. `"Strict::"`.
-    pub fn as_str(self) -> &'static str {
+    /// The enum's string value, e.g. `"Strict::"`, as a template literal
+    /// interpolates it: [`PrototypeMember::to_js_string`] for
+    /// [`Other`](Self::Other).
+    pub fn as_str(self) -> Cow<'static, str> {
         match self {
-            Strictness::Strict => "Strict::",
-            Strictness::Coercible => "Coercible::",
-            Strictness::None => "Types::",
+            Strictness::Strict => Cow::Borrowed("Strict::"),
+            Strictness::Coercible => Cow::Borrowed("Coercible::"),
+            Strictness::None => Cow::Borrowed("Types::"),
+            Strictness::Other(member) => Cow::Owned(member.to_js_string()),
+        }
+    }
+
+    /// The value as a `Sourcelike` part: [`Other`](Self::Other) is no
+    /// sourcelike, so serializing it fails ([`Source::Unexpected`]).
+    pub fn to_source(self) -> Source {
+        match self {
+            Strictness::Other(member) => Source::Unexpected(member),
+            strictness => strictness.as_str().into(),
         }
     }
 }

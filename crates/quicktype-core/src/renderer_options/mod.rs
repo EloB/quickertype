@@ -294,12 +294,154 @@ impl StringOption {
     }
 }
 
+/// A member of `Object.prototype`, in the order of
+/// `Object.getOwnPropertyNames(Object.prototype)` (Node 24).
+///
+/// TS `EnumOption.getEnumValue` checks `name in values` on a plain object
+/// literal, so these names pass as enum option values too, and the renderer
+/// gets the inherited member instead of a declared value: a native function,
+/// or `Object.prototype` itself for `__proto__`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PrototypeMember {
+    /// `constructor`: the `Object` function.
+    Constructor,
+    /// `__defineGetter__`.
+    DefineGetter,
+    /// `__defineSetter__`.
+    DefineSetter,
+    /// `hasOwnProperty`.
+    HasOwnProperty,
+    /// `__lookupGetter__`.
+    LookupGetter,
+    /// `__lookupSetter__`.
+    LookupSetter,
+    /// `isPrototypeOf`.
+    IsPrototypeOf,
+    /// `propertyIsEnumerable`.
+    PropertyIsEnumerable,
+    /// `toString`.
+    ToString,
+    /// `valueOf`.
+    ValueOf,
+    /// `__proto__`: an accessor whose value is `Object.prototype` itself (an
+    /// object, not a function).
+    Proto,
+    /// `toLocaleString`.
+    ToLocaleString,
+}
+
+impl PrototypeMember {
+    /// Every member, in `Object.getOwnPropertyNames` order.
+    pub const ALL: [PrototypeMember; 12] = [
+        Self::Constructor,
+        Self::DefineGetter,
+        Self::DefineSetter,
+        Self::HasOwnProperty,
+        Self::LookupGetter,
+        Self::LookupSetter,
+        Self::IsPrototypeOf,
+        Self::PropertyIsEnumerable,
+        Self::ToString,
+        Self::ValueOf,
+        Self::Proto,
+        Self::ToLocaleString,
+    ];
+
+    /// The property name.
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Constructor => "constructor",
+            Self::DefineGetter => "__defineGetter__",
+            Self::DefineSetter => "__defineSetter__",
+            Self::HasOwnProperty => "hasOwnProperty",
+            Self::LookupGetter => "__lookupGetter__",
+            Self::LookupSetter => "__lookupSetter__",
+            Self::IsPrototypeOf => "isPrototypeOf",
+            Self::PropertyIsEnumerable => "propertyIsEnumerable",
+            Self::ToString => "toString",
+            Self::ValueOf => "valueOf",
+            Self::Proto => "__proto__",
+            Self::ToLocaleString => "toLocaleString",
+        }
+    }
+
+    /// The member called `name`, if there is one.
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|m| m.name() == name)
+    }
+
+    /// JS `String(value)`: a native function's source text
+    /// (`function toString() { [native code] }`; `constructor` is
+    /// `function Object() { [native code] }`), or `[object Object]` for
+    /// `Object.prototype`. This is what a template literal or
+    /// `assertNever`'s `Unexpected object ${x}` shows.
+    pub fn to_js_string(self) -> String {
+        match self {
+            Self::Proto => "[object Object]".to_owned(),
+            Self::Constructor => "function Object() { [native code] }".to_owned(),
+            m => format!("function {}() {{ [native code] }}", m.name()),
+        }
+    }
+}
+
+impl fmt::Display for PrototypeMember {
+    /// Writes [`to_js_string`](Self::to_js_string).
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.to_js_string())
+    }
+}
+
+/// The value of an enum option (what TS `getEnumValue` returns), identified
+/// by the key it was looked up with.
+///
+/// The TS values are booleans, strings or feature records, declared per
+/// language; renderers map a [`Declared`](Self::Declared) name to their own
+/// typed value. A [`Prototype`](Self::Prototype) member is none of those, so
+/// each renderer reproduces what its TS code does with it: a function or
+/// object is truthy, equals no declared value (`===`, `switch`), has none of
+/// a record's fields, shows as [`PrototypeMember::to_js_string`] when
+/// interpolated into a string, and fails to serialize when emitted as a
+/// `Sourcelike` itself ([`Source::Unexpected`](crate::source::Source::Unexpected)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum EnumValue {
+    /// One of the option's declared values, by name.
+    Declared(&'static str),
+    /// A member inherited from `Object.prototype`.
+    Prototype(PrototypeMember),
+}
+
+impl EnumValue {
+    /// The declared value's name; `None` for a prototype member.
+    pub fn declared(self) -> Option<&'static str> {
+        match self {
+            Self::Declared(name) => Some(name),
+            Self::Prototype(_) => None,
+        }
+    }
+
+    /// Whether this is the declared value `name`. A prototype member is none
+    /// of the declared values (TS `===` and `switch` fall through).
+    pub fn is(self, name: &str) -> bool {
+        self.declared() == Some(name)
+    }
+
+    /// The TS truthiness of an option whose declared values are booleans,
+    /// `true_name` being the one mapped to `true`: a prototype member (a
+    /// function, or `Object.prototype`) is truthy too.
+    pub fn flag(self, true_name: &str) -> bool {
+        match self {
+            Self::Declared(name) => name == true_name,
+            Self::Prototype(_) => true,
+        }
+    }
+}
+
 /// A target language option that takes one of a fixed set of values (TS
 /// `EnumOption`).
 ///
 /// Only the value names are declared here. The TS declaration also maps each
 /// name to a renderer-specific value (a boolean, a string or a feature
-/// record); renderers map the name returned by
+/// record); renderers map the [`EnumValue`] returned by
 /// [`get_enum_value`](Self::get_enum_value) to their own typed value.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EnumOption {
@@ -348,27 +490,27 @@ impl EnumOption {
         }
     }
 
-    /// The selected value name (TS `getEnumValue(getValue(values))`): the
-    /// default when the value is missing or falsy, an error when it is not
-    /// one of the declared values.
-    // TODO(renderer): TS checks `name in values`, which also accepts
-    // `Object.prototype` members such as "toString" (yielding a function
-    // value). Model that when renderers consume enum values.
+    /// The selected value (TS `getEnumValue(getValue(values))`): the default
+    /// when the value is missing or falsy, otherwise the value whose key is
+    /// `String(value)`. TS checks `name in values`, so besides the declared
+    /// values that accepts the names of `Object.prototype` members (see
+    /// [`PrototypeMember`]); anything else is an error.
     pub fn get_enum_value(
         &self,
         values: &RendererOptions,
-    ) -> Result<&'static str, UnknownOptionValue> {
+    ) -> Result<EnumValue, UnknownOptionValue> {
         let Some(value) = values.get_non_nullish(self.name) else {
-            return Ok(self.default_value);
+            return Ok(EnumValue::Declared(self.default_value));
         };
         if !value.is_truthy() {
-            return Ok(self.default_value);
+            return Ok(EnumValue::Declared(self.default_value));
         }
         let text = value.to_js_string();
-        self.values
-            .iter()
-            .copied()
-            .find(|v| *v == text)
+        if let Some(declared) = self.values.iter().copied().find(|v| *v == text) {
+            return Ok(EnumValue::Declared(declared));
+        }
+        PrototypeMember::from_name(&text)
+            .map(EnumValue::Prototype)
             .ok_or_else(|| UnknownOptionValue {
                 value: text.into_owned(),
                 name: self.name,
@@ -437,8 +579,8 @@ pub enum ResolvedOptionValue {
     Bool(bool),
     /// A string option's value.
     String(String),
-    /// The selected value name of an enum option.
-    Enum(&'static str),
+    /// The selected value of an enum option.
+    Enum(EnumValue),
 }
 
 /// Resolves every option in `options` against `values` (TS
@@ -549,24 +691,83 @@ mod tests {
 
     #[test]
     fn enum_values() {
+        let declared = |name| Ok(EnumValue::Declared(name));
         assert_eq!(STYLE.type_label(), "a|b");
-        assert_eq!(STYLE.get_enum_value(&RendererOptions::new()), Ok("b"));
+        assert_eq!(STYLE.get_enum_value(&RendererOptions::new()), declared("b"));
         assert_eq!(
             STYLE.get_enum_value(&opts(&[("style", "a".into())])),
-            Ok("a")
+            declared("a")
         );
         assert_eq!(
             STYLE.get_enum_value(&opts(&[("style", "".into())])),
-            Ok("b")
+            declared("b")
         );
         assert_eq!(
             STYLE.get_enum_value(&opts(&[("style", OptionValue::Null)])),
-            Ok("b")
+            declared("b")
         );
         let err = STYLE
             .get_enum_value(&opts(&[("style", "c".into())]))
             .unwrap_err();
         assert_eq!(err.to_string(), "Unknown value c for option style");
+        // `name in values` is case-sensitive and only sees own and inherited
+        // properties.
+        for name in ["ToString", "prototype", "__proto", "length", "true"] {
+            assert!(
+                STYLE
+                    .get_enum_value(&opts(&[("style", name.into())]))
+                    .is_err()
+            );
+        }
+        assert!(
+            STYLE
+                .get_enum_value(&opts(&[("style", true.into())]))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn enum_values_accept_object_prototype_members() {
+        // `Object.getOwnPropertyNames(Object.prototype)` in Node 24.
+        let names = [
+            "constructor",
+            "__defineGetter__",
+            "__defineSetter__",
+            "hasOwnProperty",
+            "__lookupGetter__",
+            "__lookupSetter__",
+            "isPrototypeOf",
+            "propertyIsEnumerable",
+            "toString",
+            "valueOf",
+            "__proto__",
+            "toLocaleString",
+        ];
+        assert_eq!(PrototypeMember::ALL.map(PrototypeMember::name), names);
+        for member in PrototypeMember::ALL {
+            let value = STYLE.get_enum_value(&opts(&[("style", member.name().into())]));
+            assert_eq!(value, Ok(EnumValue::Prototype(member)));
+            let value = value.unwrap();
+            assert_eq!(value.declared(), None);
+            assert!(!value.is("a") && !value.is("b"));
+            assert!(value.flag("a"));
+        }
+        // `String(value)`, as Node prints it.
+        assert_eq!(
+            PrototypeMember::ToString.to_js_string(),
+            "function toString() { [native code] }"
+        );
+        assert_eq!(
+            PrototypeMember::DefineGetter.to_js_string(),
+            "function __defineGetter__() { [native code] }"
+        );
+        assert_eq!(
+            PrototypeMember::Constructor.to_js_string(),
+            "function Object() { [native code] }"
+        );
+        assert_eq!(PrototypeMember::Proto.to_js_string(), "[object Object]");
+        let a = EnumValue::Declared("a");
+        assert!(a.is("a") && !a.is("b") && a.flag("a") && !a.flag("b"));
     }
 
     #[test]
@@ -598,9 +799,16 @@ mod tests {
             resolved,
             [
                 ("flag", ResolvedOptionValue::Bool(false)),
-                ("style", ResolvedOptionValue::Enum("b"))
+                ("style", ResolvedOptionValue::Enum(EnumValue::Declared("b")))
             ]
         );
         assert!(get_option_values(&options, &opts(&[("style", "x".into())])).is_err());
+        assert_eq!(
+            get_option_values(&options, &opts(&[("style", "valueOf".into())])).unwrap()[1],
+            (
+                "style",
+                ResolvedOptionValue::Enum(EnumValue::Prototype(PrototypeMember::ValueOf))
+            )
+        );
     }
 }

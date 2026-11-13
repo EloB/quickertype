@@ -58,8 +58,12 @@ impl PhpOptions {
         let fast_get = FAST_GET.get_value(values);
         let with_set = WITH_SET.get_value(values);
         let with_closing = WITH_CLOSING.get_value(values);
-        let acronym_style = AcronymStyleOptions::from_value(ACRONYM_STYLE.get_enum_value(values)?)
-            .unwrap_or(AcronymStyleOptions::Pascal);
+        // An `Object.prototype` member selects no style (`undefined`), so
+        // `phpNameStyle`'s default parameter, `allUpperWordStyle` (the
+        // Pascal style), takes its place.
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?)
+                .unwrap_or(AcronymStyleOptions::Pascal);
         Ok(PhpOptions {
             with_get,
             fast_get,

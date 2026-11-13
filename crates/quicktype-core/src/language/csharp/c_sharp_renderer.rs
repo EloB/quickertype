@@ -9,7 +9,7 @@
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, PrototypeMember, RendererOptions};
 use crate::support::recursion::guard;
 use crate::support::support::{assert, defined};
 use crate::transformers::{
@@ -33,6 +33,9 @@ pub enum Framework {
     NewtonSoft,
     /// `"SystemTextJson"`.
     SystemTextJson,
+    /// An `Object.prototype` member: `makeRenderer`'s `switch` falls
+    /// through to `assertNever`.
+    Other(PrototypeMember),
 }
 
 /// TS `OutputFeatures` (plus `namespaces`): what `--features` turns on.
@@ -58,22 +61,28 @@ pub struct CSharpOptions {
     pub dense: bool,
     /// `namespace`.
     pub namespace: String,
-    /// `version`: 5, 6 or 8.
-    pub version: u32,
+    /// `version`: 5, 6 or 8; `None` for an `Object.prototype` member, which
+    /// compares as `NaN` (neither `< 8` nor `>= 8`, and not `=== 5`).
+    pub version: Option<u32>,
     /// `virtual`.
     pub virtual_: bool,
     /// `useRecords`.
     pub use_records: bool,
-    /// `typeForAny`: `"object"` or `"dynamic"`.
-    pub type_for_any: &'static str,
+    /// `typeForAny`: `"object"` or `"dynamic"` (each value is its own
+    /// name). An `Object.prototype` member is emitted as it is, so
+    /// serializing it fails (see [`Source::Unexpected`]).
+    pub type_for_any: EnumValue,
     /// `useDecimal`.
     pub use_decimal: bool,
     /// `features`.
     pub features: OutputFeatures,
     /// `justTypes`.
     pub just_types: bool,
-    /// `baseclass`: `Some("EntityData")` or `None` (`"Object"`).
-    pub baseclass: Option<&'static str>,
+    /// `baseclass`: `Some(Declared("EntityData"))`, `None` for `"Object"`
+    /// (whose value is `undefined`), or an `Object.prototype` member, which
+    /// is emitted as the base class (failing at serialization, see
+    /// [`Source::Unexpected`]) and forbids no name.
+    pub baseclass: Option<EnumValue>,
     /// `checkRequired`.
     pub check_required: bool,
     /// `keepPropertyName`.
@@ -84,38 +93,49 @@ impl CSharpOptions {
     /// `getOptionValues(cSharpOptions, values)`: the options in declaration
     /// order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
+        // The boolean-valued options are TS truthiness (an `Object.prototype`
+        // member acts as `true`), the record-valued `features` has none of
+        // the record's fields then, and the string-valued ones equal none of
+        // their values.
         let framework = match FRAMEWORK.get_enum_value(values)? {
-            "NewtonSoft" => Framework::NewtonSoft,
-            _ => Framework::SystemTextJson,
+            EnumValue::Declared("NewtonSoft") => Framework::NewtonSoft,
+            EnumValue::Declared(_) => Framework::SystemTextJson,
+            EnumValue::Prototype(member) => Framework::Other(member),
         };
-        let use_list = USE_LIST.get_enum_value(values)? == "list";
-        let dense = DENSE.get_enum_value(values)? == "dense";
+        let use_list = USE_LIST.get_enum_value(values)?.flag("list");
+        let dense = DENSE.get_enum_value(values)?.flag("dense");
         let namespace = NAMESPACE.get_value(values).into_owned();
         let version = match VERSION.get_enum_value(values)? {
-            "5" => 5,
-            "6" => 6,
-            _ => 8,
+            EnumValue::Declared("5") => Some(5),
+            EnumValue::Declared("6") => Some(6),
+            EnumValue::Declared(_) => Some(8),
+            EnumValue::Prototype(_) => None,
         };
         let virtual_ = VIRTUAL.get_value(values);
         let use_records = USE_RECORDS.get_value(values);
         let type_for_any = TYPE_FOR_ANY.get_enum_value(values)?;
-        let use_decimal = USE_DECIMAL.get_enum_value(values)? == "decimal";
+        let use_decimal = USE_DECIMAL.get_enum_value(values)?.flag("decimal");
         let features = match FEATURES.get_enum_value(values)? {
-            "attributes-only" => OutputFeatures {
+            EnumValue::Declared("attributes-only") => OutputFeatures {
                 namespaces: true,
                 helpers: false,
                 attributes: true,
             },
-            _ => OutputFeatures {
+            EnumValue::Declared(_) => OutputFeatures {
                 namespaces: true,
                 helpers: true,
                 attributes: true,
             },
+            EnumValue::Prototype(_) => OutputFeatures {
+                namespaces: false,
+                helpers: false,
+                attributes: false,
+            },
         };
         let just_types = JUST_TYPES.get_value(values);
         let baseclass = match BASECLASS.get_enum_value(values)? {
-            "EntityData" => Some("EntityData"),
-            _ => None,
+            EnumValue::Declared("Object") => None,
+            value => Some(value),
         };
         Ok(CSharpOptions {
             framework,
@@ -306,7 +326,10 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
                 Follow::None => t,
             };
             let ty = graph.type_at(actual_type)?;
-            let type_for_any = self.cs().options.type_for_any;
+            let type_for_any = match self.cs().options.type_for_any {
+                EnumValue::Declared(type_for_any) => Source::from(type_for_any),
+                EnumValue::Prototype(member) => Source::from(member),
+            };
             Ok(match ty.kind() {
                 TypeKind::Any => {
                     maybe_annotated(with_issues, any_type_issue_annotation(), type_for_any)
@@ -364,7 +387,7 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
         }
 
         let cs_type = self.cs_type(t, follow, with_issues)?;
-        if is_value_type(graph, t)? || self.cs().options.version >= 8 {
+        if is_value_type(graph, t)? || self.cs().options.version.is_some_and(|v| v >= 8) {
             Ok(sl![cs_type, "?"])
         } else {
             Ok(cs_type)
@@ -619,7 +642,7 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
         define: Source,
         is_property: bool,
     ) -> Result<()> {
-        if self.cs().options.version == 5 {
+        if self.cs().options.version == Some(5) {
             self.emit_line(declare);
             self.emit_block(
                 |r| {

@@ -16,15 +16,14 @@ use crate::attributes::constraints::{
 };
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
-use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::renderer_options::{EnumValue, RendererOptions};
+use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
 use crate::support::converters::ConvertersOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, camel_case, capitalize, combine_words, first_upper_word_style,
     split_into_words, utf16_string_escape,
 };
-use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
 
 use super::language::{
@@ -39,8 +38,9 @@ use super::utils::legalize_name;
 /// Flow renderers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct JavaScriptOptions {
-    /// `acronymStyle`.
-    pub acronym_style: AcronymStyleOptions,
+    /// `acronymStyle`: `None` for an `Object.prototype` member, which
+    /// selects no style (see [`AcronymStyleCalls`]).
+    pub acronym_style: Option<AcronymStyleOptions>,
     /// `runtimeTypecheck`.
     pub runtime_typecheck: bool,
     /// `runtimeTypecheckIgnoreUnknownProperties`.
@@ -55,18 +55,20 @@ impl JavaScriptOptions {
     /// `getOptionValues(javaScriptOptions, values)`: the options in
     /// declaration order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
-        let acronym_style = defined(AcronymStyleOptions::from_value(
-            ACRONYM_STYLE.get_enum_value(values)?,
-        ))?;
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?);
         let runtime_typecheck = RUNTIME_TYPECHECK.get_value(values);
         let runtime_typecheck_ignore_unknown_properties =
             RUNTIME_TYPECHECK_IGNORE_UNKNOWN_PROPERTIES.get_value(values);
-        let converters = defined(ConvertersOptions::from_name(
-            CONVERTERS.get_enum_value(values)?,
-        ))?;
+        // An `Object.prototype` member is neither `AllObjects` (the
+        // `switch` falls through to top-level converters) nor `=== "json"`.
+        let converters = match CONVERTERS.get_enum_value(values)? {
+            EnumValue::Declared("all-objects") => ConvertersOptions::AllObjects,
+            _ => ConvertersOptions::TopLevel,
+        };
         let raw_type = match RAW_TYPE.get_enum_value(values)? {
-            "any" => RawType::Any,
-            _ => RawType::Json,
+            EnumValue::Declared("json") => RawType::Json,
+            _ => RawType::Any,
         };
         Ok(JavaScriptOptions {
             acronym_style,
@@ -87,6 +89,8 @@ pub struct JavaScriptState {
     /// The module's `identityNamingFunction` (a singleton in TypeScript):
     /// the namer of every property.
     pub identity_naming_function: Namer,
+    /// The calls of an `undefined` acronym style in the namers.
+    pub acronym_style_calls: AcronymStyleCalls,
 }
 
 impl JavaScriptState {
@@ -95,6 +99,7 @@ impl JavaScriptState {
         JavaScriptState {
             options,
             identity_naming_function: fun_prefix_namer("properties", str::to_owned),
+            acronym_style_calls: AcronymStyleCalls::default(),
         }
     }
 }
@@ -120,15 +125,19 @@ pub struct JavaScriptTypeAnnotations {
 }
 
 /// `nameStyle(original, upper)`: a JavaScript identifier for `original`,
-/// with acronyms in `acronym_style`.
+/// with acronyms in `acronym_style`. `acronyms` is `undefined` for `None`:
+/// calling it, in the first acronym of an upper-case name or through
+/// `combineWords`' `styleWord(style, word)` for the others, is recorded in
+/// `calls`.
 pub fn name_style(
-    acronym_style_option: AcronymStyleOptions,
+    acronym_style_option: Option<AcronymStyleOptions>,
+    calls: &AcronymStyleCalls,
     original: &str,
     upper: bool,
 ) -> String {
-    let acronyms = acronym_style(acronym_style_option);
+    let acronyms = |s: &str| calls.call(acronym_style_option, "style", s);
     let words = split_into_words(original);
-    let first_acronym = move |s: &str| capitalize(&acronyms(s));
+    let first_acronym = |s: &str| capitalize(&calls.call(acronym_style_option, "acronyms", s));
     let first_word_style: WordStyle<'_> = if upper {
         &first_upper_word_style
     } else {
@@ -1085,7 +1094,8 @@ pub mod javascript_hooks {
     /// `makeNamedTypeNamer()`.
     pub fn make_named_type_namer<'a, R: JavaScriptRenderer<'a>>(r: &mut R) -> Namer {
         let acronym_style = r.js_options().acronym_style;
-        fun_prefix_namer("types", move |s| name_style(acronym_style, s, true))
+        let calls = r.js().acronym_style_calls.clone();
+        fun_prefix_namer("types", move |s| name_style(acronym_style, &calls, s, true))
     }
 
     /// `namerForObjectProperty()`: the module's `identityNamingFunction`.
@@ -1105,8 +1115,9 @@ pub mod javascript_hooks {
     /// `makeEnumCaseNamer()`.
     pub fn make_enum_case_namer<'a, R: JavaScriptRenderer<'a>>(r: &mut R) -> Option<Namer> {
         let acronym_style = r.js_options().acronym_style;
+        let calls = r.js().acronym_style_calls.clone();
         Some(fun_prefix_namer("enum-cases", move |s| {
-            name_style(acronym_style, s, true)
+            name_style(acronym_style, &calls, s, true)
         }))
     }
 
@@ -1158,6 +1169,9 @@ pub mod javascript_hooks {
         r: &mut R,
         given_output_filename: &str,
     ) -> Result<()> {
+        // What naming would have thrown.
+        r.js().acronym_style_calls.check()?;
+
         match r.leading_comments() {
             Some(leading_comments) => r.emit_comments(leading_comments)?,
             None => r.emit_usage_comments(given_output_filename)?,
@@ -1241,21 +1255,37 @@ mod tests {
 
     #[test]
     fn name_styles() {
+        let calls = AcronymStyleCalls::default();
+        let pascal = Some(AcronymStyleOptions::Pascal);
+        let camel = Some(AcronymStyleOptions::Camel);
+        assert_eq!(name_style(pascal, &calls, "url value", true), "URLValue");
+        assert_eq!(name_style(camel, &calls, "url value", true), "UrlValue");
+        assert_eq!(name_style(pascal, &calls, "1st", false), "the1St");
+        assert_eq!(name_style(pascal, &calls, "my url", false), "myURL");
+        assert!(calls.check().is_ok());
+    }
+
+    #[test]
+    fn undefined_acronym_style_throws_where_called() {
+        // No acronym: `acronyms` is never called.
+        let calls = AcronymStyleCalls::default();
+        assert_eq!(name_style(None, &calls, "my value", true), "MyValue");
+        assert!(calls.check().is_ok());
+        // A leading acronym of a lower-case name uses `allLowerWordStyle`.
+        assert_eq!(name_style(None, &calls, "url", false), "url");
+        assert!(calls.check().is_ok());
+        // The upper-case first word calls it inside the arrow function.
+        name_style(None, &calls, "url value", true);
         assert_eq!(
-            name_style(AcronymStyleOptions::Pascal, "url value", true),
-            "URLValue"
+            calls.check().unwrap_err().to_string(),
+            "acronyms is not a function"
         );
+        // The other words through `styleWord(style, word)`.
+        let calls = AcronymStyleCalls::default();
+        name_style(None, &calls, "my url", true);
         assert_eq!(
-            name_style(AcronymStyleOptions::Camel, "url value", true),
-            "UrlValue"
-        );
-        assert_eq!(
-            name_style(AcronymStyleOptions::Pascal, "1st", false),
-            "the1St"
-        );
-        assert_eq!(
-            name_style(AcronymStyleOptions::Pascal, "my url", false),
-            "myURL"
+            calls.check().unwrap_err().to_string(),
+            "style is not a function"
         );
     }
 }

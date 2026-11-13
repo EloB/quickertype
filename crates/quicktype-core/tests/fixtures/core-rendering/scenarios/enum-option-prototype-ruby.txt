@@ -1,0 +1,10 @@
+# An `Object.prototype` member (see enum-option-prototype-csharp) as Ruby
+# `strictness`: it is not `Types::`, so the primitive declarations
+# interpolate its source text, it is not `Strict::` (no `Nil`), and an
+# enum's declaration emits the value itself, which fails to serialize.
+input json TopLevel {"name": "x", "count": 1, "ratio": 1.5, "flag": true, "maybe": null, "dict": {"a": 1}}
+input schema Kind {"enum": ["one", "two"]}
+pipeline {"lang": "ruby"}
+
+render ruby {"rendererOptions": {"strictness": "toString"}}
+render ruby {"rendererOptions": {"strictness": "__proto__", "just-types": true}}

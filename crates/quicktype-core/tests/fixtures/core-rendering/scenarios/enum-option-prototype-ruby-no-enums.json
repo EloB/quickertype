@@ -1,0 +1,170 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      5,
+      false
+     ],
+     [
+      "count",
+      1,
+      false
+     ],
+     [
+      "ratio",
+      6,
+      false
+     ],
+     [
+      "flag",
+      3,
+      false
+     ],
+     [
+      "maybe",
+      4,
+      false
+     ],
+     [
+      "dict",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "double",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This code may look unusually verbose for Ruby (and it is), but\n# it performs some subtle and complex validation of JSON data.\n#\n# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:\n#\n#   top_level = TopLevel.from_json! \"{…}\"\n#   puts top_level.dict.a.even?\n#\n# If from_json! succeeds, the value returned matches the schema.\n\nrequire 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule Types\n  include Dry.Types(default: :nominal)\n\n  Integer = function toString() { [native code] }Integer\n  Bool    = function toString() { [native code] }Bool\n  Hash    = function toString() { [native code] }Hash\n  String  = function toString() { [native code] }String\n  Double  = function toString() { [native code] }Float | function toString() { [native code] }Integer\nend\n\nclass Dict < Dry::Struct\n  attribute :a, Types::Integer\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      a: d.fetch(\"a\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"a\" => a,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass TopLevel < Dry::Struct\n  attribute :top_level_name, Types::String\n  attribute :count,          Types::Integer\n  attribute :ratio,          Types::Double\n  attribute :flag,           Types::Bool\n  attribute :maybe,          Types::Nil\n  attribute :dict,           Dict\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      top_level_name: d.fetch(\"name\"),\n      count:          d.fetch(\"count\"),\n      ratio:          d.fetch(\"ratio\"),\n      flag:           d.fetch(\"flag\"),\n      maybe:          d.fetch(\"maybe\"),\n      dict:           Dict.from_dynamic!(d.fetch(\"dict\")),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"name\"  => top_level_name,\n      \"count\" => count,\n      \"ratio\" => ratio,\n      \"flag\"  => flag,\n      \"maybe\" => maybe,\n      \"dict\"  => dict.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "constructor"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This code may look unusually verbose for Ruby (and it is), but\n# it performs some subtle and complex validation of JSON data.\n#\n# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:\n#\n#   top_level = TopLevel.from_json! \"{…}\"\n#   puts top_level.dict.a.even?\n#\n# If from_json! succeeds, the value returned matches the schema.\n\nrequire 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule Types\n  include Dry.Types(default: :nominal)\n\n  Integer = function Object() { [native code] }Integer\n  Bool    = function Object() { [native code] }Bool\n  Hash    = function Object() { [native code] }Hash\n  String  = function Object() { [native code] }String\n  Double  = function Object() { [native code] }Float | function Object() { [native code] }Integer\nend\n\nclass Dict < Dry::Struct\n  attribute :a, Types::Integer\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      a: d.fetch(\"a\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"a\" => a,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass TopLevel < Dry::Struct\n  attribute :top_level_name, Types::String\n  attribute :count,          Types::Integer\n  attribute :ratio,          Types::Double\n  attribute :flag,           Types::Bool\n  attribute :maybe,          Types::Nil\n  attribute :dict,           Dict\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      top_level_name: d.fetch(\"name\"),\n      count:          d.fetch(\"count\"),\n      ratio:          d.fetch(\"ratio\"),\n      flag:           d.fetch(\"flag\"),\n      maybe:          d.fetch(\"maybe\"),\n      dict:           Dict.from_dynamic!(d.fetch(\"dict\")),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"name\"  => top_level_name,\n      \"count\" => count,\n      \"ratio\" => ratio,\n      \"flag\"  => flag,\n      \"maybe\" => maybe,\n      \"dict\"  => dict.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "__proto__"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This code may look unusually verbose for Ruby (and it is), but\n# it performs some subtle and complex validation of JSON data.\n#\n# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:\n#\n#   top_level = TopLevel.from_json! \"{…}\"\n#   puts top_level.dict.a.even?\n#\n# If from_json! succeeds, the value returned matches the schema.\n\nrequire 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule Types\n  include Dry.Types(default: :nominal)\n\n  Integer = [object Object]Integer\n  Bool    = [object Object]Bool\n  Hash    = [object Object]Hash\n  String  = [object Object]String\n  Double  = [object Object]Float | [object Object]Integer\nend\n\nclass Dict < Dry::Struct\n  attribute :a, Types::Integer\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      a: d.fetch(\"a\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"a\" => a,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass TopLevel < Dry::Struct\n  attribute :top_level_name, Types::String\n  attribute :count,          Types::Integer\n  attribute :ratio,          Types::Double\n  attribute :flag,           Types::Bool\n  attribute :maybe,          Types::Nil\n  attribute :dict,           Dict\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      top_level_name: d.fetch(\"name\"),\n      count:          d.fetch(\"count\"),\n      ratio:          d.fetch(\"ratio\"),\n      flag:           d.fetch(\"flag\"),\n      maybe:          d.fetch(\"maybe\"),\n      dict:           Dict.from_dynamic!(d.fetch(\"dict\")),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"name\"  => top_level_name,\n      \"count\" => count,\n      \"ratio\" => ratio,\n      \"flag\"  => flag,\n      \"maybe\" => maybe,\n      \"dict\"  => dict.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-ruby-no-enums"
+}
