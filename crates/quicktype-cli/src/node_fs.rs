@@ -13,48 +13,28 @@
 use std::io;
 use std::path::Path;
 
-use quicktype_core::{Readable, StdIo};
+use quicktype_core::{IoError, Readable, StdIo};
 
 use crate::messages::CliError;
 
-/// libuv's error code and description for an I/O error, as Node prints
-/// them (`ENOENT`, `no such file or directory`).
-fn errno_text(e: &io::Error) -> (&'static str, &'static str) {
-    use io::ErrorKind as K;
-    match e.kind() {
-        K::NotFound => ("ENOENT", "no such file or directory"),
-        K::PermissionDenied => ("EACCES", "permission denied"),
-        K::AlreadyExists => ("EEXIST", "file already exists"),
-        K::NotADirectory => ("ENOTDIR", "not a directory"),
-        K::IsADirectory => ("EISDIR", "illegal operation on a directory"),
-        K::InvalidFilename => ("ENAMETOOLONG", "name too long"),
-        K::ReadOnlyFilesystem => ("EROFS", "read-only file system"),
-        K::StorageFull => ("ENOSPC", "no space left on device"),
-        K::InvalidInput => ("EINVAL", "invalid argument"),
-        _ => ("EIO", "i/o error"),
-    }
+/// The error Node's `fs` throws when `syscall` fails on `path`, e.g.
+/// `ENOENT: no such file or directory, lstat 'x.json'`.
+fn fs_error(e: &io::Error, syscall: &str, path: &str) -> CliError {
+    CliError::Io(IoError::from_fs(e, syscall, Some(path)))
 }
 
-/// The `message` of the error Node's `fs` throws for a failed `syscall` on
-/// `path`: `ENOENT: no such file or directory, lstat 'x.json'`.
-pub fn fs_error_message(e: &io::Error, syscall: &str, path: &str) -> String {
-    let (code, description) = errno_text(e);
-    format!("{code}: {description}, {syscall} '{path}'")
-}
-
-/// The `message` of the error Node throws when reading a directory as a
-/// file: the open succeeds, the read fails, and the error names no path.
-fn read_error_message(e: &io::Error, path: &str) -> String {
+/// What `fs.readFileSync` throws: reading a directory opens it and fails
+/// the read, an error that names no path.
+fn read_error(e: &io::Error, path: &str) -> CliError {
     if e.kind() == io::ErrorKind::IsADirectory {
-        let (code, description) = errno_text(e);
-        return format!("{code}: {description}, read");
+        return CliError::Io(IoError::from_fs(e, "read", None));
     }
-    fs_error_message(e, "open", path)
+    fs_error(e, "open", path)
 }
 
 /// `fs.readFileSync(path)`, failing like Node does.
 pub fn read_file_sync(path: &str) -> Result<Vec<u8>, CliError> {
-    std::fs::read(path).map_err(|e| CliError::Thrown(read_error_message(&e, path)))
+    std::fs::read(path).map_err(|e| read_error(&e, path))
 }
 
 /// `fs.readFileSync(path, "utf8")`: invalid UTF-8 is replaced.
@@ -64,7 +44,7 @@ pub fn read_file_sync_utf8(path: &str) -> Result<String, CliError> {
 
 /// `fs.writeFileSync(path, data)`.
 pub fn write_file_sync(path: &str, data: &str) -> Result<(), CliError> {
-    std::fs::write(path, data).map_err(|e| CliError::Thrown(fs_error_message(&e, "open", path)))
+    std::fs::write(path, data).map_err(|e| fs_error(&e, "open", path))
 }
 
 /// `fs.existsSync(path)`: follows symbolic links and never fails.
@@ -73,32 +53,27 @@ pub fn exists_sync(path: &str) -> bool {
 }
 
 /// `fs.lstatSync(path)`.
-fn lstat_sync(path: &str) -> Result<std::fs::Metadata, String> {
-    std::fs::symlink_metadata(path).map_err(|e| fs_error_message(&e, "lstat", path))
+fn lstat_sync(path: &str) -> Result<std::fs::Metadata, CliError> {
+    std::fs::symlink_metadata(path).map_err(|e| fs_error(&e, "lstat", path))
 }
 
 /// `fs.lstatSync(path).isDirectory()`.
 pub fn is_directory(path: &str) -> Result<bool, CliError> {
-    lstat_sync(path)
-        .map(|m| m.is_dir())
-        .map_err(CliError::Thrown)
+    lstat_sync(path).map(|m| m.is_dir())
 }
 
 /// `fs.lstatSync(path).isFile()`.
 pub fn is_file(path: &str) -> Result<bool, CliError> {
-    lstat_sync(path)
-        .map(|m| m.is_file())
-        .map_err(CliError::Thrown)
+    lstat_sync(path).map(|m| m.is_file())
 }
 
 /// `fs.readdirSync(dir)`: the entry names, sorted by bytes like libuv's
 /// `scandir`.
 pub fn readdir_sync(dir: &str) -> Result<Vec<String>, CliError> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| CliError::Thrown(fs_error_message(&e, "scandir", dir)))?;
+    let entries = std::fs::read_dir(dir).map_err(|e| fs_error(&e, "scandir", dir))?;
     let mut names = Vec::new();
     for entry in entries {
-        let entry = entry.map_err(|e| CliError::Thrown(fs_error_message(&e, "scandir", dir)))?;
+        let entry = entry.map_err(|e| fs_error(&e, "scandir", dir))?;
         names.push(entry.file_name().to_string_lossy().into_owned());
     }
     names.sort_unstable_by(|a, b| a.as_bytes().cmp(b.as_bytes()));
@@ -110,10 +85,7 @@ pub fn readdir_sync(dir: &str) -> Result<Vec<String>, CliError> {
 /// that nothing handles, so the reference crashes with a stack trace; we
 /// report the error's message instead (a known gap, see docs/PARITY.md).
 pub async fn read(readable: Readable) -> Result<String, CliError> {
-    readable
-        .read(&StdIo)
-        .await
-        .map_err(|e| CliError::Thrown(e.strip_prefix("Error: ").unwrap_or(&e).to_owned()))
+    readable.read(&StdIo).await.map_err(CliError::Io)
 }
 
 /// `readableFromFileOrURL(fileOrURL, httpHeaders)` on the standard
@@ -141,7 +113,7 @@ mod tests {
     fn node_error_messages() {
         let e = io::Error::from(io::ErrorKind::NotFound);
         assert_eq!(
-            fs_error_message(&e, "lstat", "x.json"),
+            fs_error(&e, "lstat", "x.json").to_string(),
             "ENOENT: no such file or directory, lstat 'x.json'"
         );
         let e = read_file_sync("/nonexistent/qt").unwrap_err();

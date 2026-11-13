@@ -18,12 +18,14 @@
 //! directory, lstat 'x.json'`, `TypeError: fetch failed`,
 //! `Error: HTTP 404 Not Found`.
 
+use std::fmt;
+
 use indexmap::IndexMap;
 use quicktype_js_compat::json::insert_js_property;
 use quicktype_js_compat::whitespace;
 
 use crate::input::io::LocalBoxFuture;
-use crate::messages::{ErrorKind, Result, message_error};
+use crate::messages::{ErrorKind, JsErrorName, Result, message_error};
 use crate::support::windows_paths::file_path_from_file_uri;
 
 /// An HTTP response, as much of it as NodeIO looks at.
@@ -38,10 +40,125 @@ pub struct HttpResponse {
     pub body: Option<Vec<u8>>,
 }
 
-/// A JavaScript exception from a platform service, carried as its
-/// `toString()` (`Error: ENOENT: …`, `TypeError: fetch failed`), which is
-/// what quicktype's messages quote.
-pub type IoError = String;
+/// What kind of failure an [`IoError`] is.
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum IoErrorKind {
+    /// The path does not exist (`ENOENT`).
+    NotFound,
+    /// Access was denied (`EACCES`, `EPERM`).
+    PermissionDenied,
+    /// A request could not be made or failed (`fetch failed`, an invalid
+    /// URL or header).
+    Network,
+    /// Anything else.
+    Other,
+}
+
+/// A failed platform service call: the JavaScript exception Node (or
+/// undici) throws, as its constructor and message, e.g. `Error` with
+/// `ENOENT: no such file or directory, lstat 'x.json'`, or `TypeError`
+/// with `fetch failed`.
+///
+/// [`Display`](fmt::Display) gives the message; quicktype's own messages
+/// quote [`to_js_string`](Self::to_js_string) (`exceptionToString(e)`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IoError {
+    kind: IoErrorKind,
+    name: JsErrorName,
+    message: String,
+}
+
+impl IoError {
+    /// The exception `new <name>(message)`, of `kind`.
+    pub fn new(kind: IoErrorKind, name: JsErrorName, message: impl Into<String>) -> Self {
+        IoError {
+            kind,
+            name,
+            message: message.into(),
+        }
+    }
+
+    /// The `Error` Node's `fs` throws when `syscall` fails on `path`:
+    /// `ENOENT: no such file or directory, lstat 'x.json'` (libuv's code
+    /// and description), or without a path, e.g. `EISDIR: illegal
+    /// operation on a directory, read`.
+    pub fn from_fs(e: &std::io::Error, syscall: &str, path: Option<&str>) -> Self {
+        let (code, description) = errno_text(e);
+        let kind = match e.kind() {
+            std::io::ErrorKind::NotFound => IoErrorKind::NotFound,
+            std::io::ErrorKind::PermissionDenied => IoErrorKind::PermissionDenied,
+            _ => IoErrorKind::Other,
+        };
+        let message = match path {
+            Some(path) => format!("{code}: {description}, {syscall} '{path}'"),
+            None => format!("{code}: {description}, {syscall}"),
+        };
+        IoError::new(kind, JsErrorName::Error, message)
+    }
+
+    /// The kind of failure.
+    pub fn kind(&self) -> IoErrorKind {
+        self.kind
+    }
+
+    /// The exception's constructor (`e.name`).
+    pub fn name(&self) -> JsErrorName {
+        self.name
+    }
+
+    /// The exception's message (`e.message`).
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// `exceptionToString(e)`: `<name>: <message>`, as quicktype quotes it
+    /// (`Cannot read from file or URL x: Error: ENOENT: …`).
+    pub fn to_js_string(&self) -> String {
+        format!("{}: {}", self.name.as_str(), self.message)
+    }
+}
+
+impl fmt::Display for IoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for IoError {}
+
+/// libuv's error code and message for an I/O error.
+fn errno_text(e: &std::io::Error) -> (&'static str, &'static str) {
+    use std::io::ErrorKind as K;
+    match e.kind() {
+        K::NotFound => return ("ENOENT", "no such file or directory"),
+        K::PermissionDenied => {
+            // EPERM is 1 on every POSIX system.
+            if e.raw_os_error() == Some(1) {
+                return ("EPERM", "operation not permitted");
+            }
+            return ("EACCES", "permission denied");
+        }
+        K::IsADirectory => return ("EISDIR", "illegal operation on a directory"),
+        K::NotADirectory => return ("ENOTDIR", "not a directory"),
+        K::InvalidInput => return ("EINVAL", "invalid argument"),
+        K::AlreadyExists => return ("EEXIST", "file already exists"),
+        K::ReadOnlyFilesystem => return ("EROFS", "read-only file system"),
+        K::StorageFull => return ("ENOSPC", "no space left on device"),
+        _ => {}
+    }
+    let (eloop, enametoolong) = if cfg!(target_os = "linux") {
+        (40, 36)
+    } else {
+        (62, 63)
+    };
+    match e.raw_os_error() {
+        Some(n) if n == eloop => ("ELOOP", "too many symbolic links encountered"),
+        Some(n) if n == enametoolong => ("ENAMETOOLONG", "name too long"),
+        Some(24) => ("EMFILE", "too many open files"),
+        _ => ("UNKNOWN", "unknown error"),
+    }
+}
 
 /// The platform services NodeIO uses: Node's `fs`, `process.stdin` and the
 /// global `fetch`. Implementations report failures with Node's error text
@@ -270,7 +387,10 @@ pub async fn readable_from_file_or_url(
             file_or_url = file_path_from_file_uri(&file_or_url);
         } else if is_url(&file_or_url) {
             let headers = parse_headers(http_headers).map_err(|e| e.to_js_string())?;
-            let response = io.fetch(&file_or_url, &headers).await?;
+            let response = io
+                .fetch(&file_or_url, &headers)
+                .await
+                .map_err(|e| e.to_js_string())?;
             if !(200..=299).contains(&response.status) {
                 return Err(format!(
                     "Error: HTTP {} {}",
@@ -292,7 +412,8 @@ pub async fn readable_from_file_or_url(
             if file_or_url == "-" {
                 return Ok(Some(Readable::Stdin));
             }
-            let file_path = resolve_symbolic_link(io, &file_or_url)?;
+            let file_path =
+                resolve_symbolic_link(io, &file_or_url).map_err(|e| e.to_js_string())?;
             if io.exists(&file_path) {
                 return Ok(Some(Readable::File(file_path)));
             }
@@ -325,7 +446,7 @@ pub async fn read_from_file_or_url(
     let readable = readable_from_file_or_url(io, file_or_url, http_headers).await?;
     match readable.read(io).await {
         Ok(text) => Ok(text),
-        Err(message) => misc_read_error(file_or_url, message),
+        Err(e) => misc_read_error(file_or_url, e.to_js_string()),
     }
 }
 
@@ -339,44 +460,14 @@ pub struct StdIo;
 mod std_io {
     use std::io::Read;
 
+    #[cfg(not(feature = "http"))]
+    use super::IoErrorKind;
     use super::{HttpResponse, Io, IoError, StdIo};
     use crate::input::io::LocalBoxFuture;
 
-    /// Node's text for a failed file system call:
-    /// `Error: ENOENT: no such file or directory, lstat 'x'`.
+    /// The error of a failed file system call on `path`.
     fn node_error(e: &std::io::Error, syscall: &str, path: &str) -> IoError {
-        let (code, description) = errno_text(e);
-        format!("Error: {code}: {description}, {syscall} '{path}'")
-    }
-
-    /// libuv's error code and message for an I/O error.
-    fn errno_text(e: &std::io::Error) -> (&'static str, &'static str) {
-        use std::io::ErrorKind as K;
-        match e.kind() {
-            K::NotFound => return ("ENOENT", "no such file or directory"),
-            K::PermissionDenied => {
-                // EPERM is 1 on every POSIX system.
-                if e.raw_os_error() == Some(1) {
-                    return ("EPERM", "operation not permitted");
-                }
-                return ("EACCES", "permission denied");
-            }
-            K::IsADirectory => return ("EISDIR", "illegal operation on a directory"),
-            K::NotADirectory => return ("ENOTDIR", "not a directory"),
-            K::InvalidInput => return ("EINVAL", "invalid argument"),
-            _ => {}
-        }
-        let (eloop, enametoolong) = if cfg!(target_os = "linux") {
-            (40, 36)
-        } else {
-            (62, 63)
-        };
-        match e.raw_os_error() {
-            Some(n) if n == eloop => ("ELOOP", "too many symbolic links encountered"),
-            Some(n) if n == enametoolong => ("ENAMETOOLONG", "name too long"),
-            Some(24) => ("EMFILE", "too many open files"),
-            _ => ("UNKNOWN", "unknown error"),
-        }
+        IoError::from_fs(e, syscall, Some(path))
     }
 
     impl Io for StdIo {
@@ -413,7 +504,7 @@ mod std_io {
                 let mut bytes = Vec::new();
                 std::io::stdin()
                     .read_to_end(&mut bytes)
-                    .map_err(|e| format!("Error: {e}"))?;
+                    .map_err(|e| IoError::from_fs(&e, "read", None))?;
                 Ok(String::from_utf8_lossy(&bytes).into_owned())
             })
         }
@@ -434,13 +525,45 @@ mod std_io {
 
     #[cfg(not(feature = "http"))]
     fn http_get(_url: &str, _headers: &[(String, String)]) -> Result<HttpResponse, IoError> {
-        Err("Error: fetching URLs needs the `http` feature of quicktype-core".to_owned())
+        Err(IoError::new(
+            IoErrorKind::Other,
+            crate::messages::JsErrorName::Error,
+            "fetching URLs needs the `http` feature of quicktype-core",
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn io_errors_are_node_exceptions() {
+        let e = IoError::from_fs(
+            &std::io::Error::from(std::io::ErrorKind::NotFound),
+            "lstat",
+            Some("x.json"),
+        );
+        assert_eq!(e.kind(), IoErrorKind::NotFound);
+        assert_eq!(e.name(), JsErrorName::Error);
+        assert_eq!(
+            e.to_string(),
+            "ENOENT: no such file or directory, lstat 'x.json'"
+        );
+        assert_eq!(
+            e.to_js_string(),
+            "Error: ENOENT: no such file or directory, lstat 'x.json'"
+        );
+        let e = IoError::from_fs(
+            &std::io::Error::from(std::io::ErrorKind::IsADirectory),
+            "read",
+            None,
+        );
+        assert_eq!(
+            e.to_string(),
+            "EISDIR: illegal operation on a directory, read"
+        );
+    }
 
     #[test]
     fn url_detection_matches_is_url() {

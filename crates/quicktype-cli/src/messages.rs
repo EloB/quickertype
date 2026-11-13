@@ -8,7 +8,7 @@
 
 use std::fmt;
 
-use quicktype_core::{ErrorKind, MessageValue, QuickTypeError};
+use quicktype_core::{ErrorKind, IoError, MessageValue, QuickTypeError};
 
 use crate::chalk::TemplateError;
 
@@ -22,8 +22,11 @@ pub fn message_error(kind: ErrorKind, properties: Vec<(&str, MessageValue)>) -> 
 pub enum CliError {
     /// A quicktype error, printed as `Error: <message>.` with exit code 1.
     Quicktype(QuickTypeError),
-    /// A plain JS `Error` thrown by Node or a library (e.g. `fs`,
-    /// chalk-template), printed as `Error: <message>.` with exit code 1.
+    /// An exception from Node's `fs` (`ENOENT: …, open 'x'`), printed as
+    /// `Error: <message>.` with exit code 1.
+    Io(IoError),
+    /// A plain JS `Error` thrown by a library (e.g. chalk-template),
+    /// printed as `Error: <message>.` with exit code 1.
     Thrown(String),
     /// Something the Rust port cannot do yet; printed as an internal error
     /// with exit code 2, which quicktype itself never uses.
@@ -34,7 +37,7 @@ impl CliError {
     /// The process exit code for this error.
     pub fn exit_code(&self) -> u8 {
         match self {
-            Self::Quicktype(_) | Self::Thrown(_) => 1,
+            Self::Quicktype(_) | Self::Io(_) | Self::Thrown(_) => 1,
             Self::NotImplemented(_) => 2,
         }
     }
@@ -44,6 +47,7 @@ impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Quicktype(e) => f.write_str(e.user_message()),
+            Self::Io(e) => e.fmt(f),
             Self::Thrown(message) => f.write_str(message),
             Self::NotImplemented(what) => {
                 write!(

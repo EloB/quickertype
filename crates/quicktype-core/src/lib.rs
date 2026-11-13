@@ -141,7 +141,8 @@ pub use crate::input::io::block_on;
 #[cfg(feature = "fs")]
 pub use crate::input::io::node_io::StdIo;
 pub use crate::input::io::node_io::{
-    HttpResponse, Io, IoError, Readable, is_url, read_from_file_or_url, readable_from_file_or_url,
+    HttpResponse, Io, IoError, IoErrorKind, Readable, is_url, read_from_file_or_url,
+    readable_from_file_or_url,
 };
 
 // ---- Languages and renderer options --------------------------------------
