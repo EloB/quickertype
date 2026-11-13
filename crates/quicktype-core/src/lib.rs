@@ -151,7 +151,7 @@ pub use crate::inference::{INFERENCE_FLAGS, InferenceFlag, InferenceFlagName, In
 
 // ---- Inputs (`input/`) ---------------------------------------------------
 
-pub use crate::input::compressed_json::{CompressedJsonTables, JsonSample};
+pub use crate::input::compressed_json::{CompressedJsonTables, JsonSample, SampleReader};
 pub use crate::input::fetching_json_schema_store::FetchingJsonSchemaStore;
 pub use crate::input::inputs::{
     CompressedTopLevel, Input, InputData, JsonInput, JsonSourceData, LocalBoxFuture,

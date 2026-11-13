@@ -32,7 +32,9 @@
 //! name, and object keys are interned when they are read rather than when
 //! their value is committed.
 
+use std::cell::RefCell;
 use std::fmt;
+use std::io::Read;
 use std::rc::Rc;
 
 use quicktype_js_compat::json::{self, JsonValue};
@@ -89,6 +91,40 @@ pub enum JsonSample {
     /// The raw bytes of a file, URL body or standard input, read with the
     /// CLI's stream-json semantics (TS `CompressedJSONFromStream`).
     Stream(Vec<u8>),
+    /// A file, standard input or any byte stream, read chunk by chunk with
+    /// the CLI's stream-json semantics, so that it is never held whole (TS
+    /// `CompressedJSONFromStream` on a Node `Readable`).
+    Reader(SampleReader),
+}
+
+/// The byte stream of a [`JsonSample::Reader`]. It is shared, so that a
+/// [`JsonSample`] can be cloned, and compares by identity; the first sample
+/// that reads it consumes it.
+#[derive(Clone)]
+pub struct SampleReader(Rc<RefCell<Box<dyn Read>>>);
+
+impl SampleReader {
+    /// A sample read from `reader`. To report a failed read as Node's
+    /// exception, let the reader's [`std::io::Error`] wrap an
+    /// [`IoError`](crate::input::io::node_io::IoError) (see
+    /// [`CompressedJson::parse_stream_reader`]).
+    pub fn new(reader: impl Read + 'static) -> Self {
+        SampleReader(Rc::new(RefCell::new(Box::new(reader))))
+    }
+}
+
+impl PartialEq for SampleReader {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for SampleReader {}
+
+impl fmt::Debug for SampleReader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("SampleReader(..)")
+    }
 }
 
 impl From<String> for JsonSample {
@@ -459,6 +495,10 @@ impl CompressedJson {
         match sample {
             JsonSample::String(text) => self.parse_string(&text),
             JsonSample::Stream(bytes) => self.parse_stream(&bytes),
+            JsonSample::Reader(reader) => {
+                let mut reader = reader.0.borrow_mut();
+                self.parse_stream_reader(&mut **reader)
+            }
         }
     }
 
@@ -726,7 +766,8 @@ fn encode_value(v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
 
 /// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
-/// `MiscJSONParseError`.
+/// `MiscJSONParseError`, except for [`Read`](Self::Read) errors, which it
+/// reports as they are.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
     /// A JavaScript exception thrown by the JSON parser: `JSON.parse`'s
@@ -734,6 +775,9 @@ pub enum ParseError {
     Js(JsException),
     /// A quicktype error raised while building the compressed form.
     Quicktype(QuickTypeError),
+    /// The sample's stream could not be read (in TypeScript, the stream's
+    /// `error` event).
+    Read(QuickTypeError),
 }
 
 impl ParseError {
@@ -741,7 +785,7 @@ impl ParseError {
     pub fn message(&self) -> &str {
         match self {
             ParseError::Js(e) => e.message(),
-            ParseError::Quicktype(e) => e.user_message(),
+            ParseError::Quicktype(e) | ParseError::Read(e) => e.user_message(),
         }
     }
 }

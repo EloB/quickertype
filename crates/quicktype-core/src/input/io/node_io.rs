@@ -510,6 +510,56 @@ mod std_io {
         IoError::from_fs(e, syscall, Some(path))
     }
 
+    /// A reader whose errors wrap the [`IoError`] Node would report.
+    struct NodeReader<R> {
+        inner: R,
+        error: Box<dyn Fn(&std::io::Error) -> IoError>,
+    }
+
+    impl<R: Read> Read for NodeReader<R> {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            self.inner.read(buf).map_err(|e| {
+                if e.kind() == std::io::ErrorKind::Interrupted {
+                    e
+                } else {
+                    std::io::Error::other((self.error)(&e))
+                }
+            })
+        }
+    }
+
+    impl super::Readable {
+        /// Opens the source to be read chunk by chunk (as a
+        /// [`JsonSample::Reader`](crate::JsonSample::Reader)) rather than
+        /// whole ([`read`](Self::read) with [`StdIo`]): a URL's text from
+        /// memory, standard input, or the file. Opening and reading fail
+        /// with the errors [`StdIo`]'s `read_file` and `read_stdin` report
+        /// (a read error wraps its [`IoError`]); a directory reads as empty
+        /// text, as Node reads it on macOS.
+        pub fn open_std(self) -> Result<Box<dyn Read>, IoError> {
+            match self {
+                super::Readable::Text(text) => {
+                    Ok(Box::new(std::io::Cursor::new(text.into_bytes())))
+                }
+                super::Readable::Stdin => Ok(Box::new(NodeReader {
+                    inner: std::io::stdin(),
+                    error: Box::new(|e| IoError::from_fs(e, "read", None)),
+                })),
+                super::Readable::File(path) => {
+                    if std::fs::metadata(&path).is_ok_and(|m| m.is_dir()) {
+                        return Ok(Box::new(std::io::empty()));
+                    }
+                    let file =
+                        std::fs::File::open(&path).map_err(|e| node_error(&e, "open", &path))?;
+                    Ok(Box::new(NodeReader {
+                        inner: file,
+                        error: Box::new(move |e| node_error(e, "open", &path)),
+                    }))
+                }
+            }
+        }
+    }
+
     impl Io for StdIo {
         fn is_symbolic_link(&self, path: &str) -> Result<bool, IoError> {
             std::fs::symlink_metadata(path)

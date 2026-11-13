@@ -479,6 +479,7 @@ impl JsonInput {
         for sample in samples {
             match self.compressed_json.parse_sample(sample) {
                 Ok(value) => values.push(value),
+                Err(ParseError::Read(e)) => return Err(e),
                 Err(e) => return Err(message_parse_error(&name, description.as_deref(), &e)),
             }
         }
