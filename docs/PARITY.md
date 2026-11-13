@@ -59,9 +59,9 @@ findings per area, with file and line references.
   paths (lazy fetch order, failures, concurrency, re-entrancy), errors and
   options. Without a checkout (CI) the reference is the package's own,
   vendored TypeScript engine. Runs the engine declines as unsupported
-  (`QuickTypeError::unsupported`, e.g. a renderer not ported yet) run on
-  the TypeScript engine and are reported separately from those identical
-  on WebAssembly.
+  (`QuickTypeError::unsupported`, e.g. a language without a renderer,
+  which no built-in language is) run on the TypeScript engine and are
+  reported separately from those identical on WebAssembly.
 - **Round trip:** `xtask/roundtrip/` runs quicktype's own fixture suite
   with our binary: the generated code is compiled and must round-trip the
   samples and reject the expected-failure ones. It also runs the fixtures'

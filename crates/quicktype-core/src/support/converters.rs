@@ -1,12 +1,19 @@
 //! Port of `packages/quicktype-core/src/support/Converters.ts`.
 //!
-//! The `converters` option of the JavaScript-family renderers. The option
-//! declaration itself is
-//! [`renderer_options::converters_option`](crate::renderer_options::converters_option),
-//! re-exported here.
+//! The `converters` option of the JavaScript-family renderers.
 
-use crate::renderer_options::EnumValue;
-pub use crate::renderer_options::converters_option;
+use crate::renderer_options::{EnumOption, EnumValue, OptionKind};
+
+/// `convertersOption()`: the `converters` renderer option.
+pub const fn converters_option() -> EnumOption {
+    EnumOption::new(
+        "converters",
+        "Which converters to generate (top-level by default)",
+        &["top-level", "all-objects"],
+        "top-level",
+        OptionKind::Secondary,
+    )
+}
 
 /// `ConvertersOptions`: which converters to generate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

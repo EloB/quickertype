@@ -6,7 +6,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const quicktype = process.argv[2] ?? "../quicktype";
+import { referenceCheckout } from "../reference.mjs";
+
+const quicktype = referenceCheckout(process.argv[2]);
 const source = readFileSync(
     join(quicktype, "packages/quicktype-core/src/support/Chance.ts"),
     "utf8",

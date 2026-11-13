@@ -1,17 +1,19 @@
 //! Ports of quicktype's Vitest tests of JSON input:
 //!
 //! - `test/unit/integer-range-inference.test.ts` (the parts beyond
-//!   `integerStringInRange`, which `support/integer_range.rs` ports). The
-//!   TypeScript checks the rendered code (`int64` vs `float64`, ...); there
-//!   is no renderer yet, so these check the inferred `integer` or `double`
-//!   in the type graph, which is what decides the rendered type.
-//! - `test/unit/empty-json-samples.test.ts`; its last test renders code, so
-//!   it checks the top-level in the graph instead.
-//! - `test/unit/parse-json.test.ts`: `parseJSON`'s YAML and BOM handling
-//!   belongs to the JSON Schema input's port; its strict-JSON case is in
-//!   `quicktype_js_compat::json::parse`'s tests.
+//!   `integerStringInRange`, which `support/integer_range.rs` ports).
+//! - `test/unit/empty-json-samples.test.ts`.
 //!
-//! `url-input.test.ts` needs the I/O layer and the CLI (Phase 3).
+//! Where the TypeScript renders code and searches it (`int64` vs `float64`,
+//! the top-level's name), these check the type graph the input builds
+//! instead (an `integer` or `double` property, a top-level class), which is
+//! what decides the rendered code; so they test the input on its own.
+//!
+//! `test/unit/parse-json.test.ts` is ported next to `parseJSON`, in
+//! `support/parse_json.rs` (its strict-JSON case also in
+//! `quicktype_js_compat::json::parse`'s tests); `url-input.test.ts` is in
+//! `json_schema_vitest.rs` and, through the CLI, in quicktype-cli's
+//! `tests/url_input.rs`.
 
 use std::future::Future;
 use std::pin::pin;

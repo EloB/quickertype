@@ -9,6 +9,7 @@
 //! regex engine.
 
 use quicktype_js_compat::utf16;
+use quicktype_js_compat::whitespace::is_line_terminator;
 
 use crate::naming::{Namer, fun_prefix_namer};
 use crate::support::strings::{
@@ -123,8 +124,7 @@ fn underscore_before_capitals(name: &str) -> String {
     let mut i = 0;
     while i < chars.len() {
         let c = chars[i];
-        let is_line_terminator = matches!(c, '\n' | '\r' | '\u{2028}' | '\u{2029}');
-        if !is_line_terminator && i + 1 < chars.len() && is_upper(chars[i + 1]) {
+        if !is_line_terminator(c) && i + 1 < chars.len() && is_upper(chars[i + 1]) {
             out.push(c);
             out.push('_');
             out.push(chars[i + 1]);

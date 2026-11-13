@@ -4,11 +4,7 @@
 //! Each function names the JavaScript expression it implements. JavaScript
 //! `.` excludes line terminators and `\s` is [`crate::js::is_js_whitespace`].
 
-use crate::js::is_js_whitespace;
-
-fn is_line_terminator(c: char) -> bool {
-    matches!(c, '\n' | '\r' | '\u{2028}' | '\u{2029}')
-}
+use crate::js::{is_js_whitespace, is_line_terminator};
 
 fn is_word(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_'

@@ -18,6 +18,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleCalls, AcronymStyleOptions};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::converters::ConvertersOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::{
@@ -337,20 +338,16 @@ pub mod javascript_methods {
                 }
                 TypeKind::Map => sl!["m(", r.type_map_type_for(ty.map_values()?)?, ")"],
                 TypeKind::Union => {
-                    let mut parts: Vec<Source> = vec!["u(".into()];
-                    for (i, &member) in graph.children(t)?.iter().enumerate() {
-                        if i > 0 {
-                            parts.push(", ".into());
-                        }
-                        parts.push(r.type_map_type_for(member)?);
+                    let mut children: Vec<Source> = Vec::new();
+                    for &member in &graph.children(t)? {
+                        children.push(r.type_map_type_for(member)?);
                     }
-                    parts.push(")".into());
-                    Source::Sequence(parts)
+                    sl!["u(", array_intercalate(", ".into(), children), ")"]
                 }
                 TypeKind::DateTime => "Date".into(),
                 TypeKind::Uuid => "{ uuid: \"\" }".into(),
                 k if k.is_transformed_string_type_kind() => "\"\"".into(),
-                kind => return type_not_supported(kind),
+                kind => return match_type_unsupported(kind),
             })
         })
     }
