@@ -1,18 +1,69 @@
-/* The playground: settings, the input and output panes, the timing bars.
-   The colours and what both pages share are in base.css. */
+/* The playground: a one-line masthead, the input and output panes filling
+   the window, the options beside the output (a drawer on narrower screens),
+   and the engines' comparison as one line on the output, its details a
+   click away. The colours and what both pages share are in base.css. */
 
 @import "./base.css";
 
-/* The playground fills the window: masthead, settings, panes, footer. */
+/* The page: masthead, the panes, the footer. */
 body {
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* The options column, when it is beside the output. */
+    --inspector: 280px;
 }
 
-/* The speed headline, under the masthead's first line: one sentence and two links. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---- Masthead: the brand, the speed headline, the source; one line ----- */
+
+.masthead {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "brand speed source"
+        "tagline speed source";
+    align-items: center;
+    column-gap: 24px;
+    padding: 7px 16px;
+}
+
+.masthead .brand {
+    grid-area: brand;
+}
+
+.masthead .mark {
+    width: 20px;
+    height: 20px;
+}
+
+.masthead .wordmark {
+    font-size: 17px;
+    line-height: 1.15;
+}
+
+.masthead .tagline {
+    grid-area: tagline;
+    padding-left: 28px;
+    font-size: 11.5px;
+    line-height: 1.25;
+}
+
 .speed {
-    flex-basis: 100%;
-    font-size: 13.5px;
+    grid-area: speed;
+    font-size: 13px;
+    line-height: 1.4;
+    text-wrap: pretty;
 }
 
 .speed a {
@@ -25,268 +76,36 @@ body {
     color: var(--muted);
 }
 
-/* ---- Settings ---------------------------------------------------------- */
-
-.settings {
-    padding: 4px 16px 12px;
+.masthead .source {
+    grid-area: source;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 0;
+    font-size: 13px;
+    white-space: nowrap;
 }
 
-.settings-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 10px 16px;
+.github {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
 }
 
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
+.masthead .source:hover {
+    color: var(--ink);
 }
 
-.field-label {
-    font-size: 12px;
-    color: var(--muted);
-}
+/* ---- Controls ---------------------------------------------------------- */
 
 select,
 input[type="text"] {
-    height: 32px;
+    height: 30px;
     padding: 0 8px;
     border: 1px solid var(--rule);
     border-radius: 6px;
     background: var(--panel);
     min-width: 0;
-}
-
-.settings-row select {
-    min-width: 190px;
-}
-
-#name {
-    width: 190px;
-}
-
-/* The engine switch, with a note under it. */
-.engine-field {
-    max-width: 620px;
-}
-
-.engines {
-    align-self: flex-start;
-}
-
-.engines span::before {
-    content: "";
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 6px;
-    border-radius: 50%;
-    vertical-align: 1px;
-    background: var(--ts);
-}
-
-.engines input[value="wasm"] + span::before {
-    background: var(--wasm);
-}
-
-.engines input:checked + span {
-    font-weight: 600;
-}
-
-.engine-note {
-    font-size: 12px;
-    color: var(--muted);
-}
-
-.engine-note b {
-    font-weight: 600;
-    color: var(--ink);
-}
-
-.check {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 32px;
-    cursor: pointer;
-}
-
-.check input {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    flex: none;
-}
-
-.options {
-    margin-top: 10px;
-    font-size: 13px;
-}
-
-.options select,
-.options input[type="text"] {
-    height: 30px;
-}
-
-.options:empty {
-    display: none;
-}
-
-.option-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 4px 20px;
-    align-items: end;
-}
-
-.option-grid .check {
-    min-height: 30px;
-}
-
-.no-options {
-    color: var(--muted);
-}
-
-.more {
-    margin-top: 8px;
-}
-
-.more summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 28px;
-    color: var(--muted);
-    cursor: pointer;
-    list-style: none;
-}
-
-.more summary::-webkit-details-marker {
-    display: none;
-}
-
-.more summary::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    margin: 0 3px 0 1px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: rotate(-45deg);
-    transition: transform 0.15s;
-}
-
-.more[open] summary::before {
-    transform: rotate(45deg);
-}
-
-.more summary:hover {
-    color: var(--ink);
-}
-
-.more[open] summary {
-    margin-bottom: 6px;
-}
-
-.count {
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    padding: 0 6px;
-    border-radius: 9px;
-    background: var(--track);
-}
-
-.count.on {
-    color: var(--panel);
-    background: var(--wasm);
-}
-
-/* An option with a hint under it takes two columns, to keep the hint short. */
-.option-grid .hinted {
-    grid-column: span 2;
-}
-
-.option-grid .check.hinted {
-    align-items: flex-start;
-    padding-top: 4px;
-}
-
-.check.hinted input {
-    margin-top: 2px;
-}
-
-.hint {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-}
-
-/* An option whose default on this page is a preset (as on app.quicktype.io). */
-.preset {
-    font-size: 11px;
-    padding: 0 5px;
-    border: 1px solid var(--rule);
-    border-radius: 9px;
-    color: var(--muted);
-    cursor: help;
-}
-
-.general {
-    margin-top: 2px;
-    font-size: 13px;
-}
-
-.general .general-note {
-    margin-bottom: 4px;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-/* ---- Panes ------------------------------------------------------------- */
-
-.panes {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    min-height: 0;
-    border-top: 1px solid var(--rule);
-    border-bottom: 1px solid var(--rule);
-    background: var(--panel);
-}
-
-.pane {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    position: relative;
-}
-
-#input-pane {
-    border-right: 1px solid var(--rule);
-}
-
-.pane-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-    min-height: 48px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--rule);
-}
-
-.pane-head h2 {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.head-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
 }
 
 button {
@@ -321,11 +140,6 @@ button.quiet:hover:not(:disabled) {
     text-decoration: underline;
 }
 
-#sample {
-    height: 30px;
-    max-width: 200px;
-}
-
 .segmented {
     display: inline-flex;
     padding: 2px;
@@ -351,6 +165,7 @@ button.quiet:hover:not(:disabled) {
     padding: 4px 10px;
     border-radius: 5px;
     color: var(--muted);
+    white-space: nowrap;
 }
 
 .segmented input:checked + span {
@@ -363,6 +178,303 @@ button.quiet:hover:not(:disabled) {
     outline: 2px solid var(--focus);
     outline-offset: 1px;
 }
+
+.count {
+    font-size: 12px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    padding: 0 6px;
+    border-radius: 9px;
+    background: var(--track);
+    color: var(--muted);
+}
+
+.count.on {
+    color: var(--panel);
+    background: var(--wasm);
+}
+
+/* An "i": a short note, opened by a click and closed by Escape or a click elsewhere (main.js places it). */
+.tip-wrap {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.tip-button {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--muted);
+    font: italic 700 12px/1 Georgia, "Times New Roman", serif;
+}
+
+.tip-button::before {
+    content: "i";
+}
+
+.tip-button[aria-expanded="true"] {
+    border-color: var(--wasm);
+    background: var(--wasm);
+    color: var(--panel);
+}
+
+.tip {
+    position: fixed;
+    z-index: 30;
+    width: max-content;
+    max-width: min(340px, calc(100vw - 32px));
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 10px 28px rgb(16 18 30 / 0.16);
+    font: 12.5px/1.5 var(--sans);
+    text-align: left;
+    white-space: normal;
+}
+
+.tip b {
+    font-weight: 600;
+}
+
+.tip code {
+    font: 12px var(--mono);
+}
+
+/* ---- The panes ---------------------------------------------------------- */
+
+.panes {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--panel);
+}
+
+/* With the options beside it, the output keeps the larger share. */
+body[data-panel="inline"] .panes {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 8fr) var(--inspector);
+}
+
+/* A file too large for the editor has nothing to edit: the output takes more of the room. */
+body[data-input="large"] .panes {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+body[data-input="large"][data-panel="inline"] .panes {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) var(--inspector);
+}
+
+/* Phones only (see below): which pane is shown. */
+.view-switch {
+    display: none;
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+}
+
+#input-pane {
+    container: input / inline-size;
+    border-right: 1px solid var(--rule);
+}
+
+#output-pane {
+    container: output / inline-size;
+}
+
+/* A pane's first row: its controls. */
+.pane-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    min-height: 46px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--rule);
+}
+
+/* Its second: what it holds, and what to do with it. */
+.pane-sub {
+    display: flex;
+    align-items: center;
+    gap: 4px 12px;
+    min-height: 36px;
+    padding: 3px 10px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 12.5px;
+}
+
+.pane-sub h2 {
+    flex: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.head-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.pane-head .segmented {
+    font-size: 13px;
+}
+
+.pane-sub .head-actions button {
+    height: 28px;
+    padding: 0 10px;
+}
+
+#sample {
+    max-width: 160px;
+}
+
+#input-info {
+    display: inline-flex;
+    gap: 10px;
+    min-width: 0;
+    color: var(--ink);
+    white-space: nowrap;
+}
+
+#input-info span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#input-info span + span {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.drop-hint {
+    margin-left: auto;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.pane-sub .tip-wrap {
+    flex: none;
+}
+
+@container input (width < 540px) {
+    .drop-hint {
+        display: none;
+    }
+
+    .pane-sub .tip-wrap {
+        margin-left: auto;
+    }
+}
+
+/* The output's toolbar: language, top-level name, engine, options. */
+.toolbar .field {
+    display: inline-flex;
+    min-width: 0;
+}
+
+#lang {
+    width: 136px;
+}
+
+/* A text field with its label inside the box, before the value. */
+.prefixed {
+    align-items: center;
+    height: 30px;
+    padding-left: 9px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--panel);
+    cursor: text;
+}
+
+.prefixed .field-label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.prefixed input[type="text"] {
+    width: 100px;
+    height: 28px;
+    padding: 0 8px 0 7px;
+    border: 0;
+    background: transparent;
+}
+
+.prefixed:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+}
+
+.prefixed input:focus-visible {
+    outline: none;
+}
+
+.engine-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.engines span::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: 1px;
+    background: var(--ts);
+}
+
+.engines input[value="wasm"] + span::before {
+    background: var(--wasm);
+}
+
+.engines input:checked + span {
+    font-weight: 600;
+}
+
+.options-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: auto;
+}
+
+/* Three short bars: settings. */
+.options-toggle::before {
+    content: "";
+    width: 12px;
+    height: 10px;
+    background:
+        linear-gradient(currentColor 0 0) 0 0 / 100% 1.5px,
+        linear-gradient(currentColor 0 0) 0 50% / 70% 1.5px,
+        linear-gradient(currentColor 0 0) 0 100% / 40% 1.5px;
+    background-repeat: no-repeat;
+    opacity: 0.75;
+}
+
+.options-toggle[aria-expanded="true"] {
+    background: var(--track);
+    border-color: var(--track);
+}
+
+/* ---- Input ------------------------------------------------------------- */
 
 .editor {
     position: relative;
@@ -390,18 +502,29 @@ textarea:focus-visible {
     outline-offset: -2px;
 }
 
+/* A file too large for the editor: what it is and how its run went, in the middle of the pane. */
 .large {
     flex: 1;
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+}
+
+.large-card {
+    display: grid;
+    justify-items: start;
     gap: 10px;
+    max-width: 40ch;
+    padding: 20px 22px;
+    border: 1px dashed var(--rule);
+    border-radius: 10px;
+    background: var(--sunk);
     color: var(--muted);
 }
 
-.large strong {
+.large-card strong {
     color: var(--ink);
+    font-size: 15px;
 }
 
 /* Reading, running, or how long the run took: the input is not in the editor to show it. */
@@ -432,51 +555,20 @@ textarea:focus-visible {
     display: flex;
 }
 
-.pane-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 14px;
-    padding: 7px 12px;
-    border-top: 1px solid var(--rule);
-    font-size: 12px;
-    color: var(--muted);
-}
-
-#input-info {
-    display: inline-flex;
-    gap: 10px;
-    color: var(--ink);
-}
-
-#input-info span + span {
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-}
-
-.note {
-    flex: 1 1 260px;
-}
-
 /* ---- Output ------------------------------------------------------------ */
 
 .tabs {
     display: flex;
+    flex: 1;
     gap: 2px;
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: thin;
 }
 
-/* Several files: the tabs get a row of their own under the buttons. */
-.tabs.multi {
-    order: 1;
-    flex-basis: 100%;
-}
-
 .tabs [role="tab"] {
-    height: 28px;
-    padding: 0 10px;
+    height: 26px;
+    padding: 0 9px;
     border: 0;
     border-radius: 5px;
     background: none;
@@ -495,18 +587,192 @@ textarea:focus-visible {
 }
 
 .filename {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font: 12.5px var(--mono);
     color: var(--muted);
 }
 
+/* The engines' comparison: one line (.meter-line), its details under it when asked for. */
 .meter {
-    padding: 10px 12px 9px;
     border-bottom: 1px solid var(--rule);
     background: var(--sunk);
+    font-size: 12.5px;
 }
 
 .meter:empty {
     display: none;
+}
+
+.meter-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    min-height: 38px;
+    padding: 4px 10px;
+}
+
+/* At a glance: each engine's time over a short bar, and the verdict; a click opens the details. */
+.glance-wrap {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-right: auto;
+}
+
+button.glance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+    height: auto;
+    min-height: 30px;
+    margin-left: -6px;
+    padding: 3px 8px 3px 6px;
+    border-color: transparent;
+    background: none;
+    font-size: 12.5px;
+    text-align: left;
+    white-space: normal;
+}
+
+button.glance:hover,
+button.glance[aria-expanded="true"] {
+    border-color: var(--rule);
+    background: var(--panel);
+}
+
+/* The engines' chips side by side, as wide as each other, so that their bars share one length. */
+.chips {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 12px;
+}
+
+.chip {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-bottom: 5px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.chip .engine {
+    font-weight: 600;
+}
+
+.chip.wasm .engine {
+    color: var(--wasm);
+}
+
+.chip.ts .engine {
+    color: var(--ts);
+}
+
+/* The chips' bars share one scale: the slower engine's bar is full. */
+.chip-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--track);
+    overflow: hidden;
+}
+
+.chip-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--wasm);
+    transition: width 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.chip.ts .chip-bar > span {
+    background: var(--ts);
+}
+
+.chip-bar > .pending {
+    width: 30%;
+    opacity: 0.45;
+    animation: pending 1.2s ease-in-out infinite alternate;
+}
+
+.glance .pace,
+.glance .qualifier {
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.glance .pace b {
+    font-weight: 600;
+}
+
+/* The pace and a first run's start-up are in the details' sentence too: left out where the line has no room. */
+@container output (width < 840px) {
+    .glance .cold {
+        display: none;
+    }
+}
+
+@container output (width < 980px) {
+    .glance .pace {
+        display: none;
+    }
+}
+
+/* "Details", and a chevron pointing down while they are closed. */
+.glance-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.glance-more::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    margin-top: -3px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+
+button.glance[aria-expanded="true"] .glance-more::after {
+    margin-top: 3px;
+    transform: rotate(-135deg);
+}
+
+/* Where the line has no room for the word, the chevron alone (its name, "Details", is read first). */
+@container output (width < 800px) {
+    .glance-more {
+        font-size: 0;
+    }
+}
+
+button.measure {
+    height: 26px;
+    padding: 0 10px;
+    color: var(--wasm);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.meter-details {
+    max-height: min(340px, 45vh);
+    overflow: auto;
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--rule);
 }
 
 .race {
@@ -567,10 +833,6 @@ textarea:focus-visible {
     background: color-mix(in srgb, var(--panel) 55%, transparent);
 }
 
-.race.solo .lane-note {
-    color: var(--muted);
-}
-
 .fill.pending {
     width: 30%;
     opacity: 0.35;
@@ -598,6 +860,10 @@ textarea:focus-visible {
     font-weight: 400;
 }
 
+.chip .time {
+    text-align: left;
+}
+
 .lane-note {
     grid-column: 2 / -1;
     font-size: 12px;
@@ -608,7 +874,7 @@ textarea:focus-visible {
     color: var(--bad);
 }
 
-/* Without the comparison: one line, no bar. */
+/* One engine alone: one line, no bar. */
 .race.solo .lane {
     grid-template-columns: auto auto 1fr;
 }
@@ -623,6 +889,7 @@ textarea:focus-visible {
 
 .race.solo .lane-note {
     grid-column: auto;
+    color: var(--muted);
 }
 
 .lane-line {
@@ -643,7 +910,7 @@ textarea:focus-visible {
     background: var(--ts);
 }
 
-/* Both engines' results: "quickertype: 2.90 ms · quicktype: 4.20 ms · 1.4× faster · identical output ✓". */
+/* Both engines' results in a sentence: "quickertype was 1.4× faster (3.00 ms vs 4.20 ms) · identical output ✓". */
 .summary {
     margin-top: 9px;
 }
@@ -675,6 +942,7 @@ textarea:focus-visible {
 
 .verdict {
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .verdict.same {
@@ -688,57 +956,18 @@ textarea:focus-visible {
 .verdict-mark {
     display: inline-grid;
     place-items: center;
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     border-radius: 50%;
     border: 1.5px solid currentColor;
-    font-size: 11px;
+    font-size: 10.5px;
     line-height: 1;
 }
 
 .bench-failure {
-    margin-top: 6px;
+    padding: 0 10px 7px;
     font-size: 12px;
     color: var(--bad);
-}
-
-.fine {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 2px 16px;
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--muted);
-}
-
-.fine p {
-    flex: 1 1 280px;
-}
-
-button.measure {
-    height: 26px;
-    padding: 0 10px;
-    color: var(--wasm);
-    font-size: 12px;
-    font-weight: 600;
-}
-
-/* The measure button, with what it does under it: beside the fine print when there is room. */
-.measure-box {
-    display: flex;
-    flex: 0 1 230px;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 3px;
-    margin-left: auto;
-}
-
-#measure-how {
-    font-size: 11.5px;
-    line-height: 1.35;
-    text-align: right;
 }
 
 /* Where the CLI's numbers are, under the comparison. */
@@ -751,6 +980,22 @@ button.measure {
 .cli-note a {
     color: var(--wasm);
     font-weight: 600;
+}
+
+.fine {
+    display: grid;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.fine p {
+    max-width: 90ch;
+}
+
+#measure-how {
+    font-size: 11.5px;
 }
 
 .notes {
@@ -856,9 +1101,14 @@ pre#output:focus-visible {
     color: var(--muted);
 }
 
-.cli {
-    flex-wrap: nowrap;
+.pane-foot {
+    display: flex;
     align-items: baseline;
+    gap: 4px 12px;
+    padding: 7px 10px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--muted);
 }
 
 .cli-label {
@@ -880,70 +1130,350 @@ pre#output:focus-visible {
     overflow-wrap: anywhere;
 }
 
+/* ---- Options: beside the output, or a drawer ------------------------------ */
 
-/* ---- Wide screens: the panes fill the window ---------------------------- */
+.inspector {
+    /* Not the browser's dialog box: a column of the panes (opened with show()). */
+    position: static;
+    inset: auto;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--rule);
+    background: var(--panel);
+    color: inherit;
+    min-height: 0;
+}
+
+.inspector[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+/* On narrower screens (showModal()): a drawer from the right, over the page. */
+.inspector:modal {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(360px, calc(100vw - 28px));
+    height: 100dvh;
+    box-shadow: -14px 0 36px rgb(16 18 30 / 0.2);
+    animation: drawer 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.inspector::backdrop {
+    background: rgb(16 18 30 / 0.4);
+}
+
+@keyframes drawer {
+    from {
+        transform: translateX(24px);
+        opacity: 0;
+    }
+}
+
+.inspector-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 7px 8px 7px 14px;
+    border-bottom: 1px solid var(--rule);
+}
+
+.inspector-head h2 {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.inspector-lang {
+    margin-left: 4px;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+button.close {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    margin-left: auto;
+    padding: 0;
+    border-color: transparent;
+    background: none;
+    color: var(--muted);
+    font-size: 19px;
+    line-height: 1;
+}
+
+button.close::before {
+    content: "×";
+}
+
+.inspector-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 8px 14px 18px;
+    font-size: 13px;
+    overscroll-behavior: contain;
+}
+
+.options:empty {
+    display: none;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1px;
+}
+
+.check {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 5px 0;
+    cursor: pointer;
+}
+
+.check input {
+    width: 16px;
+    height: 16px;
+    margin: 1px 0 0;
+    flex: none;
+}
+
+.option-grid .field {
+    display: grid;
+    gap: 4px;
+    padding: 5px 0 7px;
+}
+
+.field-label {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.option-grid select,
+.option-grid input[type="text"] {
+    width: 100%;
+    height: 30px;
+}
+
+.hint {
+    display: block;
+    margin-top: 1px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* An option whose default on this page is a preset (as on app.quicktype.io). */
+.preset {
+    font-size: 11px;
+    padding: 0 5px;
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    color: var(--muted);
+    cursor: help;
+    white-space: nowrap;
+}
+
+.no-options {
+    padding: 6px 0;
+    color: var(--muted);
+}
+
+.more {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--rule);
+}
+
+.more summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    color: var(--muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+.more summary::-webkit-details-marker {
+    display: none;
+}
+
+.more summary::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin: 0 3px 0 1px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s;
+}
+
+.more[open] summary::before {
+    transform: rotate(45deg);
+}
+
+.more summary:hover {
+    color: var(--ink);
+}
+
+.general .general-note {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* ---- Footer: one line ----------------------------------------------------- */
+
+.credits {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 18px;
+    padding: 6px 16px;
+}
+
+.credits p {
+    max-width: none;
+}
+
+.credits p + p {
+    margin-top: 0;
+}
+
+.credits .repo {
+    margin-left: auto;
+}
+
+.credits .tip-button {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+}
+
+/* ---- Wide screens: the page fills the window ------------------------------ */
 
 @media (min-width: 900px) {
     body {
         height: 100dvh;
-        grid-template-rows: auto auto minmax(420px, 1fr) auto;
+        grid-template-rows: auto minmax(360px, 1fr) auto;
+    }
+
+    /* The mark alone (its name is the link's text, for screen readers). */
+    .source-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 }
 
-/* ---- Narrow screens: stacked ------------------------------------------- */
+/* ---- Narrow screens: one pane at a time, the page scrolls ------------------ */
 
 @media (max-width: 899px) {
+    .masthead {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "brand source"
+            "tagline tagline"
+            "speed speed";
+        padding-top: 10px;
+    }
+
+    .speed {
+        margin-top: 6px;
+        font-size: 12.5px;
+    }
+
     .panes {
         grid-template-columns: minmax(0, 1fr);
-        border-bottom: 0;
+        grid-template-rows: none;
     }
 
     #input-pane {
         border-right: 0;
-        border-bottom: 1px solid var(--rule);
+    }
+
+    .view-switch {
+        display: flex;
+        margin: 8px 10px 0;
+    }
+
+    .view-switch label {
+        flex: 1;
+        text-align: center;
+    }
+
+    body[data-view="output"] #input-pane,
+    body[data-view="input"] #output-pane {
+        display: none;
+    }
+
+    .pane-head {
+        border-top: 0;
     }
 
     .editor {
-        height: 42vh;
-        min-height: 220px;
+        height: 62vh;
+        min-height: 260px;
         flex: none;
     }
 
     .code {
-        height: 65vh;
+        height: 64vh;
         min-height: 280px;
         flex: none;
+    }
+
+    .credits {
+        padding: 10px 16px 16px;
+    }
+
+    .credits .repo {
+        margin-left: 0;
     }
 }
 
 @media (max-width: 520px) {
-
-    .settings-row .field {
+    .toolbar .field {
         flex: 1 1 140px;
     }
 
-    .settings-row select,
-    #name {
-        min-width: 0;
+    #lang,
+    .prefixed input[type="text"] {
         width: 100%;
     }
 
-    .option-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2px 12px;
+    .prefixed input[type="text"] {
+        min-width: 0;
     }
 
-    .options,
-    .general {
-        font-size: 12.5px;
-    }
-
-    .head-actions {
-        margin-left: 0;
-    }
-
-    #output-pane .head-actions {
+    /* The engine switch and Options share a row. */
+    .options-toggle {
         margin-left: auto;
+        padding: 0 10px;
+    }
+
+    .options-toggle::before {
+        display: none;
+    }
+
+    .engines span {
+        padding: 4px 8px;
+    }
+
+    #sample {
+        max-width: 150px;
     }
 
     .lane {
@@ -952,15 +1482,19 @@ pre#output:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .fill {
+    .fill,
+    .chip-bar > span {
         transition: none;
     }
 
-    .fill.pending {
+    .fill.pending,
+    .chip-bar > .pending,
+    .inspector:modal {
         animation: none;
     }
 
-    .more summary::before {
+    .more summary::before,
+    .glance-more::after {
         transition: none;
     }
 

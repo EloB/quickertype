@@ -1,6 +1,7 @@
-// The playground page: input on the left, generated code on the right.
-// quicktype-core runs in Web Workers (engine-client.js, worker.js); this
-// file only handles the page and its state.
+// The playground page: input on the left, generated code on the right, the
+// options beside it (a drawer on narrower screens; one pane at a time on
+// phones). quicktype-core runs in Web Workers (engine-client.js,
+// worker.js); this file only handles the page and its state.
 //
 // State that can be shared lives in the URL hash, in the form of quicktype's
 // README links (`#l=rust`), plus `v` (the hash format, see hash.js), `s` (an
@@ -35,6 +36,8 @@ const general = __GENERAL__;
 const speed = __SPEED__;
 
 const storageKey = "quickertype.input";
+/** Whether the viewer last opened or closed the options ("open" | "closed"); a convenience, kept in localStorage. */
+const panelKey = "quickertype.options";
 /** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
 const LARGE = 1_000_000;
 /** Inputs larger than this are not put in the editor even when asked: a text box that large freezes the page. */
@@ -81,6 +84,11 @@ const els = {
     error: $("error"),
     cli: $("cli"),
     copyCli: $("copy-cli"),
+    optionsToggle: $("options-toggle"),
+    optionsCount: $("options-count"),
+    optionsPanel: $("options-panel"),
+    optionsClose: $("options-close"),
+    optionsLang: $("options-lang"),
 };
 
 function languageNamed(name) {
@@ -337,9 +345,18 @@ function renderOptions() {
     }
 
     els.options.innerHTML = html;
+    els.optionsLang.textContent = displayName;
     els.options.querySelector("details")?.addEventListener("toggle", (event) => {
         moreOpen = event.target.open;
     });
+}
+
+/** On the Options button: how many options differ from the page's defaults (renderer and general), if any. */
+function renderOptionsCount() {
+    const changed = Object.keys(state.options).length + general.filter((g) => state.general[g.name]).length;
+    els.optionsCount.hidden = changed === 0;
+    els.optionsCount.classList.toggle("on", changed > 0);
+    els.optionsCount.innerHTML = `<span class="sr-only">, </span>${changed}<span class="sr-only"> changed from the defaults</span>`;
 }
 
 function renderControls() {
@@ -351,6 +368,7 @@ function renderControls() {
     els.sample.value = state.source.type === "sample" ? state.source.id : "";
     renderOptions();
     renderGeneral();
+    renderOptionsCount();
     renderCli();
 }
 
@@ -394,6 +412,8 @@ function showInput() {
     const large = (state.file !== undefined || state.text.length > LARGE) && !state.largeInEditor;
     els.input.hidden = large;
     els.large.hidden = !large;
+    // Nothing to edit: on a wide screen, the code takes more of the room (body[data-input]).
+    document.body.dataset.input = large ? "large" : "editor";
     if (large) {
         els.largeName.textContent = inputFileName();
         els.largeSize.textContent = formatBytes(state.source.size ?? utf8Length(state.text));
@@ -817,8 +837,9 @@ function verdict(a, b) {
  * was 1.1× faster (152 ms vs 172 ms)", the subject's time first; within 5%,
  * "quickertype and quicktype were about as fast (172 ms and 168 ms)".
  * `ms` is each engine's time, { wasm, ts }; `qualifier` goes inside the
- * parentheses ("start-up included"). As HTML, and `key`, which is the same
- * for the same verdict (who, and how many times faster).
+ * parentheses ("start-up included"). As HTML; `short`, for the line at a
+ * glance ("quicktype 1.1× faster", "about as fast"); and `key`, which is
+ * the same for the same verdict (who, and how many times faster).
  */
 function pace(ms, qualifier) {
     const ratio = ms.ts / ms.wasm;
@@ -826,7 +847,11 @@ function pace(ms, qualifier) {
     const name = (engine) => `<b class="engine-name ${engine}">${engineNames[engine]}</b>`;
     const extra = qualifier === undefined ? "" : `, ${escapeHtml(qualifier)}`;
     if (ratio < 1.05 && ratio > 1 / 1.05) {
-        return { key: "same", html: `${name("wasm")} and ${name("ts")} were about as fast (${formatMs(ms.wasm)} and ${formatMs(ms.ts)}${extra})` };
+        return {
+            key: "same",
+            html: `${name("wasm")} and ${name("ts")} were about as fast (${formatMs(ms.wasm)} and ${formatMs(ms.ts)}${extra})`,
+            short: "about as fast",
+        };
     }
 
     const faster = ratio >= 1.05 ? "wasm" : "ts";
@@ -835,6 +860,7 @@ function pace(ms, qualifier) {
     return {
         key: `${faster} ${times}`,
         html: `${name(faster)} was ${times}× faster (${formatMs(ms[faster])} vs ${formatMs(ms[otherEngine(faster)])}${extra})`,
+        short: `${name(faster)} ${times}× faster`,
     };
 }
 
@@ -887,6 +913,7 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
  * from both engines' results ("Warm medians: …" once measured; first runs
  * are said to include start-up). If either stopped with an error, both
  * times: "quickertype: 2.90 ms · quicktype: 4.20 ms · different errors ≠".
+ * With `verdict` (its last part, for the line at a glance) and `startUp`.
  */
 function summary({ wasm, ts }, timeOf, phases, measured) {
     const v = verdict(wasm, ts);
@@ -909,7 +936,9 @@ function summary({ wasm, ts }, timeOf, phases, measured) {
         same: v.same,
         detail: v.detail,
         faster,
-        html: `<p class="summary" role="status">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
+        startUp,
+        verdict: parts.at(-1),
+        html: `<p class="summary">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
     };
 }
 
@@ -946,7 +975,7 @@ function renderMeter() {
 
     if (view.reading !== undefined) {
         const { fileName, size } = view.reading;
-        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot ${state.engine}"></span>Reading ${escapeHtml(fileName)} <span class="time muted">${formatBytes(size)}</span></div>`;
+        els.meter.innerHTML = `<div class="meter-line"><div class="lane-line"><span class="engine-dot ${state.engine}"></span>Reading ${escapeHtml(fileName)} <span class="time muted">${formatBytes(size)}</span></div></div>`;
         body.status = "running";
         body.compare = "off";
         return;
@@ -960,7 +989,7 @@ function renderMeter() {
             status === "running"
                 ? `${engines[engine].boot === undefined ? `Loading ${name}…` : `Running on ${name}…`} <span class="time muted">${formatMs(performance.now() - view.runningSince)}</span>`
                 : `<span class="muted">Loading ${name}…</span>`;
-        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot ${engine}"></span>${line}</div>`;
+        els.meter.innerHTML = `<div class="meter-line"><div class="lane-line"><span class="engine-dot ${engine}"></span>${line}</div></div>`;
         body.status = status === "running" ? "running" : "idle";
         body.compare = "off";
         return;
@@ -989,11 +1018,11 @@ function renderMeter() {
     const timeOf = measured ? (r) => median(r.times) : (r) => r.ms;
     const phases = (r) => phasesOf(r, measured);
     const scale = Math.max(0, ...lanes.filter((engine) => isResult(sides[engine])).map((engine) => timeOf(sides[engine])));
-    let html = `<div class="race${solo ? " solo" : ""}">`;
+    let race = `<div class="race${solo ? " solo" : ""}">`;
     for (const engine of lanes) {
         const side = sides[engine];
         const done = isResult(side);
-        html += lane(engine, side, {
+        race += lane(engine, side, {
             scale: solo ? timeOf(side) : scale,
             timeOf,
             note: !done ? undefined : measured ? `median of ${side.times.length} warm runs` : side.first ? "first run, includes start-up" : undefined,
@@ -1002,19 +1031,27 @@ function renderMeter() {
         });
     }
 
-    html += "</div>";
+    race += "</div>";
 
-    /** The fine print, as HTML. */
+    // At a glance: each engine's time over a short bar, how they compare, and the verdict.
+    const glance = [`<span class="chips">${lanes.map((engine) => chip(engine, sides[engine], solo ? 0 : scale, timeOf)).join("")}</span>`];
+    const say = (html, kind = "qualifier") => glance.push(`<span class="${kind}">${html}</span>`);
+    /** The details: the bars, the sentence, the fine print (as HTML). */
+    let details = race;
     const fine = [];
-    const say = (text) => fine.push(escapeHtml(text));
+    const note = (text) => fine.push(escapeHtml(text));
     let compare = "off";
     if (isResult(sides.wasm) && isResult(sides.ts)) {
         const line = summary(sides, timeOf, phases, measured);
         compare = line.same ? "identical" : "different";
-        html += line.html;
-        html += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
-        if (line.detail !== undefined) say(line.detail);
-        say(
+        if (line.faster !== undefined) say(line.faster.short, "pace");
+        if (measured) say("warm runs");
+        else if (line.startUp !== undefined) say(escapeHtml(line.startUp), "qualifier cold");
+        glance.push(line.verdict);
+        details += line.html;
+        details += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
+        if (line.detail !== undefined) note(line.detail);
+        note(
             "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
         );
         if (sides.wasm.ok && sides.ts.ok) {
@@ -1026,26 +1063,30 @@ function renderMeter() {
     } else if (!solo) {
         compare = "running";
     } else {
-        say(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
+        const side = sides[lanes[0]];
+        if (isResult(side) && side.first) say("first run, includes start-up");
+        note(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
+    }
+
+    // A run that did not go the way its engine's name says, said at a glance too.
+    for (const engine of lanes) {
+        const tag = isResult(sides[engine]) ? engineTag(engine, sides[engine]) : undefined;
+        if (tag !== undefined) say(`${engineNames[engine]} ${escapeHtml(tag)}`, "qualifier warn");
     }
 
     body.compare = compare;
     // Said when the times are compared (one engine's first run is marked as such on its bar).
     if (!solo && !measured && lanes.some((engine) => isResult(sides[engine]) && sides[engine].first)) {
-        say(
+        note(
             "A worker's first run includes start-up: instantiating the WebAssembly engine, or compiling cold JavaScript. Measure warm runs to compare speed.",
         );
     }
 
     if (measured) {
-        say(`Each engine ran once to warm up, then ${bench.wasm.times.length} timed runs on this input, one engine at a time, never both together.`);
+        note(`Each engine ran once to warm up, then ${bench.wasm.times.length} timed runs on this input, one engine at a time, never both together.`);
     }
     const boot = bootNote(lanes);
-    if (boot) say(boot);
-
-    if (bench?.failure !== undefined) {
-        html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
-    }
+    if (boot) note(boot);
 
     const measuring = bench !== undefined && bench.failure === undefined && !(isResult(bench.wasm) && isResult(bench.ts));
     const label = !measuring
@@ -1057,15 +1098,51 @@ function renderMeter() {
             : "Measuring…";
     // aria-disabled rather than disabled, so that the button keeps the keyboard focus while it measures.
     const off = measuring || !result.ok;
-    const focused = document.activeElement?.id === "measure";
+    const focused = document.activeElement?.id;
     // The measurement: one warm-up run, then `measureRuns` timed runs, on
     // quickertype and then on quicktype (measure(): one request per engine,
     // in turn; the workers share one lane, so no two requests ever overlap).
-    html += `<div class="fine"><p>${fine.join(" ")}</p><div class="measure-box"><button type="button" id="measure" class="measure" aria-describedby="measure-how"${
-        off ? ' aria-disabled="true"' : ""
-    }>${label}</button><small id="measure-how">1 warm-up, then ${measureRuns} timed runs per engine; one engine at a time, never both together</small></div></div>`;
+    details += `<div class="fine"><p>${fine.join(" ")}</p><small id="measure-how">${measureHow}</small></div>`;
+    // The line at a glance is the button that opens the details.
+    let html = `<div class="meter-line"><div class="glance-wrap" role="status"><button type="button" id="meter-toggle" class="glance" aria-expanded="${meterOpen}" aria-controls="meter-details"><span class="sr-only">Details: </span>${glance.join("")}<span class="glance-more" aria-hidden="true">Details</span></button></div>`;
+    html += `<button type="button" id="measure" class="measure" aria-describedby="measure-how"${off ? ' aria-disabled="true"' : ""}>${label}</button></div>`;
+    if (bench?.failure !== undefined) {
+        html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
+    }
+    html += `<div id="meter-details" class="meter-details"${meterOpen ? "" : " hidden"}>${details}</div>`;
     els.meter.innerHTML = html;
-    if (focused) document.getElementById("measure").focus();
+    // The buttons are drawn again: the one that had the keyboard focus keeps it.
+    if (focused === "measure" || focused === "meter-toggle") document.getElementById(focused).focus();
+}
+
+/** What "Measure warm runs" does, said under the comparison and read with the button. */
+const measureHow = `1 warm-up, then ${measureRuns} timed runs per engine; one engine at a time, never both together`;
+
+/** Whether the comparison's details are open (the meter is drawn again on every change). */
+let meterOpen = false;
+
+/** Opens or closes the comparison's details. */
+function toggleMeter() {
+    meterOpen = !meterOpen;
+    document.getElementById("meter-toggle")?.setAttribute("aria-expanded", String(meterOpen));
+    const details = document.getElementById("meter-details");
+    if (details !== null) details.hidden = !meterOpen;
+}
+
+/**
+ * An engine's time at a glance, over a short bar on the same `scale` as
+ * the other engine's (none: a full bar), or what it is doing.
+ */
+function chip(engine, side, scale, timeOf) {
+    const head = `<span class="chip ${engine}"><span class="engine">${engineNames[engine]}</span>`;
+    if (side === "running") {
+        const what = engines[engine].boot === undefined ? "loading…" : "running…";
+        return `${head}<span class="time muted">${what}</span><span class="chip-bar" aria-hidden="true"><span class="pending"></span></span></span>`;
+    }
+
+    const ms = timeOf(side);
+    const width = scale > 0 ? Math.max(4, (ms / scale) * 100) : 100;
+    return `${head}<span class="time">${formatMs(ms)}</span><span class="chip-bar" aria-hidden="true"><span style="width:${width.toFixed(2)}%"></span></span></span>`;
 }
 
 /** While a newer request runs, the output shown is an older one's: dimmed, as stale. */
@@ -1080,6 +1157,174 @@ function render() {
     renderCode();
     renderStale();
     renderInputStatus();
+}
+
+// ---------------------------------------------------------------------------
+// The options panel, the panes on phones, the notes behind an "i"
+
+/** Room for the options beside the output; on a narrower screen they are a drawer over the page. */
+const roomBeside = matchMedia("(min-width: 1200px)");
+/** Room enough for them to be open when the page loads, unless the viewer closed them. */
+const roomToOpen = matchMedia("(min-width: 1280px)");
+
+function savedPanel() {
+    try {
+        return localStorage.getItem(panelKey);
+    } catch {
+        return null;
+    }
+}
+
+function savePanel(open) {
+    try {
+        localStorage.setItem(panelKey, open ? "open" : "closed");
+    } catch {
+        // Storage is off: the panel opens as the screen's width says.
+    }
+}
+
+/** The panel's state on the page: the toggle's aria-expanded, and the column it takes (body[data-panel]). */
+function renderPanel() {
+    const panel = els.optionsPanel;
+    document.body.dataset.panel = !panel.open ? "closed" : panel.matches(":modal") ? "drawer" : "inline";
+    els.optionsToggle.setAttribute("aria-expanded", String(panel.open));
+}
+
+/** The first control in the panel, which gets the keyboard focus when it opens. */
+const firstOption = () => els.optionsPanel.querySelector(".inspector-body :is(input, select, summary)");
+
+/**
+ * Opens the options: beside the output if there is room (a dialog that is
+ * not modal: the page stays usable), else as a modal drawer. With `focus`
+ * (opened by the viewer), the keyboard focus moves to its first control;
+ * opened as the page loads, it takes no focus.
+ */
+function openPanel(focus) {
+    const panel = els.optionsPanel;
+    if (!panel.open) {
+        if (!roomBeside.matches) panel.showModal();
+        else if (focus) panel.show();
+        else panel.open = true;
+    }
+
+    renderPanel();
+    if (focus) firstOption()?.focus();
+}
+
+/** Closes the options; the keyboard focus, if it was in them, goes back to the Options button. */
+function closePanel() {
+    const panel = els.optionsPanel;
+    const inside = panel.contains(document.activeElement);
+    if (panel.open) panel.close();
+    renderPanel();
+    if (inside) els.optionsToggle.focus();
+}
+
+/** Opened or closed by the viewer: remembered for the next visit. */
+function setPanel(open) {
+    if (open) openPanel(true);
+    else closePanel();
+    savePanel(open);
+}
+
+function bindPanel() {
+    const panel = els.optionsPanel;
+    els.optionsToggle.addEventListener("click", () => setPanel(!panel.open));
+    els.optionsClose.addEventListener("click", () => setPanel(false));
+    // Escape closes it, beside the output as in a drawer (where the browser would close it itself).
+    panel.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        setPanel(false);
+    });
+    panel.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || panel.matches(":modal") || event.defaultPrevented) return;
+        event.preventDefault();
+        setPanel(false);
+    });
+    /** Closed as the window crossed the width below (the close event comes later): the focus is left where it is. */
+    let resized = false;
+    // Closed some other way (a drawer's Escape the page could not cancel): the page says so.
+    panel.addEventListener("close", () => {
+        renderPanel();
+        if (resized) resized = false;
+        else if (document.activeElement === document.body || document.activeElement === null) els.optionsToggle.focus();
+    });
+    // A click on the drawer's backdrop (the dialog itself, outside its content) closes it.
+    panel.addEventListener("click", (event) => {
+        if (event.target === panel && panel.matches(":modal")) setPanel(false);
+    });
+    // Across the width where the options move between beside the output and a drawer: open beside it, or closed.
+    roomBeside.addEventListener("change", () => {
+        if (!panel.open) return;
+        const inside = panel.contains(document.activeElement);
+        resized = true;
+        panel.close();
+        if (roomBeside.matches) openPanel(inside);
+        else if (inside) els.optionsToggle.focus();
+        renderPanel();
+    });
+}
+
+/** Phones show one pane at a time: the input or the output (body[data-view]). */
+function bindViewSwitch() {
+    for (const radio of document.querySelectorAll('input[name="view"]')) {
+        radio.addEventListener("change", () => {
+            if (radio.checked) document.body.dataset.view = radio.value;
+        });
+    }
+}
+
+/**
+ * The notes behind an "i" (a button controlling the note): a click opens
+ * one by its button, and closes any other; Escape closes it (the focus back
+ * on its button), as does a click elsewhere, scrolling or resizing.
+ */
+function bindTips() {
+    let open;
+    const close = (focus) => {
+        if (open === undefined) return;
+        open.tip.hidden = true;
+        open.button.setAttribute("aria-expanded", "false");
+        if (focus) open.button.focus();
+        open = undefined;
+    };
+    /** Under its button (above, for `.up`), inside the window. */
+    const place = (button, tip) => {
+        const margin = 12;
+        const at = button.getBoundingClientRect();
+        tip.style.left = "0px";
+        tip.style.top = "0px";
+        tip.hidden = false;
+        const size = tip.getBoundingClientRect();
+        const left = Math.min(Math.max(margin, at.left - 14), window.innerWidth - size.width - margin);
+        const below = at.bottom + 6;
+        const above = at.top - size.height - 6;
+        const up = tip.classList.contains("up") ? above >= margin : below + size.height > window.innerHeight - margin && above >= margin;
+        tip.style.left = `${Math.max(margin, left)}px`;
+        tip.style.top = `${up ? above : below}px`;
+    };
+    for (const button of document.querySelectorAll(".tip-button")) {
+        const tip = document.getElementById(button.getAttribute("aria-controls"));
+        button.addEventListener("click", () => {
+            const again = open?.button === button;
+            close(false);
+            if (again) return;
+            button.setAttribute("aria-expanded", "true");
+            place(button, tip);
+            open = { button, tip };
+        });
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || open === undefined) return;
+        event.preventDefault();
+        close(true);
+    });
+    document.addEventListener("pointerdown", (event) => {
+        if (open !== undefined && !open.tip.contains(event.target) && !open.button.contains(event.target)) close(false);
+    });
+    window.addEventListener("resize", () => close(false));
+    window.addEventListener("scroll", () => close(false), { capture: true, passive: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -1251,6 +1496,7 @@ function bind() {
         state.lang = languageNamed(els.lang.value);
         state.options = {};
         renderOptions();
+        renderOptionsCount();
         renderCli();
         writeHash();
         void run();
@@ -1277,6 +1523,7 @@ function bind() {
         const value = definition.type === "boolean" ? control.checked : control.value;
         if (value === pageDefault(definition)) delete state.options[definition.name];
         else state.options[definition.name] = value;
+        renderOptionsCount();
         renderCli();
         writeHash();
         schedule(definition.type === "string" ? 300 : 0);
@@ -1288,6 +1535,7 @@ function bind() {
         if (control.checked) state.general[control.dataset.general] = true;
         else delete state.general[control.dataset.general];
         renderGeneralCount();
+        renderOptionsCount();
         renderCli();
         writeHash();
         schedule(0);
@@ -1390,9 +1638,13 @@ function bind() {
     els.meter.addEventListener("click", (event) => {
         const button = event.target.closest("#measure");
         if (button !== null && button.getAttribute("aria-disabled") !== "true") void measure();
+        if (event.target.closest("#meter-toggle") !== null) toggleMeter();
     });
 
     window.addEventListener("hashchange", () => void applyHash(readHash()));
+    bindPanel();
+    bindViewSwitch();
+    bindTips();
 }
 
 async function applyHash(hash) {
@@ -1419,6 +1671,10 @@ async function start() {
     renderLanguages();
     renderSamples();
     bind();
+    // The options are open beside the output on a wide screen, unless the viewer closed them (or opened them on a narrower one).
+    const saved = savedPanel();
+    if (roomBeside.matches && (saved === "open" || (saved === null && roomToOpen.matches))) openPanel(false);
+    renderPanel();
     engines.wasm.onBoot = () => render();
     engines.ts.onBoot = () => render();
 
