@@ -4,7 +4,7 @@
 //! attribute producer and `addToSchema` are ported with the JSON Schema input
 //! and output.
 
-use crate::attributes::type_attributes::AttributeKind;
+use crate::attributes::type_attributes::{AttributeKind, SchemaObject, set_schema_property};
 use crate::messages::Result;
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash};
 use crate::ty::type_graph::TypeGraph;
@@ -137,6 +137,24 @@ pub fn default_value_attribute_producer(
         }
     }
     Ok(Some(result))
+}
+
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addToSchema`
+
+/// The JSON value of a default.
+pub fn default_value_to_json(value: &DefaultValue) -> json::JsonValue {
+    match value {
+        DefaultValue::Bool(b) => json::JsonValue::Bool(*b),
+        DefaultValue::Number(n) => json::JsonValue::Number(*n),
+        DefaultValue::String(s) => json::JsonValue::String(s.clone()),
+        DefaultValue::Null => json::JsonValue::Null,
+    }
+}
+
+/// `DefaultValueTypeAttributeKind.addToSchema`: `default`.
+pub fn add_default_value_to_schema(schema: &mut SchemaObject, value: &DefaultValue) {
+    set_schema_property(schema, "default", Some(default_value_to_json(value)));
 }
 
 #[cfg(test)]

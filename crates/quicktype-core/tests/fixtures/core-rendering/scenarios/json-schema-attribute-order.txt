@@ -1,0 +1,10 @@
+# JSON Schema keywords come in attribute order, which is not
+# alphabetical: the schema input adds a type's description after its
+# default and constraints, so TypeScript writes "default" (and "minimum",
+# "pattern", ...) before "description" for the types that keep their own
+# description: enums, unions, a top-level string. Property descriptions
+# come last too, from descriptionForClassProperty.
+input schema TopLevel {"type": "object", "properties": {"kind": {"enum": ["a", "b"], "description": "A kind.", "default": "a"}, "either": {"anyOf": [{"type": "integer"}, {"type": "string"}], "description": "Either.", "default": 1}, "count": {"type": "integer", "description": "How many.", "default": 3, "minimum": 1}, "name": {"type": "string", "default": "none", "description": "A name.", "maxLength": 9, "pattern": "^[a-z]+$"}}, "required": ["kind"]}
+pipeline {"lang": "schema"}
+
+render schema {}

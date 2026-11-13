@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/python-union-order.test.ts: Python tries
+# integer before number in unions. tests/vitest_python.rs checks the
+# from_union calls.
+input schema TopLevel {"type": ["integer", "number"]}
+pipeline {"lang": "python"}
+
+render python {}

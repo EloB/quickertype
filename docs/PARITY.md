@@ -52,8 +52,10 @@ findings per area, with file and line references.
   against npm `quicktype-core` and our WASM package and compares results.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
-rather than the CLI, so it has no CLI recording; it will be covered by the
-JS API differential suite.
+rather than the CLI, so it has no CLI recording. The `golang-leading-comments`
+render scenario reproduces its renders (`leadingComments: []`, one file and
+multi-file); the API path itself will be covered by the JS API differential
+suite.
 
 ## Rules
 

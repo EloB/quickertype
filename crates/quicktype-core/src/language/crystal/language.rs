@@ -13,13 +13,12 @@ pub const CRYSTAL_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 };
 
 /// The Crystal target language (TS `CrystalTargetLanguage`).
+///
+/// `getSupportedIntegerRange` is the default `INT64_RANGE`: the renderer
+/// emits `Int64` for inferred integers.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CrystalTargetLanguage;
 
-// TODO(renderer): port the hooks CrystalTargetLanguage overrides:
-// - makeRenderer
-// - defaultIndentation: "  "
-// - getSupportedIntegerRange: INT64_RANGE (default)
 impl TargetLanguage for CrystalTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &CRYSTAL_LANGUAGE_CONFIG
@@ -27,5 +26,26 @@ impl TargetLanguage for CrystalTargetLanguage {
 
     fn options(&self) -> &'static [RendererOption] {
         &[]
+    }
+
+    // Renderer hooks.
+
+    fn default_indentation(&self) -> &'static str {
+        "  "
+    }
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        _renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let renderer = super::crystal_renderer::CrystalRenderer::new(self, render_context);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
     }
 }

@@ -6,7 +6,11 @@
 //! and `addToSchema` belong with the JSON Schema input and output and are
 //! ported there.
 
-use crate::attributes::type_attributes::AttributeKind;
+use quicktype_js_compat::json::JsonValue;
+
+use crate::attributes::type_attributes::{
+    AttributeKind, SchemaObject, TypeAttributeKind, set_schema_property,
+};
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
 use crate::ty::transformed_string_type::TypeKind;
@@ -294,6 +298,49 @@ pub fn pattern_attribute_producer(
         for_string: Some(PatternTypeAttributeKind.make_attributes(pattern.clone())),
         ..JsonSchemaAttributes::default()
     }))
+}
+
+// ---------------------------------------------------------------------------
+// JSON Schema output: `addToSchema`
+
+/// `MinMaxConstraintTypeAttributeKind.addToSchema` for the min/max
+/// attribute `attribute_kind`: its schema properties, for a type of one of
+/// its kinds (see [`min_max_schema_info`]).
+pub fn add_min_max_to_schema(
+    schema: &mut SchemaObject,
+    attribute_kind: TypeAttributeKind,
+    kind: TypeKind,
+    attr: &MinMaxConstraint,
+) {
+    let Some((type_kinds, min_schema_property, max_schema_property)) =
+        min_max_schema_info(attribute_kind)
+    else {
+        return;
+    };
+    if !type_kinds.contains(&kind) {
+        return;
+    }
+
+    let MinMaxConstraint(min, max) = *attr;
+    if let Some(min) = min {
+        set_schema_property(schema, min_schema_property, Some(JsonValue::Number(min)));
+    }
+
+    if let Some(max) = max {
+        set_schema_property(schema, max_schema_property, Some(JsonValue::Number(max)));
+    }
+}
+
+/// `PatternTypeAttributeKind.addToSchema`: `pattern`, for strings.
+pub fn add_pattern_to_schema(schema: &mut SchemaObject, kind: TypeKind, pattern: &str) {
+    if kind != TypeKind::String {
+        return;
+    }
+    set_schema_property(
+        schema,
+        "pattern",
+        Some(JsonValue::String(pattern.to_owned())),
+    );
 }
 
 #[cfg(test)]

@@ -1,0 +1,59 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TreePart"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "BARK",
+     "LEAF",
+     "ROOT"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TreePart",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "enum-type-name-suffix": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    treePart, err := UnmarshalTreePart(bytes)\n//    bytes, err = treePart.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalTreePart(data []byte) (TreePart, error) {\n\tvar r TreePart\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TreePart) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype TreePart string\n\nconst (\n\tBarkTreePart TreePart = \"BARK\"\n\tLeafTreePart TreePart = \"LEAF\"\n\tRootTreePart TreePart = \"ROOT\"\n)\n\ntype invalidTreePart string\nfunc (x invalidTreePart) Error() string { return \"invalid TreePart: \" + string(x) }\n\nfunc (x *TreePart) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch TreePart(value) {\n\tcase BarkTreePart, LeafTreePart, RootTreePart: *x = TreePart(value); return nil\n\t}\n\treturn invalidTreePart(value)\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-golang-enum-type-name-suffix-tree-part"
+}

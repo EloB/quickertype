@@ -1,0 +1,39 @@
+# The Dart renderer with each of its options and their combinations, on a
+# schema with every kind of property, constraint (bounds, items, pattern,
+# length), date, date-time and UUID (also nullable and in collections),
+# nullable class, enum and map, untyped union, descriptions, names that are
+# forbidden (hashCode, copyWith) or need escaping ($, quotes), and
+# top-level arrays, maps, enums and nullables. The corpus runs each option
+# alone on a few inputs.
+input schema TopLevel {"$schema": "http://json-schema.org/draft-07/schema#", "title": "TopLevel", "description": "The kitchen sink.\nSecond line.", "type": "object", "properties": {"id": {"type": "string", "format": "uuid"}, "maybeId": {"type": ["string", "null"], "format": "uuid"}, "created": {"type": "string", "format": "date-time", "description": "When it was made."}, "maybeCreated": {"anyOf": [{"type": "string", "format": "date-time"}, {"type": "null"}]}, "day": {"type": "string", "format": "date"}, "maybeDay": {"anyOf": [{"type": "string", "format": "date"}, {"type": "null"}]}, "optionalDay": {"type": "string", "format": "date"}, "count": {"type": "integer", "minimum": 1, "maximum": 1e21}, "maybeCount": {"type": ["integer", "null"], "minimum": 0}, "ratio": {"type": "number", "minimum": -0.5}, "maybeRatio": {"type": ["number", "null"], "maximum": 2.5}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 10}, "maybeTags": {"type": ["array", "null"], "items": {"type": "integer"}, "maxItems": 3}, "code": {"type": "string", "pattern": "^[A-Z]\\d+\\$$", "minLength": 2, "maxLength": 8}, "maybeCode": {"type": ["string", "null"], "pattern": "^x", "minLength": 1}, "active": {"type": "boolean"}, "hashCode": {"type": "integer"}, "copyWith": {"type": "string"}, "price$": {"type": "string"}, "with \"quote\" and \\": {"type": "string"}, "maybePoint": {"anyOf": [{"$ref": "#/definitions/Point"}, {"type": "null"}]}, "optionalPoint": {"$ref": "#/definitions/Point"}, "maybeKind": {"anyOf": [{"$ref": "#/definitions/Kind"}, {"type": "null"}]}, "kind": {"$ref": "#/definitions/Kind"}, "kinds": {"type": "array", "items": {"$ref": "#/definitions/Kind"}}, "points": {"type": "array", "items": {"$ref": "#/definitions/Point"}}, "maybePoints": {"type": "array", "items": {"anyOf": [{"$ref": "#/definitions/Point"}, {"type": "null"}]}}, "nested": {"type": "array", "items": {"type": "array", "items": {"type": "string", "format": "date"}}}, "byName": {"type": "object", "additionalProperties": {"$ref": "#/definitions/Point"}}, "maybeByName": {"type": ["object", "null"], "additionalProperties": {"type": "string", "format": "date-time"}}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "dates": {"type": "object", "additionalProperties": {"type": "string", "format": "date"}}, "mixed": {"anyOf": [{"type": "string"}, {"type": "integer"}, {"$ref": "#/definitions/Point"}]}, "anything": {}, "nothing": {"type": "null"}, "empty": {"$ref": "#/definitions/Empty"}}, "required": ["id", "maybeId", "created", "maybeCreated", "day", "count", "tags", "code", "active", "hashCode", "kind", "points", "byName", "counts", "mixed", "anything", "nothing", "maybePoint", "maybeTags", "maybeByName"], "definitions": {"Point": {"type": "object", "description": "A point.", "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "label": {"type": "string", "description": "The label."}}, "required": ["x", "y"]}, "Kind": {"enum": ["first-kind", "SECOND", "third_kind", "$dollar", "with \"quote\""], "description": "The kind."}, "Empty": {"type": "object", "properties": {}, "additionalProperties": false}}}
+input schema Labels {"type": "array", "items": {"type": "string", "format": "date-time"}}
+input schema Counts {"type": "object", "additionalProperties": {"type": ["integer", "null"]}}
+input schema Status {"enum": ["on", "off"], "description": "On or off."}
+input schema Maybe {"type": ["string", "null"], "format": "date"}
+pipeline {"lang": "dart"}
+
+render dart {}
+render dart {"rendererOptions": {"just-types": true}}
+render dart {"rendererOptions": {"coders-in-class": true}}
+render dart {"rendererOptions": {"coders-in-class": true, "from-map": true}}
+render dart {"rendererOptions": {"from-map": true}}
+render dart {"rendererOptions": {"required-props": true}}
+render dart {"rendererOptions": {"required-props": true, "copy-with": true}}
+render dart {"rendererOptions": {"final-props": false}}
+render dart {"rendererOptions": {"copy-with": true}}
+render dart {"rendererOptions": {"use-freezed": true}}
+render dart {"rendererOptions": {"use-freezed": true, "just-types": true}}
+render dart {"rendererOptions": {"use-freezed": true, "copy-with": true, "required-props": true}}
+render dart {"rendererOptions": {"use-hive": true}}
+render dart {"rendererOptions": {"use-hive": true, "use-json-annotation": true}}
+render dart {"rendererOptions": {"use-hive": true, "use-freezed": true, "part-name": "MyModels"}}
+render dart {"rendererOptions": {"use-json-annotation": true}}
+render dart {"rendererOptions": {"use-json-annotation": true, "just-types": true}}
+render dart {"rendererOptions": {"use-json-annotation": true, "use-freezed": true}}
+render dart {"rendererOptions": {"use-json-annotation": true, "copy-with": true, "coders-in-class": true}}
+render dart {"rendererOptions": {"part-name": "model"}}
+render dart {"rendererOptions": {"part-name": "Some Models", "use-hive": true, "just-types": true}}
+render dart {"alphabetize": true}
+render dart {"indentation": "\t"}
+render dart {"leadingComments": ["Leading comment", {"lines": ["line one", "line two"]}]}
+render dart {"rendererOptions": {"just-types": true}, "leadingComments": ["Leading comment"]}

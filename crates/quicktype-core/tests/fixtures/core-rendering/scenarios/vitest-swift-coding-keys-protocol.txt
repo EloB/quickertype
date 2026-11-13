@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/swift-coding-keys-protocol.test.ts: a
+# requested CodingKeys protocol emits CodingKeys even when every key is
+# redundant (checked in tests/vitest_swift_dart.rs).
+input json TopLevel {"value": 1}
+pipeline {"lang": "swift"}
+
+render swift {"rendererOptions": {"coding-keys-protocol": "CaseIterable"}}

@@ -1,0 +1,67 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "value",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "swift",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "coding-keys-protocol": "CaseIterable"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// This file was generated from JSON Schema using quicktype, do not modify it directly.\n// To parse the JSON, add this file to your project and do:\n//\n//   let topLevel = try TopLevel(json)\n\nimport Foundation\n\n// MARK: - TopLevel\nstruct TopLevel: Codable {\n    let value: Int\n\n    enum CodingKeys: String, CodingKey, CaseIterable {\n        case value = \"value\"\n    }\n}\n\n// MARK: TopLevel convenience initializers and mutators\n\nextension TopLevel {\n    init(data: Data) throws {\n        self = try newJSONDecoder().decode(TopLevel.self, from: data)\n    }\n\n    init(_ json: String, using encoding: String.Encoding = .utf8) throws {\n        guard let data = json.data(using: encoding) else {\n            throw NSError(domain: \"JSONDecoding\", code: 0, userInfo: nil)\n        }\n        try self.init(data: data)\n    }\n\n    init(fromURL url: URL) throws {\n        try self.init(data: try Data(contentsOf: url))\n    }\n\n    func with(\n        value: Int? = nil\n    ) -> TopLevel {\n        return TopLevel(\n            value: value ?? self.value\n        )\n    }\n\n    func jsonData() throws -> Data {\n        return try newJSONEncoder().encode(self)\n    }\n\n    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {\n        return String(data: try self.jsonData(), encoding: encoding)\n    }\n}\n\n// MARK: - Helper functions for creating encoders and decoders\n\nfunc newJSONDecoder() -> JSONDecoder {\n    let decoder = JSONDecoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        decoder.dateDecodingStrategy = .iso8601\n    }\n    return decoder\n}\n\nfunc newJSONEncoder() -> JSONEncoder {\n    let encoder = JSONEncoder()\n    if #available(iOS 10.0, OSX 10.12, tvOS 10.0, watchOS 3.0, *) {\n        encoder.dateEncodingStrategy = .iso8601\n    }\n    return encoder\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-swift-coding-keys-protocol"
+}

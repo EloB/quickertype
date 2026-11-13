@@ -38,9 +38,6 @@ pub const ELIXIR_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ElixirTargetLanguage;
 
-// TODO(renderer): port the hooks ElixirTargetLanguage overrides:
-// - makeRenderer
-// - defaultIndentation: "  "
 impl TargetLanguage for ElixirTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &ELIXIR_LANGUAGE_CONFIG
@@ -66,4 +63,28 @@ impl TargetLanguage for ElixirTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `defaultIndentation`.
+    fn default_indentation(&self) -> &'static str {
+        "  "
+    }
+
+    /// TS `makeRenderer`: an [`ElixirRenderer`](super::elixir_renderer::ElixirRenderer).
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::elixir_renderer::ElixirOptions::parse(renderer_options)?;
+        let renderer = super::elixir_renderer::ElixirRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

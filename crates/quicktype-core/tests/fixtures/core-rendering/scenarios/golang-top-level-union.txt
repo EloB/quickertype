@@ -1,0 +1,8 @@
+# A top-level union and a top-level enum, in single- and multi-file output.
+input schema Either {"anyOf": [{"type": "integer"}, {"type": "object", "properties": {"at": {"type": "string", "format": "date-time"}}}]}
+input schema Choice {"enum": ["one", "two"]}
+pipeline {"lang": "golang"}
+
+render golang {}
+render golang {"rendererOptions": {"multi-file-output": true}}
+render golang {"rendererOptions": {"just-types": true}}
