@@ -2,26 +2,30 @@
 //!
 //! Language metadata and renderer option declarations.
 
+use crate::messages::Result;
 use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
 use crate::support::strings::NamingStyle;
+use crate::support::support::panic;
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `namingStyles`: the naming style of a `type-style`, `member-style`
-/// or `enumerator-style` value.
-pub fn naming_style_for_option(value: &str) -> NamingStyle {
-    match value {
+/// or `enumerator-style` value. The values are those the option declares,
+/// so anything else is an internal error.
+pub fn naming_style_for_option(value: &str) -> Result<NamingStyle> {
+    Ok(match value {
         "pascal-case" => NamingStyle::Pascal,
         "original-case" => NamingStyle::Original,
         "underscore-case" => NamingStyle::Underscore,
         "camel-case" => NamingStyle::Camel,
         "upper-underscore-case" => NamingStyle::UpperUnderscore,
         "pascal-case-upper-acronyms" => NamingStyle::PascalUpperAcronyms,
-        _ => NamingStyle::CamelUpperAcronyms,
-    }
+        "camel-case-upper-acronyms" => NamingStyle::CamelUpperAcronyms,
+        _ => return panic(format!("Unknown naming style option value {value}")),
+    })
 }
 
 /// TS `cPlusPlusOptions.typeSourceStyle`.
@@ -236,5 +240,32 @@ impl TargetLanguage for CPlusPlusTargetLanguage {
             given_output_filename,
             alphabetize_properties,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maps_every_declared_naming_style_and_rejects_others() {
+        let styles: Vec<NamingStyle> = TYPE_NAMING_STYLE
+            .values
+            .iter()
+            .map(|v| naming_style_for_option(v).unwrap())
+            .collect();
+        assert_eq!(
+            styles,
+            [
+                NamingStyle::Pascal,
+                NamingStyle::Original,
+                NamingStyle::Underscore,
+                NamingStyle::Camel,
+                NamingStyle::UpperUnderscore,
+                NamingStyle::PascalUpperAcronyms,
+                NamingStyle::CamelUpperAcronyms,
+            ]
+        );
+        assert!(naming_style_for_option("kebab-case").is_err());
     }
 }

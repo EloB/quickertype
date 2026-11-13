@@ -4,6 +4,7 @@
 //! `std::variant`/`boost::variant` unions and nlohmann::json converters,
 //! into one header or (`--source-style multi-source`) one header per type.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -19,6 +20,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::declaration_ir::{Declaration, DeclarationKind};
 use crate::renderer_options::RendererOptions;
+use crate::support::collection_utils::{SameValueZero, array_intercalate};
 use crate::support::comments::CommentOptions;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, make_name_style, string_escape};
@@ -88,11 +90,11 @@ impl CPlusPlusOptions {
         let just_types = JUST_TYPES.get_value(values);
         let namespace = NAMESPACE.get_value(values).into_owned();
         let enum_type = ENUM_TYPE.get_value(values).into_owned();
-        let type_naming_style = naming_style_for_option(TYPE_NAMING_STYLE.get_enum_value(values)?);
+        let type_naming_style = naming_style_for_option(TYPE_NAMING_STYLE.get_enum_value(values)?)?;
         let member_naming_style =
-            naming_style_for_option(MEMBER_NAMING_STYLE.get_enum_value(values)?);
+            naming_style_for_option(MEMBER_NAMING_STYLE.get_enum_value(values)?)?;
         let enumerator_naming_style =
-            naming_style_for_option(ENUMERATOR_NAMING_STYLE.get_enum_value(values)?);
+            naming_style_for_option(ENUMERATOR_NAMING_STYLE.get_enum_value(values)?)?;
         Ok(CPlusPlusOptions {
             type_source_style,
             include_location,
@@ -135,21 +137,23 @@ fn plain_context(in_json_namespace: bool) -> TypeContext {
     }
 }
 
-/// `arrayIntercalate(separator, items)`.
-fn intercalate(separator: Source, items: impl IntoIterator<Item = Source>) -> Vec<Source> {
-    let mut result = Vec::new();
-    for (i, item) in items.into_iter().enumerate() {
-        if i > 0 {
-            result.push(separator.clone());
-        }
-        result.push(item);
-    }
-    result
+/// The variant of a union's non-null members in `namespace nlohmann`, the
+/// key of `forEachUniqueUnion` in `emitAllUnionFunctions` and
+/// `emitAllUnionHeaders`. As a key it is its text (a string); it carries the
+/// variant so that it is built once per union.
+struct UnionVariant {
+    /// `sourcelikeToString(variant)`.
+    text: String,
+    /// The union's non-null members, sorted by kind.
+    non_nulls: IndexSet<TypeRef>,
+    /// The variant type.
+    variant_type: Source,
 }
 
-/// `String(n)` of a JavaScript number.
-fn js_number(n: f64) -> String {
-    number::to_string(n)
+impl SameValueZeroKey for UnionVariant {
+    fn same_value_zero_key(&self) -> SameValueZero {
+        SameValueZero::String(self.text.clone())
+    }
 }
 
 /// `CPlusPlusRenderer`.
@@ -195,6 +199,9 @@ pub struct CPlusPlusRenderer<'a> {
     variant_type: &'static str,
     /// `_variantIndexMethodName`.
     variant_index_method_name: &'static str,
+    /// `isRecursiveUnion(u)` of the unions asked about so far (the graph
+    /// does not change while rendering).
+    recursive_unions: RefCell<HashMap<TypeRef, bool>>,
 }
 
 impl std::fmt::Debug for CPlusPlusRenderer<'_> {
@@ -272,6 +279,7 @@ impl<'a> CPlusPlusRenderer<'a> {
             nullopt_type,
             variant_type,
             variant_index_method_name,
+            recursive_unions: RefCell::new(HashMap::new()),
             options,
         };
         renderer.setup_global_names();
@@ -346,12 +354,18 @@ impl<'a> CPlusPlusRenderer<'a> {
     /// `isRecursiveUnion(u)`: whether one of the union's members reaches
     /// the union.
     fn is_recursive_union(&self, u: TypeRef) -> Result<bool> {
+        if let Some(&is_recursive) = self.recursive_unions.borrow().get(&u) {
+            return Ok(is_recursive);
+        }
+        let mut is_recursive = false;
         for child in self.type_graph().children(u)? {
             if self.type_reaches(child, u, &mut IndexSet::new())? {
-                return Ok(true);
+                is_recursive = true;
+                break;
             }
         }
-        Ok(false)
+        self.recursive_unions.borrow_mut().insert(u, is_recursive);
+        Ok(is_recursive)
     }
 
     /// `recursiveUnionUsesStackOptional(u)`.
@@ -801,12 +815,9 @@ impl<'a> CPlusPlusRenderer<'a> {
             );
         }
 
-        let mut type_list: Vec<Source> = Vec::new();
+        let mut types: Vec<Source> = Vec::with_capacity(non_nulls.len());
         for &t in non_nulls {
-            if !type_list.is_empty() {
-                type_list.push(", ".into());
-            }
-            type_list.push(self.cpp_type(
+            types.push(self.cpp_type(
                 t,
                 TypeContext {
                     needs_forward_indirection: true,
@@ -819,6 +830,7 @@ impl<'a> CPlusPlusRenderer<'a> {
             )?);
         }
 
+        let type_list = array_intercalate(", ".into(), types);
         Ok(sl![
             self.variant_type,
             "<",
@@ -858,7 +870,7 @@ impl<'a> CPlusPlusRenderer<'a> {
         if !in_json_namespace {
             return sl![];
         }
-        let names = intercalate(
+        let names = array_intercalate(
             "::".into(),
             self.namespace_names
                 .iter()
@@ -1152,7 +1164,7 @@ impl<'a> CPlusPlusRenderer<'a> {
         Ok(Some(match default_value {
             DefaultValue::Null => "nullptr".into(),
             DefaultValue::Bool(b) => (if b { "true" } else { "false" }).into(),
-            DefaultValue::Number(n) => js_number(n).into(),
+            DefaultValue::Number(n) => number::to_string(n).into(),
             DefaultValue::String(s) => {
                 let ty = self.type_graph().type_at(t)?;
                 if ty.is_enum() && ty.cases()?.contains(&s) {
@@ -1361,7 +1373,7 @@ impl<'a> CPlusPlusRenderer<'a> {
                 let nullopt = r.nullopt_type;
                 let bound = |value: Option<f64>, applies: bool| -> Source {
                     match value {
-                        Some(v) if applies => js_number(v).into(),
+                        Some(v) if applies => number::to_string(v).into(),
                         _ => nullopt.into(),
                     }
                 };
@@ -1679,13 +1691,13 @@ impl<'a> CPlusPlusRenderer<'a> {
             if let Some(min_items) = min_max_items.0 {
                 self.emit_line(format!(
                     "if (j.at({key}).size() < {}) throw std::runtime_error(\"Too few items\");",
-                    js_number(min_items)
+                    number::to_string(min_items)
                 ));
             }
             if let Some(max_items) = min_max_items.1 {
                 self.emit_line(format!(
                     "if (j.at({key}).size() > {}) throw std::runtime_error(\"Too many items\");",
-                    js_number(max_items)
+                    number::to_string(max_items)
                 ));
             }
         }
@@ -1709,22 +1721,24 @@ impl<'a> CPlusPlusRenderer<'a> {
 
         let prop_is_union = prop_kind == TypeKind::Union;
         if p.is_optional || prop_is_union {
-            let (null_or_optional, type_set) = if prop_is_union {
+            // `has_null`: the union's `removeNullFromUnion(propType, true)[0]
+            // !== null`.
+            let (has_null, null_or_optional, type_set) = if prop_is_union {
                 let (maybe_null, non_nulls) =
                     remove_null_from_union(graph, prop_type, NullRemovalSort::ByKind)?;
-                (maybe_null.is_some() || p.is_optional, non_nulls)
+                let has_null = maybe_null.is_some();
+                (has_null, has_null || p.is_optional, non_nulls)
             } else {
-                (true, [prop_type].into_iter().collect::<IndexSet<_>>())
+                (
+                    false,
+                    true,
+                    [prop_type].into_iter().collect::<IndexSet<_>>(),
+                )
             };
             let is_recursive_named_union = prop_is_union
                 && self.named_unions()?.contains(&prop_type)
                 && self.is_recursive_union(prop_type)?;
-            if is_recursive_named_union
-                && p.is_optional
-                && remove_null_from_union(graph, prop_type, NullRemovalSort::ByKind)?
-                    .0
-                    .is_some()
-            {
+            if is_recursive_named_union && p.is_optional && has_null {
                 let cpp_type = self.cpp_type(prop_type, MEMBER_CONTEXT, false, true, true)?;
                 let property_name =
                     self.wrap_string_key(our_qualifier, self.string_literal(json))?;
@@ -1942,17 +1956,21 @@ impl<'a> CPlusPlusRenderer<'a> {
     }
 
     /// The variant of a union's non-null members in `namespace nlohmann`.
-    fn union_variant_in_json_namespace(&self, u: TypeRef) -> Result<(IndexSet<TypeRef>, Source)> {
+    fn union_variant_in_json_namespace(&self, u: TypeRef) -> Result<UnionVariant> {
         let (_, non_nulls) = remove_null_from_union(self.type_graph(), u, NullRemovalSort::ByKind)?;
         let variant_type =
             self.cpp_type_in_optional(&non_nulls, plain_context(true), false, false)?;
-        Ok((non_nulls, variant_type))
+        Ok(UnionVariant {
+            text: self.sourcelike_to_string(&variant_type)?,
+            non_nulls,
+            variant_type,
+        })
     }
 
     /// `emitUnionHeaders(u)`: the `adl_serializer` specialization for the
     /// union's variant (also for variants of types not defined by us).
-    fn emit_union_headers(&mut self, u: TypeRef) -> Result<()> {
-        let (_, variant_type) = self.union_variant_in_json_namespace(u)?;
+    fn emit_union_headers(&mut self, variant: UnionVariant) -> Result<()> {
+        let variant_type = variant.variant_type;
 
         self.emit_line("template <>");
         self.emit_block(
@@ -1976,7 +1994,7 @@ impl<'a> CPlusPlusRenderer<'a> {
 
     /// `emitUnionFunctions(u)`: the `adl_serializer` definitions for the
     /// union's variant.
-    fn emit_union_functions(&mut self, u: TypeRef) -> Result<()> {
+    fn emit_union_functions(&mut self, variant: UnionVariant) -> Result<()> {
         let our_qualifier = self.our_qualifier(true);
 
         const FUNCTION_FOR_KIND: [(TypeKind, &str); 10] = [
@@ -1991,7 +2009,11 @@ impl<'a> CPlusPlusRenderer<'a> {
             (TypeKind::Array, "is_array"),
             (TypeKind::Enum, "is_string"),
         ];
-        let (non_nulls, variant_type) = self.union_variant_in_json_namespace(u)?;
+        let UnionVariant {
+            non_nulls,
+            variant_type,
+            ..
+        } = variant;
 
         let json = self.with_const("json");
         self.emit_block_with(
@@ -2249,19 +2271,12 @@ impl<'a> CPlusPlusRenderer<'a> {
         Ok(())
     }
 
-    /// The key of `forEachUniqueUnion` in `emitAllUnionFunctions` and
-    /// `emitAllUnionHeaders`: the variant's text.
-    fn union_variant_key(&self, u: TypeRef) -> Result<String> {
-        let (_, variant_type) = self.union_variant_in_json_namespace(u)?;
-        self.sourcelike_to_string(&variant_type)
-    }
-
     /// `emitAllUnionFunctions()`: once per distinct variant.
     fn emit_all_union_functions(&mut self) -> Result<()> {
         self.for_each_unique_union(
             BlankLinePosition::LeadingAndInterposing,
-            |r, u| r.union_variant_key(u),
-            |r, u, _, _| r.emit_union_functions(u),
+            |r, u| r.union_variant_in_json_namespace(u),
+            |r, _, variant, _| r.emit_union_functions(variant),
         )
     }
 
@@ -2269,8 +2284,8 @@ impl<'a> CPlusPlusRenderer<'a> {
     fn emit_all_union_headers(&mut self) -> Result<()> {
         self.for_each_unique_union(
             BlankLinePosition::Interposing,
-            |r, u| r.union_variant_key(u),
-            |r, u, _, _| r.emit_union_headers(u),
+            |r, u| r.union_variant_in_json_namespace(u),
+            |r, _, variant, _| r.emit_union_headers(variant),
         )
     }
 
@@ -2579,7 +2594,7 @@ impl<'a> CPlusPlusRenderer<'a> {
             }
             r.emit_line(sl![
                 ") : ",
-                Source::Sequence(intercalate(sl![", "], args)),
+                Source::Sequence(array_intercalate(sl![", "], args)),
                 " {}"
             ]);
 
