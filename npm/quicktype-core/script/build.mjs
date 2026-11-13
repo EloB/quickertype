@@ -110,6 +110,30 @@ function glueFactory() {
     };
 
     replace(/^\/\* @ts-self-types=.*\*\/\n/m, "");
+    // Strings go into the engine with one `encodeInto` (native, and much
+    // faster than the glue's loop over the ASCII prefix, which JSON samples
+    // of many megabytes go through), then as the glue does for the rest.
+    replace(
+        `    const mem = getUint8ArrayMemory0();
+
+    let offset = 0;
+
+    for (; offset < len; offset++) {
+        const code = arg.charCodeAt(offset);
+        if (code > 0x7F) break;
+        mem[ptr + offset] = code;
+    }
+    if (offset !== len) {
+        if (offset !== 0) {
+            arg = arg.slice(offset);
+        }
+`,
+        `    const prefix = cachedTextEncoder.encodeInto(arg, getUint8ArrayMemory0().subarray(ptr, ptr + len));
+    let offset = prefix.written;
+    if (prefix.read !== arg.length) {
+        arg = arg.slice(prefix.read);
+`,
+    );
     replace(/^export function /gm, "function ");
     replace(/^export \{ initSync, __wbg_init as default \};\n?/m, "");
     // The default module location uses import.meta, which CommonJS cannot
