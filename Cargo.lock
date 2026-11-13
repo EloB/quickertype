@@ -65,6 +65,10 @@ dependencies = [
 [[package]]
 name = "quicktype-core"
 version = "24.0.0"
+dependencies = [
+ "quicktype-js-compat",
+ "serde_json",
+]
 
 [[package]]
 name = "quicktype-graphql-input"
