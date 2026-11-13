@@ -5,6 +5,8 @@
 //! `unmarshalUnion`/`marshalUnion` helpers; optionally one file per type
 //! (`--multi-file-output`).
 
+use std::cell::OnceCell;
+
 use indexmap::{IndexMap, IndexSet};
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -63,11 +65,11 @@ impl GoOptions {
 }
 
 /// A union member found by kind (TS `ifMember`'s callback arguments): the
-/// member, its field name and its Go type.
+/// member and its field name. TypeScript also passes the member's Go type,
+/// which only `var c` uses; it is computed there, from the same type.
 struct UnionMember {
     t: TypeRef,
     field_name: Name,
-    go_type: Source,
 }
 
 /// `GoRenderer`.
@@ -81,6 +83,9 @@ pub struct GoRenderer<'a> {
     top_level_unmarshal_names: IndexMap<Name, Name>,
     /// `_currentFilename`.
     current_filename: Option<String>,
+    /// The children of every non-nullable union (`emitEnum` asks whether an
+    /// enum is one), computed once.
+    non_nullable_union_children: OnceCell<IndexSet<TypeRef>>,
 }
 
 impl std::fmt::Debug for GoRenderer<'_> {
@@ -103,6 +108,24 @@ fn js_to_string(source: &Source) -> String {
     }
 }
 
+/// The imports for the JavaScript strings of the Go types in `used_types`
+/// (see [`js_to_string`]): `time` if one of them is in `time_types`.
+fn imports_for(used_types: &IndexSet<String>, time_types: &[&str]) -> IndexSet<String> {
+    let mut imports = IndexSet::new();
+    if used_types.iter().any(|k| time_types.contains(&k.as_str())) {
+        imports.insert("time".to_owned());
+    }
+    imports
+}
+
+/// The imports of a class (`collectClassImports`' mapping, which `emitClass`
+/// repeats): `time` for a `time.Time` property, a pointer to one or a slice
+/// of them. An optional slice (`"*,[],time.Time"`) or a map of them is
+/// missed, as in TypeScript.
+fn class_imports(used_types: &IndexSet<String>) -> IndexSet<String> {
+    imports_for(used_types, &["time.Time", "*,time.Time", "[],time.Time"])
+}
+
 impl<'a> GoRenderer<'a> {
     /// `new GoRenderer(targetLanguage, renderContext, options)`.
     pub fn new(
@@ -116,6 +139,7 @@ impl<'a> GoRenderer<'a> {
             naming_function: naming_function(),
             top_level_unmarshal_names: IndexMap::new(),
             current_filename: None,
+            non_nullable_union_children: OnceCell::new(),
         }
     }
 
@@ -264,7 +288,6 @@ impl<'a> GoRenderer<'a> {
         Ok(Some(UnionMember {
             t,
             field_name: self.name_for_union_member(u, t)?,
-            go_type: self.go_type(t, false)?,
         }))
     }
 
@@ -407,13 +430,8 @@ impl<'a> GoRenderer<'a> {
             Ok(())
         })?;
 
-        let uses_time = ["time.Time", "*,time.Time", "[],time.Time"]
-            .iter()
-            .any(|k| used_types.contains(*k));
-        self.emit_package_definitions(
-            false,
-            uses_time.then(|| ["time".to_owned()].into_iter().collect()),
-        )?;
+        // TS: `new Set(["time"])` or the default empty set.
+        self.emit_package_definitions(false, Some(class_imports(&used_types)))?;
         let description = self.description_for_type(c)?;
         self.emit_description(description)?;
         self.emit_struct(class_name, columns)?;
@@ -445,14 +463,8 @@ impl<'a> GoRenderer<'a> {
         })?;
         self.emit_line(")");
         let type_name = self.sourcelike_to_string(&enum_name.into())?;
-        let graph = self.type_graph();
-        for t in graph.all_types_unordered() {
-            if graph.kind(t)? == TypeKind::Union
-                && nullable_from_union(graph, t)?.is_none()
-                && graph.children(t)?.contains(&e)
-            {
-                return self.end_file();
-            }
+        if self.non_nullable_union_children()?.contains(&e) {
+            return self.end_file();
         }
         self.ensure_blank_line();
         let cases = cases.join(", ");
@@ -470,6 +482,24 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
 }}"#
         ))?;
         self.end_file()
+    }
+
+    /// The children of every non-nullable union in the graph: TypeScript's
+    /// `allTypes.some((t) => t instanceof UnionType &&
+    /// nullableFromUnion(t) === null && t.getChildren().has(e))` for every
+    /// enum `e` at once.
+    fn non_nullable_union_children(&self) -> Result<&IndexSet<TypeRef>> {
+        if let Some(children) = self.non_nullable_union_children.get() {
+            return Ok(children);
+        }
+        let graph = self.type_graph();
+        let mut children = IndexSet::new();
+        for t in graph.all_types_unordered() {
+            if graph.kind(t)? == TypeKind::Union && nullable_from_union(graph, t)?.is_none() {
+                children.extend(graph.children(t)?);
+            }
+        }
+        Ok(self.non_nullable_union_children.get_or_init(|| children))
     }
 
     /// `emitUnion(u, unionName)`.
@@ -513,7 +543,8 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
                 }
 
                 if let Some(m) = r.union_member(u, TypeKind::Class)? {
-                    r.emit_line(sl!["var c ", m.go_type]);
+                    let go_type = r.go_type(m.t, false)?;
+                    r.emit_line(sl!["var c ", go_type]);
                 }
                 let args = r.make_args(
                     u,
@@ -615,11 +646,18 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
     }
 
     /// `emitImports(imports)`. TypeScript sorts with `localeCompare`; the
-    /// only imports are `bytes`, `encoding/json`, `errors` and `time`,
-    /// lower-case ASCII letters and `/`, which ICU orders like their code
-    /// points.
+    /// only imports are `bytes`, `encoding/json`, `errors` and `time`, made
+    /// of lower-case ASCII letters and `/`, which ICU's root collation orders
+    /// like their code points (punctuation before letters), so a plain sort
+    /// gives the same order. The codebase has no general `localeCompare`.
     fn emit_imports(&mut self, imports: IndexSet<String>) {
         let mut sorted_imports: Vec<String> = imports.into_iter().collect();
+        debug_assert!(
+            sorted_imports
+                .iter()
+                .all(|i| i.bytes().all(|b| b.is_ascii_lowercase() || b == b'/')),
+            "Go imports outside the localeCompare-compatible alphabet: {sorted_imports:?}"
+        );
         sorted_imports.sort();
 
         if sorted_imports.is_empty() {
@@ -677,13 +715,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
             Ok(())
         })?;
 
-        let mut imports = IndexSet::new();
-        for k in &used_types {
-            if ["time.Time", "*,time.Time", "[],time.Time"].contains(&k.as_str()) {
-                imports.insert("time".to_owned());
-            }
-        }
-        Ok(imports)
+        Ok(class_imports(&used_types))
     }
 
     /// `collectUnionImports(u)`: `time` if a member is `time.Time` or a
@@ -696,13 +728,7 @@ func (x *{type_name}) UnmarshalJSON(data []byte) error {{
             Ok(())
         })?;
 
-        let mut imports = IndexSet::new();
-        for k in &used_types {
-            if ["time.Time", "*,time.Time"].contains(&k.as_str()) {
-                imports.insert("time".to_owned());
-            }
-        }
-        Ok(imports)
+        Ok(imports_for(&used_types, &["time.Time", "*,time.Time"]))
     }
 }
 

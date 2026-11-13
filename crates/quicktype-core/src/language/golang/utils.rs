@@ -65,17 +65,11 @@ pub fn is_value_type(kind: TypeKind) -> bool {
 }
 
 /// `canOmitEmpty(cp, omitEmptyOption)`, on the property's optionality and
-/// its type's kind. Both branches of the TypeScript compute the same
-/// answer.
-pub fn can_omit_empty(is_optional: bool, kind: TypeKind, omit_empty_option: bool) -> bool {
-    if !is_optional {
-        return false;
-    }
-    let excluded = [TypeKind::Union, TypeKind::Null, TypeKind::Any];
-    if omit_empty_option {
-        return !excluded.contains(&kind);
-    }
-    !excluded.contains(&kind)
+/// its type's kind: optional properties other than unions, nulls and
+/// anys. TypeScript's two branches on `omitEmptyOption` compute the same
+/// answer, so the option is ignored here too.
+pub fn can_omit_empty(is_optional: bool, kind: TypeKind, _omit_empty_option: bool) -> bool {
+    is_optional && !matches!(kind, TypeKind::Union | TypeKind::Null | TypeKind::Any)
 }
 
 #[cfg(test)]
