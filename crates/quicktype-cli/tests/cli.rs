@@ -299,6 +299,12 @@ fn errors_before_rendering() {
             &["--lang", "rust", "--density", "sparse", "x.json"],
             "Error: Cannot read from file or URL x.json: Error: ENOENT: no such file or directory, lstat 'x.json'.\n",
         ),
+        // A multi-byte character right before `//` (found by fuzzing): not
+        // a URL, so a missing file.
+        (
+            &["--lang", "rust", "é//foo"],
+            "Error: Cannot read from file or URL é//foo: Error: ENOENT: no such file or directory, lstat 'é//foo'.\n",
+        ),
     ];
     for (args, expected) in cases {
         let output = quicktype(args);

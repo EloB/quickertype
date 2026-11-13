@@ -247,9 +247,11 @@ pub fn is_url(s: &str) -> bool {
     let after_protocol = match s.find("//") {
         Some(0) => &s[2..],
         Some(i) => {
-            let (protocol, colon) = s[..i].split_at(i - 1);
-            if colon != ":"
-                || protocol.is_empty()
+            // Whatever precedes `//` may end in a multi-byte character.
+            let Some(protocol) = s[..i].strip_suffix(':') else {
+                return false;
+            };
+            if protocol.is_empty()
                 || !protocol
                     .bytes()
                     .all(|b| b.is_ascii_alphanumeric() || b == b'_')
@@ -694,6 +696,14 @@ mod tests {
             ("file:///x.json", true),
             ("http://.ab", false),
             ("http://a.😀", true),
+            // A multi-byte character before `//` (found by fuzzing).
+            ("é//foo", false),
+            ("é://a.bc", false),
+            ("aé://a.bc", false),
+            ("😀//a.bc", false),
+            ("x😀://a.bc", false),
+            (":é//a.bc", false),
+            ("a://é.bc", true),
         ] {
             assert_eq!(is_url(s), expected, "{s:?}");
         }
