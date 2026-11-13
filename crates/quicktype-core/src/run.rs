@@ -16,6 +16,7 @@
 //! [`quicktype`] does the same and concatenates the files with
 //! [`combine_render_results`]. [`RunContext`] is what inputs receive from
 //! the run (TS `interface RunContext`, which `Run` implements).
+use std::convert::Infallible;
 use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
@@ -118,10 +119,10 @@ impl RunContext {
 
     /// `time(name, f)`: runs `f` and reports how long it took.
     pub fn time<T>(&self, name: &str, f: impl FnOnce() -> T) -> T {
-        let start = (self.clock)();
-        let result = f();
-        self.report(name, (self.clock)() - start);
-        result
+        match self.time_result(name, || Ok::<T, Infallible>(f())) {
+            Ok(result) => result,
+            Err(never) => match never {},
+        }
     }
 
     /// `time(name, f)` for a pass that can fail: as in TypeScript, where
@@ -137,12 +138,18 @@ impl RunContext {
         Ok(result)
     }
 
-    /// `timeSync(name, f)` (which, despite its name, times an async pass).
-    pub async fn time_async<T>(&self, name: &str, f: impl Future<Output = T>) -> T {
+    /// `timeSync(name, f)` (which, despite its name, times an async pass);
+    /// like [`time_result`](Self::time_result), a failed pass is not
+    /// reported.
+    pub async fn time_async<T, E>(
+        &self,
+        name: &str,
+        f: impl Future<Output = std::result::Result<T, E>>,
+    ) -> std::result::Result<T, E> {
         let start = (self.clock)();
-        let result = f.await;
+        let result = f.await?;
         self.report(name, (self.clock)() - start);
-        result
+        Ok(result)
     }
 
     /// `time` as a [`Timer`] that outlives this borrow of the context.
@@ -456,15 +463,6 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// `time(name, f)` for a pass that can fail: like TypeScript, a pass
-    /// that throws is not reported.
-    fn time<T>(&self, name: &str, f: impl FnOnce() -> Result<T>) -> Result<T> {
-        let start = (self.ctx.clock)();
-        let result = f()?;
-        self.ctx.report(name, (self.ctx.clock)() - start);
-        Ok(result)
-    }
-
     /// `makeGraphInputs()`.
     fn make_graph_inputs(&self) -> Result<GraphInputs> {
         let type_builder = TypeBuilder::new(
@@ -483,32 +481,35 @@ impl<'a> Run<'a> {
     /// `makeGraph(allInputs)`.
     async fn make_graph(&mut self) -> Result<TypeGraph> {
         let mut graph_inputs = self.make_graph_inputs()?;
-        let start = (self.ctx.clock)();
-        self.input_data
-            .add_types(
-                &self.ctx,
-                &mut graph_inputs.type_builder,
-                self.flags.infer_maps,
-                self.flags.infer_enums,
-                self.fixed_top_levels,
+        let input_data = &mut self.input_data;
+        self.ctx
+            .time_async(
+                "read input",
+                input_data.add_types(
+                    &self.ctx,
+                    &mut graph_inputs.type_builder,
+                    self.flags.infer_maps,
+                    self.flags.infer_enums,
+                    self.fixed_top_levels,
+                ),
             )
             .await?;
-        self.ctx.report("read input", (self.ctx.clock)() - start);
         self.process_graph(graph_inputs)
     }
 
     /// `makeGraphSync(allInputs)`.
     fn make_graph_sync(&mut self) -> Result<TypeGraph> {
         let mut graph_inputs = self.make_graph_inputs()?;
-        let start = (self.ctx.clock)();
-        self.input_data.add_types_sync(
-            &self.ctx,
-            &mut graph_inputs.type_builder,
-            self.flags.infer_maps,
-            self.flags.infer_enums,
-            self.fixed_top_levels,
-        )?;
-        self.ctx.report("read input", (self.ctx.clock)() - start);
+        let input_data = &mut self.input_data;
+        self.ctx.time_result("read input", || {
+            input_data.add_types_sync(
+                &self.ctx,
+                &mut graph_inputs.type_builder,
+                self.flags.infer_maps,
+                self.flags.infer_enums,
+                self.fixed_top_levels,
+            )
+        })?;
         self.process_graph(graph_inputs)
     }
 
@@ -532,9 +533,12 @@ impl<'a> Run<'a> {
         }
 
         if did_add_forwarding_intersection || !self.flags.ignore_json_refs {
-            if let Some(g) = self.time("remove indirection intersections", || {
-                remove_indirection_intersections(&graph, stm, dpr)
-            })? {
+            if let Some(g) = self
+                .ctx
+                .time_result("remove indirection intersections", || {
+                    remove_indirection_intersections(&graph, stm, dpr)
+                })?
+            {
                 graph = g;
             }
         }
@@ -545,7 +549,7 @@ impl<'a> Run<'a> {
             loop {
                 let mut changed = false;
                 if !intersections_done {
-                    let (g, done) = self.time("resolve intersections", || {
+                    let (g, done) = self.ctx.time_result("resolve intersections", || {
                         resolve_intersections(&graph, stm, dpr)
                     })?;
                     if let Some(g) = g {
@@ -555,7 +559,7 @@ impl<'a> Run<'a> {
                     intersections_done = done;
                 }
                 if !unions_done {
-                    let (g, done) = self.time("flatten unions", || {
+                    let (g, done) = self.ctx.time_result("flatten unions", || {
                         flatten_unions(&graph, stm, conflate_numbers, true, dpr)
                     })?;
                     if let Some(g) = g {
@@ -576,7 +580,7 @@ impl<'a> Run<'a> {
             }
         }
 
-        if let Some(g) = self.time("replace object type", || {
+        if let Some(g) = self.ctx.time_result("replace object type", || {
             replace_object_type(
                 &graph,
                 stm,
@@ -588,7 +592,7 @@ impl<'a> Run<'a> {
             graph = g;
         }
         loop {
-            let (g, done) = self.time("flatten unions", || {
+            let (g, done) = self.ctx.time_result("flatten unions", || {
                 flatten_unions(&graph, stm, conflate_numbers, false, dpr)
             })?;
             if let Some(g) = g {
@@ -600,7 +604,7 @@ impl<'a> Run<'a> {
         }
 
         if self.flags.combine_classes {
-            let combined = self.time("combine classes", || {
+            let combined = self.ctx.time_result("combine classes", || {
                 combine_classes(
                     &self.ctx,
                     &graph,
@@ -611,7 +615,7 @@ impl<'a> Run<'a> {
                 )
             })?;
             if let Some(combined) = combined {
-                let cleaned = self.time("combine classes cleanup", || {
+                let cleaned = self.ctx.time_result("combine classes cleanup", || {
                     combine_classes(
                         &self.ctx,
                         &combined,
@@ -626,7 +630,10 @@ impl<'a> Run<'a> {
         }
 
         if self.flags.infer_maps {
-            while let Some(g) = self.time("infer maps", || infer_maps(&graph, stm, true, dpr))? {
+            while let Some(g) = self
+                .ctx
+                .time_result("infer maps", || infer_maps(&graph, stm, true, dpr))?
+            {
                 graph = g;
             }
         }
@@ -638,12 +645,12 @@ impl<'a> Run<'a> {
         } else {
             EnumInference::None
         };
-        if let Some(g) = self.time("expand strings", || {
+        if let Some(g) = self.ctx.time_result("expand strings", || {
             expand_strings(&graph, stm, dpr, enum_inference)
         })? {
             graph = g;
         }
-        let (g, done) = self.time("flatten unions", || {
+        let (g, done) = self.ctx.time_result("flatten unions", || {
             flatten_unions(&graph, stm, conflate_numbers, false, dpr)
         })?;
         if let Some(g) = g {
@@ -655,28 +662,37 @@ impl<'a> Run<'a> {
         )?;
 
         if need_schema_processing {
-            if let Some(g) = self.time("flatten strings", || flatten_strings(&graph, stm, dpr))? {
+            if let Some(g) = self
+                .ctx
+                .time_result("flatten strings", || flatten_strings(&graph, stm, dpr))?
+            {
                 graph = g;
             }
         }
 
-        if let Some(g) = self.time("none to any", || none_to_any(&graph, stm, dpr))? {
+        if let Some(g) = self
+            .ctx
+            .time_result("none to any", || none_to_any(&graph, stm, dpr))?
+        {
             graph = g;
         }
         if !self.lang.supports_optional_class_properties() {
-            if let Some(g) = self.time("optional to nullable", || {
+            if let Some(g) = self.ctx.time_result("optional to nullable", || {
                 optional_to_nullable(&graph, stm, dpr)
             })? {
                 graph = g;
             }
         }
 
-        if let Some(g) = self.time("fixed point", || graph.rewrite_fixed_point(false, dpr))? {
+        if let Some(g) = self
+            .ctx
+            .time_result("fixed point", || graph.rewrite_fixed_point(false, dpr))?
+        {
             graph = g;
         }
 
         let lang = self.lang;
-        if let Some(g) = self.time("make transformations", || {
+        if let Some(g) = self.ctx.time_result("make transformations", || {
             make_transformations(
                 &graph,
                 stm,
@@ -688,7 +704,7 @@ impl<'a> Run<'a> {
             graph = g;
         }
 
-        let (g, done) = self.time("flatten unions", || {
+        let (g, done) = self.ctx.time_result("flatten unions", || {
             flatten_unions(&graph, stm, conflate_numbers, false, dpr)
         })?;
         if let Some(g) = g {
@@ -700,14 +716,14 @@ impl<'a> Run<'a> {
         )?;
 
         // TypeScript always garbage collects, to get a defined type order.
-        graph = self.time("GC", || {
+        graph = self.ctx.time_result("GC", || {
             graph.garbage_collect(self.alphabetize_properties, dpr)
         })?;
 
         if self.debug.print_graph {
             console_log("\n# gather names");
         }
-        self.time("gather names", || {
+        self.ctx.time_result("gather names", || {
             gather_names(
                 &mut graph,
                 !need_schema_processing,
@@ -780,7 +796,7 @@ impl<'a> Run<'a> {
 
     /// `renderGraph(targetLanguage, graph)`.
     fn render_graph(&self, graph: &TypeGraph) -> Result<MultiFileRenderResult> {
-        self.time("render", || {
+        self.ctx.time_result("render", || {
             if self.no_render {
                 return Ok(self.make_simple_text_result(vec!["Done.".to_owned(), String::new()]));
             }
