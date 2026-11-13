@@ -120,6 +120,36 @@
    ],
    "error": "Maximum call stack size exceeded",
    "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "cplusplus",
+   "filename": "quicktype.hpp",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
   }
  ],
  "id": "recursion-overflow"
