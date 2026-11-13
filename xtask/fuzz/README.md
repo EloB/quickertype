@@ -127,4 +127,7 @@ samples first, then each JSON sample or schema as a lossless syntax tree
 (`json-text.mjs`). `record.mjs` writes the shrunk case to
 `tests/fuzz-regressions/<name>/` with the reference CLI's output;
 `crates/quicktype-cli/tests/fuzz_regressions.rs` replays it with our binary
-and the npm differential suite (`fuzz` category) through the API.
+and the npm differential suite (`fuzz` category) through the API, with the
+fuzzer's own code for in-process runs (`run-case.mjs`), in the mode the case
+was found in (a "stream" case reads its samples with the reference CLI's
+reader; "cli" and "chain" cases run in the "api" mode).

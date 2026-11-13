@@ -12,26 +12,23 @@
 // * "cli": `node <reference>/dist/index.js` and our native binary, each in a
 //   fresh directory holding the same input files; exit code, stdout, stderr
 //   and written files are compared (the directory is normalized to {CWD}).
+//
+// How a case runs in-process ("api", "stream") is in run-case.mjs, which the
+// npm differential suite replays recorded cases with.
 
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
-import { Readable } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import * as vm from "node:vm";
 
 import { unportablePaths } from "./file-names.mjs";
-import { INFERENCE_FLAGS } from "./generate.mjs";
-
-/** The CLI's `wordWrap` (the `wordwrap` package at width 90), for Postman descriptions. */
-let wordWrap90 = (s) => s;
+import { cliWordWrap, INFERENCE_FLAGS, streamClassFor } from "./run-case.mjs";
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const packageRoot = path.join(repoRoot, "npm", "quicktype-core");
 const engineKey = Symbol.for("quicktype-core.engine");
-const nativeInputsKey = Symbol.for("quicktype-core.nativeInputs");
 
 export function findReference(given) {
     const candidates = given !== undefined ? [given] : process.env.QUICKTYPE_REFERENCE !== undefined
@@ -51,35 +48,19 @@ export async function loadCompare() {
     return await import(pathToFileURL(path.join(packageRoot, "test", "differential", "compare.mjs")).href);
 }
 
-/**
- * The reference CLI's CompressedJSONFromStream, compiled against `qt` (a
- * quicktype-core) instead of the reference's own.
- */
-function streamClassFor(reference, qt) {
-    const file = path.join(reference, "dist", "CompressedJSONFromStream.js");
-    const refRequire = createRequire(file);
-    const source = fs.readFileSync(file, "utf8");
-    const fn = vm.compileFunction(source, ["exports", "require", "module", "__filename", "__dirname"], { filename: file });
-    const module = { exports: {} };
-    fn(module.exports, (id) => (id === "quicktype-core" ? qt : refRequire(id)), module, file, path.dirname(file));
-    return module.exports.CompressedJSONFromStream;
-}
-
+/** Both sides, as run-case.mjs's `runInProcess` takes them, with a `wrap` for each run. */
 export function loadSides(reference) {
     const requireHere = createRequire(import.meta.url);
     const refQt = requireHere(path.join(reference, "packages", "quicktype-core"));
-    wordWrap90 = createRequire(path.join(reference, "dist", "index.js"))("wordwrap")(90);
-    const refStream = requireHere(path.join(reference, "dist", "CompressedJSONFromStream.js")).CompressedJSONFromStream;
     const oursQt = requireHere(packageRoot);
     const stats = requireHere(path.join(packageRoot, "dist", "native", "bridge.js")).engineStats;
-    const oursStream = streamClassFor(reference, oursQt);
-    const registered = globalThis[nativeInputsKey];
-    globalThis[nativeInputsKey] = [...(Array.isArray(registered) ? registered : []), oursStream];
+    const wordWrap = cliWordWrap(reference);
     return {
-        ref: { qt: refQt, Stream: refStream, wrap: (f) => f() },
+        ref: { qt: refQt, Stream: streamClassFor(reference, refQt), wordWrap, wrap: (f) => f() },
         ours: {
             qt: oursQt,
-            Stream: oursStream,
+            Stream: streamClassFor(reference, oursQt),
+            wordWrap,
             stats,
             wrap: async (f) => {
                 const saved = globalThis[engineKey];
@@ -92,84 +73,6 @@ export function loadSides(reference) {
             },
         },
     };
-}
-
-/** The CLI's `--debug` components and the quicktype options they set. */
-export const DEBUG_OPTIONS = [
-    ["print-graph", "debugPrintGraph"],
-    ["print-reconstitution", "debugPrintReconstitution"],
-    ["print-gather-names", "debugPrintGatherNames"],
-    ["print-transformations", "debugPrintTransformations"],
-    ["print-schema-resolving", "debugPrintSchemaResolving"],
-    ["provenance", "checkProvenance"],
-];
-
-/** quicktype options for a case (what the CLI's makeQuicktypeOptions would give, plus API extras). */
-export function quicktypeOptions(kase, inputData, withApiExtras = true) {
-    const options = {
-        lang: kase.lang,
-        inputData,
-        // API runs may give the options as other values than the CLI would.
-        rendererOptions: withApiExtras && kase.api?.rendererOptions !== undefined ? kase.api.rendererOptions : kase.rendererOptions,
-        alphabetizeProperties: kase.flags.alphabetizeProperties === true,
-        allPropertiesOptional: kase.flags.allPropertiesOptional === true,
-    };
-    for (const [name] of INFERENCE_FLAGS) options[name] = kase.flags[name] !== false;
-    for (const [component, name] of DEBUG_OPTIONS) {
-        if (kase.debug?.includes(component)) options[name] = true;
-    }
-
-    if (withApiExtras) {
-        for (const key of ["indentation", "leadingComments", "outputFilename"]) {
-            if (kase.api?.[key] !== undefined) options[key] = kase.api[key];
-        }
-    }
-
-    return options;
-}
-
-/** Runs a case in-process on one side ("api" or "stream" mode). */
-export async function runInProcess(side, kase, mode) {
-    const { qt } = side;
-    const inputData = new qt.InputData();
-    const options = quicktypeOptions(kase, inputData, mode === "api");
-    // "mixed": JSON top-levels and a JSON Schema in one run.
-    if (kase.src === "json" || kase.src === "postman" || kase.src === "mixed") {
-        let topLevels = kase.topLevels;
-        if (kase.src === "postman") {
-            // What the CLI does with a collection (src/index.ts).
-            const { sources, description } = qt.sourcesFromPostmanCollection(kase.postman, "in/collection.json");
-            topLevels = sources;
-            if (sources.length > 1) options.fixedTopLevels = true;
-            if (description !== undefined) options.leadingComments = wordWrap90(description).split("\n");
-        }
-
-        const handleRefs = kase.flags.ignoreJsonRefs === false;
-        let input;
-        if (mode === "stream") {
-            const lang = qt.getTargetLanguage(kase.lang);
-            input = new qt.JSONInput(
-                new side.Stream(lang.dateTimeRecognizer, handleRefs, lang.getSupportedIntegerRange(options.rendererOptions)),
-            );
-        } else {
-            input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, options.rendererOptions);
-        }
-
-        for (const tl of topLevels) {
-            const samples = mode === "stream" ? tl.samples.map((s) => Readable.from([Buffer.from(s, "utf8")])) : tl.samples;
-            await input.addSource(tl.description === undefined ? { name: tl.name, samples } : { name: tl.name, description: tl.description, samples });
-        }
-
-        inputData.addInput(input);
-    }
-
-    if (kase.src === "schema" || kase.src === "mixed") {
-        const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
-        for (const s of kase.schemas) await input.addSource(s.uris === undefined ? { name: s.name, schema: s.text } : { name: s.name, schema: s.text, uris: s.uris });
-        inputData.addInput(input);
-    }
-
-    return await qt.quicktypeMultiFile(options);
 }
 
 // ---- CLI ---------------------------------------------------------------------

@@ -1,7 +1,8 @@
 // Running one case in one mode on both sides and comparing the outcomes;
 // shared by the fuzzer, the minimizer and the replayer.
 
-import { cliCommands, cliCompatible, cliInvocation, loadCompare, loadSides, runCli, runInProcess } from "./engines.mjs";
+import { cliCommands, cliCompatible, cliInvocation, loadCompare, loadSides, runCli } from "./engines.mjs";
+import { runInProcess } from "./run-case.mjs";
 
 const timeoutMs = 120_000;
 

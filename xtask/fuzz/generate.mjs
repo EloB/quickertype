@@ -30,6 +30,7 @@ import { portableName } from "./file-names.mjs";
 import { genGraphQL } from "./graphql-gen.mjs";
 import { arr, lit, num, obj, str, toText } from "./json-text.mjs";
 import { Rng } from "./rng.mjs";
+import { INFERENCE_FLAGS } from "./run-case.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const lines = (file) =>
@@ -1031,18 +1032,6 @@ function genRendererOptions(rng, definitions) {
 
     return options;
 }
-
-/** Inference flags (CLI `--no-*`), as quicktype options. */
-export const INFERENCE_FLAGS = [
-    ["inferMaps", "--no-maps"],
-    ["inferEnums", "--no-enums"],
-    ["inferUuids", "--no-uuids"],
-    ["inferDateTimes", "--no-date-times"],
-    ["inferIntegerStrings", "--no-integer-strings"],
-    ["inferBooleanStrings", "--no-boolean-strings"],
-    ["combineClasses", "--no-combine-classes"],
-    ["ignoreJsonRefs", "--no-ignore-json-refs"],
-];
 
 function genFlags(rng) {
     const flags = {};
