@@ -118,5 +118,6 @@ export async function coldRun(qt, text, ts, lang = "typescript") {
 
 /** The medians of `runs` (`{ read, generate, total }` each). */
 export function medians(runs) {
-    return { read: median(runs.map((r) => r.read)), generate: median(runs.map((r) => r.generate)), total: median(runs.map((r) => r.total)) };
+    const of = (key) => median(runs.map((r) => r[key]));
+    return { read: of("read"), generate: of("generate"), total: of("total"), ...(runs[0].cpu === undefined ? {} : { cpu: of("cpu") }) };
 }
