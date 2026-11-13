@@ -1,0 +1,8 @@
+# Port of quicktype's test/unit/haskell-enum-case-naming.test.ts: enum
+# cases are `<case><enum name>` dependency names, so a case renamed away
+# from a forbidden word (`error`) does not get the enum name twice.
+# tests/language_vitest.rs checks the constructors.
+input schema TopLevel {"type": "object", "properties": {"health": {"type": "string", "enum": ["ok", "error"]}}, "required": ["health"]}
+pipeline {"lang": "haskell"}
+
+render haskell {}

@@ -1,0 +1,6 @@
+# Port of quicktype's test/unit/php-unions.test.ts, "a double member
+# accepts PHP integers".
+input jsonsamples TopLevel ["{\"n\": [1, 2.5, \"s\"]}"]
+pipeline {"lang": "php"}
+
+render php {}

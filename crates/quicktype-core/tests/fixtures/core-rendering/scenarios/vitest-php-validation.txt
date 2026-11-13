@@ -1,0 +1,7 @@
+# Port of quicktype's test/unit/php-validation.test.ts: validators do not
+# recheck scalar parameter types, but collections and unions still check
+# their members.
+input schema ScalarValidation {"type": "object", "properties": {"boolean": {"type": "boolean"}, "integer": {"type": "integer"}, "number": {"type": "number"}, "nullableNumber": {"type": ["number", "null"]}, "string": {"type": "string"}, "integers": {"type": "array", "items": {"type": "integer"}}, "scalarUnion": {"oneOf": [{"type": "integer"}, {"type": "string"}]}}, "required": ["boolean", "integer", "number", "nullableNumber", "string", "integers", "scalarUnion"]}
+pipeline {"lang": "php"}
+
+render php {}
