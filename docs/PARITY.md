@@ -177,6 +177,23 @@ the others name the fix they need.
   disagree in a few corner cases: a tag or anchor directly followed by a
   quoted scalar or collection (`!"x"`, `![…]`), `?`/`:` directly before a
   flow collection inside a flow sequence, and `{?}`.
+- **JavaScript exceptions in JSON Schema input.** Errors that are not
+  `QuickTypeError`s in TypeScript (urijs's `URIError: URI malformed` and
+  `TypeError: Port "…" is not a valid port`, the `TypeError`s of reading a
+  property of `null`) are `InternalError`s whose user message is the
+  exception's message, which is what the CLI prints; the JS API's error
+  class differs. urijs's `equals` can throw only for addresses whose `Ref`
+  could not have been constructed; the port counts that as unequal.
+- **Node I/O corner cases.** `StdIo` reads a directory as empty text (as
+  Node does on macOS, where the corpus was recorded; Linux Node reports
+  `EISDIR`), reports unreadable files (`EACCES`) as a `MiscReadError`
+  where Node crashes with an unhandled stream error, and resolves symbolic
+  links with POSIX path rules on every platform.
+- **Pathological schemas.** JSON and YAML nesting deeper than 1,000 is a
+  parse error (so a fetched document is "Could not fetch"); TypeScript
+  would instead overflow its stack later. `qt-accessors`/`qt-enum-values`
+  entries whose values are not strings are converted with `String(value)`
+  (TypeScript passes the raw value on to naming).
 - **chalk-template features quicktype never uses.** Style arguments and hex
   colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
   exit 2 as not implemented. Style names that are other properties of the
