@@ -11,17 +11,88 @@ use quicktype_js_compat::{sort::compare_utf16, utf16};
 /// int64 bounds are not representable as doubles).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntegerRange {
-    /// The largest integer in the range.
-    pub max: Cow<'static, str>,
-    /// The smallest integer in the range.
-    pub min: Cow<'static, str>,
+    max: Cow<'static, str>,
+    min: Cow<'static, str>,
+    /// `min` and `max` split as [`integer_string_in_range`] compares them,
+    /// so that only the tested number is split on each call.
+    split: [Bound; 2],
 }
 
 impl IntegerRange {
+    /// The range `min..=max`, with the bounds as decimal strings.
+    pub fn new(min: impl Into<Cow<'static, str>>, max: impl Into<Cow<'static, str>>) -> Self {
+        let (min, max) = (min.into(), max.into());
+        let split = [Bound::of(&min), Bound::of(&max)];
+        IntegerRange { max, min, split }
+    }
+
     const fn borrowed(min: &'static str, max: &'static str) -> Self {
         IntegerRange {
             max: Cow::Borrowed(max),
             min: Cow::Borrowed(min),
+            split: [Bound::of(min), Bound::of(max)],
+        }
+    }
+
+    /// The smallest integer in the range.
+    pub fn min(&self) -> &str {
+        &self.min
+    }
+
+    /// The largest integer in the range.
+    pub fn max(&self) -> &str {
+        &self.max
+    }
+}
+
+/// A bound as [`split_integer_string`] splits it: where its digits start
+/// and whether it is negative, if it is ASCII (otherwise it is split when
+/// compared).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Bound {
+    digits_start: usize,
+    negative: bool,
+    ascii: bool,
+}
+
+impl Bound {
+    /// `splitIntegerString(s)` for an ASCII `s`, in a constant context.
+    const fn of(s: &str) -> Bound {
+        let bytes = s.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            if bytes[i] >= 0x80 {
+                return Bound {
+                    digits_start: 0,
+                    negative: false,
+                    ascii: false,
+                };
+            }
+            i += 1;
+        }
+        let has_sign = !bytes.is_empty() && bytes[0] == b'-';
+        let mut start = if has_sign { 1 } else { 0 };
+        // Skip leading zeros, keeping at least one digit.
+        while start + 1 < bytes.len() && bytes[start] == b'0' {
+            start += 1;
+        }
+        let is_zero = start + 1 == bytes.len() && bytes[start] == b'0';
+        Bound {
+            digits_start: start,
+            negative: has_sign && !is_zero,
+            ascii: true,
+        }
+    }
+
+    fn split(self, s: &str) -> SplitInteger<'_> {
+        if self.ascii {
+            SplitInteger {
+                digits: &s[self.digits_start..],
+                negative: self.negative,
+                ascii: true,
+            }
+        } else {
+            split_integer_string(s)
         }
     }
 }
@@ -120,8 +191,8 @@ pub fn compare_integer_strings(a: &str, b: &str) -> Ordering {
 /// string) lies within `range`, inclusive.
 pub fn integer_string_in_range(s: &str, range: &IntegerRange) -> bool {
     let s = split_integer_string(s);
-    compare_split(s, split_integer_string(&range.min)).is_ge()
-        && compare_split(s, split_integer_string(&range.max)).is_le()
+    compare_split(s, range.split[0].split(&range.min)).is_ge()
+        && compare_split(s, range.split[1].split(&range.max)).is_le()
 }
 
 #[cfg(test)]
@@ -144,6 +215,34 @@ mod tests {
             "-9223372036854775808",
             &INT64_RANGE
         ));
+    }
+
+    /// The bounds' stored splits are what splitting them gives.
+    #[test]
+    fn bounds_are_split_like_numbers() {
+        for text in [
+            "0",
+            "-0",
+            "007",
+            "-007",
+            "-",
+            "",
+            "-9223372036854775808",
+            "2147483647",
+        ] {
+            let bound = Bound::of(text);
+            let expected = split_integer_string(text);
+            let actual = bound.split(text);
+            assert_eq!(
+                (actual.digits, actual.negative, actual.ascii),
+                (expected.digits, expected.negative, expected.ascii),
+                "{text:?}"
+            );
+        }
+        let range = IntegerRange::new("-5", "5");
+        assert!(integer_string_in_range("-5", &range));
+        assert!(!integer_string_in_range("6", &range));
+        assert_eq!((range.min(), range.max()), ("-5", "5"));
     }
 
     /// Every pair of a set of decimal strings (signs, leading zeros, the

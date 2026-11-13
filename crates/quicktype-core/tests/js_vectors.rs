@@ -308,16 +308,8 @@ fn integer_range_ts() {
     );
     for (name, range) in &ranges {
         let want = &vectors["ranges"][name];
-        m.check(
-            || format!("{name}.min"),
-            range.min.as_ref(),
-            str_of(&want["min"]),
-        );
-        m.check(
-            || format!("{name}.max"),
-            range.max.as_ref(),
-            str_of(&want["max"]),
-        );
+        m.check(|| format!("{name}.min"), range.min(), str_of(&want["min"]));
+        m.check(|| format!("{name}.max"), range.max(), str_of(&want["max"]));
     }
     for case in arr(&vectors["in_range"]) {
         let s = str_of(&case[0]);
