@@ -99,12 +99,3 @@ export function brief(value, max = 300) {
     if (text === undefined) return String(value);
     return text.length > max ? `${text.slice(0, max)}…` : text;
 }
-
-const notPortedPattern = /^Internal error: The (.+) renderer is not ported yet$/;
-
-/** The language whose renderer the Rust engine does not have yet, if that is why `outcome` failed. */
-export function notPortedLanguage(outcome) {
-    const message = outcome?.error?.$error?.message;
-    const match = typeof message === "string" ? notPortedPattern.exec(message) : null;
-    return match === null ? undefined : match[1];
-}

@@ -6,7 +6,7 @@ import * as os from "node:os";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 
-import { brief, capture, firstDifference, notPortedLanguage } from "./compare.mjs";
+import { brief, capture, firstDifference } from "./compare.mjs";
 import { inputsDir, loadPackages } from "./packages.mjs";
 import { allScenarios } from "./scenarios.mjs";
 
@@ -44,17 +44,24 @@ for (let i = Number(shard); i < list.length; i += Number(shards)) {
     const s = list[i];
     if (filter !== undefined && !filter.test(s.id)) continue;
     const expected = await withTimeout(capture(reference.wrap(() => s.run(reference.qt, ctx))));
-    const before = { ...ours.stats };
+    const before = { ...ours.stats, unsupportedBy: { ...ours.stats.unsupportedBy } };
     const actual = await withTimeout(capture(ours.wrap(() => s.run(ours.qt, ctx))));
     const wasmRuns = ours.stats.wasm - before.wasm;
     const tsRuns = ours.stats.ts - before.ts;
-    const engine = wasmRuns > 0 ? (tsRuns > 0 ? "mixed" : "wasm") : tsRuns > 0 ? "ts" : "none";
+    const declined = ours.stats.unsupported - before.unsupported;
+    // "wasm": every run on WebAssembly; "fallback": the engine declined a
+    // run as unsupported, which then ran on TypeScript; "ts": runs the
+    // facade gave to TypeScript as not eligible; "none": no run at all.
+    const engine = declined > 0 ? "fallback" : wasmRuns > 0 ? (tsRuns > 0 ? "mixed" : "wasm") : tsRuns > 0 ? "ts" : "none";
     const result = { id: s.id, category: s.category, group: s.group, engine };
+    if (declined > 0) {
+        result.unsupported = Object.keys(ours.stats.unsupportedBy).filter(
+            (f) => ours.stats.unsupportedBy[f] !== before.unsupportedBy[f],
+        );
+    }
+
     if (JSON.stringify(expected) === JSON.stringify(actual)) {
         result.status = "pass";
-    } else if (notPortedLanguage(actual) !== undefined) {
-        result.status = "notPorted";
-        result.language = notPortedLanguage(actual);
     } else {
         result.status = "fail";
         const d = firstDifference(expected, actual);

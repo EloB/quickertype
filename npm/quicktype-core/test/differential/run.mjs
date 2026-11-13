@@ -6,9 +6,11 @@
 //   node test/differential/run.mjs [--only REGEX] [--category corpus,inputs,api,stores,errors]
 //                                  [--shards N] [--report FILE] [--show N]
 //
-// Differences that come from a renderer the Rust engine does not have yet
-// ("The X renderer is not ported yet") are counted separately. Exits 1 if
-// anything else differs.
+// Each identical scenario is counted by the engine that produced it: on
+// WebAssembly, on the TypeScript fallback (the engine reported the run as
+// unsupported, e.g. a renderer not ported yet), or on the TypeScript engine
+// because the facade did not consider it eligible (or no run happened).
+// Exits 1 if anything differs, apart from documented known gaps.
 
 import { fork } from "node:child_process";
 import * as fs from "node:fs";
@@ -71,27 +73,30 @@ for (const [category, list] of byCategory) {
     const count = (f) => list.filter(f).length;
     const pass = count((r) => r.status === "pass");
     const passWasm = count((r) => r.status === "pass" && r.engine === "wasm");
-    const notPorted = list.filter((r) => r.status === "notPorted");
+    const fallback = list.filter((r) => r.status === "pass" && r.engine === "fallback");
+    const passOther = pass - passWasm - fallback.length;
     const known = list.filter((r) => r.status === "fail" && knownGaps.has(r.id));
     const failed = list.filter((r) => r.status === "fail" && !knownGaps.has(r.id));
     failures += failed.length;
     summary[category] = {
         total: list.length,
-        pass,
-        passWasm,
-        notPorted: notPorted.length,
+        identical: pass,
+        identicalOnWasm: passWasm,
+        identicalOnFallback: fallback.length,
+        identicalOnTypeScript: passOther,
         knownGaps: known.length,
-        fail: failed.length,
+        different: failed.length,
     };
     console.log(
-        `\n${category}: ${list.length} scenarios: ${pass} identical (${passWasm} of them on WebAssembly), ` +
-            `${notPorted.length} not ported yet, ${known.length} known gaps, ${failed.length} different`,
+        `\n${category}: ${list.length} scenarios: ${pass} identical (${passWasm} on WebAssembly, ` +
+            `${fallback.length} on the TypeScript fallback, ${passOther} on TypeScript by eligibility or without a run), ` +
+            `${known.length} known gaps, ${failed.length} different`,
     );
     for (const r of known) console.log(`  known gap: ${r.id}: ${knownGaps.get(r.id)}`);
-    if (notPorted.length > 0) {
-        const languages = new Map();
-        for (const r of notPorted) languages.set(r.language, (languages.get(r.language) ?? 0) + 1);
-        console.log(`  not ported: ${[...languages].map(([l, n]) => `${l} ${n}`).join(", ")}`);
+    if (fallback.length > 0) {
+        const features = new Map();
+        for (const r of fallback) for (const f of r.unsupported ?? []) features.set(f, (features.get(f) ?? 0) + 1);
+        console.log(`  fallback (unsupported by the engine): ${[...features].map(([f, n]) => `${f} ${n}`).join(", ")}`);
     }
 
     for (const r of failed.slice(0, show)) {

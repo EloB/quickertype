@@ -87,10 +87,10 @@ test("the synchronous API uses the engine from the first call", () => {
         const inputData = new qt.InputData();
         inputData.addInput(input);
         const result = qt.quicktypeMultiFileSync({ lang: "kotlin", inputData });
-        console.log(JSON.stringify([engineStats, result.size]));
+        console.log(JSON.stringify([engineStats.wasm, engineStats.ts, result.size]));
     `;
     const out = execFileSync(process.execPath, ["-e", script], { encoding: "utf8" });
-    assert.deepEqual(JSON.parse(out), [{ wasm: 1, ts: 0 }, 1]);
+    assert.deepEqual(JSON.parse(out), [1, 0, 1]);
 });
 
 test("QUICKTYPE_ENGINE=ts selects the TypeScript engine", () => {
@@ -102,13 +102,52 @@ test("QUICKTYPE_ENGINE=ts selects the TypeScript engine", () => {
         const inputData = new qt.InputData();
         inputData.addInput(input);
         qt.quicktypeMultiFileSync({ lang: "rust", inputData });
-        console.log(JSON.stringify(engineStats));
+        console.log(JSON.stringify([engineStats.wasm, engineStats.ts]));
     `;
     const out = execFileSync(process.execPath, ["-e", script], {
         encoding: "utf8",
         env: { ...process.env, QUICKTYPE_ENGINE: "ts" },
     });
-    assert.deepEqual(JSON.parse(out), { wasm: 0, ts: 1 });
+    assert.deepEqual(JSON.parse(out), [0, 1]);
+});
+
+test("languages the engine lacks fall back to TypeScript, never to an error", async (t) => {
+    const glue = engine.engineSync();
+    const lacking = qt.defaultTargetLanguages.filter((l) => !glue.supportsLanguage(l.name));
+    assert.ok(qt.defaultTargetLanguages.some((l) => glue.supportsLanguage(l.name)));
+    assert.equal(glue.supportsLanguage("cobol"), false);
+    if (lacking.length === 0) {
+        t.skip("every renderer is ported");
+        return;
+    }
+
+    for (const lang of lacking) {
+        const run = async (mode) => {
+            globalThis[Symbol.for("quicktype-core.engine")] = mode;
+            try {
+                const inputData = await json(lang.name, ['{"a": [1, 2.5], "b": "x"}']);
+                return await qt.quicktypeMultiFile({ lang: lang.name, inputData });
+            } finally {
+                delete globalThis[Symbol.for("quicktype-core.engine")];
+            }
+        };
+        const expected = await run("ts");
+        const before = { ...engineStats, unsupportedBy: { ...engineStats.unsupportedBy } };
+        // Even with QUICKTYPE_ENGINE=wasm, which only makes loading failures errors.
+        const actual = await run("wasm");
+        assert.deepEqual([...actual], [...expected]);
+        assert.equal(engineStats.unsupported, before.unsupported + 1);
+        assert.equal(engineStats.wasm, before.wasm);
+        const feature = `${lang.displayName} renderer`;
+        assert.equal(engineStats.unsupportedBy[feature], (before.unsupportedBy[feature] ?? 0) + 1);
+
+        const input = qt.jsonInputForTargetLanguage(lang.name);
+        input.addSourceSync({ name: "S", samples: ["[true]"] });
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        qt.quicktypeMultiFileSync({ lang: lang.name, inputData });
+        assert.equal(engineStats.unsupported, before.unsupported + 2);
+    }
 });
 
 test("concurrent runs with pending fetches don't interfere", async () => {

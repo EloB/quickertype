@@ -15,17 +15,17 @@ export async function smoke(qt, stats) {
     const engines = [];
     // Before the engine has been compiled (browsers compile asynchronously).
     const firstSync = syncRun(qt);
-    engines.push({ ...stats });
+    engines.push({ wasm: stats.wasm, ts: stats.ts });
 
     const input = qt.jsonInputForTargetLanguage("rust");
     await input.addSource({ name: "Person", samples: [sample] });
     const inputData = new qt.InputData();
     inputData.addInput(input);
     const asyncRun = await qt.quicktype({ lang: "rust", inputData });
-    engines.push({ ...stats });
+    engines.push({ wasm: stats.wasm, ts: stats.ts });
 
     const secondSync = syncRun(qt);
-    engines.push({ ...stats });
+    engines.push({ wasm: stats.wasm, ts: stats.ts });
 
     class Store extends qt.JSONSchemaStore {
         async fetch(address) {
@@ -41,7 +41,7 @@ export async function smoke(qt, stats) {
     const schemaData = new qt.InputData();
     schemaData.addInput(schema);
     const schemaRun = await qt.quicktypeMultiFile({ lang: "kotlin", inputData: schemaData });
-    engines.push({ ...stats });
+    engines.push({ wasm: stats.wasm, ts: stats.ts });
 
     return {
         outputs: {
