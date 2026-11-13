@@ -634,8 +634,9 @@ fn deep_and_wide() {
 }
 
 /// Wide objects whose keys reappear in the objects nested in them are
-/// read in linear time: each object walks its members to find a
-/// duplicate at most once (it used to walk them for every such key).
+/// read in linear time: past `SCAN_MEMBERS` members, an object walks its
+/// members to find a duplicate once (it used to walk them for every such
+/// key).
 #[test]
 fn keys_reused_by_nested_objects() {
     let n = 10_000;
@@ -652,8 +653,10 @@ fn keys_reused_by_nested_objects() {
         reader(None, false).parse_string(text).unwrap();
         KEYS_WALKED.with(Cell::get)
     };
-    assert!(walked(&wide(n)) <= 2, "{}", walked(&wide(n)));
-    assert!(walked(&duplicated) <= 2);
+    // One by one up to `SCAN_MEMBERS` members, then a set made once.
+    let bound = SCAN_MEMBERS * SCAN_MEMBERS;
+    assert!(walked(&wide(n)) <= bound, "{}", walked(&wide(n)));
+    assert!(walked(&duplicated) <= bound);
     // As many walked for ten times the members.
     assert_eq!(walked(&wide(10 * n)), walked(&wide(n)));
     same(&[&wide(n), &duplicated, &wide(100)], None, false);

@@ -48,12 +48,15 @@
 //! object's own serial is a duplicate; one with a smaller stamp is new to
 //! the object (an object that started earlier and is still open cannot
 //! add keys while this one is open); one with a larger stamp was used by a
-//! nested object in between. Only then does the object get a set of its
-//! keys, made once from its members so far and kept up to date from then
-//! on, so that an object whose keys keep reappearing in its values
-//! (`{"k0": {"k1": 0}, "k1": {"k2": 0}, …}`) is still read in linear
-//! time. `"__proto__"`, which TypeScript interns anew every time, is not
-//! in the key table ([`PROTO`]) and is tracked per object.
+//! nested object in between. Only then are the object's earlier keys
+//! compared: one by one while it has at most [`SCAN_MEMBERS`] (records
+//! whose nested objects share key names with them, which is common), and
+//! past that with a set of its keys, made once from its members so far
+//! and kept up to date from then on, so that a wide object whose keys
+//! keep reappearing in its values (`{"k0": {"k1": 0}, "k1": {"k2": 0},
+//! …}`) is still read in linear time. `"__proto__"`, which TypeScript
+//! interns anew every time, is not in the key table ([`PROTO`]) and is
+//! tracked per object.
 //!
 //! After a sample, the tape and the key table are kept for the next one
 //! only while they are small ([`KEEP_NODES`], [`KEEP_KEYS`]); a large
@@ -158,6 +161,11 @@ const PROTO: u32 = u32::MAX;
 
 /// How many positions [`Keys::cache`] remembers keys at.
 const KEY_CACHE: usize = 64;
+
+/// Up to how many members an object's earlier keys are compared one by
+/// one for a key a nested object used (see the module documentation);
+/// past that, with a set.
+const SCAN_MEMBERS: usize = 16;
 
 /// Tapes of up to this many nodes (48 KiB) are kept for the next sample.
 const KEEP_NODES: usize = 1 << 12;
@@ -370,7 +378,8 @@ struct OpenObject {
     /// How many members it has so far.
     members: usize,
     /// Its keys, once a key with a stamp larger than its serial came up
-    /// (see the module documentation); every key after that is added.
+    /// past [`SCAN_MEMBERS`] members (see the module documentation); every
+    /// key after that is added.
     keys: Option<HashSet<u32>>,
 }
 
@@ -650,6 +659,9 @@ impl<'t> Recorder<'t> {
             object.reordered = match &mut object.keys {
                 Some(keys) => !keys.insert(index),
                 // Used by a nested object since this one opened.
+                None if stamp > object.serial && object.members <= SCAN_MEMBERS => {
+                    self.has_key(object.node, index)
+                }
                 None if stamp > object.serial => {
                     let mut keys = self.member_keys(object.node);
                     let repeated = !keys.insert(index);
@@ -679,17 +691,14 @@ impl<'t> Recorder<'t> {
         index
     }
 
-    /// The keys (but `"__proto__"`) of the object at `node`, still being
-    /// recorded, so far.
-    fn member_keys(&self, node: usize) -> HashSet<u32> {
-        let mut keys = HashSet::default();
+    /// The key nodes of the object at `node`, still being recorded, so
+    /// far: what each of its members starts with.
+    fn member_keys_at(&self, node: usize) -> impl Iterator<Item = u32> + '_ {
         let mut i = node + 1;
-        while i < self.nodes.len() {
+        std::iter::from_fn(move || {
+            let key = self.nodes.get(i)?.a;
             #[cfg(test)]
             tests::KEYS_WALKED.with(|n| n.set(n.get() + 1));
-            if self.nodes[i].a != PROTO {
-                keys.insert(self.nodes[i].a);
-            }
             // Past the key and its value.
             i = match self.nodes.get(i + 1) {
                 Some(Node {
@@ -699,8 +708,22 @@ impl<'t> Recorder<'t> {
                 }) => *a as usize,
                 _ => i + 2,
             };
-        }
-        keys
+            Some(key)
+        })
+    }
+
+    /// Whether the object at `node`, still being recorded, has the key
+    /// `index` already.
+    fn has_key(&self, node: usize, index: u32) -> bool {
+        self.member_keys_at(node).any(|key| key == index)
+    }
+
+    /// The keys (but `"__proto__"`) of the object at `node`, still being
+    /// recorded, so far.
+    fn member_keys(&self, node: usize) -> HashSet<u32> {
+        self.member_keys_at(node)
+            .filter(|&key| key != PROTO)
+            .collect()
     }
 
     /// `ScanJsonString()`: the cursor is just past the opening quote. A
