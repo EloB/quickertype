@@ -1,0 +1,80 @@
+<!doctype html>
+<!--
+  The repository's social preview (GitHub: Settings > General > Social
+  preview), 1280x640. The figure is the golden-corpus row of
+  docs/BENCHMARKS.md. Render it with headless Chrome, from this directory:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+      --hide-scrollbars --force-device-scale-factor=1 --window-size=1280,640 \
+      --screenshot="$PWD/social-preview.png" "file://$PWD/social-preview.html"
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* The playground's dark palette (site/src/base.css). */
+  :root {
+    --paper: #131419;
+    --panel: #1a1c23;
+    --ink: #e5e6ec;
+    --muted: #9a9dab;
+    --rule: #2d303a;
+    --wasm: #a08cff;
+    --ts: #6ea8ea;
+    --viz-ours: #9085e9;
+    --viz-theirs: #696c79;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; background: var(--paper); }
+  body { color: var(--ink); font-family: var(--sans); }
+  .frame { position: absolute; inset: 0; padding: 72px 96px; display: grid;
+           grid-template-columns: 1fr 420px; column-gap: 56px; }
+  .left { display: flex; flex-direction: column; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 20px; }
+  .mark { width: 72px; height: 72px; flex: none; }
+  .wordmark { font-size: 90px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .pitch h1 { font-size: 50px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.12; }
+  .pitch p { margin-top: 18px; font-size: 32px; line-height: 1.3; color: var(--muted); }
+  .url { font-family: var(--mono); font-size: 28px; color: var(--muted); }
+  .card { background: var(--panel); border: 1px solid var(--rule); border-radius: 28px;
+          padding: 44px 40px; display: flex; flex-direction: column; justify-content: center; }
+  .big { font-size: 160px; font-weight: 750; letter-spacing: -0.045em; line-height: 0.88; color: var(--wasm); }
+  .claim { margin-top: 18px; font-size: 34px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.15; }
+  .caption { margin-top: 10px; font-size: 23px; line-height: 1.3; color: var(--muted); }
+  .bars { margin-top: 30px; display: flex; flex-direction: column; gap: 8px; font-size: 22px; }
+  .label { color: var(--muted); }
+  .label b { color: var(--ink); font-weight: 600; }
+  .bar { height: 14px; border-radius: 7px; margin-bottom: 8px; }
+  .bar.theirs { width: 100%; background: var(--viz-theirs); }
+  .bar.ours { width: 14px; background: var(--viz-ours); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="left">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="12" height="7" rx="3.5" fill="#a08cff"/><rect x="2" y="18" width="28" height="7" rx="3.5" fill="#6ea8ea"/></svg>
+      <span class="wordmark">quickertype</span>
+    </div>
+    <div class="pitch">
+      <h1>quicktype, rewritten in Rust.</h1>
+      <p>The same CLI, the same API and the same output, byte for byte.</p>
+    </div>
+    <div class="url">github.com/EloB/quickertype</div>
+  </div>
+  <div class="card">
+    <div class="big">46×</div>
+    <p class="claim">faster than quicktype</p>
+    <p class="caption">on its own test corpus:<br>11,178 runs, CLI against CLI</p>
+    <div class="bars">
+      <span class="label">quicktype <b>572 s</b></span>
+      <span class="bar theirs"></span>
+      <span class="label">quickertype <b>12.5 s</b></span>
+      <span class="bar ours"></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
