@@ -486,6 +486,79 @@ pub fn depth(value: &JsonValue) -> usize {
     deepest
 }
 
+/// V8's `RangeError: Maximum call stack size exceeded`, where a JavaScript
+/// recursion this crate models iteratively would overflow Node's stack.
+/// (`quicktype_core` turns it into its `RangeError`.)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StackOverflow;
+
+impl fmt::Display for StackOverflow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Maximum call stack size exceeded")
+    }
+}
+
+impl std::error::Error for StackOverflow {}
+
+/// JavaScript `String(value)`, as a template literal converts a value:
+/// arrays are joined with `,` (`null` elements give `""`), objects are
+/// `[object Object]`, numbers as [`number::to_string`].
+///
+/// Iterative. Node's `Array.prototype.join` recurses once per nested array
+/// and overflows its stack where the caller leaves too little: arrays
+/// nested more than `max_depth` deep (counting `value` itself) fail with
+/// [`StackOverflow`].
+pub fn to_js_string(value: &JsonValue, max_depth: usize) -> Result<String, StackOverflow> {
+    /// `String(value)` of anything but an array.
+    fn scalar(value: &JsonValue) -> String {
+        match value {
+            JsonValue::Null => "null".to_owned(),
+            JsonValue::Bool(b) => b.to_string(),
+            JsonValue::Number(n) => number::to_string(*n),
+            JsonValue::String(s) => s.clone(),
+            JsonValue::Array(_) | JsonValue::Object(_) => "[object Object]".to_owned(),
+        }
+    }
+
+    let JsonValue::Array(items) = value else {
+        return Ok(scalar(value));
+    };
+    // (remaining elements, the text so far, whether an element was written)
+    let mut stack = vec![(items.iter(), String::new(), false)];
+    loop {
+        let Some((elements, text, started)) = stack.last_mut() else {
+            return Ok(String::new());
+        };
+        match elements.next() {
+            Some(element) => {
+                if *started {
+                    text.push(',');
+                }
+                *started = true;
+                match element {
+                    JsonValue::Array(inner) => {
+                        if stack.len() >= max_depth {
+                            return Err(StackOverflow);
+                        }
+                        stack.push((inner.iter(), String::new(), false));
+                    }
+                    JsonValue::Null => {}
+                    other => text.push_str(&scalar(other)),
+                }
+            }
+            None => {
+                let Some((_, text, _)) = stack.pop() else {
+                    return Ok(String::new());
+                };
+                match stack.last_mut() {
+                    Some((_, parent, _)) => parent.push_str(&text),
+                    None => return Ok(text),
+                }
+            }
+        }
+    }
+}
+
 /// `!!value`: JavaScript truthiness. `null`, `false`, `0`, `-0`, `NaN` and
 /// `""` are falsy; arrays and objects (even empty ones) are truthy.
 pub fn is_truthy(value: &JsonValue) -> bool {
@@ -768,6 +841,32 @@ mod tests {
         let deeper = parse(&format!("{}{}", "[".repeat(102), "]".repeat(102))).unwrap();
         let elided = "Array([".repeat(100) + "Array([..])" + &"])".repeat(100);
         assert_eq!(format!("{deeper:?}"), elided);
+    }
+
+    #[test]
+    fn js_strings() {
+        let v = |text: &str| parse(text).unwrap();
+        assert_eq!(
+            to_js_string(&v(r#"[1, null, "a", [2, [3]], {"x": 1}, true, 1e21]"#), 3).unwrap(),
+            "1,,a,2,3,[object Object],true,1e+21"
+        );
+        assert_eq!(
+            to_js_string(&v("[1,[2,[null,[]]],3]"), 4).unwrap(),
+            "1,2,,,3"
+        );
+        assert_eq!(to_js_string(&v("[[null], [], [[]]]"), 3).unwrap(), ",,");
+        assert_eq!(to_js_string(&v("null"), 0).unwrap(), "null");
+        assert_eq!(to_js_string(&v("{}"), 0).unwrap(), "[object Object]");
+        assert_eq!(to_js_string(&v("-0"), 0).unwrap(), "0");
+        assert_eq!(to_js_string(&v("[]"), 1).unwrap(), "");
+        let nested = |n: usize| v(&format!("{}\"x\"{}", "[".repeat(n), "]".repeat(n)));
+        assert_eq!(to_js_string(&nested(2_710), 2_710).unwrap(), "x");
+        assert_eq!(to_js_string(&nested(2_711), 2_710), Err(StackOverflow));
+        assert_eq!(to_js_string(&nested(1_000_000), 2_710), Err(StackOverflow));
+        assert_eq!(
+            StackOverflow.to_string(),
+            "Maximum call stack size exceeded"
+        );
     }
 
     #[test]

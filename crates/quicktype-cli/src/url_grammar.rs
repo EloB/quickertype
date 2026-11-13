@@ -6,9 +6,8 @@
 //! expansions.
 
 use indexmap::IndexMap;
-use quicktype_core::{JsErrorName, QuickTypeError};
-use quicktype_js_compat::json::JsonValue;
-use quicktype_js_compat::number;
+use quicktype_core::support::recursion;
+use quicktype_js_compat::json::{self, JsonValue};
 
 use crate::messages::CliError;
 
@@ -24,7 +23,7 @@ const STRING_ARRAY_MAX_DEPTH: usize = 2_734;
 
 /// V8's `RangeError` when Node's stack runs out.
 fn stack_overflow() -> CliError {
-    QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded").into()
+    recursion::stack_overflow().into()
 }
 
 /// `panic(message)`: an internal error.
@@ -32,59 +31,10 @@ fn panic<T>(message: String) -> Result<T, CliError> {
     Err(quicktype_core::QuickTypeError::internal(message).into())
 }
 
-/// JavaScript `String(value)` (what a template literal inserts), for
-/// anything but an array.
-fn scalar_string(value: &JsonValue) -> String {
-    match value {
-        JsonValue::Null => "null".to_owned(),
-        JsonValue::Bool(b) => b.to_string(),
-        JsonValue::Number(n) => number::to_string(*n),
-        JsonValue::String(s) => s.clone(),
-        JsonValue::Array(_) | JsonValue::Object(_) => "[object Object]".to_owned(),
-    }
-}
-
-/// JavaScript `String(value)`. Arrays are joined with `,` (`null` elements
-/// give `""`), iteratively; nesting deeper than [`STRING_ARRAY_MAX_DEPTH`]
-/// is Node's `RangeError`.
+/// JavaScript `String(value)`; nesting deeper than
+/// [`STRING_ARRAY_MAX_DEPTH`] is Node's `RangeError`.
 fn js_string(value: &JsonValue) -> Result<String, CliError> {
-    let JsonValue::Array(items) = value else {
-        return Ok(scalar_string(value));
-    };
-    // (remaining elements, the text so far, whether an element was written)
-    let mut stack = vec![(items.iter(), String::new(), false)];
-    loop {
-        let Some((elements, text, started)) = stack.last_mut() else {
-            return Ok(String::new());
-        };
-        match elements.next() {
-            Some(element) => {
-                if *started {
-                    text.push(',');
-                }
-                *started = true;
-                match element {
-                    JsonValue::Array(inner) => {
-                        if stack.len() >= STRING_ARRAY_MAX_DEPTH {
-                            return Err(stack_overflow());
-                        }
-                        stack.push((inner.iter(), String::new(), false));
-                    }
-                    JsonValue::Null => {}
-                    other => text.push_str(&scalar_string(other)),
-                }
-            }
-            None => {
-                let Some((_, text, _)) = stack.pop() else {
-                    return Ok(String::new());
-                };
-                match stack.last_mut() {
-                    Some((_, parent, _)) => parent.push_str(&text),
-                    None => return Ok(text),
-                }
-            }
-        }
-    }
+    json::to_js_string(value, STRING_ARRAY_MAX_DEPTH).map_err(|_| stack_overflow())
 }
 
 /// `expand(json)`: all URLs an expression stands for, in order. `depth`

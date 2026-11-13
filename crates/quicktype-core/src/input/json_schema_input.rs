@@ -68,6 +68,7 @@ use crate::run::RunContext;
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
 use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::parse_json::parse_json;
+use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, console_log, defined, panic};
 use crate::support::windows_paths::fix_windows_path;
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_targets};
@@ -1056,11 +1057,6 @@ impl Edge {
             Edge::OneOrAnyOf => 5_860,
         }
     }
-}
-
-/// V8's `RangeError: Maximum call stack size exceeded`.
-pub(crate) fn stack_overflow() -> QuickTypeError {
-    QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded")
 }
 
 /// Awaits a step of the TypeScript `async` recursion. In JavaScript every

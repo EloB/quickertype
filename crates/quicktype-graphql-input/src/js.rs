@@ -8,7 +8,6 @@
 //! those reads, truthiness, `===`, and `String(value)` for the template
 //! literals of quicktype's messages.
 
-use quicktype_core::support::recursion::stack_overflow;
 use quicktype_core::{JsErrorName, QuickTypeError, Result};
 use quicktype_js_compat::json::{self, JsonValue};
 
@@ -117,7 +116,7 @@ impl<'a> JsVal<'a> {
         match self {
             JsVal::Undefined => Ok("undefined".to_owned()),
             JsVal::Str(s) => Ok(s.to_owned()),
-            JsVal::Json(v) => json_to_string(v),
+            JsVal::Json(v) => Ok(json::to_js_string(v, STRING_ARRAY_MAX_DEPTH)?),
         }
     }
 }
@@ -127,59 +126,6 @@ impl<'a> JsVal<'a> {
 /// arrays around the name. Elsewhere Node has a little more or less stack
 /// left; that is not modelled.
 const STRING_ARRAY_MAX_DEPTH: usize = 2_710;
-
-/// `String(value)` of anything but an array.
-fn scalar_to_string(value: &JsonValue) -> String {
-    match value {
-        JsonValue::Null => "null".to_owned(),
-        JsonValue::Bool(b) => b.to_string(),
-        JsonValue::Number(n) => quicktype_js_compat::number::to_string(*n),
-        JsonValue::String(s) => s.clone(),
-        JsonValue::Array(_) | JsonValue::Object(_) => "[object Object]".to_owned(),
-    }
-}
-
-/// `String(value)` of a JSON value: arrays joined with commas (`null`
-/// elements empty), iteratively; objects `[object Object]`.
-fn json_to_string(value: &JsonValue) -> Result<String> {
-    let JsonValue::Array(items) = value else {
-        return Ok(scalar_to_string(value));
-    };
-    // (remaining elements, the text so far, whether an element was written)
-    let mut stack = vec![(items.iter(), String::new(), false)];
-    loop {
-        let Some((elements, text, started)) = stack.last_mut() else {
-            return Ok(String::new());
-        };
-        match elements.next() {
-            Some(element) => {
-                if *started {
-                    text.push(',');
-                }
-                *started = true;
-                match element {
-                    JsonValue::Array(inner) => {
-                        if stack.len() >= STRING_ARRAY_MAX_DEPTH {
-                            return Err(stack_overflow());
-                        }
-                        stack.push((inner.iter(), String::new(), false));
-                    }
-                    JsonValue::Null => {}
-                    other => text.push_str(&scalar_to_string(other)),
-                }
-            }
-            None => {
-                let Some((_, text, _)) = stack.pop() else {
-                    return Ok(String::new());
-                };
-                match stack.last_mut() {
-                    Some((_, parent, _)) => parent.push_str(&text),
-                    None => return Ok(text),
-                }
-            }
-        }
-    }
-}
 
 /// The names of the functions on `Object.prototype` (what
 /// `obj[key]` finds for those keys when `obj` lacks them), as each
