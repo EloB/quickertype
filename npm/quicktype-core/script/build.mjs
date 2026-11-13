@@ -82,7 +82,19 @@ function buildWasm() {
 }
 
 /** Exports of the glue that the facade uses (src/native/wasm/glue.d.ts). */
-const glueExports = ["initSync", "runSync", "start", "poll", "settle", "supportsLanguage", "engineVersion", "__pow", "__panicForTests"];
+const glueExports = [
+    "initSync",
+    "runSync",
+    "start",
+    "poll",
+    "settle",
+    "cancel",
+    "supportsLanguage",
+    "engineVersion",
+    "__pow",
+    "__panicForTests",
+    "__pendingRuns",
+];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */
 function glueFactory() {
@@ -136,7 +148,16 @@ function writeGlue() {
         path.join(cjsDir, "glue.js"),
         `"use strict";\n${factory}
 function wasmLocation() {
-    return require("path").join(__dirname, "quicktype_wasm_bg.wasm");
+    // Node: next to this file. A browser bundle of the CommonJS build has no
+    // __dirname or "path" (package.json maps "path" to false), so there the
+    // file is expected next to the bundle's script.
+    if (typeof process === "object" && process !== null && process.versions != null && process.versions.node != null) {
+        return __dirname + "/quicktype_wasm_bg.wasm";
+    }
+
+    var script = typeof document === "object" && document !== null ? document.currentScript : null;
+    var base = script && script.src ? script.src : typeof location === "object" && location !== null ? location.href : undefined;
+    return new URL("quicktype_wasm_bg.wasm", base);
 }
 
 exports.createGlue = createGlue;

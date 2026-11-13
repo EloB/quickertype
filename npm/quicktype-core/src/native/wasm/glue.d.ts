@@ -12,14 +12,19 @@ export interface WasmGlue {
     start(request: unknown, host: unknown): number;
     poll(id: number): unknown;
     settle(id: number, callId: number, ok: boolean, value: unknown): void;
+    cancel(id: number): void;
     supportsLanguage(name: string): boolean;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
+    __pendingRuns(): number;
 }
 
 /** A fresh, uninitialized copy of the glue. */
 export declare function createGlue(): WasmGlue;
 
-/** Where the .wasm file is: a path (CommonJS) or a URL (ES modules). */
+/**
+ * Where the .wasm file is: a path (CommonJS in Node), a URL (ES modules),
+ * or, for a browser bundle of the CommonJS build, a URL next to the script.
+ */
 export declare function wasmLocation(): unknown;

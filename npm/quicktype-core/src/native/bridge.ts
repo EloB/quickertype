@@ -21,14 +21,8 @@ import type {
     TargetLanguage,
 } from "../TargetLanguage.js";
 
-import { type EncodedRun, encodeRun, encodeValue } from "./encode.js";
-import {
-    discardEngine,
-    engineAsync,
-    engineLoadError,
-    engineSync,
-    isDiscarded,
-} from "./engine.js";
+import { type EncodedRun, Unencodable, encodeRun, encodeValue } from "./encode.js";
+import { discardEngine, engineAsync, engineLoadError, engineSync, isDiscarded } from "./engine.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -45,6 +39,12 @@ export const engineStats = {
     ts: 0,
     unsupported: 0,
     unsupportedBy: {} as Record<string, number>,
+    /** Runs redone on the TypeScript engine because the engine failed. */
+    rerun: 0,
+    /** Store documents flattened for the engine (each object once per run). */
+    documentsEncoded: 0,
+    /** What the engine's last failure was (a panic message or an exception). */
+    lastFailure: undefined as string | undefined,
 };
 
 /** The engine lacks `feature`: the run goes to the TypeScript engine. */
@@ -56,33 +56,6 @@ function declined(feature: string): undefined {
 }
 
 const supportedLanguages = new WeakMap<WasmGlue, Map<string, boolean>>();
-
-/**
- * Whether the engine has the language's renderer (asked once per
- * instance), so that runs it would decline go to the TypeScript engine
- * before they have any side effects.
- */
-function engineSupports(glue: WasmGlue, lang: string): boolean {
-    let known = supportedLanguages.get(glue);
-    if (known === undefined) {
-        known = new Map();
-        supportedLanguages.set(glue, known);
-    }
-
-    let supported = known.get(lang);
-    if (supported === undefined) {
-        try {
-            supported = glue.supportsLanguage(lang);
-        } catch (e) {
-            engineFailure(glue, e);
-            supported = false;
-        }
-
-        known.set(lang, supported);
-    }
-
-    return supported;
-}
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
@@ -249,41 +222,90 @@ function decodeFiles(files: any[]): MultiFileRenderResult {
     return result;
 }
 
-/**
- * The result the engine's outcome stands for (or the error it throws), or
- * `undefined` if the engine declined the run as unsupported.
- */
-function decodeOutcome(outcome: any): MultiFileRenderResult | undefined {
-    if (outcome.unsupported !== undefined) return declined(outcome.unsupported);
-    engineStats.wasm++;
+/** The result an outcome stands for (or the error it throws). */
+function decodeResult(outcome: any): MultiFileRenderResult {
     if (outcome.files !== undefined) return decodeFiles(outcome.files);
     if (outcome.error !== undefined) return throwEngineError(outcome.error);
     throw outcome.thrown;
 }
 
-let lastPanic: string | undefined;
+/** Restores what a run on the engine changed on the inputs. */
+type Restore = () => void;
 
 /**
- * An exception that escaped the engine: a trap (a Rust panic, which
- * aborts) or a stack overflow. The instance is discarded either way.
+ * What a run on the engine may change on its JSON Schema inputs, as
+ * TypeScript's `addTypes` would: the store (wrapped when schemas are given
+ * as text), the top-levels, and the cache of the store the input had.
+ * When a run is redone on the TypeScript engine, this is put back first,
+ * so that the TypeScript run starts from the same state as it would have.
  */
-function engineFailure(glue: WasmGlue, e: unknown): unknown {
-    discardEngine(glue);
-    const panicMessage = lastPanic;
-    lastPanic = undefined;
-    if (e instanceof RangeError) {
-        // The JavaScript engine's stack overflowed, as it would have in
-        // the TypeScript engine.
-        return e;
-    }
+function snapshotInputs(inputs: JSONSchemaInput[]): Restore {
+    const saved = inputs.map((input: any) => {
+        const store = input._schemaStore;
+        const cache: unknown = store?._schemas;
+        return {
+            input,
+            store,
+            topLevels: [...input._topLevels],
+            cache: cache instanceof Map ? [...cache] : undefined,
+        };
+    });
+    return () => {
+        for (const { input, store, topLevels, cache } of saved) {
+            input._schemaStore = store;
+            input._topLevels.clear();
+            for (const [name, ref] of topLevels) input._topLevels.set(name, ref);
+            if (cache !== undefined) {
+                store._schemas.clear();
+                for (const [address, schema] of cache) store._schemas.set(address, schema);
+            }
+        }
+    };
+}
 
-    try {
-        return messageError("InternalError", {
-            message: panicMessage ?? `WebAssembly engine failed: ${String(e)}`,
-        });
-    } catch (error) {
-        return error;
-    }
+/** A weak reference, or a strong one where the host has no `WeakRef`. */
+interface Ref_<T> {
+    deref(): T | undefined;
+}
+
+function weakRef<T extends object>(target: T): Ref_<T> {
+    const WeakRefConstructor = (globalThis as any).WeakRef;
+    return typeof WeakRefConstructor === "function" ? new WeakRefConstructor(target) : { deref: () => target };
+}
+
+/** The async runs in flight on each instance (weakly: see `Driver`). */
+const inflight = new WeakMap<WasmGlue, Set<Ref_<Driver>>>();
+
+/**
+ * Runs whose `Driver` became unreachable (a store promise that will never
+ * settle, and nothing else waiting): the engine can drop them too.
+ */
+const abandoned = (() => {
+    const Registry = (globalThis as any).FinalizationRegistry;
+    if (typeof Registry !== "function") return undefined;
+    return new Registry(({ glue, id }: { glue: WasmGlue; id: number }) => {
+        if (isDiscarded(glue)) return;
+        try {
+            glue.cancel(id);
+        } catch (e) {
+            engineFailed(glue, e);
+        }
+    });
+})();
+
+/**
+ * An exception escaped the engine: a trap (a Rust panic, which aborts) or a
+ * stack overflow. The instance's memory can no longer be trusted, so it is
+ * discarded, and every run on it, this one included, is redone on the
+ * TypeScript engine, which gives the result (or error) TypeScript gives.
+ */
+function engineFailed(glue: WasmGlue, e: unknown): void {
+    engineStats.lastFailure = lastPanic ?? String(e);
+    lastPanic = undefined;
+    discardEngine(glue);
+    const runs = inflight.get(glue);
+    inflight.delete(glue);
+    for (const run of runs ?? []) run.deref()?.redo();
 }
 
 /** A `store.get` the engine is waiting for. */
@@ -293,36 +315,247 @@ interface SchemaRequest {
     callId: number;
 }
 
-interface Driver {
-    glue: WasmGlue;
-    id: number;
+/**
+ * Drives one async run on the engine: polls it, starts the store fetches it
+ * asks for once each poll has returned, and settles them.
+ *
+ * Only the pending fetches' callbacks (and a poll in progress) reference a
+ * driver; the engine's host object holds it weakly. So a run whose fetch
+ * never settles, and that nobody can observe any more, is collected, and
+ * the engine is told to drop it (`abandoned`).
+ */
+class Driver {
+    public id = -1;
+
     /** Requested by the engine during the current poll, not yet started. */
-    requests: SchemaRequest[];
-    step: () => void;
-    fail: (e: unknown) => void;
+    public readonly requests: SchemaRequest[] = [];
+
+    /** The stores of the run's schema inputs, set by `schemaPrepare`. */
+    public readonly stores: JSONSchemaStore[] = [];
+
+    private done = false;
+
+    /** Set when the run must be redone on TypeScript whatever it ends with. */
+    private unsupported: string | undefined;
+
+    /** Documents already sent to the engine in this run, with their ids. */
+    private readonly sent = new Map<object, number>();
+
+    /** The store fetches started and not settled yet. */
+    private readonly fetching = new Set<Promise<unknown>>();
+
+    private readonly self: Ref_<Driver>;
+
+    public constructor(
+        public readonly glue: WasmGlue,
+        private readonly run: RunContext,
+        private readonly restore: Restore,
+        private readonly resolve: (result: MultiFileRenderResult | undefined) => void,
+        private readonly reject: (e: unknown) => void,
+    ) {
+        this.self = weakRef(this);
+        let runs = inflight.get(glue);
+        if (runs === undefined) {
+            runs = new Set();
+            inflight.set(glue, runs);
+        }
+
+        runs.add(this.self);
+    }
+
+    public started(id: number): void {
+        this.id = id;
+        abandoned?.register(this, { glue: this.glue, id }, this);
+    }
+
+    private end(): boolean {
+        if (this.done) return false;
+        this.done = true;
+        inflight.get(this.glue)?.delete(this.self);
+        abandoned?.unregister(this);
+        return true;
+    }
+
+    /** Redo the run on the TypeScript engine (the engine failed). */
+    public redo(): void {
+        if (!this.end()) return;
+        engineStats.ts++;
+        engineStats.rerun++;
+        this.handOver(undefined);
+    }
+
+    /**
+     * Resolves with `undefined` (the TypeScript engine does the run) once
+     * the store fetches this attempt started have settled, so that none of
+     * them completes during the TypeScript run (a store's `get` caches what
+     * it fetches, and must not get one address twice), and after the
+     * inputs are back as they were.
+     */
+    private handOver(result: undefined): void {
+        const quiet = (): undefined => undefined;
+        Promise.all([...this.fetching].map((f) => f.then(quiet, quiet))).then(() => {
+            this.restore();
+            this.resolve(result);
+        });
+    }
+
+    private finish(outcome: any): void {
+        if (!this.end()) return;
+        const unsupported = this.unsupported ?? outcome.unsupported;
+        if (unsupported !== undefined) {
+            this.handOver(declined(unsupported));
+            return;
+        }
+
+        engineStats.wasm++;
+        try {
+            this.resolve(decodeResult(outcome));
+        } catch (e) {
+            this.reject(e);
+        }
+    }
+
+    public step(): void {
+        for (;;) {
+            if (this.done) return;
+            if (isDiscarded(this.glue)) {
+                this.redo();
+                return;
+            }
+
+            let outcome: unknown;
+            try {
+                outcome = this.glue.poll(this.id);
+            } catch (e) {
+                engineFailed(this.glue, e);
+                return;
+            }
+
+            if (outcome !== undefined) {
+                this.finish(outcome);
+                return;
+            }
+
+            let settledNow = false;
+            for (const request of this.requests.splice(0)) {
+                if (this.startFetch(request)) settledNow = true;
+            }
+
+            if (!settledNow) return;
+        }
+    }
+
+    /** Settles a fetch in the engine; false if the engine failed. */
+    private settle(callId: number, ok: boolean, value: unknown): boolean {
+        if (this.done) return false;
+        if (isDiscarded(this.glue)) {
+            this.redo();
+            return false;
+        }
+
+        try {
+            this.glue.settle(this.id, callId, ok, value);
+            return true;
+        } catch (e) {
+            engineFailed(this.glue, e);
+            return false;
+        }
+    }
+
+    /**
+     * A document for the engine: its encoding, or the id of the same
+     * object sent before (stores hand out one object per address).
+     */
+    private document(schema: unknown): unknown {
+        if (schema !== null && typeof schema === "object") {
+            const id = this.sent.get(schema);
+            if (id !== undefined) return { cachedId: id };
+        }
+
+        const encoded = encodeValue(schema);
+        engineStats.documentsEncoded++;
+        if (encoded !== undefined && schema !== null && typeof schema === "object") {
+            const id = this.sent.size;
+            this.sent.set(schema, id);
+            encoded.id = id;
+        }
+
+        return encoded;
+    }
+
+    /**
+     * `await this._store.get(address, this._ctx.debugPrintSchemaResolving)`
+     * for a request of the engine. It runs after the poll that made the
+     * request has returned: the engine awaits right there, so nothing
+     * happens in between, and the store's code (user code) runs on a
+     * shallow stack instead of below every frame of a deeply nested
+     * resolution. Returns whether the request settled synchronously (the
+     * store threw).
+     */
+    private startFetch(request: SchemaRequest): boolean {
+        let pending: unknown;
+        try {
+            pending = this.stores[request.storeId].get(
+                request.address,
+                this.run.debugPrintSchemaResolving,
+            );
+        } catch (e) {
+            return this.settle(request.callId, false, e);
+        }
+
+        const fetched = Promise.resolve(pending);
+        this.fetching.add(fetched);
+        const settled = (): void => {
+            this.fetching.delete(fetched);
+        };
+        fetched.then(settled, settled);
+        fetched.then(
+            (schema) => {
+                if (this.done) return;
+                let value: unknown;
+                try {
+                    value = this.document(schema);
+                } catch (e) {
+                    if (!(e instanceof Unencodable)) throw e;
+                    // Let the engine stop; the run is redone on TypeScript.
+                    this.unsupported = e.feature;
+                    if (this.settle(request.callId, false, e)) this.step();
+                    return;
+                }
+
+                if (this.settle(request.callId, true, value)) this.step();
+            },
+            (e) => {
+                if (this.settle(request.callId, false, e)) this.step();
+            },
+        );
+        return false;
+    }
 }
+
+let lastPanic: string | undefined;
 
 function makeHost(
     run: RunContext,
     options: any,
     encoded: EncodedRun,
-    stores: JSONSchemaStore[],
-    driver: Driver | undefined,
+    glue: WasmGlue,
+    driver: Ref_<Driver> | undefined,
 ): Record<string, unknown> {
+    const syncStores: JSONSchemaStore[] = [];
+    const stores = (): JSONSchemaStore[] => driver?.deref()?.stores ?? syncStores;
     return {
         schemaPrepare(storeId: number): void {
-            stores[storeId] = prepareSchemaInput(
-                encoded.schemaInputs[storeId],
-                run,
-            );
+            stores()[storeId] = prepareSchemaInput(encoded.schemaInputs[storeId], run);
         },
         schemaGet(storeId: number, address: string, callId: number): void {
-            if (driver === undefined) {
+            const d = driver?.deref();
+            if (d === undefined) {
                 return panic("The synchronous engine cannot fetch schemas");
             }
 
             // Started once the poll has returned (see `startFetch`).
-            driver.requests.push({ storeId, address, callId });
+            d.requests.push({ storeId, address, callId });
         },
         schemaTopLevels(storeId: number, names: string[], refs: string[]): void {
             // `this.addTopLevel(name, ref)` for each top-level `addTypes` found.
@@ -331,15 +564,21 @@ function makeHost(
                 input.addTopLevel(names[i], Ref.parse(refs[i]));
             }
         },
-        timing(name: string, milliseconds: number): void {
+        // The callbacks that can run user code report whether that made
+        // the instance unusable (a nested run trapped); the engine then
+        // traps too rather than go on.
+        timing(name: string, milliseconds: number): boolean {
             // `this._options.onTiming?.({ name, milliseconds })`
             options.onTiming?.({ name, milliseconds });
+            return isDiscarded(glue);
         },
-        log(line: string): void {
+        log(line: string): boolean {
             console.log(line);
+            return isDiscarded(glue);
         },
-        error(line: string): void {
+        error(line: string): boolean {
             console.error(line);
+            return isDiscarded(glue);
         },
         now(): number {
             return performance.now();
@@ -350,132 +589,80 @@ function makeHost(
     };
 }
 
-/**
- * `await this._store.get(address, this._ctx.debugPrintSchemaResolving)`
- * for a request of the engine. It runs after the poll that made the
- * request has returned: the engine awaits right there, so nothing happens
- * in between, and the store's code (user code) runs on a shallow stack
- * instead of below every frame of a deeply nested resolution. Returns
- * whether the request settled synchronously (the store threw).
- */
-function startFetch(
-    driver: Driver,
-    stores: JSONSchemaStore[],
-    run: RunContext,
-    request: SchemaRequest,
-): boolean {
-    const { glue } = driver;
-    const settle = (ok: boolean, value: unknown): void => {
-        if (isDiscarded(glue)) {
-            driver.fail(engineFailure(glue, new Error("discarded")));
-            return;
-        }
-
-        try {
-            glue.settle(driver.id, request.callId, ok, value);
-        } catch (e) {
-            driver.fail(engineFailure(glue, e));
-        }
-    };
-    let pending: unknown;
-    try {
-        pending = stores[request.storeId].get(request.address, run.debugPrintSchemaResolving);
-    } catch (e) {
-        settle(false, e);
-        return true;
-    }
-
-    Promise.resolve(pending).then(
-        (schema) => {
-            let encodedSchema: unknown;
-            try {
-                encodedSchema = encodeValue(schema);
-            } catch (e) {
-                settle(false, e);
-                driver.step();
-                return;
-            }
-
-            settle(true, encodedSchema);
-            driver.step();
-        },
-        (e) => {
-            settle(false, e);
-            driver.step();
-        },
-    );
-    return false;
-}
-
 function runOnEngine(
     glue: WasmGlue,
     encoded: EncodedRun,
     run: RunContext,
     options: any,
 ): Promise<MultiFileRenderResult | undefined> {
+    const restore = snapshotInputs(encoded.schemaInputs);
     return new Promise((resolve, reject) => {
-        let settled = false;
-        const stores: JSONSchemaStore[] = [];
-        const driver: Driver = {
-            glue,
-            id: -1,
-            requests: [],
-            fail(e) {
-                if (settled) return;
-                settled = true;
-                engineStats.wasm++;
-                reject(e);
-            },
-            step() {
-                for (;;) {
-                    if (settled) return;
-                    let outcome: unknown;
-                    try {
-                        outcome = glue.poll(driver.id);
-                    } catch (e) {
-                        driver.fail(engineFailure(glue, e));
-                        return;
-                    }
-
-                    if (outcome !== undefined) {
-                        settled = true;
-                        try {
-                            resolve(decodeOutcome(outcome));
-                        } catch (e) {
-                            reject(e);
-                        }
-
-                        return;
-                    }
-
-                    let settledNow = false;
-                    for (const request of driver.requests.splice(0)) {
-                        if (startFetch(driver, stores, run, request)) {
-                            settledNow = true;
-                        }
-                    }
-
-                    if (!settledNow) return;
-                }
-            },
-        };
-        const host = makeHost(run, options, encoded, stores, driver);
+        const driver = new Driver(glue, run, restore, resolve, reject);
+        const host = makeHost(run, options, encoded, glue, weakRef(driver));
+        let id: number;
         try {
-            driver.id = glue.start(encoded.request, host);
+            id = glue.start(encoded.request, host);
         } catch (e) {
-            driver.fail(engineFailure(glue, e));
+            engineFailed(glue, e);
             return;
         }
 
+        driver.started(id);
         driver.step();
     });
 }
 
 /**
+ * Whether the engine has the language's renderer (asked once per
+ * instance), so that runs it would decline go to the TypeScript engine
+ * before they have any side effects; `undefined` if asking made the engine
+ * fail.
+ */
+function engineSupports(glue: WasmGlue, lang: string): boolean | undefined {
+    let known = supportedLanguages.get(glue);
+    if (known === undefined) {
+        known = new Map();
+        supportedLanguages.set(glue, known);
+    }
+
+    let supported = known.get(lang);
+    if (supported === undefined) {
+        try {
+            supported = glue.supportsLanguage(lang);
+        } catch (e) {
+            engineFailed(glue, e);
+            return undefined;
+        }
+
+        known.set(lang, supported);
+    }
+
+    return supported;
+}
+
+/** The TypeScript engine does the run: the engine failed or declined it. */
+function useTypeScript(glue: WasmGlue, encoded: EncodedRun, targetLanguage: TargetLanguage): boolean {
+    const supported = engineSupports(glue, encoded.request.lang as string);
+    if (supported === undefined) {
+        engineStats.ts++;
+        engineStats.rerun++;
+        return true;
+    }
+
+    if (!supported) {
+        declined(`${targetLanguage.displayName} renderer`);
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * `run()` on the WebAssembly engine: `undefined` if the run is not
  * eligible (the caller then uses the TypeScript engine), else a promise of
- * the result, or of `undefined` if the engine could not be loaded or does
- * not support the run (a language whose renderer is not ported yet).
+ * the result, or of `undefined` if the TypeScript engine has to do it
+ * after all: the engine could not be loaded, does not support the run (a
+ * language whose renderer is not ported yet), or failed.
  */
 export function runNative(
     run: RunContext,
@@ -502,10 +689,7 @@ export function runNative(
             return undefined;
         }
 
-        if (!engineSupports(glue, encoded.request.lang as string)) {
-            return declined(`${targetLanguage.displayName} renderer`);
-        }
-
+        if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
         return runOnEngine(glue, encoded, run, options);
     });
 }
@@ -539,20 +723,24 @@ export function runNativeSync(
         return undefined;
     }
 
-    if (!engineSupports(glue, encoded.request.lang as string)) {
-        return declined(`${targetLanguage.displayName} renderer`);
-    }
-
-    let outcome: unknown;
+    if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
+    const restore = snapshotInputs(encoded.schemaInputs);
+    let outcome: any;
     try {
-        outcome = glue.runSync(
-            encoded.request,
-            makeHost(run, options, encoded, [], undefined),
-        );
+        outcome = glue.runSync(encoded.request, makeHost(run, options, encoded, glue, undefined));
     } catch (e) {
-        engineStats.wasm++;
-        throw engineFailure(glue, e);
+        engineFailed(glue, e);
+        restore();
+        engineStats.ts++;
+        engineStats.rerun++;
+        return undefined;
     }
 
-    return decodeOutcome(outcome);
+    if (outcome.unsupported !== undefined) {
+        restore();
+        return declined(outcome.unsupported);
+    }
+
+    engineStats.wasm++;
+    return decodeResult(outcome);
 }

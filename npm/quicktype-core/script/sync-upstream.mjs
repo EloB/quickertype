@@ -2,15 +2,17 @@
 // except for Run.ts (which hands eligible runs to the WebAssembly engine)
 // and src/native/ (the bridge).
 //
-//   node script/sync-upstream.mjs [--check] [QUICKTYPE_CHECKOUT]
+//   node script/sync-upstream.mjs [--check | --accept] [QUICKTYPE_CHECKOUT]
 //
 // The checkout defaults to $QUICKTYPE_REFERENCE, ../quicktype or
 // ../../quicktype next to this repository. Without --check, upstream files
 // are copied over (and files that no longer exist upstream are removed);
 // with --check, differences are listed and the exit code is 1 if there
-// are any. Either way, if upstream's Run.ts differs from the one Run.ts
-// was derived from (src/native/UPSTREAM.json), the change has to be ported
-// by hand: the script says so and exits 1.
+// are any. Either way, if upstream changed one of the files src/native
+// depends on (their hashes are in src/native/UPSTREAM.json: Run.ts, which
+// is modified here, and the files whose internals the bridge reads), the
+// script says so and exits 1: port Run.ts's change by hand, review the
+// bridge, then record the new hashes with --accept.
 
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
@@ -21,6 +23,7 @@ const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".."
 const repositoryRoot = path.join(packageRoot, "..", "..");
 const args = process.argv.slice(2);
 const check = args.includes("--check");
+const accept = args.includes("--accept");
 const given = args.find((a) => !a.startsWith("--")) ?? process.env.QUICKTYPE_REFERENCE;
 const candidates = given !== undefined ? [given] : [path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")];
 const checkout = candidates.find((c) => fs.existsSync(path.join(c, "packages", "quicktype-core", "src", "index.ts")));
@@ -76,12 +79,30 @@ for (const file of listFiles(path.join(packageRoot, "src")).map((f) => path.join
 
 for (const d of differences) console.log(d);
 let status = check && differences.length > 0 ? 1 : 0;
-const runTs = sha256(path.join(upstreamRoot, "src", "Run.ts"));
-if (runTs !== upstreamMeta.runTsSha256) {
+let changedGuarded = false;
+for (const [file, recorded] of Object.entries(upstreamMeta.guarded)) {
+    const now = sha256(path.join(upstreamRoot, file));
+    if (now === recorded) continue;
+    changedGuarded = true;
+    if (accept) {
+        upstreamMeta.guarded[file] = now;
+        continue;
+    }
+
     console.log(
-        `Run.ts changed upstream since ${upstreamMeta.commit}: port the change into src/Run.ts by hand, then update src/native/UPSTREAM.json`,
+        file === "src/Run.ts"
+            ? `${file} changed upstream since ${upstreamMeta.commit}: port the change into src/Run.ts by hand`
+            : `${file} changed upstream since ${upstreamMeta.commit}: src/native depends on it; review the bridge`,
     );
     status = 1;
+}
+
+if (accept && changedGuarded) {
+    fs.writeFileSync(
+        path.join(packageRoot, "src", "native", "UPSTREAM.json"),
+        `${JSON.stringify(upstreamMeta, undefined, 4)}\n`,
+    );
+    console.log("recorded the new hashes in src/native/UPSTREAM.json (update its commit too)");
 }
 
 console.log(

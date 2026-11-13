@@ -41,8 +41,23 @@ function suppliedModule(): unknown {
     return new host.WebAssembly.Module(supplied);
 }
 
+let attempted = false;
+let attemptedWith: unknown;
+let attempts = 0;
+
+/** How often the engine was compiled (or tried to be), for tests. */
+export function compileAttempts(): number {
+    return attempts;
+}
+
 function compileSync(): void {
     if (compiledModule !== undefined) return;
+    // A failure is final, unless the embedder supplies a module afterwards.
+    const supplied = host[suppliedModuleKey];
+    if (attempted && supplied === attemptedWith) return;
+    attempted = true;
+    attemptedWith = supplied;
+    attempts++;
     try {
         compiledModule =
             suppliedModule() ??
@@ -54,6 +69,7 @@ function compileSync(): void {
 }
 
 async function compileAsync(): Promise<void> {
+    attempts++;
     try {
         const supplied = suppliedModule();
         if (supplied !== undefined) {

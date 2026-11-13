@@ -123,8 +123,45 @@ function truthy(x: unknown): boolean {
     return !!x;
 }
 
+/**
+ * Whether `s` is well-formed UTF-16 (no lone surrogates).
+ * `String.prototype.isWellFormed` where the host has it.
+ */
+export function isWellFormed(s: string): boolean {
+    const native = (s as any).isWellFormed;
+    if (typeof native === "function") return native.call(s);
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        if (c < 0xd800 || c > 0xdfff) continue;
+        if (c > 0xdbff) return false;
+        const next = s.charCodeAt(i + 1);
+        if (!(next >= 0xdc00 && next <= 0xdfff)) return false;
+        i++;
+    }
+
+    return true;
+}
+
 class Ineligible {}
 const ineligible = new Ineligible();
+
+/**
+ * Every string of the request must be well-formed: the engine's strings
+ * are UTF-8, so a lone surrogate (which `JSON.parse` accepts) would arrive
+ * as U+FFFD and could merge distinct keys or names.
+ */
+function checkStrings(value: unknown, depth = 0): void {
+    if (typeof value === "string") {
+        if (!isWellFormed(value)) fail();
+    } else if (Array.isArray(value)) {
+        for (const item of value) checkStrings(item, depth + 1);
+    } else if (value !== null && typeof value === "object" && !ArrayBuffer.isView(value) && depth < 64) {
+        for (const key of Object.keys(value)) {
+            checkStrings(key, depth + 1);
+            checkStrings((value as any)[key], depth + 1);
+        }
+    }
+}
 
 function fail(): never {
     throw ineligible;
@@ -272,6 +309,8 @@ function encodeJSONInput(input: any): Record<string, unknown> {
     const strings: string[] = cjson._strings;
     const stringLengths = new Uint32Array(strings.length);
     for (let i = 0; i < strings.length; i++) {
+        // Each on its own: joined, the halves of neighbours could pair up.
+        if (!isWellFormed(strings[i])) fail();
         stringLengths[i] = strings[i].length;
     }
 
@@ -323,16 +362,27 @@ function encodeJSONInput(input: any): Record<string, unknown> {
     };
 }
 
-/** The attribute producers every `JSONSchemaInput` starts with. */
-const builtinAttributeProducerCount = 9;
+let builtinAttributeProducers: unknown[] | undefined;
+
+/** Whether `producers` are exactly the ones every `JSONSchemaInput` starts with. */
+function onlyBuiltinAttributeProducers(producers: unknown): boolean {
+    if (builtinAttributeProducers === undefined) {
+        builtinAttributeProducers = (new JSONSchemaInput(undefined) as any)._attributeProducers;
+    }
+
+    const builtin = builtinAttributeProducers as unknown[];
+    return (
+        Array.isArray(producers) &&
+        producers.length === builtin.length &&
+        producers.every((p, i) => p === builtin[i])
+    );
+}
 
 function encodeSchemaInput(
     input: any,
     storeId: number,
 ): Record<string, unknown> {
-    if (input._attributeProducers.length !== builtinAttributeProducerCount) {
-        fail();
-    }
+    if (!onlyBuiltinAttributeProducers(input._attributeProducers)) fail();
 
     const sourceUris: string[] = [];
     const sourceNames: string[] = [];
@@ -392,6 +442,11 @@ const switchNames = [
     "debugPrintTimes",
 ] as const;
 
+/** An encoded input without its JSON string table (checked on its own). */
+function withoutTables(input: any): unknown {
+    return input.kind === "json" ? { ...input, strings: "" } : input;
+}
+
 /**
  * The request for a run with the (default-filled) `options` of a `Run`,
  * or `undefined` if the run must use the TypeScript engine.
@@ -445,19 +500,19 @@ export function encodeRun(
             }
         }
 
-        return {
-            request: {
-                lang,
-                rendererOptionNames,
-                rendererOptionValues,
-                switches,
-                leadingComments: encodeLeadingComments(options.leadingComments),
-                outputFilename: options.outputFilename,
-                indentation,
-                inputs,
-            },
-            schemaInputs,
+        const request = {
+            lang,
+            rendererOptionNames,
+            rendererOptionValues,
+            switches,
+            leadingComments: encodeLeadingComments(options.leadingComments),
+            outputFilename: options.outputFilename,
+            indentation,
+            inputs,
         };
+        // (The JSON inputs' string tables were checked while encoding.)
+        checkStrings({ ...request, inputs: inputs.map(withoutTables) });
+        return { request, schemaInputs };
     } catch (e) {
         if (e === ineligible) return undefined;
         throw e;
@@ -477,26 +532,54 @@ const enum Tag {
 }
 
 /**
+ * A store document the engine cannot read exactly: it has a string that is
+ * not well-formed UTF-16 (which would arrive as U+FFFD), refers to itself
+ * (TypeScript recurses until its stack overflows), or would take too much
+ * memory to flatten. The run is then redone on the TypeScript engine.
+ */
+export class Unencodable {
+    public constructor(public readonly feature: string) {}
+}
+
+/** More nodes than this (a huge document, or sharing that multiplies) is not flattened. */
+const maximumNodes = 50_000_000;
+
+/** Marks the end of an object or array during `encodeValue`'s walk. */
+const leave = {};
+
+/**
  * A schema document a store returned, flattened for the engine: tags in
  * pre-order, with numbers, collection sizes and strings (object keys
  * before their values) in separate streams. Objects are read with
  * `Object.keys`; values JSON has no notion of (functions, symbols, bigints)
  * become `undefined`, which the engine reads as absent (in objects) or
- * `null` (in arrays).
+ * `null` (in arrays). Throws `Unencodable` (see there).
  */
-export function encodeValue(value: unknown): unknown {
+export function encodeValue(value: unknown): Record<string, unknown> | undefined {
     if (value === undefined) return undefined;
     const tags: number[] = [];
     const numbers: number[] = [];
     const counts: number[] = [];
     const strings: string[] = [];
-    // Pending values, and the keys to emit before them (`undefined` for none).
+    // The objects and arrays being walked, to tell a cycle from sharing.
+    const ancestors = new Set<object>();
+    // Pending values (or `leave` markers), and the keys to emit before them.
     const values: unknown[] = [value];
     const keys: Array<string | undefined> = [undefined];
+    const string = (s: string): void => {
+        if (!isWellFormed(s)) throw new Unencodable("lone surrogates in schema documents");
+        strings.push(s);
+    };
     while (values.length > 0) {
         const v = values.pop();
         const key = keys.pop();
-        if (key !== undefined) strings.push(key);
+        if (v === leave) {
+            ancestors.delete(key as unknown as object);
+            continue;
+        }
+
+        if (tags.length >= maximumNodes) throw new Unencodable("schema documents this large");
+        if (key !== undefined) string(key);
         if (v === null) {
             tags.push(Tag.Null);
             continue;
@@ -512,9 +595,14 @@ export function encodeValue(value: unknown): unknown {
                 break;
             case "string":
                 tags.push(Tag.String);
-                strings.push(v);
+                string(v);
                 break;
-            case "object":
+            case "object": {
+                if (ancestors.has(v)) throw new Unencodable("circular schema documents");
+                ancestors.add(v);
+                // Leave the object after its children (`keys` carries it).
+                values.push(leave);
+                keys.push(v as unknown as string);
                 if (Array.isArray(v)) {
                     tags.push(Tag.Array);
                     counts.push(v.length);
@@ -533,6 +621,8 @@ export function encodeValue(value: unknown): unknown {
                 }
 
                 break;
+            }
+
             default:
                 tags.push(Tag.Undefined);
         }

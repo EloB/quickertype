@@ -1,5 +1,24 @@
 {
     "repository": "https://github.com/glideapps/quicktype",
     "commit": "c39af7d303b025280e2668a1b2d29913093593c9",
-    "runTsSha256": "429586d910f21e6a6486eb19af14a04661f62a23a997496a85b4fbfea43fca84"
+    "comment": "Upstream files whose internals or behavior src/native depends on, with their SHA-256 at that commit. Run.ts is modified here; the others are vendored unchanged. When one of them changes upstream, review src/native before syncing (script/sync-upstream.mjs).",
+    "guarded": {
+        "src/Run.ts": "429586d910f21e6a6486eb19af14a04661f62a23a997496a85b4fbfea43fca84",
+        "src/Annotation.ts": "5097a9e42969b9904a541fe461c618533c34f4557ad4723361ff10e425105e42",
+        "src/DateTime.ts": "98060fd443a4f201584f096c43995bbff7ea10187b66f95402ff4fdc411b953a",
+        "src/Inference.ts": "8b6f89ab0676f9c92377b6c32acd28c857a42b2d8971f76eb82e3f04ecc7ac8c",
+        "src/Messages.ts": "27c3a7addb881ec30451ccc1d9b1c22354f42850fbf8871a1f6293d9ce44c421",
+        "src/Source.ts": "384fc3587ccdbc47c4c6587f42caf87b6055fdd43be823ac2f9fd83eae1926d8",
+        "src/TargetLanguage.ts": "2129e00f8f9020527a74a68f8e6fb1e3c033b43dbead51efd24d533cb1b85347",
+        "src/RendererOptions/index.ts": "3710b31461de1787ed703a2cd9daa0080044ccf0c6079526c2c5a2fe1ecbb406",
+        "src/input/Inputs.ts": "b845ddf1a3ac6a0c427c482ed31c4ec1891ba2e1b332b93837f1b6ace90bc700",
+        "src/input/CompressedJSON.ts": "110c1a794f45e64dfbc8329ef97e8fbef6764e7193fb3b27e3a41c29b07c3351",
+        "src/input/JSONSchemaInput.ts": "316374b7d69463fa4ac9c9268b0082d92743e53eaf25874b9b4deb2a5a92013f",
+        "src/input/JSONSchemaStore.ts": "78f30ed068347104c26653d5b877e7748c347be9045968706482c84b35169d37",
+        "src/input/PathElement.ts": "a2a341df3457d53626fdb1d19e3a14e5e5056e353e524402eb4ad76568262b02",
+        "src/language/All.ts": "8e1826907fe51bf0b6690bd787df266df76b6ff701920c2ae6d2b12fe5f3a090",
+        "src/language/Kotlin/utils.ts": "c9fdbdc4f018adb46b4017f993d5f611bdc5d96c10ac14ef7662b2ee505a5a72",
+        "src/language/Swift/utils.ts": "81bfe4fa9e7d2e1083c2bd8774bd2c0c1d480a8b9c2139a9ded75107d2ea84b3",
+        "src/support/Comments.ts": "f07e81a72c0c8796e0c160210829bee9d7035b8467fbf20267fa81e562f8b360"
+    }
 }
