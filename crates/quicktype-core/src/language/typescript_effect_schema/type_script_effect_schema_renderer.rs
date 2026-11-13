@@ -4,13 +4,14 @@
 //! that is not emitted yet is wrapped in `S.suspend`, so the output depends
 //! on the order in which schemas are rendered (`emittedObjects`).
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
+use crate::graph::Graph;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
@@ -18,6 +19,7 @@ use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     is_letter_or_underscore, split_into_words, string_escape, utf16_string_escape,
 };
+use crate::support::support::assert;
 use crate::target_language::TargetLanguage;
 use quicktype_js_compat::number::to_string as js_number;
 
@@ -41,7 +43,8 @@ impl TypeScriptEffectSchemaOptions {
 }
 
 /// `nameStyle(original, upper)`: camel-case acronyms, and names start with
-/// a letter or underscore.
+/// a letter or underscore. The TypeScript duplicates the zod renderer's
+/// `nameStyle` here instead of sharing it, and so does the port.
 fn name_style(original: &str, upper: bool) -> String {
     let acronyms = acronym_style(AcronymStyleOptions::Camel);
     let words = split_into_words(original);
@@ -68,9 +71,29 @@ fn name_style(original: &str, upper: bool) -> String {
     )
 }
 
-/// `importStatement(lhs, moduleName)`.
+/// `importStatement(lhs, moduleName)`, duplicated from the zod renderer as
+/// in the TypeScript.
 fn import_statement(lhs: &str, module_name: &str) -> Source {
     sl!["import ", lhs, " from ", module_name, ";"]
+}
+
+/// The highest set bit of `bits` below `limit`.
+fn highest_bit_below(bits: &[u64], limit: usize) -> Option<usize> {
+    let mut word = limit / 64;
+    let mut mask = (1u64 << (limit % 64)).wrapping_sub(1);
+    loop {
+        if let Some(&bits) = bits.get(word) {
+            let masked = bits & mask;
+            if masked != 0 {
+                return Some(word * 64 + 63 - masked.leading_zeros() as usize);
+            }
+        }
+        if word == 0 {
+            return None;
+        }
+        word -= 1;
+        mask = u64::MAX;
+    }
 }
 
 /// `TypeScriptEffectSchemaRenderer`.
@@ -391,44 +414,98 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
         Ok(())
     }
 
-    /// The `recurse` of `walkObjectNames`.
-    fn walk_object_names_recurse(
-        &mut self,
-        t: TypeRef,
-        names: &mut Vec<Name>,
-        visited: &mut HashSet<TypeRef>,
-    ) -> Result<()> {
-        if !visited.insert(t) {
-            return Ok(());
-        }
-        let ty = self.type_graph().type_at(t)?;
-        match ty.kind() {
-            TypeKind::Object | TypeKind::Class => {
-                names.push(self.name_for_named_type(t)?);
-                self.for_each_class_property(t, BlankLinePosition::None, |r, _, _, prop, _| {
-                    r.walk_object_names_recurse(prop.type_ref, names, visited)
-                })?;
+    /// The objects (as indexes into `map_key`) that the properties of
+    /// `object_type` reach directly: through arrays and maps, but not
+    /// through unions or into other objects. These are the edges of the
+    /// graph `walkObjectNames` walks.
+    fn direct_object_dependencies(
+        &self,
+        object_type: TypeRef,
+        index_of_name: &HashMap<Name, usize>,
+    ) -> Result<Vec<usize>> {
+        let graph = self.type_graph();
+        let mut dependencies = Vec::new();
+        let mut visited: HashSet<TypeRef> = HashSet::new();
+        let mut stack: Vec<TypeRef> = graph
+            .type_at(object_type)?
+            .properties()?
+            .values()
+            .map(|p| p.type_ref)
+            .collect();
+        while let Some(t) = stack.pop() {
+            if !visited.insert(t) {
+                continue;
             }
-            TypeKind::Array => self.walk_object_names_recurse(ty.items()?, names, visited)?,
-            TypeKind::Map => self.walk_object_names_recurse(ty.map_values()?, names, visited)?,
-            // An enum has no children.
-            _ => {}
+            let ty = graph.type_at(t)?;
+            match ty.kind() {
+                TypeKind::Object | TypeKind::Class => {
+                    if let Some(&index) = index_of_name.get(&self.name_for_named_type(t)?) {
+                        dependencies.push(index);
+                    }
+                }
+                TypeKind::Array => stack.push(ty.items()?),
+                TypeKind::Map => stack.push(ty.map_values()?),
+                // An enum has no children; unions are not walked.
+                _ => {}
+            }
         }
-        Ok(())
+        Ok(dependencies)
     }
 
-    /// `walkObjectNames(objectType)`: the classes the properties of
-    /// `object_type` reach through arrays, maps and other classes (but not
-    /// through unions).
-    fn walk_object_names(&mut self, object_type: TypeRef) -> Result<Vec<Name>> {
-        let mut names = Vec::new();
-        let mut visited = HashSet::new();
+    /// The `ordinal` of every object in `emitSchemas`. TS walks the graph
+    /// from each object (`walkObjectNames`) and puts the object after the
+    /// dependencies already in `order`, which are exactly the objects
+    /// before it: `ordinal = max(depIndex + 1)` over the objects it reaches
+    /// with a smaller index (bug-compatibly, that index and not the
+    /// position in `order`). Here the reachable sets come from the
+    /// strongly connected components of the object graph, computed once.
+    fn object_ordinals(&self, map_key: &[Name], map_value: &[TypeRef]) -> Result<Vec<usize>> {
+        let count = map_key.len();
+        let mut index_of_name: HashMap<Name, usize> = HashMap::new();
+        for (index, &name) in map_key.iter().enumerate() {
+            index_of_name.entry(name).or_insert(index);
+        }
+        let mut direct = Vec::with_capacity(count);
+        for &t in map_value {
+            direct.push(self.direct_object_dependencies(t, &index_of_name)?);
+        }
 
-        self.for_each_class_property(object_type, BlankLinePosition::None, |r, _, _, prop, _| {
-            r.walk_object_names_recurse(prop.type_ref, &mut names, &mut visited)
-        })?;
+        let components =
+            Graph::with_edges(0..count, false, direct.clone())?.strongly_connected_components()?;
+        let words = count.div_ceil(64);
+        let mut component_of = vec![0; count];
+        // Tarjan emits a component after every component it reaches, so
+        // the reachable set of each successor is complete when needed.
+        let mut reach: Vec<Vec<u64>> = Vec::with_capacity(components.size());
+        for (component, members) in components.nodes().iter().enumerate() {
+            let mut bits = vec![0u64; words];
+            for &member in members {
+                component_of[member] = component;
+                bits[member / 64] |= 1 << (member % 64);
+            }
+            for &successor in components.successors(component) {
+                assert(
+                    successor < component,
+                    "Components are not in reverse topological order",
+                )?;
+                for (word, other) in bits.iter_mut().zip(&reach[successor]) {
+                    *word |= other;
+                }
+            }
+            reach.push(bits);
+        }
 
-        Ok(names)
+        let mut ordinals = Vec::with_capacity(count);
+        for (index, dependencies) in direct.iter().enumerate() {
+            let mut ordinal = 0;
+            for &dependency in dependencies {
+                if let Some(highest) = highest_bit_below(&reach[component_of[dependency]], index) {
+                    ordinal = ordinal.max(highest + 1);
+                }
+            }
+            ordinals.push(ordinal);
+        }
+        Ok(ordinals)
     }
 
     /// `emitSchemas()`.
@@ -449,25 +526,8 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             Ok(())
         })?;
 
-        for (index, &source) in map_value.iter().enumerate() {
-            // assume first
-            let mut ordinal = 0;
-
-            // pull out all names
-            let names = self.walk_object_names(source)?;
-
-            // must be behind all these names
-            for dep_name in names {
-                // find this name's ordinal, if it has already been added
-                for &dep_index in &order {
-                    if map_key[dep_index] == dep_name {
-                        // this is the index of the dependency, so make sure
-                        // we come after it
-                        ordinal = ordinal.max(dep_index + 1);
-                    }
-                }
-            }
-
+        let ordinals = self.object_ordinals(&map_key, &map_value)?;
+        for (index, ordinal) in ordinals.into_iter().enumerate() {
             // insert index (`splice` clamps the position)
             order.insert(ordinal.min(order.len()), index);
         }
@@ -548,5 +608,23 @@ impl<'a> ConvenienceRenderer<'a> for TypeScriptEffectSchemaRenderer<'a> {
 
         self.emit_imports();
         self.emit_schemas()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn highest_bits_below_a_limit() {
+        let bits = [0b1001u64, 1 << 5];
+        assert_eq!(highest_bit_below(&bits, 0), None);
+        assert_eq!(highest_bit_below(&bits, 1), Some(0));
+        assert_eq!(highest_bit_below(&bits, 3), Some(0));
+        assert_eq!(highest_bit_below(&bits, 4), Some(3));
+        assert_eq!(highest_bit_below(&bits, 64), Some(3));
+        assert_eq!(highest_bit_below(&bits, 70), Some(69));
+        assert_eq!(highest_bit_below(&bits, 128), Some(69));
+        assert_eq!(highest_bit_below(&bits, 200), Some(69));
     }
 }
