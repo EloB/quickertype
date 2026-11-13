@@ -628,6 +628,17 @@ function schemaEnumValue(rng, kind) {
     }
 }
 
+const genNumberLiteral = (rng) => (rng.chance(0.5) ? genIntLiteral(rng) : genDoubleLiteral(rng));
+
+/** A pattern with characters that need escaping in generated code. */
+function oddPattern(rng) {
+    const parts = ["\\d", "\\\\", '"', "'", "`", "${x}", "*/", "/*", "\\u00e9", "ü", "😀", "$", "^", "\n", "\t", "#{x}", "%s", "{{", "}}", "[^\\]]", "(?:a|b)", "\\/"];
+    let p = "";
+    const n = rng.range(1, 5);
+    for (let i = 0; i < n; i++) p += rng.pick(parts);
+    return p;
+}
+
 class SchemaGen {
     constructor(rng) {
         this.rng = rng;
@@ -703,14 +714,14 @@ class SchemaGen {
             case "string":
                 e.push(this.typeOf("string"));
                 if (rng.chance(0.4)) e.push([str("format"), str(rng.pick(SCHEMA_FORMATS))]);
-                if (rng.chance(0.1)) e.push([str("pattern"), str(rng.pick(PATTERNS))]);
-                if (rng.chance(0.1)) e.push([str("minLength"), num(rng.range(0, 5))]);
-                if (rng.chance(0.1)) e.push([str("maxLength"), num(rng.range(5, 300))]);
+                if (rng.chance(0.1)) e.push([str("pattern"), str(rng.chance(0.7) ? rng.pick(PATTERNS) : oddPattern(rng))]);
+                if (rng.chance(0.1)) e.push([str("minLength"), num(rng.chance(0.8) ? rng.range(0, 5) : genIntLiteral(rng))]);
+                if (rng.chance(0.1)) e.push([str("maxLength"), num(rng.chance(0.8) ? rng.range(5, 300) : genNumberLiteral(rng))]);
                 break;
             case "number":
                 e.push(this.typeOf(rng.pick(["number", "integer"])));
-                if (rng.chance(0.15)) e.push([str("minimum"), num(rng.pick(["0", "-1", "1.5", "-2147483648", "1e3"]))]);
-                if (rng.chance(0.15)) e.push([str("maximum"), num(rng.pick(["100", "2147483647", "9007199254740991", "0.5", "1e20"]))]);
+                if (rng.chance(0.15)) e.push([str("minimum"), num(rng.chance(0.6) ? rng.pick(["0", "-1", "1.5", "-2147483648", "1e3"]) : genNumberLiteral(rng))]);
+                if (rng.chance(0.15)) e.push([str("maximum"), num(rng.chance(0.6) ? rng.pick(["100", "2147483647", "9007199254740991", "0.5", "1e20"]) : genNumberLiteral(rng))]);
                 if (rng.chance(0.05)) e.push([str("exclusiveMinimum"), num("0")]);
                 if (rng.chance(0.05)) e.push([str("format"), str(rng.pick(["int32", "int64", "double", "float"]))]);
                 break;
