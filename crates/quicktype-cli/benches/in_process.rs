@@ -93,6 +93,9 @@ fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
 fn main() {
     let mut iterations = 10usize;
     let mut json = false;
+    let mut filters: Vec<String> = Vec::new();
+    let mut per_input = false;
+    let mut languages: Vec<&'static str> = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
@@ -103,18 +106,39 @@ fn main() {
                     .expect("--iterations <n>");
             }
             "--json" => json = true,
+            // Only inputs whose file name contains one of the filters.
+            "--filter" => filters.extend(args.next()),
+            // Also print the median time of each input and language.
+            "--per-input" => per_input = true,
+            // Only these languages (repeatable).
+            "--lang" => {
+                let name = args.next().expect("--lang <name>");
+                languages.push(
+                    LANGUAGES
+                        .iter()
+                        .copied()
+                        .find(|l| *l == name)
+                        .expect("one of the benchmark's languages"),
+                );
+            }
             // `cargo bench` passes `--bench`.
             _ => {}
         }
     }
-    let inputs = inputs();
-    let runs = inputs.len() * LANGUAGES.len();
+    let inputs: Vec<(String, String)> = inputs()
+        .into_iter()
+        .filter(|(name, _)| filters.is_empty() || filters.iter().any(|f| name.contains(f.as_str())))
+        .collect();
+    if languages.is_empty() {
+        languages = LANGUAGES.to_vec();
+    }
+    let runs = inputs.len() * languages.len();
 
     // Warm-up: first-use initialization (the Markov chain, pluralize's
     // rules) happens once per process, as in a long-lived JS process.
     let mut output_bytes = 0;
     for (_, text) in &inputs {
-        for lang in LANGUAGES {
+        for lang in &languages {
             output_bytes += run(lang, text).2;
         }
     }
@@ -122,13 +146,16 @@ fn main() {
     let mut totals = Vec::with_capacity(iterations);
     let mut parse_totals = Vec::with_capacity(iterations);
     let mut engine_totals = Vec::with_capacity(iterations);
+    // Per input and language, every iteration's time.
+    let mut cells: Vec<Vec<f64>> = vec![Vec::new(); runs];
     for _ in 0..iterations {
         let (mut parse, mut engine) = (Duration::ZERO, Duration::ZERO);
-        for (_, text) in &inputs {
-            for lang in LANGUAGES {
+        for (i, (_, text)) in inputs.iter().enumerate() {
+            for (j, lang) in languages.iter().enumerate() {
                 let (p, e, _) = run(lang, text);
                 parse += p;
                 engine += e;
+                cells[i * languages.len() + j].push((p + e).as_secs_f64() * 1000.0);
             }
         }
         totals.push((parse + engine).as_secs_f64() * 1000.0);
@@ -145,6 +172,20 @@ fn main() {
         };
         (median, v[0])
     };
+    if per_input {
+        print!("{:<32}", "input (ms per run, median)");
+        for lang in &languages {
+            print!("{lang:>8}");
+        }
+        println!();
+        for (i, (name, _)) in inputs.iter().enumerate() {
+            print!("{name:<32}");
+            for j in 0..languages.len() {
+                print!("{:>8.3}", summarize(&mut cells[i * languages.len() + j]).0);
+            }
+            println!();
+        }
+    }
     let (total, total_min) = summarize(&mut totals);
     let (parse, _) = summarize(&mut parse_totals);
     let (engine, _) = summarize(&mut engine_totals);
@@ -156,7 +197,7 @@ fn main() {
         println!(
             "in-process: {} inputs × {} languages = {runs} runs per iteration, {iterations} iterations, {ALLOCATOR} allocator",
             inputs.len(),
-            LANGUAGES.len()
+            languages.len()
         );
         println!("  total   median {total:.1} ms  (min {total_min:.1} ms)");
         println!("  parse   median {parse:.1} ms");
