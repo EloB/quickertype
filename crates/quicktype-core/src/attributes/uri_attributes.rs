@@ -44,6 +44,65 @@ pub fn path_extension(path: &str) -> Option<&str> {
     Some(extension)
 }
 
+// ---------------------------------------------------------------------------
+// JSON input: `uriInferenceAttributesProducer`; JSON Schema input:
+// `uriSchemaAttributesProducer`
+
+/// `uriInferenceAttributesProducer(s)`: the protocol and the (lowercased)
+/// path extension of a string inferred as a `uri`; no attributes if urijs
+/// cannot parse it (an invalid port).
+pub fn uri_inference_attributes_producer(
+    s: &str,
+) -> crate::attributes::type_attributes::TypeAttributes {
+    use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
+    let Ok(uri) = quicktype_js_compat::uri::Uri::parse(s) else {
+        return TypeAttributes::new();
+    };
+    let extensions: IndexSet<String> = path_extension(uri.path())
+        .map(str::to_lowercase)
+        .into_iter()
+        .collect();
+    UriTypeAttributeKind.make_attributes((
+        [uri.protocol().to_lowercase()].into_iter().collect(),
+        extensions,
+    ))
+}
+
+/// `uriSchemaAttributesProducer(schema, ref, types)`: `qt-uri-protocols`
+/// and `qt-uri-extensions` of a string schema.
+pub fn uri_schema_attributes_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _ref: &crate::input::json_schema_input::Ref,
+    types: &IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> crate::messages::Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::attributes::type_attributes::AttributeKind;
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType};
+    use crate::input::json_schema_store::{JsonSchema, check_array};
+
+    if schema.type_of() != "object" || !types.contains(&JsonSchemaType::String) {
+        return Ok(None);
+    }
+    let strings = |property: &str| -> crate::messages::Result<IndexSet<String>> {
+        Ok(match schema.get(property) {
+            None => IndexSet::new(),
+            Some(values) => check_array(values, |v| matches!(v, JsonSchema::String(_)))?
+                .iter()
+                .filter_map(|v| v.as_str().map(str::to_owned))
+                .collect(),
+        })
+    };
+    let protocols = strings(PROTOCOLS_SCHEMA_PROPERTY)?;
+    let extensions = strings(EXTENSIONS_SCHEMA_PROPERTY)?;
+    if protocols.is_empty() && extensions.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(JsonSchemaAttributes {
+        for_string: Some(UriTypeAttributeKind.make_attributes((protocols, extensions))),
+        ..JsonSchemaAttributes::default()
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -231,6 +231,113 @@ pub fn union_member_name(
     Ok((Some(first), is_fixed))
 }
 
+// ---------------------------------------------------------------------------
+// JSON Schema input: `makeAccessorNames`, `accessorNamesAttributeProducer`
+
+/// `isAccessorEntry(x)`: a string, or an object of strings.
+fn is_accessor_entry(x: &crate::input::json_schema_store::JsonSchema) -> bool {
+    use crate::input::json_schema_store::JsonSchema;
+    match x {
+        JsonSchema::String(_) => true,
+        JsonSchema::Object(map) => map.values().all(|v| matches!(v, JsonSchema::String(_))),
+        _ => false,
+    }
+}
+
+/// `makeAccessorEntry(ae)`: a string is a name for every language,
+/// anything else is read as an object of names by language
+/// (`mapFromObject`). Values that are not strings (which TypeScript would
+/// pass on as they are) are converted with `String(value)`.
+fn make_accessor_entry(ae: &crate::input::json_schema_store::JsonSchema) -> Result<AccessorEntry> {
+    use crate::input::json_schema_input::js_exception;
+    use crate::input::json_schema_store::JsonSchema;
+    Ok(match ae {
+        JsonSchema::String(s) => AccessorEntry::Name(s.clone()),
+        JsonSchema::Object(map) => AccessorEntry::ByLanguage(
+            map.iter()
+                .map(|(k, v)| (k.clone(), v.to_js_string()))
+                .collect(),
+        ),
+        JsonSchema::Array(items) => {
+            let mut names: IndexMap<String, String> = items
+                .iter()
+                .enumerate()
+                .map(|(i, v)| (i.to_string(), v.to_js_string()))
+                .collect();
+            names.insert("length".to_owned(), items.len().to_string());
+            AccessorEntry::ByLanguage(names)
+        }
+        JsonSchema::Null => return Err(js_exception("Cannot convert undefined or null to object")),
+        JsonSchema::Bool(_) | JsonSchema::Number(_) => AccessorEntry::ByLanguage(IndexMap::new()),
+    })
+}
+
+/// `makeAccessorNames(x)`: accessor entries by name from a `qt-accessors`
+/// (or `qt-enum-values`) object.
+pub fn make_accessor_names(
+    x: &crate::input::json_schema_store::JsonSchema,
+) -> Result<AccessorNames> {
+    use crate::input::json_schema_store::JsonSchema;
+    // FIXME (as in TypeScript): do proper error reporting.
+    let JsonSchema::Object(map) = x else {
+        return crate::support::support::panic(format!(
+            "Value must be an object, but is {}",
+            x.to_js_string()
+        ));
+    };
+    map.iter()
+        .map(|(k, v)| Ok((k.clone(), make_accessor_entry(v)?)))
+        .collect()
+}
+
+/// `accessorNamesAttributeProducer(schema, canonicalRef, types, cases)`:
+/// `qt-accessors` names the properties or enum cases of the type; under
+/// `oneOf` it is an array naming each case.
+pub fn accessor_names_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    canonical_ref: &crate::input::json_schema_input::Ref,
+    _types: &IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::input::json_schema_input::JsonSchemaAttributes;
+    use crate::input::json_schema_store::check_array;
+
+    let Some(maybe_accessors) = schema.get("qt-accessors") else {
+        return Ok(None);
+    };
+    let Some(cases) = cases else {
+        return Ok(Some(JsonSchemaAttributes {
+            for_type: Some(
+                AccessorNamesTypeAttributeKind
+                    .make_attributes(make_accessor_names(maybe_accessors)?),
+            ),
+            ..JsonSchemaAttributes::default()
+        }));
+    };
+    let identifier_attribute = make_union_identifier_attribute();
+    let accessors = check_array(maybe_accessors, is_accessor_entry)?;
+    let properties = vec![
+        ("operation", MessageValue::from("oneOf")),
+        ("ref", canonical_ref.push(&["oneOf"])?.message_value()),
+    ];
+    message_assert(
+        cases.len() == accessors.len(),
+        ErrorKind::SchemaWrongAccessorEntryArrayLength,
+        properties,
+    )?;
+    let case_attributes = accessors
+        .iter()
+        .map(|accessor| {
+            make_union_member_names_attribute(&identifier_attribute, make_accessor_entry(accessor)?)
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(Some(JsonSchemaAttributes {
+        for_union: Some(identifier_attribute),
+        for_cases: Some(case_attributes),
+        ..JsonSchemaAttributes::default()
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

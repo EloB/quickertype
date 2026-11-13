@@ -723,7 +723,7 @@ fn ipv6_best(address: &str) -> String {
 /// but no operation ported here observes the difference, so missing parts
 /// are `None` and present parts are never empty (except `path`, which is
 /// always a string).
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Uri {
     protocol: Option<String>,
     username: Option<String>,
