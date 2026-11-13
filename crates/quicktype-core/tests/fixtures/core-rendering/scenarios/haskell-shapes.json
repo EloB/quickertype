@@ -1,0 +1,839 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "id",
+       [
+        "An identifier."
+       ]
+      ],
+      [
+       "name",
+       [
+        "A name.\nOn two lines."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "?>weird\nname",
+      1,
+      false
+     ],
+     [
+      "_",
+      2,
+      false
+     ],
+     [
+      "a b",
+      1,
+      false
+     ],
+     [
+      "a`b",
+      1,
+      true
+     ],
+     [
+      "anything",
+      3,
+      true
+     ],
+     [
+      "choice",
+      4,
+      false
+     ],
+     [
+      "empty",
+      12,
+      false
+     ],
+     [
+      "entries",
+      13,
+      false
+     ],
+     [
+      "id",
+      14,
+      false
+     ],
+     [
+      "listMap",
+      15,
+      false
+     ],
+     [
+      "lookup",
+      16,
+      false
+     ],
+     [
+      "matrix",
+      18,
+      false
+     ],
+     [
+      "maybeList",
+      20,
+      true
+     ],
+     [
+      "maybeMap",
+      22,
+      true
+     ],
+     [
+      "name",
+      24,
+      false
+     ],
+     [
+      "nothing",
+      11,
+      false
+     ],
+     [
+      "optionalEntry",
+      8,
+      true
+     ],
+     [
+      "pick",
+      25,
+      false
+     ],
+     [
+      "ratio",
+      26,
+      false
+     ],
+     [
+      "status",
+      27,
+      false
+     ],
+     [
+      "tags",
+      28,
+      false
+     ],
+     [
+      "this",
+      1,
+      false
+     ],
+     [
+      "toString",
+      1,
+      false
+     ],
+     [
+      "uuid",
+      1,
+      false
+     ],
+     [
+      "when",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "?>weird\nname",
+       "a b",
+       "a`b",
+       "this",
+       "toString",
+       "uuid",
+       "when",
+       "Name",
+       "label",
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "_"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     10,
+     6,
+     5,
+     2,
+     11,
+     1
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Names"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entry"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "propertyDescriptions": [
+      [
+       "value",
+       [
+        "The value."
+       ]
+      ]
+     ],
+     "description": [
+      "An entry."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      7,
+      true
+     ],
+     [
+      "value",
+      9,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     8,
+     9
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entry"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "propertyDescriptions": [
+      [
+       "value",
+       [
+        "The value."
+       ]
+      ]
+     ],
+     "description": [
+      "An entry."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      8,
+      true
+     ],
+     [
+      "value",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Count"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "empty"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entries"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 8
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      1,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "id"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "listMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 5
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "lookup"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 17
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "lookup"
+      ],
+      "alts": [],
+      "d": 6
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 10
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 19
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    },
+    "items": 9
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     21,
+     11
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 10
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeMap"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     23,
+     11
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeMap"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      10
+     ],
+     "pattern": "^[a-z~']+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pick"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     9,
+     1
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0.5,
+      99.5
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "status"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "open",
+     "it's",
+     "a\\b",
+     "line\nbreak",
+     "Ünï",
+     "type",
+     "_",
+     ""
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      5
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Registry"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 30
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "item"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "label",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 9
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     10,
+     1
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Count",
+    10
+   ],
+   [
+    "Names",
+    5
+   ],
+   [
+    "Registry",
+    29
+   ],
+   [
+    "Scores",
+    31
+   ],
+   [
+    "Either",
+    32
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule QuickType\n    ( TopLevel (..)\n    , Count (..)\n    , Names (..)\n    , Registry (..)\n    , Scores (..)\n    , Either (..)\n    , ChoiceEntry (..)\n    , EntryElement (..)\n    , Empty (..)\n    , Item (..)\n    , Status (..)\n    , Choice (..)\n    , Next (..)\n    , Pick (..)\n    , decodeTopLevel\n    ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\n\ntype Count = Int\n\ntype Names = [Text]\n\ntype Registry = HashMap Text Item\n\ntype Scores = HashMap Text Double\n\n{-| The top level.\n\ntopLevelID:\nAn identifier.\n\nname:\nA name.\nOn two lines.\n-}\ndata TopLevel = TopLevel\n    { weirdNameTopLevel :: Text\n    , emptyTopLevel :: Bool\n    , aBTopLevel :: Text\n    , topLevelABTopLevel :: Maybe Text\n    , anythingTopLevel :: Maybe Value\n    , choiceTopLevel :: Choice\n    , topLevelEmptyTopLevel :: Empty\n    , entriesTopLevel :: [EntryElement]\n    , topLevelIDTopLevel :: Int\n    , listMapTopLevel :: HashMap Text ([Text])\n    , lookupTopLevel :: HashMap Text (HashMap Text Int)\n    , matrixTopLevel :: [([Double])]\n    , maybeListTopLevel :: Maybe (Maybe ([Int]))\n    , maybeMapTopLevel :: Maybe (Maybe (HashMap Text Text))\n    , nameTopLevel :: Text\n    , nothingTopLevel :: Maybe Text\n    , optionalEntryTopLevel :: Maybe EntryElement\n    , pickTopLevel :: Pick\n    , ratioTopLevel :: Double\n    , statusTopLevel :: Status\n    , tagsTopLevel :: [Text]\n    , thisTopLevel :: Text\n    , toStringTopLevel :: Text\n    , uuidTopLevel :: Text\n    , whenTopLevel :: Text\n    } deriving (Show)\n\ndata Choice\n    = BoolInChoice Bool\n    | ChoiceEntryInChoice ChoiceEntry\n    | IntegerInChoice Int\n    | NullInChoice\n    | StringArrayInChoice ([Text])\n    | StringInChoice Text\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata ChoiceEntry = ChoiceEntry\n    { nextChoiceEntry :: Maybe Next\n    , valueChoiceEntry :: Maybe Double\n    } deriving (Show)\n\ndata Next\n    = DoubleInNext Double\n    | EntryElementInNext EntryElement\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata EntryElement = EntryElement\n    { nextEntryElement :: Maybe EntryElement\n    , valueEntryElement :: Double\n    } deriving (Show)\n\ndata Pick\n    = DoubleInPick Double\n    | StringInPick Text\n    deriving (Show)\n\ndata Status\n    = OpenStatus\n    | ItSStatus\n    | ABStatus\n    | LineBreakStatus\n    | NStatus\n    | TypeStatus\n    | PurpleStatus\n    | FluffyStatus\n    deriving (Show)\n\ndata Empty = Empty\n    {\n    } deriving (Show)\n\ndata Item = Item\n    { labelItem :: Text\n    } deriving (Show)\n\ndata Either\n    = IntegerInEither Int\n    | StringInEither Text\n    deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Count\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Names\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Registry\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Scores\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Either\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel weirdNameTopLevel emptyTopLevel aBTopLevel topLevelABTopLevel anythingTopLevel choiceTopLevel topLevelEmptyTopLevel entriesTopLevel topLevelIDTopLevel listMapTopLevel lookupTopLevel matrixTopLevel maybeListTopLevel maybeMapTopLevel nameTopLevel nothingTopLevel optionalEntryTopLevel pickTopLevel ratioTopLevel statusTopLevel tagsTopLevel thisTopLevel toStringTopLevel uuidTopLevel whenTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"?>weird\\nname\" .= weirdNameTopLevel\n        , Just $ \"_\" .= emptyTopLevel\n        , Just $ \"a b\" .= aBTopLevel\n        , (\"a`b\" .=) <$> topLevelABTopLevel\n        , (\"anything\" .=) <$> anythingTopLevel\n        , Just $ \"choice\" .= choiceTopLevel\n        , Just $ \"empty\" .= topLevelEmptyTopLevel\n        , Just $ \"entries\" .= entriesTopLevel\n        , Just $ \"id\" .= topLevelIDTopLevel\n        , Just $ \"listMap\" .= listMapTopLevel\n        , Just $ \"lookup\" .= lookupTopLevel\n        , Just $ \"matrix\" .= matrixTopLevel\n        , (\"maybeList\" .=) <$> maybeListTopLevel\n        , (\"maybeMap\" .=) <$> maybeMapTopLevel\n        , Just $ \"name\" .= nameTopLevel\n        , Just $ \"nothing\" .= nothingTopLevel\n        , (\"optionalEntry\" .=) <$> optionalEntryTopLevel\n        , Just $ \"pick\" .= pickTopLevel\n        , Just $ \"ratio\" .= ratioTopLevel\n        , Just $ \"status\" .= statusTopLevel\n        , Just $ \"tags\" .= tagsTopLevel\n        , Just $ \"this\" .= thisTopLevel\n        , Just $ \"toString\" .= toStringTopLevel\n        , Just $ \"uuid\" .= uuidTopLevel\n        , Just $ \"when\" .= whenTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"?>weird\\nname\"\n        <*> v .: \"_\"\n        <*> v .: \"a b\"\n        <*> v .:! \"a`b\"\n        <*> v .:! \"anything\"\n        <*> v .: \"choice\"\n        <*> v .: \"empty\"\n        <*> v .: \"entries\"\n        <*> v .: \"id\"\n        <*> v .: \"listMap\"\n        <*> v .: \"lookup\"\n        <*> v .: \"matrix\"\n        <*> v .:! \"maybeList\"\n        <*> v .:! \"maybeMap\"\n        <*> v .: \"name\"\n        <*> v .: \"nothing\"\n        <*> v .:! \"optionalEntry\"\n        <*> v .: \"pick\"\n        <*> v .: \"ratio\"\n        <*> v .: \"status\"\n        <*> v .: \"tags\"\n        <*> v .: \"this\"\n        <*> v .: \"toString\"\n        <*> v .: \"uuid\"\n        <*> v .: \"when\"\n\ninstance ToJSON Choice where\n    toJSON (BoolInChoice x) = toJSON x\n    toJSON (ChoiceEntryInChoice x) = toJSON x\n    toJSON (IntegerInChoice x) = toJSON x\n    toJSON NullInChoice = Null\n    toJSON (StringArrayInChoice x) = toJSON x\n    toJSON (StringInChoice x) = toJSON x\n\ninstance FromJSON Choice where\n    parseJSON xs@(Bool _) = (fmap BoolInChoice . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap ChoiceEntryInChoice . parseJSON) xs\n    parseJSON xs@(Number _) = (fmap IntegerInChoice . parseJSON) xs\n    parseJSON Null = return NullInChoice\n    parseJSON xs@(Array _) = (fmap StringArrayInChoice . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInChoice . parseJSON) xs\n\ninstance ToJSON ChoiceEntry where\n    toJSON (ChoiceEntry nextChoiceEntry valueChoiceEntry) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextChoiceEntry\n        , (\"value\" .=) <$> valueChoiceEntry\n        ]\n\ninstance FromJSON ChoiceEntry where\n    parseJSON (Object v) = ChoiceEntry\n        <$> v .:! \"next\"\n        <*> v .:! \"value\"\n\ninstance ToJSON Next where\n    toJSON (DoubleInNext x) = toJSON x\n    toJSON (EntryElementInNext x) = toJSON x\n\ninstance FromJSON Next where\n    parseJSON xs@(Number _) = (fmap DoubleInNext . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap EntryElementInNext . parseJSON) xs\n\ninstance ToJSON EntryElement where\n    toJSON (EntryElement nextEntryElement valueEntryElement) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextEntryElement\n        , Just $ \"value\" .= valueEntryElement\n        ]\n\ninstance FromJSON EntryElement where\n    parseJSON (Object v) = EntryElement\n        <$> v .:! \"next\"\n        <*> v .: \"value\"\n\ninstance ToJSON Pick where\n    toJSON (DoubleInPick x) = toJSON x\n    toJSON (StringInPick x) = toJSON x\n\ninstance FromJSON Pick where\n    parseJSON xs@(Number _) = (fmap DoubleInPick . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInPick . parseJSON) xs\n\ninstance ToJSON Status where\n    toJSON OpenStatus = \"open\"\n    toJSON ItSStatus = \"it's\"\n    toJSON ABStatus = \"a\\\\b\"\n    toJSON LineBreakStatus = \"line\\nbreak\"\n    toJSON NStatus = \"Ünï\"\n    toJSON TypeStatus = \"type\"\n    toJSON PurpleStatus = \"_\"\n    toJSON FluffyStatus = \"\"\n\ninstance FromJSON Status where\n    parseJSON = withText \"Status\" parseText\n        where\n            parseText \"open\" = return OpenStatus\n            parseText \"it's\" = return ItSStatus\n            parseText \"a\\\\b\" = return ABStatus\n            parseText \"line\\nbreak\" = return LineBreakStatus\n            parseText \"Ünï\" = return NStatus\n            parseText \"type\" = return TypeStatus\n            parseText \"_\" = return PurpleStatus\n            parseText \"\" = return FluffyStatus\n\ninstance ToJSON Empty where\n    toJSON = \\_ -> emptyObject\n\ninstance FromJSON Empty where\n    parseJSON (Object _) = return Empty\n\ninstance ToJSON Item where\n    toJSON (Item labelItem) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"label\" .= labelItem\n        ]\n\ninstance FromJSON Item where\n    parseJSON (Object v) = Item\n        <$> v .: \"label\"\n\ninstance ToJSON Either where\n    toJSON (IntegerInEither x) = toJSON x\n    toJSON (StringInEither x) = toJSON x\n\ninstance FromJSON Either where\n    parseJSON xs@(Number _) = (fmap IntegerInEither . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInEither . parseJSON) xs\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "array-type": "array",
+    "module": "Data.Model"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule Data.Model\n    ( TopLevel (..)\n    , Count (..)\n    , Names (..)\n    , Registry (..)\n    , Scores (..)\n    , Either (..)\n    , ChoiceEntry (..)\n    , EntryElement (..)\n    , Empty (..)\n    , Item (..)\n    , Status (..)\n    , Choice (..)\n    , Next (..)\n    , Pick (..)\n    , decodeTopLevel\n    ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\nimport Data.Vector (Vector)\n\ntype Count = Int\n\ntype Names = Vector Text\n\ntype Registry = HashMap Text Item\n\ntype Scores = HashMap Text Double\n\n{-| The top level.\n\ntopLevelID:\nAn identifier.\n\nname:\nA name.\nOn two lines.\n-}\ndata TopLevel = TopLevel\n    { weirdNameTopLevel :: Text\n    , emptyTopLevel :: Bool\n    , aBTopLevel :: Text\n    , topLevelABTopLevel :: Maybe Text\n    , anythingTopLevel :: Maybe Value\n    , choiceTopLevel :: Choice\n    , topLevelEmptyTopLevel :: Empty\n    , entriesTopLevel :: Vector EntryElement\n    , topLevelIDTopLevel :: Int\n    , listMapTopLevel :: HashMap Text (Vector Text)\n    , lookupTopLevel :: HashMap Text (HashMap Text Int)\n    , matrixTopLevel :: Vector (Vector Double)\n    , maybeListTopLevel :: Maybe (Maybe (Vector Int))\n    , maybeMapTopLevel :: Maybe (Maybe (HashMap Text Text))\n    , nameTopLevel :: Text\n    , nothingTopLevel :: Maybe Text\n    , optionalEntryTopLevel :: Maybe EntryElement\n    , pickTopLevel :: Pick\n    , ratioTopLevel :: Double\n    , statusTopLevel :: Status\n    , tagsTopLevel :: Vector Text\n    , thisTopLevel :: Text\n    , toStringTopLevel :: Text\n    , uuidTopLevel :: Text\n    , whenTopLevel :: Text\n    } deriving (Show)\n\ndata Choice\n    = BoolInChoice Bool\n    | ChoiceEntryInChoice ChoiceEntry\n    | IntegerInChoice Int\n    | NullInChoice\n    | StringArrayInChoice (Vector Text)\n    | StringInChoice Text\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata ChoiceEntry = ChoiceEntry\n    { nextChoiceEntry :: Maybe Next\n    , valueChoiceEntry :: Maybe Double\n    } deriving (Show)\n\ndata Next\n    = DoubleInNext Double\n    | EntryElementInNext EntryElement\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata EntryElement = EntryElement\n    { nextEntryElement :: Maybe EntryElement\n    , valueEntryElement :: Double\n    } deriving (Show)\n\ndata Pick\n    = DoubleInPick Double\n    | StringInPick Text\n    deriving (Show)\n\ndata Status\n    = OpenStatus\n    | ItSStatus\n    | ABStatus\n    | LineBreakStatus\n    | NStatus\n    | TypeStatus\n    | PurpleStatus\n    | FluffyStatus\n    deriving (Show)\n\ndata Empty = Empty\n    {\n    } deriving (Show)\n\ndata Item = Item\n    { labelItem :: Text\n    } deriving (Show)\n\ndata Either\n    = IntegerInEither Int\n    | StringInEither Text\n    deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Count\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Names\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Registry\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Scores\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Either\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel weirdNameTopLevel emptyTopLevel aBTopLevel topLevelABTopLevel anythingTopLevel choiceTopLevel topLevelEmptyTopLevel entriesTopLevel topLevelIDTopLevel listMapTopLevel lookupTopLevel matrixTopLevel maybeListTopLevel maybeMapTopLevel nameTopLevel nothingTopLevel optionalEntryTopLevel pickTopLevel ratioTopLevel statusTopLevel tagsTopLevel thisTopLevel toStringTopLevel uuidTopLevel whenTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"?>weird\\nname\" .= weirdNameTopLevel\n        , Just $ \"_\" .= emptyTopLevel\n        , Just $ \"a b\" .= aBTopLevel\n        , (\"a`b\" .=) <$> topLevelABTopLevel\n        , (\"anything\" .=) <$> anythingTopLevel\n        , Just $ \"choice\" .= choiceTopLevel\n        , Just $ \"empty\" .= topLevelEmptyTopLevel\n        , Just $ \"entries\" .= entriesTopLevel\n        , Just $ \"id\" .= topLevelIDTopLevel\n        , Just $ \"listMap\" .= listMapTopLevel\n        , Just $ \"lookup\" .= lookupTopLevel\n        , Just $ \"matrix\" .= matrixTopLevel\n        , (\"maybeList\" .=) <$> maybeListTopLevel\n        , (\"maybeMap\" .=) <$> maybeMapTopLevel\n        , Just $ \"name\" .= nameTopLevel\n        , Just $ \"nothing\" .= nothingTopLevel\n        , (\"optionalEntry\" .=) <$> optionalEntryTopLevel\n        , Just $ \"pick\" .= pickTopLevel\n        , Just $ \"ratio\" .= ratioTopLevel\n        , Just $ \"status\" .= statusTopLevel\n        , Just $ \"tags\" .= tagsTopLevel\n        , Just $ \"this\" .= thisTopLevel\n        , Just $ \"toString\" .= toStringTopLevel\n        , Just $ \"uuid\" .= uuidTopLevel\n        , Just $ \"when\" .= whenTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"?>weird\\nname\"\n        <*> v .: \"_\"\n        <*> v .: \"a b\"\n        <*> v .:! \"a`b\"\n        <*> v .:! \"anything\"\n        <*> v .: \"choice\"\n        <*> v .: \"empty\"\n        <*> v .: \"entries\"\n        <*> v .: \"id\"\n        <*> v .: \"listMap\"\n        <*> v .: \"lookup\"\n        <*> v .: \"matrix\"\n        <*> v .:! \"maybeList\"\n        <*> v .:! \"maybeMap\"\n        <*> v .: \"name\"\n        <*> v .: \"nothing\"\n        <*> v .:! \"optionalEntry\"\n        <*> v .: \"pick\"\n        <*> v .: \"ratio\"\n        <*> v .: \"status\"\n        <*> v .: \"tags\"\n        <*> v .: \"this\"\n        <*> v .: \"toString\"\n        <*> v .: \"uuid\"\n        <*> v .: \"when\"\n\ninstance ToJSON Choice where\n    toJSON (BoolInChoice x) = toJSON x\n    toJSON (ChoiceEntryInChoice x) = toJSON x\n    toJSON (IntegerInChoice x) = toJSON x\n    toJSON NullInChoice = Null\n    toJSON (StringArrayInChoice x) = toJSON x\n    toJSON (StringInChoice x) = toJSON x\n\ninstance FromJSON Choice where\n    parseJSON xs@(Bool _) = (fmap BoolInChoice . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap ChoiceEntryInChoice . parseJSON) xs\n    parseJSON xs@(Number _) = (fmap IntegerInChoice . parseJSON) xs\n    parseJSON Null = return NullInChoice\n    parseJSON xs@(Array _) = (fmap StringArrayInChoice . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInChoice . parseJSON) xs\n\ninstance ToJSON ChoiceEntry where\n    toJSON (ChoiceEntry nextChoiceEntry valueChoiceEntry) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextChoiceEntry\n        , (\"value\" .=) <$> valueChoiceEntry\n        ]\n\ninstance FromJSON ChoiceEntry where\n    parseJSON (Object v) = ChoiceEntry\n        <$> v .:! \"next\"\n        <*> v .:! \"value\"\n\ninstance ToJSON Next where\n    toJSON (DoubleInNext x) = toJSON x\n    toJSON (EntryElementInNext x) = toJSON x\n\ninstance FromJSON Next where\n    parseJSON xs@(Number _) = (fmap DoubleInNext . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap EntryElementInNext . parseJSON) xs\n\ninstance ToJSON EntryElement where\n    toJSON (EntryElement nextEntryElement valueEntryElement) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextEntryElement\n        , Just $ \"value\" .= valueEntryElement\n        ]\n\ninstance FromJSON EntryElement where\n    parseJSON (Object v) = EntryElement\n        <$> v .:! \"next\"\n        <*> v .: \"value\"\n\ninstance ToJSON Pick where\n    toJSON (DoubleInPick x) = toJSON x\n    toJSON (StringInPick x) = toJSON x\n\ninstance FromJSON Pick where\n    parseJSON xs@(Number _) = (fmap DoubleInPick . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInPick . parseJSON) xs\n\ninstance ToJSON Status where\n    toJSON OpenStatus = \"open\"\n    toJSON ItSStatus = \"it's\"\n    toJSON ABStatus = \"a\\\\b\"\n    toJSON LineBreakStatus = \"line\\nbreak\"\n    toJSON NStatus = \"Ünï\"\n    toJSON TypeStatus = \"type\"\n    toJSON PurpleStatus = \"_\"\n    toJSON FluffyStatus = \"\"\n\ninstance FromJSON Status where\n    parseJSON = withText \"Status\" parseText\n        where\n            parseText \"open\" = return OpenStatus\n            parseText \"it's\" = return ItSStatus\n            parseText \"a\\\\b\" = return ABStatus\n            parseText \"line\\nbreak\" = return LineBreakStatus\n            parseText \"Ünï\" = return NStatus\n            parseText \"type\" = return TypeStatus\n            parseText \"_\" = return PurpleStatus\n            parseText \"\" = return FluffyStatus\n\ninstance ToJSON Empty where\n    toJSON = \\_ -> emptyObject\n\ninstance FromJSON Empty where\n    parseJSON (Object _) = return Empty\n\ninstance ToJSON Item where\n    toJSON (Item labelItem) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"label\" .= labelItem\n        ]\n\ninstance FromJSON Item where\n    parseJSON (Object v) = Item\n        <$> v .: \"label\"\n\ninstance ToJSON Either where\n    toJSON (IntegerInEither x) = toJSON x\n    toJSON (StringInEither x) = toJSON x\n\ninstance FromJSON Either where\n    parseJSON xs@(Number _) = (fmap IntegerInEither . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInEither . parseJSON) xs\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\ntype Count = Int\n\ntype Names = [Text]\n\ntype Registry = HashMap Text Item\n\ntype Scores = HashMap Text Double\n\n{-| The top level.\n\ntopLevelID:\nAn identifier.\n\nname:\nA name.\nOn two lines.\n-}\ndata TopLevel = TopLevel\n    { weirdNameTopLevel :: Text\n    , emptyTopLevel :: Bool\n    , aBTopLevel :: Text\n    , topLevelABTopLevel :: Maybe Text\n    , anythingTopLevel :: Maybe Value\n    , choiceTopLevel :: Choice\n    , topLevelEmptyTopLevel :: Empty\n    , entriesTopLevel :: [EntryElement]\n    , topLevelIDTopLevel :: Int\n    , listMapTopLevel :: HashMap Text ([Text])\n    , lookupTopLevel :: HashMap Text (HashMap Text Int)\n    , matrixTopLevel :: [([Double])]\n    , maybeListTopLevel :: Maybe (Maybe ([Int]))\n    , maybeMapTopLevel :: Maybe (Maybe (HashMap Text Text))\n    , nameTopLevel :: Text\n    , nothingTopLevel :: Maybe Text\n    , optionalEntryTopLevel :: Maybe EntryElement\n    , pickTopLevel :: Pick\n    , ratioTopLevel :: Double\n    , statusTopLevel :: Status\n    , tagsTopLevel :: [Text]\n    , thisTopLevel :: Text\n    , toStringTopLevel :: Text\n    , uuidTopLevel :: Text\n    , whenTopLevel :: Text\n    } deriving (Show)\n\ndata Choice\n    = BoolInChoice Bool\n    | ChoiceEntryInChoice ChoiceEntry\n    | IntegerInChoice Int\n    | NullInChoice\n    | StringArrayInChoice ([Text])\n    | StringInChoice Text\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata ChoiceEntry = ChoiceEntry\n    { nextChoiceEntry :: Maybe Next\n    , valueChoiceEntry :: Maybe Double\n    } deriving (Show)\n\ndata Next\n    = DoubleInNext Double\n    | EntryElementInNext EntryElement\n    deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata EntryElement = EntryElement\n    { nextEntryElement :: Maybe EntryElement\n    , valueEntryElement :: Double\n    } deriving (Show)\n\ndata Pick\n    = DoubleInPick Double\n    | StringInPick Text\n    deriving (Show)\n\ndata Status\n    = OpenStatus\n    | ItSStatus\n    | ABStatus\n    | LineBreakStatus\n    | NStatus\n    | TypeStatus\n    | PurpleStatus\n    | FluffyStatus\n    deriving (Show)\n\ndata Empty = Empty\n    {\n    } deriving (Show)\n\ndata Item = Item\n    { labelItem :: Text\n    } deriving (Show)\n\ndata Either\n    = IntegerInEither Int\n    | StringInEither Text\n    deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Count\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Names\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Registry\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Scores\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Either\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel weirdNameTopLevel emptyTopLevel aBTopLevel topLevelABTopLevel anythingTopLevel choiceTopLevel topLevelEmptyTopLevel entriesTopLevel topLevelIDTopLevel listMapTopLevel lookupTopLevel matrixTopLevel maybeListTopLevel maybeMapTopLevel nameTopLevel nothingTopLevel optionalEntryTopLevel pickTopLevel ratioTopLevel statusTopLevel tagsTopLevel thisTopLevel toStringTopLevel uuidTopLevel whenTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"?>weird\\nname\" .= weirdNameTopLevel\n        , Just $ \"_\" .= emptyTopLevel\n        , Just $ \"a b\" .= aBTopLevel\n        , (\"a`b\" .=) <$> topLevelABTopLevel\n        , (\"anything\" .=) <$> anythingTopLevel\n        , Just $ \"choice\" .= choiceTopLevel\n        , Just $ \"empty\" .= topLevelEmptyTopLevel\n        , Just $ \"entries\" .= entriesTopLevel\n        , Just $ \"id\" .= topLevelIDTopLevel\n        , Just $ \"listMap\" .= listMapTopLevel\n        , Just $ \"lookup\" .= lookupTopLevel\n        , Just $ \"matrix\" .= matrixTopLevel\n        , (\"maybeList\" .=) <$> maybeListTopLevel\n        , (\"maybeMap\" .=) <$> maybeMapTopLevel\n        , Just $ \"name\" .= nameTopLevel\n        , Just $ \"nothing\" .= nothingTopLevel\n        , (\"optionalEntry\" .=) <$> optionalEntryTopLevel\n        , Just $ \"pick\" .= pickTopLevel\n        , Just $ \"ratio\" .= ratioTopLevel\n        , Just $ \"status\" .= statusTopLevel\n        , Just $ \"tags\" .= tagsTopLevel\n        , Just $ \"this\" .= thisTopLevel\n        , Just $ \"toString\" .= toStringTopLevel\n        , Just $ \"uuid\" .= uuidTopLevel\n        , Just $ \"when\" .= whenTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"?>weird\\nname\"\n        <*> v .: \"_\"\n        <*> v .: \"a b\"\n        <*> v .:! \"a`b\"\n        <*> v .:! \"anything\"\n        <*> v .: \"choice\"\n        <*> v .: \"empty\"\n        <*> v .: \"entries\"\n        <*> v .: \"id\"\n        <*> v .: \"listMap\"\n        <*> v .: \"lookup\"\n        <*> v .: \"matrix\"\n        <*> v .:! \"maybeList\"\n        <*> v .:! \"maybeMap\"\n        <*> v .: \"name\"\n        <*> v .: \"nothing\"\n        <*> v .:! \"optionalEntry\"\n        <*> v .: \"pick\"\n        <*> v .: \"ratio\"\n        <*> v .: \"status\"\n        <*> v .: \"tags\"\n        <*> v .: \"this\"\n        <*> v .: \"toString\"\n        <*> v .: \"uuid\"\n        <*> v .: \"when\"\n\ninstance ToJSON Choice where\n    toJSON (BoolInChoice x) = toJSON x\n    toJSON (ChoiceEntryInChoice x) = toJSON x\n    toJSON (IntegerInChoice x) = toJSON x\n    toJSON NullInChoice = Null\n    toJSON (StringArrayInChoice x) = toJSON x\n    toJSON (StringInChoice x) = toJSON x\n\ninstance FromJSON Choice where\n    parseJSON xs@(Bool _) = (fmap BoolInChoice . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap ChoiceEntryInChoice . parseJSON) xs\n    parseJSON xs@(Number _) = (fmap IntegerInChoice . parseJSON) xs\n    parseJSON Null = return NullInChoice\n    parseJSON xs@(Array _) = (fmap StringArrayInChoice . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInChoice . parseJSON) xs\n\ninstance ToJSON ChoiceEntry where\n    toJSON (ChoiceEntry nextChoiceEntry valueChoiceEntry) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextChoiceEntry\n        , (\"value\" .=) <$> valueChoiceEntry\n        ]\n\ninstance FromJSON ChoiceEntry where\n    parseJSON (Object v) = ChoiceEntry\n        <$> v .:! \"next\"\n        <*> v .:! \"value\"\n\ninstance ToJSON Next where\n    toJSON (DoubleInNext x) = toJSON x\n    toJSON (EntryElementInNext x) = toJSON x\n\ninstance FromJSON Next where\n    parseJSON xs@(Number _) = (fmap DoubleInNext . parseJSON) xs\n    parseJSON xs@(Object _) = (fmap EntryElementInNext . parseJSON) xs\n\ninstance ToJSON EntryElement where\n    toJSON (EntryElement nextEntryElement valueEntryElement) =\n        object $ foldMap (maybe [] pure)\n        [ (\"next\" .=) <$> nextEntryElement\n        , Just $ \"value\" .= valueEntryElement\n        ]\n\ninstance FromJSON EntryElement where\n    parseJSON (Object v) = EntryElement\n        <$> v .:! \"next\"\n        <*> v .: \"value\"\n\ninstance ToJSON Pick where\n    toJSON (DoubleInPick x) = toJSON x\n    toJSON (StringInPick x) = toJSON x\n\ninstance FromJSON Pick where\n    parseJSON xs@(Number _) = (fmap DoubleInPick . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInPick . parseJSON) xs\n\ninstance ToJSON Status where\n    toJSON OpenStatus = \"open\"\n    toJSON ItSStatus = \"it's\"\n    toJSON ABStatus = \"a\\\\b\"\n    toJSON LineBreakStatus = \"line\\nbreak\"\n    toJSON NStatus = \"Ünï\"\n    toJSON TypeStatus = \"type\"\n    toJSON PurpleStatus = \"_\"\n    toJSON FluffyStatus = \"\"\n\ninstance FromJSON Status where\n    parseJSON = withText \"Status\" parseText\n        where\n            parseText \"open\" = return OpenStatus\n            parseText \"it's\" = return ItSStatus\n            parseText \"a\\\\b\" = return ABStatus\n            parseText \"line\\nbreak\" = return LineBreakStatus\n            parseText \"Ünï\" = return NStatus\n            parseText \"type\" = return TypeStatus\n            parseText \"_\" = return PurpleStatus\n            parseText \"\" = return FluffyStatus\n\ninstance ToJSON Empty where\n    toJSON = \\_ -> emptyObject\n\ninstance FromJSON Empty where\n    parseJSON (Object _) = return Empty\n\ninstance ToJSON Item where\n    toJSON (Item labelItem) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"label\" .= labelItem\n        ]\n\ninstance FromJSON Item where\n    parseJSON (Object v) = Item\n        <$> v .: \"label\"\n\ninstance ToJSON Either where\n    toJSON (IntegerInEither x) = toJSON x\n    toJSON (StringInEither x) = toJSON x\n\ninstance FromJSON Either where\n    parseJSON xs@(Number _) = (fmap IntegerInEither . parseJSON) xs\n    parseJSON xs@(String _) = (fmap StringInEither . parseJSON) xs\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule QuickType\n  ( TopLevel (..)\n  , Count (..)\n  , Names (..)\n  , Registry (..)\n  , Scores (..)\n  , Either (..)\n  , ChoiceEntry (..)\n  , EntryElement (..)\n  , Empty (..)\n  , Item (..)\n  , Status (..)\n  , Choice (..)\n  , Next (..)\n  , Pick (..)\n  , decodeTopLevel\n  ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\n\ntype Count = Int\n\ntype Names = [Text]\n\ntype Registry = HashMap Text Item\n\ntype Scores = HashMap Text Double\n\n{-| The top level.\n\nname:\nA name.\nOn two lines.\n\ntopLevelID:\nAn identifier.\n-}\ndata TopLevel = TopLevel\n  { aBTopLevel :: Text\n  , anythingTopLevel :: Maybe Value\n  , choiceTopLevel :: Choice\n  , emptyTopLevel :: Bool\n  , entriesTopLevel :: [EntryElement]\n  , listMapTopLevel :: HashMap Text ([Text])\n  , lookupTopLevel :: HashMap Text (HashMap Text Int)\n  , matrixTopLevel :: [([Double])]\n  , maybeListTopLevel :: Maybe (Maybe ([Int]))\n  , maybeMapTopLevel :: Maybe (Maybe (HashMap Text Text))\n  , nameTopLevel :: Text\n  , nothingTopLevel :: Maybe Text\n  , optionalEntryTopLevel :: Maybe EntryElement\n  , pickTopLevel :: Pick\n  , ratioTopLevel :: Double\n  , statusTopLevel :: Status\n  , tagsTopLevel :: [Text]\n  , thisTopLevel :: Text\n  , toStringTopLevel :: Text\n  , topLevelABTopLevel :: Maybe Text\n  , topLevelEmptyTopLevel :: Empty\n  , topLevelIDTopLevel :: Int\n  , uuidTopLevel :: Text\n  , weirdNameTopLevel :: Text\n  , whenTopLevel :: Text\n  } deriving (Show)\n\ndata Choice\n  = BoolInChoice Bool\n  | ChoiceEntryInChoice ChoiceEntry\n  | IntegerInChoice Int\n  | NullInChoice\n  | StringArrayInChoice ([Text])\n  | StringInChoice Text\n  deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata ChoiceEntry = ChoiceEntry\n  { nextChoiceEntry :: Maybe Next\n  , valueChoiceEntry :: Maybe Double\n  } deriving (Show)\n\ndata Next\n  = DoubleInNext Double\n  | EntryElementInNext EntryElement\n  deriving (Show)\n\n{-| An entry.\n\nvalue:\nThe value.\n-}\ndata EntryElement = EntryElement\n  { nextEntryElement :: Maybe EntryElement\n  , valueEntryElement :: Double\n  } deriving (Show)\n\ndata Pick\n  = DoubleInPick Double\n  | StringInPick Text\n  deriving (Show)\n\ndata Status\n  = OpenStatus\n  | ItSStatus\n  | ABStatus\n  | LineBreakStatus\n  | NStatus\n  | TypeStatus\n  | PurpleStatus\n  | FluffyStatus\n  deriving (Show)\n\ndata Empty = Empty\n  {\n  } deriving (Show)\n\ndata Item = Item\n  { labelItem :: Text\n  } deriving (Show)\n\ndata Either\n  = IntegerInEither Int\n  | StringInEither Text\n  deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Count\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Names\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Registry\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Scores\ndecodeTopLevel = decode\n\ndecodeTopLevel :: ByteString -> Maybe Either\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n  toJSON (TopLevel aBTopLevel anythingTopLevel choiceTopLevel emptyTopLevel entriesTopLevel listMapTopLevel lookupTopLevel matrixTopLevel maybeListTopLevel maybeMapTopLevel nameTopLevel nothingTopLevel optionalEntryTopLevel pickTopLevel ratioTopLevel statusTopLevel tagsTopLevel thisTopLevel toStringTopLevel topLevelABTopLevel topLevelEmptyTopLevel topLevelIDTopLevel uuidTopLevel weirdNameTopLevel whenTopLevel) =\n    object $ foldMap (maybe [] pure)\n    [ Just $ \"a b\" .= aBTopLevel\n    , (\"anything\" .=) <$> anythingTopLevel\n    , Just $ \"choice\" .= choiceTopLevel\n    , Just $ \"_\" .= emptyTopLevel\n    , Just $ \"entries\" .= entriesTopLevel\n    , Just $ \"listMap\" .= listMapTopLevel\n    , Just $ \"lookup\" .= lookupTopLevel\n    , Just $ \"matrix\" .= matrixTopLevel\n    , (\"maybeList\" .=) <$> maybeListTopLevel\n    , (\"maybeMap\" .=) <$> maybeMapTopLevel\n    , Just $ \"name\" .= nameTopLevel\n    , Just $ \"nothing\" .= nothingTopLevel\n    , (\"optionalEntry\" .=) <$> optionalEntryTopLevel\n    , Just $ \"pick\" .= pickTopLevel\n    , Just $ \"ratio\" .= ratioTopLevel\n    , Just $ \"status\" .= statusTopLevel\n    , Just $ \"tags\" .= tagsTopLevel\n    , Just $ \"this\" .= thisTopLevel\n    , Just $ \"toString\" .= toStringTopLevel\n    , (\"a`b\" .=) <$> topLevelABTopLevel\n    , Just $ \"empty\" .= topLevelEmptyTopLevel\n    , Just $ \"id\" .= topLevelIDTopLevel\n    , Just $ \"uuid\" .= uuidTopLevel\n    , Just $ \"?>weird\\nname\" .= weirdNameTopLevel\n    , Just $ \"when\" .= whenTopLevel\n    ]\n\ninstance FromJSON TopLevel where\n  parseJSON (Object v) = TopLevel\n    <$> v .: \"a b\"\n    <*> v .:! \"anything\"\n    <*> v .: \"choice\"\n    <*> v .: \"_\"\n    <*> v .: \"entries\"\n    <*> v .: \"listMap\"\n    <*> v .: \"lookup\"\n    <*> v .: \"matrix\"\n    <*> v .:! \"maybeList\"\n    <*> v .:! \"maybeMap\"\n    <*> v .: \"name\"\n    <*> v .: \"nothing\"\n    <*> v .:! \"optionalEntry\"\n    <*> v .: \"pick\"\n    <*> v .: \"ratio\"\n    <*> v .: \"status\"\n    <*> v .: \"tags\"\n    <*> v .: \"this\"\n    <*> v .: \"toString\"\n    <*> v .:! \"a`b\"\n    <*> v .: \"empty\"\n    <*> v .: \"id\"\n    <*> v .: \"uuid\"\n    <*> v .: \"?>weird\\nname\"\n    <*> v .: \"when\"\n\ninstance ToJSON Choice where\n  toJSON (BoolInChoice x) = toJSON x\n  toJSON (ChoiceEntryInChoice x) = toJSON x\n  toJSON (IntegerInChoice x) = toJSON x\n  toJSON NullInChoice = Null\n  toJSON (StringArrayInChoice x) = toJSON x\n  toJSON (StringInChoice x) = toJSON x\n\ninstance FromJSON Choice where\n  parseJSON xs@(Bool _) = (fmap BoolInChoice . parseJSON) xs\n  parseJSON xs@(Object _) = (fmap ChoiceEntryInChoice . parseJSON) xs\n  parseJSON xs@(Number _) = (fmap IntegerInChoice . parseJSON) xs\n  parseJSON Null = return NullInChoice\n  parseJSON xs@(Array _) = (fmap StringArrayInChoice . parseJSON) xs\n  parseJSON xs@(String _) = (fmap StringInChoice . parseJSON) xs\n\ninstance ToJSON ChoiceEntry where\n  toJSON (ChoiceEntry nextChoiceEntry valueChoiceEntry) =\n    object $ foldMap (maybe [] pure)\n    [ (\"next\" .=) <$> nextChoiceEntry\n    , (\"value\" .=) <$> valueChoiceEntry\n    ]\n\ninstance FromJSON ChoiceEntry where\n  parseJSON (Object v) = ChoiceEntry\n    <$> v .:! \"next\"\n    <*> v .:! \"value\"\n\ninstance ToJSON Next where\n  toJSON (DoubleInNext x) = toJSON x\n  toJSON (EntryElementInNext x) = toJSON x\n\ninstance FromJSON Next where\n  parseJSON xs@(Number _) = (fmap DoubleInNext . parseJSON) xs\n  parseJSON xs@(Object _) = (fmap EntryElementInNext . parseJSON) xs\n\ninstance ToJSON EntryElement where\n  toJSON (EntryElement nextEntryElement valueEntryElement) =\n    object $ foldMap (maybe [] pure)\n    [ (\"next\" .=) <$> nextEntryElement\n    , Just $ \"value\" .= valueEntryElement\n    ]\n\ninstance FromJSON EntryElement where\n  parseJSON (Object v) = EntryElement\n    <$> v .:! \"next\"\n    <*> v .: \"value\"\n\ninstance ToJSON Pick where\n  toJSON (DoubleInPick x) = toJSON x\n  toJSON (StringInPick x) = toJSON x\n\ninstance FromJSON Pick where\n  parseJSON xs@(Number _) = (fmap DoubleInPick . parseJSON) xs\n  parseJSON xs@(String _) = (fmap StringInPick . parseJSON) xs\n\ninstance ToJSON Status where\n  toJSON OpenStatus = \"open\"\n  toJSON ItSStatus = \"it's\"\n  toJSON ABStatus = \"a\\\\b\"\n  toJSON LineBreakStatus = \"line\\nbreak\"\n  toJSON NStatus = \"Ünï\"\n  toJSON TypeStatus = \"type\"\n  toJSON PurpleStatus = \"_\"\n  toJSON FluffyStatus = \"\"\n\ninstance FromJSON Status where\n  parseJSON = withText \"Status\" parseText\n    where\n      parseText \"open\" = return OpenStatus\n      parseText \"it's\" = return ItSStatus\n      parseText \"a\\\\b\" = return ABStatus\n      parseText \"line\\nbreak\" = return LineBreakStatus\n      parseText \"Ünï\" = return NStatus\n      parseText \"type\" = return TypeStatus\n      parseText \"_\" = return PurpleStatus\n      parseText \"\" = return FluffyStatus\n\ninstance ToJSON Empty where\n  toJSON = \\_ -> emptyObject\n\ninstance FromJSON Empty where\n  parseJSON (Object _) = return Empty\n\ninstance ToJSON Item where\n  toJSON (Item labelItem) =\n    object $ foldMap (maybe [] pure)\n    [ Just $ \"label\" .= labelItem\n    ]\n\ninstance FromJSON Item where\n  parseJSON (Object v) = Item\n    <$> v .: \"label\"\n\ninstance ToJSON Either where\n  toJSON (IntegerInEither x) = toJSON x\n  toJSON (StringInEither x) = toJSON x\n\ninstance FromJSON Either where\n  parseJSON xs@(Number _) = (fmap IntegerInEither . parseJSON) xs\n  parseJSON xs@(String _) = (fmap StringInEither . parseJSON) xs\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "haskell-shapes"
+}

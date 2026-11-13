@@ -1,0 +1,20 @@
+# The Scala 3 renderers (circe, upickle and --just-types, which wins over
+# --framework) on schema shapes: renamed properties, keyword and odd enum
+# cases, empty classes, null union members, duplicate unions, any and null
+# types, date-times and UUIDs, top-level primitives, arrays, maps and
+# unions, leading comments.
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"id": {"type": "integer", "minimum": 1, "maximum": 100, "description": "An identifier."}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 99.5}, "name": {"type": "string", "minLength": 2, "maxLength": 10, "pattern": "^[a-z~']+$", "description": "A name.\nOn two lines."}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 5}, "matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}, "lookup": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer"}}}, "listMap": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}, "when": {"type": "string", "format": "date-time"}, "uuid": {"type": "string", "format": "uuid"}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"$ref": "#/definitions/entry"}, {"type": "array", "items": {"type": "string"}}, {"type": "object", "additionalProperties": {"type": "number"}}, {"type": "boolean"}, {"type": "null"}]}, "pick": {"anyOf": [{"type": "number"}, {"enum": ["x", "y"]}, {"type": "string", "format": "date-time"}]}, "status": {"enum": ["open", "it's", "a\\b", "line\nbreak", "Ünï", "type", "_", ""]}, "?>weird\nname": {"type": "string"}, "this": {"type": "string"}, "_": {"type": "boolean"}, "a b": {"type": "string"}, "toString": {"type": "string"}, "a`b": {"type": "string"}, "anything": {}, "nothing": {"type": "null"}, "maybeList": {"anyOf": [{"type": "array", "items": {"type": "integer"}}, {"type": "null"}]}, "maybeMap": {"anyOf": [{"type": "object", "additionalProperties": {"type": "string"}}, {"type": "null"}]}, "optionalEntry": {"$ref": "#/definitions/entry"}, "entries": {"type": "array", "items": {"$ref": "#/definitions/entry"}}, "empty": {"type": "object", "properties": {}, "additionalProperties": false}}, "required": ["id", "ratio", "name", "tags", "matrix", "lookup", "listMap", "when", "uuid", "choice", "pick", "status", "?>weird\nname", "this", "_", "nothing", "entries", "empty", "a b", "toString"], "definitions": {"entry": {"type": "object", "description": "An entry.", "properties": {"value": {"type": "number", "description": "The value."}, "next": {"$ref": "#/definitions/entry"}}, "required": ["value"]}}}
+input schema Count {"type": "integer"}
+input schema Names {"type": "array", "items": {"type": "string"}}
+input schema Registry {"type": "object", "additionalProperties": {"$ref": "#/definitions/item"}, "definitions": {"item": {"type": "object", "properties": {"label": {"type": "string"}}, "required": ["label"]}}}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Either {"anyOf": [{"type": "integer"}, {"type": "string"}]}
+pipeline {"lang": "scala3"}
+
+render scala3 {}
+render scala3 {"rendererOptions": {"framework": "upickle"}}
+render scala3 {"rendererOptions": {"just-types": true}}
+render scala3 {"rendererOptions": {"just-types": true, "framework": "upickle", "package": "com.example"}}
+render scala3 {"leadingComments": ["A leading comment"], "rendererOptions": {"framework": "upickle"}}
+render scala3 {"leadingComments": [{"lines": ["one", "two"]}]}
+render scala3 {"alphabetize": true, "rendererOptions": {"framework": "circe"}}
