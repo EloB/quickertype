@@ -71,6 +71,8 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { dumpTransformation } from "./dump-transformation.mjs";
+
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
 const require = createRequire(join(quicktype, "package.json"));
 const dist = join(quicktype, "packages/quicktype-core/dist");
@@ -112,84 +114,6 @@ Chance.prototype.animal = function (...args) {
 
 function accessorEntry(entry) {
     return typeof entry === "string" ? entry : Array.from(entry);
-}
-
-// A transformer tree (`Transformers.ts`) as JSON: `k` is the transformer's
-// kind, `s` the index of its source type, and the other keys hold the
-// kind-specific fields (child transformers are dumped the same way, absent
-// ones as null):
-//
-//   decode, parse-string, stringify   { c: consumer }
-//   string-producer                   { c, result }
-//   min-max-length-check              { c, min, max }   (minLength, maxLength)
-//   min-max-value-check               { c, min, max }   (minimum, maximum)
-//   decode-array                      { c, item: itemTargetType, x: itemTransformer }
-//   encode-array                      { item, x }
-//   choice                            { xs: [transformer, ...] }
-//   decoding-choice                   { null, integer, double, bool, string, array, object }
-//   union-member-match                { x: transformer, member: memberType }
-//   string-match                      { x: transformer, case: stringCase }
-//   encode, union-instantiation       {}
-function dumpTransformer(xfer) {
-    if (xfer === undefined) return null;
-    const d = { k: xfer.kind, s: typeRefIndex(xfer.sourceTypeRef) };
-    const bound = (n) => (n === undefined ? null : n);
-    switch (xfer.kind) {
-        case "decode":
-        case "parse-string":
-        case "stringify":
-            d.c = dumpTransformer(xfer.consumer);
-            break;
-        case "string-producer":
-            d.c = dumpTransformer(xfer.consumer);
-            d.result = xfer.result;
-            break;
-        case "min-max-length-check":
-            d.c = dumpTransformer(xfer.consumer);
-            d.min = bound(xfer.minLength);
-            d.max = bound(xfer.maxLength);
-            break;
-        case "min-max-value-check":
-            d.c = dumpTransformer(xfer.consumer);
-            d.min = bound(xfer.minimum);
-            d.max = bound(xfer.maximum);
-            break;
-        case "decode-array":
-            d.c = dumpTransformer(xfer.consumer);
-            d.item = typeRefIndex(xfer._itemTargetTypeRef);
-            d.x = dumpTransformer(xfer.itemTransformer);
-            break;
-        case "encode-array":
-            d.item = typeRefIndex(xfer._itemTargetTypeRef);
-            d.x = dumpTransformer(xfer.itemTransformer);
-            break;
-        case "choice":
-            d.xs = xfer.transformers.map(dumpTransformer);
-            break;
-        case "decoding-choice":
-            d.null = dumpTransformer(xfer.nullTransformer);
-            d.integer = dumpTransformer(xfer.integerTransformer);
-            d.double = dumpTransformer(xfer.doubleTransformer);
-            d.bool = dumpTransformer(xfer.boolTransformer);
-            d.string = dumpTransformer(xfer.stringTransformer);
-            d.array = dumpTransformer(xfer.arrayTransformer);
-            d.object = dumpTransformer(xfer.objectTransformer);
-            break;
-        case "union-member-match":
-            d.x = dumpTransformer(xfer.transformer);
-            d.member = typeRefIndex(xfer.memberTypeRef);
-            break;
-        case "string-match":
-            d.x = dumpTransformer(xfer.transformer);
-            d.case = xfer.stringCase;
-            break;
-        case "encode":
-        case "union-instantiation":
-            break;
-        default:
-            throw new Error(`cannot dump transformer ${xfer.kind}`);
-    }
-    return d;
 }
 
 function dumpAttributes(attributes) {
@@ -248,10 +172,7 @@ function dumpAttributes(attributes) {
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
                 break;
             case "transformation":
-                result.transformation = {
-                    target: typeRefIndex(value._targetTypeRef),
-                    xfer: dumpTransformer(value.transformer),
-                };
+                result.transformation = dumpTransformation(value, typeRefIndex);
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);

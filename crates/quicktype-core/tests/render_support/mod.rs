@@ -9,7 +9,7 @@
 //!
 //! A `transformation` attribute (C#, Python) is dumped as its target type's
 //! index and its transformer tree; the format is documented at
-//! `dumpTransformer` in `xtask/core-rendering/record-render-cases.mjs`.
+//! `dumpTransformer` in `xtask/core-rendering/dump-transformation.mjs`.
 
 #![allow(dead_code)]
 
@@ -129,7 +129,7 @@ fn optional_transformer(v: &Value, refs: &[TypeRef]) -> Result<Option<Rc<Transfo
     }
 }
 
-/// A dumped transformer tree (`dumpTransformer` in the recorder).
+/// A dumped transformer tree (`dumpTransformer` in `dump-transformation.mjs`).
 pub fn transformer(v: &Value, refs: &[TypeRef]) -> Result<Rc<Transformer>> {
     let source = type_ref_at(&v["s"], refs)?;
     let consumer = || optional_transformer(&v["c"], refs);
@@ -196,8 +196,15 @@ pub fn transformer(v: &Value, refs: &[TypeRef]) -> Result<Rc<Transformer>> {
     })
 }
 
-/// The attributes of a dumped type that has no `transformation` attribute.
+/// The attributes of a dumped type that has no `transformation` attribute
+/// (which refers to other types; see [`attributes_in_graph`]).
 pub fn attributes(v: &Value) -> Result<TypeAttributes> {
+    if v.get("transformation").is_some() {
+        return Err(err(
+            "a transformation attribute refers to other types by index: \
+             rebuild it with attributes_in_graph and the graph's type refs",
+        ));
+    }
     attributes_in_graph(v, &[])
 }
 

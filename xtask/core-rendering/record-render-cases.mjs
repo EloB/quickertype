@@ -27,6 +27,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { dumpTransformation } from "./dump-transformation.mjs";
+
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
 const languages = process.argv.length > 3 ? process.argv.slice(3) : ["rust"];
 const require = createRequire(join(quicktype, "package.json"));
@@ -71,84 +73,6 @@ Chance.prototype.animal = function (...args) {
 function accessorEntry(entry) {
     if (typeof entry === "string") return entry;
     return Array.from(entry);
-}
-
-// A transformer tree (`Transformers.ts`) as JSON: `k` is the transformer's
-// kind, `s` the index of its source type, and the other keys hold the
-// kind-specific fields (child transformers are dumped the same way, absent
-// ones as null):
-//
-//   decode, parse-string, stringify   { c: consumer }
-//   string-producer                   { c, result }
-//   min-max-length-check              { c, min, max }   (minLength, maxLength)
-//   min-max-value-check               { c, min, max }   (minimum, maximum)
-//   decode-array                      { c, item: itemTargetType, x: itemTransformer }
-//   encode-array                      { item, x }
-//   choice                            { xs: [transformer, ...] }
-//   decoding-choice                   { null, integer, double, bool, string, array, object }
-//   union-member-match                { x: transformer, member: memberType }
-//   string-match                      { x: transformer, case: stringCase }
-//   encode, union-instantiation       {}
-function dumpTransformer(xfer) {
-    if (xfer === undefined) return null;
-    const d = { k: xfer.kind, s: typeRefIndex(xfer.sourceTypeRef) };
-    const bound = (n) => (n === undefined ? null : n);
-    switch (xfer.kind) {
-        case "decode":
-        case "parse-string":
-        case "stringify":
-            d.c = dumpTransformer(xfer.consumer);
-            break;
-        case "string-producer":
-            d.c = dumpTransformer(xfer.consumer);
-            d.result = xfer.result;
-            break;
-        case "min-max-length-check":
-            d.c = dumpTransformer(xfer.consumer);
-            d.min = bound(xfer.minLength);
-            d.max = bound(xfer.maxLength);
-            break;
-        case "min-max-value-check":
-            d.c = dumpTransformer(xfer.consumer);
-            d.min = bound(xfer.minimum);
-            d.max = bound(xfer.maximum);
-            break;
-        case "decode-array":
-            d.c = dumpTransformer(xfer.consumer);
-            d.item = typeRefIndex(xfer._itemTargetTypeRef);
-            d.x = dumpTransformer(xfer.itemTransformer);
-            break;
-        case "encode-array":
-            d.item = typeRefIndex(xfer._itemTargetTypeRef);
-            d.x = dumpTransformer(xfer.itemTransformer);
-            break;
-        case "choice":
-            d.xs = xfer.transformers.map(dumpTransformer);
-            break;
-        case "decoding-choice":
-            d.null = dumpTransformer(xfer.nullTransformer);
-            d.integer = dumpTransformer(xfer.integerTransformer);
-            d.double = dumpTransformer(xfer.doubleTransformer);
-            d.bool = dumpTransformer(xfer.boolTransformer);
-            d.string = dumpTransformer(xfer.stringTransformer);
-            d.array = dumpTransformer(xfer.arrayTransformer);
-            d.object = dumpTransformer(xfer.objectTransformer);
-            break;
-        case "union-member-match":
-            d.x = dumpTransformer(xfer.transformer);
-            d.member = typeRefIndex(xfer.memberTypeRef);
-            break;
-        case "string-match":
-            d.x = dumpTransformer(xfer.transformer);
-            d.case = xfer.stringCase;
-            break;
-        case "encode":
-        case "union-instantiation":
-            break;
-        default:
-            throw new Error(`cannot dump transformer ${xfer.kind}`);
-    }
-    return d;
 }
 
 function dumpAttributes(attributes) {
@@ -209,11 +133,7 @@ function dumpAttributes(attributes) {
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
                 break;
             case "transformation":
-                // A Transformation: its target type and its transformer tree.
-                result.transformation = {
-                    target: typeRefIndex(value._targetTypeRef),
-                    xfer: dumpTransformer(value.transformer),
-                };
+                result.transformation = dumpTransformation(value, typeRefIndex);
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);
@@ -414,42 +334,53 @@ const apiCases = [
     },
 ];
 
-async function recordApi(spec) {
-    const schemaInput = new core.JSONSchemaInput(undefined);
-    if (spec.schema !== undefined) {
-        await schemaInput.addSource({
-            name: spec.schema.name,
-            schema: JSON.stringify({
-                $schema: "http://json-schema.org/draft-07/schema#",
-                title: spec.schema.name,
-                type: "object",
-                properties: { value: { type: "string" }, next: spec.schema.next },
-                required: spec.schema.required,
-            }),
-        });
-    } else {
-        await schemaInput.addSource({
-            name: "",
-            schema: JSON.stringify({ definitions: spec.definitions }),
-            uris: ["#/definitions/"],
-            isConverted: true,
-        });
-    }
+// Records an API case: `addInputs(inputData)` adds the inputs, which
+// quicktypeMultiFile renders with `lang` (and `rendererOptions`, if given);
+// the expected output is stored inline.
+async function recordApiCase(id, lang, rendererOptions, addInputs) {
     const inputData = new core.InputData();
-    inputData.addInput(schemaInput);
+    await addInputs(inputData);
     captured = {};
     drawnNames = new Set();
-    await core.quicktypeMultiFile({ inputData, lang: "rust" });
+    const options = { inputData, lang };
+    if (rendererOptions !== undefined) options.rendererOptions = rendererOptions;
+    await core.quicktypeMultiFile(options);
     const rec = captured;
     captured = undefined;
     const fixture = {
-        id: spec.id,
+        id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
         files: rec.files.map((f) => ({ name: f.name, text: f.text, annotations: f.annotations })),
     };
-    writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
+    writeFileSync(join(outDir, caseFileName(id)), `${JSON.stringify(fixture)}\n`);
+}
+
+function recordRustApi(spec) {
+    return recordApiCase(spec.id, "rust", undefined, async (inputData) => {
+        const schemaInput = new core.JSONSchemaInput(undefined);
+        if (spec.schema !== undefined) {
+            await schemaInput.addSource({
+                name: spec.schema.name,
+                schema: JSON.stringify({
+                    $schema: "http://json-schema.org/draft-07/schema#",
+                    title: spec.schema.name,
+                    type: "object",
+                    properties: { value: { type: "string" }, next: spec.schema.next },
+                    required: spec.schema.required,
+                }),
+            });
+        } else {
+            await schemaInput.addSource({
+                name: "",
+                schema: JSON.stringify({ definitions: spec.definitions }),
+                uris: ["#/definitions/"],
+                isConverted: true,
+            });
+        }
+        inputData.addInput(schemaInput);
+    });
 }
 
 // quicktype's C# unit tests (test/unit/csharp-*.test.ts): each renders one
@@ -522,30 +453,18 @@ const csharpApiCases = [
     },
 ];
 
-async function recordCSharpApi(spec) {
-    const inputData = new core.InputData();
-    if (spec.json !== undefined) {
-        const jsonInput = core.jsonInputForTargetLanguage("csharp");
-        await jsonInput.addSource({ name: spec.json.name, samples: [spec.json.sample] });
-        inputData.addInput(jsonInput);
-    } else {
-        const schemaInput = new core.JSONSchemaInput(undefined);
-        await schemaInput.addSource({ name: spec.schema.name, schema: JSON.stringify(spec.schema.schema) });
-        inputData.addInput(schemaInput);
-    }
-    captured = {};
-    drawnNames = new Set();
-    await core.quicktypeMultiFile({ inputData, lang: "csharp", rendererOptions: spec.rendererOptions });
-    const rec = captured;
-    captured = undefined;
-    const fixture = {
-        id: spec.id,
-        graph: rec.graph,
-        gather: rec.gather,
-        render: rec.render,
-        files: rec.files.map((f) => ({ name: f.name, text: f.text, annotations: f.annotations })),
-    };
-    writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
+function recordCSharpApi(spec) {
+    return recordApiCase(spec.id, "csharp", spec.rendererOptions, async (inputData) => {
+        if (spec.json !== undefined) {
+            const jsonInput = core.jsonInputForTargetLanguage("csharp");
+            await jsonInput.addSource({ name: spec.json.name, samples: [spec.json.sample] });
+            inputData.addInput(jsonInput);
+        } else {
+            const schemaInput = new core.JSONSchemaInput(undefined);
+            await schemaInput.addSource({ name: spec.schema.name, schema: JSON.stringify(spec.schema.schema) });
+            inputData.addInput(schemaInput);
+        }
+    });
 }
 
 mkdirSync(outDir, { recursive: true });
@@ -557,15 +476,13 @@ for (const id of goldenCases(goldenDir)) {
     counts[outcome] = (counts[outcome] ?? 0) + 1;
     if (outcome !== "recorded") console.log(`${id}: ${outcome}`);
 }
-if (languages.includes("rust")) {
-    for (const spec of apiCases) {
-        await recordApi(spec);
-        counts["recorded (api)"] = (counts["recorded (api)"] ?? 0) + 1;
-    }
-}
-if (languages.includes("csharp")) {
-    for (const spec of csharpApiCases) {
-        await recordCSharpApi(spec);
+for (const [lang, cases, record] of [
+    ["rust", apiCases, recordRustApi],
+    ["csharp", csharpApiCases, recordCSharpApi],
+]) {
+    if (!languages.includes(lang)) continue;
+    for (const spec of cases) {
+        await record(spec);
         counts["recorded (api)"] = (counts["recorded (api)"] ?? 0) + 1;
     }
 }
