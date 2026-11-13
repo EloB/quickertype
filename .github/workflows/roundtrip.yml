@@ -37,6 +37,27 @@ jobs:
           name: quicktype-${{ matrix.os }}
           path: target/release/quicktype
 
+  # The fixtures' later quicktype steps for every language, compared with the
+  # TypeScript CLI's output; no language toolchains needed.
+  later-steps:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: quicktype-ubuntu-latest
+          path: ${{ runner.temp }}/bin
+      - run: chmod +x "$RUNNER_TEMP/bin/quicktype"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/tsc" typescript@7.0.2
+          echo "QUICKTYPE_TSC=$RUNNER_TEMP/tsc/node_modules/@typescript/typescript-linux-x64/lib/tsc" >> "$GITHUB_ENV"
+      - run: xtask/roundtrip/roundtrip.sh prepare "$QUICKTYPE_DIR"
+      - run: xtask/roundtrip/roundtrip.sh steps "$QUICKTYPE_DIR" --bin "$RUNNER_TEMP/bin/quicktype" --jobs 4
+
   fixtures:
     needs: build
     runs-on: ${{ matrix.runs-on || 'ubuntu-latest' }}
@@ -53,7 +74,8 @@ jobs:
           - golang,schema-golang,graphql-golang
           - python,schema-python,graphql-python
           - java,schema-java,graphql-java
-          - java-datetime-legacy,schema-java-datetime-legacy,java-lombok,schema-java-lombok
+          - java-datetime-legacy,schema-java-datetime-legacy,graphql-java-datetime-legacy
+          - java-lombok,schema-java-lombok,graphql-java-lombok
           - kotlin,schema-kotlin,kotlin-jackson,schema-kotlin-jackson
           - kotlinx,schema-kotlinx
           - rust,schema-rust
@@ -129,6 +151,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8
+      # json-ts-csharp reads TypeScript, for which ours needs the TypeScript
+      # 7.0.2 native compiler (see ci.yml).
+      - if: contains(matrix.fixture, 'json-ts')
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/tsc" typescript@7.0.2
+          echo "QUICKTYPE_TSC=$RUNNER_TEMP/tsc/node_modules/@typescript/typescript-linux-x64/lib/tsc" >> "$GITHUB_ENV"
       - if: contains(matrix.fixture, 'cjson')
         run: sudo apt-get update && sudo apt-get -y install build-essential valgrind
       - if: contains(matrix.fixture, 'cplusplus')

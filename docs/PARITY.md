@@ -62,6 +62,12 @@ findings per area, with file and line references.
   (`QuickTypeError::unsupported`, e.g. a renderer not ported yet) run on
   the TypeScript engine and are reported separately from those identical
   on WebAssembly.
+- **Round trip:** `xtask/roundtrip/` runs quicktype's own fixture suite
+  with our binary: the generated code is compiled and must round-trip the
+  samples and reject the expected-failure ones. It also runs the fixtures'
+  later steps, which the corpus does not record (JSON to JSON Schema to the
+  language, TypeScript to C#). The `roundtrip` workflow runs it weekly
+  against the TypeScript CLI as the baseline.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
 rather than the CLI, so it has no CLI recording. The `golang-leading-comments`

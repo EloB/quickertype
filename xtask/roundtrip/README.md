@@ -12,10 +12,11 @@ The parity corpus (`cargo xtask parity`) checks that our output is
 byte-identical to quicktype's. This suite checks that the output also
 works, and covers inputs and option combinations the corpus does not.
 
-The tool runs quicktype's harness unchanged except for one switch: with
+The tool runs quicktype's harness with two additions (`harness.patch`): with
 `QUICKTYPE_BIN` set, the fixtures run that executable with the options
 rendered as command-line arguments instead of calling the CLI's `main`
-in-process. The same arguments go to the TypeScript CLI (`--ts`) for the
+in-process, and `QUICKTYPE_RESULTS` records every test instead of stopping at
+the first failure. The same arguments go to the TypeScript CLI (`--ts`) for the
 baseline, so a test that passes with TypeScript and fails with ours is a bug
 in the port.
 
@@ -34,6 +35,8 @@ in the port.
     the first failure, as upstream does.
 - `roundtrip.sh`: prepares a patched copy of quicktype and runs fixtures.
 - `compare.mjs`: summarizes results files and compares two of them.
+- `later-steps.mts`: the fixtures' later quicktype steps as a
+  generation-only differential (below).
 
 ## Usage
 
@@ -57,6 +60,19 @@ xtask/roundtrip/roundtrip.sh run ../quicktype-roundtrip --ts --quick --cpus 4 \
 xtask/roundtrip/roundtrip.sh compare /tmp/ts.jsonl /tmp/ours.jsonl
 ```
 
+The golden corpus records only each fixture's first quicktype run. The
+later ones (JSON to JSON Schema and on to the language for
+`diffViaSchema`/`roundtripViaSchema`, JSON to schema to C# and schema to
+schema for `schema-json-csharp`, JSON to TypeScript to C# for
+`json-ts-csharp`) are checked only when the fixture runs. `steps` runs them
+all with both CLIs and compares every written file, for every language,
+without its toolchain (about 7,000 steps; `QUICKTYPE_TSC` as below for the
+TypeScript input):
+
+```sh
+xtask/roundtrip/roundtrip.sh steps ../quicktype-roundtrip --jobs 8
+```
+
 `--quick` sets `QUICKTEST=true`, which leaves out the 166 inputs in
 `test/inputs/json/misc`. Samples after `--` restrict the run, as with
 `npm run test:fixtures -- <sample>`; their paths are relative to the copy.
@@ -76,7 +92,9 @@ quicktype's CI (`.github/workflows/test-pr.yaml` upstream). Notes for a Mac:
 
 - cJSON's run command uses `valgrind`, which does not exist on macOS. A shim
   on `PATH` that drops the `--` flags and runs the program loses only the
-  leak check.
+  leak check. It must not `exec` the program: the harness's shell reports a
+  program killed by a signal (a failed `assert` on an expected-failure
+  sample) as exit status 0 when the signal reaches it directly.
 - `python` runs `python3.12` and needs `mypy`, `python-dateutil` and
   `types-python-dateutil`; a venv (`uv venv --python 3.12`) with shims for
   `python3.12` and `mypy` on `PATH` does.
@@ -84,9 +102,20 @@ quicktype's CI (`.github/workflows/test-pr.yaml` upstream). Notes for a Mac:
   (`npm install --prefix <dir>`, then their `.bin` on `PATH`; flow 0.66 is
   x86-64 and runs under Rosetta).
 - `ruby`: `BUNDLE_PATH=<dir>` keeps `bundle install` out of the system gems.
+  Ruby 3.4 and newer no longer load `bigdecimal` (and Ruby 4 `logger`) by
+  default, which dry-types 1.7 needs: point `BUNDLE_GEMFILE` at a Gemfile
+  with the fixture's locked versions plus those two gems.
+- `dart` with `use-freezed` or `use-json-annotation` runs `build_runner`
+  2.1.7, which does not build on Dart 3; upstream CI uses Dart 2.14.
 - `cplusplus` with `boost: true` needs Boost headers (`CPATH`).
-- `java` needs Maven and a JDK that still accepts the fixture's
-  `-source 1.6` (upstream CI uses 11).
+- `json-ts-csharp` reads TypeScript; ours needs the TypeScript 7.0.2 native
+  compiler for that (`npm install --prefix <dir> typescript@7.0.2`, then
+  `QUICKTYPE_TSC` set to its `tsc`, as in `ci.yml`).
+- `java` needs Maven and a JDK that accepts the fixture POM's
+  `-source 1.6` (upstream CI uses 11). With JDK 12 or newer,
+  `MAVEN_ARGS="-Dmaven.compiler.source=8 -Dmaven.compiler.target=8"`
+  overrides it. The `java-lombok` fixtures use Lombok 1.18.2, which does not
+  work on JDK 16 or newer: they need JDK 11.
 
 ## What is not covered
 

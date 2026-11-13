@@ -5,6 +5,7 @@
 #   roundtrip.sh prepare <dir> [--from <quicktype checkout>]
 #   roundtrip.sh run <dir> [--bin <command> | --ts] [--results <file>]
 #                [--quick] [--cpus <n>] <fixture>[,<fixture>...] [-- <sample>...]
+#   roundtrip.sh steps <dir> [--bin <command>] [--jobs <n>]
 #   roundtrip.sh compare <ts-results.jsonl> <ours-results.jsonl>
 #   roundtrip.sh summary <results.jsonl>...
 
@@ -21,7 +22,7 @@ die() {
 }
 
 usage() {
-    sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
     exit 2
 }
 
@@ -128,9 +129,41 @@ cmd_run() {
     node "$here/compare.mjs" summary "$results"
 }
 
+# The fixtures' later steps as a generation-only differential against the
+# TypeScript CLI (later-steps.mts). Needs no language toolchains.
+cmd_steps() {
+    local dir="" bin="" jobs=4
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --bin) bin="$2"; shift 2 ;;
+            --jobs) jobs="$2"; shift 2 ;;
+            -*) die "unknown option $1" ;;
+            *) [ -z "$dir" ] || die "one directory only"; dir="$1"; shift ;;
+        esac
+    done
+    [ -n "$dir" ] || usage
+    dir="$(cd "$dir" && pwd)"
+    git -C "$dir" apply --reverse --check "$patch" 2>/dev/null ||
+        die "$dir has no harness patch; run: $0 prepare $dir"
+    if [ -z "$bin" ]; then
+        (cd "$repo" && cargo build --release --quiet -p quicktype-cli)
+        bin="$repo/target/release/quicktype"
+    fi
+    local work status=0
+    work="$(mktemp -d)"
+    "$dir/node_modules/.bin/tsx" "$here/later-steps.mts" "$dir" "$bin" "$work" "$jobs" || status=$?
+    if [ "$status" -eq 0 ]; then
+        rm -rf "$work"
+    else
+        echo "roundtrip: outputs kept in $work" >&2
+    fi
+    return "$status"
+}
+
 case "${1:-}" in
     prepare) shift; cmd_prepare "$@" ;;
     run) shift; cmd_run "$@" ;;
+    steps) shift; cmd_steps "$@" ;;
     compare) shift; exec node "$here/compare.mjs" compare "$@" ;;
     summary) shift; exec node "$here/compare.mjs" summary "$@" ;;
     *) usage ;;
