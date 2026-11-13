@@ -1,0 +1,14 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as cJSON
+# options: the boolean-valued ones are truthy, the naming styles fall
+# through `makeNameStyle` to `assertNever`, and `integer-size` is emitted
+# as the C type of integers, which fails to serialize.
+input json TopLevel {"name": "x", "count": 1, "ratio": 1.5, "tags": ["a"], "nested": {"deep": null}, "choice": [1, "a"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "toString", "typedef-alias": "constructor", "print-style": "__proto__", "header-only": false}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"integer-size": "toString"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"integer-size": "__proto__"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "toString"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"member-style": "__proto__", "type-style": "valueOf"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"enumerator-style": "constructor"}}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"type-style": "toString", "print-style": "bogus"}}

@@ -250,6 +250,10 @@ pub enum AccessLevel {
     Internal,
     /// `"public"`.
     Public,
+    /// An `Object.prototype` member: not `=== "internal"`, so the
+    /// `accessLevel` getter interpolates its source text followed by a
+    /// space, and not `=== "public"` either.
+    Other(crate::renderer_options::PrototypeMember),
 }
 
 /// The values of the `protocol` option: `none` (neither), `equatable` or

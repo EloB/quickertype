@@ -1,0 +1,10 @@
+# `Object.prototype` members (see enum-option-prototype-csharp) as Kotlin
+# options: `framework` falls through `makeRenderer`'s `switch` to
+# `assertNever` unless `--just-types` comes first, and `acronym-style`
+# leaves `kotlinNameStyle`'s default (the Pascal style).
+input json TopLevel {"myUrl": "x", "items": [{"jsonId": 1}]}
+pipeline {"lang": "kotlin"}
+
+render kotlin {"rendererOptions": {"framework": "toString"}}
+render kotlin {"rendererOptions": {"framework": "__proto__", "just-types": true, "acronym-style": "constructor"}}
+render kotlin {"rendererOptions": {"framework": "klaxon", "acronym-style": "valueOf"}}

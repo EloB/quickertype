@@ -1,0 +1,156 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      5,
+      false
+     ],
+     [
+      "count",
+      1,
+      false
+     ],
+     [
+      "ratio",
+      6,
+      false
+     ],
+     [
+      "flag",
+      3,
+      false
+     ],
+     [
+      "maybe",
+      4,
+      false
+     ],
+     [
+      "dict",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "enum",
+    "a": {},
+    "cases": [
+     "x"
+    ]
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Kind"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "cases": [
+     "one",
+     "two"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Kind",
+    7
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object function toString() { [native code] }",
+   "console": []
+  },
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "__proto__",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Unexpected object [object Object]",
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-ruby"
+}

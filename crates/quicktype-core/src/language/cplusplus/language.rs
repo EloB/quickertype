@@ -4,7 +4,7 @@
 
 use crate::messages::Result;
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
+    BooleanOption, EnumOption, EnumValue, OptionKind, RendererOption, StringOption,
 };
 use crate::support::strings::NamingStyle;
 use crate::support::support::panic;
@@ -13,9 +13,12 @@ use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `namingStyles`: the naming style of a `type-style`, `member-style`
-/// or `enumerator-style` value. The values are those the option declares,
-/// so anything else is an internal error.
-pub fn naming_style_for_option(value: &str) -> Result<NamingStyle> {
+/// or `enumerator-style` value, as `makeNameStyle` takes it. The declared
+/// values are those the option declares, so another one is an internal
+/// error; an `Object.prototype` member falls through `makeNameStyle`'s
+/// `switch` to `assertNever`.
+pub fn naming_style_for_option(value: EnumValue) -> Result<NamingStyle> {
+    let value = value.declared_or_assert_never()?;
     Ok(match value {
         "pascal-case" => NamingStyle::Pascal,
         "original-case" => NamingStyle::Original,
@@ -252,7 +255,7 @@ mod tests {
         let styles: Vec<NamingStyle> = TYPE_NAMING_STYLE
             .values
             .iter()
-            .map(|v| naming_style_for_option(v).unwrap())
+            .map(|v| naming_style_for_option(EnumValue::Declared(v)).unwrap())
             .collect();
         assert_eq!(
             styles,
@@ -266,6 +269,14 @@ mod tests {
                 NamingStyle::CamelUpperAcronyms,
             ]
         );
-        assert!(naming_style_for_option("kebab-case").is_err());
+        assert!(naming_style_for_option(EnumValue::Declared("kebab-case")).is_err());
+        let err = naming_style_for_option(EnumValue::Prototype(
+            crate::renderer_options::PrototypeMember::ToString,
+        ))
+        .unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Internal error: Unexpected object function toString() { [native code] }"
+        );
     }
 }

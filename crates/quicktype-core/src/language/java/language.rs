@@ -150,3 +150,29 @@ pub enum DateTimeProviderKind {
     /// `"legacy"`: `java.util.Date` (TS `JavaLegacyDateTimeProvider`).
     Legacy,
 }
+
+/// The value of TS `javaOptions.dateTimeProvider`, as the renderers compare
+/// it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DateTimeProviderOption {
+    /// `"java8"`.
+    Java8,
+    /// `"legacy"`.
+    Legacy,
+    /// An `Object.prototype` member: the constructor's `switch` takes its
+    /// default (the Java 8 provider), but it is not `=== "java8"` where the
+    /// Jackson renderer asks.
+    Other(crate::renderer_options::PrototypeMember),
+}
+
+impl DateTimeProviderOption {
+    /// The provider the `JavaRenderer` constructor's `switch` creates.
+    pub fn provider_kind(self) -> DateTimeProviderKind {
+        match self {
+            DateTimeProviderOption::Legacy => DateTimeProviderKind::Legacy,
+            DateTimeProviderOption::Java8 | DateTimeProviderOption::Other(_) => {
+                DateTimeProviderKind::Java8
+            }
+        }
+    }
+}

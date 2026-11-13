@@ -103,7 +103,7 @@ What the golden corpus covers, and what it does not:
   - C++: with-struct, east-const, boost, wstring.
   - Python: `--python-version` 3.5, 3.6, 3.7, 3.9.
   - JavaScript: converters, raw-type, ignore-unknown.
-- All of the above is listed in `scratchpad/opts.txt`. Regenerate it by parsing `case.json`.
+- The list above was collected by parsing the corpus's `case.json` files.
 - JSON-input cases always pass `--alphabetize-properties`. Schema and GraphQL cases never do.
 - Fixtures in `test/fixtures.ts` that are **not** in the golden corpus: `LeadingCommentsGoFixture`,
   `JSONSchemaJSONFixture(csharp)`, `JSONTypeScriptFixture(csharp)`, `CommentInjectionTreeSitterFixture`,

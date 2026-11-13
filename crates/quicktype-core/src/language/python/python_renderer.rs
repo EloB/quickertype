@@ -20,7 +20,7 @@ use indexmap::{IndexMap, IndexSet};
 
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::recursion::guard;
 use crate::support::strings::string_escape;
@@ -67,42 +67,51 @@ impl PythonOptions {
     /// order; an unknown `python-version` is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
         let features = match FEATURES.get_enum_value(values)? {
-            "3.5" => PythonFeatures {
+            EnumValue::Declared("3.5") => PythonFeatures {
                 type_hints: false,
                 typing_type: false,
                 data_classes: false,
                 builtin_generics: false,
                 union_operators: false,
             },
-            "3.6" => PythonFeatures {
+            EnumValue::Declared("3.6") => PythonFeatures {
                 type_hints: true,
                 typing_type: false,
                 data_classes: false,
                 builtin_generics: false,
                 union_operators: false,
             },
-            "3.7" => PythonFeatures {
+            EnumValue::Declared("3.7") => PythonFeatures {
                 type_hints: true,
                 typing_type: true,
                 data_classes: true,
                 builtin_generics: false,
                 union_operators: false,
             },
-            "3.9" => PythonFeatures {
+            EnumValue::Declared("3.9") => PythonFeatures {
                 type_hints: true,
                 typing_type: true,
                 data_classes: true,
                 builtin_generics: true,
                 union_operators: false,
             },
-            "3.10" => PythonFeatures {
+            EnumValue::Declared("3.10") => PythonFeatures {
                 type_hints: true,
                 typing_type: true,
                 data_classes: true,
                 builtin_generics: true,
                 union_operators: true,
             },
-            other => return panic(format!("Unknown python-version {other}")),
+            EnumValue::Declared(other) => return panic(format!("Unknown python-version {other}")),
+            // An `Object.prototype` member has none of the record's fields:
+            // every feature reads as `undefined`, which is falsy.
+            EnumValue::Prototype(_) => PythonFeatures {
+                type_hints: false,
+                typing_type: false,
+                data_classes: false,
+                builtin_generics: false,
+                union_operators: false,
+            },
         };
         Ok(PythonOptions {
             features,

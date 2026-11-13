@@ -17,7 +17,7 @@ use quicktype_js_compat::sort::sort_strings;
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
@@ -28,7 +28,7 @@ use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_fr
 
 use super::date_time_provider::JavaDateTimeProvider;
 use super::language::{
-    ACRONYM_STYLE, DATE_TIME_PROVIDER, DateTimeProviderKind, JUST_TYPES, LOMBOK,
+    ACRONYM_STYLE, DATE_TIME_PROVIDER, DateTimeProviderOption, JUST_TYPES, LOMBOK,
     LOMBOK_COPY_ANNOTATIONS, PACKAGE_NAME, USE_LIST,
 };
 use super::utils::{java_name_style, string_escape};
@@ -42,7 +42,7 @@ pub struct JavaOptions {
     /// `justTypes`.
     pub just_types: bool,
     /// `dateTimeProvider`.
-    pub date_time_provider: DateTimeProviderKind,
+    pub date_time_provider: DateTimeProviderOption,
     /// `acronymStyle`.
     pub acronym_style: AcronymStyleOptions,
     /// `packageName`.
@@ -57,14 +57,20 @@ impl JavaOptions {
     /// `getOptionValues(javaOptions, values)`: the options in declaration
     /// order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
-        let use_list = USE_LIST.get_enum_value(values)? == "list";
+        // TS truthiness: an `Object.prototype` member acts as `list`.
+        let use_list = USE_LIST.get_flag(values, "list")?;
         let just_types = JUST_TYPES.get_value(values);
         let date_time_provider = match DATE_TIME_PROVIDER.get_enum_value(values)? {
-            "legacy" => DateTimeProviderKind::Legacy,
-            _ => DateTimeProviderKind::Java8,
+            EnumValue::Declared("legacy") => DateTimeProviderOption::Legacy,
+            EnumValue::Declared(_) => DateTimeProviderOption::Java8,
+            EnumValue::Prototype(member) => DateTimeProviderOption::Other(member),
         };
-        let acronym_style = AcronymStyleOptions::from_value(ACRONYM_STYLE.get_enum_value(values)?)
-            .unwrap_or(AcronymStyleOptions::Pascal);
+        // An `Object.prototype` member selects no style (`undefined`), so
+        // `javaNameStyle`'s default parameter, `allUpperWordStyle` (the
+        // Pascal style), takes its place.
+        let acronym_style =
+            AcronymStyleOptions::from_enum_value(ACRONYM_STYLE.get_enum_value(values)?)
+                .unwrap_or(AcronymStyleOptions::Pascal);
         Ok(JavaOptions {
             use_list,
             just_types,
@@ -101,7 +107,7 @@ impl JavaState {
         let converter_classname = "Converter";
         JavaState {
             date_time_provider: JavaDateTimeProvider::new(
-                options.date_time_provider,
+                options.date_time_provider.provider_kind(),
                 converter_classname,
             ),
             options,

@@ -1,0 +1,277 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "myUrl",
+      4,
+      false
+     ],
+     [
+      "count",
+      1,
+      false
+     ],
+     [
+      "ratio",
+      6,
+      false
+     ],
+     [
+      "when",
+      4,
+      false
+     ],
+     [
+      "items",
+      2,
+      false
+     ],
+     [
+      "maybe",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 3
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "jsonId",
+      1,
+      false
+     ],
+     [
+      "kind",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "double",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "visibility": "toString",
+    "density": "constructor",
+    "integer-type": "__proto__"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    my_url: String,\n\n    count: i64,\n\n    ratio: f64,\n\n    when: String,\n\n    items: Vec<Item>,\n\n    maybe: Option<serde_json::Value>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct Item {\n    json_id: i64,\n\n    kind: String,\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       28,
+       11,
+       28,
+       36
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "def from_int(x):\n    assert isinstance(x, int) and not isinstance(x, bool)\n    return x\n\n\ndef from_str(x):\n    assert isinstance(x, str)\n    return x\n\n\ndef from_float(x):\n    assert isinstance(x, (float, int)) and not isinstance(x, bool)\n    return float(x)\n\n\ndef from_list(f, x):\n    assert isinstance(x, list)\n    return [f(y) for y in x]\n\n\ndef from_none(x):\n    assert x is None\n    return x\n\n\ndef to_float(x):\n    assert isinstance(x, (int, float))\n    return x\n\n\ndef to_class(c, x):\n    assert isinstance(x, c)\n    return x.to_dict()\n\n\nclass Item:\n    def __init__(self, json_id, kind):\n        self.json_id = json_id\n        self.kind = kind\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        json_id = from_int(obj[\"jsonId\"])\n        kind = from_str(obj[\"kind\"])\n        return Item(json_id, kind)\n\n    def to_dict(self):\n        result = {}\n        result[\"jsonId\"] = from_int(self.json_id)\n        result[\"kind\"] = from_str(self.kind)\n        return result\n\n\nclass TopLevel:\n    def __init__(self, my_url, count, ratio, when, items, maybe):\n        self.my_url = my_url\n        self.count = count\n        self.ratio = ratio\n        self.when = when\n        self.items = items\n        self.maybe = maybe\n\n    @staticmethod\n    def from_dict(obj):\n        assert isinstance(obj, dict)\n        my_url = from_str(obj[\"myUrl\"])\n        count = from_int(obj[\"count\"])\n        ratio = from_float(obj[\"ratio\"])\n        when = from_str(obj[\"when\"])\n        items = from_list(Item.from_dict, obj[\"items\"])\n        maybe = from_none(obj[\"maybe\"])\n        return TopLevel(my_url, count, ratio, when, items, maybe)\n\n    def to_dict(self):\n        result = {}\n        result[\"myUrl\"] = from_str(self.my_url)\n        result[\"count\"] = from_int(self.count)\n        result[\"ratio\"] = to_float(self.ratio)\n        result[\"when\"] = from_str(self.when)\n        result[\"items\"] = from_list(lambda x: to_class(Item, x), self.items)\n        result[\"maybe\"] = from_none(self.maybe)\n        return result\n\n\ndef top_level_from_dict(s):\n    return TopLevel.from_dict(s)\n\n\ndef top_level_to_dict(x):\n    return to_class(TopLevel, x)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "python",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "python-version": "__proto__",
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "class Item:\n    def __init__(self, json_id, kind):\n        self.json_id = json_id\n        self.kind = kind\n\n\nclass TopLevel:\n    def __init__(self, my_url, count, ratio, when, items, maybe):\n        self.my_url = my_url\n        self.count = count\n        self.ratio = ratio\n        self.when = when\n        self.items = items\n        self.maybe = maybe\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "objective-c",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "features": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [],
+   "console": []
+  },
+  {
+   "lang": "elm",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "array-type": "constructor"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "-- To decode the JSON data, add this file to your project, run\n--\n--     elm install NoRedInk/elm-json-decode-pipeline\n--\n-- add these imports\n--\n--     import Json.Decode exposing (decodeString)\n--     import QuickType exposing (topLevel)\n--\n-- and you're off to the races with\n--\n--     decodeString topLevel myJsonString\n\nmodule QuickType exposing\n    ( TopLevel\n    , topLevelToString\n    , topLevel\n    , Item\n    )\n\nimport Json.Decode as Jdec\nimport Json.Decode.Pipeline as Jpipe\nimport Json.Encode as Jenc\nimport Dict exposing (Dict)\n\ntype alias TopLevel =\n    { myURL : String\n    , count : Int\n    , ratio : Float\n    , when : String\n    , items : List Item\n    , maybe : ()\n    }\n\ntype alias Item =\n    { jsonID : Int\n    , kind : String\n    }\n\n-- decoders and encoders\noptionalField key decoder fallback =\n    Jdec.dict Jdec.value\n        |> Jdec.andThen (\\m ->\n            case Dict.get key m of\n                Nothing -> Jdec.succeed fallback\n                Just x -> Jdec.decodeValue decoder x |> Result.map Jdec.succeed |> Result.withDefault (Jdec.fail (\"Invalid \" ++ key)))\n\ntopLevelToString : TopLevel -> String\ntopLevelToString r = Jenc.encode 0 (encodeTopLevel r)\n\ntopLevel : Jdec.Decoder TopLevel\ntopLevel =\n    Jdec.succeed TopLevel\n        |> Jpipe.required \"myUrl\" Jdec.string\n        |> Jpipe.required \"count\" Jdec.int\n        |> Jpipe.required \"ratio\" Jdec.float\n        |> Jpipe.required \"when\" Jdec.string\n        |> Jpipe.required \"items\" (Jdec.list item )\n        |> Jpipe.required \"maybe\" (Jdec.null ())\n\nencodeTopLevel : TopLevel -> Jenc.Value\nencodeTopLevel x =\n    Jenc.object\n        [ (\"myUrl\", Jenc.string x.myURL)\n        , (\"count\", Jenc.int x.count)\n        , (\"ratio\", Jenc.float x.ratio)\n        , (\"when\", Jenc.string x.when)\n        , (\"items\", Jenc.list encodeItem x.items)\n        , (\"maybe\", always Jenc.null x.maybe)\n        ]\n\nitem : Jdec.Decoder Item\nitem =\n    Jdec.succeed Item\n        |> Jpipe.required \"jsonId\" Jdec.int\n        |> Jpipe.required \"kind\" Jdec.string\n\nencodeItem : Item -> Jenc.Value\nencodeItem x =\n    Jenc.object\n        [ (\"jsonId\", Jenc.int x.jsonID)\n        , (\"kind\", Jenc.string x.kind)\n        ]\n\n--- encoder helpers\n\nmakeNullableEncoder : (a -> Jenc.Value) -> Maybe a -> Jenc.Value\nmakeNullableEncoder f m =\n    case m of\n    Just x -> f x\n    Nothing -> Jenc.null\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       31,
+       14,
+       31,
+       16
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "array-type": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule QuickType\n    ( TopLevel (..)\n    , Item (..)\n    , decodeTopLevel\n    ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\n\ndata TopLevel = TopLevel\n    { myURLTopLevel :: Text\n    , countTopLevel :: Int\n    , ratioTopLevel :: Double\n    , whenTopLevel :: Text\n    , itemsTopLevel :: [Item]\n    , maybeTopLevel :: Maybe Text\n    } deriving (Show)\n\ndata Item = Item\n    { jsonIDItem :: Int\n    , kindItem :: Text\n    } deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel myURLTopLevel countTopLevel ratioTopLevel whenTopLevel itemsTopLevel maybeTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"myUrl\" .= myURLTopLevel\n        , Just $ \"count\" .= countTopLevel\n        , Just $ \"ratio\" .= ratioTopLevel\n        , Just $ \"when\" .= whenTopLevel\n        , Just $ \"items\" .= itemsTopLevel\n        , Just $ \"maybe\" .= maybeTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"myUrl\"\n        <*> v .: \"count\"\n        <*> v .: \"ratio\"\n        <*> v .: \"when\"\n        <*> v .: \"items\"\n        <*> v .: \"maybe\"\n\ninstance ToJSON Item where\n    toJSON (Item jsonIDItem kindItem) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"jsonId\" .= jsonIDItem\n        , Just $ \"kind\" .= kindItem\n        ]\n\ninstance FromJSON Item where\n    parseJSON (Object v) = Item\n        <$> v .: \"jsonId\"\n        <*> v .: \"kind\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "php",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "<?php\ndeclare(strict_types=1);\n\n// This is an autogenerated file:TopLevel\n\nclass TopLevel {\n    private string $myURL; // json:myUrl Required\n    private int $count; // json:count Required\n    private float $ratio; // json:ratio Required\n    private string $when; // json:when Required\n    private array $items; // json:items Required\n    private mixed $maybe; // json:maybe Optional\n\n    /**\n     * @param string $myURL\n     * @param int $count\n     * @param float $ratio\n     * @param string $when\n     * @param array $items\n     * @param mixed $maybe\n     */\n    public function __construct(string $myURL, int $count, float $ratio, string $when, array $items, mixed $maybe) {\n        $this->myURL = $myURL;\n        $this->count = $count;\n        $this->ratio = $ratio;\n        $this->when = $when;\n        $this->items = $items;\n        $this->maybe = $maybe;\n    }\n\n    /**\n     * @param string $value\n     * @throws Exception\n     * @return string\n     */\n    public static function fromMyURL(string $value): string {\n        return $value; /*string*/\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function toMyURL(): string {\n        if (TopLevel::validateMyURL($this->myURL))  {\n            return $this->myURL; /*string*/\n        }\n        throw new Exception('never get to this TopLevel::myURL');\n    }\n\n    /**\n     * @param string\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateMyURL(string $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function getMyURL(): string {\n        if (TopLevel::validateMyURL($this->myURL))  {\n            return $this->myURL;\n        }\n        throw new Exception('never get to getMyURL TopLevel::myURL');\n    }\n\n    /**\n     * @return string\n     */\n    public static function sampleMyURL(): string {\n        return 'TopLevel::myURL::31'; /*31:myURL*/\n    }\n\n    /**\n     * @param int $value\n     * @throws Exception\n     * @return int\n     */\n    public static function fromCount(int $value): int {\n        return $value; /*int*/\n    }\n\n    /**\n     * @throws Exception\n     * @return int\n     */\n    public function toCount(): int {\n        if (TopLevel::validateCount($this->count))  {\n            return $this->count; /*int*/\n        }\n        throw new Exception('never get to this TopLevel::count');\n    }\n\n    /**\n     * @param int\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateCount(int $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return int\n     */\n    public function getCount(): int {\n        if (TopLevel::validateCount($this->count))  {\n            return $this->count;\n        }\n        throw new Exception('never get to getCount TopLevel::count');\n    }\n\n    /**\n     * @return int\n     */\n    public static function sampleCount(): int {\n        return 32; /*32:count*/\n    }\n\n    /**\n     * @param float $value\n     * @throws Exception\n     * @return float\n     */\n    public static function fromRatio(float $value): float {\n        return $value; /*float*/\n    }\n\n    /**\n     * @throws Exception\n     * @return float\n     */\n    public function toRatio(): float {\n        if (TopLevel::validateRatio($this->ratio))  {\n            return $this->ratio; /*float*/\n        }\n        throw new Exception('never get to this TopLevel::ratio');\n    }\n\n    /**\n     * @param float\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateRatio(float $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return float\n     */\n    public function getRatio(): float {\n        if (TopLevel::validateRatio($this->ratio))  {\n            return $this->ratio;\n        }\n        throw new Exception('never get to getRatio TopLevel::ratio');\n    }\n\n    /**\n     * @return float\n     */\n    public static function sampleRatio(): float {\n        return 33.033; /*33:ratio*/\n    }\n\n    /**\n     * @param string $value\n     * @throws Exception\n     * @return string\n     */\n    public static function fromWhen(string $value): string {\n        return $value; /*string*/\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function toWhen(): string {\n        if (TopLevel::validateWhen($this->when))  {\n            return $this->when; /*string*/\n        }\n        throw new Exception('never get to this TopLevel::when');\n    }\n\n    /**\n     * @param string\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateWhen(string $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function getWhen(): string {\n        if (TopLevel::validateWhen($this->when))  {\n            return $this->when;\n        }\n        throw new Exception('never get to getWhen TopLevel::when');\n    }\n\n    /**\n     * @return string\n     */\n    public static function sampleWhen(): string {\n        return 'TopLevel::when::34'; /*34:when*/\n    }\n\n    /**\n     * @param array $value\n     * @throws Exception\n     * @return array\n     */\n    public static function fromItems(array $value): array {\n        return  array_map(function ($value) {\n            return Item::from($value); /*class*/\n        }, $value);\n    }\n\n    /**\n     * @throws Exception\n     * @return array\n     */\n    public function toItems(): array {\n        if (TopLevel::validateItems($this->items))  {\n            return array_map(function ($value) {\n                return $value->to(); /*class*/\n            }, $this->items);\n        }\n        throw new Exception('never get to this TopLevel::items');\n    }\n\n    /**\n     * @param array\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateItems(array $value): bool {\n        if (!is_array($value)) {\n            throw new Exception(\"Attribute Error:TopLevel::items\");\n        }\n        array_walk($value, function($value_v) {\n            $value_v->validate();\n        });\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return array\n     */\n    public function getItems(): array {\n        if (TopLevel::validateItems($this->items))  {\n            return $this->items;\n        }\n        throw new Exception('never get to getItems TopLevel::items');\n    }\n\n    /**\n     * @return array\n     */\n    public static function sampleItems(): array {\n        return  array(\n            Item::sample() /*35:*/\n        ); /* 35:items*/\n    }\n\n    /**\n     * @param mixed $value\n     * @throws Exception\n     * @return mixed\n     */\n    public static function fromMaybe(mixed $value): mixed {\n        return $value; /*null*/\n    }\n\n    /**\n     * @throws Exception\n     * @return mixed\n     */\n    public function toMaybe(): mixed {\n        if (TopLevel::validateMaybe($this->maybe))  {\n            return $this->maybe; /*null*/\n        }\n        throw new Exception('never get to this TopLevel::maybe');\n    }\n\n    /**\n     * @param mixed\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateMaybe(mixed $value): bool {\n        if (!is_null($value)) {\n            throw new Exception(\"Attribute Error:TopLevel::maybe\");\n        }\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return mixed\n     */\n    public function getMaybe(): mixed {\n        if (TopLevel::validateMaybe($this->maybe))  {\n            return $this->maybe;\n        }\n        throw new Exception('never get to getMaybe TopLevel::maybe');\n    }\n\n    /**\n     * @return mixed\n     */\n    public static function sampleMaybe(): mixed {\n        return null; /*36:maybe*/\n    }\n\n    /**\n     * @throws Exception\n     * @return bool\n     */\n    public function validate(): bool {\n        return TopLevel::validateMyURL($this->myURL)\n        || TopLevel::validateCount($this->count)\n        || TopLevel::validateRatio($this->ratio)\n        || TopLevel::validateWhen($this->when)\n        || TopLevel::validateItems($this->items)\n        || TopLevel::validateMaybe($this->maybe);\n    }\n\n    /**\n     * @return stdClass\n     * @throws Exception\n     */\n    public function to(): stdClass  {\n        $out = new stdClass();\n        $out->{'myUrl'} = $this->toMyURL();\n        $out->{'count'} = $this->toCount();\n        $out->{'ratio'} = $this->toRatio();\n        $out->{'when'} = $this->toWhen();\n        $out->{'items'} = $this->toItems();\n        $out->{'maybe'} = $this->toMaybe();\n        return $out;\n    }\n\n    /**\n     * @param stdClass $obj\n     * @return TopLevel\n     * @throws Exception\n     */\n    public static function from(stdClass $obj): TopLevel {\n        if (!property_exists($obj, 'myUrl')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'count')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'ratio')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'when')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'items')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'maybe')) {\n            throw new Exception(\"Missing required property\");\n        }\n        return new TopLevel(\n         TopLevel::fromMyURL($obj->{'myUrl'})\n        ,TopLevel::fromCount($obj->{'count'})\n        ,TopLevel::fromRatio($obj->{'ratio'})\n        ,TopLevel::fromWhen($obj->{'when'})\n        ,TopLevel::fromItems($obj->{'items'})\n        ,TopLevel::fromMaybe($obj->{'maybe'})\n        );\n    }\n\n    /**\n     * @return TopLevel\n     */\n    public static function sample(): TopLevel {\n        return new TopLevel(\n         TopLevel::sampleMyURL()\n        ,TopLevel::sampleCount()\n        ,TopLevel::sampleRatio()\n        ,TopLevel::sampleWhen()\n        ,TopLevel::sampleItems()\n        ,TopLevel::sampleMaybe()\n        );\n    }\n}\n\n// This is an autogenerated file:Item\n\nclass Item {\n    private int $jsonID; // json:jsonId Required\n    private string $kind; // json:kind Required\n\n    /**\n     * @param int $jsonID\n     * @param string $kind\n     */\n    public function __construct(int $jsonID, string $kind) {\n        $this->jsonID = $jsonID;\n        $this->kind = $kind;\n    }\n\n    /**\n     * @param int $value\n     * @throws Exception\n     * @return int\n     */\n    public static function fromJSONID(int $value): int {\n        return $value; /*int*/\n    }\n\n    /**\n     * @throws Exception\n     * @return int\n     */\n    public function toJSONID(): int {\n        if (Item::validateJSONID($this->jsonID))  {\n            return $this->jsonID; /*int*/\n        }\n        throw new Exception('never get to this Item::jsonID');\n    }\n\n    /**\n     * @param int\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateJSONID(int $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return int\n     */\n    public function getJSONID(): int {\n        if (Item::validateJSONID($this->jsonID))  {\n            return $this->jsonID;\n        }\n        throw new Exception('never get to getJSONID Item::jsonID');\n    }\n\n    /**\n     * @return int\n     */\n    public static function sampleJSONID(): int {\n        return 31; /*31:jsonID*/\n    }\n\n    /**\n     * @param string $value\n     * @throws Exception\n     * @return string\n     */\n    public static function fromKind(string $value): string {\n        return $value; /*string*/\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function toKind(): string {\n        if (Item::validateKind($this->kind))  {\n            return $this->kind; /*string*/\n        }\n        throw new Exception('never get to this Item::kind');\n    }\n\n    /**\n     * @param string\n     * @return bool\n     * @throws Exception\n     */\n    public static function validateKind(string $value): bool {\n        return true;\n    }\n\n    /**\n     * @throws Exception\n     * @return string\n     */\n    public function getKind(): string {\n        if (Item::validateKind($this->kind))  {\n            return $this->kind;\n        }\n        throw new Exception('never get to getKind Item::kind');\n    }\n\n    /**\n     * @return string\n     */\n    public static function sampleKind(): string {\n        return 'Item::kind::32'; /*32:kind*/\n    }\n\n    /**\n     * @throws Exception\n     * @return bool\n     */\n    public function validate(): bool {\n        return Item::validateJSONID($this->jsonID)\n        || Item::validateKind($this->kind);\n    }\n\n    /**\n     * @return stdClass\n     * @throws Exception\n     */\n    public function to(): stdClass  {\n        $out = new stdClass();\n        $out->{'jsonId'} = $this->toJSONID();\n        $out->{'kind'} = $this->toKind();\n        return $out;\n    }\n\n    /**\n     * @param stdClass $obj\n     * @return Item\n     * @throws Exception\n     */\n    public static function from(stdClass $obj): Item {\n        if (!property_exists($obj, 'jsonId')) {\n            throw new Exception(\"Missing required property\");\n        }\n        if (!property_exists($obj, 'kind')) {\n            throw new Exception(\"Missing required property\");\n        }\n        return new Item(\n         Item::fromJSONID($obj->{'jsonId'})\n        ,Item::fromKind($obj->{'kind'})\n        );\n    }\n\n    /**\n     * @return Item\n     */\n    public static function sample(): Item {\n        return new Item(\n         Item::sampleJSONID()\n        ,Item::sampleKind()\n        );\n    }\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-misc"
+}

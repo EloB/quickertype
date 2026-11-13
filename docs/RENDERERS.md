@@ -86,6 +86,8 @@ framework-labelled commit and tell the core owner.
 | `private readonly _options: OptionValues<typeof xOptions>` | `options: XOptions` (plain struct of enums/bools/strings) |
 | module-level `const fooNamer = funPrefixNamer(...)` | a `Namer` field created in `new()`, returned with `.clone()` (namer **identity** decides naming groups) |
 | a namer created inside a hook (`new Namer(...)` per call) | `Namer::new(...)` inside the hook: a fresh identity per call, as in TS |
+| a name style that can throw (the JavaScript family's `acronyms(s)`) | the style returns `Result<String>`; the namer passes it through `self.core().name_style_errors().clone()`'s `name_or(result, fallback)`, and `assign_names` reports the first error, where TS's `assignNames` throws it |
+| an enum option's value (`getEnumValue`) | `X.get_enum_value(values)?` (an `EnumValue`, see `renderer_options`) mapped to a typed value with an `Other(PrototypeMember)` variant where the TS code compares, switches on or interpolates it; boolean-valued options with `X.get_flag(values, "true-name")?` |
 | `this.typeGraph`, `this.targetLanguage`, `this.leadingComments` | `self.type_graph()`, `self.target_language()`, `self.leading_comments()` |
 | `t.kind`, `t.getCombinedName()`, `c.getProperties()` | `graph.kind(t)?`, `graph.combined_name(t)?`, `graph.type_at(c)?.properties()?` |
 | `matchType(t, any => ..., ...)` | `match graph.kind(t)? { TypeKind::Any => ..., ..., kind => return type_not_supported(kind) }` |

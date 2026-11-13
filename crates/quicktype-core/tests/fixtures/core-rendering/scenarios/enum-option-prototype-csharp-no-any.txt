@@ -1,0 +1,10 @@
+# `Object.prototype` members as C# `any-type` and `base-class` (see
+# enum-option-prototype-csharp) on a top-level array of integers: no `any`
+# is emitted, so `any-type` alone renders, but the top-level wrapper class
+# still names the base class, which fails to serialize.
+input schema Numbers {"type": "array", "items": {"type": "integer"}}
+pipeline {"lang": "csharp"}
+
+render csharp {"rendererOptions": {"any-type": "constructor"}}
+render csharp {"rendererOptions": {"framework": "NewtonSoft", "any-type": "valueOf", "just-types": true}}
+render csharp {"rendererOptions": {"base-class": "toString"}}

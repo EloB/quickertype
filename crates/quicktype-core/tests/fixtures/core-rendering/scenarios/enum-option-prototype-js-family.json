@@ -1,0 +1,252 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "url",
+      4,
+      false
+     ],
+     [
+      "myUrl",
+      1,
+      false
+     ],
+     [
+      "plain",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "value",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "jsonId",
+      3,
+      false
+     ],
+     [
+      "kind",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "javascript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "toString"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "acronyms is not a function",
+   "console": []
+  },
+  {
+   "lang": "typescript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "__proto__"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "acronyms is not a function",
+   "console": []
+  },
+  {
+   "lang": "flow",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "constructor"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "acronyms is not a function",
+   "console": []
+  },
+  {
+   "lang": "javascript-prop-types",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "acronym-style": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "acronyms is not a function",
+   "console": []
+  },
+  {
+   "lang": "javascript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "raw-type": "toString",
+    "converters": "constructor",
+    "runtime-typecheck": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this data:\n//\n//   const Convert = require(\"./out\");\n//\n//   const topLevel = Convert.toTopLevel(json);\n//\n// These functions will throw an error if the JSON doesn't\n// match the expected interface, even if the JSON is valid.\n\n// Converts JSON types to/from your types\n// and asserts the results at runtime\nfunction toTopLevel(json) {\n    return cast(json, r(\"TopLevel\"));\n}\n\nfunction topLevelToJson(value) {\n    return uncast(value, r(\"TopLevel\"));\n}\n\nfunction invalidValue(typ, val, key, parent = '') {\n    const prettyTyp = prettyTypeName(typ);\n    const parentText = parent ? ` on ${parent}` : '';\n    const keyText = key ? ` for key \"${key}\"` : '';\n    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);\n}\n\nfunction prettyTypeName(typ) {\n    if (Array.isArray(typ)) {\n        if (typ.length === 2 && typ[0] === undefined) {\n            return `an optional ${prettyTypeName(typ[1])}`;\n        } else {\n            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(\", \")}]`;\n        }\n    } else if (typeof typ === \"object\" && typ.literal !== undefined) {\n        return typ.literal;\n    } else {\n        return typeof typ;\n    }\n}\n\nfunction jsonToJSProps(typ) {\n    if (typ.jsonToJS === undefined) {\n        const map = {};\n        typ.props.forEach((p) => map[p.json] = { key: p.js, typ: p.typ });\n        typ.jsonToJS = map;\n    }\n    return typ.jsonToJS;\n}\n\nfunction jsToJSONProps(typ) {\n    if (typ.jsToJSON === undefined) {\n        const map = {};\n        typ.props.forEach((p) => map[p.js] = { key: p.json, typ: p.typ });\n        typ.jsToJSON = map;\n    }\n    return typ.jsToJSON;\n}\n\nfunction transform(val, typ, getProps, key = '', parent = '') {\n    function transformPrimitive(typ, val) {\n        if (typeof typ === typeof val) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n\n    function transformUnion(typs, val) {\n        // val must validate against one typ in typs\n        const l = typs.length;\n        for (let i = 0; i < l; i++) {\n            const typ = typs[i];\n            try {\n                return transform(val, typ, getProps);\n            } catch (_) {}\n        }\n        return invalidValue(typs, val, key, parent);\n    }\n\n    function transformEnum(cases, val) {\n        if (cases.indexOf(val) !== -1) return val;\n        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);\n    }\n\n    function transformArray(typ, val) {\n        // val must be an array with no invalid elements\n        if (!Array.isArray(val)) return invalidValue(l(\"array\"), val, key, parent);\n\n        return val.map(el => transform(el, typ, getProps));\n    }\n\n    function transformDate(val) {\n        if (val === null) {\n            return null;\n        }\n        const d = new Date(val);\n        if (isNaN(d.valueOf())) {\n            return invalidValue(l(\"Date\"), val, key, parent);\n        }\n        return d;\n    }\n\n    function transformObject(props, additional, val) {\n        if (val === null || typeof val !== \"object\" || Array.isArray(val)) {\n            return invalidValue(l(ref || \"object\"), val, key, parent);\n        }\n        const result = {};\n        Object.getOwnPropertyNames(props).forEach(key => {\n            const prop = props[key];\n            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;\n            result[prop.key] = transform(v, prop.typ, getProps, key, ref);\n        });\n        Object.getOwnPropertyNames(val).forEach(key => {\n            if (!Object.prototype.hasOwnProperty.call(props, key)) {\n                result[key] = transform(val[key], additional, getProps, key, ref);\n            }\n        });\n        return result;\n    }\n\n    if (typ === \"any\") return val;\n    if (typ === null) {\n        if (val === null) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n    if (typ === false) return invalidValue(typ, val, key, parent);\n    let ref = undefined;\n    while (typeof typ === \"object\" && typ.ref !== undefined) {\n        ref = typ.ref;\n        typ = typeMap[typ.ref];\n    }\n    if (Array.isArray(typ)) return transformEnum(typ, val);\n    if (typeof typ === \"object\") {\n        return typ.hasOwnProperty(\"pattern\")      ? typeof val === \"string\" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"string\")       ? typeof val === \"string\" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"number\")       ? typeof val === \"number\" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"integer\")      ? typeof val === \"number\" && val % 1 === 0 ? val : invalidValue(l(\"integer\"), val, key, parent)\n            : typ.hasOwnProperty(\"unionMembers\") ? transformUnion(typ.unionMembers, val)\n            : typ.hasOwnProperty(\"arrayItems\")    ? transformArray(typ.arrayItems, val)\n            : typ.hasOwnProperty(\"props\")         ? transformObject(getProps(typ), typ.additional, val)\n            : invalidValue(typ, val, key, parent);\n    }\n    // Numbers can be parsed by Date but shouldn't be.\n    if (typ === Date && (typeof val === \"string\" || val instanceof Date)) return transformDate(val);\n    return transformPrimitive(typ, val);\n}\n\nfunction cast(val, typ) {\n    return transform(val, typ, jsonToJSProps);\n}\n\nfunction uncast(val, typ) {\n    return transform(val, typ, jsToJSONProps);\n}\n\nfunction l(typ) {\n    return { literal: typ };\n}\n\nfunction a(typ) {\n    return { arrayItems: typ };\n}\n\nfunction i(typ) {\n    return { integer: typ };\n}\n\nfunction p(pattern) {\n    return { pattern };\n}\n\nfunction s(typ, min, max) {\n    return { string: typ, min, max };\n}\n\nfunction n(typ, min, max) {\n    return { number: typ, min, max };\n}\n\nfunction u(...typs) {\n    return { unionMembers: typs };\n}\n\nfunction o(props, additional) {\n    return { props, additional };\n}\n\nfunction m(additional) {\n    const props = [];\n    return { props, additional };\n}\n\nfunction r(name) {\n    return { ref: name };\n}\n\nconst typeMap = {\n    \"TopLevel\": o([\n        { json: \"url\", js: \"url\", typ: r(\"URL\") },\n        { json: \"myUrl\", js: \"myUrl\", typ: \"\" },\n        { json: \"plain\", js: \"plain\", typ: r(\"Plain\") },\n    ], false),\n    \"Plain\": o([\n        { json: \"value\", js: \"value\", typ: i(0) },\n    ], false),\n    \"URL\": o([\n        { json: \"jsonId\", js: \"jsonId\", typ: i(0) },\n        { json: \"kind\", js: \"kind\", typ: \"\" },\n    ], false),\n};\n\nmodule.exports = {\n    \"topLevelToJson\": topLevelToJson,\n    \"toTopLevel\": toTopLevel,\n};\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "typescript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "raw-type": "__proto__",
+    "converters": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// To parse this data:\n//\n//   import { Convert, TopLevel } from \"./out\";\n//\n//   const topLevel = Convert.toTopLevel(json);\n//\n// These functions will throw an error if the JSON doesn't\n// match the expected interface, even if the JSON is valid.\n\nexport interface TopLevel {\n    url:   URL;\n    myUrl: string;\n    plain: Plain;\n}\n\nexport interface Plain {\n    value: number;\n}\n\nexport interface URL {\n    jsonId: number;\n    kind:   string;\n}\n\n// Converts JSON types to/from your types\n// and asserts the results at runtime\nexport class Convert {\n    public static toTopLevel(json: unknown): TopLevel {\n        return cast(json, r(\"TopLevel\"));\n    }\n\n    public static topLevelToJson(value: TopLevel): unknown {\n        return uncast(value, r(\"TopLevel\"));\n    }\n}\n\nfunction invalidValue(typ: any, val: any, key: any, parent: any = ''): never {\n    const prettyTyp = prettyTypeName(typ);\n    const parentText = parent ? ` on ${parent}` : '';\n    const keyText = key ? ` for key \"${key}\"` : '';\n    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);\n}\n\nfunction prettyTypeName(typ: any): string {\n    if (Array.isArray(typ)) {\n        if (typ.length === 2 && typ[0] === undefined) {\n            return `an optional ${prettyTypeName(typ[1])}`;\n        } else {\n            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(\", \")}]`;\n        }\n    } else if (typeof typ === \"object\" && typ.literal !== undefined) {\n        return typ.literal;\n    } else {\n        return typeof typ;\n    }\n}\n\nfunction jsonToJSProps(typ: any): any {\n    if (typ.jsonToJS === undefined) {\n        const map: any = {};\n        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });\n        typ.jsonToJS = map;\n    }\n    return typ.jsonToJS;\n}\n\nfunction jsToJSONProps(typ: any): any {\n    if (typ.jsToJSON === undefined) {\n        const map: any = {};\n        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });\n        typ.jsToJSON = map;\n    }\n    return typ.jsToJSON;\n}\n\nfunction transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {\n    function transformPrimitive(typ: string, val: any): any {\n        if (typeof typ === typeof val) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n\n    function transformUnion(typs: any[], val: any): any {\n        // val must validate against one typ in typs\n        const l = typs.length;\n        for (let i = 0; i < l; i++) {\n            const typ = typs[i];\n            try {\n                return transform(val, typ, getProps);\n            } catch (_) {}\n        }\n        return invalidValue(typs, val, key, parent);\n    }\n\n    function transformEnum(cases: string[], val: any): any {\n        if (cases.indexOf(val) !== -1) return val;\n        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);\n    }\n\n    function transformArray(typ: any, val: any): any {\n        // val must be an array with no invalid elements\n        if (!Array.isArray(val)) return invalidValue(l(\"array\"), val, key, parent);\n\n        return val.map(el => transform(el, typ, getProps));\n    }\n\n    function transformDate(val: any): any {\n        if (val === null) {\n            return null;\n        }\n        const d = new Date(val);\n        if (isNaN(d.valueOf())) {\n            return invalidValue(l(\"Date\"), val, key, parent);\n        }\n        return d;\n    }\n\n    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {\n        if (val === null || typeof val !== \"object\" || Array.isArray(val)) {\n            return invalidValue(l(ref || \"object\"), val, key, parent);\n        }\n        const result: any = {};\n        Object.getOwnPropertyNames(props).forEach(key => {\n            const prop = props[key];\n            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;\n            result[prop.key] = transform(v, prop.typ, getProps, key, ref);\n        });\n        Object.getOwnPropertyNames(val).forEach(key => {\n            if (!Object.prototype.hasOwnProperty.call(props, key)) {\n                result[key] = transform(val[key], additional, getProps, key, ref);\n            }\n        });\n        return result;\n    }\n\n    if (typ === \"any\") return val;\n    if (typ === null) {\n        if (val === null) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n    if (typ === false) return invalidValue(typ, val, key, parent);\n    let ref: any = undefined;\n    while (typeof typ === \"object\" && typ.ref !== undefined) {\n        ref = typ.ref;\n        typ = typeMap[typ.ref];\n    }\n    if (Array.isArray(typ)) return transformEnum(typ, val);\n    if (typeof typ === \"object\") {\n        return typ.hasOwnProperty(\"pattern\")      ? typeof val === \"string\" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"string\")       ? typeof val === \"string\" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"number\")       ? typeof val === \"number\" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"integer\")      ? typeof val === \"number\" && val % 1 === 0 ? val : invalidValue(l(\"integer\"), val, key, parent)\n            : typ.hasOwnProperty(\"unionMembers\") ? transformUnion(typ.unionMembers, val)\n            : typ.hasOwnProperty(\"arrayItems\")    ? transformArray(typ.arrayItems, val)\n            : typ.hasOwnProperty(\"props\")         ? transformObject(getProps(typ), typ.additional, val)\n            : invalidValue(typ, val, key, parent);\n    }\n    // Numbers can be parsed by Date but shouldn't be.\n    if (typ === Date && (typeof val === \"string\" || val instanceof Date)) return transformDate(val);\n    return transformPrimitive(typ, val);\n}\n\nfunction cast<T>(val: any, typ: any): T {\n    return transform(val, typ, jsonToJSProps);\n}\n\nfunction uncast<T>(val: T, typ: any): any {\n    return transform(val, typ, jsToJSONProps);\n}\n\nfunction l(typ: any) {\n    return { literal: typ };\n}\n\nfunction a(typ: any) {\n    return { arrayItems: typ };\n}\n\nfunction i(typ: any) {\n    return { integer: typ };\n}\n\nfunction p(pattern: any) {\n    return { pattern };\n}\n\nfunction s(typ: any, min: any, max: any) {\n    return { string: typ, min, max };\n}\n\nfunction n(typ: any, min: any, max: any) {\n    return { number: typ, min, max };\n}\n\nfunction u(...typs: any[]) {\n    return { unionMembers: typs };\n}\n\nfunction o(props: any[], additional: any) {\n    return { props, additional };\n}\n\nfunction m(additional: any) {\n    const props: any[] = [];\n    return { props, additional };\n}\n\nfunction r(name: string) {\n    return { ref: name };\n}\n\nconst typeMap: any = {\n    \"TopLevel\": o([\n        { json: \"url\", js: \"url\", typ: r(\"URL\") },\n        { json: \"myUrl\", js: \"myUrl\", typ: \"\" },\n        { json: \"plain\", js: \"plain\", typ: r(\"Plain\") },\n    ], false),\n    \"Plain\": o([\n        { json: \"value\", js: \"value\", typ: i(0) },\n    ], false),\n    \"URL\": o([\n        { json: \"jsonId\", js: \"jsonId\", typ: i(0) },\n        { json: \"kind\", js: \"kind\", typ: \"\" },\n    ], false),\n};\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "flow",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "raw-type": "hasOwnProperty",
+    "prefer-unknown": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// @flow\n\n// To parse this data:\n//\n//   const Convert = require(\"./out\");\n//\n//   const topLevel = Convert.toTopLevel(json);\n//\n// These functions will throw an error if the JSON doesn't\n// match the expected interface, even if the JSON is valid.\n\nexport type TopLevel = {\n    url:   URL;\n    myUrl: string;\n    plain: Plain;\n};\n\nexport type Plain = {\n    value: number;\n};\n\nexport type URL = {\n    jsonId: number;\n    kind:   string;\n};\n\n// Converts JSON types to/from your types\n// and asserts the results at runtime\nfunction toTopLevel(json: mixed): TopLevel {\n    return cast(json, r(\"TopLevel\"));\n}\n\nfunction topLevelToJson(value: TopLevel): mixed {\n    return uncast(value, r(\"TopLevel\"));\n}\n\nfunction invalidValue(typ: any, val: any, key: any, parent: any = '') {\n    const prettyTyp = prettyTypeName(typ);\n    const parentText = parent ? ` on ${parent}` : '';\n    const keyText = key ? ` for key \"${key}\"` : '';\n    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);\n}\n\nfunction prettyTypeName(typ: any): string {\n    if (Array.isArray(typ)) {\n        if (typ.length === 2 && typ[0] === undefined) {\n            return `an optional ${prettyTypeName(typ[1])}`;\n        } else {\n            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(\", \")}]`;\n        }\n    } else if (typeof typ === \"object\" && typ.literal !== undefined) {\n        return typ.literal;\n    } else {\n        return typeof typ;\n    }\n}\n\nfunction jsonToJSProps(typ: any): any {\n    if (typ.jsonToJS === undefined) {\n        const map: any = {};\n        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });\n        typ.jsonToJS = map;\n    }\n    return typ.jsonToJS;\n}\n\nfunction jsToJSONProps(typ: any): any {\n    if (typ.jsToJSON === undefined) {\n        const map: any = {};\n        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });\n        typ.jsToJSON = map;\n    }\n    return typ.jsToJSON;\n}\n\nfunction transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {\n    function transformPrimitive(typ: string, val: any): any {\n        if (typeof typ === typeof val) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n\n    function transformUnion(typs: any[], val: any): any {\n        // val must validate against one typ in typs\n        const l = typs.length;\n        for (let i = 0; i < l; i++) {\n            const typ = typs[i];\n            try {\n                return transform(val, typ, getProps);\n            } catch (_) {}\n        }\n        return invalidValue(typs, val, key, parent);\n    }\n\n    function transformEnum(cases: string[], val: any): any {\n        if (cases.indexOf(val) !== -1) return val;\n        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);\n    }\n\n    function transformArray(typ: any, val: any): any {\n        // val must be an array with no invalid elements\n        if (!Array.isArray(val)) return invalidValue(l(\"array\"), val, key, parent);\n\n        return val.map(el => transform(el, typ, getProps));\n    }\n\n    function transformDate(val: any): any {\n        if (val === null) {\n            return null;\n        }\n        const d = new Date(val);\n        if (isNaN(d.valueOf())) {\n            return invalidValue(l(\"Date\"), val, key, parent);\n        }\n        return d;\n    }\n\n    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {\n        if (val === null || typeof val !== \"object\" || Array.isArray(val)) {\n            return invalidValue(l(ref || \"object\"), val, key, parent);\n        }\n        const result: any = {};\n        Object.getOwnPropertyNames(props).forEach(key => {\n            const prop = props[key];\n            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;\n            result[prop.key] = transform(v, prop.typ, getProps, key, ref);\n        });\n        Object.getOwnPropertyNames(val).forEach(key => {\n            if (!Object.prototype.hasOwnProperty.call(props, key)) {\n                result[key] = transform(val[key], additional, getProps, key, ref);\n            }\n        });\n        return result;\n    }\n\n    if (typ === \"any\") return val;\n    if (typ === null) {\n        if (val === null) return val;\n        return invalidValue(typ, val, key, parent);\n    }\n    if (typ === false) return invalidValue(typ, val, key, parent);\n    let ref: any = undefined;\n    while (typeof typ === \"object\" && typ.ref !== undefined) {\n        ref = typ.ref;\n        typ = typeMap[typ.ref];\n    }\n    if (Array.isArray(typ)) return transformEnum(typ, val);\n    if (typeof typ === \"object\") {\n        return typ.hasOwnProperty(\"pattern\")      ? typeof val === \"string\" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"string\")       ? typeof val === \"string\" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"number\")       ? typeof val === \"number\" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)\n            : typ.hasOwnProperty(\"integer\")      ? typeof val === \"number\" && val % 1 === 0 ? val : invalidValue(l(\"integer\"), val, key, parent)\n            : typ.hasOwnProperty(\"unionMembers\") ? transformUnion(typ.unionMembers, val)\n            : typ.hasOwnProperty(\"arrayItems\")    ? transformArray(typ.arrayItems, val)\n            : typ.hasOwnProperty(\"props\")         ? transformObject(getProps(typ), typ.additional, val)\n            : invalidValue(typ, val, key, parent);\n    }\n    // Numbers can be parsed by Date but shouldn't be.\n    if (typ === Date && (typeof val === \"string\" || val instanceof Date)) return transformDate(val);\n    return transformPrimitive(typ, val);\n}\n\nfunction cast<T>(val: any, typ: any): T {\n    return transform(val, typ, jsonToJSProps);\n}\n\nfunction uncast<T>(val: T, typ: any): any {\n    return transform(val, typ, jsToJSONProps);\n}\n\nfunction l(typ: any) {\n    return { literal: typ };\n}\n\nfunction a(typ: any) {\n    return { arrayItems: typ };\n}\n\nfunction i(typ: any) {\n    return { integer: typ };\n}\n\nfunction p(pattern: any) {\n    return { pattern };\n}\n\nfunction s(typ: any, min: any, max: any) {\n    return { string: typ, min, max };\n}\n\nfunction n(typ: any, min: any, max: any) {\n    return { number: typ, min, max };\n}\n\nfunction u(...typs: any[]) {\n    return { unionMembers: typs };\n}\n\nfunction o(props: any[], additional: any) {\n    return { props, additional };\n}\n\nfunction m(additional: any) {\n    const props: any[] = [];\n    return { props, additional };\n}\n\nfunction r(name: string) {\n    return { ref: name };\n}\n\nconst typeMap: any = {\n    \"TopLevel\": o([\n        { json: \"url\", js: \"url\", typ: r(\"URL\") },\n        { json: \"myUrl\", js: \"myUrl\", typ: \"\" },\n        { json: \"plain\", js: \"plain\", typ: r(\"Plain\") },\n    ], false),\n    \"Plain\": o([\n        { json: \"value\", js: \"value\", typ: i(0) },\n    ], false),\n    \"URL\": o([\n        { json: \"jsonId\", js: \"jsonId\", typ: i(0) },\n        { json: \"kind\", js: \"kind\", typ: \"\" },\n    ], false),\n};\n\nmodule.exports = {\n    \"topLevelToJson\": topLevelToJson,\n    \"toTopLevel\": toTopLevel,\n};\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "javascript-prop-types",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "module-system": "toString",
+    "converters": "valueOf"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example usage:\n//\n// import { MyShape } from ./myShape.js;\n//\n// class MyComponent extends React.Component {\n//   //\n// }\n//\n// MyComponent.propTypes = {\n//   input: MyShape\n// };\n\nimport PropTypes from \"prop-types\";\nconst Integer = (props, name) => props[name] == null || Number.isInteger(props[name]) ? null : new Error(\"Expected integer\");\n\nlet _TopLevel;\nlet _Plain;\nlet _URL;\n_Plain = PropTypes.shape({\n    \"value\": PropTypes.oneOfType([Integer]).isRequired,\n});\n_URL = PropTypes.shape({\n    \"jsonId\": PropTypes.oneOfType([Integer]).isRequired,\n    \"kind\": PropTypes.oneOfType([PropTypes.string]).isRequired,\n});\n_TopLevel = PropTypes.shape({\n    \"url\": _URL,\n    \"myUrl\": PropTypes.oneOfType([PropTypes.string]).isRequired,\n    \"plain\": _Plain,\n});\n\nexport const TopLevel = _TopLevel;\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "enum-option-prototype-js-family"
+}

@@ -26,7 +26,7 @@
 //! name, an internal assertion) is an error instead of an exception.
 //! `docs/RENDERERS.md` is the porting guide.
 
-use std::cell::OnceCell;
+use std::cell::{OnceCell, RefCell};
 use std::hash::Hash;
 use std::rc::Rc;
 
@@ -46,7 +46,7 @@ use crate::attributes::type_attributes::{
 use crate::declaration_ir::{
     Declaration, DeclarationIR, cycle_breaker_types_for_graph, declarations_for_graph,
 };
-use crate::messages::Result;
+use crate::messages::{QuickTypeError, Result};
 use crate::naming::{Name, Namer, Names, NamespaceId, Naming, Proposer, assign_names};
 use crate::renderer::{
     BlankLineConfig, ForEachPosition, RenderContext, RenderResult, RendererCore,
@@ -196,6 +196,39 @@ pub struct ConvenienceRendererCore<'a> {
     have_optional_properties: Option<bool>,
     cycle_breaker_types: OnceCell<IndexSet<TypeRef>>,
     alphabetize_properties: bool,
+    name_style_errors: NameStyleErrors,
+}
+
+/// What name styles threw during naming.
+///
+/// A name style returns a `String` and cannot fail, but in TS some throw:
+/// the JavaScript family's call an `undefined` acronym style when
+/// `acronym-style` is an `Object.prototype` member. Their namers record the
+/// exception here (a cheap clone of the renderer's
+/// [`ConvenienceRendererCore::name_style_errors`]) and go on with a
+/// fallback name; [`ConvenienceRendererExt::assign_names`] reports the first
+/// one as soon as naming is done, which is where TS's `assignNames` throws
+/// it: before the graph is processed or anything is emitted.
+#[derive(Clone, Debug, Default)]
+pub struct NameStyleErrors(Rc<RefCell<Option<QuickTypeError>>>);
+
+impl NameStyleErrors {
+    /// The name in `result`; for an error, records it (only the first one,
+    /// TS stops there) and returns `fallback`, for naming to go on with.
+    pub fn name_or(&self, result: Result<String>, fallback: &str) -> String {
+        result.unwrap_or_else(|error| {
+            self.0.borrow_mut().get_or_insert(error);
+            fallback.to_owned()
+        })
+    }
+
+    /// The first error recorded, if any.
+    fn check(&self) -> Result<()> {
+        match self.0.borrow().as_ref() {
+            Some(error) => Err(error.clone()),
+            None => Ok(()),
+        }
+    }
 }
 
 impl std::fmt::Debug for ConvenienceRendererCore<'_> {
@@ -235,7 +268,14 @@ impl<'a> ConvenienceRendererCore<'a> {
             have_optional_properties: None,
             cycle_breaker_types: OnceCell::new(),
             alphabetize_properties: false,
+            name_style_errors: NameStyleErrors::default(),
         }
+    }
+
+    /// Where this render's namers record what their name styles threw (see
+    /// [`NameStyleErrors`]).
+    pub fn name_style_errors(&self) -> &NameStyleErrors {
+        &self.name_style_errors
     }
 
     /// The namer for named types (`_namedTypeNamer`), once naming has
@@ -1653,10 +1693,15 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         Ok(())
     }
 
-    /// `assignNames()`: sets up naming and assigns all names.
+    /// `assignNames()`: sets up naming and assigns all names. What a name
+    /// style threw on the way ([`NameStyleErrors`]) is the error: TS stops
+    /// there, so it comes before anything that failed later.
     fn assign_names(&mut self) -> Result<Names> {
-        let roots = self.set_up_naming()?;
-        assign_names(&self.core().naming, &roots)
+        let names = self
+            .set_up_naming()
+            .and_then(|roots| assign_names(&self.core().naming, &roots));
+        self.core().name_style_errors.check()?;
+        names
     }
 
     // ---- Graph processing -----------------------------------------------
@@ -2337,8 +2382,8 @@ fn comment_line_escapes(delimiters: &[Option<&str>]) -> Vec<(&'static str, &'sta
 pub mod prelude {
     pub use super::{
         ConvenienceRenderer, ConvenienceRendererCore, ConvenienceRendererExt, ForbiddenWord,
-        ForbiddenWordsInfo, constant_proposer, defaults, match_type_unsupported, render_with,
-        type_not_supported,
+        ForbiddenWordsInfo, NameStyleErrors, constant_proposer, defaults, match_type_unsupported,
+        render_with, type_not_supported,
     };
     pub use crate::forward_convenience_renderer_hooks;
     pub use crate::messages::Result;
@@ -2520,6 +2565,118 @@ mod family_tests {
         // The leaf's greeting and comment start, the family's forbidden
         // names (so the top-level is renamed).
         assert_eq!(lines, ["leaf greeting", "-- ", "Purple_TopLevel", ""]);
+    }
+}
+
+#[cfg(test)]
+mod name_style_error_tests {
+    use crate::convenience_renderer::prelude::*;
+    use crate::messages::{JsErrorName, QuickTypeError};
+    use crate::target_language::TargetLanguage;
+
+    /// Hooks whose type namer throws from inside its name style (it
+    /// records a `TypeError` for every name but the first, which it styles
+    /// first) and which emit a line.
+    mod throwing_hooks {
+        pub use crate::convenience_renderer::defaults::*;
+
+        use super::*;
+
+        pub fn make_named_type_namer<'a, R: ConvenienceRenderer<'a>>(r: &mut R) -> Namer {
+            let errors = r.core().name_style_errors().clone();
+            fun_prefix_namer("types", move |s| {
+                let result = if s == "TopLevel" {
+                    Ok(s.to_owned())
+                } else {
+                    Err(QuickTypeError::js_exception(
+                        JsErrorName::TypeError,
+                        format!("{s} is not a function"),
+                    ))
+                };
+                errors.name_or(result, s)
+            })
+        }
+
+        pub fn namer_for_object_property<'a, R: ConvenienceRenderer<'a>>(
+            _r: &mut R,
+            _o: TypeRef,
+            _p: &ClassProperty,
+        ) -> Result<Option<Namer>> {
+            Ok(Some(fun_prefix_namer("properties", str::to_owned)))
+        }
+
+        pub fn make_union_member_namer<'a, R: ConvenienceRenderer<'a>>(
+            _r: &mut R,
+        ) -> Option<Namer> {
+            None
+        }
+
+        pub fn make_enum_case_namer<'a, R: ConvenienceRenderer<'a>>(_r: &mut R) -> Option<Namer> {
+            None
+        }
+
+        pub fn emit_source_structure<'a, R: ConvenienceRenderer<'a>>(
+            r: &mut R,
+            _given_output_filename: &str,
+        ) -> Result<()> {
+            r.emit_line("emitted");
+            Ok(())
+        }
+    }
+
+    struct Throwing<'a> {
+        core: ConvenienceRendererCore<'a>,
+    }
+
+    impl<'a> ConvenienceRenderer<'a> for Throwing<'a> {
+        fn core(&self) -> &ConvenienceRendererCore<'a> {
+            &self.core
+        }
+
+        fn core_mut(&mut self) -> &mut ConvenienceRendererCore<'a> {
+            &mut self.core
+        }
+
+        forward_convenience_renderer_hooks!(throwing_hooks);
+    }
+
+    #[test]
+    fn name_style_errors_stop_the_render_right_after_naming() {
+        use crate::attributes::type_attributes::TypeAttributes;
+        use crate::ty::type_builder::TypeBuilder;
+        use crate::ty::type_builder_utils::get_no_string_type_mapping;
+
+        fn class(builder: &mut TypeBuilder<'_>, name: &str) {
+            let t = builder
+                .get_unique_class_type(
+                    TypeAttributes::new(),
+                    true,
+                    Some(indexmap::IndexMap::new()),
+                    None,
+                )
+                .unwrap();
+            builder.add_top_level(name, t).unwrap();
+        }
+        let mut builder =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        class(&mut builder, "TopLevel");
+        class(&mut builder, "First");
+        class(&mut builder, "Second");
+        let graph = builder.finish().unwrap();
+        let language = crate::language::rust::language::RustTargetLanguage;
+        let ctx = RenderContext {
+            type_graph: &graph,
+            leading_comments: None,
+        };
+        let mut renderer = Throwing {
+            core: ConvenienceRendererCore::new(&language as &dyn TargetLanguage, ctx),
+        };
+        let error = renderer.render("out").unwrap_err();
+        // The first exception, as TS's `assignNames` throws it ...
+        assert_eq!(error.user_message(), "First is not a function");
+        // ... before `processGraph` and `emitSourceStructure`.
+        assert!(renderer.core().declaration_ir().is_err());
+        assert!(renderer.core().base.emit_context().is_empty());
     }
 }
 

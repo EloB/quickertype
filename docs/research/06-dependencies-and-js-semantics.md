@@ -2,8 +2,8 @@
 
 Scope: every npm runtime dependency of `quicktype-core`, the CLI (`src/`) and the input packages, plus a codebase-wide
 inventory of places where JavaScript semantics leak into output. Reference: quicktype @ `c39af7d3`. All claims marked
-**[exp]** were confirmed by running node / Rust experiments (scripts in the session scratchpad; the results are quoted
-here).
+**[exp]** were confirmed by running node / Rust experiments (the scripts were throwaway and are not committed; the
+results are quoted here).
 
 ## 0. Summary
 

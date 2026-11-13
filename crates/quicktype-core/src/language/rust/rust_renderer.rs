@@ -6,7 +6,7 @@ use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::attributes::constraints::min_max_value_for_type;
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
-use crate::renderer_options::RendererOptions;
+use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
@@ -47,18 +47,23 @@ impl RustOptions {
     /// `getOptionValues(rustOptions, values)`: the options in declaration
     /// order; the first unknown enum value is an error.
     pub fn parse(values: &RendererOptions) -> Result<Self> {
+        // An `Object.prototype` member equals none of the values the
+        // renderer compares with (`=== Density.Dense`, `=== Visibility.Crate`,
+        // `=== Visibility.Public`, the `integerType` switch), so it gets each
+        // comparison's fallback: normal density, no visibility modifier
+        // (private) and conservative integers.
         let density = match DENSITY.get_enum_value(values)? {
-            "dense" => Density::Dense,
+            EnumValue::Declared("dense") => Density::Dense,
             _ => Density::Normal,
         };
         let visibility = match VISIBILITY.get_enum_value(values)? {
-            "private" => Visibility::Private,
-            "crate" => Visibility::Crate,
-            _ => Visibility::Public,
+            EnumValue::Declared("crate") => Visibility::Crate,
+            EnumValue::Declared("public") => Visibility::Public,
+            _ => Visibility::Private,
         };
         let integer_type = match INTEGER_TYPE.get_enum_value(values)? {
-            "force-i32" => IntegerType::ForceI32,
-            "force-i64" => IntegerType::ForceI64,
+            EnumValue::Declared("force-i32") => IntegerType::ForceI32,
+            EnumValue::Declared("force-i64") => IntegerType::ForceI64,
             _ => IntegerType::Conservative,
         };
         Ok(RustOptions {

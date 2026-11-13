@@ -29,8 +29,8 @@ use crate::transformers::{
 use crate::ty::type_utils::{is_nullable, nullable_from_union};
 
 use super::c_sharp_renderer::{
-    CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings, intercalate_and,
-    transformation_of,
+    BaseClass, CSharpOptions, CSharpRenderer, CSharpState, Finish, Follow, emit_usings,
+    intercalate_and, transformation_of,
 };
 use super::utils::{
     AccessModifier, DENSE_JSON_PROPERTY_NAME, DENSE_NULL_VALUE_HANDLING_ENUM_NAME,
@@ -1245,7 +1245,7 @@ mod system_text_json_hooks {
     use crate::attributes::type_attributes::TransformationAttribute;
     use crate::convenience_renderer::prelude::*;
     use crate::convenience_renderer::{ForbiddenWordsInfo, INFERRED_NAME_ORDER};
-    use crate::language::csharp::c_sharp_renderer::c_sharp_hooks;
+    use crate::language::csharp::c_sharp_renderer::{BaseClass, c_sharp_hooks};
     use crate::support::support::defined;
     use crate::transformers::{TransformerData, downcast_transformation};
     use std::rc::Rc;
@@ -1284,7 +1284,7 @@ mod system_text_json_hooks {
             forbidden.extend(["J", "R", "N"].map(str::to_owned));
         }
 
-        if let Some(baseclass) = r.cs.options.baseclass {
+        if let Some(baseclass) = r.cs.options.baseclass.and_then(BaseClass::forbidden_name) {
             forbidden.push(baseclass.to_owned());
         }
 
@@ -1407,7 +1407,7 @@ impl<'a> CSharpRenderer<'a> for SystemTextJsonCSharpRenderer<'a> {
             ]);
         }
 
-        if self.options().baseclass == Some("EntityData") {
+        if self.options().baseclass == Some(BaseClass::EntityData) {
             self.emit_using("Microsoft.Azure.Mobile.Server");
         }
         Ok(())
