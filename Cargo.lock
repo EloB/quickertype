@@ -357,6 +357,7 @@ dependencies = [
  "quicktype-graphql-input",
  "quicktype-js-compat",
  "quicktype-typescript-input",
+ "serde_json",
 ]
 
 [[package]]

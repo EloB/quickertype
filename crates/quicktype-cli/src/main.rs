@@ -10,9 +10,6 @@
 //! quicktype-core's [`Options`] (`makeQuicktypeOptions`), run
 //! [`quicktype_multi_file`] and write the files (`writeOutput`). The CLI
 //! uses only quicktype-core's public API.
-//!
-//! Not yet ported: `--graphql-introspect`, which exits with an internal
-//! "not implemented" error (exit code 2).
 
 mod chalk;
 mod cli_options;
@@ -38,9 +35,9 @@ use quicktype_core::internal::{block_on, train_markov_chain};
 use quicktype_core::{
     Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, INFERENCE_FLAGS, InferenceFlags,
     InputData, JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData,
-    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, TargetLanguage,
-    default_target_languages, json_input_for_target_language, parse_json, quicktype_multi_file,
-    set_console_sink, sources_from_postman_collection,
+    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, StdIo,
+    TargetLanguage, default_target_languages, json_input_for_target_language, parse_json,
+    quicktype_multi_file, set_console_sink, sources_from_postman_collection,
 };
 use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::wordwrap::WordWrap;
@@ -318,18 +315,47 @@ fn postman_sources(collection_files: &[String]) -> Result<PostmanInputs, CliErro
 }
 
 /// The sources of `--src-lang graphql`: each query file with the
-/// introspection schema of `--graphql-schema`.
-async fn graphql_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliError> {
-    if options.graphql_introspect.is_some() {
-        // TODO(graphql): `introspectServer`, Phase 5.
-        return Err(CliError::NotImplemented("--graphql-introspect".to_owned()));
-    }
-    let num_sources = options.src.len();
-    if num_sources == 0 {
-        return Err(message_error(ErrorKind::DriverNoGraphQLQueryGiven, vec![]));
-    }
-    let http_headers = options.http_header.as_deref().unwrap_or_default();
+/// introspection schema of `--graphql-schema`, or of
+/// `--graphql-introspect` (which is also written to the `--graphql-schema`
+/// file if given). `None` when there is nothing more to do: the schema was
+/// written to its file, or printed, for lack of a query.
+async fn graphql_sources(
+    options: &CliOptions,
+    console: &Console,
+) -> Result<Option<Vec<TypeSource>>, CliError> {
     let mut schema_string: Option<String> = None;
+    let mut wrote_schema_to_file = false;
+    if let Some(url) = &options.graphql_introspect {
+        let introspected = graphql_introspection::introspect_server(
+            &StdIo,
+            url,
+            options.http_method.as_deref().unwrap_or("POST"),
+            options.http_header.as_deref().unwrap_or_default(),
+        )
+        .await?;
+        if let Some(file) = &options.graphql_schema {
+            node_fs::write_file_sync(file, &introspected)?;
+            wrote_schema_to_file = true;
+        }
+        schema_string = Some(introspected);
+    }
+
+    let num_sources = options.src.len();
+    if num_sources != 1 {
+        if wrote_schema_to_file {
+            // We're done.
+            return Ok(None);
+        }
+        if num_sources == 0 {
+            if let Some(schema) = &schema_string {
+                console.log(schema);
+                return Ok(None);
+            }
+            return Err(message_error(ErrorKind::DriverNoGraphQLQueryGiven, vec![]));
+        }
+    }
+
+    let http_headers = options.http_header.as_deref().unwrap_or_default();
     let mut sources = Vec::with_capacity(num_sources);
     for query_file in &options.src {
         let mut schema_file_name = None;
@@ -358,7 +384,7 @@ async fn graphql_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliErr
             query,
         }));
     }
-    Ok(sources)
+    Ok(Some(sources))
 }
 
 /// TS `makeQuicktypeOptions(options)`: handles `--help`, `--version` and
@@ -389,7 +415,10 @@ async fn make_quicktype_options(
     let mut leading_comments = None;
     let mut fixed_top_levels = false;
     let sources = match options.src_lang.as_str() {
-        "graphql" => graphql_sources(options).await?,
+        "graphql" => match graphql_sources(options, console).await? {
+            Some(sources) => sources,
+            None => return Ok(None),
+        },
         "json" | "schema" => sources::get_sources(options).await?,
         "typescript" => vec![TypeSource::Schema(make_typescript_source(
             &options.src,
