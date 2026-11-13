@@ -16,6 +16,7 @@ fs = []
 http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
 
 [dependencies]
+foldhash.workspace = true
 indexmap.workspace = true
 quicktype-js-compat.workspace = true
 regex.workspace = true

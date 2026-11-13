@@ -1016,8 +1016,8 @@ impl<'a> SwiftRenderer<'a> {
         };
         let graph = self.type_graph();
         // `sortBy(t)`: classes first, then the other kinds by name.
-        let mut sort_keys: std::collections::HashMap<TypeRef, String> =
-            std::collections::HashMap::new();
+        let mut sort_keys: crate::support::fast_hash::HashMap<TypeRef, String> =
+            crate::support::fast_hash::HashMap::default();
         for &m in graph.type_at(u)?.members()? {
             let kind = graph.kind(m)?;
             let key = if kind == TypeKind::Class {

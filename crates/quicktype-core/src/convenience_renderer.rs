@@ -27,7 +27,6 @@
 //! `docs/RENDERERS.md` is the porting guide.
 
 use std::cell::OnceCell;
-use std::collections::HashMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
@@ -57,6 +56,7 @@ use crate::support::collection_utils::{
     SameValueZeroKey, first_by_same_value_zero, sort_by_cached_string_key,
 };
 use crate::support::comments::{Comment, CommentOptions};
+use crate::support::fast_hash::HashMap;
 use crate::support::strings::trim_end;
 use crate::support::support::{assert, defined, non_null, panic};
 use crate::target_language::TargetLanguage;
@@ -216,11 +216,11 @@ impl<'a> ConvenienceRendererCore<'a> {
             global_forbidden_namespace: None,
             other_forbidden_namespaces: IndexMap::new(),
             global_namespace: None,
-            name_store: HashMap::new(),
+            name_store: HashMap::default(),
             top_level_names: IndexMap::new(),
-            property_names: HashMap::new(),
-            member_names: HashMap::new(),
-            case_names: HashMap::new(),
+            property_names: HashMap::default(),
+            member_names: HashMap::default(),
+            case_names: HashMap::default(),
             names_for_transformations: IndexMap::new(),
             named_type_namer: None,
             union_member_namer: None,
@@ -2143,7 +2143,8 @@ pub trait ConvenienceRendererExt<'a>: ConvenienceRenderer<'a> {
         &mut self,
         mut process: impl FnMut(&mut Self, TypeRef) -> Result<T>,
     ) -> Result<IndexSet<T>> {
-        let mut visited: std::collections::HashSet<TypeRef> = std::collections::HashSet::new();
+        let mut visited: crate::support::fast_hash::HashSet<TypeRef> =
+            crate::support::fast_hash::HashSet::default();
         let mut processed: IndexSet<T> = IndexSet::new();
         let mut queue: Vec<TypeRef> = self.top_levels().values().copied().collect();
         while let Some(t) = queue.pop() {

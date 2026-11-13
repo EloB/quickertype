@@ -391,6 +391,7 @@ version = "24.0.0"
 dependencies = [
  "brotli-decompressor",
  "flate2",
+ "foldhash",
  "indexmap",
  "quicktype-js-compat",
  "regex",

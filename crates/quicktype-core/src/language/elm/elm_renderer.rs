@@ -5,7 +5,6 @@
 //! global namespace; every top-level and named type gets encoder and
 //! decoder names that depend on its own name.
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -17,6 +16,7 @@ use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, annotated, multi_word, paren_if_needed, single_word};
 use crate::support::comments::{Comment, CommentOptions};
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::decapitalize;
 use crate::support::support::defined;
@@ -117,8 +117,8 @@ impl<'a> ElmRenderer<'a> {
             options,
             upper_naming_function: upper_naming_function(),
             lower_naming_function: lower_naming_function(),
-            top_level_dependents: HashMap::new(),
-            named_type_dependents: HashMap::new(),
+            top_level_dependents: HashMap::default(),
+            named_type_dependents: HashMap::default(),
         }
     }
 

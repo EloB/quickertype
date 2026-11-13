@@ -30,7 +30,6 @@
 //! message.
 
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
@@ -67,6 +66,7 @@ use crate::messages::{
 };
 use crate::run::RunContext;
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::parse_json::parse_json;
 use crate::support::support::{assert, console_log, defined, panic};
 use crate::support::windows_paths::fix_windows_path;
@@ -139,7 +139,7 @@ thread_local! {
     /// `normalizeURI` is a pure function of the URI; quicktype calls it for
     /// every `Ref` it creates.
     static NORMALIZED: RefCell<HashMap<Uri, std::result::Result<Uri, UriError>>> =
-        RefCell::new(HashMap::new());
+        RefCell::new(HashMap::default());
 }
 
 /// `normalizeURI(uri)`: `new URI(URI.decode(uri.clone().normalize().toString()))`.
@@ -557,7 +557,7 @@ impl Canonizer {
     fn new(debug_print_schema_resolving: bool) -> Self {
         Canonizer {
             map: EqualityMap::new(),
-            schema_addresses_added: HashSet::new(),
+            schema_addresses_added: HashSet::default(),
             debug_print_schema_resolving,
         }
     }

@@ -4,8 +4,6 @@
 //! the schemas that use it; schemas in a reference cycle are declared first
 //! and wrapped in `z.lazy()`.
 
-use std::collections::{HashMap, HashSet};
-
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -14,6 +12,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
@@ -156,7 +155,7 @@ impl<'a> TypeScriptZodRenderer<'a> {
         TypeScriptZodRenderer {
             core: ConvenienceRendererCore::new(target_language, render_context),
             options,
-            recursive_type_refs: HashSet::new(),
+            recursive_type_refs: HashSet::default(),
         }
     }
 
@@ -560,13 +559,13 @@ impl<'a> TypeScriptZodRenderer<'a> {
         // Find types that participate in a reference cycle: types from which
         // we can get back to the same type by following child type
         // references. Those can never be topologically ordered.
-        let mut index_for_type_ref: HashMap<TypeRef, usize> = HashMap::new();
+        let mut index_for_type_ref: HashMap<TypeRef, usize> = HashMap::default();
         for (index, &type_ref) in map_type_ref.iter().enumerate() {
             index_for_type_ref.insert(type_ref, index);
         }
-        let mut recursive_type_refs: HashSet<TypeRef> = HashSet::new();
+        let mut recursive_type_refs: HashSet<TypeRef> = HashSet::default();
         for start_index in 0..map_type.len() {
-            let mut visited: HashSet<usize> = HashSet::new();
+            let mut visited: HashSet<usize> = HashSet::default();
             let mut stack: Vec<TypeRef> = map_child_type_refs[start_index].clone();
             while let Some(child_ref) = stack.pop() {
                 let Some(&child_index) = index_for_type_ref.get(&child_ref) else {

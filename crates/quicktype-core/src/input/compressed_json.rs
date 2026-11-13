@@ -32,7 +32,6 @@
 //! name, and object keys are interned when they are read rather than when
 //! their value is committed.
 
-use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
@@ -43,6 +42,7 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
@@ -166,7 +166,7 @@ impl CompressedJson {
             ctx: None,
             context_stack: Vec::new(),
             strings: Vec::new(),
-            string_indexes: HashMap::new(),
+            string_indexes: HashMap::default(),
             objects: Vec::new(),
             arrays: Vec::new(),
         }
@@ -535,7 +535,7 @@ impl CompressedJson {
     /// [`CompressedJson::from_tables`].
     pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
         let mut strings: Vec<String> = self.strings.iter().map(|s| s.to_string()).collect();
-        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::new();
+        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::default();
         let mut encode = |v: Value| {
             encode_value(v, |kind| {
                 *kind_indexes.entry(kind).or_insert_with(|| {

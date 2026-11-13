@@ -5,8 +5,6 @@
 //! freezed and Hive annotation variants. Unions other than `T | null` are
 //! `dynamic`.
 
-use std::collections::HashMap;
-
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
@@ -15,6 +13,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::{decapitalize, snake_case};
 use crate::support::support::defined;
@@ -132,8 +131,8 @@ impl<'a> DartRenderer<'a> {
             need_enum_values: false,
             class_counter: 0,
             class_property_counter: 0,
-            top_level_dependents: HashMap::new(),
-            enum_values: HashMap::new(),
+            top_level_dependents: HashMap::default(),
+            enum_values: HashMap::default(),
         }
     }
 

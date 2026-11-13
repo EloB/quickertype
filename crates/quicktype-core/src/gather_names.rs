@@ -37,8 +37,9 @@
 //! Singular names come from `pluralize.singular` directly (so `cookies`
 //! becomes `cooky`, unlike `TypeNames.singularize`).
 
+use std::collections::VecDeque;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet, VecDeque};
+
 use std::rc::Rc;
 
 use indexmap::IndexSet;
@@ -50,6 +51,7 @@ use crate::attributes::type_names::{
 };
 use crate::messages::Result;
 use crate::support::collection_utils::sort_by_string_key;
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::{console_log, defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_graph::TypeGraph;
@@ -361,10 +363,10 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
     let mut gatherer = Gatherer {
         graph,
         queue: UniqueQueue::default(),
-        names_for_type: HashMap::new(),
-        direct_alternatives_for_type: HashMap::new(),
-        ancestor_alternatives_for_type: HashMap::new(),
-        pairs_processed: HashMap::new(),
+        names_for_type: HashMap::default(),
+        direct_alternatives_for_type: HashMap::default(),
+        ancestor_alternatives_for_type: HashMap::default(),
+        pairs_processed: HashMap::default(),
     };
 
     let top_levels: Vec<(String, TypeRef)> = gatherer

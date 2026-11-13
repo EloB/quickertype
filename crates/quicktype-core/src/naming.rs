@@ -15,13 +15,13 @@
 //! matters for output, because each group gets its own prefix sequence
 //! (`Purple`, `Fluffy`, ...) and suffix counter.
 
-use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
 
 use crate::messages::Result;
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::{assert, defined, panic};
 
 /// A name to be assigned (TS `Name`). Resolve it with [`Names::get`] once
@@ -283,7 +283,7 @@ impl ForbiddenSet {
         }
         let exact = &self.exact;
         let by_lowercase = self.by_lowercase.get_or_insert_with(|| {
-            let mut by_lowercase: HashMap<String, Vec<String>> = HashMap::new();
+            let mut by_lowercase: HashMap<String, Vec<String>> = HashMap::default();
             for name in exact {
                 by_lowercase
                     .entry(name.to_lowercase())
@@ -722,8 +722,8 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         names: Names {
             assigned: vec![None; naming.names.len()],
         },
-        nameds_for_name: HashMap::new(),
-        forbidden_nameds: HashMap::new(),
+        nameds_for_name: HashMap::default(),
+        forbidden_nameds: HashMap::default(),
     };
 
     // Assign all fixed names.

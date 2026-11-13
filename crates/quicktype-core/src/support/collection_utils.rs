@@ -587,7 +587,8 @@ impl<T> SameValueZeroKey for JsObject<T> {
 pub fn first_by_same_value_zero<K: SameValueZeroKey, V>(
     entries: impl IntoIterator<Item = (K, V)>,
 ) -> Vec<(K, V)> {
-    let mut seen: std::collections::HashSet<SameValueZero> = std::collections::HashSet::new();
+    let mut seen: crate::support::fast_hash::HashSet<SameValueZero> =
+        crate::support::fast_hash::HashSet::default();
     let mut result = Vec::new();
     for (k, v) in entries {
         let key = k.same_value_zero_key();
