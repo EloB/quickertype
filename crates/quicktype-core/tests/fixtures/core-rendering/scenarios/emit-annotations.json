@@ -145,12 +145,19 @@
     "lineonce []",
     "item \"x\"",
     "lineonce [\"x\"]",
-    "line []"
+    "line []",
+    "line [[\"import \\\"fmt\\\"\"]]",
+    "lineonce [\"import \\\"fmt\\\"\"]",
+    "lineonce [\"import \\\"fmt\\\"\"]",
+    "item [\"y\"]",
+    "line []",
+    "lineonce [\"y\"]",
+    "lineonce [[\"y\"]]"
    ],
    "files": [
     {
      "name": "out.txt",
-     "text": "//\n//\nab\nab\nTopLevel\n//\n\nx\n",
+     "text": "//\n//\nab\nab\nTopLevel\n//\n\nx\nimport \"fmt\"\nimport \"fmt\"\ny\ny\ny\n",
      "annotations": []
     }
    ],

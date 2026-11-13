@@ -31,6 +31,13 @@ lineonce []
 item "x"
 lineonce ["x"]
 line []
+line [["import \"fmt\""]]
+lineonce ["import \"fmt\""]
+lineonce ["import \"fmt\""]
+item ["y"]
+line []
+lineonce ["y"]
+lineonce [["y"]]
 end
 
 render probe {} script

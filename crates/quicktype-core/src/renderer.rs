@@ -155,6 +155,9 @@ pub struct EmitContext {
     last_newline: Option<usize>,
     num_blank_lines_needed: usize,
     prevent_blank_line: bool,
+    /// Whether a finished file refers to this context (it can be reopened
+    /// and its items are a file's contents).
+    finished: bool,
 }
 
 impl Default for EmitContext {
@@ -172,6 +175,7 @@ impl EmitContext {
             last_newline: None,
             num_blank_lines_needed: 0,
             prevent_blank_line: true,
+            finished: false,
         }
     }
 
@@ -205,9 +209,11 @@ impl EmitContext {
         self.push_item(item);
     }
 
-    /// `containsItem(item)`: JavaScript `===` against every item. Strings
-    /// compare by value and names by identity; any other item is a fresh
-    /// object and never equal.
+    /// `containsItem(item)`: JavaScript `===` against every item. Only
+    /// primitive strings ([`Source::Text`] items) compare by value and
+    /// names by identity; arrays ([`Source::Sequence`], e.g. from
+    /// [`sl!`](crate::sl) even with one part) and every other source object
+    /// are fresh and never equal.
     fn contains_item(&self, item: &Source) -> bool {
         match item {
             Source::Text(s) => self
@@ -432,13 +438,19 @@ impl<'a> RendererCore<'a> {
 
     /// Ends `gatherSource`: returns the items of the current context and
     /// makes `saved` current again.
+    ///
+    /// The gather context is freed, unless it is a finished file (the
+    /// gatherer reopened one), whose items are copied.
     pub fn end_gather(&mut self, saved: usize) -> Vec<Source> {
         let index = self.current;
-        let referenced = self.finished_emit_contexts.values().any(|&c| c == index);
-        let items = if index == self.contexts.len() - 1 && !referenced && index != saved {
-            self.contexts.pop().map(|c| c.items).unwrap_or_default()
-        } else {
+        let items = if self.contexts[index].finished {
             self.contexts[index].items.clone()
+        } else {
+            let items = std::mem::take(&mut self.contexts[index].items);
+            if index == self.contexts.len() - 1 && index != saved {
+                self.contexts.pop();
+            }
+            items
         };
         self.current = saved;
         items
@@ -497,6 +509,7 @@ impl<'a> RendererCore<'a> {
             .insert(filename.to_owned(), (self.current, len));
         self.finished_emit_contexts
             .insert(filename.to_lowercase(), self.current);
+        self.contexts[self.current].finished = true;
         self.contexts.push(EmitContext::new());
         self.current = self.contexts.len() - 1;
     }
@@ -541,6 +554,99 @@ mod tests {
         assert_eq!(line_indentation("  \tx"), (6, Some("x")));
         assert_eq!(line_indentation("   "), (0, None));
         assert_eq!(line_indentation(""), (0, None));
+    }
+
+    fn core_with_graph<R>(f: impl FnOnce(&mut RendererCore<'_>) -> R) -> R {
+        let mut builder = crate::ty::type_builder::TypeBuilder::new(
+            crate::ty::type_builder_utils::get_no_string_type_mapping(),
+            false,
+            false,
+            false,
+            false,
+        )
+        .unwrap();
+        let t = builder
+            .get_primitive_type(
+                crate::ty::transformed_string_type::TypeKind::Bool,
+                crate::attributes::type_attributes::TypeAttributes::new(),
+                None,
+            )
+            .unwrap();
+        builder.add_top_level("TopLevel", t).unwrap();
+        let graph = builder.finish().unwrap();
+        let language = crate::language::rust::language::RustTargetLanguage;
+        let mut core = RendererCore::new(
+            &language,
+            RenderContext {
+                type_graph: &graph,
+                leading_comments: None,
+            },
+        );
+        f(&mut core)
+    }
+
+    fn lines_of(core: &RendererCore<'_>) -> Vec<String> {
+        let source = Source::Sequence(core.emit_context().source().to_vec());
+        crate::source::serialize_render_result(&source, &Names::new(), "  ")
+            .unwrap()
+            .lines
+    }
+
+    #[test]
+    fn emit_line_once_compares_like_javascript() {
+        core_with_graph(|core| {
+            // TS `emitLine(["import \"fmt\""])`: an array item, never `===`.
+            core.emit_line(crate::sl!["import \"fmt\""]);
+            core.emit_line_once(vec!["import \"fmt\"".into()]);
+            // TS `emitLine("x")`: a string item, deduplicated by value.
+            core.emit_line("x");
+            core.emit_line_once(vec!["x".into()]);
+            // Several parts are always an array.
+            core.emit_line_once(vec!["y".into(), "z".into()]);
+            core.emit_line_once(vec!["y".into(), "z".into()]);
+            // An array item never matches either.
+            core.emit_item(crate::sl!["w"]);
+            core.emit_line_parts(vec![]);
+            core.emit_line_once(vec![crate::sl!["w"]]);
+            assert_eq!(
+                lines_of(core),
+                [
+                    "import \"fmt\"",
+                    "import \"fmt\"",
+                    "x",
+                    "yz",
+                    "yz",
+                    "w",
+                    "w",
+                    ""
+                ]
+            );
+            assert!(core.emit_item_once(crate::sl![]));
+            assert!(core.emit_item_once(crate::sl![]));
+            assert!(core.emit_item_once("w"));
+            assert!(!core.emit_item_once("w"));
+        });
+    }
+
+    #[test]
+    fn gather_contexts_are_freed_and_finished_ones_kept() {
+        core_with_graph(|core| {
+            core.emit_line("a");
+            core.finish_file("f");
+            let saved = core.begin_gather();
+            core.emit_line("gathered");
+            let items = core.end_gather(saved);
+            assert_eq!(items.len(), 2);
+            assert_eq!(core.contexts.len(), 2);
+            // A gather that reopens a finished file returns a copy of it.
+            let saved = core.begin_gather();
+            core.initialize_emit_context_for_filename("F");
+            core.emit_line("b");
+            let items = core.end_gather(saved);
+            assert_eq!(items.len(), 4);
+            assert_eq!(core.finished_files["f"], (0, 2));
+            assert_eq!(core.contexts[0].items.len(), 4);
+        });
     }
 
     #[test]

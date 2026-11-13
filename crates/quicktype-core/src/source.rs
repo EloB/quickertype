@@ -39,7 +39,9 @@ pub type Modifier = Rc<dyn Fn(&str) -> String>;
 #[derive(Clone)]
 pub enum Source {
     /// `text`: literal text. A `"\n"` inside starts a new line, like the
-    /// newlines `sourcelikeToSource` inserts.
+    /// newlines `sourcelikeToSource` inserts. As an emitted item it stands
+    /// for a TS *string* (compared by value in `emitLineOnce`); TS renderers
+    /// never build `{ kind: "text" }` objects themselves.
     Text(String),
     /// `newline`: ends the line and changes the indentation of the following
     /// lines by this many levels.
@@ -144,19 +146,18 @@ impl Source {
     }
 }
 
-/// Builds a [`Source`] from sourcelikes, like a TS array literal: `sl![]`
-/// is an empty sequence, `sl![x]` is `x` itself and `sl![a, b, ...]` is a
-/// sequence. Every part goes through `Source::from`.
+/// Builds a [`Source`] from sourcelikes like a TS array literal: always a
+/// [`Source::Sequence`], also for zero or one part. Every part goes through
+/// `Source::from`.
+///
+/// The distinction from the part itself matters for `emitLineOnce` and
+/// `emitItemOnce`, which compare items with JavaScript `===`: a string item
+/// (`emit_line("x")`) equals an earlier string item with the same text, an
+/// array item (`emit_line(sl!["x"])`, TS `emitLine(["x"])`) equals nothing.
 #[macro_export]
 macro_rules! sl {
-    () => {
-        $crate::source::Source::Sequence(::std::vec::Vec::new())
-    };
-    ($x:expr $(,)?) => {
-        $crate::source::Source::from($x)
-    };
-    ($($x:expr),+ $(,)?) => {
-        $crate::source::Source::Sequence(::std::vec![$($crate::source::Source::from($x)),+])
+    ($($x:expr),* $(,)?) => {
+        $crate::source::Source::Sequence(::std::vec![$($crate::source::Source::from($x)),*])
     };
 }
 
