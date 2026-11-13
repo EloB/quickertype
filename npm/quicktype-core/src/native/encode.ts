@@ -86,8 +86,12 @@ export function dateTimeKind(recognizer: unknown): string | undefined {
     }
 }
 
-function ownNames(x: object): string {
-    return Object.getOwnPropertyNames(x).sort().join(",");
+/** The own property names of `x`, but `except`, sorted. */
+function ownNames(x: object, except: readonly string[] = []): string {
+    return Object.getOwnPropertyNames(x)
+        .filter((name) => !except.includes(name))
+        .sort()
+        .join(",");
 }
 
 let builtinLanguages: Map<unknown, TargetLanguage> | undefined;
@@ -119,19 +123,29 @@ export function builtinLanguageName(lang: TargetLanguage): string | undefined {
 
 let expectedOwnNames: Map<unknown, string> | undefined;
 
-/** The own properties a fresh instance of each built-in input has. */
-function hasOnlyBuiltinFields(input: object): boolean {
+/** The fields a read creates on a `CompressedJSON` (`process` and `finish`). */
+const readingFields = ["_ctx", "_rootValue"];
+
+/**
+ * Whether `x` has the own properties a fresh instance of its class has, and
+ * no others (no method replaced on the instance), for the built-in classes
+ * the engine reads: `JSONInput`, `JSONSchemaInput` and
+ * `CompressedJSONFromString` (which may also have the fields reading a
+ * sample creates).
+ */
+export function hasOnlyBuiltinFields(x: object): boolean {
     if (expectedOwnNames === undefined) {
+        const cjson = (): CompressedJSONFromString => new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false);
         expectedOwnNames = new Map<unknown, string>([
-            [
-                JSONInput.prototype,
-                ownNames(new JSONInput(new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false))),
-            ],
+            [JSONInput.prototype, ownNames(new JSONInput(cjson()))],
             [JSONSchemaInput.prototype, ownNames(new JSONSchemaInput(undefined))],
+            [CompressedJSONFromString.prototype, ownNames(cjson(), readingFields)],
         ]);
     }
 
-    return expectedOwnNames.get(Object.getPrototypeOf(input)) === ownNames(input);
+    const proto = Object.getPrototypeOf(x);
+    const except = proto === CompressedJSONFromString.prototype ? readingFields : [];
+    return expectedOwnNames.get(proto) === ownNames(x, except);
 }
 
 /** JavaScript truthiness. */

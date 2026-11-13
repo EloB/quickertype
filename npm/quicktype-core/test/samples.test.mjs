@@ -17,6 +17,7 @@ const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), ".."
 const qt = require(packageRoot);
 const { engineStats } = require(path.join(packageRoot, "dist", "native", "bridge.js"));
 const engine = require(path.join(packageRoot, "dist", "native", "engine.js"));
+const nativeSamples = require(path.join(packageRoot, "dist", "native", "samples.js"));
 const { CompressedJSONFromString } = require(path.join(packageRoot, "dist", "input", "CompressedJSON.js"));
 const { DefaultDateTimeRecognizer } = require(path.join(packageRoot, "dist", "DateTime.js"));
 
@@ -257,6 +258,32 @@ const invalid = [
     "x".repeat(100),
 ];
 
+test("the tables are TypeScript's, string for string", async () => {
+    // `JSON.parse` keeps one of two "__proto__" members, and TypeScript
+    // interns its key once; a sample that is not JSON interns nothing.
+    for (const groups of [
+        [["Proto", ['{"__proto__":1,"__proto__":2}']]],
+        [["Proto", ['{"__proto__": {"__proto__": 1}, "x": {"__proto__": [2], "__proto__": 3}}']]],
+        [
+            ["Truncated", ['{"key1": [1, {"key2": ']],
+            ["Valid", ['{"k": "v"}']],
+        ],
+        [["Formats", ['{"b": 1, "2": {"q": "date"}, "a": "2020-01-01", "1": [4], "b": "x", "u": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}']]],
+    ]) {
+        const attempt = async () => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            const errors = [];
+            for (const [name, list] of groups) errors.push((await outcome(() => input.addSource({ name, samples: list }))).error);
+            return { errors, inside: inside(input) };
+        };
+        const expected = await inMode("ts", attempt);
+        const before = { ...engineStats };
+        assert.deepEqual(await attempt(), expected, JSON.stringify(groups));
+        assert.equal(engineStats.samplesRead, before.samplesRead + 1, JSON.stringify(groups));
+        assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
+    }
+});
+
 test("a sample that is not JSON fails in addSource, with V8's error", async () => {
     for (const bad of invalid) {
         for (const sync of [false, true]) {
@@ -444,6 +471,32 @@ test("samples read by an instance that failed are read again by TypeScript", asy
     assert.deepEqual([...(await run(input, "rust"))], [...expected]);
     assert.equal(engineStats.tablesFilled, before.tablesFilled + 1);
     assert.equal(engineStats.wasm, before.wasm + 1);
+});
+
+test("the samples of a large input are taken from an instance that failed", async () => {
+    // A large input's samples are not kept: here, every input is large.
+    const old = nativeSamples.setKeptTexts(0);
+    try {
+        const expected = await inMode("ts", async () => inside(await addAll("rust", plainGroups)));
+        const input = await addAll("rust", plainGroups);
+        const glue = engine.engineSync();
+        assert.throws(() => glue.__panicForTests(), WebAssembly.RuntimeError);
+        engine.discardEngine(glue);
+        assert.deepEqual(inside(input), expected);
+
+        // Should even that fail, the tables cannot be had, and every use of
+        // them says so.
+        const lost = await addAll("rust", plainGroups);
+        const failing = engine.engineSync();
+        failing.jsonExport = () => {
+            throw new Error("unreadable");
+        };
+        engine.discardEngine(failing);
+        assert.throws(() => lost._compressedJSON._strings, /samples of this input were lost/);
+        await assert.rejects(run(lost, "rust"), /samples of this input were lost/);
+    } finally {
+        nativeSamples.setKeptTexts(old);
+    }
 });
 
 test("the engine drops the samples of inputs that are gone", () => {

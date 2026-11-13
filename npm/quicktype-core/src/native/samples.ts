@@ -9,11 +9,11 @@
 // input, and returns the sample's root `Value` exactly as TypeScript would
 // have computed it. The TypeScript tables of the `CompressedJSON` stay
 // empty until something reads them: its four table fields become accessors
-// that, on first use, fill them by reading the same texts, in the same
-// order, with TypeScript's own code (`materialize`). A run on the engine
-// holds the engine's copy from when it is encoded (`leaseSamples`,
-// encode.ts), so the TypeScript parse and the conversion of the tables are
-// both skipped.
+// that, on first use, fill them with the engine's tables, which are the
+// ones TypeScript builds from the same samples (`materialize`). A run on
+// the engine holds the engine's copy from when it is encoded
+// (`leaseSamples`, encode.ts), so the TypeScript parse and the conversion
+// of the tables are both skipped.
 //
 // Everything else is read by TypeScript, as before, after the tables are
 // filled: samples that are not strings or not well-formed UTF-16; samples
@@ -28,17 +28,16 @@
 // A sample that is not JSON is not read by the engine either: TypeScript's
 // `JSON.parse` then throws V8's own error, from `addSource`, as before.
 //
-// The README ("WebAssembly samples") has the argument for why this cannot
-// be told apart from TypeScript reading the samples.
+// The README ("JSON samples") has the argument for why this cannot be told
+// apart from TypeScript reading the samples.
 
-import { DefaultDateTimeRecognizer } from "../DateTime.js";
 import { CompressedJSONFromString } from "../input/CompressedJSON.js";
 
 import { engineFailed, engineStats } from "./bridge.js";
-import { dateTimeKind, isWellFormed } from "./encode.js";
+import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineMode, engineSync, isDiscarded } from "./engine.js";
 import { installSampleReader } from "./hook.js";
-import type { WasmGlue } from "./wasm/glue.js";
+import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
 
@@ -63,10 +62,31 @@ interface NativeSamples {
     readonly glue: WasmGlue;
     readonly id: number;
     readonly config: Config;
-    /** Every sample the engine read into these tables, in order. */
-    readonly texts: string[];
+    /**
+     * Every sample the engine read into these tables, in order, while they
+     * add up to at most `keptTexts` code units; `undefined` after that.
+     * Only for an engine instance that fails (see `materialize`).
+     */
+    texts: string[] | undefined;
+    /** The code units of the samples read. */
+    textLength: number;
     /** The table fields as they were (empty), restored by `materialize`. */
     readonly fields: Array<[string, PropertyDescriptor]>;
+}
+
+/**
+ * The samples a `CompressedJSON` keeps (see `NativeSamples.texts`): up to
+ * 4 Mi code units (8 MiB) of them, so that the tables of a small input
+ * never depend on the memory of an instance that failed, while a large
+ * input is not held twice.
+ */
+let keptTexts = 1 << 22;
+
+/** For tests: the limit of `NativeSamples.texts`; returns the old one. */
+export function setKeptTexts(codeUnits: number): number {
+    const old = keptTexts;
+    keptTexts = codeUnits;
+    return old;
 }
 
 const states = new WeakMap<object, NativeSamples>();
@@ -88,31 +108,6 @@ function drop(glue: WasmGlue, id: number): void {
     } catch (e) {
         engineFailed(glue, e);
     }
-}
-
-let expectedFields: string[] | undefined;
-
-/**
- * Whether `cjson` has the own properties of a fresh
- * `CompressedJSONFromString` and no others (no method replaced on the
- * instance), allowing for `_ctx` and `_rootValue`, which reading a sample
- * creates.
- */
-function hasOnlyBuiltinFields(cjson: object): boolean {
-    if (expectedFields === undefined) {
-        expectedFields = Object.getOwnPropertyNames(
-            new CompressedJSONFromString(new DefaultDateTimeRecognizer(), false),
-        );
-    }
-
-    const expected = expectedFields;
-    let i = 0;
-    for (const name of Object.getOwnPropertyNames(cjson)) {
-        if (name === "_ctx" || name === "_rootValue") continue;
-        if (name !== expected[i++]) return false;
-    }
-
-    return i === expected.length;
 }
 
 /** What `cjson` reads its next sample with, if the engine can read with it. */
@@ -193,19 +188,14 @@ function start(cjson: any, config: Config): NativeSamples | undefined {
     if (glue === undefined) return undefined;
     let id: number;
     try {
-        id = glue.jsonCreate(
-            config.dateTime,
-            !!config.handleRefs,
-            config.range?.min ?? undefined,
-            config.range?.max ?? undefined,
-        );
+        id = glue.jsonCreate(config.dateTime, !!config.handleRefs, config.range?.min, config.range?.max);
     } catch (e) {
         engineFailed(glue, e);
         return undefined;
     }
 
     const fields: Array<[string, PropertyDescriptor]> = [];
-    const state: NativeSamples = { glue, id, config, texts: [], fields };
+    const state: NativeSamples = { glue, id, config, texts: [], textLength: 0, fields };
     for (const name of tableFields) {
         const descriptor = Object.getOwnPropertyDescriptor(cjson, name) as PropertyDescriptor;
         fields.push([name, descriptor]);
@@ -230,25 +220,101 @@ function start(cjson: any, config: Config): NativeSamples | undefined {
 
 /**
  * Fills `cjson`'s TypeScript tables, if the engine has read samples into
- * it: the fields become plain again and the samples are read, in order,
- * by TypeScript's own `process`, with the configuration they were read
- * with. Whatever `cjson` is in the middle of (a read that touched a table
- * first) is set aside meanwhile. Afterwards `cjson` is an ordinary
- * `CompressedJSON`: its samples are read by TypeScript, and runs send its
- * tables.
+ * it: the fields become plain again and get the engine's tables, which
+ * are the ones TypeScript builds from the same samples (one conversion,
+ * no parsing). Afterwards `cjson` is an ordinary `CompressedJSON`: its
+ * samples are read by TypeScript, and runs send its tables.
+ *
+ * Should the engine instance have failed, the samples are read again by
+ * TypeScript if they were kept (`NativeSamples.texts`); a larger input's
+ * tables are still taken from the failed instance's memory, which a
+ * failure (a panic, running out of memory, a stack overflow) leaves
+ * readable. Only if that fails too are the samples lost, and filling the
+ * tables throws.
  */
 export function materialize(cjson: any): void {
     const state = states.get(cjson);
     if (state === undefined) return;
     states.delete(cjson);
     registry.unregister(state);
-    for (const [name, descriptor] of state.fields) {
-        Object.defineProperty(cjson, name, descriptor);
+    const { glue, texts } = state;
+    try {
+        const tables = isDiscarded(glue) && texts !== undefined ? undefined : exportTables(state);
+        if (tables === undefined && texts === undefined) {
+            // Every use of the tables fails from now on, as this one does.
+            const lost = new Error(
+                "quicktype-core: the JSON samples of this input were lost when the WebAssembly engine failed",
+            );
+            for (const [name, descriptor] of state.fields) {
+                const fail = (): never => {
+                    throw lost;
+                };
+                Object.defineProperty(cjson, name, { configurable: true, enumerable: descriptor.enumerable, get: fail, set: fail });
+            }
+
+            throw lost;
+        }
+
+        for (const [name, descriptor] of state.fields) {
+            Object.defineProperty(cjson, name, descriptor);
+        }
+
+        if (tables !== undefined) fill(cjson, tables);
+        else replay(cjson, state.config, texts as string[]);
+    } finally {
+        drop(glue, state.id);
+        engineStats.tablesFilled++;
+    }
+}
+
+/** The engine's tables of `state`, or `undefined` if they cannot be had. */
+function exportTables(state: NativeSamples): ExportedTables | undefined {
+    try {
+        return state.glue.jsonExport(state.id);
+    } catch (e) {
+        if (!isDiscarded(state.glue)) engineFailed(state.glue, e);
+        return undefined;
+    }
+}
+
+/**
+ * The engine's tables into `cjson`'s (empty) ones, as `internString`,
+ * `internObject` and `internArray` would have added them.
+ */
+function fill(cjson: any, tables: ExportedTables): void {
+    const { strings, stringLengths, objects, objectOffsets, arrays, arrayOffsets } = tables;
+    const stringList: string[] = cjson._strings;
+    const stringIndexes: Record<string, number> = cjson._stringIndexes;
+    let at = 0;
+    for (let i = 0; i < stringLengths.length; i++) {
+        const s = strings.slice(at, at + stringLengths[i]);
+        at += stringLengths[i];
+        stringList.push(s);
+        // As `internString` does (for "__proto__", the inherited setter
+        // ignores it, which is why TypeScript interns it every time).
+        stringIndexes[s] = i;
     }
 
-    // What a read in progress has set up, set aside. `_ctx` and
-    // `_rootValue` exist (as own fields) only once a read has created them,
-    // as the engine's reads did for the samples replayed here.
+    const runs = (target: number[][], flat: Int32Array, offsets: Uint32Array): void => {
+        for (let i = 0; i < offsets.length; i++) {
+            const end = i + 1 < offsets.length ? offsets[i + 1] : flat.length;
+            const run: number[] = [];
+            for (let j = offsets[i]; j < end; j++) run.push(flat[j]);
+            target.push(run);
+        }
+    };
+    runs(cjson._objects, objects, objectOffsets);
+    runs(cjson._arrays, arrays, arrayOffsets);
+}
+
+/**
+ * The samples read by TypeScript's own `process`, in order, with the
+ * configuration they were read with. Whatever `cjson` is in the middle of
+ * (a read that touched a table first) is set aside meanwhile.
+ */
+function replay(cjson: any, config: Config, texts: string[]): void {
+    // `_ctx` and `_rootValue` exist (as own fields) only once a read has
+    // created them, as the engine's reads did for the samples replayed.
     const own = (name: string): boolean => Object.prototype.hasOwnProperty.call(cjson, name);
     const reading = (["_ctx", "_rootValue"] as const).filter(own).map((name) => [name, cjson[name]] as const);
     const stack: unknown[] = cjson._contextStack.splice(0);
@@ -257,13 +323,12 @@ export function materialize(cjson: any): void {
         handleRefs: cjson.handleRefs,
         supportedIntegerRange: cjson.supportedIntegerRange,
     };
-    const { config } = state;
     try {
         for (const [name] of reading) cjson[name] = undefined;
         cjson.dateTimeRecognizer = config.recognizer;
         cjson.handleRefs = config.handleRefs;
         cjson.supportedIntegerRange = config.range;
-        for (const text of state.texts) {
+        for (const text of texts) {
             cjson.process(JSON.parse(text));
             cjson.finish();
         }
@@ -273,8 +338,6 @@ export function materialize(cjson: any): void {
         cjson.supportedIntegerRange = current.supportedIntegerRange;
         for (const [name, value] of reading) cjson[name] = value;
         for (const item of stack) cjson._contextStack.push(item);
-        drop(state.glue, state.id);
-        engineStats.tablesFilled++;
     }
 }
 
@@ -383,7 +446,12 @@ function readSample(cjson: any, text: unknown): number | undefined {
     }
 
     if (value > 0) {
-        state.texts.push(text);
+        state.textLength += text.length;
+        if (state.texts !== undefined) {
+            if (state.textLength <= keptTexts) state.texts.push(text);
+            else state.texts = undefined;
+        }
+
         engineStats.samplesRead++;
         // The fields TypeScript's `process` would have created.
         if ((value & 15) >= 8 && !Object.prototype.hasOwnProperty.call(cjson, "_ctx")) {
