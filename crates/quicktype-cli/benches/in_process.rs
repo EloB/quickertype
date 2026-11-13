@@ -90,6 +90,12 @@ fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
     (parsed - start, done - parsed, bytes)
 }
 
+/// Reports a bad argument and exits.
+fn usage_error(message: &str) -> ! {
+    eprintln!("in_process: {message}");
+    std::process::exit(2);
+}
+
 fn main() {
     let mut iterations = 10usize;
     let mut json = false;
@@ -100,10 +106,10 @@ fn main() {
     while let Some(a) = args.next() {
         match a.as_str() {
             "--iterations" | "-n" => {
-                iterations = args
-                    .next()
-                    .and_then(|n| n.parse().ok())
-                    .expect("--iterations <n>");
+                iterations = match args.next().map(|n| n.parse::<usize>()) {
+                    Some(Ok(n)) if n >= 1 => n,
+                    _ => usage_error("--iterations takes a whole number of at least 1"),
+                };
             }
             "--json" => json = true,
             // Only inputs whose file name contains one of the filters.
@@ -112,14 +118,14 @@ fn main() {
             "--per-input" => per_input = true,
             // Only these languages (repeatable).
             "--lang" => {
-                let name = args.next().expect("--lang <name>");
-                languages.push(
-                    LANGUAGES
-                        .iter()
-                        .copied()
-                        .find(|l| *l == name)
-                        .expect("one of the benchmark's languages"),
-                );
+                let name = args.next().unwrap_or_default();
+                match LANGUAGES.iter().copied().find(|l| *l == name) {
+                    Some(lang) => languages.push(lang),
+                    None => usage_error(&format!(
+                        "--lang takes one of {}, got {name:?}",
+                        LANGUAGES.join(", ")
+                    )),
+                }
             }
             // `cargo bench` passes `--bench`.
             _ => {}
@@ -129,6 +135,9 @@ fn main() {
         .into_iter()
         .filter(|(name, _)| filters.is_empty() || filters.iter().any(|f| name.contains(f.as_str())))
         .collect();
+    if inputs.is_empty() {
+        usage_error("no input matches --filter");
+    }
     if languages.is_empty() {
         languages = LANGUAGES.to_vec();
     }

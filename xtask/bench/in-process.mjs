@@ -9,7 +9,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const args = process.argv.slice(2);
 const checkout = resolve(args[0] ?? "../quicktype");
@@ -19,6 +19,10 @@ for (let i = 1; i < args.length; i++) {
     if (args[i] === "--iterations" || args[i] === "-n") iterations = Number(args[++i]);
     else if (args[i] === "--json") json = true;
 }
+if (!Number.isInteger(iterations) || iterations < 1) {
+    console.error(`--iterations must be a whole number of at least 1, got ${iterations}`);
+    process.exit(2);
+}
 
 const core = await import(
     pathToFileURL(join(checkout, "packages/quicktype-core/dist/index.js")).href
@@ -26,7 +30,7 @@ const core = await import(
 const { InputData, jsonInputForTargetLanguage, quicktypeMultiFile } = core;
 
 const LANGUAGES = ["ts", "rust", "go", "cs", "java", "py", "swift", "c++"];
-const inputsDir = resolve(new URL("../../tests/inputs/json", import.meta.url).pathname);
+const inputsDir = fileURLToPath(new URL("../../tests/inputs/json", import.meta.url));
 const files = readdirSync(join(inputsDir, "samples"))
     .filter((f) => f.endsWith(".json"))
     .sort()
