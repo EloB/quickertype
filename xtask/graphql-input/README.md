@@ -7,11 +7,14 @@ committed fixtures and never need Node.
 
 | Script | Writes | Replayed by |
 |---|---|---|
+| `record-introspection.mjs <quicktype>` | `crates/quicktype-cli/tests/fixtures/graphql-introspect.json`: the reference CLI with `--graphql-introspect` (and `--http-method`, `--http-header`, `--graphql-schema`, query files) against a local server with scripted responses: exit code, stdout, stderr, written files and the requests the server received | `quicktype-cli/tests/graphql_introspect.rs` |
 | `run-graphql-inputs.mjs <quicktype>` | `crates/quicktype-graphql-input/tests/fixtures/graphql-input/`: `cases.json` (the manifest and graphql-js's introspection query), `expected/<id>.txt` (per case, the type graph right after input or the error), `schemas/*.gqlschema` (introspection results of the SDL schemas in the script) and `parse-vectors.json` (graphql-js's `parse` on seeded mutations of valid documents) | `quicktype-graphql-input/tests/graphql_input.rs` |
 
 ```sh
 node xtask/graphql-input/run-graphql-inputs.mjs ../quicktype
+node xtask/graphql-input/record-introspection.mjs ../quicktype
 cargo test -p quicktype-graphql-input --test graphql_input
+cargo test -p quicktype-cli --test graphql_introspect
 ```
 
 A case adds its sources (`{name, schema, query}`, the schema read with
