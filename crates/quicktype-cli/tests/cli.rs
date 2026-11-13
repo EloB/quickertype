@@ -404,6 +404,30 @@ fn inputs_too_deep_for_node_fail_like_node() {
 }
 
 #[test]
+fn unions_that_contain_themselves_fail_like_node() {
+    // With `$ref`s handled, a reference to an array's items from inside
+    // them makes a union that contains itself; quicktype overflows its
+    // stack on it, and so did the port, natively (an abort).
+    let dir = work_dir("ref-cycle");
+    fs::write(
+        dir.join("cycle.json"),
+        r##"{"": [{"$ref": "#//0"}, null]}"##,
+    )
+    .unwrap();
+    let output = quicktype_in(
+        &dir,
+        &["--lang", "go", "--no-ignore-json-refs", "cycle.json"],
+        None,
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(stdout(&output), "");
+    assert_eq!(
+        stderr(&output),
+        "Error: Maximum call stack size exceeded.\n"
+    );
+}
+
+#[test]
 fn graphql_inputs_too_deep_for_node_fail_like_node() {
     // Before: a field type nested in 100,000 lists aborted the
     // CLI (TypeScript overflows building the schema), 3,000 nested

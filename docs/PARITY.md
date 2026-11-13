@@ -302,7 +302,11 @@ the others name the fix they need.
   `RangeError`, where TypeScript fails at about 400 (measured with GraphQL
   lists and selection sets). A GraphQL field type of 100,000 nested lists
   used to overflow the CLI's native stack there, and a JSON Schema chain
-  of 1,500 maps a 2 MB one (`tests/deep_schemas.rs`).
+  of 1,500 maps a 2 MB one (`tests/deep_schemas.rs`). `UnionBuilder`'s
+  walk through nested unions (`attributesForTypes`) is guarded as well:
+  with `$ref`s handled, JSON can make a union that contains itself
+  (`{"": [{"$ref": "#//0"}, null]}` with `--no-ignore-json-refs`), on
+  which TypeScript recurses until V8's stack overflows.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports

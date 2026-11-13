@@ -1,13 +1,13 @@
-//! Deeply nested JSON through the library API, with both readers: where
-//! TypeScript's recursion overflows Node's stack, the run fails with V8's
-//! `RangeError: Maximum call stack size exceeded`, and it never overflows
-//! the native stack (a million levels used to abort the process). The
-//! rules are in `docs/PARITY.md` ("Very deeply nested JSON").
+//! Deeply nested (and self-referencing) JSON through the library API, with
+//! both readers: where TypeScript's recursion overflows Node's stack, the
+//! run fails with V8's `RangeError: Maximum call stack size exceeded`, and
+//! it never overflows the native stack (a million levels used to abort the
+//! process). The rules are in `docs/PARITY.md` ("Very deeply nested JSON").
 //!
 //! The runs use a thread with the CLI's stack size, as the CLI does.
 
 use quicktype_core::{
-    InputData, JsonSample, JsonSourceData, Options, get_target_language,
+    InferenceFlags, InputData, JsonSample, JsonSourceData, Options, get_target_language,
     json_input_for_target_language, quicktype_multi_file_sync,
 };
 
@@ -77,5 +77,35 @@ fn json_parse_samples_overflow_while_read() {
     for json in [arrays(1_000_000), objects(1_000_000)] {
         assert_eq!(run(json.clone(), true), Err(PARSE_OVERFLOW.to_owned()));
         assert_eq!(run(json, false), Err(OVERFLOW.to_owned()));
+    }
+}
+
+/// With `$ref`s handled (`--no-ignore-json-refs`), a reference to an array's
+/// items from inside them makes a union that contains itself; TypeScript's
+/// `UnionBuilder` recurses into it until V8's stack overflows, as the port
+/// does under its guard (it used to overflow the native stack, also the
+/// CLI's). On the test thread's own small stack.
+#[test]
+fn unions_that_contain_themselves_overflow_like_node() {
+    let lang = get_target_language("go").unwrap();
+    for json in [
+        r##"{"": [{"$ref": "#//0"}, null]}"##,
+        r##"{"a": [null, {"$ref": "#/a"}]}"##,
+    ] {
+        let mut input = json_input_for_target_language(lang, true, &Default::default());
+        input
+            .add_source_sync(JsonSourceData {
+                name: "Cycle".to_owned(),
+                samples: vec![JsonSample::Stream(json.as_bytes().to_vec())],
+                description: None,
+            })
+            .unwrap();
+        let mut input_data = InputData::new();
+        input_data.add_input(input);
+        let mut flags = InferenceFlags::default();
+        flags.ignore_json_refs = false;
+        let options = Options::new(lang, input_data).with_inference_flags(flags);
+        let e = quicktype_multi_file_sync(options).unwrap_err();
+        assert_eq!(e.user_message(), OVERFLOW, "{json}");
     }
 }
