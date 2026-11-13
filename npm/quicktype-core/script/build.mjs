@@ -1,7 +1,7 @@
 // Builds the package: the WebAssembly engine (crates/quicktype-wasm) and
 // the TypeScript facade, as CommonJS (dist/) and ES modules (dist/esm/).
 //
-//   node script/build.mjs [--skip-wasm] [--debug]
+//   node script/build.mjs [--skip-wasm] [--debug] [--heap-stats]
 //
 // 1. `cargo build -p quicktype-wasm --target wasm32-unknown-unknown --release`
 // 2. `wasm-bindgen --target web` (the CLI version must equal the
@@ -16,7 +16,10 @@
 //    {"type": "module"} marker in dist/esm.
 //
 // --skip-wasm reuses build/wasm-bindgen from an earlier build (optimized
-// already, if it was a release build); --no-wasm-opt leaves out step 3.
+// already, if it was a release build); --no-wasm-opt leaves out step 3;
+// --heap-stats builds the engine with the `heap-stats` feature, whose
+// allocator counts the bytes in use and their peak (`__heapBytes`,
+// `__heapPeak`), for measurements (it costs about 2% of a run's time).
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -72,6 +75,7 @@ function findBindgen() {
 function buildWasm() {
     const cargoArgs = ["build", "-p", "quicktype-wasm", "--target", "wasm32-unknown-unknown"];
     if (profile === "release") cargoArgs.push("--release");
+    if (args.has("--heap-stats")) cargoArgs.push("--features", "heap-stats");
     run("cargo", cargoArgs, { cwd: repositoryRoot });
     const wasm = path.join(
         repositoryRoot,

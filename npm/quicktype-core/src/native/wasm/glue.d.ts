@@ -48,7 +48,9 @@ export interface WasmGlue {
     __jsonReadTrapForTests(id: number, text: string): number;
     __memoryGrowths(): number;
     __memoryPages(): number;
+    /** `NaN` unless the engine is built with `--heap-stats`. */
     __heapBytes(): number;
+    /** `NaN` unless the engine is built with `--heap-stats`. */
     __heapPeak(): number;
     engineVersion(): string;
     __pow(x: number, y: number): number;

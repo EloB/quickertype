@@ -294,30 +294,31 @@ pub fn memory_growths() -> u32 {
 }
 
 /// Bytes the engine has allocated and not freed (the allocator's count),
-/// for the facade's tests; 0 outside WebAssembly.
+/// for measurements; `NaN` without the `heap-stats` feature, and outside
+/// WebAssembly.
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapBytes)]
 pub fn heap_bytes() -> f64 {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "heap-stats"))]
     return allocator::in_use() as f64;
-    #[cfg(not(target_arch = "wasm32"))]
-    0.0
+    #[cfg(not(all(target_arch = "wasm32", feature = "heap-stats")))]
+    f64::NAN
 }
 
 /// The most bytes allocated at once since the last call (which starts
-/// the next measurement from the bytes in use), for the facade's tests;
-/// 0 outside WebAssembly.
+/// the next measurement from the bytes in use), for measurements; `NaN`
+/// without the `heap-stats` feature, and outside WebAssembly.
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __heapPeak)]
 pub fn heap_peak() -> f64 {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "heap-stats"))]
     {
         let peak = allocator::peak();
         allocator::reset_peak();
         peak as f64
     }
-    #[cfg(not(target_arch = "wasm32"))]
-    0.0
+    #[cfg(not(all(target_arch = "wasm32", feature = "heap-stats")))]
+    f64::NAN
 }
 
 /// The size of the WebAssembly memory in 64 KiB pages, for the facade's

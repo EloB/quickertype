@@ -589,21 +589,17 @@ test("the engine holds at most its limit of compressed forms, however many input
 
         const before = { ...engineStats };
         const kept = [];
-        let heapAfterWarmUp;
         let pagesAfterWarmUp;
         for (let i = 0; i < 48; i++) {
             const input = await addAll("go", [["Big", [texts[i % 3]]]]);
             kept.push(input);
             assert.ok(glue.jsonHeld() <= limit, `${glue.jsonHeld()} bytes held after ${i + 1} inputs`);
             assert.deepEqual([...(await run(input, "go"))], expected[i % 3]);
-            if (i === 15) {
-                heapAfterWarmUp = glue.__heapBytes();
-                pagesAfterWarmUp = glue.__memoryPages();
-            }
+            if (i === 15) pagesAfterWarmUp = glue.__memoryPages();
         }
 
-        // Neither what the engine holds nor its memory grew with the inputs.
-        assert.ok(glue.__heapBytes() <= heapAfterWarmUp * 1.25, `${glue.__heapBytes()} against ${heapAfterWarmUp} bytes`);
+        // The engine's memory did not grow with the inputs (without the
+        // limit, each adds some 2 MiB).
         assert.ok(glue.__memoryPages() <= pagesAfterWarmUp * 1.25, `${glue.__memoryPages()} against ${pagesAfterWarmUp} pages`);
         assert.equal(engineStats.samplesRead, before.samplesRead + 48);
         assert.equal(engineStats.wasm, before.wasm + 48);
