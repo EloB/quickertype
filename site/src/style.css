@@ -287,6 +287,52 @@ input[type="text"] {
     background: var(--track);
 }
 
+.count.on {
+    color: var(--panel);
+    background: var(--wasm);
+}
+
+/* An option with a hint under it takes two columns, to keep the hint short. */
+.option-grid .hinted {
+    grid-column: span 2;
+}
+
+.option-grid .check.hinted {
+    align-items: flex-start;
+    padding-top: 4px;
+}
+
+.check.hinted input {
+    margin-top: 2px;
+}
+
+.hint {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* An option whose default on this page is a preset (as on app.quicktype.io). */
+.preset {
+    font-size: 11px;
+    padding: 0 5px;
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    color: var(--muted);
+    cursor: help;
+}
+
+.general {
+    margin-top: 2px;
+    font-size: 13px;
+}
+
+.general .general-note {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
 /* ---- Panes ------------------------------------------------------------- */
 
 .panes {
@@ -802,20 +848,26 @@ pre#output:focus-visible {
 
 .cli {
     flex-wrap: nowrap;
+    align-items: baseline;
 }
 
 .cli-label {
     flex: none;
 }
 
+/* The whole command is shown, wrapped between arguments (Copy copies it as one line). */
 #cli {
     flex: 1;
     min-width: 0;
-    overflow-x: auto;
-    white-space: nowrap;
-    font: 12px var(--mono);
+    font: 12px/1.5 var(--mono);
     color: var(--ink);
-    scrollbar-width: thin;
+}
+
+/* An argument wraps only if it is longer than a line. */
+#cli .arg {
+    display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .credits {
@@ -826,6 +878,15 @@ pre#output:focus-visible {
 
 .credits p {
     max-width: 80ch;
+}
+
+.credits p + p {
+    margin-top: 4px;
+}
+
+.credits code {
+    font: 11.5px var(--mono);
+    white-space: nowrap;
 }
 
 [hidden] {
@@ -892,7 +953,8 @@ pre#output:focus-visible {
         gap: 2px 12px;
     }
 
-    .options {
+    .options,
+    .general {
         font-size: 12.5px;
     }
 

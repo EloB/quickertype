@@ -3,9 +3,13 @@
 // mode a second copy on the TypeScript engine (`?engine=ts`).
 //
 // Request:  { id, kind: "json" | "schema", lang, name, text, rendererOptions,
-//             warmup?, repeat? }
+//             options, warmup?, repeat? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
 //           { type: "result", id, ok, files | error, ms, times, inputTimes, ran, reason, first }
+//
+// `options` are `quicktype()` options from the page's general options
+// (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
+// them for its flags.
 //
 // `times` are whole runs; `inputTimes` the part spent reading the input
 // (`addSource`: parsing the JSON or the schema), which is quicktype's
@@ -23,7 +27,7 @@ import {
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
 
 /** One quicktype run, as quicktype's CLI would do it for a file of `kind`. */
-async function generate({ kind, lang, name, text, rendererOptions }, phases) {
+async function generate({ kind, lang, name, text, rendererOptions, options = {} }, phases) {
     const start = performance.now();
     const inputData = new InputData();
     if (kind === "schema") {
@@ -31,13 +35,16 @@ async function generate({ kind, lang, name, text, rendererOptions }, phases) {
         await input.addSource({ name, schema: text });
         inputData.addInput(input);
     } else {
-        const input = jsonInputForTargetLanguage(lang);
+        // As the CLI's makeInputData: `$ref`s are references with
+        // --no-ignore-json-refs, and the renderer options set the range of
+        // integers (Rust's `integer-type`, cJSON's `integer-size`).
+        const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
         await input.addSource({ name, samples: [text] });
         inputData.addInput(input);
     }
 
     phases.input = performance.now() - start;
-    return quicktypeMultiFile({ inputData, lang, rendererOptions });
+    return quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
 }
 
 function snapshot() {
