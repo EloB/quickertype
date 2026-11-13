@@ -752,9 +752,6 @@ pub(crate) struct TallyBuilder<'a> {
     /// `finish` returns it.
     root: Option<NodeId>,
     frames: Vec<Frame>,
-    /// The text of a key of the `JSON.parse` reader's key table, while it
-    /// is set ([`JsonSink::set_property_key_read`]).
-    key: String,
 }
 
 impl<'a> TallyBuilder<'a> {
@@ -765,7 +762,6 @@ impl<'a> TallyBuilder<'a> {
             config,
             root: None,
             frames: Vec::new(),
-            key: String::new(),
         }
     }
 
@@ -795,6 +791,89 @@ impl<'a> TallyBuilder<'a> {
 
     fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
         defined(self.tallies.nodes.get_mut(id as usize))
+    }
+
+    /// What [`JsonSink::set_property_key`] does in the tallies: counts
+    /// `key` in the current object, with only the fields of the tallies it
+    /// needs, so that `key` can be borrowed from another of them (the
+    /// reader's key table, [`JsonSink::set_property_key_read`]). Returns
+    /// the key's value node, the index of the key expected next, and the
+    /// `__proto__` tree it replaced ([`key_set`](Self::key_set) does the
+    /// rest).
+    fn tally_key(
+        frames: &[Frame],
+        nodes: &mut Vec<Node>,
+        free: &mut Vec<NodeId>,
+        strings: &mut Strings,
+        key: &str,
+    ) -> Result<(NodeId, usize, Option<NodeId>)> {
+        let Some(&Frame::Object { node, next_key, .. }) = frames.last() else {
+            return panic("Setting a key outside an object");
+        };
+        let mut replaced = None;
+        let (value, next_key) = if key == "__proto__" {
+            let fresh = alloc(nodes, free)?;
+            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+            object.add_proto_occurrences(1);
+            replaced = object.proto.replace(fresh);
+            (fresh, next_key)
+        } else {
+            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+            let expected = object
+                .keys
+                .get_index(next_key)
+                .is_some_and(|(&id, _)| strings.get(id as usize) == Some(key));
+            let index = if expected {
+                next_key
+            } else {
+                let id = strings.intern_text(key);
+                match object.keys.get_index_of(&id) {
+                    Some(index) => index,
+                    None => {
+                        let fresh = alloc(nodes, free)?;
+                        let object =
+                            defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+                        object.keys.insert(
+                            id,
+                            KeyTally {
+                                count: 0,
+                                node: fresh,
+                            },
+                        );
+                        object.keys.len() - 1
+                    }
+                }
+            };
+            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+            let (_, tally) = defined(object.keys.get_index_mut(index))?;
+            tally.count += 1;
+            (tally.node, index + 1)
+        };
+        Ok((value, next_key, replaced))
+    }
+
+    /// The rest of [`JsonSink::set_property_key`], after
+    /// [`tally_key`](Self::tally_key): frees the `__proto__` tree the key
+    /// replaced, and makes the key's value node where the next value goes.
+    fn key_set(
+        &mut self,
+        (value, next_key, replaced): (NodeId, usize, Option<NodeId>),
+        is_ref: bool,
+    ) {
+        if let Some(old) = replaced {
+            self.tallies.free_tree(old);
+        }
+        if let Some(Frame::Object {
+            value: v,
+            expecting_ref,
+            next_key: n,
+            ..
+        }) = self.frames.last_mut()
+        {
+            *v = Some(value);
+            *expecting_ref = is_ref;
+            *n = next_key;
+        }
     }
 
     /// The current key's value is complete (TS: `currentKey = undefined`).
@@ -940,68 +1019,14 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        let Some(&Frame::Object { node, next_key, .. }) = self.frames.last() else {
-            return panic("Setting a key outside an object");
-        };
         let Tallies {
             nodes,
             free,
             strings,
             ..
         } = &mut *self.tallies;
-        let mut replaced = None;
-        let (value, next_key) = if key == "__proto__" {
-            let fresh = alloc(nodes, free)?;
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            object.add_proto_occurrences(1);
-            replaced = object.proto.replace(fresh);
-            (fresh, next_key)
-        } else {
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let expected = object
-                .keys
-                .get_index(next_key)
-                .is_some_and(|(&id, _)| strings.get(id as usize) == Some(key));
-            let index = if expected {
-                next_key
-            } else {
-                let id = strings.intern_text(key);
-                match object.keys.get_index_of(&id) {
-                    Some(index) => index,
-                    None => {
-                        let fresh = alloc(nodes, free)?;
-                        let object =
-                            defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                        object.keys.insert(
-                            id,
-                            KeyTally {
-                                count: 0,
-                                node: fresh,
-                            },
-                        );
-                        object.keys.len() - 1
-                    }
-                }
-            };
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let (_, tally) = defined(object.keys.get_index_mut(index))?;
-            tally.count += 1;
-            (tally.node, index + 1)
-        };
-        if let Some(old) = replaced {
-            self.tallies.free_tree(old);
-        }
-        if let Some(Frame::Object {
-            value: v,
-            expecting_ref,
-            next_key: n,
-            ..
-        }) = self.frames.last_mut()
-        {
-            *v = Some(value);
-            *expecting_ref = key == "$ref";
-            *n = next_key;
-        }
+        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
+        self.key_set(set, key == "$ref");
         Ok(())
     }
 
@@ -1067,13 +1092,20 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
-        // Copied: setting a key borrows the tallies, which hold the text.
-        let mut key = std::mem::take(&mut self.key);
-        key.clear();
-        key.push_str(self.tallies.string_reader.key_text(id));
-        let set = self.set_property_key(&key);
-        self.key = key;
-        set
+        // The key is the reader's, borrowed beside the fields it is
+        // counted in.
+        let Tallies {
+            nodes,
+            free,
+            strings,
+            string_reader,
+            ..
+        } = &mut *self.tallies;
+        let key = string_reader.key_text(id);
+        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
+        let is_ref = key == "$ref";
+        self.key_set(set, is_ref);
+        Ok(())
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before
