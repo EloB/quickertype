@@ -4,7 +4,9 @@
 // tests/inputs/json/samples plus json/misc/1b409.json, through eight
 // languages), on the reference quicktype-core in one warm Node process.
 //
-//   node xtask/bench/in-process.mjs <quicktype checkout> [--iterations N] [--json]
+//   node xtask/bench/in-process.mjs [quicktype checkout] [--iterations N] [--json]
+//
+// The checkout defaults to the one xtask/reference.mjs finds.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -13,18 +15,26 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { referenceCheckout } from "../reference.mjs";
 
+const USAGE = "usage: node xtask/bench/in-process.mjs [quicktype checkout] [--iterations N] [--json]";
 const args = process.argv.slice(2);
-const checkout = referenceCheckout(args[0]);
+let given;
 let iterations = 10;
 let json = false;
-for (let i = 1; i < args.length; i++) {
-    if (args[i] === "--iterations" || args[i] === "-n") iterations = Number(args[++i]);
-    else if (args[i] === "--json") json = true;
+for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--iterations" || arg === "-n") iterations = Number(args[++i]);
+    else if (arg === "--json") json = true;
+    else if (!arg.startsWith("-") && given === undefined) given = arg;
+    else {
+        console.error(`unexpected argument ${arg}\n${USAGE}`);
+        process.exit(2);
+    }
 }
 if (!Number.isInteger(iterations) || iterations < 1) {
     console.error(`--iterations must be a whole number of at least 1, got ${iterations}`);
     process.exit(2);
 }
+const checkout = referenceCheckout(given);
 
 const core = await import(
     pathToFileURL(join(checkout, "packages/quicktype-core/dist/index.js")).href
