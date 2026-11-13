@@ -317,9 +317,10 @@ the others name the fix they need.
 - **URL grammars (`--src-urls`).** TypeScript's `expand` recurses once
   per nested array or `oneOf`, and `String(array)` once per nested array
   when it reports a grammar that is not an object; the port counts both
-  and reports Node's `RangeError` where the reference CLI does (Node 24):
-  past 2,227 nested `expand` calls and 2,734 nested arrays. (A million
-  levels used to overflow the native stack.) A grammar whose arrays
+  and reports Node's `RangeError` where the reference CLI does (Node 24,
+  varying by one between runs): past 2,227 nested `expand` calls and
+  2,734 nested arrays. (A million levels used to overflow the native
+  stack.) A grammar whose arrays
   multiply out exponentially (`["u", {"oneOf": ["a", "b"]}, …]` with
   dozens of `oneOf`s) runs both out of memory: Node aborts at V8's heap
   limit (`FATAL ERROR: … JavaScript heap out of memory`, after about a
