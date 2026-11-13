@@ -209,9 +209,12 @@ impl Input for HostSchemaInput {
                 self.host.prepare_schema_input(self.store_id)?;
             }
             // Schema text is parsed (and timed) by the JavaScript store.
-            self.inner
+            let result = self
+                .inner
                 .add_types(type_builder, debug_print_schema_resolving, None)
-                .await?;
+                .await;
+            // The top-levels found, also when the run failed after finding
+            // some (TypeScript adds each to the input as it is found).
             if self.has_sources {
                 let top_levels = self
                     .inner
@@ -220,7 +223,7 @@ impl Input for HostSchemaInput {
                     .collect();
                 self.host.schema_top_levels(self.store_id, top_levels);
             }
-            Ok(())
+            result
         }
     }
 

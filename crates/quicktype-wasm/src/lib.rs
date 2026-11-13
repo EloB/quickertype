@@ -103,12 +103,12 @@ fn install() {
     }
     quicktype_core::set_console_sink(Some(Box::new(|line| {
         if let Some(host) = active() {
-            host.log(line);
+            host.buffer_line(false, line);
         }
     })));
     quicktype_core::internal::set_console_error_sink(Some(Box::new(|line| {
         if let Some(host) = active() {
-            host.error(line);
+            host.buffer_line(true, line);
         }
     })));
     std::panic::set_hook(Box::new(|info| {
@@ -185,7 +185,13 @@ pub fn poll(id: u32) -> JsValue {
         return js::internal_error_outcome("Polled a run that is not pending");
     };
     let mut cx = Context::from_waker(Waker::noop());
-    let polled = with_active(&host, || future.as_mut().poll(&mut cx));
+    let polled = with_active(&host, || {
+        let polled = future.as_mut().poll(&mut cx);
+        // What the run printed before it began to wait, before the facade
+        // starts the fetch it waits for.
+        host.flush();
+        polled
+    });
     match polled {
         Poll::Ready(outcome) => {
             RUNS.with(|runs| runs.borrow_mut()[id as usize] = None);
@@ -204,6 +210,27 @@ pub fn poll(id: u32) -> JsValue {
             js::internal_error_outcome("The engine is waiting for nothing")
         }
     }
+}
+
+/// Drops run `id`: the facade gave up on it (its promise can no longer be
+/// observed), so its future and host objects need not be kept.
+#[wasm_bindgen]
+pub fn cancel(id: u32) {
+    let dropped = RUNS.with(|runs| {
+        runs.borrow_mut()
+            .get_mut(id as usize)
+            .and_then(Option::take)
+    });
+    // Dropped outside the borrow: dropping runs no JavaScript, but keep the
+    // table free either way.
+    drop(dropped);
+}
+
+/// How many runs are pending (for the facade's tests).
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __pendingRuns)]
+pub fn pending_runs() -> u32 {
+    RUNS.with(|runs| runs.borrow().iter().filter(|r| r.is_some()).count() as u32)
 }
 
 /// Settles host call `call_id` of run `id` with `value` (`ok`) or the

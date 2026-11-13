@@ -55,19 +55,26 @@ extern "C" {
         refs: Vec<String>,
     ) -> std::result::Result<(), JsValue>;
 
+    /// Calls `onTiming`; returns whether user code it ran made the
+    /// instance unusable (a nested run trapped).
     #[wasm_bindgen(method, catch)]
-    fn timing(this: &HostObject, name: &str, milliseconds: f64)
-    -> std::result::Result<(), JsValue>;
+    fn timing(
+        this: &HostObject,
+        name: &str,
+        milliseconds: f64,
+    ) -> std::result::Result<bool, JsValue>;
 
     /// JavaScript `String(value)`.
     #[wasm_bindgen(catch, js_name = String)]
     fn js_string(value: &JsValue) -> std::result::Result<String, JsValue>;
 
+    /// `console.log(line)`; returns like `timing`.
     #[wasm_bindgen(method, catch)]
-    fn log(this: &HostObject, line: &str) -> std::result::Result<(), JsValue>;
+    fn log(this: &HostObject, line: &str) -> std::result::Result<bool, JsValue>;
 
+    /// `console.error(line)`; returns like `timing`.
     #[wasm_bindgen(method, catch)]
-    fn error(this: &HostObject, line: &str) -> std::result::Result<(), JsValue>;
+    fn error(this: &HostObject, line: &str) -> std::result::Result<bool, JsValue>;
 
     #[wasm_bindgen(method, catch)]
     fn now(this: &HostObject) -> std::result::Result<f64, JsValue>;
@@ -88,6 +95,12 @@ extern "C" {
     fn strings(this: &EncodedObject) -> String;
     #[wasm_bindgen(method, getter, js_name = stringLengths)]
     fn string_lengths(this: &EncodedObject) -> Vec<u32>;
+    /// Set when the facade will refer to this document again by id.
+    #[wasm_bindgen(method, getter)]
+    fn id(this: &EncodedObject) -> Option<u32>;
+    /// Set instead of the encoding for a document already sent in this run.
+    #[wasm_bindgen(method, getter, js_name = cachedId)]
+    fn cached_id(this: &EncodedObject) -> Option<u32>;
 
     /// The facade's request (`encodeRequest`).
     type RequestObject;
@@ -378,19 +391,36 @@ fn decode_sourcelike(value: &JsValue, depth: usize) -> Result<Sourcelike> {
     }
 }
 
-fn decode_encoded_value(value: &JsValue) -> Result<Option<JsonSchema>> {
+/// Decodes a document from the store (`encodeValue`), or takes it from
+/// `documents` when the facade sends the id of one it sent before: a store
+/// hands out the same object for every `$ref` into a document, and
+/// re-encoding it each time would make runs quadratic.
+fn decode_document(
+    value: &JsValue,
+    documents: &RefCell<HashMap<u32, JsonSchema>>,
+) -> Result<Option<JsonSchema>> {
     if value.is_undefined() {
         return Ok(None);
     }
     let encoded: &EncodedObject = value.unchecked_ref();
+    if let Some(id) = encoded.cached_id() {
+        return match documents.borrow().get(&id) {
+            Some(document) => Ok(Some(document.clone())),
+            None => Err(wire(WireError::new("unknown document id"))),
+        };
+    }
     let strings = split_blob(&encoded.strings(), &encoded.string_lengths()).map_err(wire)?;
-    decode_value(&EncodedValue {
+    let document = decode_value(&EncodedValue {
         tags: encoded.tags(),
         numbers: encoded.numbers(),
         counts: encoded.counts(),
         strings,
     })
-    .map_err(wire)
+    .map_err(wire)?;
+    if let (Some(id), Some(document)) = (encoded.id(), &document) {
+        documents.borrow_mut().insert(id, document.clone());
+    }
+    Ok(document)
 }
 
 // ---------------------------------------------------------------------------
@@ -410,6 +440,13 @@ pub struct JsHost {
     /// there; the engine finishes, but every later callback and print is
     /// suppressed and the run ends with this exception.
     deferred: RefCell<Option<JsValue>>,
+    /// Console lines not yet handed to JavaScript (`true`: `console.error`).
+    /// The engine's console sink only buffers, so it never runs user code
+    /// (a replaced `console.log`) from inside the engine; [`flush`](Self::flush)
+    /// hands them over before anything else of the run reaches JavaScript.
+    lines: RefCell<Vec<(bool, String)>>,
+    /// The store documents of this run, by the facade's id.
+    documents: RefCell<HashMap<u32, JsonSchema>>,
 }
 
 impl JsHost {
@@ -420,7 +457,18 @@ impl JsHost {
             next_call: Cell::new(0),
             thrown: RefCell::new(Vec::new()),
             deferred: RefCell::new(None),
+            lines: RefCell::new(Vec::new()),
+            documents: RefCell::new(HashMap::new()),
         })
+    }
+
+    /// User code that a callback ran made a nested run trap, so this
+    /// instance's memory can no longer be trusted: trap too, rather than go
+    /// on (the facade then redoes the run on the TypeScript engine).
+    fn check_discarded(discarded: bool) {
+        if discarded {
+            std::process::abort();
+        }
     }
 
     fn aborted(&self) -> bool {
@@ -451,20 +499,29 @@ impl JsHost {
         error
     }
 
-    /// `console.log(line)` for the engine's debug output.
-    pub fn log(&self, line: &str) {
+    /// Buffers a line of the engine's console output (`error`:
+    /// `console.error`, else `console.log`).
+    pub fn buffer_line(&self, error: bool, line: &str) {
         if !self.aborted() {
-            if let Err(e) = self.object.log(line) {
-                self.defer(e);
-            }
+            self.lines.borrow_mut().push((error, line.to_owned()));
         }
     }
 
-    /// `console.error(line)`.
-    pub fn error(&self, line: &str) {
-        if !self.aborted() {
-            if let Err(e) = self.object.error(line) {
-                self.defer(e);
+    /// Hands the buffered console lines to JavaScript, in order.
+    pub fn flush(&self) {
+        let lines = std::mem::take(&mut *self.lines.borrow_mut());
+        for (error, line) in lines {
+            if self.aborted() {
+                return;
+            }
+            let printed = if error {
+                self.object.error(&line)
+            } else {
+                self.object.log(&line)
+            };
+            match printed {
+                Ok(discarded) => JsHost::check_discarded(discarded),
+                Err(e) => self.defer(e),
             }
         }
     }
@@ -496,6 +553,7 @@ impl JsHost {
     /// have yet ([`QuickTypeError::unsupported_feature`]), for which the
     /// facade runs TypeScript instead.
     pub fn finish(&self, result: Result<MultiFileRenderResult>) -> JsValue {
+        self.flush();
         let outcome = Object::new();
         if let Some(exception) = self.deferred.borrow_mut().take() {
             set(&outcome, "thrown", &exception);
@@ -543,7 +601,7 @@ impl RunHost for Rc<JsHost> {
                 return Err(host.thrown(e));
             }
             let value = CallFuture(slot).await.map_err(|e| host.thrown(e))?;
-            decode_encoded_value(&value)
+            decode_document(&value, &host.documents)
         })
     }
 
@@ -555,9 +613,13 @@ impl RunHost for Rc<JsHost> {
     }
 
     fn timing(&self, name: &str, milliseconds: f64) {
+        // Earlier output first (`--debug print-times` prints before
+        // `onTiming` is called).
+        self.flush();
         if !self.aborted() {
-            if let Err(e) = self.object.timing(name, milliseconds) {
-                self.defer(e);
+            match self.object.timing(name, milliseconds) {
+                Ok(discarded) => JsHost::check_discarded(discarded),
+                Err(e) => self.defer(e),
             }
         }
     }
