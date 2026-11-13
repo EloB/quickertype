@@ -27,8 +27,6 @@ pub const TYPE_SCRIPT_EFFECT_SCHEMA_LANGUAGE_CONFIG: LanguageConfig = LanguageCo
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TypeScriptEffectSchemaTargetLanguage;
 
-// TODO(renderer): port the hooks TypeScriptEffectSchemaTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for TypeScriptEffectSchemaTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &TYPE_SCRIPT_EFFECT_SCHEMA_LANGUAGE_CONFIG
@@ -68,4 +66,31 @@ impl TargetLanguage for TypeScriptEffectSchemaTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer`: a `TypeScriptEffectSchemaRenderer`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options =
+            super::type_script_effect_schema_renderer::TypeScriptEffectSchemaOptions::parse(
+                renderer_options,
+            )?;
+        let renderer =
+            super::type_script_effect_schema_renderer::TypeScriptEffectSchemaRenderer::new(
+                self,
+                render_context,
+                options,
+            );
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }
