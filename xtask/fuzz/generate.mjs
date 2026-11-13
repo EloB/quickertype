@@ -718,6 +718,7 @@ class SchemaGen {
             [0.7, "any"],
             [0.2, "boolschema"],
             [leaf ? 0 : 0.7, "multi"],
+            [0.12, "malformed"],
         ]);
         const e = [];
         switch (kind) {
@@ -835,6 +836,41 @@ class SchemaGen {
                 break;
             case "boolschema":
                 return lit(rng.chance(0.85) ? "true" : "false");
+            case "malformed":
+                // Schemas quicktype rejects, for its error messages.
+                return rng.pick([
+                    () => obj([[str("type"), num("5")]]),
+                    () => obj([[str("type"), arr([str("string"), num("3")])]]),
+                    () => obj([[str("type"), str("strin")]]),
+                    () => obj([[str("type"), str("object")], [str("required"), str("x")]]),
+                    () => obj([[str("type"), str("object")], [str("required"), arr([num("1")])]]),
+                    () => obj([[str("type"), str("object")], [str("properties"), arr([])]]),
+                    () => obj([[str("type"), str("object")], [str("properties"), obj([[str("a"), num("1")]])]]),
+                    () => obj([[str("type"), str("array")], [str("items"), num("3")]]),
+                    () => obj([[str("$ref"), num("5")]]),
+                    () => obj([[str("$ref"), str(`#/${this.defsKey}/missing`)]]),
+                    () => obj([[str("$ref"), str("#/properties/nope/items")]]),
+                    () => obj([[str("$ref"), str("#/definitions/%E0%A4%A")]]),
+                    () => obj([[str("$ref"), str("#/a~2b")]]),
+                    () => obj([[str("enum"), str("x")]]),
+                    () => obj([[str("oneOf"), obj([])]]),
+                    () => obj([[str("anyOf"), arr([])]]),
+                    () => obj([[str("allOf"), arr([num("1")])]]),
+                    () => obj([[str("additionalProperties"), str("x")]]),
+                    () => lit("null"),
+                    () => num("1"),
+                    () => str("schema"),
+                    () => arr([]),
+                    () => obj([[str("enum"), arr([obj([]), arr([])])]]),
+                    () => obj([[str("const"), obj([[str("a"), num("1")]])]]),
+                    () => obj([[str("qt-accessors"), num("1")], [str("type"), str("object")], [str("properties"), obj([[str("a"), obj([])]])]]),
+                    () => obj([[str("qt-enum-values"), arr([])], [str("enum"), arr([str("a")])]]),
+                    () => obj([[str("format"), num("1")], [str("type"), str("string")]]),
+                    () => obj([[str("minimum"), str("1")], [str("type"), str("number")]]),
+                    () => obj([[str("pattern"), num("1")], [str("type"), str("string")]]),
+                    () => obj([[str("description"), num("1")], [str("type"), str("string")]]),
+                    () => obj([[str("title"), arr([])], [str("type"), str("object")]]),
+                ])();
             case "multi":
                 e.push([str("type"), arr(rng.sample(["string", "number", "integer", "boolean", "null", "object", "array"], rng.range(2, 4)).map((t) => str(t)))]);
                 if (rng.chance(0.5)) e.push([str("properties"), obj([[str(genKey(rng)), this.schema(depth - 1)]])]);
