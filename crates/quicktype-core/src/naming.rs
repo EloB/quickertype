@@ -15,6 +15,7 @@
 //! matters for output, because each group gets its own prefix sequence
 //! (`Purple`, `Fluffy`, ...) and suffix counter.
 
+use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
@@ -57,6 +58,10 @@ struct NamerData {
     prefixes: Vec<String>,
     prefix_set: IndexSet<String>,
     case_insensitive_styled_names: bool,
+    /// `name_style` results by raw name. Name styles are pure functions,
+    /// and naming styles every name several times (to group the names, to
+    /// try each proposal), so each raw name is styled once per namer.
+    styled: RefCell<HashMap<String, String>>,
 }
 
 /// `Namer`: styles names and resolves conflicts between them.
@@ -104,6 +109,7 @@ impl Namer {
             prefixes,
             prefix_set,
             case_insensitive_styled_names,
+            styled: RefCell::default(),
         }))
     }
 
@@ -119,7 +125,15 @@ impl Namer {
 
     /// `nameStyle(rawName)`.
     pub fn name_style(&self, raw_name: &str) -> String {
-        (self.0.name_style)(raw_name)
+        if let Some(styled) = self.0.styled.borrow().get(raw_name) {
+            return styled.clone();
+        }
+        let styled = (self.0.name_style)(raw_name);
+        self.0
+            .styled
+            .borrow_mut()
+            .insert(raw_name.to_owned(), styled.clone());
+        styled
     }
 
     /// The style function itself, for renderers that reuse it outside of
