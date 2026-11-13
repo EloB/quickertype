@@ -19,6 +19,7 @@ use crate::language::javascript::java_script_renderer::{
 use crate::language::javascript::language::RawType;
 use crate::renderer_options::RendererOptions;
 use crate::source::{MultiWord, multi_word, paren_if_needed, single_word};
+use crate::support::recursion::guard;
 use crate::support::strings::{camel_case, utf16_string_escape};
 use crate::ty::type_utils::nullable_from_union;
 
@@ -212,59 +213,62 @@ pub mod typescript_flow_base_methods {
         r: &R,
         t: TypeRef,
     ) -> Result<MultiWord> {
-        if let Some(empty_object_type) = empty_object_type_for(r, t)? {
-            return Ok(single_word(vec![empty_object_type.into()]));
-        }
-
-        let graph = r.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if r.ts_flow_options().prefer_const_values && kind == TypeKind::Enum {
-            let cases = ty.cases()?;
-            if cases.len() == 1 {
-                let item = cases.first().map_or("", String::as_str);
-                return Ok(single_word(vec![
-                    format!("\"{}\"", utf16_string_escape(item)).into(),
-                ]));
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            if let Some(empty_object_type) = empty_object_type_for(r, t)? {
+                return Ok(single_word(vec![empty_object_type.into()]));
             }
-        }
 
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            return Ok(single_word(vec![r.name_for_named_type(t)?.into()]));
-        }
-
-        Ok(match kind {
-            TypeKind::Any => single_word(vec![r.any_type().into()]),
-            TypeKind::Null => single_word(vec!["null".into()]),
-            TypeKind::Bool => single_word(vec!["boolean".into()]),
-            TypeKind::Integer | TypeKind::Double => single_word(vec!["number".into()]),
-            TypeKind::String => single_word(vec!["string".into()]),
-            TypeKind::Array => r.source_for_array_type(t)?,
-            TypeKind::Map => single_word(vec![sl![
-                "{ ",
-                if r.ts_flow_options().readonly {
-                    readonly_prefix(r)
-                } else {
-                    ""
-                },
-                "[key: string]: ",
-                source_for(r, ty.map_values()?)?.source,
-                " }"
-            ]]),
-            TypeKind::Union => {
-                if inlines_union(r, t)? {
-                    let mut children = Vec::new();
-                    for c in graph.children(t)? {
-                        children.push(paren_if_needed(source_for(r, c)?));
-                    }
-                    return multi_word(" | ", children);
+            let graph = r.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if r.ts_flow_options().prefer_const_values && kind == TypeKind::Enum {
+                let cases = ty.cases()?;
+                if cases.len() == 1 {
+                    let item = cases.first().map_or("", String::as_str);
+                    return Ok(single_word(vec![
+                        format!("\"{}\"", utf16_string_escape(item)).into(),
+                    ]));
                 }
-
-                single_word(vec![r.name_for_named_type(t)?.into()])
             }
-            TypeKind::DateTime => single_word(vec!["Date".into()]),
-            k if k.is_transformed_string_type_kind() => single_word(vec!["string".into()]),
-            kind => return type_not_supported(kind),
+
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                return Ok(single_word(vec![r.name_for_named_type(t)?.into()]));
+            }
+
+            Ok(match kind {
+                TypeKind::Any => single_word(vec![r.any_type().into()]),
+                TypeKind::Null => single_word(vec!["null".into()]),
+                TypeKind::Bool => single_word(vec!["boolean".into()]),
+                TypeKind::Integer | TypeKind::Double => single_word(vec!["number".into()]),
+                TypeKind::String => single_word(vec!["string".into()]),
+                TypeKind::Array => r.source_for_array_type(t)?,
+                TypeKind::Map => single_word(vec![sl![
+                    "{ ",
+                    if r.ts_flow_options().readonly {
+                        readonly_prefix(r)
+                    } else {
+                        ""
+                    },
+                    "[key: string]: ",
+                    source_for(r, ty.map_values()?)?.source,
+                    " }"
+                ]]),
+                TypeKind::Union => {
+                    if inlines_union(r, t)? {
+                        let mut children = Vec::new();
+                        for c in graph.children(t)? {
+                            children.push(paren_if_needed(source_for(r, c)?));
+                        }
+                        return multi_word(" | ", children);
+                    }
+
+                    single_word(vec![r.name_for_named_type(t)?.into()])
+                }
+                TypeKind::DateTime => single_word(vec!["Date".into()]),
+                k if k.is_transformed_string_type_kind() => single_word(vec!["string".into()]),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 

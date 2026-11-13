@@ -160,6 +160,76 @@
    ],
    "error": "Internal error: Defined value expected, but got undefined",
    "console": []
+  },
+  {
+   "lang": "typescript-zod",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "typescript-effect-schema",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "typescript",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "kotlin",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Defined value expected, but got undefined",
+   "console": []
+  },
+  {
+   "lang": "elm",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Defined value expected, but got undefined",
+   "console": []
   }
  ],
  "id": "recursion-overflow-top-level"

@@ -17,6 +17,7 @@ use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
+use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use indexmap::IndexMap;
 
@@ -254,42 +255,45 @@ pub mod scala3_methods {
         with_issues: bool,
         no_optional: bool,
     ) -> Result<Source> {
-        let graph = r.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => maybe_annotated(
-                with_issues,
-                any_type_issue_annotation(),
-                r.any_source_type(!no_optional),
-            ),
-            TypeKind::Null => maybe_annotated(
-                with_issues,
-                null_type_issue_annotation(),
-                r.any_source_type(!no_optional),
-            ),
-            TypeKind::Bool => "Boolean".into(),
-            TypeKind::Integer => "Long".into(),
-            TypeKind::Double => "Double".into(),
-            TypeKind::String => "String".into(),
-            TypeKind::Array => r.array_type(t, with_issues)?,
-            TypeKind::Class | TypeKind::Enum => r.name_for_named_type(t)?.into(),
-            TypeKind::Map => r.map_type(t, with_issues)?,
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    if no_optional {
-                        return Ok(sl![r.scala_type(nullable, with_issues, false)?]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = r.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => maybe_annotated(
+                    with_issues,
+                    any_type_issue_annotation(),
+                    r.any_source_type(!no_optional),
+                ),
+                TypeKind::Null => maybe_annotated(
+                    with_issues,
+                    null_type_issue_annotation(),
+                    r.any_source_type(!no_optional),
+                ),
+                TypeKind::Bool => "Boolean".into(),
+                TypeKind::Integer => "Long".into(),
+                TypeKind::Double => "Double".into(),
+                TypeKind::String => "String".into(),
+                TypeKind::Array => r.array_type(t, with_issues)?,
+                TypeKind::Class | TypeKind::Enum => r.name_for_named_type(t)?.into(),
+                TypeKind::Map => r.map_type(t, with_issues)?,
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        if no_optional {
+                            return Ok(sl![r.scala_type(nullable, with_issues, false)?]);
+                        }
+                        return Ok(sl![
+                            "Option[",
+                            r.scala_type(nullable, with_issues, false)?,
+                            "]"
+                        ]);
                     }
-                    return Ok(sl![
-                        "Option[",
-                        r.scala_type(nullable, with_issues, false)?,
-                        "]"
-                    ]);
+                    r.name_for_named_type(t)?.into()
                 }
-                r.name_for_named_type(t)?.into()
-            }
-            TypeKind::Uuid => "java.util.UUID".into(),
-            kind if kind.is_transformed_string_type_kind() => "java.time.Instant".into(),
-            kind => return match_type_unsupported(kind),
+                TypeKind::Uuid => "java.util.UUID".into(),
+                kind if kind.is_transformed_string_type_kind() => "java.time.Instant".into(),
+                kind => return match_type_unsupported(kind),
+            })
         })
     }
 

@@ -1,9 +1,9 @@
 # Endless recursion over the type graph: a nullable union whose member is an
 # array of the union itself makes the renderers' type-to-source functions
 # (C# csType, Pike sourceFor, Ruby dryType, Elixir elixirType, Python
-# pythonType, Swift swiftType, Dart dartType, ...) recurse until V8's stack
-# overflows, a
-# RangeError (support::recursion::guard in Rust). The graph comes from the
+# pythonType, Swift swiftType, Dart dartType, Rust rustType, Java javaType,
+# TypeScript sourceFor, Zod and Effect typeMapTypeFor, ...) recurse until
+# V8's stack overflows, a RangeError (support::recursion::guard in Rust). The graph comes from the
 # default (Rust) pipeline: C#'s own pipeline already overflows in
 # needTransformerForType.
 input schema TopLevel {"type": "object", "properties": {"x": {"$ref": "#/definitions/a"}}, "required": ["x"], "definitions": {"a": {"type": ["array", "null"], "items": {"$ref": "#/definitions/a"}}}}
@@ -30,3 +30,21 @@ render dart {"rendererOptions": {"just-types": true}}
 render crystal {}
 render cplusplus {}
 render cplusplus {"rendererOptions": {"source-style": "multi-source"}, "filename": "quicktype.hpp"}
+render elm {}
+render haskell {}
+render java {}
+render java {"rendererOptions": {"just-types": true}}
+render javascript {}
+render javascript-prop-types {}
+render kotlin {}
+render kotlin {"rendererOptions": {"framework": "klaxon"}}
+render kotlin {"rendererOptions": {"framework": "kotlinx"}}
+render php {}
+render rust {}
+render scala3 {}
+render scala3 {"rendererOptions": {"framework": "upickle"}}
+render smithy4a {}
+render typescript {}
+render flow {}
+render typescript-zod {}
+render typescript-effect-schema {}

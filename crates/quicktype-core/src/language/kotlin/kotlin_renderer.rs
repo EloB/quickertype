@@ -21,6 +21,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::AcronymStyleOptions;
+use crate::support::recursion::guard;
 use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_graph::TypeGraph;
@@ -155,36 +156,39 @@ pub fn base_kotlin_type<'a, R: KotlinRenderer<'a>>(
     with_issues: bool,
     no_optional: bool,
 ) -> Result<Source> {
-    let optional = if no_optional { "" } else { "?" };
-    let graph = r.type_graph();
-    Ok(match graph.kind(t)? {
-        TypeKind::Any => maybe_annotated(
-            with_issues,
-            any_type_issue_annotation(),
-            r.any_source_type(optional),
-        ),
-        TypeKind::Null => maybe_annotated(
-            with_issues,
-            null_type_issue_annotation(),
-            r.any_source_type(optional),
-        ),
-        TypeKind::Bool => "Boolean".into(),
-        TypeKind::Integer => "Long".into(),
-        TypeKind::Double => "Double".into(),
-        TypeKind::String => "String".into(),
-        TypeKind::Array => r.array_type(t, with_issues, false)?,
-        TypeKind::Class | TypeKind::Enum => r.name_for_named_type(t)?.into(),
-        TypeKind::Map => r.map_type(t, with_issues, false)?,
-        TypeKind::Union => match nullable_from_union(graph, t)? {
-            Some(nullable) => sl![r.kotlin_type(nullable, with_issues, false)?, optional],
-            None => r.name_for_named_type(t)?.into(),
-        },
-        TypeKind::DateTime => "OffsetDateTime".into(),
-        TypeKind::Date => "LocalDate".into(),
-        TypeKind::Time => "OffsetTime".into(),
-        kind if kind.is_transformed_string_type_kind() => "String".into(),
-        TypeKind::Intersection => return panic("Unknown type intersection"),
-        kind => return type_not_supported(kind),
+    // Endless on a cycle through a nullable union (V8 overflows its stack).
+    guard(|| {
+        let optional = if no_optional { "" } else { "?" };
+        let graph = r.type_graph();
+        Ok(match graph.kind(t)? {
+            TypeKind::Any => maybe_annotated(
+                with_issues,
+                any_type_issue_annotation(),
+                r.any_source_type(optional),
+            ),
+            TypeKind::Null => maybe_annotated(
+                with_issues,
+                null_type_issue_annotation(),
+                r.any_source_type(optional),
+            ),
+            TypeKind::Bool => "Boolean".into(),
+            TypeKind::Integer => "Long".into(),
+            TypeKind::Double => "Double".into(),
+            TypeKind::String => "String".into(),
+            TypeKind::Array => r.array_type(t, with_issues, false)?,
+            TypeKind::Class | TypeKind::Enum => r.name_for_named_type(t)?.into(),
+            TypeKind::Map => r.map_type(t, with_issues, false)?,
+            TypeKind::Union => match nullable_from_union(graph, t)? {
+                Some(nullable) => sl![r.kotlin_type(nullable, with_issues, false)?, optional],
+                None => r.name_for_named_type(t)?.into(),
+            },
+            TypeKind::DateTime => "OffsetDateTime".into(),
+            TypeKind::Date => "LocalDate".into(),
+            TypeKind::Time => "OffsetTime".into(),
+            kind if kind.is_transformed_string_type_kind() => "String".into(),
+            TypeKind::Intersection => return panic("Unknown type intersection"),
+            kind => return type_not_supported(kind),
+        })
     })
 }
 
