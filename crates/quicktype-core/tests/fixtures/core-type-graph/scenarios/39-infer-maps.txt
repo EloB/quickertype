@@ -1,0 +1,40 @@
+# InferMaps: digit-only names always make a map; string-only classes need
+# 50 properties; otherwise names must look random enough for the number of
+# properties, and all values must be compatible (modulo null). The class
+# attributes go to both the map and its values.
+builder prov
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+prim b bool
+cls digits 1:i,22:s,333:b n=Digits
+cls strs xqzv:s,kwjh:s,pfgt:s n=Strings
+cls rnd xqzvw:i,kwjhq:i,pfgtz:i n=Random
+cls eng name:i,age:i,city:i n=English
+cls mixed xqzvw:i,kwjhq:s,pfgtz:i n=Mixed
+union ni i,nul n=NullableInt
+cls nulls xqzvw:i,kwjhq:ni,pfgtz:nul n=Nulls
+cls nums xqzvw:i,kwjhq:d n=Numbers
+cls one xqzvw:i n=One
+ucls fixed fixed xqzvw:i,kwjhq:i n=Fixed
+cls top d:digits,s:strs,r:rnd,e:eng,m:mixed,n:nulls,nu:nums,o:one,f:fixed n=Top
+top Top top
+finish printonrewrite
+infermaps debug
+infermaps
+infermaps conflate
+gc
+print
+
+# Classes inside classes: the outer map's values unify the inner classes.
+builder
+prim i integer
+cls in1 a:i n=In1
+cls in2 a:i n=In2
+cls outer qxzv:in1,zzkq:in2,jjwx:in1 n=Outer
+cls top o:outer n=Top
+top Top top
+finish
+infermaps debug
+print

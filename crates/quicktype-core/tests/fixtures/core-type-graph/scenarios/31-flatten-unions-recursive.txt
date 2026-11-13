@@ -1,0 +1,80 @@
+# FlattenUnions with recursion: flattening `A | M` reaches `A | (A | M)`
+# through the map values, which must reuse the forwarding ref.
+builder
+str s unrestricted
+reserve u1
+reserve u2
+umap m
+props m - u1
+cls a name:s n=A
+union u2b a,m fwd=u2
+union u1b a,u2 n=U1 fwd=u1
+cls top v:u1 n=Top
+top Top top
+finish
+print
+flatten debug
+print
+gc
+print
+
+# Maps and objects with makeObjectTypes (the schema pass), with classes
+# and maps unified into an object.
+builder
+prim i integer
+str s unrestricted
+map m i n=M
+cls c a:i,b?:s n=C
+obj o p:s i n=O
+union u m,c,o n=MCO
+cls top u:u n=Top
+top Top top
+finish
+flatten objects debug
+print
+
+# Without makeObjectTypes, classes and maps with non-any values become maps.
+builder
+prim i integer
+str s unrestricted
+map m i n=M
+cls c a:i n=C
+union u m,c n=MC
+cls top u:u n=Top
+top Top top
+finish
+flatten
+print
+
+# Arrays in a union are unified item by item.
+builder
+prim i integer
+str s unrestricted
+arr ai i
+arr as s
+prim nul null
+union u ai,as,nul n=Arrays
+cls top u:u n=Top
+top Top top
+finish
+flatten debug
+print
+
+# The same with classes: `A | (A | B)` where B refers back to the union.
+builder
+str s unrestricted
+prim i integer
+reserve u1
+reserve u2
+cls b next:u1,n:i n=B
+cls a name:s,n?:i n=A
+union u2b a,b fwd=u2
+union u1b a,u2 n=U1 fwd=u1
+arr list u1
+cls top v:u1,l:list n=Top
+top Top top
+finish
+flatten debug
+print
+gc
+print

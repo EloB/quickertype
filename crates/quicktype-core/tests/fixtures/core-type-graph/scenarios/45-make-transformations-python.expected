@@ -1,0 +1,164 @@
+(forwarding intersections: false)
+
+# make-transformations
+transformation for 3:
+string -> decode
+  string -> parse-string
+-> integer
+reverse:
+integer -> stringify
+  string -> encode
+-> string
+transformation for 5:
+string -> decode
+  string -> parse-string
+-> bool
+reverse:
+bool -> stringify
+  string -> encode
+-> string
+transformation for 8:
+any -> decoding-choice
+  null -> decode
+    null -> union-instantiation
+  string -> decode
+    string -> parse-string
+      integer -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: null
+    null -> encode
+  union -> union-member-match - member: integer
+    integer -> stringify
+      string -> encode
+-> any
+transformation for 3:
+any -> decoding-choice
+  integer -> decode
+  string -> decode
+    string -> parse-string
+-> integer
+reverse:
+integer -> encode
+-> any
+transformation for 13:
+any -> decoding-choice
+  integer -> decode
+    integer -> union-instantiation
+  string -> decode
+    string -> choice
+      string -> parse-string
+        bool -> union-instantiation
+      string -> parse-string
+        enum -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: integer
+    integer -> encode
+  union -> union-member-match - member: bool
+    bool -> stringify
+      string -> encode
+  union -> union-member-match - member: enum
+    enum -> stringify
+      string -> encode
+-> any
+transformation for 15:
+any -> decoding-choice
+  null -> decode
+    null -> union-instantiation
+  string -> decode
+    string -> choice
+      string -> parse-string
+        bool -> union-instantiation
+      string -> parse-string
+        integer -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: null
+    null -> encode
+  union -> union-member-match - member: bool
+    bool -> stringify
+      string -> encode
+  union -> union-member-match - member: integer
+    integer -> stringify
+      string -> encode
+-> any
+0: class Top | children 1,4,6,10,11,14 | 10 | given Top ()
+1: string | children 2,3 | transformation | unrestricted
+2: string | unrestricted
+3: integer IntString | 0,3 | given IntString ()
+4: string | children 2,5 | transformation | unrestricted
+5: bool BoolString | 4 | given BoolString ()
+6: any | children 9,7,2,3,8 | transformation | 3
+7: null | 2
+8: union MaybeIntString | children 3,7 | 6 | given MaybeIntString ()
+9: any
+10: any | children 9,3,2 | transformation | 3
+11: any | children 9,3,2,5,12,13 | transformation | 4
+12: enum Color | 5 | given Color ()
+13: union WithEnum | children 5,12,3 | 8 | given WithEnum ()
+14: any | children 9,7,2,5,3,15 | transformation | 3,4
+15: union Both | children 5,3,7 | 9 | given Both ()
+
+# GC
+0: class Top | children 1,4,6,10,11,14 | 10 | given Top ()
+1: string | children 3,2 | transformation | unrestricted
+2: integer IntString | 0,3 | given IntString ()
+3: string | unrestricted
+4: string | children 3,5 | transformation | unrestricted
+5: bool BoolString | 4 | given BoolString ()
+6: any | children 9,8,3,2,7 | transformation | 3
+7: union MaybeIntString | children 2,8 | 6 | given MaybeIntString ()
+8: null | 2
+9: any
+10: any | children 9,2,3 | transformation | 3
+11: any | children 9,2,3,5,13,12 | transformation | 4
+12: union WithEnum | children 5,13,2 | 8 | given WithEnum ()
+13: enum Color | 5 | given Color ()
+14: any | children 9,8,3,5,2,15 | transformation | 3,4
+15: union Both | children 5,2,8 | 9 | given Both ()
+0: class Top | children 1,4,6,10,11,14 | 10 | given Top ()
+1: string | children 3,2 | transformation | unrestricted
+2: integer IntString | 0,3 | given IntString ()
+3: string | unrestricted
+4: string | children 3,5 | transformation | unrestricted
+5: bool BoolString | 4 | given BoolString ()
+6: any | children 9,8,3,2,7 | transformation | 3
+7: union MaybeIntString | children 2,8 | 6 | given MaybeIntString ()
+8: null | 2
+9: any
+10: any | children 9,2,3 | transformation | 3
+11: any | children 9,2,3,5,13,12 | transformation | 4
+12: union WithEnum | children 5,13,2 | 8 | given WithEnum ()
+13: enum Color | 5 | given Color ()
+14: any | children 9,8,3,5,2,15 | transformation | 3,4
+15: union Both | children 5,2,8 | 9 | given Both ()
+xf 3: none
+xf 6:
+any -> decoding-choice
+  null -> decode
+    null -> union-instantiation
+  string -> decode
+    string -> parse-string
+      integer -> union-instantiation
+-> union
+reverse:
+union -> choice
+  union -> union-member-match - member: null
+    null -> encode
+  union -> union-member-match - member: integer
+    integer -> stringify
+      string -> encode
+-> any
+canFail false nodes 6 reverse canFail true nodes 6
+(forwarding intersections: false)
+(flatten: unchanged)
+(flatten done: true)
+0: integer
+1: double
+2: union TopLevel | children 1,0 | given TopLevel ()
+3: class Top | children 2 | given Top ()
+(maketx: unchanged)

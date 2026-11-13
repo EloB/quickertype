@@ -1,0 +1,36 @@
+# Type graph parts of quicktype's Vitest tests (the rest of each test is
+# rendering).
+#
+# test/unit/enum-order.test.ts: a schema enum keeps its case order through
+# expand strings (all) and C#'s enum transformation.
+builder
+str day cases=Monday:1,Tuesday:1,Friday:1,Sunday:1 n=DaySchema
+top DaySchema day
+finish
+expand all
+print
+query cases 1
+maketx csharp
+gc
+print
+query cases 2
+
+# test/unit/rust-cycle-breaker-boxing.test.ts (graph part only; the boxing
+# itself is rendering): Node.next is anyOf [Node, string, null], a
+# canonical union that every pass keeps, recursive class included.
+builder
+str s unrestricted
+prim nul null
+reserve node
+union next node,s,nul n=Next
+ucls nodec open value:s,next?:next n=Node fwd=node
+top Node node
+finish
+rmind
+flatten
+replaceobj
+flatten
+opt2null
+fixedpoint
+gc
+print

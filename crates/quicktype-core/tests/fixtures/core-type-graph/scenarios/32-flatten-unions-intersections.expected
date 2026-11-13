@@ -1,0 +1,68 @@
+(forwarding intersections: false)
+reconstituting 11
+reconstituted 11 as 0
+reconstituting 6
+reconstituted 6 as 1
+reconstituting 0
+reconstituted 0 as 2
+reconstituting 5
+reconstituted 5 as 3
+reconstituting 4
+reconstituted 4 as 4
+reconstituting 2
+reconstituted 2 as 5
+reconstituting 3
+reconstituted 3 as 6
+reconstituting 1
+reconstituted 1 as 7
+reconstituting 10
+reconstituted 10 as 8
+reconstituting 9
+reconstituted 9 as 9
+replacing set 8 as 10
+replaced set 8 as 10
+(flatten done: false)
+0: class Top | children 1,3,8 | given Top ()
+1: union Nested | children 2,3 | given Nested ()
+2: integer
+3: union WithIntersection | children 4,7 | given WithIntersection ()
+4: intersection X | children 5,6 | given X ()
+5: object A | children 2 | given A ()
+6: object B | children 7 | given B ()
+7: string | unrestricted
+8: union W | children 9,7 | given W ()
+9: array | children 10
+10: union V | children 2,7 | given V ()
+(resolve done: true)
+0: class Top | children 1,3,6 | given Top ()
+1: union Nested | children 2,3 | given Nested ()
+2: integer
+3: union WithIntersection | children 4,5 | given WithIntersection ()
+4: object X | children 2,5 | given X ()
+5: string | unrestricted
+6: union W | children 7,5 | given W ()
+7: array | children 8
+8: union V | children 2,5 | given V ()
+(flatten done: true)
+0: class Top | children 1,5,6 | given Top ()
+1: union Nested | children 3,2,4 | given Nested ()
+2: object X | children 3,4 | given X ()
+3: integer
+4: string | unrestricted
+5: union WithIntersection | children 2,4 | given WithIntersection ()
+6: union W | children 7,4 | given W ()
+7: array | children 8
+8: union V | children 3,4 | given V ()
+(resolve: unchanged)
+(resolve done: true)
+(flatten: unchanged)
+(flatten done: true)
+0: class Top | children 1,5,6 | given Top ()
+1: union Nested | children 3,2,4 | given Nested ()
+2: object X | children 3,4 | given X ()
+3: integer
+4: string | unrestricted
+5: union WithIntersection | children 2,4 | given WithIntersection ()
+6: union W | children 7,4 | given W ()
+7: array | children 8
+8: union V | children 3,4 | given V ()

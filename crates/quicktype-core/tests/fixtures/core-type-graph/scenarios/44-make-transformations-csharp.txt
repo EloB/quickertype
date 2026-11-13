@@ -1,0 +1,39 @@
+# MakeTransformations with C#'s needsTransformerForType: non-nullable
+# unions, enums, constrained numbers and strings, integer-/bool-strings and
+# arrays of those get transformations.
+builder prov stm=date:date-time,time:date-time,date-time,uuid,uri,integer-string,bool-string
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+prim b bool
+prim is integer-string n=IntString
+prim bs bool-string
+prim dt date-time
+enum e red,green n=Color
+prim ri integer mm=1:10 n=Ranged
+str ls unrestricted ml=2:5 n=Short
+union nullable i,nul n=NullableInt
+union nullable2 ri,nul n=NullableRanged
+union mixed i,s,nul,b n=Mixed
+union strs is,e,dt,ls n=Strings
+arr arr is
+arr arr2 i
+cls c x:i n=C
+union withclass c,is,d n=WithClass
+cls top a:i,b:s,c:is,d:bs,e:e,f:ri,g:ls,h:nullable,h2:nullable2,m:mixed,s:strs,arr:arr,arr2:arr2,w:withclass n=Top
+top Top top
+finish printonrewrite
+maketx csharp debug
+gc
+print
+xf 1
+xf 2
+xf 4
+xf 9
+xf 11
+xf 13
+xf 15
+xf 20
+xf 22
+xf 25
