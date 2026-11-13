@@ -11,7 +11,7 @@
 
 use std::rc::Rc;
 
-use super::{Generator, SUB_DEFINITIONS, VALIDATION_KEYWORDS, get, set, text};
+use super::{Generator, SUB_DEFINITIONS, VALIDATION_KEYWORDS, get, in_table, set, text};
 use crate::error::{Error, Result};
 use crate::js::{self, Obj, Value};
 use crate::tsc::api::Symbol;
@@ -218,7 +218,7 @@ impl Generator<'_> {
                     }
                 }
             }
-            if SUB_DEFINITIONS.contains(&name.as_str()) {
+            if in_table(SUB_DEFINITIONS, &name) {
                 if let Some((k, v)) = text::group_jsdoc(&text) {
                     let value = if v.is_empty() {
                         Value::Bool(true)
@@ -234,7 +234,7 @@ impl Generator<'_> {
             }
             if name.contains('.') {
                 let parts: Vec<&str> = name.split('.').collect();
-                if parts.len() == 2 && SUB_DEFINITIONS.contains(&parts[0]) {
+                if parts.len() == 2 && in_table(SUB_DEFINITIONS, parts[0]) {
                     let value = if text.is_empty() {
                         Value::Bool(true)
                     } else {
@@ -247,7 +247,7 @@ impl Generator<'_> {
                     set(definition, parts[0], Value::Object(merged));
                 }
             }
-            if VALIDATION_KEYWORDS.contains(&name.as_str()) {
+            if in_table(VALIDATION_KEYWORDS, &name) {
                 set(definition, &name, parse_value(&text)?);
             } else {
                 set(other_annotations, &doc.name, Value::Bool(true));

@@ -12,7 +12,11 @@
 //! quicktype's `test/unit/typescript-input.test.ts`; `feature-*` and
 //! `error-*` are hand-written cases for typescript-json-schema features and
 //! compiler errors; `order-*` exercise the TypeScript 5.9 union-order
-//! emulation (`tjs::order`).
+//! emulation (`tjs::order`); `review-*` reproduce code-review findings
+//! (warnings before errors, nameless default exports, tuple labels,
+//! initializer operators and conversions, `Object.prototype` names in JSDoc
+//! and type names, root file names). A case's `files.json`, when present,
+//! lists the file names to pass instead of its sorted `.ts` files.
 //!
 //! Needs the TypeScript 7.0.2 compiler: `$QUICKTYPE_TSC`, the usual lookup
 //! from this crate's directory, or `node_modules` of a sibling `quicktype`
@@ -70,23 +74,28 @@ fn expected(dir: &Path) -> String {
     }
 }
 
-fn actual(dir: &Path, tsc: &Path) -> String {
+/// The file names a case passes: its `files.json`, or its `.ts` files sorted.
+fn case_files(dir: &Path) -> Vec<String> {
+    if let Ok(list) = std::fs::read_to_string(dir.join("files.json")) {
+        return serde_json::from_str(&list).expect("files.json is a list of names");
+    }
     let mut files: Vec<String> = std::fs::read_dir(dir)
         .expect("case directory")
         .filter_map(|e| e.ok()?.file_name().into_string().ok())
         .filter(|f| f.ends_with(".ts"))
         .collect();
     files.sort();
+    files
+}
+
+fn actual(dir: &Path, tsc: &Path) -> String {
+    let files = case_files(dir);
     match schema_for_typescript_sources_in(&files, dir, tsc) {
         Ok(out) => format!(
             "schema: {}\nname: {}\nuris: {:?}\nwarnings: {:?}",
             out.source.schema, out.source.name, out.source.uris, out.warnings
         ),
-        Err(e) => format!(
-            "error: {}\nwarnings: {:?}",
-            e.message(),
-            Vec::<String>::new()
-        ),
+        Err(f) => format!("error: {}\nwarnings: {:?}", f.error.message(), f.warnings),
     }
 }
 

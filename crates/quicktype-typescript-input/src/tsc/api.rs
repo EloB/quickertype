@@ -128,6 +128,7 @@ pub struct Type {
 }
 
 /// An index signature of a type.
+#[derive(Clone)]
 pub struct IndexInfo {
     /// Key type.
     pub key_type: Rc<Type>,
@@ -179,6 +180,9 @@ pub struct JsDocTag {
     pub text: Option<String>,
 }
 
+/// Results of list requests by method and handle.
+type ListCache<T> = HashMap<(&'static str, u64), Vec<Rc<T>>>;
+
 /// A loaded program and its checker, backed by one `tsc --api` process.
 pub struct Session {
     channel: RefCell<Channel>,
@@ -190,6 +194,11 @@ pub struct Session {
     files: RefCell<HashMap<String, Rc<SourceFile>>>,
     default_lib: RefCell<HashMap<String, bool>>,
     number_type: RefCell<Option<u64>>,
+    /// Per-object results of list requests, keyed by method and handle.
+    type_lists: RefCell<ListCache<Type>>,
+    symbol_lists: RefCell<ListCache<Symbol>>,
+    index_infos: RefCell<HashMap<u64, Vec<IndexInfo>>>,
+    strings: RefCell<HashMap<(u64, Option<u32>), String>>,
 }
 
 impl Session {
@@ -207,6 +216,10 @@ impl Session {
             files: RefCell::default(),
             default_lib: RefCell::default(),
             number_type: RefCell::default(),
+            type_lists: RefCell::default(),
+            symbol_lists: RefCell::default(),
+            index_infos: RefCell::default(),
+            strings: RefCell::default(),
         };
         let init = session.raw_json("initialize", &Json::Null)?;
         session.case_sensitive = init["useCaseSensitiveFileNames"].as_bool().unwrap_or(true);
@@ -319,6 +332,33 @@ impl Session {
             .into_iter()
             .map(|r| self.type_from(r))
             .collect())
+    }
+
+    /// A type list for one object, fetched once per snapshot.
+    fn cached_types(&self, method: &'static str, id: u64, params: Json) -> Result<Vec<Rc<Type>>> {
+        if let Some(v) = self.type_lists.borrow().get(&(method, id)) {
+            return Ok(v.clone());
+        }
+        let v = self.type_list(method, params)?;
+        self.type_lists.borrow_mut().insert((method, id), v.clone());
+        Ok(v)
+    }
+
+    /// A symbol list for one object, fetched once per snapshot.
+    fn cached_symbols(
+        &self,
+        method: &'static str,
+        id: u64,
+        params: Json,
+    ) -> Result<Vec<Rc<Symbol>>> {
+        if let Some(v) = self.symbol_lists.borrow().get(&(method, id)) {
+            return Ok(v.clone());
+        }
+        let v = self.symbol_list(method, params)?;
+        self.symbol_lists
+            .borrow_mut()
+            .insert((method, id), v.clone());
+        Ok(v)
     }
 
     fn symbol_list(&self, method: &str, params: Json) -> Result<Vec<Rc<Symbol>>> {
@@ -436,20 +476,26 @@ impl Session {
 
     /// `getPropertiesOfType`.
     pub fn properties_of_type(&self, t: &Type) -> Result<Vec<Rc<Symbol>>> {
-        self.symbol_list("getPropertiesOfType", json!({ "type": t.id }))
+        self.cached_symbols("getPropertiesOfType", t.id, json!({ "type": t.id }))
     }
 
     /// `getIndexInfosOfType`.
     pub fn index_infos_of_type(&self, t: &Type) -> Result<Vec<IndexInfo>> {
+        if let Some(v) = self.index_infos.borrow().get(&t.id) {
+            return Ok(v.clone());
+        }
         let v: Option<Vec<IndexInfoResponse>> =
             self.call_as("getIndexInfosOfType", json!({ "type": t.id }))?;
-        Ok(v.unwrap_or_default()
+        let infos: Vec<IndexInfo> = v
+            .unwrap_or_default()
             .into_iter()
             .map(|i| IndexInfo {
                 key_type: self.type_from(i.key_type),
                 value_type: self.type_from(i.value_type),
             })
-            .collect())
+            .collect();
+        self.index_infos.borrow_mut().insert(t.id, infos.clone());
+        Ok(infos)
     }
 
     /// `getIndexTypeOfType(t, IndexKind.Number)` of the TS 5 API.
@@ -475,12 +521,12 @@ impl Session {
 
     /// `getBaseTypes` (empty unless `t` is a class or interface).
     pub fn base_types(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.type_list("getBaseTypes", json!({ "type": t.id }))
+        self.cached_types("getBaseTypes", t.id, json!({ "type": t.id }))
     }
 
     /// `getTypeArguments`.
     pub fn type_arguments(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.type_list("getTypeArguments", json!({ "type": t.id }))
+        self.cached_types("getTypeArguments", t.id, json!({ "type": t.id }))
     }
 
     /// `getAliasedSymbol`.
@@ -502,22 +548,29 @@ impl Session {
 
     /// `typeToString(type, undefined, flags)`.
     pub fn type_to_string(&self, t: &Type, flags: Option<u32>) -> Result<String> {
+        if let Some(v) = self.strings.borrow().get(&(t.id, flags)) {
+            return Ok(v.clone());
+        }
         let mut params = json!({ "type": t.id });
         if let Some(f) = flags {
             params["flags"] = json!(f);
         }
-        Ok(self
+        let text = self
             .call("typeToString", params)?
             .as_str()
             .unwrap_or_default()
-            .to_owned())
+            .to_owned();
+        self.strings
+            .borrow_mut()
+            .insert((t.id, flags), text.clone());
+        Ok(text)
     }
 
-    /// `typeToTypeNode(type)`, decoded.
-    pub fn type_to_type_node(&self, t: &Type) -> Result<Option<Node>> {
+    /// `typeToTypeNode(type, undefined, flags)` (`NodeBuilderFlags`), decoded.
+    pub fn type_to_type_node(&self, t: &Type, flags: u32) -> Result<Option<Node>> {
         let bytes = self.raw(
             "typeToTypeNode",
-            &json!({ "snapshot": self.snapshot, "project": self.project, "type": t.id }),
+            &json!({ "snapshot": self.snapshot, "project": self.project, "type": t.id, "flags": flags }),
         )?;
         Ok(SourceFile::parse(bytes).map(|sf| sf.root()))
     }
@@ -569,7 +622,7 @@ impl Session {
 
     /// `symbol.members`, as a list.
     pub fn members_of_symbol(&self, s: &Symbol) -> Result<Vec<Rc<Symbol>>> {
-        self.symbol_list("getMembersOfSymbol", json!({ "objectId": s.id }))
+        self.cached_symbols("getMembersOfSymbol", s.id, json!({ "objectId": s.id }))
     }
 
     /// `type.target`.
@@ -583,12 +636,16 @@ impl Session {
 
     /// `type.types` of unions, intersections and template literals.
     pub fn types_of_type(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.type_list("getTypesOfType", json!({ "objectId": t.id }))
+        self.cached_types("getTypesOfType", t.id, json!({ "objectId": t.id }))
     }
 
     /// `type.aliasTypeArguments`.
     pub fn alias_type_arguments(&self, t: &Type) -> Result<Vec<Rc<Type>>> {
-        self.type_list("getAliasTypeArgumentsOfType", json!({ "objectId": t.id }))
+        self.cached_types(
+            "getAliasTypeArgumentsOfType",
+            t.id,
+            json!({ "objectId": t.id }),
+        )
     }
 }
 

@@ -19,7 +19,7 @@ pub mod js;
 pub mod tjs;
 pub mod tsc;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub use error::{Error, Result};
 use js::{Obj, Value};
@@ -49,10 +49,39 @@ pub struct Output {
     pub warnings: Vec<String>,
 }
 
+/// A failed [`schema_for_typescript_sources`]: the error, and the lines the
+/// reference has already written to stderr by the time it throws.
+#[derive(Clone, Debug)]
+pub struct Failure {
+    /// What went wrong.
+    pub error: Error,
+    /// `console.warn`/`console.error` output before the error.
+    pub warnings: Vec<String>,
+}
+
+impl From<Error> for Failure {
+    fn from(error: Error) -> Failure {
+        Failure {
+            error,
+            warnings: Vec::new(),
+        }
+    }
+}
+
+impl std::fmt::Display for Failure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(f)
+    }
+}
+
+impl std::error::Error for Failure {}
+
 /// `schemaForTypeScriptSources(sourceFileNames)`, with the process's working
 /// directory as the root directory and the compiler found by
 /// [`tsc::locate::locate`].
-pub fn schema_for_typescript_sources(file_names: &[String]) -> Result<Output> {
+pub fn schema_for_typescript_sources(
+    file_names: &[String],
+) -> std::result::Result<Output, Failure> {
     let cwd = std::env::current_dir()
         .map_err(|e| Error::Tsc(format!("cannot read the working directory: {e}")))?;
     let exe = tsc::locate::locate(&cwd)?;
@@ -65,13 +94,11 @@ pub fn schema_for_typescript_sources_in(
     file_names: &[String],
     cwd: &Path,
     tsc_exe: &Path,
-) -> Result<Output> {
+) -> std::result::Result<Output, Failure> {
     let case_sensitive = !cfg!(any(target_os = "macos", target_os = "windows"));
     let cwd = normalize(&cwd.to_string_lossy());
-    if let Some(message) = root_file_errors(file_names, &cwd, case_sensitive) {
-        return Err(Error::TypeScript { message });
-    }
-    let files: Vec<String> = file_names.iter().map(|f| absolute(f, &cwd)).collect();
+    let files = root_files(file_names, &cwd, case_sensitive)
+        .map_err(|message| Error::TypeScript { message })?;
     let config_path = format!(
         "{}/__quicktype_typescript_input__.json",
         cwd.trim_end_matches('/')
@@ -102,7 +129,7 @@ pub fn schema_for_typescript_sources_in(
     run(&session, file_names, &files)
 }
 
-fn run(s: &Session, given: &[String], files: &[String]) -> Result<Output> {
+fn run(s: &Session, given: &[String], files: &[String]) -> std::result::Result<Output, Failure> {
     let mut diagnostics = s.pre_emit_diagnostics()?;
     sort_diagnostics(&mut diagnostics, s.case_sensitive());
     if let Some(error) = diagnostics
@@ -111,7 +138,8 @@ fn run(s: &Session, given: &[String], files: &[String]) -> Result<Output> {
     {
         return Err(Error::TypeScript {
             message: flatten(error),
-        });
+        }
+        .into());
     }
     let mut warnings = Vec::new();
     if !diagnostics.is_empty() {
@@ -123,14 +151,21 @@ fn run(s: &Session, given: &[String], files: &[String]) -> Result<Output> {
                         .iter()
                         .position(|x| x == f)
                         .map_or(f.as_str(), |i| given[i].as_str());
-                    let (line, col) = line_and_character(s, f, d.pos as usize)?;
-                    format!("{shown} ({},{}): {}", line + 1, col + 1, flatten(d))
+                    match line_and_character(s, f, d.pos as usize) {
+                        Ok((line, col)) => {
+                            format!("{shown} ({},{}): {}", line + 1, col + 1, flatten(d))
+                        }
+                        Err(_) => flatten(d),
+                    }
                 }
                 _ => flatten(d),
             });
         }
-        return Err(Error::TypeScript {
-            message: "Failed to build the JSON Schema generator".into(),
+        return Err(Failure {
+            error: Error::TypeScript {
+                message: "Failed to build the JSON Schema generator".into(),
+            },
+            warnings,
         });
     }
 
@@ -147,8 +182,16 @@ fn run(s: &Session, given: &[String], files: &[String]) -> Result<Output> {
     }
     let order = tjs::order::CreationOrder::compute(s, &user_files)?;
     let mut generator = tjs::Generator::build(s, &user_files, order)?;
-    let schema = generator.schema_for_main_symbols()?;
-    add_enum_accessor_names(&mut generator, s, &user_files, &schema)?;
+    let schema = generator
+        .schema_for_main_symbols()
+        .and_then(|schema| {
+            add_enum_accessor_names(&mut generator, s, &user_files, &schema)?;
+            Ok(schema)
+        })
+        .map_err(|error| Failure {
+            error,
+            warnings: std::mem::take(&mut generator.warnings),
+        })?;
     sanitize_type_annotations(&Value::Object(schema.clone()));
     let (name, uris) = post_process(&schema);
     warnings.append(&mut generator.warnings);
@@ -426,28 +469,97 @@ fn contains_path(root: &str, file: &str, case_sensitive: bool) -> bool {
         .is_some_and(|rest| rest.starts_with('/'))
 }
 
-/// The diagnostics TypeScript reports for root files before checking: a
-/// missing file (TS6053) or one outside `rootDir` (TS6059). They are
-/// synthesized here with TypeScript 5.9's texts, which print the names as
-/// given rather than TS 7's absolute paths.
-fn root_file_errors(file_names: &[String], cwd: &str, case_sensitive: bool) -> Option<String> {
+/// TypeScript 5.9's processing of the root file names
+/// (`getSourceFileFromReferenceWorker`): a name without an extension gets
+/// `.ts`, `.tsx` or `.d.ts` appended (TS6231 if none exists), other
+/// extensions are rejected (TS6504 for JavaScript, TS6054 otherwise), and a
+/// missing file is TS6053. Files outside `rootDir` are TS6059. The texts are
+/// TypeScript 5.9's, which print names as given (normalized) where TS 7
+/// prints absolute paths. Returns the absolute paths of the root files, or
+/// the message of the diagnostic TypeScript would report first.
+fn root_files(
+    file_names: &[String],
+    cwd: &str,
+    case_sensitive: bool,
+) -> std::result::Result<Vec<String>, String> {
     const CHAIN: &str =
         "\n  The file is in the program because:\n    Root file specified for compilation";
+    const TS_EXTENSIONS: &[&str] = &[".ts", ".tsx", ".d.ts", ".cts", ".d.cts", ".mts", ".d.mts"];
+    const JS_EXTENSIONS: &[&str] = &[".js", ".jsx", ".mjs", ".cjs"];
+    let all = format!("'{}'", TS_EXTENSIONS.join("', '"));
     let mut errors: Vec<(u32, String)> = Vec::new();
+    let mut files = Vec::new();
     for name in file_names {
         let shown = normalize(name);
-        let abs = absolute(name, cwd);
-        if !PathBuf::from(&abs).is_file() {
-            errors.push((6053, format!("File '{shown}' not found.{CHAIN}")));
-        } else if !name.ends_with(".d.ts") && !contains_path(cwd, &abs, case_sensitive) {
+        let canonical = if case_sensitive {
+            shown.clone()
+        } else {
+            shown.to_lowercase()
+        };
+        let base = shown.rsplit('/').next().unwrap_or(&shown);
+        let resolved = if base.contains('.') {
+            if !TS_EXTENSIONS.iter().any(|e| canonical.ends_with(e)) {
+                if JS_EXTENSIONS.iter().any(|e| canonical.ends_with(e)) {
+                    errors.push((
+                        6504,
+                        format!(
+                            "File '{shown}' is a JavaScript file. Did you mean to enable the 'allowJs' option?{CHAIN}"
+                        ),
+                    ));
+                } else {
+                    errors.push((
+                        6054,
+                        format!(
+                            "File '{shown}' has an unsupported extension. The only supported extensions are {all}.{CHAIN}"
+                        ),
+                    ));
+                }
+                continue;
+            }
+            let abs = absolute(&shown, cwd);
+            if !Path::new(&abs).is_file() {
+                errors.push((6053, format!("File '{shown}' not found.{CHAIN}")));
+                continue;
+            }
+            (shown, abs)
+        } else {
+            let found = [".ts", ".tsx", ".d.ts"]
+                .iter()
+                .map(|e| format!("{shown}{e}"))
+                .find(|n| Path::new(&absolute(n, cwd)).is_file());
+            match found {
+                Some(n) => {
+                    let abs = absolute(&n, cwd);
+                    (n, abs)
+                }
+                None => {
+                    errors.push((
+                        6231,
+                        format!("Could not resolve the path '{shown}' with the extensions: {all}.{CHAIN}"),
+                    ));
+                    continue;
+                }
+            }
+        };
+        let (shown, abs) = resolved;
+        let declaration = [".d.ts", ".d.cts", ".d.mts"]
+            .iter()
+            .any(|e| shown.ends_with(e));
+        if !declaration && !contains_path(cwd, &abs, case_sensitive) {
             errors.push((
                 6059,
-                format!("File '{shown}' is not under 'rootDir' '.'. 'rootDir' is expected to contain all source files.{CHAIN}"),
+                format!(
+                    "File '{shown}' is not under 'rootDir' '.'. 'rootDir' is expected to contain all source files.{CHAIN}"
+                ),
             ));
         }
+        files.push(abs);
     }
     errors.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| js::compare_utf16(&a.1, &b.1)));
-    errors.into_iter().next().map(|(_, m)| m)
+    match errors.into_iter().next() {
+        Some((_, message)) => Err(message),
+        None => Ok(files),
+    }
 }
 
 #[cfg(test)]

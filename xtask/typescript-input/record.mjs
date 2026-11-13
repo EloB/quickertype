@@ -3,9 +3,10 @@
 //
 // For every case directory in crates/quicktype-typescript-input/tests/corpus,
 // runs quicktype-typescript-input's `schemaForTypeScriptSources` (TypeScript
-// 5.9.3 + typescript-json-schema 0.67.4) on the case's `.ts` files, with the
-// case directory as the working directory (quicktype compiles with
-// `rootDir: "."`), and writes `expected.json`:
+// 5.9.3 + typescript-json-schema 0.67.4) on the case's `.ts` files (or the
+// names listed in its `files.json`), with the case directory as the working
+// directory (quicktype compiles with `rootDir: "."`), and writes
+// `expected.json`:
 //
 //   { "schema": "<JSON.stringify output>", "name": "...", "uris": [...],
 //     "warnings": [...] }                     on success
@@ -34,7 +35,12 @@ if (process.argv[2] === "--case") {
     const [, , , checkout, dir] = process.argv;
     const require = createRequire(path.join(checkout, "package.json"));
     const { schemaForTypeScriptSources } = require("quicktype-typescript-input");
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).sort();
+    // `files.json` (a list of names) overrides the default: the case's
+    // `.ts` files in sorted order.
+    const list = path.join(dir, "files.json");
+    const files = fs.existsSync(list)
+        ? JSON.parse(fs.readFileSync(list, "utf8"))
+        : fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).sort();
     const warnings = [];
     console.warn = (...a) => warnings.push(a.join(" "));
     console.error = (...a) => warnings.push(a.join(" "));

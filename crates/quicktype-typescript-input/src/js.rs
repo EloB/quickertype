@@ -225,6 +225,27 @@ impl JsObject {
     }
 }
 
+/// Whether `key` names a property of `Object.prototype`, which a lookup on a
+/// plain JavaScript object (`table[key]`) finds even when the object has no
+/// such own property.
+pub fn is_object_prototype_key(key: &str) -> bool {
+    matches!(
+        key,
+        "constructor"
+            | "__defineGetter__"
+            | "__defineSetter__"
+            | "hasOwnProperty"
+            | "__lookupGetter__"
+            | "__lookupSetter__"
+            | "isPrototypeOf"
+            | "propertyIsEnumerable"
+            | "toString"
+            | "valueOf"
+            | "__proto__"
+            | "toLocaleString"
+    )
+}
+
 /// `{...a, ...b}` for objects: a new object with `a`'s and then `b`'s own
 /// properties. `None` (spreading `undefined`) contributes nothing.
 pub fn spread(parts: &[Option<&Obj>]) -> Obj {

@@ -36,6 +36,10 @@ use crate::tsc::generated::{
 pub const NO_TRUNCATION: u32 = 1;
 /// `TypeFormatFlags.UseFullyQualifiedType`.
 pub const USE_FULLY_QUALIFIED_TYPE: u32 = 64;
+/// `NodeBuilderFlags.NoTruncation`.
+const NODE_BUILDER_NO_TRUNCATION: u32 = 1;
+/// `NodeBuilderFlags.InTypeAlias`: print the type itself, not its alias.
+const NODE_BUILDER_IN_TYPE_ALIAS: u32 = 8_388_608;
 
 const NUMERIC_INDEX_PATTERN: &str = "^[0-9]+$";
 const VALIDATION_KEYWORDS: &[&str] = &[
@@ -69,6 +73,7 @@ const VALIDATION_KEYWORDS: &[&str] = &[
     "title",
 ];
 const ANNOTATION_KEYWORDS: &[&str] = &["description", "default", "examples", "title", "$ref"];
+const SIMPLE_TYPES_ALLOWED_PROPERTIES: &[&str] = &["type", "description"];
 const SUB_DEFINITIONS: &[&str] = &["items", "additionalProperties", "contains"];
 
 /// quicktype's `unsupportedBuiltins`.
@@ -125,6 +130,24 @@ pub struct Generator<'s> {
     index_cache: HashMap<u64, Option<Rc<Type>>>,
     order: order::CreationOrder,
     main_files: Vec<String>,
+}
+
+/// `table[key]` on one of typescript-json-schema's keyword tables, which are
+/// plain objects: `Object.prototype` names are found too.
+fn in_table(table: &[&str], key: &str) -> bool {
+    table.contains(&key) || js::is_object_prototype_key(key)
+}
+
+/// `expr.hasOwnProperty(key)`. A JSDoc tag named `hasOwnProperty` shadows
+/// the method with a string, and the call throws.
+fn has_own(o: &Obj, key: &str, expr: &str) -> Result<bool> {
+    let o = o.borrow();
+    if o.has("hasOwnProperty") {
+        return Err(Error::Generator(format!(
+            "{expr}.hasOwnProperty is not a function"
+        )));
+    }
+    Ok(o.has(key))
 }
 
 fn get(o: &Obj, k: &str) -> Option<Value> {
@@ -224,12 +247,22 @@ impl<'s> Generator<'s> {
         let symbols = s.symbols_at(&name_nodes)?;
         let types = s.types_at(&decls)?;
         for ((decl, symbol), node_type) in decls.iter().zip(symbols).zip(types) {
-            let (Some(symbol), Some(node_type)) = (symbol, node_type) else {
-                continue;
+            let Some(node_type) = node_type else { continue };
+            // A nameless `export default class {}` has no name to ask about;
+            // its symbol (`default`) is the one of its type.
+            let symbol = match symbol {
+                Some(symbol) => symbol,
+                None => match s.symbol_of_type(&node_type)? {
+                    Some(symbol) if decl.named("name").is_none() => symbol,
+                    _ => continue,
+                },
             };
             let name = text::strip_quoted_prefix(&g.fqn(&symbol)?);
-            let _ = decl;
-            if !g.user_symbols.iter().any(|(n, _)| *n == name) {
+            // `if (!userSymbols[name])` on a plain object: `Object.prototype`
+            // names count as present.
+            if !g.user_symbols.iter().any(|(n, _)| *n == name)
+                && !js::is_object_prototype_key(&name)
+            {
                 g.all_symbols.insert(name.clone(), Rc::clone(&node_type));
             }
             if name != "__proto__" {
@@ -276,6 +309,11 @@ impl<'s> Generator<'s> {
         set(&root, "definitions", Value::Object(Rc::clone(&definitions)));
         for (name, sym) in main {
             let Some(ty) = self.all_symbols.get(&name).cloned() else {
+                // `allSymbols[name]` is then `Object.prototype[name]`, which the
+                // patched `getTypeDefinition` calls `getSymbol()` on.
+                if js::is_object_prototype_key(&name) {
+                    return Err(Error::Generator("typ.getSymbol is not a function".into()));
+                }
                 continue;
             };
             let def = self.get_type_definition(
@@ -421,7 +459,15 @@ impl<'s> Generator<'s> {
         if let Some(target) = tuple_target {
             let flags = target.element_flags.clone();
             let elem_types = s.type_arguments(ty)?;
-            let labels: Vec<Option<String>> = match s.type_to_type_node(ty)? {
+            // `labeledElementDeclarations` is not exposed by TS 7; the labels
+            // come from the type printed as a node, without truncation or the
+            // alias name, and with a `readonly` operator unwrapped.
+            let mut node =
+                s.type_to_type_node(ty, NODE_BUILDER_NO_TRUNCATION | NODE_BUILDER_IN_TYPE_ALIAS)?;
+            while let Some(n) = node.clone().filter(|n| n.kind() == sk::TypeOperator) {
+                node = n.named("type");
+            }
+            let labels: Vec<Option<String>> = match node {
                 Some(n) if n.kind() == sk::TupleType => n
                     .named_list("elements")
                     .iter()
@@ -635,7 +681,7 @@ impl<'s> Generator<'s> {
             return Ok(Some(definition));
         };
         set(&def, "title", Value::String(name.clone()));
-        if def.borrow().has("ignore") {
+        if has_own(&def, "ignore", "definition")? {
             return Ok(None);
         }
         let initializer = match &prop.value_declaration {
@@ -852,7 +898,8 @@ impl<'s> Generator<'s> {
             if let Some(only) = schemas[0].as_object() {
                 let entries = only.borrow().entries();
                 for (k, v) in entries {
-                    if k == "description" && definition.borrow().has(&k) {
+                    has_own(only, &k, "schemas[0]")?;
+                    if k == "description" && has_own(definition, &k, "definition")? {
                         continue;
                     }
                     set(definition, &k, v);
@@ -1069,7 +1116,7 @@ impl<'s> Generator<'s> {
                 && !has(prop.flags, sf::Method)
                 && !union_flags.contains(&tf::Undefined)
                 && !union_flags.contains(&tf::Void)
-                && !def.borrow().has("ignore")
+                && !has_own(&def, "ignore", "def")?
             {
                 required.push(prop.name.clone());
             }
@@ -1160,7 +1207,7 @@ impl<'s> Generator<'s> {
         if let Some(prop) = &args.prop {
             let defs = Value::object();
             self.parse_comments_into_definition(Some(prop), &defs, &Value::object())?;
-            if defs.borrow().has("ignore") || defs.borrow().has("type") {
+            if has_own(&defs, "ignore", "defs")? || has_own(&defs, "type", "defs")? {
                 return Ok(Value::Object(defs));
             }
         }
@@ -1337,7 +1384,7 @@ impl<'s> Generator<'s> {
                 if let Some(ret) = returned.as_object() {
                     let entries = ret.borrow().entries();
                     for (k, v) in entries {
-                        if ANNOTATION_KEYWORDS.contains(&k.as_str()) {
+                        if in_table(ANNOTATION_KEYWORDS, &k) {
                             set(&r, &k, v);
                         }
                     }
@@ -1351,7 +1398,7 @@ impl<'s> Generator<'s> {
             .is_some_and(|v| v.truthy())
         {
             if let Some(ret) = returned.as_object() {
-                make_nullable(ret);
+                make_nullable(ret)?;
             }
         }
         Ok(returned)
@@ -1371,7 +1418,7 @@ fn add_simple_type(def: &Obj, t: &str) -> bool {
         .borrow()
         .keys()
         .iter()
-        .any(|k| k != "type" && k != "description")
+        .any(|k| !in_table(SIMPLE_TYPES_ALLOWED_PROPERTIES, k))
     {
         return false;
     }
@@ -1406,9 +1453,9 @@ fn add_simple_type(def: &Obj, t: &str) -> bool {
 }
 
 /// `makeNullable`.
-fn make_nullable(def: &Obj) {
+fn make_nullable(def: &Obj) -> Result<()> {
     if add_simple_type(def, "null") {
-        return;
+        return Ok(());
     }
     let union = get(def, "oneOf")
         .filter(Value::truthy)
@@ -1417,11 +1464,12 @@ fn make_nullable(def: &Obj) {
         let null = Value::object();
         set(&null, "type", Value::str("null"));
         a.borrow_mut().push(Value::Object(null));
-        return;
+        return Ok(());
     }
     let sub = Value::object();
     let entries = def.borrow().entries();
     for (k, v) in entries {
+        has_own(def, &k, "def")?;
         sub.borrow_mut().define(&k, v);
         def.borrow_mut().remove(&k);
     }
@@ -1432,6 +1480,7 @@ fn make_nullable(def: &Obj) {
         "anyOf",
         Value::array(vec![Value::Object(sub), Value::Object(null)]),
     );
+    Ok(())
 }
 
 /// `Object.keys(obj)` order for a list of distinct keys.
@@ -1451,14 +1500,14 @@ mod tests {
     fn nullable_simple_and_complex() {
         let d = Value::object();
         set(&d, "type", Value::str("string"));
-        make_nullable(&d);
+        make_nullable(&d).unwrap();
         assert_eq!(
             js::stringify(&Value::Object(d)),
             r#"{"type":["string","null"]}"#
         );
         let d = Value::object();
         set(&d, "$ref", Value::str("#/definitions/A"));
-        make_nullable(&d);
+        make_nullable(&d).unwrap();
         assert_eq!(
             js::stringify(&Value::Object(d)),
             r##"{"anyOf":[{"$ref":"#/definitions/A"},{"type":"null"}]}"##

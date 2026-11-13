@@ -15,8 +15,9 @@ for every input cannot be guaranteed: that would require replaying TS 5's checke
 likely.
 
 **Implemented** in `crates/quicktype-typescript-input` (§10), following §7. The refined creation-order replay
-closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on all 452 cases
-of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation).
+closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on all 474 cases
+of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation and
+22 `review-*` cases from the code review).
 §10 lists what is still known to diverge.
 
 ## 1. The reference pipeline
@@ -396,7 +397,12 @@ the full semantic check, against about 3 s for the reference CLI.
 * JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt), and tags may be
   inherited from base declarations where TS 5.9's checker-less `symbol.getJsDocTags()` did not inherit them.
 * JSDoc values that `require()` a module, and the `T[K]` index-signature branch that reads checker internals, are not
-  supported. Initializers outside the constant subset are reported as `exception evaluating initializer`.
+  supported. Initializers are evaluated from their syntax tree with JavaScript semantics (literals, templates,
+  unary/binary/logical/conditional operators, `typeof`/`void`); anything needing an environment is reported as
+  `exception evaluating initializer`, as `vm2` would for an unknown binding.
+* typescript-json-schema's plain-object lookups are reproduced where they surface (`Object.prototype` names as JSDoc
+  tags or type names, `__proto__`), but not every consequence of assigning `__proto__` (an inherited prototype that
+  later `for…in` loops would enumerate).
 * The libraries are TS 7's `lib.*.d.ts`: a script (non-module) input that merges with a DOM global can see
   different members or diagnostics.
 * Lone surrogates in TypeScript source text become U+FFFD.

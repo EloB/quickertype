@@ -1,0 +1,3 @@
+{
+  "error": "TypeScript error: File 'data.json' has an unsupported extension. The only supported extensions are '.ts', '.tsx', '.d.ts', '.cts', '.d.cts', '.mts', '.d.mts'.\n  The file is in the program because:\n    Root file specified for compilation"
+}
