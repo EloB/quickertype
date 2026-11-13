@@ -266,13 +266,9 @@ fn deep_queries_and_schemas_do_not_overflow() {
     assert!(builder.len() > 2 * depth);
 }
 
-/// A chain of 40,000 fragments, each spreading the next, is expanded in
-/// linear time (cycle detection once looked through every enclosing
-/// expansion at each spread). The reference takes about 0.5 s; the bound
-/// is generous for debug builds.
-#[test]
-fn long_fragment_chains_are_linear() {
-    let length = 40_000;
+/// The time `add_types` takes to expand a chain of `length` fragments,
+/// each spreading the next: the fastest of `runs` runs.
+fn chain_expansion_time(length: usize, runs: usize) -> std::time::Duration {
     let mut query = String::from("{ viewer { ...F0 } }\n");
     for i in 0..length {
         let next = if i + 1 < length {
@@ -284,19 +280,38 @@ fn long_fragment_chains_are_linear() {
     }
     let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
         .expect("the basic schema");
-    let mut input = GraphQlInput::new();
-    input.add_source_sync(GraphQlSourceData {
-        name: "Chain".to_owned(),
-        schema: parse_json(&schema_text, "GraphQL schema", None).unwrap(),
-        query,
-    });
-    let mut builder =
-        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
-    let start = std::time::Instant::now();
-    input.add_types_sync(&mut builder).unwrap();
-    let elapsed = start.elapsed();
+    (0..runs)
+        .map(|_| {
+            let mut input = GraphQlInput::new();
+            input.add_source_sync(GraphQlSourceData {
+                name: "Chain".to_owned(),
+                schema: parse_json(&schema_text, "GraphQL schema", None).unwrap(),
+                query: query.clone(),
+            });
+            let mut builder =
+                TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+            let start = std::time::Instant::now();
+            input.add_types_sync(&mut builder).unwrap();
+            start.elapsed()
+        })
+        .min()
+        .expect("at least one run")
+}
+
+/// A chain of fragments, each spreading the next, is expanded in linear
+/// time (cycle detection once looked through every enclosing expansion at
+/// each spread, which is quadratic). A wall-clock bound would fail on a
+/// loaded machine, so this compares chains of 10,000 and 40,000 fragments:
+/// linear work takes about 4 times as long for the longer one, quadratic
+/// work 16 times. Each takes the fastest of three runs, which keeps out
+/// most of the noise of other processes.
+#[test]
+fn long_fragment_chains_are_linear() {
+    let short = chain_expansion_time(10_000, 3);
+    let long = chain_expansion_time(40_000, 3);
+    let ratio = long.as_secs_f64() / short.as_secs_f64();
     assert!(
-        elapsed < std::time::Duration::from_secs(5),
-        "expanding the chain took {elapsed:?}"
+        ratio < 10.0,
+        "4 times the fragments took {ratio:.1} times as long ({short:?}, then {long:?})"
     );
 }
