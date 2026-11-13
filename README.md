@@ -1,5 +1,8 @@
 # quicktype (Rust)
 
+[![CI](https://github.com/EloB/quickertype/actions/workflows/ci.yml/badge.svg)](https://github.com/EloB/quickertype/actions/workflows/ci.yml)
+[![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/)
+
 A Rust port of [quicktype](https://github.com/glideapps/quicktype) with a single goal:
 **behave exactly like quicktype, only much faster.**
 
