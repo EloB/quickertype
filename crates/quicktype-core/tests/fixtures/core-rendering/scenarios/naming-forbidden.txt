@@ -1,0 +1,16 @@
+# Forbidden names: global keywords, per-namespace forbidden strings and
+# names, includeGlobalForbidden, the keyword namespace that is created once
+# per kind, and case-insensitive namers.
+input json TopLevel {"data": {"data": {"x": 1}}, "other": {"data": {"y": "s"}}, "Data": [1, 2], "type": "kw", "Type": 1, "TYPE": true, "self": null, "fooBar": 1, "foo_bar": 2, "foo-bar": 3, "FooBar": 4}
+
+render probe {"alphabetize": true, "probe": {"keywords": ["Data", "TopLevel", "self"]}}
+
+render probe {"probe": {"keywords": ["Data", "type"], "propGlobal": true, "propForbid": ["fooBar", "other"], "propForbidClass": true}}
+
+render probe {"probe": {"types": {"style": "pascal", "ci": true}, "keywords": ["DATA"], "props": {"style": "pascal", "ci": true}}}
+
+render probe {"probe": {"props": {"style": "camel", "fresh": true}}}
+
+render probe {"probe": {"props": null}}
+
+render rust {}

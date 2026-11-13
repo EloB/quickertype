@@ -1,0 +1,214 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      1,
+      false
+     ],
+     [
+      "b",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "c",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "line [\"x\", {\"ann\": \"inline\", \"s\": [\"😀\", {\"top\": \"TopLevel\"}]}, \"y\"]",
+    "annotate \"block\"",
+    "line [\"one\"]",
+    "indented",
+    "line [\"two\"]",
+    "end",
+    "end",
+    "line [\"after\"]",
+    "annotate \"empty\"",
+    "end",
+    "line [\"z\"]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "x😀TopLevely\none\n    two\nafter\nz\n",
+     "annotations": [
+      [
+       "inline",
+       0,
+       1,
+       0,
+       11
+      ],
+      [
+       "block",
+       1,
+       0,
+       3,
+       0
+      ],
+      [
+       "empty",
+       4,
+       0,
+       4,
+       0
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "lineonce [\"//\"]",
+    "lineonce [\"//\"]",
+    "line [\"//\"]",
+    "lineonce [\"//\"]",
+    "lineonce [\"a\", \"b\"]",
+    "lineonce [\"a\", \"b\"]",
+    "lineonce [{\"top\": \"TopLevel\"}]",
+    "lineonce [{\"top\": \"TopLevel\"}]",
+    "lineonce [[\"//\"]]",
+    "lineonce []",
+    "item \"x\"",
+    "lineonce [\"x\"]",
+    "line []"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "//\n//\nab\nab\nTopLevel\n//\n\nx\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "line [\"start\"]",
+    "blank 1",
+    "gathertwice",
+    "blank 2",
+    "line [\"gathered\"]",
+    "indented",
+    "line [\"inside\"]",
+    "end",
+    "blank 1",
+    "end",
+    "line [\"end\"]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "start\n\ngathered\n    inside\ngathered\n    inside\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "line [\"names\"]",
+    "line [{\"type\": 0}, \" \", {\"prop\": [0, \"a\"]}, \" \", {\"prop\": [0, \"b\"]}]",
+    "tostring [\"a\\nb\", {\"top\": \"TopLevel\"}]",
+    "tostring {\"mod\": \"wrap\", \"s\": {\"mod\": \"upper\", \"s\": {\"top\": \"TopLevel\"}}}"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "names\nTopLevel a b\n\"a\\nbTopLevel\"\n\"<TOPLEVEL>\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "emit-annotations"
+}

@@ -269,6 +269,11 @@ impl<'a> ConvenienceRendererCore<'a> {
         self.name_store.get(&t).copied()
     }
 
+    /// The name of the top-level `name` (`nameStoreView.getForTopLevel`).
+    pub fn top_level_name(&self, name: &str) -> Result<Name> {
+        defined(self.top_level_names.get(name).copied())
+    }
+
     /// The property names of a class, by JSON name, in sorted JSON name
     /// order (`_propertyNamesStoreView.get(o)`).
     pub fn property_names(&self, o: TypeRef) -> Result<&IndexMap<String, Name>> {

@@ -1,0 +1,12 @@
+# Name gathering from JSON (destructive): property names propagate down,
+# array items and map values get singular names (pluralize directly, so
+# "cookies" becomes "cooky"), union members share their union's names, and
+# ancestor and direct alternatives resolve collisions.
+input json TopLevel {"cookies": [{"flavor": "choc", "bakers": [{"name": "a"}]}], "people": [[{"age": 1}]], "data": {"items": {"x": {"age": 2, "name": "n"}}}, "mixed": [1, "two", {"three": 3}], "other": {"data": {"items": 1}}, "statuses": [{"code": 1}], "matrices": [{"cells": [{"v": true}]}]}
+pipeline {"inferMaps": true}
+
+render probe {}
+
+render probe {"alphabetize": true}
+
+render rust {}

@@ -1,0 +1,240 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "x",
+       [
+        "Averyveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongword then more"
+       ]
+      ],
+      [
+       "y",
+       [
+        "   "
+       ]
+      ]
+     ],
+     "description": [
+      "First line of the top-level description, long enough that word wrapping at ninety columns has to split it somewhere.\r\nSecond thirdfourth\n\n\tTabbed paragraph."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      1,
+      true
+     ],
+     [
+      "y",
+      1,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x",
+       "y"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     3,
+     2
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x",
+       "y"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "description-of 0",
+    "property-table 0",
+    "description [\"one\", \"\", \"two\"]",
+    "comments [\"plain\", {\"lines\": [\"a\", \"\", \"b\"]}, {\"descriptionBlock\": [\"desc\"]}, {\"customLines\": [\"custom\", \"*/ closing\", \"/* opening\"], \"beforeComment\": \"/**\", \"lineStart\": \" * \", \"afterComment\": \" */\"}]",
+    "commentlines [[\"{- nested -}\", \"x -}\"], {\"lineStart\": \"-- \", \"firstLineStart\": \"{-| \"}]",
+    "commentlines [[\"say \\\"hi\\\"\", \"path\\\\\", \"ends with quote\\\"\", \"escaped \\\\\\\"\", \"triple \\\"\\\"\\\" quotes\"], {\"beforeComment\": \"\\\"\\\"\\\"\", \"afterComment\": \"\\\"\\\"\\\"\", \"lineStart\": \"\", \"lineEnd\": \"\\\"\"}]",
+    "commentlines [[\"\", \"x\"], {\"lineStart\": \"  ##  \", \"lineEnd\": \"\"}]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// First line of the top-level description, long enough that word wrapping at ninety columns\n// has to split it somewhere.\n// Second\n// third\n// fourth\n//\n// Tabbed paragraph.\n//\n// Averyveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongword\n// then more\nx: \"x\"?;\ny: \"y\"?;\n// one\n//\n// two\n// plain\n\n// a\n//\n// b\n\n// desc\n\n/**\n * custom\n * * / closing\n * / * opening\n */\n\n{-| { - nested - }\n-- x - }\n\"\"\"\nsay \"hi\\\"\"\npath\\\\\"\nends with quote\\\"\"\nescaped \\\\\\\"\"\ntriple \\\"\\\"\\\" quotes\"\n\"\"\"\n  ##\n  ##  x\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "comment": "/// ",
+    "splice": true
+   },
+   "script": [
+    "commentlines [[\"ends with backslash\\\\\", \"\", \"fine\"], {}]",
+    "comments [{\"lines\": [\"two\\\\\"]}]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "/// ends with backslash\\.\n///\n/// fine\n/// two\\.\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "ignored by the probe"
+   ],
+   "probe": {},
+   "script": [
+    "line [\"the probe does not read leadingComments\"]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "the probe does not read leadingComments\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "string comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    },
+    {
+     "descriptionBlock": [
+      "block"
+     ]
+    },
+    {
+     "customLines": [
+      "custom"
+     ],
+     "lineStart": "// ",
+     "beforeComment": "//--",
+     "afterComment": "//--"
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "/// string comment\n\n/// line one\n/// line two\n\n/// block\n\n//--\n// custom\n//--\n\nuse serde::{Serialize, Deserialize};\n\n/// First line of the top-level description, long enough that word wrapping at ninety columns\n/// has to split it somewhere.\n/// Second\n/// third\n/// fourth\n///\n/// Tabbed paragraph.\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    ///\n    /// Averyveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongword\n    /// then more\n    pub x: Option<String>,\n\n    pub y: Option<String>,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n/// First line of the top-level description, long enough that word wrapping at ninety columns\n/// has to split it somewhere.\n/// Second\n/// third\n/// fourth\n///\n/// Tabbed paragraph.\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    ///\n    /// Averyveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongword\n    /// then more\n    pub x: Option<String>,\n\n    pub y: Option<String>,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "comments"
+}

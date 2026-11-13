@@ -1,0 +1,333 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "data",
+      4,
+      false
+     ],
+     [
+      "other",
+      6,
+      false
+     ],
+     [
+      "Data",
+      1,
+      false
+     ],
+     [
+      "type",
+      8,
+      false
+     ],
+     [
+      "Type",
+      2,
+      false
+     ],
+     [
+      "TYPE",
+      3,
+      false
+     ],
+     [
+      "self",
+      9,
+      false
+     ],
+     [
+      "fooBar",
+      2,
+      false
+     ],
+     [
+      "foo_bar",
+      2,
+      false
+     ],
+     [
+      "foo-bar",
+      2,
+      false
+     ],
+     [
+      "FooBar",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 2
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "data",
+      5,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "data",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "y",
+      8,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "keywords": [
+     "Data",
+     "TopLevel",
+     "self"
+    ]
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top PurpleTopLevel -> class #0\n\nclass PurpleTopLevel (TopLevel)\n    data <- \"Data\"\n    fluffyFooBar <- \"foo_bar\"\n    fooBar <- \"FooBar\"\n    other <- \"other\"\n    purpleFooBar <- \"fooBar\"\n    purpleType <- \"type\"\n    self <- \"self\"\n    topLevelData <- \"data\"\n    topLevelFooBar <- \"foo-bar\"\n    topLevelType <- \"Type\"\n    type <- \"TYPE\"\nclass Other (other)\n    data <- \"data\"\nclass OtherData (data)\n    y <- \"y\"\nclass TopLevelData (data)\n    data <- \"data\"\nclass DataData (data)\n    x <- \"x\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "keywords": [
+     "Data",
+     "type"
+    ],
+    "propGlobal": true,
+    "propForbid": [
+     "fooBar",
+     "other"
+    ],
+    "propForbidClass": true
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    topLevelData <- \"data\"\n    topLevelOther <- \"other\"\n    data <- \"Data\"\n    fluffyType <- \"type\"\n    purpleType <- \"Type\"\n    topLevelType <- \"TYPE\"\n    self <- \"self\"\n    fluffyFooBar <- \"fooBar\"\n    tentacledFooBar <- \"foo_bar\"\n    purpleFooBar <- \"foo-bar\"\n    topLevelFooBar <- \"FooBar\"\nclass TopLevelData (data)\n    data <- \"data\"\nclass DataData (data)\n    x <- \"x\"\nclass Other (other)\n    data <- \"data\"\nclass OtherData (data)\n    y <- \"y\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "types": {
+     "style": "pascal",
+     "ci": true
+    },
+    "keywords": [
+     "DATA"
+    ],
+    "props": {
+     "style": "pascal",
+     "ci": true
+    }
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    TopLevelData <- \"data\"\n    Other <- \"other\"\n    Data <- \"Data\"\n    PurpleType <- \"type\"\n    TopLevelType <- \"Type\"\n    Type <- \"TYPE\"\n    Self <- \"self\"\n    PurpleFooBar <- \"fooBar\"\n    FluffyFooBar <- \"foo_bar\"\n    TopLevelFooBar <- \"foo-bar\"\n    FooBar <- \"FooBar\"\nclass Other (other)\n    Data <- \"data\"\nclass OtherData (data)\n    Y <- \"y\"\nclass TopLevelData (data)\n    Data <- \"data\"\nclass DataData (data)\n    X <- \"x\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "props": {
+     "style": "camel",
+     "fresh": true
+    }
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    topLevelData <- \"data\"\n    other <- \"other\"\n    data <- \"Data\"\n    purpleType <- \"type\"\n    topLevelType <- \"Type\"\n    type <- \"TYPE\"\n    self <- \"self\"\n    purpleFooBar <- \"fooBar\"\n    fluffyFooBar <- \"foo_bar\"\n    topLevelFooBar <- \"foo-bar\"\n    fooBar <- \"FooBar\"\nclass Other (other)\n    data <- \"data\"\nclass OtherData (data)\n    y <- \"y\"\nclass TopLevelData (data)\n    data <- \"data\"\nclass DataData (data)\n    x <- \"x\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "props": null
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\nclass TopLevelData (data)\nclass DataData (data)\nclass Other (other)\nclass OtherData (data)\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    #[serde(rename = \"data\")]\n    pub top_level_data: TopLevelData,\n\n    pub other: Other,\n\n    #[serde(rename = \"Data\")]\n    pub data: Vec<i64>,\n\n    #[serde(rename = \"type\")]\n    pub fluffy_type: String,\n\n    #[serde(rename = \"Type\")]\n    pub purple_type: i64,\n\n    #[serde(rename = \"TYPE\")]\n    pub top_level_type: bool,\n\n    #[serde(rename = \"self\")]\n    pub top_level_self: Option<serde_json::Value>,\n\n    #[serde(rename = \"fooBar\")]\n    pub purple_foo_bar: i64,\n\n    #[serde(rename = \"foo_bar\")]\n    pub fluffy_foo_bar: i64,\n\n    #[serde(rename = \"foo-bar\")]\n    pub top_level_foo_bar: i64,\n\n    #[serde(rename = \"FooBar\")]\n    pub foo_bar: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Other {\n    pub data: OtherData,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct OtherData {\n    pub y: String,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevelData {\n    pub data: DataData,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct DataData {\n    pub x: i64,\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       35,
+       24,
+       35,
+       49
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "naming-forbidden"
+}

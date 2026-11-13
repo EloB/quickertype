@@ -1,0 +1,440 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "cookies",
+      1,
+      true
+     ],
+     [
+      "friends",
+      7,
+      true
+     ],
+     [
+      "owner",
+      10,
+      true
+     ],
+     [
+      "pets",
+      11,
+      true
+     ],
+     [
+      "union",
+      14,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "cookies"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     2,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "cookies"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 3
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "cookie"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "flavor",
+      4,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flavor",
+       "name",
+       "kind"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     6,
+     5
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "flavor",
+       "name",
+       "kind"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children",
+       "friends"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     8,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children",
+       "friends"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 9
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "person"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "children",
+      7,
+      true
+     ],
+     [
+      "name",
+      4,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "person"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     9,
+     5
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pets"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     12,
+     5
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pets"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 13
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Pet"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "kind",
+      4,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     19,
+     15,
+     5
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 16
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "b",
+      17,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "a",
+       "b"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     18,
+     5
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "a",
+       "b"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "union"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "a",
+      17,
+      true
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    cookies <- \"cookies\"?\n    friends <- \"friends\"?\n    owner <- \"owner\"?\n    pets <- \"pets\"?\n    union <- \"union\"?\nclass Cookie (cookie)\n    flavor <- \"flavor\"?\nclass Person (person)\n    children <- \"children\"?\n    name <- \"name\"?\nclass Pet (Pet)\n    kind <- \"kind\"?\nunion TopLevelUnion\n    Null <- null\n    PurpleUnion <- class\n    UnionElementArray <- array\nclass UnionElement (union)\n    b <- \"b\"?\nclass PurpleUnion (union)\n    a <- \"a\"?\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\nuse std::collections::HashMap;\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    pub cookies: Option<Vec<Cookie>>,\n\n    pub friends: Option<Vec<Person>>,\n\n    pub owner: Option<Person>,\n\n    pub pets: Option<HashMap<String, Pet>>,\n\n    #[serde(rename = \"union\")]\n    pub top_level_union: Option<TopLevelUnion>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Cookie {\n    pub flavor: Option<String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Person {\n    pub children: Option<Vec<Person>>,\n\n    pub name: Option<String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Pet {\n    pub kind: Option<String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum TopLevelUnion {\n    PurpleUnion(PurpleUnion),\n\n    UnionElementArray(Vec<UnionElement>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct UnionElement {\n    pub b: Option<i64>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct PurpleUnion {\n    pub a: Option<i64>,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "gather-names-schema"
+}

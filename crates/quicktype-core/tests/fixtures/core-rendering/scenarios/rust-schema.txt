@@ -1,0 +1,11 @@
+# The Rust renderer on schema features: descriptions, integer bounds for
+# integer-type conservative, enums with rename_all, unions with null,
+# recursive types (Box), top-level aliases.
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"small": {"type": "integer", "minimum": -5, "maximum": 100}, "half": {"type": "integer", "minimum": 0}, "big": {"type": "integer", "minimum": 0, "maximum": 3000000000}, "kebab": {"enum": ["one-two", "three-four"]}, "screaming": {"enum": ["ONE_TWO", "THREE"]}, "pascal": {"enum": ["OneTwo", "Three"]}, "mixed": {"enum": ["a b", "c-d", "eF"]}, "self": {"$ref": "#"}, "list": {"type": "array", "items": {"$ref": "#"}}, "maybeSelf": {"anyOf": [{"$ref": "#"}, {"type": "null"}]}, "recursiveUnion": {"anyOf": [{"$ref": "#"}, {"type": "string"}]}, "nullableRecursiveUnion": {"anyOf": [{"$ref": "#"}, {"type": "string"}, {"type": "null"}]}, "camelCaseProp": {"type": "string", "description": "A camel case property."}, "ünicode name": {"type": "boolean"}, "type": {"type": "string"}}, "required": ["small", "kebab", "self", "recursiveUnion"]}
+input schema Numbers {"type": "array", "items": {"type": "number"}}
+input schema Alias {"type": "string"}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}
+
+render rust {}
+render rust {"rendererOptions": {"integer-type": "force-i32", "skip-serializing-none": true, "density": "dense"}}
+render rust {"alphabetize": true, "rendererOptions": {"leading-comments": false}}

@@ -1,0 +1,12 @@
+# Colliding names: the first proposal that no other name in the group
+# proposes wins; the rest take the namer's prefixes (one sequence for the
+# whole group), then numeric suffixes.
+input json TopLevel {"x0": {"item": {"item": {"f0": 0}}}, "x1": {"item": {"item": {"f1": 1}}}, "x2": {"item": {"item": {"f2": 2}}}, "x3": {"item": {"item": {"f3": 3}}}, "x4": {"item": {"item": {"f4": 4}}}, "x5": {"item": {"item": {"f5": 5}}}, "x6": {"item": {"item": {"f6": 6}}}, "x7": {"item": {"item": {"f7": 7}}}, "x8": {"item": {"item": {"f8": 8}}}, "x9": {"item": {"item": {"f9": 9}}}, "x10": {"item": {"item": {"f10": 10}}}, "x11": {"item": {"item": {"f11": 11}}}, "x12": {"item": {"item": {"f12": 12}}}, "x13": {"item": {"item": {"f13": 13}}}, "x14": {"item": {"item": {"f14": 14}}}, "x15": {"item": {"item": {"f15": 15}}}}
+
+render probe {"alphabetize": true}
+
+render probe {"probe": {"types": {"style": "underscore", "prefixes": ["A", "B"]}}}
+
+render probe {"probe": {"types": {"style": "pascal", "prefixes": []}}}
+
+render rust {}

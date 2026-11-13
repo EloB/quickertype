@@ -1,0 +1,55 @@
+# Annotations record UTF-16 spans and never change the text; emitLineOnce
+# only deduplicates single-part lines (strings by value, names by identity);
+# gathered source keeps its items.
+input json TopLevel {"a": [1, 2], "b": {"c": "x"}}
+
+render probe {} script
+line ["x", {"ann": "inline", "s": ["😀", {"top": "TopLevel"}]}, "y"]
+annotate "block"
+line ["one"]
+indented
+line ["two"]
+end
+end
+line ["after"]
+annotate "empty"
+end
+line ["z"]
+end
+
+render probe {} script
+lineonce ["//"]
+lineonce ["//"]
+line ["//"]
+lineonce ["//"]
+lineonce ["a", "b"]
+lineonce ["a", "b"]
+lineonce [{"top": "TopLevel"}]
+lineonce [{"top": "TopLevel"}]
+lineonce [["//"]]
+lineonce []
+item "x"
+lineonce ["x"]
+line []
+end
+
+render probe {} script
+line ["start"]
+blank 1
+gathertwice
+blank 2
+line ["gathered"]
+indented
+line ["inside"]
+end
+blank 1
+end
+line ["end"]
+end
+
+render probe {} script
+line ["names"]
+line [{"type": 0}, " ", {"prop": [0, "a"]}, " ", {"prop": [0, "b"]}]
+tostring ["a\nb", {"top": "TopLevel"}]
+tostring {"mod": "wrap", "s": {"mod": "upper", "s": {"top": "TopLevel"}}}
+end

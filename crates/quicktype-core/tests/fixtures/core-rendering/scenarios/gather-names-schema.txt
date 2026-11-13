@@ -1,0 +1,7 @@
+# Name gathering from JSON Schema (not destructive): given names win over
+# inferred ones, titles and definition names are kept.
+input schema TopLevel {"type": "object", "properties": {"cookies": {"type": "array", "items": {"type": "object", "properties": {"flavor": {"type": "string"}}}}, "owner": {"$ref": "#/definitions/person"}, "friends": {"type": "array", "items": {"$ref": "#/definitions/person"}}, "pets": {"type": "object", "additionalProperties": {"type": "object", "title": "Pet", "properties": {"kind": {"type": "string"}}}}, "union": {"oneOf": [{"type": "object", "properties": {"a": {"type": "integer"}}}, {"type": "array", "items": {"type": "object", "properties": {"b": {"type": "integer"}}}}]}}, "definitions": {"person": {"type": "object", "properties": {"name": {"type": "string"}, "children": {"type": "array", "items": {"$ref": "#/definitions/person"}}}}}}
+
+render probe {}
+
+render rust {}

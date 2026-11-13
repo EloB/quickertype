@@ -1,0 +1,54 @@
+# Blank lines are requested with ensureBlankLine and only materialized before
+# the next item; they are prevented at the start of a file and after
+# preventBlankLine; indentation changes apply from the next line on.
+input json TopLevel {"a": 1}
+
+render probe {} script
+blank 2
+line ["first (no blank lines before it)"]
+blank 1
+blank 3
+line ["after three blank lines"]
+indent 1
+line ["indented"]
+line [""]
+line []
+blank 1
+line []
+line ["after a bare newline, then a blank"]
+prevent
+blank 2
+line ["prevented"]
+indent -1
+line ["dedented"]
+indented
+line ["block"]
+indented
+line ["nested ", {"top": "TopLevel"}]
+end
+end
+blank 1
+end
+
+render probe {"indentation": "\t"} script
+line ["tabs"]
+indented
+line ["a", "b", ["c", ["d"]]]
+blank 1
+line [{"nl": 1}, "x"]
+line ["y"]
+end
+end
+
+render probe {} script
+multiline "first\n    four\n\n        eight\n\ttab\n    \tspaces then tab\n   \nback"
+line ["after"]
+end
+
+render probe {} script
+multiline "a\n  two spaces"
+end
+
+render probe {} script
+indent 1
+end

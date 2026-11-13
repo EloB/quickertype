@@ -1,0 +1,163 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "blank 2",
+    "line [\"first (no blank lines before it)\"]",
+    "blank 1",
+    "blank 3",
+    "line [\"after three blank lines\"]",
+    "indent 1",
+    "line [\"indented\"]",
+    "line [\"\"]",
+    "line []",
+    "blank 1",
+    "line []",
+    "line [\"after a bare newline, then a blank\"]",
+    "prevent",
+    "blank 2",
+    "line [\"prevented\"]",
+    "indent -1",
+    "line [\"dedented\"]",
+    "indented",
+    "line [\"block\"]",
+    "indented",
+    "line [\"nested \", {\"top\": \"TopLevel\"}]",
+    "end",
+    "end",
+    "blank 1"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "first (no blank lines before it)\n\n\n\nafter three blank lines\n    indented\n    \n\n\n\n    after a bare newline, then a blank\n    prevented\ndedented\n    block\n        nested TopLevel\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "\t",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "line [\"tabs\"]",
+    "indented",
+    "line [\"a\", \"b\", [\"c\", [\"d\"]]]",
+    "blank 1",
+    "line [{\"nl\": 1}, \"x\"]",
+    "line [\"y\"]",
+    "end"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "tabs\n\tabcd\n\n\n\t\tx\n\t\ty\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "multiline \"first\\n    four\\n\\n        eight\\n\\ttab\\n    \\tspaces then tab\\n   \\nback\"",
+    "line [\"after\"]"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "first\n    four\n\n        eight\n    tab\n        spaces then tab\n\nback\nafter\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "multiline \"a\\n  two spaces\""
+   ],
+   "error": "Internal error: Indentation is not a multiple of 4.",
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "indent 1"
+   ],
+   "error": "Internal error: Cannot change indent for the first line",
+   "console": []
+  }
+ ],
+ "id": "emit-blank-lines"
+}
