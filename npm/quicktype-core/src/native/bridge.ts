@@ -4,6 +4,8 @@
 // run, and turning its outcome back into what the TypeScript engine would
 // have returned or thrown.
 
+import URI from "urijs";
+
 import {
     IssueAnnotationData,
     anyTypeIssueAnnotation,
@@ -11,6 +13,7 @@ import {
 } from "../Annotation.js";
 import type { InputData } from "../input/Inputs.js";
 import { JSONSchemaInput, Ref } from "../input/JSONSchemaInput.js";
+import { type PathElement, PathElementKind } from "../input/PathElement.js";
 import type { JSONSchemaStore } from "../input/JSONSchemaStore.js";
 import { messageError } from "../Messages.js";
 import type { RunContext } from "../Run.js";
@@ -126,20 +129,42 @@ function prepareSchemaInput(input: any, ctx: RunContext): JSONSchemaStore {
     return maybeSchemaStore;
 }
 
-/** Turns the engine's `Ref` placeholders back into `Ref`s. */
+/** How the engine sends a JSON Schema `Ref`: its address and path elements. */
+type RefPlaceholder = {
+    address?: string;
+    path: Array<{ kind: PathElementKind; key?: string; index?: number }>;
+};
+
+/** The `Ref` the engine sent as `placeholder`, rebuilt exactly. */
+function refFromPlaceholder(placeholder: RefPlaceholder): Ref {
+    const path = placeholder.path.map((e): PathElement => {
+        switch (e.kind) {
+            case PathElementKind.KeyOrIndex:
+                return { kind: PathElementKind.KeyOrIndex, key: e.key as string };
+            case PathElementKind.Type:
+                return { kind: PathElementKind.Type, index: e.index as number };
+            case PathElementKind.Root:
+                return { kind: PathElementKind.Root };
+            default:
+                return { kind: PathElementKind.Object };
+        }
+    });
+    const ref = new Ref(undefined, path);
+    // The address is already normalized; `new Ref` would normalize it once
+    // more, which decodes percent escapes a second time.
+    if (placeholder.address !== undefined) ref.addressURI = new URI(placeholder.address);
+    return ref;
+}
+
+/** Turns the engine's `Ref` (and other `toString()`) placeholders back into objects. */
 function rehydrateProperty(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(rehydrateProperty);
     if (value === null || typeof value !== "object") return value;
+    const ref = (value as any).__qtRef;
+    if (ref !== undefined) return refFromPlaceholder(ref);
     const display = (value as any).__qtDisplay;
     if (display !== undefined) {
         const text: string = display.display;
-        try {
-            const ref = Ref.parse(text);
-            if (ref.toString() === text) return ref;
-        } catch {
-            // Not a ref.
-        }
-
         return { toString: () => text };
     }
 

@@ -3,7 +3,7 @@
 // results (files, lines, annotations), errors (class, messageName,
 // message, properties) and console output.
 //
-//   node test/differential/run.mjs [--only REGEX] [--category corpus,inputs,api,stores,errors]
+//   node test/differential/run.mjs [--only REGEX] [--category corpus,inputs,api,stores,errors,robustness,fuzz]
 //                                  [--shards N] [--report FILE] [--show N]
 //
 // Each identical scenario is counted by the engine that produced it: on

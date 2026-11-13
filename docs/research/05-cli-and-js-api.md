@@ -562,8 +562,10 @@ type NativeRunResult = { files: [string, { lines: string[];
 ### 4.3 Errors
 
 * Rust returns `Err(JsValue)` in one of two forms:
-  * `{__qt: {kind, properties}}`. The properties are JSON, with `Ref` values encoded as `{__ref: "<Ref.toString()>"}`.
-    The facade rehydrates them (`Ref.parse`) and calls the **JS** `messageError(kind, properties)`. That function
+  * `{__qt: {kind, properties}}`. The properties are JSON, with `Ref` values encoded as `{__qtRef: {address, path}}`
+    (`addressURI.toString()`, absent without an address, and the path elements as TypeScript's `PathElement`s).
+    The facade rebuilds each `Ref` from them exactly (not by parsing its `toString()`, which cannot tell a key
+    containing `/` from two keys) and calls the **JS** `messageError(kind, properties)`. That function
     throws a real `QuickTypeError` (`Messages.ts:269-311`) with an identical `errorMessage`, `messageName`,
     `userMessage` and `properties`, and `instanceof` works. JS also does the template substitution, including the
     quirks below, so they are exact by construction:

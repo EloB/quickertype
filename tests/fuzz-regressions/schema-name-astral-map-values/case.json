@@ -1,0 +1,33 @@
+{
+  "description": "As schema-name-astral, for the values of a map that refer to another property's schema",
+  "foundIn": "cli",
+  "case": {
+    "lang": "go",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "😀",
+        "text": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"a\": {\n      \"type\": \"object\",\n      \"additionalProperties\": {\n        \"$ref\": \"#/properties/b\"\n      }\n    },\n    \"b\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"c\": {\n          \"type\": \"string\"\n        }\n      }\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "debug": [],
+    "cli": {
+      "schemaFile": "😀"
+    }
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "go",
+      "--src-lang",
+      "schema",
+      "in/😀"
+    ],
+    "dirs": [],
+    "exit": 0,
+    "files": []
+  }
+}

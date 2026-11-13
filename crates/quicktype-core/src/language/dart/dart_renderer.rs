@@ -13,6 +13,7 @@ use crate::attributes::constraints::{
 };
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
+use crate::messages::{JsErrorName, QuickTypeError};
 use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
 use crate::support::fast_hash::HashMap;
@@ -227,7 +228,18 @@ impl<'a> DartRenderer<'a> {
             let option_name_is_empty = self.options.part_name.is_empty();
             // FIXME: This should use a `Name`, not `modifySource`
             let part_name = if option_name_is_empty {
-                defined(self.top_levels().keys().next().cloned())?
+                match self.top_levels().keys().next() {
+                    Some(name) => name.clone(),
+                    // Without top-levels TypeScript modifies `undefined`, and
+                    // serializing that source fails. Nothing else in the
+                    // render can fail before.
+                    None => {
+                        return Err(QuickTypeError::js_exception(
+                            JsErrorName::TypeError,
+                            "Cannot read properties of undefined (reading 'kind')",
+                        ));
+                    }
+                }
             } else {
                 self.options.part_name.clone()
             };

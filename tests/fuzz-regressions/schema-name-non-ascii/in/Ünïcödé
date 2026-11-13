@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "_1": {
+      "$ref": "#/$defs/KeysMap"
+    }
+  },
+  "$defs": {
+    "KeysMap": {}
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "description": "Dart with use-freezed and no part name, but no top-levels (an empty Postman collection): TypeScript names the part after an undefined first top-level and fails serializing it with a TypeError",
+  "seed": 529341,
+  "foundIn": "api",
+  "case": {
+    "seed": 529341,
+    "lang": "dart",
+    "src": "postman",
+    "postman": "{}",
+    "rendererOptions": {
+      "use-freezed": true
+    },
+    "flags": {},
+    "api": {},
+    "debug": [],
+    "cli": {}
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "dart",
+      "--src-lang",
+      "postman",
+      "in/collection.json",
+      "--use-freezed"
+    ],
+    "dirs": [],
+    "exit": 1,
+    "files": []
+  }
+}

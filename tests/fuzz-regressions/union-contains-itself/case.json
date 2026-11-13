@@ -1,0 +1,34 @@
+{
+  "description": "A union that contains itself (anyOf [{}, $ref to itself]): TypeScript overflows the stack in UnionBuilder's attributesForTypes; the port must fail the same way instead of recursing until the native stack runs out",
+  "seed": 10882,
+  "foundIn": "api",
+  "case": {
+    "seed": 10882,
+    "lang": "typescript",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "TopLevel",
+        "text": "{\n  \"$ref\": \"#/$defs/ANALYSIS-PROPERTY\",\n  \"$defs\": {\n    \"ANALYSIS-PROPERTY\": {\n      \"anyOf\": [\n        {\n          \"$ref\": \"#/$defs/ANALYSIS-PROPERTY\"\n        },\n        {}\n      ]\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "cli": {}
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "typescript",
+      "--src-lang",
+      "schema",
+      "--top-level",
+      "TopLevel",
+      "in/schema.json"
+    ],
+    "dirs": [],
+    "exit": 1,
+    "files": []
+  }
+}

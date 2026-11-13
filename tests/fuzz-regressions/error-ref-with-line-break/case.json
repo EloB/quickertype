@@ -1,0 +1,35 @@
+{
+  "description": "A JSON Schema error whose ref has a line break in a property name: error.properties.ref must be a Ref (TypeScript's), though Ref.parse of its text drops the line break",
+  "seed": 201809,
+  "foundIn": "api",
+  "case": {
+    "seed": 201809,
+    "lang": "typescript-zod",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "TopLevel",
+        "text": "{\n  \"properties\": {\n    \"lat\": {\n      \"$ref\": \"#/definitions/series\"\n    }\n  },\n  \"definitions\": {\n    \"series\": {\n      \"properties\": {\n        \"Cod\": {\n          \"properties\": {\n            \"new\\nline\": {\n              \"required\": [\n                \"ab\"\n              ],\n              \"additionalProperties\": false\n            }\n          }\n        }\n      }\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "debug": [],
+    "cli": {}
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "typescript-zod",
+      "--src-lang",
+      "schema",
+      "--top-level",
+      "TopLevel",
+      "in/schema.json"
+    ],
+    "dirs": [],
+    "exit": 1,
+    "files": []
+  }
+}

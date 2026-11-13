@@ -1,0 +1,35 @@
+{
+  "description": "A JSON Schema whose address has no suffix and ends in a non-ASCII character (top-level name, file name): Ref.name drops the last UTF-16 unit, where the port truncated bytes and panicked off a char boundary",
+  "seed": 103425,
+  "foundIn": "cli",
+  "case": {
+    "seed": 103425,
+    "lang": "schema",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "Ünïcödé",
+        "text": "{\n  \"properties\": {\n    \"_1\": {\n      \"$ref\": \"#/$defs/KeysMap\"\n    }\n  },\n  \"$defs\": {\n    \"KeysMap\": {}\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "debug": [],
+    "cli": {
+      "schemaFile": "Ünïcödé"
+    }
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "schema",
+      "--src-lang",
+      "schema",
+      "in/Ünïcödé"
+    ],
+    "dirs": [],
+    "exit": 0,
+    "files": []
+  }
+}
