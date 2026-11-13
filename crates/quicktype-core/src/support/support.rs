@@ -81,19 +81,23 @@ pub fn indentation_string(level: usize) -> String {
     "  ".repeat(level)
 }
 
-/// A receiver for [`console_log`] lines.
+/// A receiver for console lines ([`console_log`], or [`console_warn`] and
+/// [`console_error`]).
 pub type ConsoleSink = Box<dyn FnMut(&str)>;
 
 thread_local! {
     static CONSOLE_SINK: RefCell<Option<ConsoleSink>> = const { RefCell::new(None) };
+    static CONSOLE_ERROR_SINK: RefCell<Option<ConsoleSink>> = const { RefCell::new(None) };
 }
 
-/// `console.log(line)`: quicktype's debug output (`--debug print-graph`,
-/// `print-reconstitution`, ...). Writes `line` and a newline to stdout,
-/// ignoring write errors, unless [`set_console_sink`] installed a sink on
-/// this thread.
-pub fn console_log(line: &str) {
-    let handled = CONSOLE_SINK.with(|sink| {
+/// Gives `line` to the sink installed in `sink`, or writes it and a newline
+/// to `write` (ignoring write errors).
+fn console_line(
+    sink: &'static std::thread::LocalKey<RefCell<Option<ConsoleSink>>>,
+    line: &str,
+    write: impl FnOnce(&[u8]),
+) {
+    let handled = sink.with(|sink| {
         if let Some(sink) = sink.borrow_mut().as_mut() {
             sink(line);
             true
@@ -102,10 +106,35 @@ pub fn console_log(line: &str) {
         }
     });
     if !handled {
-        let mut stdout = std::io::stdout().lock();
-        let _ = stdout.write_all(line.as_bytes());
-        let _ = stdout.write_all(b"\n");
+        let mut bytes = Vec::with_capacity(line.len() + 1);
+        bytes.extend_from_slice(line.as_bytes());
+        bytes.push(b'\n');
+        write(&bytes);
     }
+}
+
+/// `console.log(line)`: quicktype's debug output (`--debug print-graph`,
+/// `print-reconstitution`, ...). Writes `line` and a newline to stdout,
+/// ignoring write errors, unless [`set_console_sink`] installed a sink on
+/// this thread.
+pub fn console_log(line: &str) {
+    console_line(&CONSOLE_SINK, line, |bytes| {
+        let _ = std::io::stdout().lock().write_all(bytes);
+    });
+}
+
+/// `console.warn(line)`: a warning on stderr (ignoring write errors), or
+/// to the sink [`set_console_error_sink`] installed on this thread.
+pub fn console_warn(line: &str) {
+    console_error(line);
+}
+
+/// `console.error(line)`: like [`console_warn`]; Node writes both to
+/// stderr, unadorned.
+pub fn console_error(line: &str) {
+    console_line(&CONSOLE_ERROR_SINK, line, |bytes| {
+        let _ = std::io::stderr().lock().write_all(bytes);
+    });
 }
 
 /// Routes [`console_log`] output on this thread to `sink` (for tests and for
@@ -114,20 +143,41 @@ pub fn set_console_sink(sink: Option<ConsoleSink>) {
     CONSOLE_SINK.with(|s| *s.borrow_mut() = sink);
 }
 
-/// Runs `f` and returns everything it wrote with [`console_log`], one entry
-/// per line.
-pub fn capture_console<R>(f: impl FnOnce() -> R) -> (R, Vec<String>) {
+/// Routes [`console_warn`] and [`console_error`] output on this thread to
+/// `sink` (for tests and for the WebAssembly build), or back to stderr
+/// with `None`.
+pub fn set_console_error_sink(sink: Option<ConsoleSink>) {
+    CONSOLE_ERROR_SINK.with(|s| *s.borrow_mut() = sink);
+}
+
+/// Runs `f` with `sink`'s lines collected; returns them, one entry per line.
+fn capture_lines<R>(
+    sink: &'static std::thread::LocalKey<RefCell<Option<ConsoleSink>>>,
+    f: impl FnOnce() -> R,
+) -> (R, Vec<String>) {
     use std::rc::Rc;
     let lines = Rc::new(RefCell::new(Vec::new()));
     let sink_lines = Rc::clone(&lines);
-    let previous = CONSOLE_SINK.with(|s| s.borrow_mut().take());
-    set_console_sink(Some(Box::new(move |line| {
-        sink_lines.borrow_mut().push(line.to_owned())
-    })));
+    let previous = sink.with(|s| s.borrow_mut().take());
+    let collector: ConsoleSink =
+        Box::new(move |line| sink_lines.borrow_mut().push(line.to_owned()));
+    sink.with(|s| *s.borrow_mut() = Some(collector));
     let result = f();
-    set_console_sink(previous);
+    sink.with(|s| *s.borrow_mut() = previous);
     let lines = lines.borrow().clone();
     (result, lines)
+}
+
+/// Runs `f` and returns everything it wrote with [`console_log`], one entry
+/// per line.
+pub fn capture_console<R>(f: impl FnOnce() -> R) -> (R, Vec<String>) {
+    capture_lines(&CONSOLE_SINK, f)
+}
+
+/// Runs `f` and returns everything it wrote with [`console_warn`] and
+/// [`console_error`], one entry per line.
+pub fn capture_console_errors<R>(f: impl FnOnce() -> R) -> (R, Vec<String>) {
+    capture_lines(&CONSOLE_ERROR_SINK, f)
 }
 
 #[cfg(test)]
@@ -168,5 +218,18 @@ mod tests {
             console_log("two");
         });
         assert_eq!(lines, vec!["one", "two"]);
+    }
+
+    #[test]
+    fn console_streams_are_captured_separately() {
+        let (((), errors), logs) = capture_console(|| {
+            capture_console_errors(|| {
+                console_log("log");
+                console_warn("warn");
+                console_error("error");
+            })
+        });
+        assert_eq!(logs, ["log"]);
+        assert_eq!(errors, ["warn", "error"]);
     }
 }
