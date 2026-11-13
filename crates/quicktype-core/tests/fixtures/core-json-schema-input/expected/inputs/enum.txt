@@ -1,0 +1,39 @@
+resolving # relative to tests/inputs/schema/enum.schema# (tests/inputs/schema/enum.schema#)
+trying to fetch tests/inputs/schema/enum.schema
+successully fetched tests/inputs/schema/enum.schema
+resolved to # (tests/inputs/schema/enum.schema#)
+resolving # relative to tests/inputs/schema/enum.schema# (tests/inputs/schema/enum.schema#)
+resolved to # (tests/inputs/schema/enum.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 29 | 0 | given TopLevel ()
+1: intersection arr | children 11 | 1 | distance 2 arr ()
+2: intersection arr | children 9 | 2 | distance 4 arr ()
+3: intersection arr | children 5 | 3 | distance 7 arr ()
+4: string arr | 4 | distance 8 arr () | 3 enums: foo (1), ...
+5: union arr | children 4 | 5 | distance 8 arr ()
+6: intersection arr | children 8 | 6 | distance 7 arr ()
+7: integer | 7
+8: union arr | children 7 | 8 | distance 8 arr ()
+9: union arr | children 3,6 | 9 | distance 6 arr ()
+10: array | children 2 | 10
+11: union arr | children 10 | 11 | distance 3 arr ()
+12: intersection for | children 14 | 12 | distance 2 for ()
+13: string for | 13 | distance 3 for () | unrestricted
+14: union for | children 13 | 14 | distance 3 for ()
+15: intersection gve | children 17 | 15 | distance 2 gve ()
+16: string gve | 16 | distance 3 gve () | 3 enums: good (1), ...
+17: union gve | children 16 | 17 | distance 3 gve ()
+18: intersection lvc | children 20 | 18 | distance 2 lvc ()
+19: string lvc | 19 | distance 3 lvc () | 3 enums: lawful (1), ...
+20: union lvc | children 19 | 20 | distance 3 lvc ()
+21: intersection otherArr | children 26 | 21 | distance 2 otherArr ()
+22: intersection otherArr | children 24 | 22 | distance 4 otherArr ()
+23: string otherArr | 23 | distance 6 otherArr () | 3 enums: foo (1), ...
+24: union otherArr | children 23 | 24 | distance 6 otherArr ()
+25: array | children 22 | 25
+26: union otherArr | children 25 | 26 | distance 3 otherArr ()
+27: any | 27
+28: object TopLevel | children 1,12,15,18,21,27 | 28 | distance 1 TopLevel ()
+29: union TopLevel | children 28 | 29 | distance 1 TopLevel ()
+# attributes

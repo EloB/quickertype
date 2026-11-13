@@ -1,0 +1,15 @@
+resolving # relative to tests/inputs/schema/issue2680-top-level-array.schema# (tests/inputs/schema/issue2680-top-level-array.schema#)
+trying to fetch tests/inputs/schema/issue2680-top-level-array.schema
+successully fetched tests/inputs/schema/issue2680-top-level-array.schema
+resolved to # (tests/inputs/schema/issue2680-top-level-array.schema#)
+resolving # relative to tests/inputs/schema/issue2680-top-level-array.schema# (tests/inputs/schema/issue2680-top-level-array.schema#)
+resolved to # (tests/inputs/schema/issue2680-top-level-array.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 5 | 0 | given TopLevel ()
+1: intersection TopLevel | children 3 | 1 | distance 2 TopLevel ()
+2: integer | 2
+3: union TopLevel | children 2 | 3 | distance 4 TopLevel ()
+4: array | children 1 | 4
+5: union TopLevel | children 4 | 5 | distance 1 TopLevel ()
+# attributes

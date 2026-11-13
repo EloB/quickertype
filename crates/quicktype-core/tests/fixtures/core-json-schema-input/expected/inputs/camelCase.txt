@@ -1,0 +1,18 @@
+resolving # relative to tests/inputs/schema/camelCase.schema# (tests/inputs/schema/camelCase.schema#)
+trying to fetch tests/inputs/schema/camelCase.schema
+successully fetched tests/inputs/schema/camelCase.schema
+resolved to # (tests/inputs/schema/camelCase.schema#)
+resolving # relative to tests/inputs/schema/camelCase.schema# (tests/inputs/schema/camelCase.schema#)
+resolved to # (tests/inputs/schema/camelCase.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 8 | 0 | given TopLevel ()
+1: intersection myProperty | children 3 | 1 | distance 2 myProperty ()
+2: string _property | 2 | distance 3 myProperty,secondProperty () | unrestricted
+3: union myProperty | children 2 | 3 | distance 3 myProperty ()
+4: intersection secondProperty | children 5 | 4 | distance 2 secondProperty ()
+5: union secondProperty | children 2 | 5 | distance 3 secondProperty ()
+6: any | 6
+7: object TopLevel | children 1,4,6 | 7 | distance 1 TopLevel ()
+8: union TopLevel | children 7 | 8 | distance 1 TopLevel ()
+# attributes

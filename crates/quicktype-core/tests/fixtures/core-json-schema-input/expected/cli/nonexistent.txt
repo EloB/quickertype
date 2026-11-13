@@ -1,0 +1,6 @@
+resolving # relative to nonexistent.schema# (nonexistent.schema#)
+trying to fetch nonexistent.schema
+couldn't fetch nonexistent.schema
+trying to fetch nonexistent.schema
+couldn't fetch nonexistent.schema
+error: Could not fetch schema #, referred to from nonexistent.schema#

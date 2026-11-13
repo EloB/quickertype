@@ -1,0 +1,4 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema
+error: Value of type string is not valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema#

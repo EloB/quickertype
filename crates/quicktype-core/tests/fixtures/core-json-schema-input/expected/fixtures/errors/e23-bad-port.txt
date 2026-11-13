@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema#)
+error: Port "99999" is not a valid port

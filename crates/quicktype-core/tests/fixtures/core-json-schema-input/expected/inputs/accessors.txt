@@ -1,0 +1,32 @@
+resolving # relative to tests/inputs/schema/accessors.schema# (tests/inputs/schema/accessors.schema#)
+trying to fetch tests/inputs/schema/accessors.schema
+successully fetched tests/inputs/schema/accessors.schema
+resolved to # (tests/inputs/schema/accessors.schema#)
+resolving # relative to tests/inputs/schema/accessors.schema# (tests/inputs/schema/accessors.schema#)
+resolved to # (tests/inputs/schema/accessors.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 18 | 0 | given TopLevel ()
+1: intersection bar | children 3 | 1 | distance 2 bar ()
+2: string bar | 2 | distance 3 bar,foo () | unrestricted
+3: union bar | children 2 | 3 | distance 3 bar ()
+4: intersection enum | children 6 | 4 | distance 2 enum ()
+5: string enum | 5 | distance 3 enum () | 3 enums: red (1), ...
+6: union enum | children 5 | 6 | distance 3 enum ()
+7: intersection foo | children 8 | 7 | distance 2 foo ()
+8: union foo | children 2 | 8 | distance 3 foo ()
+9: intersection union | children 16 | 9 | distance 2 union ()
+10: intersection union | children 12 | 10 | distance 4 union ()
+11: bool | 11
+12: union union | children 11 | 12 | distance 5 union ()
+13: intersection union | children 15 | 13 | distance 4 union ()
+14: double | 14
+15: union union | children 14 | 15 | distance 5 union ()
+16: union union | children 10,13 | 16 | distance 3 union ()
+17: object TopLevel | children 1,4,7,9 | 17 | distance 1 TopLevel ()
+18: union TopLevel | children 17 | 18 | distance 1 TopLevel ()
+# attributes
+0 accessorNames [["union","unionization"],["enum","enumerification"],["foo",[["cs","Fu_uu"],["java","Goo"]]],["bar",[["go","Bah"],["*","barre"]]]]
+4 accessorNames [["red","fire"],["green","grass"]]
+10 unionMemberNames ["presence"]
+13 unionMemberNames ["amount"]

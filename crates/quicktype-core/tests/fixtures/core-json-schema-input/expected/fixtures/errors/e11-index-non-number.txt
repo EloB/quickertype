@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#)
+resolving #/arr/x relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: Trying to index array in schema with key that is not a number, but is x at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema#x

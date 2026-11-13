@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "constTypedArray": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "const": "x"
+    }
+  }
+}

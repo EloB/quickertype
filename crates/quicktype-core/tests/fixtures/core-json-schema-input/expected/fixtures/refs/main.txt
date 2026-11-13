@@ -1,0 +1,139 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+resolving sub/a.schema#/definitions/A relative to #/properties/a (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/a)
+trying to fetch sub/a.schema
+couldn't fetch sub/a.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema
+resolved to #/definitions/A (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#/definitions/A)
+resolving b.schema#/definitions/B relative to #/definitions/A/properties/b (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#/definitions/A/properties/b)
+trying to fetch b.schema
+couldn't fetch b.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+resolved to #/definitions/B (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B)
+resolving sub/a.schema# relative to #/properties/aRoot (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/aRoot)
+trying to fetch sub/a.schema
+couldn't fetch sub/a.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#)
+resolving ../c.schema#/x relative to #/properties/c (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#/properties/c)
+trying to fetch ../c.schema
+couldn't fetch ../c.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/c.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/c.schema
+resolved to #/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/c.schema#/x)
+resolving sub/b.schema#/definitions/B relative to #/properties/dotted (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/dotted)
+trying to fetch sub/b.schema
+couldn't fetch sub/b.schema
+resolved to #/definitions/B (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B)
+resolving #/definitions/list/0 relative to #/properties/item0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/item0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/list/0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/list/0)
+resolving #/definitions/Local relative to #/properties/local (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/local)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Local (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/Local)
+resolving # relative to #/properties/self (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/self)
+trying to fetch 
+couldn't fetch 
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+resolving sub/a.schema#/definitions/A relative to #properties/a (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/a)
+trying to fetch sub/a.schema
+couldn't fetch sub/a.schema
+resolved to #/definitions/A (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#/definitions/A)
+resolving sub/a.schema# relative to #properties/aRoot (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/aRoot)
+trying to fetch sub/a.schema
+couldn't fetch sub/a.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/a.schema#)
+resolving sub/b.schema#/definitions/B relative to #properties/dotted (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/dotted)
+trying to fetch sub/b.schema
+couldn't fetch sub/b.schema
+resolved to #/definitions/B (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B)
+resolving #/definitions/list/0 relative to #properties/item0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/item0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/list/0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/list/0)
+resolving #/definitions/Local relative to #properties/local (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/local)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Local (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/Local)
+resolving # relative to #properties/self (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/self)
+trying to fetch 
+couldn't fetch 
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#)
+resolving #/definitions/a~1b relative to #properties/slash (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/slash)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/a~1b (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/a~1b)
+resolving #/definitions/with%20space relative to #properties/space (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#properties/space)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/with%20space (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/with%20space)
+resolving #/definitions/a~1b relative to #/properties/slash (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/slash)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/a~1b (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/a~1b)
+resolving #/definitions/with%20space relative to #/properties/space (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/properties/space)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/with%20space (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/with%20space)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 51 | 0 | given TopLevel ()
+1: intersection a | children 2 | 1 | distance 2 a ()
+2: intersection A | children 12 | 2 | given A ()
+3: intersection b | children 4 | 3 | distance 2 b ()
+4: intersection B | children 9 | 4 | given B ()
+5: intersection B | children 7 | 5 | distance 2 B ()
+6: date-time B | 6 | distance 4 B ()
+7: union B | children 6 | 7 | distance 4 B ()
+8: array | children 5 | 8
+9: union B | children 8 | 9 | distance 1 B ()
+10: any | 10
+11: object A | children 3,10 | 11 | distance 1 A ()
+12: union A | children 11 | 12 | distance 1 A ()
+13: intersection aRoot | children 14 | 13 | distance 2 aRoot ()
+14: intersection ATitle | children 20 | 14 | given ATitle ()
+15: intersection c | children 16 | 15 | distance 2 c ()
+16: intersection c | children 18 | 16 | distance 2 c ()
+17: string c | 17 | distance 3 c () | 2 enums: one (1), ...
+18: union c | children 17 | 18 | distance 3 c ()
+19: object ATitle | children 15,10 | 19 | distance 1 ATitle ()
+20: union ATitle | children 19 | 20 | distance 1 ATitle ()
+21: intersection dotted | children 4 | 21 | distance 2 dotted ()
+22: intersection item0 | children 23 | 22 | distance 2 item0 ()
+23: intersection 0 | children 25 | 23 | distance 2 0 ()
+24: double | 24
+25: union 0 | children 24 | 25 | distance 3 0 ()
+26: intersection local | children 27 | 26 | distance 2 local ()
+27: intersection Local | children 29 | 27 | given Local () | a loc...
+28: string Local | 28 | distance 1 Local () | unrestricted
+29: union Local | children 28 | 29 | distance 1 Local ()
+30: intersection self | children 31 | 30 | distance 2 self ()
+31: intersection main | children 47 | 31 | distance 2 main ()
+32: intersection a | children 2 | 32 | distance 2 a ()
+33: intersection aRoot | children 14 | 33 | distance 2 aRoot ()
+34: intersection dotted | children 4 | 34 | distance 2 dotted ()
+35: intersection item0 | children 23 | 35 | distance 2 item0 ()
+36: intersection local | children 27 | 36 | distance 2 local ()
+37: intersection self | children 31 | 37 | distance 2 self ()
+38: intersection slash | children 39 | 38 | distance 2 slash ()
+39: intersection a~1b | children 41 | 39 | given a~1b ()
+40: integer | 40
+41: union a~1b | children 40 | 41 | distance 1 a~1b ()
+42: intersection space | children 43 | 42 | distance 2 space ()
+43: intersection with%20space | children 45 | 43 | given with%20space ()
+44: bool | 44
+45: union with%20space | children 44 | 45 | distance 1 with%20space ()
+46: object main | children 32,33,34,35,36,37,38,42,10 | 46 | distance 3 main ()
+47: union main | children 46 | 47 | distance 3 main ()
+48: intersection slash | children 39 | 48 | distance 2 slash ()
+49: intersection space | children 43 | 49 | distance 2 space ()
+50: object TopLevel | children 1,13,21,22,26,30,48,49,10 | 50 | distance 1 TopLevel ()
+51: union TopLevel | children 50 | 51 | distance 1 TopLevel ()
+# attributes

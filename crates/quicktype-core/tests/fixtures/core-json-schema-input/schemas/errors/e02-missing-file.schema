@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "x": {
+      "$ref": "other.json#/x"
+    }
+  }
+}

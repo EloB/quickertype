@@ -1,0 +1,69 @@
+resolving # relative to tests/inputs/schema/integer-string.schema# (tests/inputs/schema/integer-string.schema#)
+trying to fetch tests/inputs/schema/integer-string.schema
+successully fetched tests/inputs/schema/integer-string.schema
+resolved to # (tests/inputs/schema/integer-string.schema#)
+resolving # relative to tests/inputs/schema/integer-string.schema# (tests/inputs/schema/integer-string.schema#)
+resolved to # (tests/inputs/schema/integer-string.schema#)
+resolving #/properties/nullable relative to #/properties/arrNullable/items (tests/inputs/schema/integer-string.schema#/properties/arrNullable/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/nullable (tests/inputs/schema/integer-string.schema#/properties/nullable)
+resolving #/properties/one relative to #/properties/nullable/oneOf/1 (tests/inputs/schema/integer-string.schema#/properties/nullable/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/integer-string.schema#/properties/one)
+resolving #/properties/one relative to #/properties/arrOne/items (tests/inputs/schema/integer-string.schema#/properties/arrOne/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/integer-string.schema#/properties/one)
+resolving #/properties/one relative to #/properties/optional (tests/inputs/schema/integer-string.schema#/properties/optional)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/integer-string.schema#/properties/one)
+resolving #/properties/one relative to #/properties/unionWithInt/oneOf/1 (tests/inputs/schema/integer-string.schema#/properties/unionWithInt/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/integer-string.schema#/properties/one)
+resolving #/properties/one relative to #/properties/unionWithIntAndEnum/oneOf/1 (tests/inputs/schema/integer-string.schema#/properties/unionWithIntAndEnum/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/properties/one (tests/inputs/schema/integer-string.schema#/properties/one)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 35 | 0 | given TopLevel ()
+1: intersection arrNullable | children 13 | 1 | distance 2 arrNullable ()
+2: intersection arrNullable | children 3 | 2 | distance 4 arrNullable ()
+3: intersection integer-string | children 11 | 3 | distance 2 integer-string ()
+4: intersection integer-string | children 6 | 4 | distance 4 integer-string ()
+5: null | 5
+6: union integer-string | children 5 | 6 | distance 5 integer-string ()
+7: intersection integer-string | children 8 | 7 | distance 4 integer-string ()
+8: intersection integer-string | children 10 | 8 | distance 2 integer-string ()
+9: integer-string integer-string | 9 | distance 3 integer-string ()
+10: union integer-string | children 9 | 10 | distance 3 integer-string ()
+11: union integer-string | children 4,7 | 11 | distance 3 integer-string ()
+12: array | children 2 | 12
+13: union arrNullable | children 12 | 13 | distance 3 arrNullable ()
+14: intersection arrOne | children 17 | 14 | distance 2 arrOne ()
+15: intersection arrOne | children 8 | 15 | distance 4 arrOne ()
+16: array | children 15 | 16
+17: union arrOne | children 16 | 17 | distance 3 arrOne ()
+18: intersection optional | children 8 | 18 | distance 2 optional ()
+19: intersection unionWithInt | children 24 | 19 | distance 2 unionWithInt ()
+20: intersection unionWithInt | children 22 | 20 | distance 4 unionWithInt ()
+21: integer | 21
+22: union unionWithInt | children 21 | 22 | distance 5 unionWithInt ()
+23: intersection unionWithInt | children 8 | 23 | distance 4 unionWithInt ()
+24: union unionWithInt | children 20,23 | 24 | distance 3 unionWithInt ()
+25: intersection unionWithIntAndEnum | children 32 | 25 | distance 2 unionWithIntAndEnum ()
+26: intersection unionWithIntAndEnum | children 27 | 26 | distance 4 unionWithIntAndEnum ()
+27: union unionWithIntAndEnum | children 21 | 27 | distance 5 unionWithIntAndEnum ()
+28: intersection unionWithIntAndEnum | children 8 | 28 | distance 4 unionWithIntAndEnum ()
+29: intersection unionWithIntAndEnum | children 31 | 29 | distance 4 unionWithIntAndEnum ()
+30: string unionWithIntAndEnum | 30 | distance 5 unionWithIntAndEnum () | 1 enums: foo (1), ...
+31: union unionWithIntAndEnum | children 30 | 31 | distance 5 unionWithIntAndEnum ()
+32: union unionWithIntAndEnum | children 26,28,29 | 32 | distance 3 unionWithIntAndEnum ()
+33: any | 33
+34: object TopLevel | children 1,14,3,8,18,19,25,33 | 34 | distance 1 TopLevel ()
+35: union TopLevel | children 34 | 35 | distance 1 TopLevel ()
+# attributes

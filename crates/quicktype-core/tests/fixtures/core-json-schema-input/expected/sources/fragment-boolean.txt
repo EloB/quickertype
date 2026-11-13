@@ -1,0 +1,5 @@
+resolving #/definitions relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema
+resolved to #/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#/definitions)
+error: Schema value to get top-level types from must be an object, but is boolean, at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#/definitions

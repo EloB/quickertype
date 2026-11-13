@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "quicktypePropertyOrder": "betaalpha",
+  "properties": {
+    "alpha": {
+      "type": "string"
+    },
+    "beta": {
+      "type": "string"
+    },
+    "gamma": {
+      "type": "string"
+    }
+  }
+}

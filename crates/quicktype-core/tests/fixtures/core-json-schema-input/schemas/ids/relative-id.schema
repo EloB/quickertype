@@ -1,0 +1,9 @@
+{
+  "$id": "relative-id.schema",
+  "type": "object",
+  "properties": {
+    "p": {
+      "$ref": "other.schema#/definitions/P"
+    }
+  }
+}

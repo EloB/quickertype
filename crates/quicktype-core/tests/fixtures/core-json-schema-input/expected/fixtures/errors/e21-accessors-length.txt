@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema#)
+error: Accessor entry array must have the same number of entries as the oneOf at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema#/oneOf

@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema#)
+error: JSON Schema must specify at least one type at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema#

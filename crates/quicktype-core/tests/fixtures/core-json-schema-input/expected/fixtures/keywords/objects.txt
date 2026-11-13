@@ -1,0 +1,63 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 52 | 0 | given TopLevel () | A thing.
+1: intersection accessors | children 9 | 1 | distance 2 accessors ()
+2: intersection a | children 4 | 2 | distance 2 a ()
+3: string a | 3 | distance 3 a,b,described,inner,draft3,multiType,t () | unrestricted
+4: union a | children 3 | 4 | distance 3 a ()
+5: intersection b | children 6 | 5 | distance 2 b ()
+6: union b | children 3 | 6 | distance 3 b ()
+7: any | 7
+8: object accessors | children 2,5,7 | 8 | distance 3 accessors ()
+9: union accessors | children 8 | 9 | distance 3 accessors ()
+10: intersection additional | children 15 | 10 | distance 2 additional ()
+11: intersection additional | children 13 | 11 | distance 5 additional ()
+12: double | 12
+13: union additional | children 12 | 13 | distance 6 additional ()
+14: object additional | children 11 | 14 | distance 3 additional ()
+15: union additional | children 14 | 15 | distance 3 additional ()
+16: intersection closed | children 21 | 16 | distance 2 closed ()
+17: intersection z | children 19 | 17 | distance 2 z ()
+18: null | 18
+19: union z | children 18 | 19 | distance 3 z ()
+20: object closed | children 17 | 20 | distance 3 closed ()
+21: union closed | children 20 | 21 | distance 3 closed ()
+22: intersection described | children 23 | 22 | distance 2 described ()
+23: union described | children 3 | 23 | distance 3 described ()
+24: intersection describedObject | children 28 | 24 | distance 2 describedObject () | objec...
+25: intersection inner | children 26 | 25 | distance 2 inner ()
+26: union inner | children 3 | 26 | distance 3 inner ()
+27: object describedObject | children 25,7 | 27 | distance 3 describedObject () | prop descs: 1
+28: union describedObject | children 27 | 28 | distance 3 describedObject ()
+29: intersection draft3 | children 30 | 29 | distance 2 draft3 ()
+30: union draft3 | children 3 | 30 | distance 3 draft3 ()
+31: intersection multiType | children 33 | 31 | distance 2 multiType () | multi...
+32: integer | 32
+33: union multiType | children 32,3 | 33 | distance 3 multiType ()
+34: none | 34
+35: intersection patternMap | children 39 | 35 | distance 2 patternMap ()
+36: intersection patternMap | children 37 | 36 | distance 5 patternMap ()
+37: union patternMap | children 32 | 37 | distance 6 patternMap ()
+38: object patternMap | children 36 | 38 | distance 3 patternMap ()
+39: union patternMap | children 38 | 39 | distance 3 patternMap ()
+40: intersection TitledThing | children 44 | 40 | given TitledThing ()
+41: intersection t | children 42 | 41 | distance 2 t ()
+42: union t | children 3 | 42 | distance 3 t ()
+43: object TitledThing | children 41,7 | 43 | distance 1 TitledThing ()
+44: union TitledThing | children 43 | 44 | distance 1 TitledThing ()
+45: intersection unevaluated | children 50 | 45 | distance 2 unevaluated ()
+46: intersection unevaluated | children 48 | 46 | distance 5 unevaluated ()
+47: bool | 47
+48: union unevaluated | children 47 | 48 | distance 6 unevaluated ()
+49: object unevaluated | children 46 | 49 | distance 3 unevaluated ()
+50: union unevaluated | children 49 | 50 | distance 3 unevaluated ()
+51: object TopLevel | children 1,10,7,16,22,24,29,31,34,35,40,45 | 51 | distance 1 TopLevel () | prop descs: 3
+52: union TopLevel | children 51 | 52 | distance 1 TopLevel ()
+# attributes
+1 accessorNames [["a","renamedA"],["b",[["go","BGo"],["*","BStar"]]]]

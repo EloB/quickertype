@@ -1,0 +1,4 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema
+error: null is not a valid JSON Schema at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema#

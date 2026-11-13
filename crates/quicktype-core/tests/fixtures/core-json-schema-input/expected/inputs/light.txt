@@ -1,0 +1,27 @@
+resolving # relative to tests/inputs/schema/light.schema# (tests/inputs/schema/light.schema#)
+trying to fetch tests/inputs/schema/light.schema
+successully fetched tests/inputs/schema/light.schema
+resolved to # (tests/inputs/schema/light.schema#)
+resolving # relative to tests/inputs/schema/light.schema# (tests/inputs/schema/light.schema#)
+resolved to # (tests/inputs/schema/light.schema#)
+resolving #/$defs/LightParams relative to #/properties/LightParams (tests/inputs/schema/light.schema#/properties/LightParams)
+trying to fetch 
+couldn't fetch 
+resolved to #/$defs/LightParams (tests/inputs/schema/light.schema#/$defs/LightParams)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 13 | 0 | given TopLevel ()
+1: intersection LightParams | children 2 | 1 | distance 2 LightParams ()
+2: intersection LightParams | children 11 | 2 | given LightParams ()
+3: intersection app_id | children 5 | 3 | distance 2 app_id ()
+4: string app_id | 4 | distance 3 app_id,outlet_id,rgba () | unrestricted
+5: union app_id | children 4 | 5 | distance 3 app_id ()
+6: intersection outlet_id | children 7 | 6 | distance 2 outlet_id ()
+7: union outlet_id | children 4 | 7 | distance 3 outlet_id ()
+8: intersection rgba | children 9 | 8 | distance 2 rgba ()
+9: union rgba | children 4 | 9 | distance 3 rgba ()
+10: object LightParams | children 3,6,8 | 10 | distance 1 LightParams ()
+11: union LightParams | children 10 | 11 | distance 1 LightParams ()
+12: object TopLevel | children 1 | 12 | distance 1 TopLevel ()
+13: union TopLevel | children 12 | 13 | distance 1 TopLevel ()
+# attributes

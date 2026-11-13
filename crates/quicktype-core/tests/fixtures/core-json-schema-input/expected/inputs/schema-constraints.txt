@@ -1,0 +1,19 @@
+resolving # relative to tests/inputs/schema/schema-constraints.schema# (tests/inputs/schema/schema-constraints.schema#)
+trying to fetch tests/inputs/schema/schema-constraints.schema
+successully fetched tests/inputs/schema/schema-constraints.schema
+resolved to # (tests/inputs/schema/schema-constraints.schema#)
+resolving # relative to tests/inputs/schema/schema-constraints.schema# (tests/inputs/schema/schema-constraints.schema#)
+resolved to # (tests/inputs/schema/schema-constraints.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 9 | 0 | given TopLevel ()
+1: intersection minMaxLength | children 3 | 1 | distance 2 minMaxLength ()
+2: string minMaxLength | 2 | distance 3 minMaxLength () | 5-5 | unrestricted
+3: union minMaxLength | children 2 | 3 | distance 3 minMaxLength ()
+4: intersection percent | children 6 | 4 | distance 2 percent ()
+5: double | 5 | 0-1
+6: union percent | children 5 | 6 | distance 3 percent ()
+7: any | 7
+8: object TopLevel | children 1,4,7 | 8 | distance 1 TopLevel ()
+9: union TopLevel | children 8 | 9 | distance 1 TopLevel ()
+# attributes

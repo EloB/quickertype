@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#)
+resolving #/definitions/Nope relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#/properties/x)
+trying to fetch 
+couldn't fetch 
+error: Key Nope not in schema object at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema#Nope

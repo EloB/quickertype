@@ -1,0 +1,9 @@
+definitions:
+  Base: &base
+    type: object
+    properties:
+      id: {type: integer}
+type: object
+properties:
+  first: *base
+  second: *base
