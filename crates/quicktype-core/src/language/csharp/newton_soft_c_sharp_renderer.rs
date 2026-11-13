@@ -898,7 +898,7 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
 
                 self.emit_line_parts(vec![
                     "if (".into(),
-                    array_intercalate(sl![" && "], conditions).into(),
+                    array_intercalate(" && ".into(), conditions).into(),
                     ")".into(),
                 ]);
                 self.emit_block(
@@ -936,7 +936,7 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
 
                 self.emit_line_parts(vec![
                     "if (".into(),
-                    array_intercalate(sl![" && "], conditions).into(),
+                    array_intercalate(" && ".into(), conditions).into(),
                     ")".into(),
                 ]);
                 self.emit_block(
