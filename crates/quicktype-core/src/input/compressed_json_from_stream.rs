@@ -25,7 +25,7 @@
 //! byte order mark is not stripped and is a syntax error, as in the CLI.
 
 use super::compressed_json::{CompressedJson, ParseError, Value};
-use crate::messages::Result;
+use crate::messages::{JsErrorName, JsException, Result};
 
 impl CompressedJson {
     /// `CompressedJSONFromStream.parse(readStream)`: reads a sample with the
@@ -36,12 +36,16 @@ impl CompressedJson {
     /// ```
     /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
     /// use quicktype_core::input::compressed_json::{CompressedJson, ParseError, Value};
+    /// use quicktype_core::messages::{JsErrorName, JsException};
     ///
     /// let mut cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
     /// assert_eq!(cjson.parse_stream(b"1.0"), Ok(Value::Double));
     /// assert_eq!(
     ///     cjson.parse_stream(b"[1 2]"),
-    ///     Err(ParseError::Syntax("Parser cannot parse input: expected ','".to_owned()))
+    ///     Err(ParseError::Js(JsException::new(
+    ///         JsErrorName::Error,
+    ///         "Parser cannot parse input: expected ','"
+    ///     )))
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
@@ -91,8 +95,9 @@ struct Tokenizer<'a> {
     cjson: &'a mut CompressedJson,
 }
 
+/// stream-json's `Error` with `message`.
 fn syntax(message: &str) -> ParseError {
-    ParseError::Syntax(message.to_owned())
+    ParseError::Js(JsException::new(JsErrorName::Error, message))
 }
 
 /// `TERM` and the whitespace the parser skips: space, tab, LF and CR only.

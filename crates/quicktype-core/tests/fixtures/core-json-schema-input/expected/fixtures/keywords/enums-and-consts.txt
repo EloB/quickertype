@@ -1,0 +1,40 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 29 | 0 | given TopLevel ()
+1: intersection constBool | children 3 | 1 | distance 2 constBool ()
+2: bool | 2
+3: union constBool | children 2 | 3 | distance 3 constBool ()
+4: intersection constInteger | children 6 | 4 | distance 2 constInteger ()
+5: integer | 5
+6: union constInteger | children 5 | 6 | distance 3 constInteger ()
+7: intersection constNumber | children 9 | 7 | distance 2 constNumber ()
+8: double | 8
+9: union constNumber | children 8 | 9 | distance 3 constNumber ()
+10: intersection constString | children 12 | 10 | distance 2 constString ()
+11: string constString | 11 | distance 3 constString () | 1 enums: widget (1), ...
+12: union constString | children 11 | 12 | distance 3 constString ()
+13: intersection enumWithValues | children 15 | 13 | distance 2 enumWithValues ()
+14: string enumWithValues | 14 | distance 3 enumWithValues () | 2 enums: red (1), ...
+15: union enumWithValues | children 14 | 15 | distance 3 enumWithValues ()
+16: intersection intFloatEnum | children 17 | 16 | distance 2 intFloatEnum ()
+17: union intFloatEnum | children 8,5 | 17 | distance 3 intFloatEnum ()
+18: intersection mixedEnum | children 21 | 18 | distance 2 mixedEnum ()
+19: null | 19
+20: string mixedEnum | 20 | distance 3 mixedEnum () | 1 enums: a (1), ...
+21: union mixedEnum | children 2,8,5,19,20 | 21 | distance 3 mixedEnum ()
+22: intersection objectEnum | children 23 | 22 | distance 2 objectEnum ()
+23: union objectEnum | children 19 | 23 | distance 3 objectEnum ()
+24: intersection typedEnum | children 26 | 24 | distance 2 typedEnum ()
+25: string typedEnum | 25 | distance 3 typedEnum () | 1 enums: x (1), ...
+26: union typedEnum | children 19,25 | 26 | distance 3 typedEnum ()
+27: any | 27
+28: object TopLevel | children 1,4,7,10,13,16,18,22,24,27 | 28 | distance 1 TopLevel ()
+29: union TopLevel | children 28 | 29 | distance 1 TopLevel ()
+# attributes
+13 enumValues [["red","RED"],["green",[["go","Green"],["*","GREEN"]]]]

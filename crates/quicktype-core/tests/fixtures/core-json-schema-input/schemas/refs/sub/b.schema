@@ -1,0 +1,11 @@
+{
+  "definitions": {
+    "B": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

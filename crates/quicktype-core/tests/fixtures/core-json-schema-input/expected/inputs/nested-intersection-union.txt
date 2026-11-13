@@ -1,0 +1,67 @@
+resolving # relative to tests/inputs/schema/nested-intersection-union.schema# (tests/inputs/schema/nested-intersection-union.schema#)
+trying to fetch tests/inputs/schema/nested-intersection-union.schema
+successully fetched tests/inputs/schema/nested-intersection-union.schema
+resolved to # (tests/inputs/schema/nested-intersection-union.schema#)
+resolving # relative to tests/inputs/schema/nested-intersection-union.schema# (tests/inputs/schema/nested-intersection-union.schema#)
+resolved to # (tests/inputs/schema/nested-intersection-union.schema#)
+resolving #/definitions/Message relative to #/properties/input/items/oneOf/0 (tests/inputs/schema/nested-intersection-union.schema#/properties/input/items/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Message (tests/inputs/schema/nested-intersection-union.schema#/definitions/Message)
+resolving #/definitions/Item relative to #/properties/input/items/oneOf/1 (tests/inputs/schema/nested-intersection-union.schema#/properties/input/items/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Item (tests/inputs/schema/nested-intersection-union.schema#/definitions/Item)
+resolving #/definitions/FunctionOutput relative to #/definitions/Item/oneOf/0 (tests/inputs/schema/nested-intersection-union.schema#/definitions/Item/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/FunctionOutput (tests/inputs/schema/nested-intersection-union.schema#/definitions/FunctionOutput)
+resolving #/definitions/BaseItem relative to #/definitions/FunctionOutput/allOf/0 (tests/inputs/schema/nested-intersection-union.schema#/definitions/FunctionOutput/allOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/BaseItem (tests/inputs/schema/nested-intersection-union.schema#/definitions/BaseItem)
+resolving #/definitions/ReasoningItem relative to #/definitions/Item/oneOf/1 (tests/inputs/schema/nested-intersection-union.schema#/definitions/Item/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/ReasoningItem (tests/inputs/schema/nested-intersection-union.schema#/definitions/ReasoningItem)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 37 | 0 | given TopLevel ()
+1: intersection input | children 35 | 1 | distance 2 input ()
+2: intersection input | children 33 | 2 | distance 4 input ()
+3: intersection input | children 4 | 3 | distance 7 input ()
+4: intersection Message | children 10 | 4 | given Message ()
+5: intersection content | children 7 | 5 | distance 2 content ()
+6: string content | 6 | distance 3 content,id,output,summary () | unrestricted
+7: union content | children 6 | 7 | distance 3 content ()
+8: any | 8
+9: object Message | children 5,8 | 9 | distance 1 Message ()
+10: union Message | children 9 | 10 | distance 1 Message ()
+11: intersection input | children 12 | 11 | distance 7 input ()
+12: intersection Item | children 32 | 12 | given Item ()
+13: intersection Item | children 14 | 13 | distance 2 Item ()
+14: intersection FunctionOutput | children 15,21 | 14 | given FunctionOutput ()
+15: intersection FunctionOutput | children 16 | 15 | distance 2 FunctionOutput ()
+16: intersection BaseItem | children 20 | 16 | given BaseItem ()
+17: intersection id | children 18 | 17 | distance 2 id ()
+18: union id | children 6 | 18 | distance 3 id ()
+19: object BaseItem | children 17,8 | 19 | distance 1 BaseItem ()
+20: union BaseItem | children 19 | 20 | distance 1 BaseItem ()
+21: intersection FunctionOutput | children 25 | 21 | distance 2 FunctionOutput ()
+22: intersection output | children 23 | 22 | distance 2 output ()
+23: union output | children 6 | 23 | distance 3 output ()
+24: object FunctionOutput | children 22,8 | 24 | distance 3 FunctionOutput ()
+25: union FunctionOutput | children 24 | 25 | distance 3 FunctionOutput ()
+26: intersection Item | children 27 | 26 | distance 2 Item ()
+27: intersection ReasoningItem | children 31 | 27 | given ReasoningItem ()
+28: intersection summary | children 29 | 28 | distance 2 summary ()
+29: union summary | children 6 | 29 | distance 3 summary ()
+30: object ReasoningItem | children 28,8 | 30 | distance 1 ReasoningItem ()
+31: union ReasoningItem | children 30 | 31 | distance 1 ReasoningItem ()
+32: union Item | children 13,26 | 32 | distance 1 Item ()
+33: union input | children 3,11 | 33 | distance 6 input ()
+34: array | children 2 | 34
+35: union input | children 34 | 35 | distance 3 input ()
+36: object TopLevel | children 1 | 36 | distance 1 TopLevel ()
+37: union TopLevel | children 36 | 37 | distance 1 TopLevel ()
+# attributes

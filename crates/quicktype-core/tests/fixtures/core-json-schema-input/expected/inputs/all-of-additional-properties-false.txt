@@ -1,0 +1,38 @@
+resolving # relative to tests/inputs/schema/all-of-additional-properties-false.schema# (tests/inputs/schema/all-of-additional-properties-false.schema#)
+trying to fetch tests/inputs/schema/all-of-additional-properties-false.schema
+successully fetched tests/inputs/schema/all-of-additional-properties-false.schema
+resolved to # (tests/inputs/schema/all-of-additional-properties-false.schema#)
+resolving # relative to tests/inputs/schema/all-of-additional-properties-false.schema# (tests/inputs/schema/all-of-additional-properties-false.schema#)
+resolved to # (tests/inputs/schema/all-of-additional-properties-false.schema#)
+resolving #/definitions/Income relative to # (tests/inputs/schema/all-of-additional-properties-false.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Income (tests/inputs/schema/all-of-additional-properties-false.schema#/definitions/Income)
+resolving #/definitions/AmountAndFrequency relative to #/definitions/Income/allOf/0 (tests/inputs/schema/all-of-additional-properties-false.schema#/definitions/Income/allOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/AmountAndFrequency (tests/inputs/schema/all-of-additional-properties-false.schema#/definitions/AmountAndFrequency)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 2,12 | 1 | given TopLevel ()
+2: intersection TopLevel | children 3 | 2 | distance 2 TopLevel ()
+3: intersection AmountAndFrequency | children 11 | 3 | given AmountAndFrequency ()
+4: intersection amount | children 6 | 4 | distance 2 amount ()
+5: double | 5
+6: union amount | children 5 | 6 | distance 3 amount ()
+7: intersection frequency | children 9 | 7 | distance 2 frequency ()
+8: string frequency | 8 | distance 3 frequency () | 3 enums: Weekly (1), ...
+9: union frequency | children 8 | 9 | distance 3 frequency ()
+10: object AmountAndFrequency | children 4,7 | 10 | distance 1 AmountAndFrequency ()
+11: union AmountAndFrequency | children 10 | 11 | distance 1 AmountAndFrequency ()
+12: intersection TopLevel | children 20 | 12 | distance 2 TopLevel ()
+13: intersection description | children 15 | 13 | distance 2 description ()
+14: string description | 14 | distance 3 description () | unrestricted
+15: union description | children 14 | 15 | distance 3 description ()
+16: intersection type | children 18 | 16 | distance 2 type ()
+17: string type | 17 | distance 3 type () | 2 enums: GrossSalaryAmount (1), ...
+18: union type | children 17 | 18 | distance 3 type ()
+19: object TopLevel | children 13,16 | 19 | distance 3 TopLevel ()
+20: union TopLevel | children 19 | 20 | distance 3 TopLevel ()
+# attributes

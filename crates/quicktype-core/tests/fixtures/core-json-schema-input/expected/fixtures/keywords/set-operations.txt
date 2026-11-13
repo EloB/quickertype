@@ -1,0 +1,77 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#)
+resolving #/definitions/O relative to #/properties/all/allOf/0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/properties/all/allOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/O (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/definitions/O)
+resolving #/definitions/S relative to #/properties/one/oneOf/0 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/properties/one/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/S (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/definitions/S)
+resolving #/definitions/N relative to #/properties/one/oneOf/1 (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/properties/one/oneOf/1)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/N (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/definitions/N)
+resolving #/definitions/O relative to #/properties/refWithType (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/properties/refWithType)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/O (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema#/definitions/O)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 49 | 0 | given TopLevel ()
+1: intersection all | children 2,10 | 1 | distance 2 all ()
+2: intersection all | children 3 | 2 | distance 4 all ()
+3: intersection O | children 9 | 3 | given O ()
+4: intersection o | children 6 | 4 | distance 2 o ()
+5: string S | 5 | distance 1 S () | unrestricted
+6: union o | children 5 | 6 | distance 3 o ()
+7: any | 7
+8: object O | children 4,7 | 8 | distance 1 O ()
+9: union O | children 8 | 9 | distance 1 O ()
+10: intersection all | children 19 | 10 | distance 4 all ()
+11: null | 11
+12: double | 12
+13: integer | 13
+14: bool | 14
+15: array | children 7 | 15
+16: intersection extra | children 17 | 16 | distance 2 extra ()
+17: union extra | children 13 | 17 | distance 3 extra ()
+18: object all | children 16,7 | 18 | distance 5 all ()
+19: union all | children 15,14,12,13,11,18,5 | 19 | distance 5 all ()
+20: intersection any | children 25 | 20 | distance 2 any ()
+21: intersection any | children 22 | 21 | distance 4 any ()
+22: union any | children 5 | 22 | distance 5 any ()
+23: intersection any | children 24 | 23 | distance 4 any ()
+24: union any | children 11 | 24 | distance 5 any ()
+25: union any | children 21,23 | 25 | distance 3 any ()
+26: intersection nested | children 36 | 26 | distance 2 nested ()
+27: intersection nested | children 32 | 27 | distance 4 nested ()
+28: intersection nested | children 29 | 28 | distance 6 nested ()
+29: union nested | children 5 | 29 | distance 7 nested ()
+30: intersection nested | children 31 | 30 | distance 6 nested ()
+31: union nested | children 13 | 31 | distance 7 nested ()
+32: union nested | children 28,30 | 32 | distance 5 nested ()
+33: intersection nested | children 34 | 33 | distance 4 nested ()
+34: intersection nested | children 35 | 34 | distance 6 nested ()
+35: union nested | children 14 | 35 | distance 7 nested ()
+36: union nested | children 27,33 | 36 | distance 3 nested ()
+37: intersection one | children 44 | 37 | distance 2 one () | one o...
+38: intersection one | children 39 | 38 | distance 4 one ()
+39: intersection S | children 40 | 39 | given S ()
+40: union S | children 5 | 40 | distance 1 S ()
+41: intersection one | children 42 | 41 | distance 4 one ()
+42: intersection N | children 43 | 42 | given N ()
+43: union N | children 12 | 43 | distance 1 N ()
+44: union one | children 38,41 | 44 | distance 3 one ()
+45: intersection refWithType | children 3,47 | 45 | distance 2 refWithType ()
+46: object refWithType | children 7 | 46 | distance 3 refWithType ()
+47: union refWithType | children 46 | 47 | distance 3 refWithType ()
+48: object TopLevel | children 1,20,26,37,45,7 | 48 | distance 1 TopLevel () | prop descs: 1
+49: union TopLevel | children 48 | 49 | distance 1 TopLevel ()
+# attributes
+38 unionMemberNames ["Str"]
+41 unionMemberNames [[["go","Num"]]]

@@ -1,0 +1,52 @@
+resolving # relative to tests/inputs/schema/date-time.schema# (tests/inputs/schema/date-time.schema#)
+trying to fetch tests/inputs/schema/date-time.schema
+successully fetched tests/inputs/schema/date-time.schema
+resolved to # (tests/inputs/schema/date-time.schema#)
+resolving # relative to tests/inputs/schema/date-time.schema# (tests/inputs/schema/date-time.schema#)
+resolved to # (tests/inputs/schema/date-time.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 42 | 0 | given TopLevel ()
+1: intersection complex-union-array | children 14 | 1 | distance 2 complex-union-array ()
+2: intersection complex-union-array | children 12 | 2 | distance 4 complex-union-array ()
+3: intersection complex-union-array | children 5 | 3 | distance 7 complex-union-array ()
+4: string date | 4 | distance 3 date,date-time,time () | unrestricted
+5: union complex-union-array | children 4 | 5 | distance 8 complex-union-array ()
+6: intersection complex-union-array | children 8 | 6 | distance 7 complex-union-array ()
+7: integer | 7
+8: union complex-union-array | children 7 | 8 | distance 8 complex-union-array ()
+9: intersection complex-union-array | children 11 | 9 | distance 7 complex-union-array ()
+10: string complex-union-array | 10 | distance 8 complex-union-array () | 2 enums: foo (1), ...
+11: union complex-union-array | children 10 | 11 | distance 8 complex-union-array ()
+12: union complex-union-array | children 3,6,9 | 12 | distance 6 complex-union-array ()
+13: array | children 2 | 13
+14: union complex-union-array | children 13 | 14 | distance 3 complex-union-array ()
+15: intersection date | children 16 | 15 | distance 2 date ()
+16: union date | children 4 | 16 | distance 3 date ()
+17: intersection date-time | children 18 | 17 | distance 2 date-time ()
+18: union date-time | children 4 | 18 | distance 3 date-time ()
+19: intersection LocalDate | children 21 | 19 | given LocalDate ()
+20: object LocalDate | 20 | distance 1 LocalDate ()
+21: union LocalDate | children 20 | 21 | distance 1 LocalDate ()
+22: intersection OffsetDateTime | children 24 | 22 | given OffsetDateTime ()
+23: object OffsetDateTime | 23 | distance 1 OffsetDateTime ()
+24: union OffsetDateTime | children 23 | 24 | distance 1 OffsetDateTime ()
+25: intersection OffsetTime | children 27 | 25 | given OffsetTime ()
+26: object OffsetTime | 26 | distance 1 OffsetTime ()
+27: union OffsetTime | children 26 | 27 | distance 1 OffsetTime ()
+28: intersection time | children 29 | 28 | distance 2 time ()
+29: union time | children 4 | 29 | distance 3 time ()
+30: intersection union-array | children 40 | 30 | distance 2 union-array ()
+31: intersection union-array | children 38 | 31 | distance 4 union-array ()
+32: intersection union-array | children 33 | 32 | distance 7 union-array ()
+33: union union-array | children 4 | 33 | distance 8 union-array ()
+34: intersection union-array | children 35 | 34 | distance 7 union-array ()
+35: union union-array | children 4 | 35 | distance 8 union-array ()
+36: intersection union-array | children 37 | 36 | distance 7 union-array ()
+37: union union-array | children 4 | 37 | distance 8 union-array ()
+38: union union-array | children 32,34,36 | 38 | distance 6 union-array ()
+39: array | children 31 | 39
+40: union union-array | children 39 | 40 | distance 3 union-array ()
+41: object TopLevel | children 1,15,17,19,22,25,28,30 | 41 | distance 1 TopLevel ()
+42: union TopLevel | children 41 | 42 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,6 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema
+error: Could not fetch schema #, referred to from crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema#

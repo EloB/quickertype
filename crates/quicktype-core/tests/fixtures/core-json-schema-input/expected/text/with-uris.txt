@@ -1,0 +1,12 @@
+resolving #/definitions/A relative to WithUri# (WithUri#)
+trying to fetch WithUri
+successully fetched WithUri
+resolved to #/definitions/A (WithUri#/definitions/A)
+resolving #/definitions/A relative to WithUri# (WithUri#)
+resolved to #/definitions/A (WithUri#/definitions/A)
+# needIR true; single string source "{\"definitions\":{\"A\":{\"type\":\"number\"}}}"
+# graph
+0: intersection WithUri | children 2 | 0 | given WithUri ()
+1: double | 1
+2: union WithUri | children 1 | 2 | distance 1 WithUri ()
+# attributes

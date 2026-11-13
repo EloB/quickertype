@@ -138,7 +138,7 @@ mod tests {
     fn helpers_return_internal_errors() {
         assert!(assert(true, "x").is_ok());
         let e = assert(false, "Something broke").unwrap_err();
-        assert_eq!(e.kind(), ErrorKind::InternalError);
+        assert_eq!(e.kind(), Some(ErrorKind::InternalError));
         assert_eq!(e.user_message(), "Internal error: Something broke");
         assert_eq!(
             assert_default(false).unwrap_err().user_message(),

@@ -1,0 +1,39 @@
+{
+  "$id": "http://example.com/schemas/root.json",
+  "type": "object",
+  "properties": {
+    "item": {
+      "$ref": "item.json"
+    },
+    "anchored": {
+      "$ref": "#anchor"
+    },
+    "nested": {
+      "$ref": "nested/thing.json#/definitions/T"
+    }
+  },
+  "definitions": {
+    "Item": {
+      "$id": "item.json",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        }
+      }
+    },
+    "Anchored": {
+      "$id": "#anchor",
+      "type": "string"
+    },
+    "Nested": {
+      "$id": "nested/thing.json",
+      "definitions": {
+        "T": {
+          "type": "boolean",
+          "title": "Tee"
+        }
+      }
+    }
+  }
+}

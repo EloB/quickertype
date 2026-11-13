@@ -1,0 +1,21 @@
+resolving # relative to tests/inputs/schema/integer-float-union.schema# (tests/inputs/schema/integer-float-union.schema#)
+trying to fetch tests/inputs/schema/integer-float-union.schema
+successully fetched tests/inputs/schema/integer-float-union.schema
+resolved to # (tests/inputs/schema/integer-float-union.schema#)
+resolving # relative to tests/inputs/schema/integer-float-union.schema# (tests/inputs/schema/integer-float-union.schema#)
+resolved to # (tests/inputs/schema/integer-float-union.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 11 | 0 | given TopLevel ()
+1: intersection number | children 8 | 1 | distance 2 number ()
+2: intersection number | children 4 | 2 | distance 4 number ()
+3: integer | 3
+4: union number | children 3 | 4 | distance 5 number ()
+5: intersection number | children 7 | 5 | distance 4 number ()
+6: double | 6
+7: union number | children 6 | 7 | distance 5 number ()
+8: union number | children 2,5 | 8 | distance 3 number ()
+9: any | 9
+10: object TopLevel | children 1,9 | 10 | distance 1 TopLevel ()
+11: union TopLevel | children 10 | 11 | distance 1 TopLevel ()
+# attributes

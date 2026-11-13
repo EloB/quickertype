@@ -1,0 +1,24 @@
+resolving # relative to Text# (Text#)
+trying to fetch Text
+successully fetched Text
+resolved to # (Text#)
+resolving # relative to Text# (Text#)
+resolved to # (Text#)
+resolving crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B relative to #/properties/b (Text#/properties/b)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema
+resolved to #/definitions/B (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B)
+# needIR true; single string source "{\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B\"}}}"
+# graph
+0: intersection Text | children 10 | 0 | given Text ()
+1: intersection b | children 2 | 1 | distance 2 b ()
+2: intersection B | children 7 | 2 | given B ()
+3: intersection B | children 5 | 3 | distance 2 B ()
+4: date-time B | 4 | distance 4 B ()
+5: union B | children 4 | 5 | distance 4 B ()
+6: array | children 3 | 6
+7: union B | children 6 | 7 | distance 1 B ()
+8: any | 8
+9: object Text | children 1,8 | 9 | distance 1 Text ()
+10: union Text | children 9 | 10 | distance 1 Text ()
+# attributes

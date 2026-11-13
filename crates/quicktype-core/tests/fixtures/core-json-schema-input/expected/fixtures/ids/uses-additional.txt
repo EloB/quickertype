@@ -1,0 +1,12 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#)
+resolving http://example.com/extra.json#/definitions/Extra relative to #/properties/extra (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#/properties/extra)
+trying to fetch http://example.com/extra.json
+couldn't fetch http://example.com/extra.json
+trying to fetch http://example.com/extra.json
+couldn't fetch http://example.com/extra.json
+error: Could not fetch schema http://example.com/extra.json#/definitions/Extra, referred to from crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema#/properties/extra

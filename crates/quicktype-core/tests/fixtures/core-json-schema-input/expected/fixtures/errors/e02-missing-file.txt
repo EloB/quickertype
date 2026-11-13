@@ -1,0 +1,12 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#)
+resolving other.json#/x relative to #/properties/x (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#/properties/x)
+trying to fetch other.json
+couldn't fetch other.json
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/other.json
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/other.json
+error: Could not fetch schema other.json#/x, referred to from crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema#/properties/x

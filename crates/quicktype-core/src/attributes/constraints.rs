@@ -193,6 +193,109 @@ pub fn pattern_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<String>>
         .cloned())
 }
 
+// ---------------------------------------------------------------------------
+// JSON Schema input: the constraint attribute producers
+
+/// `producer(schema, minProperty, maxProperty)`: the numeric bounds, if
+/// either is given.
+fn min_max_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    min_property: &str,
+    max_property: &str,
+) -> Option<MinMaxConstraint> {
+    use crate::input::json_schema_store::JsonSchema;
+    if schema.type_of() != "object" {
+        return None;
+    }
+    let number = |property: &str| match schema.get(property) {
+        Some(JsonSchema::Number(n)) => Some(*n),
+        _ => None,
+    };
+    let (min, max) = (number(min_property), number(max_property));
+    if min.is_none() && max.is_none() {
+        return None;
+    }
+    Some(MinMaxConstraint(min, max))
+}
+
+/// `minMaxAttributeProducer`: `minimum`/`maximum` of numbers.
+pub fn min_max_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _ref: &crate::input::json_schema_input::Ref,
+    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};
+    if !types.contains(&T::Number) && !types.contains(&T::Integer) {
+        return Ok(None);
+    }
+    Ok(
+        min_max_producer(schema, "minimum", "maximum").map(|c| JsonSchemaAttributes {
+            for_number: Some(MinMaxTypeAttributeKind.make_attributes(c)),
+            ..JsonSchemaAttributes::default()
+        }),
+    )
+}
+
+/// `minMaxLengthAttributeProducer`: `minLength`/`maxLength` of strings.
+pub fn min_max_length_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _ref: &crate::input::json_schema_input::Ref,
+    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};
+    if !types.contains(&T::String) {
+        return Ok(None);
+    }
+    Ok(
+        min_max_producer(schema, "minLength", "maxLength").map(|c| JsonSchemaAttributes {
+            for_string: Some(MinMaxLengthTypeAttributeKind.make_attributes(c)),
+            ..JsonSchemaAttributes::default()
+        }),
+    )
+}
+
+/// `minMaxItemsAttributeProducer`: `minItems`/`maxItems` of arrays.
+pub fn min_max_items_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _ref: &crate::input::json_schema_input::Ref,
+    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};
+    if !types.contains(&T::Array) {
+        return Ok(None);
+    }
+    Ok(
+        min_max_producer(schema, "minItems", "maxItems").map(|c| JsonSchemaAttributes {
+            for_array: Some(MinMaxItemsTypeAttributeKind.make_attributes(c)),
+            ..JsonSchemaAttributes::default()
+        }),
+    )
+}
+
+/// `patternAttributeProducer`: `pattern` of strings.
+pub fn pattern_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _ref: &crate::input::json_schema_input::Ref,
+    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};
+    use crate::input::json_schema_store::JsonSchema;
+    if schema.type_of() != "object" || !types.contains(&T::String) {
+        return Ok(None);
+    }
+    let Some(JsonSchema::String(pattern)) = schema.get("pattern") else {
+        return Ok(None);
+    };
+    Ok(Some(JsonSchemaAttributes {
+        for_string: Some(PatternTypeAttributeKind.make_attributes(pattern.clone())),
+        ..JsonSchemaAttributes::default()
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema#)
+error: `required` must contain only strings, but it has 1, at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema#

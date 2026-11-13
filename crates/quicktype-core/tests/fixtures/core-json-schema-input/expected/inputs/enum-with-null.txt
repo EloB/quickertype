@@ -1,0 +1,16 @@
+resolving # relative to tests/inputs/schema/enum-with-null.schema# (tests/inputs/schema/enum-with-null.schema#)
+trying to fetch tests/inputs/schema/enum-with-null.schema
+successully fetched tests/inputs/schema/enum-with-null.schema
+resolved to # (tests/inputs/schema/enum-with-null.schema#)
+resolving # relative to tests/inputs/schema/enum-with-null.schema# (tests/inputs/schema/enum-with-null.schema#)
+resolved to # (tests/inputs/schema/enum-with-null.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 6 | 0 | given TopLevel ()
+1: intersection enum | children 4 | 1 | distance 2 enum ()
+2: null | 2
+3: string enum | 3 | distance 3 enum () | 2 enums: foo (1), ...
+4: union enum | children 2,3 | 4 | distance 3 enum ()
+5: object TopLevel | children 1 | 5 | distance 1 TopLevel ()
+6: union TopLevel | children 5 | 6 | distance 1 TopLevel ()
+# attributes

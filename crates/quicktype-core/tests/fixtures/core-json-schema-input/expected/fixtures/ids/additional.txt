@@ -1,0 +1,15 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema
+adding mapping http://example.com/extra.json# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+adding mapping http://example.com/extra.json#/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions)
+adding mapping http://example.com/extra.json#/definitions/Extra (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra)
+adding mapping http://example.com/extra.json#/definitions/Extra/properties (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra/properties)
+adding mapping http://example.com/extra.json#/definitions/Extra/properties/e (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#definitions/Extra/properties/e)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | 0 | given TopLevel ()
+# attributes

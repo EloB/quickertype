@@ -1,0 +1,12 @@
+resolving # relative to tests/inputs/schema/top-level-primitive.schema# (tests/inputs/schema/top-level-primitive.schema#)
+trying to fetch tests/inputs/schema/top-level-primitive.schema
+successully fetched tests/inputs/schema/top-level-primitive.schema
+resolved to # (tests/inputs/schema/top-level-primitive.schema#)
+resolving # relative to tests/inputs/schema/top-level-primitive.schema# (tests/inputs/schema/top-level-primitive.schema#)
+resolved to # (tests/inputs/schema/top-level-primitive.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 2 | 0 | given TopLevel () | Top l...
+1: double | 1
+2: union TopLevel | children 1 | 2 | distance 1 TopLevel ()
+# attributes

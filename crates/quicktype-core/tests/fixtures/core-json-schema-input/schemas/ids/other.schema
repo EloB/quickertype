@@ -1,0 +1,12 @@
+{
+  "definitions": {
+    "P": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

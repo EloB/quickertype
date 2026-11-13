@@ -1,0 +1,6 @@
+resolving # relative to Bad# (Bad#)
+trying to fetch Bad
+couldn't fetch Bad
+trying to fetch Bad
+couldn't fetch Bad
+error: Could not fetch schema #, referred to from Bad#
