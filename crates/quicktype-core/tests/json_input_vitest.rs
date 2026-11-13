@@ -20,8 +20,7 @@ use std::task::{Context, Poll, Waker};
 use indexmap::IndexMap;
 use quicktype_core::date_time::DefaultDateTimeRecognizer;
 use quicktype_core::inference::InferenceFlags;
-use quicktype_core::input::compressed_json::{CompressedJson, CompressedJsonFromString};
-use quicktype_core::input::compressed_json_from_stream::CompressedJsonFromStream;
+use quicktype_core::input::compressed_json::{CompressedJson, JsonSample};
 use quicktype_core::input::inputs::{
     InputData, JsonInput, JsonSourceData, json_input_for_target_language_named,
 };
@@ -79,10 +78,10 @@ fn streamed_kinds(
     range: Option<IntegerRange>,
 ) -> IndexMap<String, TypeKind> {
     let cjson = CompressedJson::new(Box::new(DefaultDateTimeRecognizer), false, range);
-    let mut input = JsonInput::new(CompressedJsonFromStream::new(cjson));
+    let mut input = JsonInput::new(cjson);
     block_on(input.add_source(JsonSourceData {
         name: "Edge".to_owned(),
-        samples: vec![json.as_bytes().to_vec()],
+        samples: vec![JsonSample::Stream(json.as_bytes().to_vec())],
         description: None,
     }))
     .expect("valid JSON");
@@ -101,7 +100,7 @@ fn core_kinds(
         .expect("known language");
     block_on(input.add_source(JsonSourceData {
         name: "Edge".to_owned(),
-        samples: vec![json.to_owned()],
+        samples: vec![json.into()],
         description: None,
     }))
     .expect("valid JSON");
@@ -234,7 +233,7 @@ fn cjson_the_integer_size_option_narrows_the_inferred_range() {
 
 // describe("JSON input with empty samples") — empty-json-samples.test.ts
 
-fn empty_source() -> JsonSourceData<String> {
+fn empty_source() -> JsonSourceData {
     JsonSourceData {
         name: "X".to_owned(),
         samples: Vec::new(),
@@ -242,7 +241,7 @@ fn empty_source() -> JsonSourceData<String> {
     }
 }
 
-fn typescript_input() -> JsonInput<CompressedJsonFromString> {
+fn typescript_input() -> JsonInput {
     json_input_for_target_language_named("typescript", None, false, &RendererOptions::new())
         .expect("typescript")
 }
@@ -272,7 +271,7 @@ fn non_empty_samples_still_generate_code() {
     let mut input = typescript_input();
     block_on(input.add_source(JsonSourceData {
         name: "Person".to_owned(),
-        samples: vec![r#"{"name":"Alice","age":30}"#.to_owned()],
+        samples: vec![r#"{"name":"Alice","age":30}"#.into()],
         description: None,
     }))
     .expect("valid sample");
@@ -283,20 +282,26 @@ fn non_empty_samples_still_generate_code() {
     assert_eq!(graph.kind(person).expect("kind"), TypeKind::Class);
 }
 
+/// TS adds every JSON source to the one `"json"` input, whichever way it
+/// was created; here sources read either way share it.
 #[test]
 fn input_data_keeps_one_input_per_kind() {
     let mut input_data = InputData::new();
-    let make = || typescript_input();
-    for name in ["A", "B", "A"] {
+    let samples = [
+        ("A", JsonSample::from("{}")),
+        ("B", JsonSample::Stream(b"[1.0]".to_vec())),
+        ("A", JsonSample::from(r#"{"x":1}"#)),
+    ];
+    for (name, sample) in samples {
         input_data
             .add_source_sync(
                 "json",
                 JsonSourceData {
                     name: name.to_owned(),
-                    samples: vec!["{}".to_owned()],
+                    samples: vec![sample],
                     description: None,
                 },
-                make,
+                typescript_input,
             )
             .expect("added");
     }
@@ -306,26 +311,53 @@ fn input_data_keeps_one_input_per_kind() {
     let graph = graph_of(language("typescript"), &mut input_data).expect("graph");
     let names: Vec<&String> = graph.top_levels().keys().collect();
     assert_eq!(names, ["A", "B"]);
-    // A different input type under the same kind is an internal error.
-    let error = input_data
-        .add_source_sync(
-            "json",
-            JsonSourceData {
-                name: "C".to_owned(),
-                samples: vec![b"{}".to_vec()],
-                description: None,
-            },
-            || {
-                JsonInput::new(CompressedJsonFromStream::new(CompressedJson::new(
-                    Box::new(DefaultDateTimeRecognizer),
-                    false,
-                    None,
-                )))
-            },
-        )
-        .unwrap_err();
+    // `1.0` was read with stream-json semantics: a double.
+    let b = graph.type_at(graph.top_levels()["B"]).expect("B");
     assert_eq!(
-        error.user_message(),
-        "Internal error: The input of kind json doesn't take this kind of source"
+        graph.kind(b.items().expect("array")).expect("kind"),
+        TypeKind::Double
     );
+}
+
+/// The JavaScript facade's path: tables and encoded top-levels exported
+/// from one input and imported into another give the same graph.
+#[test]
+fn compressed_tables_round_trip() {
+    let mut input = typescript_input();
+    let samples = [
+        r#"{"d":"2020-01-01","u":"http://h/p.png","e":["x","y","x"],"n":{"k":[1,2.5,null]}}"#,
+        r#""2021-02-03""#,
+    ];
+    input
+        .add_source_sync(JsonSourceData {
+            name: "First".to_owned(),
+            samples: samples.iter().map(|&s| s.into()).collect(),
+            description: Some("described".to_owned()),
+        })
+        .expect("valid");
+    input
+        .add_source_sync(JsonSourceData {
+            name: "Second".to_owned(),
+            samples: vec!["[true]".into()],
+            description: None,
+        })
+        .expect("valid");
+    let (tables, top_levels) = input.to_compressed();
+    let imported = JsonInput::from_compressed(
+        &tables,
+        false,
+        language("typescript").date_time_recognizer(),
+        top_levels,
+    )
+    .expect("valid tables");
+
+    let print = |input: JsonInput| {
+        let mut input_data = InputData::new();
+        input_data.add_input(input);
+        graph_of(language("typescript"), &mut input_data)
+            .expect("graph")
+            .graph_text()
+            .expect("print")
+    };
+    assert_eq!(print(imported), print(input));
 }

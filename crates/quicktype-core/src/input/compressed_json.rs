@@ -9,25 +9,32 @@
 //! strings are interned as possible enum cases and long ones are dropped
 //! ([`Value::UninternedString`]).
 //!
-//! [`CompressedJson`] is the state and the builder that a *reader* drives
-//! (TS: the abstract class `CompressedJSON<T>` and its protected methods).
-//! Readers implement [`CompressedJsonReader`]:
+//! [`CompressedJson`] is the state and the builder (TS: the abstract class
+//! `CompressedJSON<T>` and its protected methods). TypeScript reads samples
+//! with one of two subclasses; here they are two methods, and a
+//! [`JsonSample`] says which one reads it:
 //!
-//! - [`CompressedJsonFromString`]: the JavaScript API's reader, `JSON.parse`
-//!   semantics (`1.0` is an integer, array-index keys come first, the last
-//!   duplicate key wins, V8's error messages);
-//! - [`CompressedJsonFromStream`](crate::input::compressed_json_from_stream::CompressedJsonFromStream):
+//! - [`CompressedJson::parse_string`] (`CompressedJSONFromString`): the
+//!   JavaScript API's reader, `JSON.parse` semantics (`1.0` is an integer,
+//!   array-index keys come first, the last duplicate key wins, V8's error
+//!   messages);
+//! - [`CompressedJson::parse_stream`] (`CompressedJSONFromStream`, see
+//!   [`compressed_json_from_stream`](crate::input::compressed_json_from_stream)):
 //!   the CLI's reader, stream-json semantics (`1.0` is a double, source key
 //!   order, duplicate keys kept, stream-json's error messages).
 //!
+//! The JavaScript facade can also hand over tables a JavaScript
+//! `CompressedJSON` built ([`CompressedJsonTables`]).
+//!
 //! Differences from the TypeScript that cannot be observed: values are an
-//! enum instead of tagged integers, objects are lists of key/value pairs,
-//! and a [`Value::StringFormat`] holds its kind instead of interning the
-//! kind's name.
+//! enum instead of tagged integers, objects are lists of key/value pairs, a
+//! [`Value::StringFormat`] holds its kind instead of interning the kind's
+//! name, and object keys are interned when they are read rather than when
+//! their value is committed.
 
 use std::collections::HashMap;
 use std::fmt;
-use std::future::Future;
+use std::rc::Rc;
 
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::utf16;
@@ -71,11 +78,36 @@ pub enum Value {
     TransformedString(u32),
 }
 
-/// The state of an object or array being read (TS `Context`).
+/// One JSON sample, and which reader reads it (TS: the type `T` of
+/// `JSONInput<T>` and the matching `CompressedJSON<T>` subclass).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum JsonSample {
+    /// JSON text read with `JSON.parse` semantics, as quicktype-core's
+    /// JavaScript API does (TS `CompressedJSONFromString`).
+    String(String),
+    /// The raw bytes of a file, URL body or standard input, read with the
+    /// CLI's stream-json semantics (TS `CompressedJSONFromStream`).
+    Stream(Vec<u8>),
+}
+
+impl From<String> for JsonSample {
+    fn from(text: String) -> Self {
+        JsonSample::String(text)
+    }
+}
+
+impl From<&str> for JsonSample {
+    fn from(text: &str) -> Self {
+        JsonSample::String(text.to_owned())
+    }
+}
+
+/// The state of an object or array being read (TS `Context`). The current
+/// key is held interned.
 #[derive(Debug, Default)]
 struct Context {
     current_array: Option<Vec<Value>>,
-    current_key: Option<String>,
+    current_key: Option<u32>,
     current_object: Option<Vec<(Value, Value)>>,
 }
 
@@ -91,9 +123,9 @@ pub struct CompressedJson {
     root_value: Option<Value>,
     ctx: Option<Context>,
     context_stack: Vec<Context>,
-    strings: Vec<String>,
-    /// Only looked up, never iterated.
-    string_indexes: HashMap<String, u32>,
+    strings: Vec<Rc<str>>,
+    /// Only looked up, never iterated; shares its keys with `strings`.
+    string_indexes: HashMap<Rc<str>, u32>,
     objects: Vec<Vec<(Value, Value)>>,
     arrays: Vec<Vec<Value>>,
 }
@@ -208,11 +240,13 @@ impl CompressedJson {
     /// string.
     pub fn get_string_for_value(&self, v: Value) -> Result<&str> {
         match v {
-            Value::InternedString(i) | Value::TransformedString(i) => {
-                Ok(defined(self.strings.get(i as usize))?)
-            }
+            Value::InternedString(i) | Value::TransformedString(i) => self.string_at(i),
             _ => panic("Trying to get index for value with invalid tag"),
         }
+    }
+
+    fn string_at(&self, index: u32) -> Result<&str> {
+        Ok(defined(self.strings.get(index as usize))?)
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
@@ -244,11 +278,21 @@ impl CompressedJson {
         defined(self.ctx.as_mut())
     }
 
-    /// `internString(s)`. Like the TypeScript, whose index is a plain
-    /// object, `"__proto__"` is never found again and gets a new index each
-    /// time (harmless: strings are compared by content).
+    /// `internString(s)`: allocates `s` once, the first time it is seen.
+    /// Like the TypeScript, whose index is a plain object, `"__proto__"` is
+    /// never found again and gets a new index each time (harmless: strings
+    /// are compared by content).
     fn intern_string(&mut self, s: &str) -> u32 {
-        intern(&mut self.strings, &mut self.string_indexes, s)
+        if let Some(&index) = self.string_indexes.get(s) {
+            return index;
+        }
+        let index = self.strings.len() as u32;
+        let s: Rc<str> = Rc::from(s);
+        if &*s != "__proto__" {
+            self.string_indexes.insert(Rc::clone(&s), index);
+        }
+        self.strings.push(s);
+        index
     }
 
     /// `makeString(s)`.
@@ -260,7 +304,12 @@ impl CompressedJson {
     fn is_expecting_ref(&self) -> bool {
         self.ctx
             .as_ref()
-            .is_some_and(|ctx| ctx.current_key.as_deref() == Some("$ref"))
+            .and_then(|ctx| ctx.current_key)
+            .is_some_and(|key| {
+                self.strings
+                    .get(key as usize)
+                    .is_some_and(|k| &**k == "$ref")
+            })
     }
 
     /// `commitValue(value)`.
@@ -277,7 +326,6 @@ impl CompressedJson {
             let Some(key) = ctx.current_key.take() else {
                 return panic("Must have key and can't have string when committing");
             };
-            let key = intern(&mut self.strings, &mut self.string_indexes, &key);
             object.push((Value::InternedString(key), value));
             Ok(())
         } else if let Some(array) = &mut ctx.current_array {
@@ -361,7 +409,8 @@ impl CompressedJson {
 
     /// `setPropertyKey(key)`: the key of the next value in the object.
     pub fn set_property_key(&mut self, key: &str) -> Result<()> {
-        self.context()?.current_key = Some(key.to_owned());
+        let key = self.intern_string(key);
+        self.context()?.current_key = Some(key);
         Ok(())
     }
 
@@ -403,27 +452,278 @@ impl CompressedJson {
         self.ctx = None;
         self.context_stack.clear();
     }
+
+    /// Reads one sample with the reader it asks for.
+    pub fn parse_sample(&mut self, sample: JsonSample) -> Result<Value, ParseError> {
+        match sample {
+            JsonSample::String(text) => self.parse_string(&text),
+            JsonSample::Stream(bytes) => self.parse_stream(&bytes),
+        }
+    }
+
+    /// `CompressedJSONFromString.parseSync(input)`: `JSON.parse`, then
+    /// `process` the value in `Object.getOwnPropertyNames` order.
+    ///
+    /// ```
+    /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
+    /// use quicktype_core::input::compressed_json::{CompressedJson, ParseError, Value};
+    ///
+    /// let mut cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
+    /// assert_eq!(cjson.parse_string("1.0"), Ok(Value::Integer));
+    /// assert_eq!(
+    ///     cjson.parse_string("[1,"),
+    ///     Err(ParseError::Syntax("Unexpected end of JSON input".to_owned()))
+    /// );
+    /// ```
+    pub fn parse_string(&mut self, text: &str) -> Result<Value, ParseError> {
+        let json = json::parse(text).map_err(|e| ParseError::Syntax(e.message().to_owned()))?;
+        let result = self.process(&json).and_then(|()| self.finish());
+        if result.is_err() {
+            self.reset_partial_sample();
+        }
+        Ok(result?)
+    }
+
+    /// `process(json)`, iteratively.
+    fn process(&mut self, json: &JsonValue) -> Result<()> {
+        enum Step<'a> {
+            Value(&'a JsonValue),
+            Key(&'a str),
+            FinishObject,
+            FinishArray,
+        }
+        let mut steps = vec![Step::Value(json)];
+        while let Some(step) = steps.pop() {
+            match step {
+                Step::Value(JsonValue::Null) => self.commit_null()?,
+                Step::Value(JsonValue::Bool(b)) => self.commit_boolean(*b)?,
+                Step::Value(JsonValue::String(s)) => self.commit_string(s)?,
+                Step::Value(JsonValue::Number(n)) => {
+                    let is_double = self.parsed_number_is_double(*n);
+                    self.commit_number(is_double)?;
+                }
+                Step::Value(JsonValue::Array(items)) => {
+                    self.push_array_context();
+                    steps.push(Step::FinishArray);
+                    steps.extend(items.iter().rev().map(Step::Value));
+                }
+                Step::Value(JsonValue::Object(map)) => {
+                    self.push_object_context();
+                    steps.push(Step::FinishObject);
+                    for (key, value) in map.iter().rev() {
+                        steps.push(Step::Value(value));
+                        steps.push(Step::Key(key));
+                    }
+                }
+                Step::Key(key) => self.set_property_key(key)?,
+                Step::FinishObject => self.finish_object()?,
+                Step::FinishArray => self.finish_array()?,
+            }
+        }
+        Ok(())
+    }
+
+    /// The compressed form with a JavaScript `CompressedJSON`'s encoding,
+    /// as the JavaScript facade sends it (research 05, §4.2), together
+    /// with `roots` (sample values) encoded against it; the inverse of
+    /// [`CompressedJson::from_tables`].
+    pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
+        let mut strings: Vec<String> = self.strings.iter().map(|s| s.to_string()).collect();
+        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::new();
+        let mut encode = |v: Value| {
+            encode_value(v, |kind| {
+                *kind_indexes.entry(kind).or_insert_with(|| {
+                    strings.push(kind.as_str().to_owned());
+                    (strings.len() - 1) as u32
+                })
+            })
+        };
+        let mut objects = Vec::new();
+        let mut object_offsets = Vec::with_capacity(self.objects.len());
+        for object in &self.objects {
+            object_offsets.push(objects.len() as u32);
+            for &(key, value) in object {
+                objects.push(encode(key));
+                objects.push(encode(value));
+            }
+        }
+        let mut arrays = Vec::new();
+        let mut array_offsets = Vec::with_capacity(self.arrays.len());
+        for array in &self.arrays {
+            array_offsets.push(arrays.len() as u32);
+            arrays.extend(array.iter().map(|&v| encode(v)));
+        }
+        let roots = roots.iter().map(|&v| encode(v)).collect();
+        let tables = CompressedJsonTables {
+            strings,
+            objects,
+            object_offsets,
+            arrays,
+            array_offsets,
+        };
+        (tables, roots)
+    }
+
+    /// Imports the tables a JavaScript `CompressedJSON` built (the facade's
+    /// path into the engine, research 05 §4.2). The integer range only
+    /// matters while reading, so the result has none.
+    pub fn from_tables(
+        date_time_recognizer: Box<dyn DateTimeRecognizer>,
+        handle_refs: bool,
+        tables: &CompressedJsonTables,
+    ) -> Result<Self> {
+        let mut cjson = CompressedJson::new(date_time_recognizer, handle_refs, None);
+        for s in &tables.strings {
+            let s: Rc<str> = Rc::from(s.as_str());
+            if &*s != "__proto__" {
+                let index = cjson.strings.len() as u32;
+                cjson.string_indexes.entry(Rc::clone(&s)).or_insert(index);
+            }
+            cjson.strings.push(s);
+        }
+        let ranges = |offsets: &[u32], len: usize| -> Result<Vec<(usize, usize)>> {
+            let mut ranges = Vec::with_capacity(offsets.len());
+            for (i, &start) in offsets.iter().enumerate() {
+                let end = offsets.get(i + 1).map_or(len, |&e| e as usize);
+                if start as usize > end || end > len {
+                    return panic("Invalid CompressedJSON table offsets");
+                }
+                ranges.push((start as usize, end));
+            }
+            Ok(ranges)
+        };
+        let object_ranges = ranges(&tables.object_offsets, tables.objects.len())?;
+        let array_ranges = ranges(&tables.array_offsets, tables.arrays.len())?;
+        let (object_count, array_count) = (object_ranges.len(), array_ranges.len());
+        for (start, end) in object_ranges {
+            let flat = &tables.objects[start..end];
+            if flat.len() % 2 != 0 {
+                return panic("An object in the CompressedJSON tables has a key without a value");
+            }
+            let mut object = Vec::with_capacity(flat.len() / 2);
+            for pair in flat.chunks(2) {
+                let key = cjson.decode_value(pair[0], object_count, array_count)?;
+                if !matches!(key, Value::InternedString(_)) {
+                    return panic(
+                        "An object key in the CompressedJSON tables is not an interned string",
+                    );
+                }
+                object.push((key, cjson.decode_value(pair[1], object_count, array_count)?));
+            }
+            cjson.objects.push(object);
+        }
+        for (start, end) in array_ranges {
+            let array = tables.arrays[start..end]
+                .iter()
+                .map(|&v| cjson.decode_value(v, object_count, array_count))
+                .collect::<Result<Vec<_>>>()?;
+            cjson.arrays.push(array);
+        }
+        Ok(cjson)
+    }
+
+    /// Decodes a JavaScript `Value` (`tag | index << 4`) against the tables
+    /// being imported.
+    pub(crate) fn decode_value(
+        &self,
+        v: i32,
+        object_count: usize,
+        array_count: usize,
+    ) -> Result<Value> {
+        let tag = v & TAG_MASK;
+        let index = (v >> TAG_BITS) as u32;
+        let in_range = |count: usize| (index as usize) < count;
+        let value = match tag {
+            TAG_NULL => Value::Null,
+            TAG_FALSE => Value::False,
+            TAG_TRUE => Value::True,
+            TAG_INTEGER => Value::Integer,
+            TAG_DOUBLE => Value::Double,
+            TAG_INTERNED_STRING if in_range(self.strings.len()) => Value::InternedString(index),
+            TAG_UNINTERNED_STRING => Value::UninternedString,
+            TAG_OBJECT if in_range(object_count) => Value::Object(index),
+            TAG_ARRAY if in_range(array_count) => Value::Array(index),
+            TAG_STRING_FORMAT => {
+                let kind = TypeKind::from_str(self.string_at(index)?)
+                    .filter(|k| k.is_transformed_string_type_kind());
+                match kind {
+                    Some(kind) => Value::StringFormat(kind),
+                    None => return panic("Not a transformed string type kind"),
+                }
+            }
+            TAG_TRANSFORMED_STRING if in_range(self.strings.len()) => {
+                Value::TransformedString(index)
+            }
+            _ => return panic(format!("Invalid CompressedJSON value {v}")),
+        };
+        Ok(value)
+    }
+
+    /// The number of objects and arrays, for decoding values against this
+    /// compressed form.
+    pub(crate) fn counts(&self) -> (usize, usize) {
+        (self.objects.len(), self.arrays.len())
+    }
 }
 
-/// `internString(s)` on the string tables.
-fn intern(strings: &mut Vec<String>, indexes: &mut HashMap<String, u32>, s: &str) -> u32 {
-    if let Some(&index) = indexes.get(s) {
-        return index;
-    }
-    let index = strings.len() as u32;
-    strings.push(s.to_owned());
-    if s != "__proto__" {
-        indexes.insert(s.to_owned(), index);
-    }
-    index
+/// `Tag`: the low bits of an encoded `Value`.
+const TAG_NULL: i32 = 1;
+const TAG_FALSE: i32 = 2;
+const TAG_TRUE: i32 = 3;
+const TAG_INTEGER: i32 = 4;
+const TAG_DOUBLE: i32 = 5;
+const TAG_INTERNED_STRING: i32 = 6;
+const TAG_UNINTERNED_STRING: i32 = 7;
+const TAG_OBJECT: i32 = 8;
+const TAG_ARRAY: i32 = 9;
+const TAG_STRING_FORMAT: i32 = 10;
+const TAG_TRANSFORMED_STRING: i32 = 11;
+const TAG_BITS: i32 = 4;
+const TAG_MASK: i32 = (1 << TAG_BITS) - 1;
+
+/// The tables of a JavaScript `CompressedJSON` (research 05, §4.2), with
+/// each `Value` encoded as in TypeScript: `tag | index << 4`, where a
+/// `StringFormat` value's index is that of its kind's name in `strings`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CompressedJsonTables {
+    /// The string table.
+    pub strings: Vec<String>,
+    /// Every object's keys and values, `[k0, v0, k1, v1, …]`, concatenated.
+    pub objects: Vec<i32>,
+    /// Where each object starts in `objects`; it ends where the next one
+    /// starts.
+    pub object_offsets: Vec<u32>,
+    /// Every array's elements, concatenated.
+    pub arrays: Vec<i32>,
+    /// Where each array starts in `arrays`.
+    pub array_offsets: Vec<u32>,
 }
 
-// TODO(js-exception): `Syntax` is a JavaScript exception (`JSON.parse`'s
-// `SyntaxError`, stream-json's `Error`); switch it to messages.rs' variant
-// for runtime exceptions once that lands.
+/// Encodes a value as TypeScript does, `tag | index << 4`, with
+/// `kind_index` giving the string index of a transformed kind's name.
+fn encode_value(v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
+    let (tag, index) = match v {
+        Value::Null => (TAG_NULL, 0),
+        Value::False => (TAG_FALSE, 0),
+        Value::True => (TAG_TRUE, 0),
+        Value::Integer => (TAG_INTEGER, 0),
+        Value::Double => (TAG_DOUBLE, 0),
+        Value::InternedString(i) => (TAG_INTERNED_STRING, i),
+        Value::UninternedString => (TAG_UNINTERNED_STRING, 0),
+        Value::Object(i) => (TAG_OBJECT, i),
+        Value::Array(i) => (TAG_ARRAY, i),
+        Value::StringFormat(kind) => (TAG_STRING_FORMAT, kind_index(kind)),
+        Value::TransformedString(i) => (TAG_TRANSFORMED_STRING, i),
+    };
+    tag | ((index as i32) << TAG_BITS)
+}
+
 /// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
 /// `MiscJSONParseError`.
+// TODO(js-exception): `Syntax` is a JavaScript exception (`JSON.parse`'s
+// `SyntaxError`, stream-json's `Error`); switch it to messages.rs' variant
+// for runtime exceptions once that lands.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
     /// A JavaScript `Error` thrown by the JSON parser (`JSON.parse`'s
@@ -457,132 +757,19 @@ impl From<QuickTypeError> for ParseError {
     }
 }
 
-/// A way to read JSON samples into a [`CompressedJson`]: TS's abstract
-/// `parse(input: T)` / `parseSync(input: T)` of `CompressedJSON<T>`, which
-/// the subclasses implement.
-pub trait CompressedJsonReader {
-    /// The sample type (TS `T`).
-    type Sample;
-
-    /// The compressed form the samples are read into.
-    fn compressed_json(&self) -> &CompressedJson;
-
-    /// `parseSync(sample)`: reads one sample and returns its root value.
-    fn parse_sync(&mut self, sample: Self::Sample) -> Result<Value, ParseError>;
-
-    /// `parse(sample)`. Reading itself is synchronous in Rust; the future
-    /// exists so readers that wait for input can be added without changing
-    /// [`JsonInput`](crate::input::inputs::JsonInput).
-    fn parse(&mut self, sample: Self::Sample) -> impl Future<Output = Result<Value, ParseError>> {
-        std::future::ready(self.parse_sync(sample))
-    }
-}
-
-/// `CompressedJSONFromString`: reads samples with `JSON.parse` semantics,
-/// as quicktype-core's JavaScript API does.
-///
-/// ```
-/// use quicktype_core::date_time::DefaultDateTimeRecognizer;
-/// use quicktype_core::input::compressed_json::{
-///     CompressedJson, CompressedJsonFromString, CompressedJsonReader, ParseError, Value,
-/// };
-///
-/// let cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
-/// let mut reader = CompressedJsonFromString::new(cjson);
-/// assert_eq!(reader.parse_sync("1.0".to_owned()), Ok(Value::Integer));
-/// assert_eq!(
-///     reader.parse_sync("[1,".to_owned()),
-///     Err(ParseError::Syntax("Unexpected end of JSON input".to_owned()))
-/// );
-/// ```
-#[derive(Debug)]
-pub struct CompressedJsonFromString {
-    cjson: CompressedJson,
-}
-
-impl CompressedJsonFromString {
-    /// A reader that fills `cjson`.
-    pub fn new(cjson: CompressedJson) -> Self {
-        CompressedJsonFromString { cjson }
-    }
-
-    /// `process(json)`, iteratively: walks the parsed value in
-    /// `Object.getOwnPropertyNames` order.
-    fn process(&mut self, json: &JsonValue) -> Result<()> {
-        enum Step<'a> {
-            Value(&'a JsonValue),
-            Key(&'a str),
-            FinishObject,
-            FinishArray,
-        }
-        let cjson = &mut self.cjson;
-        let mut steps = vec![Step::Value(json)];
-        while let Some(step) = steps.pop() {
-            match step {
-                Step::Value(JsonValue::Null) => cjson.commit_null()?,
-                Step::Value(JsonValue::Bool(b)) => cjson.commit_boolean(*b)?,
-                Step::Value(JsonValue::String(s)) => cjson.commit_string(s)?,
-                Step::Value(JsonValue::Number(n)) => {
-                    let is_double = cjson.parsed_number_is_double(*n);
-                    cjson.commit_number(is_double)?;
-                }
-                Step::Value(JsonValue::Array(items)) => {
-                    cjson.push_array_context();
-                    steps.push(Step::FinishArray);
-                    steps.extend(items.iter().rev().map(Step::Value));
-                }
-                Step::Value(JsonValue::Object(map)) => {
-                    cjson.push_object_context();
-                    steps.push(Step::FinishObject);
-                    for (key, value) in map.iter().rev() {
-                        steps.push(Step::Value(value));
-                        steps.push(Step::Key(key));
-                    }
-                }
-                Step::Key(key) => cjson.set_property_key(key)?,
-                Step::FinishObject => cjson.finish_object()?,
-                Step::FinishArray => cjson.finish_array()?,
-            }
-        }
-        Ok(())
-    }
-}
-
-impl CompressedJsonReader for CompressedJsonFromString {
-    type Sample = String;
-
-    fn compressed_json(&self) -> &CompressedJson {
-        &self.cjson
-    }
-
-    /// `parseSync(input)`: `JSON.parse`, then `process`.
-    fn parse_sync(&mut self, sample: String) -> Result<Value, ParseError> {
-        let json = json::parse(&sample).map_err(|e| ParseError::Syntax(e.message().to_owned()))?;
-        let result = self.process(&json).and_then(|()| self.cjson.finish());
-        if result.is_err() {
-            self.cjson.reset_partial_sample();
-        }
-        Ok(result?)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
 
-    fn reader(range: Option<IntegerRange>) -> CompressedJsonFromString {
-        CompressedJsonFromString::new(CompressedJson::new(
-            Box::new(DefaultDateTimeRecognizer),
-            false,
-            range,
-        ))
+    fn cjson(range: Option<IntegerRange>) -> CompressedJson {
+        CompressedJson::new(Box::new(DefaultDateTimeRecognizer), false, range)
     }
 
     #[test]
     fn number_classification_like_json_parse() {
-        let mut r = reader(Some(INT64_RANGE.clone()));
-        let mut kind = |s: &str| r.parse_sync(s.to_owned()).unwrap();
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        let mut kind = |s: &str| r.parse_string(s).unwrap();
         assert_eq!(kind("1.0"), Value::Integer);
         assert_eq!(kind("1e2"), Value::Integer);
         assert_eq!(kind("-0.0"), Value::Integer);
@@ -592,14 +779,11 @@ mod tests {
         assert_eq!(kind("-9223372036854775809"), Value::Integer);
         assert_eq!(kind("1e21"), Value::Double);
         assert_eq!(kind("1e400"), Value::Double);
-        let mut unbounded = reader(None);
-        assert_eq!(
-            unbounded.parse_sync("1e400".into()).unwrap(),
-            Value::Integer
-        );
+        let mut unbounded = cjson(None);
+        assert_eq!(unbounded.parse_string("1e400").unwrap(), Value::Integer);
         assert_eq!(
             unbounded
-                .parse_sync("123456789012345678901234567890".into())
+                .parse_string("123456789012345678901234567890")
                 .unwrap(),
             Value::Integer
         );
@@ -607,35 +791,91 @@ mod tests {
 
     #[test]
     fn strings_are_classified_and_interned() {
-        let mut r = reader(Some(INT64_RANGE.clone()));
+        let mut r = cjson(Some(INT64_RANGE.clone()));
         let v = r
-            .parse_sync(r#"["2020-01-01", "x", "x", "http://a/b.JPG", "1"]"#.into())
+            .parse_string(r#"["2020-01-01", "x", "x", "http://a/b.JPG", "1"]"#)
             .unwrap();
-        let cjson = r.compressed_json();
-        let items = cjson.get_array_for_value(v).unwrap();
+        let items = r.get_array_for_value(v).unwrap();
         assert_eq!(items[0], Value::StringFormat(TypeKind::Date));
         assert_eq!(items[1], items[2]);
-        assert_eq!(cjson.get_string_for_value(items[1]).unwrap(), "x");
+        assert_eq!(r.get_string_for_value(items[1]).unwrap(), "x");
         assert!(matches!(items[3], Value::TransformedString(_)));
         assert_eq!(items[4], Value::StringFormat(TypeKind::IntegerString));
         let long = "é".repeat(65);
+        let mut r = cjson(None);
         assert_eq!(
-            r.parse_sync(format!("\"{long}\"")).unwrap(),
+            r.parse_string(&format!("\"{long}\"")).unwrap(),
             Value::UninternedString
         );
     }
 
     #[test]
     fn objects_keep_js_property_order() {
-        let mut r = reader(Some(INT64_RANGE.clone()));
-        let v = r.parse_sync(r#"{"b":1,"1":2,"b":"x"}"#.into()).unwrap();
-        let cjson = r.compressed_json();
-        let entries = cjson.get_object_for_value(v).unwrap();
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        let v = r.parse_string(r#"{"b":1,"1":2,"b":"x"}"#).unwrap();
+        let entries = r.get_object_for_value(v).unwrap();
         let keys: Vec<&str> = entries
             .iter()
-            .map(|(k, _)| cjson.get_string_for_value(*k).unwrap())
+            .map(|(k, _)| r.get_string_for_value(*k).unwrap())
             .collect();
         assert_eq!(keys, ["1", "b"]);
         assert!(matches!(entries[1].1, Value::InternedString(_)));
+    }
+
+    #[test]
+    fn keys_are_interned_once() {
+        let mut r = cjson(None);
+        r.parse_string(r#"[{"a":"a","__proto__":1},{"a":2,"__proto__":3}]"#)
+            .unwrap();
+        // "a" once; "__proto__" every time, like the TypeScript.
+        let texts: Vec<&str> = r.strings.iter().map(|s| &**s).collect();
+        assert_eq!(texts, ["a", "__proto__", "__proto__"]);
+    }
+
+    /// Deep samples are processed without recursion, on success and when
+    /// `JSON.parse` fails after the root value or inside it.
+    #[test]
+    fn deep_nesting() {
+        let n = 1_000_000;
+        let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
+        let mut r = cjson(None);
+        assert!(matches!(r.parse_string(&deep), Ok(Value::Array(_))));
+        assert_eq!(
+            r.parse_string(&format!("{deep} x")).unwrap_err().message(),
+            "Unexpected non-whitespace character after JSON at position 2000001 (line 1 column 2000002)"
+        );
+        assert!(
+            r.parse_string(&format!("{}x", r#"{"a":["#.repeat(n / 2)))
+                .is_err()
+        );
+        assert_eq!(r.parse_string("1"), Ok(Value::Integer));
+    }
+
+    #[test]
+    fn tables_round_trip() {
+        let mut r = cjson(Some(INT64_RANGE.clone()));
+        let v = r
+            .parse_string(
+                r#"{"d":"2020-01-01","u":"http://h/p.png","s":["x",{"k":null}],"t":true}"#,
+            )
+            .unwrap();
+        let date = r.parse_string(r#""2021-01-01""#).unwrap();
+        let (tables, roots) = r.to_tables(&[v, date]);
+        let imported =
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
+                .unwrap();
+        assert_eq!(imported.objects, r.objects);
+        assert_eq!(imported.arrays, r.arrays);
+        let (objects, arrays) = imported.counts();
+        let decoded: Vec<Value> = roots
+            .iter()
+            .map(|&root| imported.decode_value(root, objects, arrays).unwrap())
+            .collect();
+        assert_eq!(decoded, [v, date]);
+        let mut bad = tables.clone();
+        bad.objects[0] = (99 << TAG_BITS) | TAG_INTERNED_STRING;
+        assert!(
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &bad).is_err()
+        );
     }
 }

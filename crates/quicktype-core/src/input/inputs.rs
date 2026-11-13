@@ -22,13 +22,12 @@ use std::pin::Pin;
 
 use indexmap::{IndexMap, IndexSet};
 
-use super::compressed_json::{
-    CompressedJson, CompressedJsonFromString, CompressedJsonReader, ParseError, Value,
-};
+use super::compressed_json::{CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value};
 use super::inference::TypeInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
 use crate::attributes::type_names::make_names_type_attributes;
+use crate::date_time::DateTimeRecognizer;
 use crate::language::all::{default_target_languages, language_named};
 use crate::messages::{ErrorKind, MessageValue, QuickTypeError, Result, message_error};
 use crate::renderer_options::RendererOptions;
@@ -324,7 +323,7 @@ impl InputData {
 
 /// The samples of one top-level (TS `JSONSourceData<T>`).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct JsonSourceData<T> {
+pub struct JsonSourceData<T = JsonSample> {
     /// The top-level's name.
     pub name: String,
     /// The JSON samples; there must be at least one.
@@ -340,11 +339,26 @@ struct JsonTopLevel {
     samples: Vec<Value>,
 }
 
-/// The JSON samples input (TS `JSONInput<T>`), generic over how samples
-/// are read: [`CompressedJsonFromString`] (`JSON.parse`, the JavaScript
-/// API) or
-/// [`CompressedJsonFromStream`](crate::input::compressed_json_from_stream::CompressedJsonFromStream)
-/// (stream-json, the CLI).
+/// A top-level of a JavaScript-built `CompressedJSON` (research 05, §4.2):
+/// its samples are `Value`s encoded as `tag | index << 4`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CompressedTopLevel {
+    /// The top-level's name.
+    pub name: String,
+    /// Its description, if any.
+    pub description: Option<String>,
+    /// Its samples' root values.
+    pub samples: Vec<i32>,
+}
+
+/// The JSON samples input (TS `JSONInput<T>`).
+///
+/// Each sample says how to read it ([`JsonSample`]): `JSON.parse`
+/// semantics, as quicktype-core's JavaScript API reads strings, or
+/// stream-json semantics, as the CLI reads files. TypeScript has one
+/// reader per input; here one input takes both, so [`InputData`] can add
+/// either kind of source to its single `"json"` input, as TypeScript adds
+/// every source to the existing input.
 ///
 /// ```
 /// use quicktype_core::input::inputs::{JsonSourceData, json_input_for_target_language};
@@ -355,7 +369,7 @@ struct JsonTopLevel {
 /// let error = input
 ///     .add_source_sync(JsonSourceData {
 ///         name: "Person".to_owned(),
-///         samples: vec![r#"{"name": "Ann", }"#.to_owned()],
+///         samples: vec![r#"{"name": "Ann", }"#.into()],
 ///         description: None,
 ///     })
 ///     .unwrap_err();
@@ -365,23 +379,70 @@ struct JsonTopLevel {
 /// );
 /// ```
 #[derive(Debug)]
-pub struct JsonInput<R> {
-    compressed_json: R,
+pub struct JsonInput {
+    compressed_json: CompressedJson,
     top_levels: IndexMap<String, JsonTopLevel>,
 }
 
-impl<R: CompressedJsonReader> JsonInput<R> {
+impl JsonInput {
     /// `new JSONInput(compressedJSON)`.
-    pub fn new(compressed_json: R) -> Self {
+    pub fn new(compressed_json: CompressedJson) -> Self {
         JsonInput {
             compressed_json,
             top_levels: IndexMap::new(),
         }
     }
 
-    /// The reader and its compressed samples.
+    /// A JSON input from the tables and top-levels a JavaScript
+    /// `CompressedJSON` and `JSONInput` built: the JavaScript facade reads
+    /// the samples (with `JSON.parse` and its error messages) and sends the
+    /// result this way (research 05, §4.2).
+    pub fn from_compressed(
+        tables: &CompressedJsonTables,
+        handle_refs: bool,
+        date_time_recognizer: Box<dyn DateTimeRecognizer>,
+        top_levels: Vec<CompressedTopLevel>,
+    ) -> Result<Self> {
+        let compressed_json =
+            CompressedJson::from_tables(date_time_recognizer, handle_refs, tables)?;
+        let (objects, arrays) = compressed_json.counts();
+        let mut input = JsonInput::new(compressed_json);
+        for top_level in top_levels {
+            let values = top_level
+                .samples
+                .iter()
+                .map(|&v| input.compressed_json.decode_value(v, objects, arrays))
+                .collect::<Result<Vec<Value>>>()?;
+            input.add_samples(&top_level.name, values, top_level.description.as_deref());
+        }
+        Ok(input)
+    }
+
+    /// The inverse of [`from_compressed`](Self::from_compressed): the
+    /// compressed samples as tables and encoded top-levels.
+    pub fn to_compressed(&self) -> (CompressedJsonTables, Vec<CompressedTopLevel>) {
+        let roots: Vec<Value> = self
+            .top_levels
+            .values()
+            .flat_map(|t| t.samples.iter().copied())
+            .collect();
+        let (tables, encoded) = self.compressed_json.to_tables(&roots);
+        let mut encoded = encoded.into_iter();
+        let top_levels = self
+            .top_levels
+            .iter()
+            .map(|(name, t)| CompressedTopLevel {
+                name: name.clone(),
+                description: t.description.clone(),
+                samples: encoded.by_ref().take(t.samples.len()).collect(),
+            })
+            .collect();
+        (tables, top_levels)
+    }
+
+    /// The compressed samples.
     pub fn compressed_json(&self) -> &CompressedJson {
-        self.compressed_json.compressed_json()
+        &self.compressed_json
     }
 
     /// `addSamples(name, values, description)`.
@@ -395,36 +456,28 @@ impl<R: CompressedJsonReader> JsonInput<R> {
         }
     }
 
-    /// `addSource(source)`.
-    pub async fn add_source(&mut self, source: JsonSourceData<R::Sample>) -> Result<()> {
-        let JsonSourceData {
-            name,
-            samples,
-            description,
-        } = source;
-        check_samples(&name, samples.len())?;
-        let mut values = Vec::with_capacity(samples.len());
-        for sample in samples {
-            match self.compressed_json.parse(sample).await {
-                Ok(value) => values.push(value),
-                Err(e) => return Err(message_parse_error(&name, description.as_deref(), &e)),
-            }
-        }
-        self.add_samples(&name, values, description.as_deref());
-        Ok(())
+    /// `addSource(source)`. Reading is synchronous; the future exists for
+    /// [`Input`]'s sake.
+    pub async fn add_source(&mut self, source: JsonSourceData) -> Result<()> {
+        self.add_source_sync(source)
     }
 
     /// `addSourceSync(source)`.
-    pub fn add_source_sync(&mut self, source: JsonSourceData<R::Sample>) -> Result<()> {
+    pub fn add_source_sync(&mut self, source: JsonSourceData) -> Result<()> {
         let JsonSourceData {
             name,
             samples,
             description,
         } = source;
-        check_samples(&name, samples.len())?;
+        if samples.is_empty() {
+            return message_error(
+                ErrorKind::DriverNoSamplesForTopLevel,
+                vec![("name", name.into())],
+            );
+        }
         let mut values = Vec::with_capacity(samples.len());
         for sample in samples {
-            match self.compressed_json.parse_sync(sample) {
+            match self.compressed_json.parse_sample(sample) {
                 Ok(value) => values.push(value),
                 Err(e) => return Err(message_parse_error(&name, description.as_deref(), &e)),
             }
@@ -444,7 +497,7 @@ impl<R: CompressedJsonReader> JsonInput<R> {
         infer_enums: bool,
         fixed_top_levels: bool,
     ) -> Result<()> {
-        let inference = TypeInference::new(self.compressed_json(), infer_maps, infer_enums);
+        let inference = TypeInference::new(&self.compressed_json, infer_maps, infer_enums);
         for (name, top_level) in &self.top_levels {
             let tref = inference.infer_top_level_type(
                 type_builder,
@@ -463,8 +516,8 @@ impl<R: CompressedJsonReader> JsonInput<R> {
     }
 }
 
-impl<R: CompressedJsonReader + 'static> Input for JsonInput<R> {
-    type Source = JsonSourceData<R::Sample>;
+impl Input for JsonInput {
+    type Source = JsonSourceData;
 
     fn kind(&self) -> &str {
         "json"
@@ -509,17 +562,6 @@ impl<R: CompressedJsonReader + 'static> Input for JsonInput<R> {
     }
 }
 
-/// `DriverNoSamplesForTopLevel` for an empty sample list.
-fn check_samples(name: &str, count: usize) -> Result<()> {
-    if count == 0 {
-        return message_error(
-            ErrorKind::DriverNoSamplesForTopLevel,
-            vec![("name", name.into())],
-        );
-    }
-    Ok(())
-}
-
 /// `messageParseError(name, description, e)`.
 fn message_parse_error(name: &str, description: Option<&str>, e: &ParseError) -> QuickTypeError {
     QuickTypeError::new(
@@ -536,16 +578,19 @@ fn message_parse_error(name: &str, description: Option<&str>, e: &ParseError) ->
 }
 
 /// `jsonInputForTargetLanguage(targetLanguage, languages, handleJSONRefs,
-/// rendererOptions)` for a language object: a JSON input with `JSON.parse`
-/// semantics, the language's date/time recognizer and its integer range
-/// for `renderer_options`.
+/// rendererOptions)` for a language object: a JSON input with the
+/// language's date/time recognizer and its integer range for
+/// `renderer_options`. Samples given as [`JsonSample::String`] are read with
+/// `JSON.parse` semantics, as in TypeScript.
 pub fn json_input_for_target_language(
     target_language: &dyn TargetLanguage,
     handle_json_refs: bool,
     renderer_options: &RendererOptions,
-) -> JsonInput<CompressedJsonFromString> {
-    JsonInput::new(CompressedJsonFromString::new(
-        CompressedJson::for_target_language(target_language, handle_json_refs, renderer_options),
+) -> JsonInput {
+    JsonInput::new(CompressedJson::for_target_language(
+        target_language,
+        handle_json_refs,
+        renderer_options,
     ))
 }
 
@@ -557,7 +602,7 @@ pub fn json_input_for_target_language_named(
     languages: Option<&[&'static dyn TargetLanguage]>,
     handle_json_refs: bool,
     renderer_options: &RendererOptions,
-) -> Result<JsonInput<CompressedJsonFromString>> {
+) -> Result<JsonInput> {
     let languages = languages.unwrap_or_else(|| default_target_languages());
     let target_language = defined(language_named(name, languages))?;
     Ok(json_input_for_target_language(

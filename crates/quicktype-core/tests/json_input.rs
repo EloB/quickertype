@@ -26,8 +26,7 @@ use quicktype_core::attributes::uri_attributes::{
 };
 use quicktype_core::date_time::{DateTimeRecognizer, DefaultDateTimeRecognizer};
 use quicktype_core::inference::{INFERENCE_FLAGS, InferenceFlags};
-use quicktype_core::input::compressed_json::{CompressedJson, CompressedJsonFromString};
-use quicktype_core::input::compressed_json_from_stream::CompressedJsonFromStream;
+use quicktype_core::input::compressed_json::{CompressedJson, JsonSample};
 use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
 use quicktype_core::input::postman_collection::sources_from_postman_collection;
 use quicktype_core::language::all::{default_target_languages, language_named};
@@ -126,34 +125,34 @@ fn build(config: &Config, sources: &[Source], options: &Options) -> Result<Vec<S
         !options.flags.ignore_json_refs,
         &options.renderer_options,
     );
-    let mut input_data = InputData::new();
     // The CLI's reader through the async API, the JavaScript API's reader
     // through the sync one.
-    if config.stream {
-        let mut input = JsonInput::new(CompressedJsonFromStream::new(cjson));
-        for source in sources {
-            block_on(input.add_source(JsonSourceData {
-                name: source.name.clone(),
-                samples: source.samples.clone(),
-                description: source.description.clone(),
-            }))?;
+    let mut input = JsonInput::new(cjson);
+    for source in sources {
+        let samples = source
+            .samples
+            .iter()
+            .map(|s| {
+                if config.stream {
+                    JsonSample::Stream(s.clone())
+                } else {
+                    JsonSample::String(String::from_utf8(s.clone()).expect("UTF-8 sample"))
+                }
+            })
+            .collect();
+        let source = JsonSourceData {
+            name: source.name.clone(),
+            samples,
+            description: source.description.clone(),
+        };
+        if config.stream {
+            block_on(input.add_source(source))?;
+        } else {
+            input.add_source_sync(source)?;
         }
-        input_data.add_input(input);
-    } else {
-        let mut input = JsonInput::new(CompressedJsonFromString::new(cjson));
-        for source in sources {
-            input.add_source_sync(JsonSourceData {
-                name: source.name.clone(),
-                samples: source
-                    .samples
-                    .iter()
-                    .map(|s| String::from_utf8(s.clone()).expect("UTF-8 sample"))
-                    .collect(),
-                description: source.description.clone(),
-            })?;
-        }
-        input_data.add_input(input);
     }
+    let mut input_data = InputData::new();
+    input_data.add_input(input);
 
     let ctx = RunContext::for_target_language(config.lang, &options.flags);
     let mut builder = TypeBuilder::new(

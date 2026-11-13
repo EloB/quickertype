@@ -2,8 +2,10 @@
 //! parser of stream-json 3.5.0 (`node_modules/stream-json/src/core/parser.js`)
 //! that it is driven by.
 //!
-//! This is how the CLI reads JSON samples, and it differs from `JSON.parse`
-//! ([`CompressedJsonFromString`](crate::input::compressed_json::CompressedJsonFromString)):
+//! This is how the CLI reads JSON samples
+//! ([`CompressedJson::parse_stream`](crate::input::compressed_json::CompressedJson::parse_stream)),
+//! and it differs from `JSON.parse`
+//! ([`CompressedJson::parse_string`](crate::input::compressed_json::CompressedJson::parse_string)):
 //!
 //! - a number is a `double` iff its literal contains `.`, `e` or `E`, or it
 //!   is a whole number outside the target's integer range (compared as a
@@ -22,54 +24,31 @@
 //! like Node's `setEncoding("utf8")` (invalid sequences become U+FFFD); a
 //! byte order mark is not stripped and is a syntax error, as in the CLI.
 
-use super::compressed_json::{CompressedJson, CompressedJsonReader, ParseError, Value};
+use super::compressed_json::{CompressedJson, ParseError, Value};
 use crate::messages::Result;
 
-/// `CompressedJSONFromStream`: reads samples with the CLI's stream-json
-/// semantics. A sample is the raw bytes of a file, URL body or standard
-/// input (TS: a `Readable`).
-///
-/// ```
-/// use quicktype_core::date_time::DefaultDateTimeRecognizer;
-/// use quicktype_core::input::compressed_json::{
-///     CompressedJson, CompressedJsonReader, ParseError, Value,
-/// };
-/// use quicktype_core::input::compressed_json_from_stream::CompressedJsonFromStream;
-///
-/// let cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
-/// let mut reader = CompressedJsonFromStream::new(cjson);
-/// assert_eq!(reader.parse_sync(b"1.0".to_vec()), Ok(Value::Double));
-/// assert_eq!(
-///     reader.parse_sync(b"[1 2]".to_vec()),
-///     Err(ParseError::Syntax("Parser cannot parse input: expected ','".to_owned()))
-/// );
-/// ```
-#[derive(Debug)]
-pub struct CompressedJsonFromStream {
-    cjson: CompressedJson,
-}
-
-impl CompressedJsonFromStream {
-    /// A reader that fills `cjson`.
-    pub fn new(cjson: CompressedJson) -> Self {
-        CompressedJsonFromStream { cjson }
-    }
-}
-
-impl CompressedJsonReader for CompressedJsonFromStream {
-    type Sample = Vec<u8>;
-
-    fn compressed_json(&self) -> &CompressedJson {
-        &self.cjson
-    }
-
-    /// `parse(readStream)`: tokenizes the sample and forwards each token
-    /// to the builder (TS `methodMap`).
-    fn parse_sync(&mut self, sample: Vec<u8>) -> Result<Value, ParseError> {
-        let text = String::from_utf8_lossy(&sample);
-        let result = Tokenizer::new(&text, &mut self.cjson).run();
+impl CompressedJson {
+    /// `CompressedJSONFromStream.parse(readStream)`: reads a sample with the
+    /// CLI's stream-json semantics. The sample is the raw bytes of a file,
+    /// URL body or standard input (TS: a `Readable`); each token goes to
+    /// the builder (TS `methodMap`).
+    ///
+    /// ```
+    /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
+    /// use quicktype_core::input::compressed_json::{CompressedJson, ParseError, Value};
+    ///
+    /// let mut cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
+    /// assert_eq!(cjson.parse_stream(b"1.0"), Ok(Value::Double));
+    /// assert_eq!(
+    ///     cjson.parse_stream(b"[1 2]"),
+    ///     Err(ParseError::Syntax("Parser cannot parse input: expected ','".to_owned()))
+    /// );
+    /// ```
+    pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
+        let text = String::from_utf8_lossy(sample);
+        let result = Tokenizer::new(&text, self).run();
         if result.is_err() {
-            self.cjson.reset_partial_sample();
+            self.reset_partial_sample();
         }
         result
     }
@@ -450,16 +429,12 @@ mod tests {
     use crate::date_time::DefaultDateTimeRecognizer;
     use crate::support::integer_range::{INT64_RANGE, IntegerRange};
 
-    fn reader(range: Option<IntegerRange>) -> CompressedJsonFromStream {
-        CompressedJsonFromStream::new(CompressedJson::new(
-            Box::new(DefaultDateTimeRecognizer),
-            false,
-            range,
-        ))
+    fn reader(range: Option<IntegerRange>) -> CompressedJson {
+        CompressedJson::new(Box::new(DefaultDateTimeRecognizer), false, range)
     }
 
     fn read(text: &str) -> Result<Value, ParseError> {
-        reader(Some(INT64_RANGE.clone())).parse_sync(text.as_bytes().to_vec())
+        reader(Some(INT64_RANGE.clone())).parse_stream(text.as_bytes())
     }
 
     fn error(text: &str) -> String {
@@ -479,7 +454,7 @@ mod tests {
         assert_eq!(read("1E400"), Ok(Value::Double));
         let mut unbounded = reader(None);
         assert_eq!(
-            unbounded.parse_sync(b"123456789012345678901234567890".to_vec()),
+            unbounded.parse_stream(b"123456789012345678901234567890"),
             Ok(Value::Integer)
         );
     }
@@ -488,9 +463,9 @@ mod tests {
     fn duplicate_keys_and_source_order() {
         let mut r = reader(Some(INT64_RANGE.clone()));
         let v = r
-            .parse_sync(br#"{"b":1.0,"2":1,"a":2,"b":"dup"}"#.to_vec())
+            .parse_stream(br#"{"b":1.0,"2":1,"a":2,"b":"dup"}"#)
             .unwrap();
-        let cjson = r.compressed_json();
+        let cjson = &r;
         let keys: Vec<&str> = cjson
             .get_object_for_value(v)
             .unwrap()
@@ -550,13 +525,39 @@ mod tests {
         }
     }
 
+    /// Deep samples are read without recursion, on success and when the
+    /// error comes after the root value or inside it.
+    #[test]
+    fn deep_nesting() {
+        let n = 1_000_000;
+        let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
+        let mut r = reader(None);
+        assert!(matches!(
+            r.parse_stream(deep.as_bytes()),
+            Ok(Value::Array(_))
+        ));
+        assert_eq!(
+            r.parse_stream(format!("{deep} x").as_bytes())
+                .unwrap_err()
+                .message(),
+            "Parser cannot parse input: unexpected characters"
+        );
+        assert_eq!(
+            r.parse_stream(format!("{}x", r#"{"a":["#.repeat(n / 2)).as_bytes())
+                .unwrap_err()
+                .message(),
+            "Parser cannot parse input: expected a value"
+        );
+        assert_eq!(r.parse_stream(b"1"), Ok(Value::Integer));
+    }
+
     #[test]
     fn escapes_and_surrogates() {
         let mut r = reader(Some(INT64_RANGE.clone()));
         let v = r
-            .parse_sync(br#"["\ud83d\ude00x", "\u00e9\n", "\ud800"]"#.to_vec())
+            .parse_stream(br#"["\ud83d\ude00x", "\u00e9\n", "\ud800"]"#)
             .unwrap();
-        let cjson = r.compressed_json();
+        let cjson = &r;
         let items = cjson.get_array_for_value(v).unwrap();
         let text = |v| cjson.get_string_for_value(v).unwrap();
         assert_eq!(text(items[0]), "😀x");
