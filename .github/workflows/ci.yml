@@ -49,6 +49,42 @@ jobs:
           name: parity-report
           path: parity-report.json
 
+  # TypeScript input against what quicktype-typescript-input (TypeScript
+  # 5.9) recorded. Needs the TypeScript 7.0.2 native compiler; without it
+  # the test would skip itself, so the version is checked first.
+  typescript-input:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install the TypeScript 7.0.2 compiler
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/tsc" typescript@7.0.2
+          tsc="$RUNNER_TEMP/tsc/node_modules/@typescript/typescript-linux-x64/lib/tsc"
+          "$tsc" --version
+          "$tsc" --version | grep -q "7\.0\.2"
+          echo "QUICKTYPE_TSC=$tsc" >> "$GITHUB_ENV"
+      - run: cargo test -p quicktype-typescript-input --test differential
+
+  # Secrets in the whole history (configuration: .gitleaks.toml).
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            | tar -xz gitleaks
+          ./gitleaks git --no-banner --redact .
+
   wasm:
     runs-on: ubuntu-latest
     steps:
