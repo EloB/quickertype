@@ -59,7 +59,7 @@ export function scenarios() {
                         }
 
                         const handleRefs = kase.flags.ignoreJsonRefs === false;
-                        const input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.rendererOptions);
+                        const input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.api?.rendererOptions ?? kase.rendererOptions);
                         for (const tl of topLevels) await input.addSource(tl);
                         inputData.addInput(input);
                     }

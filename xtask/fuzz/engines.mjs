@@ -108,7 +108,8 @@ export function quicktypeOptions(kase, inputData, withApiExtras = true) {
     const options = {
         lang: kase.lang,
         inputData,
-        rendererOptions: kase.rendererOptions,
+        // API runs may give the options as other values than the CLI would.
+        rendererOptions: withApiExtras && kase.api?.rendererOptions !== undefined ? kase.api.rendererOptions : kase.rendererOptions,
         alphabetizeProperties: kase.flags.alphabetizeProperties === true,
         allPropertiesOptional: kase.flags.allPropertiesOptional === true,
     };
@@ -147,10 +148,10 @@ export async function runInProcess(side, kase, mode) {
         if (mode === "stream") {
             const lang = qt.getTargetLanguage(kase.lang);
             input = new qt.JSONInput(
-                new side.Stream(lang.dateTimeRecognizer, handleRefs, lang.getSupportedIntegerRange(kase.rendererOptions)),
+                new side.Stream(lang.dateTimeRecognizer, handleRefs, lang.getSupportedIntegerRange(options.rendererOptions)),
             );
         } else {
-            input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.rendererOptions);
+            input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, options.rendererOptions);
         }
 
         for (const tl of topLevels) {

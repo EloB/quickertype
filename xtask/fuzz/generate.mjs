@@ -1089,6 +1089,18 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
         kase.api.outputFilename = extraRng.pick(["Foo.x", "out.ts", "my-file.go", "Model.java", "a.b.c", "x", "Top Level.swift",
             "日本.ts", "ünïcode.h", "😀.rs", "class.py", "1abc.c", ".hidden", "no_extension", "a-b.c-d.e", "UPPER.H", "x.d.ts", "stdout"]);
     }
+    if (extraRng.chance(0.08)) {
+        // The renderer options as other JavaScript values than the CLI gives.
+        const odd = {};
+        for (const [name, value] of Object.entries(kase.rendererOptions)) {
+            if (value === true) odd[name] = extraRng.pick([true, "true", false, "false", 1, 0, "yes", null]);
+            else odd[name] = extraRng.weighted([[6, value], [1, String(value).toUpperCase()], [1, 3], [1, [value]]]);
+        }
+
+        if (extraRng.chance(0.3)) odd[extraRng.pick(["bogus-option", "justTypes", "toString", "__proto__"])] = true;
+        kase.api.rendererOptions = odd;
+    }
+
     kase.debug = [];
     if (extraRng.chance(0.12)) {
         const components = ["print-graph", "print-reconstitution", "print-gather-names", "print-transformations", "provenance"];
