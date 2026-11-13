@@ -1,0 +1,18 @@
+# The Smithy4s renderer (CLI name smithy4a), which has no golden coverage
+# beyond the CLI option sweep, on JSON samples: nested and recursive
+# structures, lists of lists, maps, unions with list and map members,
+# nullable and optional properties, inferred enums and top-level lists,
+# maps and primitives.
+input json TopLevel {"name": "x", "count": 1, "ratio": 1.5, "flag": true, "tags": ["a", "b"], "matrix": [[1, 2], [3]], "nested": {"deepValue": null, "items": [{"id": 1}, {"id": "two"}]}, "maybe": null, "choice": [1, "a", {"z": 1}, [1], {"k": {"z": 2}}], "byKey": {"k1": {"v": 1}, "k2": {"v": 2}, "k3": {"v": 3}, "k4": {"v": 4}, "k5": {"v": 5}, "k6": {"v": 6}}, "case": "a", "type": 2, "a-b": 3, "1st": 4, "trailing_": 5, "with space": 6, "anything": [null, 1], "empty": {}, "status": "open", "kind": "open"}
+input json Records [{"id": 1, "label": "a", "status": "open"}, {"id": 2, "status": "closed", "extra": [1.5, null]}, {"id": 3, "status": "open", "label": null}]
+input json Strings ["a", "b"]
+input json Lists [[{"x": 1}]]
+input json Number 3.5
+pipeline {"lang": "smithy4a", "inferMaps": true}
+
+render smithy4a {}
+render smithy4a {"rendererOptions": {"package": "com.example.model"}}
+render smithy4a {"rendererOptions": {"just-types": true}}
+render smithy4a {"alphabetize": true}
+render smithy4a {"indentation": "  "}
+render smithy4a {"leadingComments": ["Leading comment", {"lines": ["line one", "line two"]}]}

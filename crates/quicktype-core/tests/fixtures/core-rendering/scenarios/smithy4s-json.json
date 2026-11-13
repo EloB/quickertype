@@ -1,0 +1,688 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "name",
+      7,
+      false
+     ],
+     [
+      "count",
+      1,
+      false
+     ],
+     [
+      "ratio",
+      20,
+      false
+     ],
+     [
+      "flag",
+      14,
+      false
+     ],
+     [
+      "tags",
+      21,
+      false
+     ],
+     [
+      "matrix",
+      15,
+      false
+     ],
+     [
+      "nested",
+      16,
+      false
+     ],
+     [
+      "maybe",
+      4,
+      false
+     ],
+     [
+      "choice",
+      8,
+      false
+     ],
+     [
+      "byKey",
+      5,
+      false
+     ],
+     [
+      "case",
+      7,
+      false
+     ],
+     [
+      "type",
+      1,
+      false
+     ],
+     [
+      "a-b",
+      1,
+      false
+     ],
+     [
+      "1st",
+      1,
+      false
+     ],
+     [
+      "trailing_",
+      1,
+      false
+     ],
+     [
+      "with space",
+      1,
+      false
+     ],
+     [
+      "anything",
+      2,
+      false
+     ],
+     [
+      "empty",
+      13,
+      false
+     ],
+     [
+      "status",
+      7,
+      false
+     ],
+     [
+      "kind",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 3
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     4,
+     1
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "k1",
+      6,
+      false
+     ],
+     [
+      "k2",
+      6,
+      false
+     ],
+     [
+      "k3",
+      6,
+      false
+     ],
+     [
+      "k4",
+      6,
+      false
+     ],
+     [
+      "k5",
+      6,
+      false
+     ],
+     [
+      "k6",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 9
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     1,
+     11,
+     10,
+     7
+    ]
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 1
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "z",
+      1,
+      true
+     ],
+     [
+      "k",
+      12,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "z",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 10
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "deepValue",
+      4,
+      false
+     ],
+     [
+      "items",
+      17,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 18
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      19,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     1,
+     7
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Number"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Strings"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 7
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Records"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 23
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "id",
+      1,
+      false
+     ],
+     [
+      "label",
+      26,
+      true
+     ],
+     [
+      "status",
+      7,
+      false
+     ],
+     [
+      "extra",
+      24,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 25
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     20,
+     4
+    ]
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     4,
+     7
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Lists"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 28
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 29
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "x",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Records",
+    22
+   ],
+   [
+    "Strings",
+    21
+   ],
+   [
+    "Lists",
+    27
+   ],
+   [
+    "Number",
+    20
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n    @required name : String,\n    @required count : Long,\n    @required ratio : Double,\n    @required flag : Boolean,\n    @required tags : StringsList,\n    @required matrix : matrixList,\n    @required nested : Nested,\n    maybe : Document,\n    @required choice : choiceList,\n    @required byKey : ByKey,\n    @required `case` : String,\n    @required type : Long,\n    @required `a-b` : Long,\n    @required `1st` : Long,\n    @required `trailing_` : Long,\n    @required with space : Long,\n    @required anything : anythingList,\n    @required empty : Empty,\n    @required status : String,\n    @required kind : String\n}\nlist StringsList{ member: String}\nlist matrixList{ member: matrixList}\nlist choiceList{ member: ChoiceElement}\nlist anythingList{ member: Long}\n\nstructure ByKey {\n    @required k1 : K1,\n    @required k2 : K1,\n    @required k3 : K1,\n    @required k4 : K1,\n    @required k5 : K1,\n    @required k6 : K1\n}\n\nstructure K1 {\n    @required v : Long\n}\n\n@untagged union ChoiceElement { \n    A : ChoiceClass\n    B : matrixList\n    C : Long\n    D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n    z : Long,\n    k : K\n}\n\nstructure K {\n    @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n    deepValue : Document,\n    @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n    @required id : ID\n}\n\n@untagged union ID { \n    A : Long\n    B : String\n}\n\nstructure Record {\n    @required id : Long,\n    label : String,\n    @required status : String,\n    extra : extraList\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n    @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       17,
+       12,
+       17,
+       20
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       70,
+       16,
+       70,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "package": "com.example.model"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace com.example.model\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n    @required name : String,\n    @required count : Long,\n    @required ratio : Double,\n    @required flag : Boolean,\n    @required tags : StringsList,\n    @required matrix : matrixList,\n    @required nested : Nested,\n    maybe : Document,\n    @required choice : choiceList,\n    @required byKey : ByKey,\n    @required `case` : String,\n    @required type : Long,\n    @required `a-b` : Long,\n    @required `1st` : Long,\n    @required `trailing_` : Long,\n    @required with space : Long,\n    @required anything : anythingList,\n    @required empty : Empty,\n    @required status : String,\n    @required kind : String\n}\nlist StringsList{ member: String}\nlist matrixList{ member: matrixList}\nlist choiceList{ member: ChoiceElement}\nlist anythingList{ member: Long}\n\nstructure ByKey {\n    @required k1 : K1,\n    @required k2 : K1,\n    @required k3 : K1,\n    @required k4 : K1,\n    @required k5 : K1,\n    @required k6 : K1\n}\n\nstructure K1 {\n    @required v : Long\n}\n\n@untagged union ChoiceElement { \n    A : ChoiceClass\n    B : matrixList\n    C : Long\n    D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n    z : Long,\n    k : K\n}\n\nstructure K {\n    @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n    deepValue : Document,\n    @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n    @required id : ID\n}\n\n@untagged union ID { \n    A : Long\n    B : String\n}\n\nstructure Record {\n    @required id : Long,\n    label : String,\n    @required status : String,\n    extra : extraList\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n    @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       17,
+       12,
+       17,
+       20
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       70,
+       16,
+       70,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n    @required name : String,\n    @required count : Long,\n    @required ratio : Double,\n    @required flag : Boolean,\n    @required tags : StringsList,\n    @required matrix : matrixList,\n    @required nested : Nested,\n    maybe : Document,\n    @required choice : choiceList,\n    @required byKey : ByKey,\n    @required `case` : String,\n    @required type : Long,\n    @required `a-b` : Long,\n    @required `1st` : Long,\n    @required `trailing_` : Long,\n    @required with space : Long,\n    @required anything : anythingList,\n    @required empty : Empty,\n    @required status : String,\n    @required kind : String\n}\nlist StringsList{ member: String}\nlist matrixList{ member: matrixList}\nlist choiceList{ member: ChoiceElement}\nlist anythingList{ member: Long}\n\nstructure ByKey {\n    @required k1 : K1,\n    @required k2 : K1,\n    @required k3 : K1,\n    @required k4 : K1,\n    @required k5 : K1,\n    @required k6 : K1\n}\n\nstructure K1 {\n    @required v : Long\n}\n\n@untagged union ChoiceElement { \n    A : ChoiceClass\n    B : matrixList\n    C : Long\n    D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n    z : Long,\n    k : K\n}\n\nstructure K {\n    @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n    deepValue : Document,\n    @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n    @required id : ID\n}\n\n@untagged union ID { \n    A : Long\n    B : String\n}\n\nstructure Record {\n    @required id : Long,\n    label : String,\n    @required status : String,\n    extra : extraList\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n    @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       17,
+       12,
+       17,
+       20
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       70,
+       16,
+       70,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n    @required `a-b` : Long,\n    @required anything : anythingList,\n    @required byKey : ByKey,\n    @required choice : choiceList,\n    @required count : Long,\n    @required empty : Empty,\n    @required flag : Boolean,\n    @required kind : String,\n    @required matrix : matrixList,\n    maybe : Document,\n    @required name : String,\n    @required nested : Nested,\n    @required ratio : Double,\n    @required status : String,\n    @required tags : StringsList,\n    @required `1st` : Long,\n    @required `case` : String,\n    @required `trailing_` : Long,\n    @required type : Long,\n    @required with space : Long\n}\nlist anythingList{ member: Long}\nlist choiceList{ member: ChoiceElement}\nlist matrixList{ member: matrixList}\nlist StringsList{ member: String}\n\nstructure ByKey {\n    @required k1 : K1,\n    @required k2 : K1,\n    @required k3 : K1,\n    @required k4 : K1,\n    @required k5 : K1,\n    @required k6 : K1\n}\n\nstructure K1 {\n    @required v : Long\n}\n\n@untagged union ChoiceElement { \n    A : ChoiceClass\n    B : matrixList\n    C : Long\n    D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n    k : K,\n    z : Long\n}\n\nstructure K {\n    @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n    deepValue : Document,\n    @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n    @required id : ID\n}\n\n@untagged union ID { \n    A : Long\n    B : String\n}\n\nstructure Record {\n    extra : extraList,\n    @required id : Long,\n    label : String,\n    @required status : String\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n    @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       19,
+       12,
+       19,
+       20
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       70,
+       16,
+       70,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n  @required name : String,\n  @required count : Long,\n  @required ratio : Double,\n  @required flag : Boolean,\n  @required tags : StringsList,\n  @required matrix : matrixList,\n  @required nested : Nested,\n  maybe : Document,\n  @required choice : choiceList,\n  @required byKey : ByKey,\n  @required `case` : String,\n  @required type : Long,\n  @required `a-b` : Long,\n  @required `1st` : Long,\n  @required `trailing_` : Long,\n  @required with space : Long,\n  @required anything : anythingList,\n  @required empty : Empty,\n  @required status : String,\n  @required kind : String\n}\nlist StringsList{ member: String}\nlist matrixList{ member: matrixList}\nlist choiceList{ member: ChoiceElement}\nlist anythingList{ member: Long}\n\nstructure ByKey {\n  @required k1 : K1,\n  @required k2 : K1,\n  @required k3 : K1,\n  @required k4 : K1,\n  @required k5 : K1,\n  @required k6 : K1\n}\n\nstructure K1 {\n  @required v : Long\n}\n\n@untagged union ChoiceElement { \n  A : ChoiceClass\n  B : matrixList\n  C : Long\n  D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n  z : Long,\n  k : K\n}\n\nstructure K {\n  @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n  deepValue : Document,\n  @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n  @required id : ID\n}\n\n@untagged union ID { \n  A : Long\n  B : String\n}\n\nstructure Record {\n  @required id : Long,\n  label : String,\n  @required status : String,\n  extra : extraList\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n  @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       17,
+       10,
+       17,
+       18
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       70,
+       14,
+       70,
+       22
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "smithy4a",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    "Leading comment",
+    {
+     "lines": [
+      "line one",
+      "line two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Leading comment\n\n// line one\n// line two\n\n$version: \"2\"\nnamespace quicktype\n\ndocument NullValue\n\nlist Records { member : Record}\nlist Strings { member : String}\nlist Lists { member : ListList}\n\nstructure TopLevel {\n    @required name : String,\n    @required count : Long,\n    @required ratio : Double,\n    @required flag : Boolean,\n    @required tags : StringsList,\n    @required matrix : matrixList,\n    @required nested : Nested,\n    maybe : Document,\n    @required choice : choiceList,\n    @required byKey : ByKey,\n    @required `case` : String,\n    @required type : Long,\n    @required `a-b` : Long,\n    @required `1st` : Long,\n    @required `trailing_` : Long,\n    @required with space : Long,\n    @required anything : anythingList,\n    @required empty : Empty,\n    @required status : String,\n    @required kind : String\n}\nlist StringsList{ member: String}\nlist matrixList{ member: matrixList}\nlist choiceList{ member: ChoiceElement}\nlist anythingList{ member: Long}\n\nstructure ByKey {\n    @required k1 : K1,\n    @required k2 : K1,\n    @required k3 : K1,\n    @required k4 : K1,\n    @required k5 : K1,\n    @required k6 : K1\n}\n\nstructure K1 {\n    @required v : Long\n}\n\n@untagged union ChoiceElement { \n    A : ChoiceClass\n    B : matrixList\n    C : Long\n    D : String\n}\n\nlist matrixList{ member: Long}\n\nstructure ChoiceClass {\n    z : Long,\n    k : K\n}\n\nstructure K {\n    @required z : Long\n}\n\nstructure Empty{}\n\nstructure Nested {\n    deepValue : Document,\n    @required items : itemsList\n}\nlist itemsList{ member: Item}\n\nstructure Item {\n    @required id : ID\n}\n\n@untagged union ID { \n    A : Long\n    B : String\n}\n\nstructure Record {\n    @required id : Long,\n    label : String,\n    @required status : String,\n    extra : extraList\n}\nlist extraList{ member: Double}\n\nstructure ListElement {\n    @required x : Long\n}\n",
+     "annotations": [
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       22,
+       12,
+       22,
+       20
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       75,
+       16,
+       75,
+       24
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "smithy4s-json"
+}
