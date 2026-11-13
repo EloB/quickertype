@@ -1,0 +1,14 @@
+# rewriteFixedPoint rewrites the original graph twice when the size changes.
+builder
+prim i integer
+prim d double
+str s unrestricted
+cls unused x:d n=Unused
+cls c x:i,y:s n=C
+top C c
+finish printonrewrite
+print
+fixedpoint debug
+print
+fixedpoint
+print

@@ -1,0 +1,19 @@
+(forwarding intersections: false)
+0: none Nothing | 0 | given Nothing ()
+1: integer | 1
+2: class C | children 1,0 | 2 | given C ()
+
+# none to any
+reconstituting 2
+reconstituted 2 as 0
+reconstituting 1
+reconstituted 1 as 1
+replacing set 0 as 2
+replaced set 0 as 2
+0: class C | children 1,2 | 2 | given C ()
+1: integer | 1
+2: any | 0
+0: class C | children 1,2 | 2 | given C ()
+1: integer | 1
+2: any | 0
+(nonetoany: unchanged)

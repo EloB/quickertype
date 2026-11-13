@@ -149,9 +149,11 @@ the others name the fix they need.
   `String`s cannot. Wherever the TypeScript produces one, the port drops it:
   `utf16::units_to_string`, `utf16::slice`/`substring`,
   `json::gap_from_str`, and through them `strings::utf16_concat_map`,
-  `utf16_legalize_characters`, `combine_words` (via legalizers) and
-  `pluralize`. Lone surrogates in input JSON are not representable at all.
-  No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
+  `utf16_legalize_characters`, `combine_words` (via legalizers),
+  `pluralize` and `combineNames` (`attributes/type_names.rs`, whose common
+  prefix/suffix of a type's names can cut an astral character in half).
+  Lone surrogates in input JSON are not representable at all. No golden
+  input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or

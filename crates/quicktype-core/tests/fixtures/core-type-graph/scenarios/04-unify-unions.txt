@@ -1,0 +1,18 @@
+# Unification flattens unions; string cases, enums and numbers.
+builder
+prim i integer in=num
+prim d double
+str s1 cases=red:2,blue:1 in=color
+str s2 cases=blue:3,green:1
+enum e a,b n=Letters
+prim nul null
+union u1 i,s1 in=first
+union u2 d,nul,u1 in=second
+cls x p:u2,q:s2 n=X
+cls y p:u1,q:e n=Y
+top X x
+top Y y
+finish printonrewrite
+print
+unify 8,9 conflate debug
+print

@@ -1,0 +1,3 @@
+(forwarding intersections: false)
+0: string when | distance 1 when () | unrestricted
+1: class C | children 0 | given C ()

@@ -1,0 +1,250 @@
+Pune Hedgehog
+Tartu Gecko
+Livingstone Southern White-faced Owl
+Hammerfest Ponies
+Arak Groundhog
+Beijing Pigeon
+Trapani Snow Leopard
+Chiang Mai Goose
+Esbjerg Cougar
+Basse-Terre Elephant
+Casablanca Groundhog
+Barcelona Hawaiian Monk Seal
+Porto Camel
+Santiago de Cali Raven
+St. George's Bee-eater
+Alexandria Anteater
+Nord Sugar Gliders
+Mafikeng Aardwolf
+Hargeisa Cotton Rat
+Dibrugarh Ferrets
+Veracruz Chimpanzee
+Kanazawa Ivory Bush Coral
+Ufa Bat
+Riyadh Flying Frog
+Tokyo Clown Triggerfish
+Tórshavn Butterfly
+Glasgow Yellowjacket
+Da Nang Chipmunk
+Örnsköldsvik Guinea Pigs
+Coventry Jaguar
+Ankara Giant Anteater
+Oslo Cheetah
+Hamilton African Wild Dog
+Dortmund Ant
+Shanghai Salmon
+Nzérékoré Squirrel Monkey
+Addis Ababa Garter Snake
+Punta Arenas Rabbit
+Tbilisi Hyena
+George Town Leopard
+Tartu Grison
+Invercargill Pangolin
+Des Moines Ring-tailed Lemur
+Basra Cobra
+Gloucester Lion
+Nukulaelae Anteater
+Liverpool Grizzly Bear
+Xi'an Monarch Butterfly
+Sarajevo Mice
+Fort-de-France Ring-tailed Lemur
+Simferopol Coyote
+Perth Chinese Water Dragon
+Port Moresby Iguanas
+Tampere Gayal
+Pago Pago Mouse Deer
+Sault Ste. Marie Rats
+Innsbruck Newt
+Luxor Ring-tailed Lemur
+Bridgetown Crow
+Abidjan Drongo
+Lilongwe Tyrant Flycatcher
+Kandahar Monkey
+Cairns Death Adder
+Rouen Rabbit
+Charlotte Polar Bear
+Dededo Camel
+Irkutsk Pacific White Sided Dolphin
+Charlotte Hamsters
+Harare Snakes
+Kharkiv Mini Donkey
+Kumasi Sheep
+Pelotas Geckos
+Saguenay Geese
+Reno Guanaco
+Arica Dogs
+Port-au-Prince Ferrets
+Marseille Cats
+Geneva Elk
+Mecca Shelduck
+Novosibirsk Blue Whale
+Huambo Porpoise
+Birmingham Duck
+Haparanda Silkworm
+Porto Small Clawed Asian Otter
+Bucharest Rhea
+Fort Wayne Hornbill
+Tiaret Camel
+Key West Basilisk
+Chaguanas Impala
+Harare Hippopotamus
+Suez Rabbits
+Dundee Killer Whale
+Basseterre Dog
+Entebbe Raccoon dog
+Hobart Cotton Rat
+Tromsø Cows
+Veracruz Grison
+Springfield Wallaby
+Tartu Dog
+Kuopio Weaver-finch
+Waitangi Turkey
+Kōchi Zebu
+Perth Copepod
+Fort-de-France Giant Panda
+Valletta Nubian Ibex
+Hyderabad Grouse
+Handan Goat
+Oviedo Toad
+Isfahan Gorilla
+Ouagadougou Nurse Shark
+Ndola Radiated Tortoise
+Ürümqi Kowari
+Malang Bull Shark
+Trabzon Viper
+Pierre Old World Flycatcher
+Nagano Ladybug
+Asunción Coquerel's Sifaka
+Mogadishu Cougar
+Jayapura Wombat
+Melekeok African Wild Ass
+Alofi Chinese Water Dragon
+Haparanda Margay
+Innsbruck Accentor
+Montpelier Lion
+Prince George Armadillo
+North Bay Fox
+Portland Hyena
+Karachi Spectacled Bear
+Cannes Radiated Tortoise
+Cusco Rabbits
+Funchal Coquerel's Sifaka
+Bordeaux Silverside Fish
+Luxor Drongo
+Blantyre Dunnart
+Charlotte Amalie Rabbits
+Yaroslavl Camel
+Dover Guinea
+Accra Zebra
+Akureyri Silkworm
+Campinas Himalayan Tahr
+Vologda Aardwolf
+Tampico Fossa
+Palikir Ivory Bush Coral
+Puerto Aisén Cicada
+Cannes African Wild Ass
+Orlando Alpaca
+Weno Deer
+Port Vila Hyrax
+Pierre Beluga Whale
+Saga Llama
+Lillehammer Helmetshrike
+Berlin Flea
+Stepanakert Asian Black Bear
+Pekanbaru Cow
+Cayenne Armadillo
+Mugla Snakes
+Bologna Tarantula
+Bologna Beetle
+Fukui Gerbil
+Petrozavodsk White-Beaked Dolphin
+Torreón Lion
+Gold Coast Starfish
+Libreville Goat
+Springfield Barred Owl
+Natal Dingo
+Nagano Rabbits
+Guayaquil Slender Snipe Eel
+Temuco Turkeys
+Santiago de Cuba Falcon
+Zanzibar City Goats
+Nelspruit Malayan Tapir
+Saguenay Queen Parrotfish
+Roseau Pigs and Hogs
+Liberia Chameleons
+Dover West Indian Manatee
+Algiers Deer Mouse
+Mbabane Cows
+Santiago Donkey
+Longyearbyen Atlantic Cod
+Alofi Fly
+Concord Guinea Pigs
+Tabriz Alpaca
+Maspalomas Viper
+Belfast Hedgehog
+Hammerfest Chuckwalla
+Nelspruit Little Penguin
+Timbuktu Ducks
+Casablanca Donkey
+Yaren District Gelada
+Tainan Matschies Tree Kangaroo
+Anadyr Oryx
+Wilmington Spectacled Bear
+Lagos Cookiecutter Shark
+Suez Birds
+Hargeisa Cotton Rat
+Boston Stick Insects
+Durango Guinea
+New Delhi Honey
+Tezpur Mouse
+Porto-Novo Llamas
+random 0.4170219984371215
+random 0.99718480813317
+random 0.720324489288032
+random 0.9325573612004519
+random 0.00011438108049333096
+random 0.12812444777227938
+random 0.302332567749545
+random 0.9990405153948814
+random 0.14675589255057275
+random 0.23608897626399994
+random 0.09233859553933144
+random 0.39658072614111006
+random 0.1862602112814784
+random 0.38791074021719396
+random 0.34556072507984936
+random 0.66974604036659
+random 0.3967674686573446
+random 0.9355390726123005
+random 0.5388167318888009
+random 0.8463109182193875
+random 0.4191945190541446
+random 0.31327351299114525
+random 0.6852195006795228
+random 0.5245481627061963
+random 0.2044522489886731
+random 0.44345289375633
+random 0.8781174370087683
+random 0.22957722004503012
+random 0.027387595968320966
+random 0.5344139072112739
+random 0.6704675075598061
+random 0.9139620224013925
+random 0.41730480431579053
+random 0.45720480917952955
+random 0.5586898273322731
+random 0.4306985700968653
+random 0.1403869369532913
+random 0.939127794932574
+random 0.1981014832854271
+random 0.7783892354927957
+random 0.8007445663679391
+random 0.7159705108497292
+random 0.9682615718338639
+random 0.8027575032319874
+random 0.313424184685573
+random 0.09280081023462117
+random 0.692322616931051
+random 0.5181525482330471
+random 0.8763891460839659
+random 0.8650202453136444

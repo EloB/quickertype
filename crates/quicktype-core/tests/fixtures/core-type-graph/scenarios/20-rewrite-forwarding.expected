@@ -1,0 +1,35 @@
+(forwarding intersections: false)
+0: integer
+1: string | unrestricted
+2: map existing | children 0 | distance 1 existing ()
+3: object O1 | children 0 | given O1 ()
+4: object O2 | children 0 | given O2 ()
+5: class Top | children 2,3,4 | given Top ()
+
+# unify
+reconstituting 5
+reconstituted 5 as 0
+reconstituting 2
+reconstituted 2 as 1
+reconstituting 0
+reconstituted 0 as 2
+replacing set 3,4 as 3
+replaced set 3,4 as 3
+0: class Top | children 1,3 | given Top ()
+1: map existing | children 2 | distance 1 existing ()
+2: integer
+3: intersection o1 | children 1 | given O1,O2 ()
+
+# remove indirection intersections
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 1 as 1
+reconstituted 1 as 1
+reconstituting 2 as 2
+reconstituted 2 as 2
+0: class Top | children 1 | given Top ()
+1: map o1 | children 2 | given O1,O2 ()
+2: integer
+0: class Top | children 1 | given Top ()
+1: map o1 | children 2 | given O1,O2 ()
+2: integer

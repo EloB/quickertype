@@ -1,0 +1,54 @@
+(forwarding intersections: false)
+0: integer
+1: double
+2: string | unrestricted
+3: null
+4: class Alpha | children 0,2 | given Alpha ()
+5: class Beta | children 1,3 | given Beta ()
+6: class Gamma | children 0,2 | distance 1 Gamma ()
+7: array | children 4
+8: class Top | children 7,5,6 | given Top ()
+
+# unify
+reconstituting 8
+reconstituted 8 as 0
+reconstituting 7
+reconstituted 7 as 1
+replacing set 4,5,6 as 2
+  reconstituting 2
+  reconstituted 2 as 4
+  reconstituting 3
+  reconstituted 3 as 5
+  reconstituting 0
+  reconstituted 0 as 6
+replaced set 4,5,6 as 2
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class alpha | children 6,3,4,5 | given Alpha,Beta ()
+3: double
+4: string | unrestricted
+5: null
+6: integer
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class alpha | children 6,3,4,5 | given Alpha,Beta ()
+3: double
+4: string | unrestricted
+5: null
+6: integer
+
+# GC
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class alpha | children 3,4,5,6 | given Alpha,Beta ()
+3: integer
+4: double
+5: string | unrestricted
+6: null
+0: class Top | children 1,2 | given Top ()
+1: array | children 2
+2: class alpha | children 3,4,5,6 | given Alpha,Beta ()
+3: integer
+4: double
+5: string | unrestricted
+6: null

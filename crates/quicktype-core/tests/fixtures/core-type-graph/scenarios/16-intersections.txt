@@ -1,0 +1,15 @@
+# Intersections print, and chains of single-member intersections are removed.
+builder
+prim i integer
+str s unrestricted
+uinter x1 n=X1
+uinter x2 n=X2
+members x2 x1
+members x1 i
+inter x3 i,s n=Both
+cls top a:x2,b:x3 n=Top
+top Top top
+finish printonrewrite
+print
+rmind debug
+print

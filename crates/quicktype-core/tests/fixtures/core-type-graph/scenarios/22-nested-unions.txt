@@ -1,0 +1,21 @@
+# Nested single-member unions pass their attributes to the leaves; deeper
+# unions' attributes become inferred.
+builder
+prim i integer
+prim b bool
+str s unrestricted
+union inner i n=Inner desc=inner-docs
+union mid inner,b in=Mid
+union outer mid,s n=Outer
+prim nul null
+union other nul,i in=Other
+cls x u:outer n=X
+cls y u:other n=Y
+top X x
+top Y y
+finish printonrewrite
+print
+unify 8,9 debug
+print
+gc
+print

@@ -1,0 +1,11 @@
+# none becomes any; attributes of any are dropped except provenance.
+builder prov
+prim none none n=Nothing
+prim i integer
+cls c n:none,i:i n=C
+top C c
+finish printonrewrite
+print
+nonetoany debug
+print
+nonetoany

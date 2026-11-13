@@ -1,0 +1,41 @@
+(forwarding intersections: false)
+0: integer
+1: string | unrestricted
+2: class C | children 0,1 | given C ()
+3: class Top | children 2 | given Top ()
+
+# GC
+reconstituting 3 as 0
+reconstituted 3 as 0
+reconstituting 2 as 1
+reconstituted 2 as 1
+reconstituting 0 as 2
+reconstituted 0 as 2
+reconstituting 1 as 3
+reconstituted 1 as 3
+0: class Top | children 1 | given Top ()
+1: class C | children 2,3 | given C ()
+2: integer
+3: string | unrestricted
+0: class Top | children 1 | given Top ()
+1: class C | children 2,3 | given C ()
+2: integer
+3: string | unrestricted
+
+# GC
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 1 as 1
+reconstituted 1 as 1
+reconstituting 2 as 2
+reconstituted 2 as 2
+reconstituting 3 as 3
+reconstituted 3 as 3
+0: class Top | children 1 | given Top ()
+1: class C | children 2,3 | given C ()
+2: integer
+3: string | unrestricted
+0: class Top | children 1 | given Top ()
+1: class C | children 2,3 | given C ()
+2: integer
+3: string | unrestricted

@@ -1,0 +1,24 @@
+(forwarding intersections: true)
+0: class Node | children 2,1 | given Node ()
+1: integer
+2: array children | children 0 | distance 1 children ()
+3: intersection again | children 1 | distance 1 again ()
+4: class Wrapper | children 3,1 | distance 1 Wrapper ()
+
+# remove indirection intersections
+reconstituting 0 as 0
+reconstituted 0 as 0
+reconstituting 2 as 1
+reconstituted 2 as 1
+reconstituting 1 as 2
+reconstituted 1 as 2
+reconstituting 4 as 3
+reconstituted 4 as 3
+0: class Node | children 1,2 | given Node ()
+1: array children | children 0 | distance 1 children ()
+2: integer again | distance 1 again ()
+3: class Wrapper | children 2 | distance 1 Wrapper ()
+0: class Node | children 1,2 | given Node ()
+1: array children | children 0 | distance 1 children ()
+2: integer again | distance 1 again ()
+3: class Wrapper | children 2 | distance 1 Wrapper ()

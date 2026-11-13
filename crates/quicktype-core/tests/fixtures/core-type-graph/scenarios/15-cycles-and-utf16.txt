@@ -1,0 +1,17 @@
+# Cycles survive GC; property names sort by UTF-16 code units.
+builder
+reserve a
+reserve b
+prim i integer
+ucls ca open - n=A fwd=a
+ucls cb open - n=B fwd=b
+props a 😀:b,ｚ:i,z:i,é:a
+props b back?:a,x:i
+uarr arr in=list
+items arr a
+cls top list:arr n=Top
+top Top top
+finish printonrewrite
+print
+gc alpha
+print

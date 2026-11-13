@@ -1,0 +1,48 @@
+(forwarding intersections: false)
+0: integer
+1: double
+2: string | unrestricted
+3: null
+4: any
+5: enum
+6: union U1 | children 0,2 | given U1 ()
+7: union U2 | children 3,6 | given U2 ()
+8: union | children 1,0
+9: union | children 5,2
+10: union U5 | children 1,6 | distance 1 U5 ()
+11: intersection X1 | children 4,0 | given X1 ()
+12: intersection X2 | children 11,2 | given X2 ()
+13: class C1 | children 0,2 | given C1 ()
+14: class C2 | children 1,2 | given C2 ()
+15: class C3 | children 0 | given C3 ()
+16: array | children 13
+17: array | children 14
+18: class Top | children 7,8,9,10,12,13,14,15,16,17,5 | given Top ()
+recmembers 7 union: 0,2,3 | given U2,U1 ()
+recmembers 10: 0,2,1 | 
+recmembers 12 intersect: 0,2 | given X2,X1 ()
+recmembers 11,12 intersect: 0,2 | given X1,X2 ()
+recmembers 6,7,10 union: 0,2,3,1 | given U1,U2 ()
+groups 6,7,8,9,10: 6;7;8;9;10
+compatible 13 14: false
+compatible 13 14 conflate: true
+compatible 13 15: false
+compatible 16 17 conflate: true
+compatible 0 1: false
+compatible 0 1 conflate: true
+canonical 6: true
+canonical 7: false
+canonical 8: true
+canonical 9: false
+nullable 7: true
+nullable 6: false
+nullable 4: true
+named: objects 18,13,14,15 enums 5 unions 7,6,8,9,10
+parents 0: 6,8,11,13,15
+parents 2: 6,9,12,13,14
+nonnull 7: 3 | 6
+nonnull 8: - | 1,0
+reachable 18: 18
+reachable 7: 6
+reachable 8: 8
+error: Internal error: isNullable not implemented for IntersectionType

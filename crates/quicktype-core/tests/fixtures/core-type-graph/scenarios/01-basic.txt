@@ -1,0 +1,20 @@
+# Deduplication by identity, names and printing.
+builder
+prim i integer in=count
+prim i2 integer in=total
+prim d double
+str s unrestricted in=label
+str s2 unrestricted
+prim b bool n=Flag
+prim nul null
+arr a i in=counts
+arr a2 i
+cls c x:i,y?:s,z:a n=Point
+cls c2 y?:s,x:i,z:a in=Other
+ucls u open x:i
+top Top c
+top Second u
+finish printonrewrite
+print
+gc
+print

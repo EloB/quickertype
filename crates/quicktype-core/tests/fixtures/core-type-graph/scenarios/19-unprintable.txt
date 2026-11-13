@@ -1,0 +1,8 @@
+# Printing an object whose properties were never set is an internal error.
+builder
+prim i integer
+obj o - i n=O
+cls top o:o n=Top
+top Top top
+finish
+print

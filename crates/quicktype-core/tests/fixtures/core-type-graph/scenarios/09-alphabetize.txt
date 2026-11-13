@@ -1,0 +1,14 @@
+# Canonical order sorts properties; GC with alphabetize makes classes unique.
+builder alpha
+prim i integer
+str s unrestricted
+cls c zeta:i,alpha:s,Mid:i n=C
+cls c2 alpha:s,zeta:i,Mid:i in=Same
+cls top b:c,a:c2 n=Top
+top Top top
+finish printonrewrite
+print
+gc alpha debug
+print
+gc debug
+print

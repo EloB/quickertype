@@ -1,0 +1,14 @@
+# Optional properties become nullable unions.
+builder
+prim i integer
+str s unrestricted in=name
+prim nul null
+union u i,s in=either
+cls c a?:i,b?:u,c:s,d?:nul n=C
+ucls f fixed a?:s n=Fixed
+cls top c:c,f:f n=Top
+top Top top
+finish printonrewrite
+print
+opt2null debug
+print

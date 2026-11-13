@@ -1,0 +1,48 @@
+(forwarding intersections: false)
+0: integer
+1: string | unrestricted
+2: any
+3: map m | children 0 | distance 1 m,other ()
+4: object O1 | children 1,0 | given O1 ()
+5: object O2 | children 0,1 | given O2 ()
+6: object O3 | children 2 | given O3 ()
+7: map | children 1
+8: class Top | children 3,4,5,6,7 | given Top ()
+
+# unify
+0: class Top | children 1,5,6,8 | given Top ()
+1: map O1 | children 2 | given O1 ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
+5: object O2 | children 3,4 | given O2 ()
+6: object O3 | children 7 | given O3 ()
+7: any
+8: map | children 4
+0: class Top | children 1,5,6,8 | given Top ()
+1: map O1 | children 2 | given O1 ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
+5: object O2 | children 3,4 | given O2 ()
+6: object O3 | children 7 | given O3 ()
+7: any
+8: map | children 4
+
+# unify
+0: class Top | children 1,5,7 | given Top ()
+1: map O1 | children 2 | given O1 ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
+5: map o2 | children 6 | given O2,O3 ()
+6: any
+7: map | children 4
+0: class Top | children 1,5,7 | given Top ()
+1: map O1 | children 2 | given O1 ()
+2: union | children 3,4
+3: integer
+4: string | unrestricted
+5: map o2 | children 6 | given O2,O3 ()
+6: any
+7: map | children 4
