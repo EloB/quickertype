@@ -328,9 +328,11 @@ impl Ref {
             Some(uri) => (uri.filename().to_owned(), uri.suffix()),
             None => (String::new(), ""),
         };
-        if utf16::len(&name) > suffix.len() + 1 {
-            // The suffix and its dot are ASCII.
-            name.truncate(name.len() - suffix.len() - 1);
+        let length = utf16::len(&name);
+        if length > suffix.len() + 1 {
+            // `name.slice(0, name.length - suffix.length - 1)`, in UTF-16
+            // units (the suffix is ASCII; without one, the last unit goes).
+            name = utf16::slice(&name, 0, Some((length - suffix.len() - 1) as i64)).to_owned();
         }
         if name.is_empty() {
             return Ok("Something".to_owned());

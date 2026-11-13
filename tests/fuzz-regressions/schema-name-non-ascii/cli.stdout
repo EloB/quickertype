@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Ncd",
+    "definitions": {
+        "NcdObject": {
+            "type": "object",
+            "additionalProperties": {},
+            "properties": {
+                "_1": {}
+            },
+            "required": [],
+            "title": "NcdObject"
+        },
+        "Ncd": {
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {}
+                },
+                {
+                    "type": "boolean"
+                },
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/NcdObject"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Ncd"
+        }
+    }
+}
