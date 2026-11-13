@@ -108,6 +108,36 @@
    "console": []
   },
   {
+   "lang": "cjson",
+   "filename": "TopLevel.h",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Cannot declare type",
+   "console": []
+  },
+  {
+   "lang": "cjson",
+   "filename": "TopLevel.h",
+   "alphabetize": false,
+   "rendererOptions": {
+    "source-style": "multi-source"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Defined value expected, but got undefined",
+   "console": []
+  },
+  {
    "lang": "ruby",
    "filename": "out.txt",
    "alphabetize": false,

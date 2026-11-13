@@ -1,0 +1,8 @@
+# cJSON enums: `qt-enum-values` give enumerators explicit values (by
+# language, with the `*` wildcard), the others count on from 1; case
+# names with C escapes in the getter and creator.
+input schema TopLevel {"type": "object", "properties": {"level": {"type": "string", "enum": ["low", "mid", "high", "max"], "qt-enum-values": {"low": "10", "high": {"cjson": "30", "*": "99"}, "max": {"rust": "7"}}}, "mode": {"type": "string", "enum": ["a\"b", "tab\tc", "nl\nd", "u\u0003e"], "qt-enum-values": {"tab\tc": "-1"}}, "other": {"type": "string", "enum": ["x", "y"]}}, "required": ["level", "mode"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "TopLevel.h"}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"enumerator-style": "camel-case", "typedef-alias": "add-typedef"}}

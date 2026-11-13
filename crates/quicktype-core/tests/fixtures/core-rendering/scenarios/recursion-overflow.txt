@@ -12,6 +12,12 @@ input schema TopLevel {"type": "object", "properties": {"x": {"$ref": "#/definit
 render csharp {}
 render csharp {"rendererOptions": {"framework": "NewtonSoft", "csharp-version": "5"}}
 render pike {}
+# cJSON declares types before use, so the cycle's array becomes a
+# declaration and both modes fail before recursing: the single header
+# with "Cannot declare type", one file per type looking up the array's
+# name.
+render cjson {"filename": "TopLevel.h"}
+render cjson {"filename": "TopLevel.h", "rendererOptions": {"source-style": "multi-source"}}
 render ruby {}
 render ruby {"rendererOptions": {"just-types": true}}
 render elixir {}

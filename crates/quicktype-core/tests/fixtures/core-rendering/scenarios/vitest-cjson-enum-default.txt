@@ -1,0 +1,6 @@
+# test/unit/cjson-enum-default.test.ts: enumerators start at 1, so the
+# getter's default 0 never collides with a real enumerator.
+input schema TopLevel {"$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "properties": {"subscription": {"type": "string", "enum": ["state", "config", "heartbeat"]}}, "required": ["subscription"]}
+pipeline {"lang": "cjson"}
+
+render cjson {"filename": "stdout"}
