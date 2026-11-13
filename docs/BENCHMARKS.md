@@ -286,6 +286,19 @@ exist on the new path. CPU time drops by a quarter to a third: tokenizing is
 unchanged, but nothing is stored per value, and inference touches each
 place once instead of each value.
 
+Text samples (`JsonSample::String`, the JavaScript API's `JSON.parse`
+semantics) are still parsed whole and kept in the compressed form, and
+their values are walked into tallies too, so parsing costs more and
+inference less. The in-process benchmark (112 runs per iteration, same
+binary, `QUICKTYPE_INFERENCE=compressed-json` for the reference path;
+built without LTO; median of three interleaved rounds of 10 iterations,
+under the same load):
+
+| Inference from | Total | Parse | Engine |
+|---|---:|---:|---:|
+| Running tallies | 857 ms | 419 ms | 428 ms |
+| `CompressedJSON` (the reference) | 913 ms | 320 ms | 653 ms |
+
 To reproduce, as in [Memory on large inputs](#memory-on-large-inputs),
 with `target/before/quicktype` built from `e41fe731d`:
 
