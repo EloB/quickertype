@@ -272,6 +272,16 @@ function genEnumShape(rng) {
  */
 function genShape(rng, depth, pool) {
     if (pool.length > 0 && rng.chance(0.08)) return rng.pick(pool);
+    const classes = pool.filter((p) => p.k === "class" && p.props.length >= 2);
+    if (classes.length > 0 && rng.chance(0.05)) {
+        // A near copy of another class (some properties dropped, added or
+        // retyped), for combineClasses' overlap threshold.
+        const base = rng.pick(classes);
+        const props = base.props.filter(() => !rng.chance(0.2)).map((p) => (rng.chance(0.1) ? { ...p, shape: genShape(rng, 0, []) } : p));
+        if (rng.chance(0.4)) props.push({ key: genKey(rng), shape: genShape(rng, 0, []), presence: 1, nullP: 0 });
+        return { k: "class", props: rng.chance(0.3) ? rng.shuffle(props) : props };
+    }
+
     const leafWeight = depth <= 0 ? 100 : 5;
     const kind = rng.weighted([
         [leafWeight, "leaf"],
