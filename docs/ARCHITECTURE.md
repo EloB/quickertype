@@ -451,7 +451,7 @@ have no such header.
 
 | Upstream adds | Rust |
 |---|---|
-| A target language | `crates/quicktype-core/src/language/<lang>/` (`language.rs`, the renderer, and `utils.rs`/`constants.rs` where TS has them), declared in `language/mod.rs` and listed in `ALL` (`language/all.rs`) in TS order; follow [RENDERERS.md](RENDERERS.md). `crates/quicktype-core/tests/data/target_languages.json` pins each language's metadata and options (`tests/target_languages.rs`). |
+| A target language | `crates/quicktype-core/src/language/<lang>/` (`language.rs`, the renderer, and `utils.rs`/`constants.rs` where TS has them), declared in `language/mod.rs` and listed in `ALL` (`language/all.rs`) in TS order; follow [RENDERERS.md](RENDERERS.md). `crates/quicktype-core/tests/data/target_languages.json` pins each language's metadata and options (`tests/target_languages.rs`); re-record it with `xtask/core-rendering/record-target-languages.mjs`. |
 | A renderer option | a `static` option in the language's `language.rs`, added to its option slice in TS declaration order and read in that order by the renderer's options `parse`. The CLI and `--help` get it from `cli_option_definitions`. |
 | A global CLI option | a `GlobalOption` variant and its `definition` (name, type, help text) in `crates/quicktype-cli/src/cli_options.rs`, plus a `CliOptions` field |
 | An inference flag | `INFERENCE_FLAGS` and `InferenceFlags` in `crates/quicktype-core/src/inference.rs`, and its `--no-*` `GlobalOption` |
