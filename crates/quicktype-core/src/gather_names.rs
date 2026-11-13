@@ -108,9 +108,6 @@ fn members_sorted_by_kind(graph: &TypeGraph, t: TypeRef) -> Result<Vec<TypeRef>>
     Ok(members.into_iter().map(|(m, _)| m).collect())
 }
 
-/// `addAlternatives(existing, alternatives)` on a stored value (`None`:
-/// TS `undefined`): extends the set in place; it becomes `null` (TS) once
-/// it reaches the threshold.
 /// `parts.join("_")`, without the formatting machinery (alternative names
 /// are built for every name of every type).
 fn underscored(parts: &[&str]) -> String {
@@ -124,6 +121,9 @@ fn underscored(parts: &[&str]) -> String {
     s
 }
 
+/// `addAlternatives(existing, alternatives)` on a stored value (`None`:
+/// TS `undefined`): extends the set in place; it becomes `null` (TS) once
+/// it reaches the threshold.
 fn add_alternatives(
     existing: Option<Alternatives>,
     alternatives: Vec<String>,
