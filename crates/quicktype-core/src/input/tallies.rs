@@ -820,6 +820,11 @@ struct CompressedTally<'c> {
     /// The index of the first `"__proto__"` looked at, which stands for
     /// every one ([`NO_INDEX`] before).
     proto: u32,
+    /// By string index: the node whose cases it was last counted in, and
+    /// its position among them. Most strings occur at one place, where
+    /// this finds them without hashing; it is checked against the cases,
+    /// since the node may have been freed and reused since.
+    case_positions: Vec<(NodeId, u32)>,
     /// Bit sets of the objects and arrays reached so far.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
@@ -869,6 +874,7 @@ impl<'c> CompressedTally<'c> {
             cjson,
             classes: vec![UNKNOWN; cjson.table_counts().strings],
             proto: NO_INDEX,
+            case_positions: vec![(NO_INDEX, 0); cjson.table_counts().strings],
             objects_seen: vec![0; objects.div_ceil(64)],
             arrays_seen: vec![0; arrays.div_ceil(64)],
             stack: Vec::new(),
@@ -876,6 +882,7 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// Whether string `index` is `"__proto__"`.
+    #[inline]
     fn is_proto(&mut self, index: u32) -> Result<bool> {
         let class = defined(self.classes.get_mut(index as usize))?;
         if *class == UNKNOWN {
@@ -979,23 +986,27 @@ impl<'c> CompressedTally<'c> {
         }
         let Tallies { nodes, free, .. } = tallies;
         let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-        let index = match object.keys.get_index(expected) {
-            Some((&found, _)) if found == key => expected,
-            _ => match object.keys.get_index_of(&key) {
-                Some(index) => index,
-                None => {
-                    let fresh = alloc(nodes, free)?;
-                    let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                    object.keys.insert(
-                        key,
-                        KeyTally {
-                            count: 0,
-                            node: fresh,
-                        },
-                    );
-                    object.keys.len() - 1
-                }
-            },
+        // Objects at one place usually list their keys in the same order.
+        if let Some((&found, tally)) = object.keys.get_index_mut(expected)
+            && found == key
+        {
+            tally.count += 1;
+            return Ok((tally.node, expected + 1));
+        }
+        let index = match object.keys.get_index_of(&key) {
+            Some(index) => index,
+            None => {
+                let fresh = alloc(nodes, free)?;
+                let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+                object.keys.insert(
+                    key,
+                    KeyTally {
+                        count: 0,
+                        node: fresh,
+                    },
+                );
+                object.keys.len() - 1
+            }
         };
         let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
         let (_, tally) = defined(object.keys.get_index_mut(index))?;
@@ -1004,6 +1015,7 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// The string tally of `node`.
+    #[inline]
     fn strings(tallies: &mut Tallies, node: NodeId) -> Result<&mut StringTally> {
         let Tallies {
             nodes,
@@ -1033,7 +1045,15 @@ impl<'c> CompressedTally<'c> {
                     index
                 };
                 let strings = Self::strings(tallies, node)?;
-                *strings.cases.entry(id).or_insert(0) += 1;
+                let slot = defined(self.case_positions.get_mut(id as usize))?;
+                match strings.cases.get_index_mut(slot.1 as usize) {
+                    Some((&case, count)) if slot.0 == node && case == id => *count += 1,
+                    _ => {
+                        let entry = strings.cases.entry(id);
+                        *slot = (node, entry.index() as u32);
+                        *entry.or_insert(0) += 1;
+                    }
+                }
                 add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
                 return Ok(true);
             }
