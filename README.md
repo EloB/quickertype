@@ -9,10 +9,11 @@ A Rust port of [quicktype](https://github.com/glideapps/quicktype) with a single
 - A Rust API (`quicktype-core` crate) that the CLI and the WASM bindings are
   built on.
 
-Exactness isn't a slogan here; it's tested. Every one of the 10,132 cases in
+Exactness isn't a slogan here; it's tested. Every one of the 11,177 cases in
 `tests/golden` is a recorded run of the TypeScript quicktype CLI, and
 `cargo xtask parity` replays them against this implementation and compares
-every generated file byte for byte.
+every generated file (and, for the `cli-*` cases, stdout, stderr and the exit
+code) byte for byte.
 
 > Status: scaffolding. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan and
 > `tests/parity-baseline.txt` for the cases that pass today.
