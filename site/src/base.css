@@ -1,0 +1,196 @@
+/* quickertype's pages, what they share: the colours, the type, the links,
+   the masthead and the footer. System fonts; light and dark from
+   prefers-color-scheme. The two engines have a colour each: violet for
+   quickertype (WebAssembly), blue for quicktype (TypeScript), used for the
+   engine switch, the timing bars and the mark.
+
+   The benchmark charts have their own pair, checked with the dataviz
+   palette validator (scripts/validate_palette.js) against both themes'
+   panels and page: quickertype the violet accent, quicktype the gray it is
+   compared with (the emphasis form: the gray is meant to read as gray). */
+
+:root {
+    --paper: #f3f4f7;
+    --panel: #ffffff;
+    --sunk: #f8f8fb;
+    --ink: #1b1c24;
+    --muted: #5f6271;
+    --rule: #dcdee6;
+    --track: #e7e8ef;
+    --wasm: #5b3fd6;
+    --ts: #2a69ad;
+    --ok: #17734a;
+    --bad: #b3261e;
+    --bad-bg: #fbeeed;
+    --focus: #5b3fd6;
+    --code-comment: #737786;
+    --code-string: #22733f;
+    --code-number: #9a5200;
+    --code-keyword: #6a37c4;
+    --code-type: #0c6b7a;
+    --viz-ours: #6250d6;
+    --viz-theirs: #8a8c99;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #131419;
+        --panel: #1a1c23;
+        --sunk: #16171d;
+        --ink: #e5e6ec;
+        --muted: #9a9dab;
+        --rule: #2d303a;
+        --track: #2a2c36;
+        --wasm: #a08cff;
+        --ts: #6ea8ea;
+        --ok: #4cc38a;
+        --bad: #ff8a80;
+        --bad-bg: #2c1c1e;
+        --focus: #a08cff;
+        --code-comment: #7f8494;
+        --code-string: #95d38a;
+        --code-number: #f0b46a;
+        --code-keyword: #b9a6ff;
+        --code-type: #6fcfd9;
+        --viz-ours: #9085e9;
+        --viz-theirs: #696c79;
+        color-scheme: dark;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--paper);
+}
+
+body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--paper);
+    color: var(--ink);
+    font: 14px/1.45 var(--sans);
+    -webkit-text-size-adjust: 100%;
+}
+
+a {
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    text-decoration-color: currentColor;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+input,
+select,
+button,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--wasm);
+}
+
+h1,
+h2,
+p {
+    margin: 0;
+}
+
+/* ---- Masthead ---------------------------------------------------------- */
+
+.masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    padding: 14px 16px 10px;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: center;
+    text-decoration: none;
+}
+
+.mark {
+    width: 22px;
+    height: 22px;
+}
+
+.mark-wasm {
+    fill: var(--wasm);
+}
+
+.mark-ts {
+    fill: var(--ts);
+}
+
+.wordmark {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.tagline {
+    color: var(--muted);
+}
+
+.source {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+
+/* ---- Footer ------------------------------------------------------------ */
+
+.credits {
+    padding: 12px 16px 16px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.credits p {
+    max-width: 80ch;
+}
+
+.credits p + p {
+    margin-top: 4px;
+}
+
+.credits code {
+    font: 11.5px var(--mono);
+    white-space: nowrap;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 520px) {
+    .masthead {
+        padding-top: 12px;
+    }
+
+    .source {
+        margin-left: 0;
+        width: 100%;
+    }
+}

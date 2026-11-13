@@ -19,7 +19,7 @@
 // posts the File itself to the workers, which read it (see worker.js), so
 // that its text never passes through the main thread.
 
-/* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
+/* global __LANGUAGES__, __SAMPLES__, __GENERAL__, __SPEED__ */
 
 import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
@@ -31,6 +31,8 @@ const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
 /** quicktype's general options: { name (the CLI flag), label, option (of `quicktype()`), value (when on) }. */
 const general = __GENERAL__;
+/** From the benchmarks (site/data/benchmarks.json): `upTo`, the largest CLI speed-up. */
+const speed = __SPEED__;
 
 const storageKey = "quickertype.input";
 /** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
@@ -38,6 +40,8 @@ const LARGE = 1_000_000;
 const defaultLanguage = "typescript";
 const defaultSample = "pokedex";
 const defaultEngine = "wasm";
+/** Timed runs per engine when warm runs are measured, after one warm-up run. */
+const measureRuns = 5;
 
 /** The engines by the names the page gives them (and the hash, as `e`). */
 const engineNames = { wasm: "quickertype", ts: "quicktype" };
@@ -645,7 +649,7 @@ async function measure() {
     if (view.status !== "done" || view.settled !== bench.gen || !view.shown.result?.ok) return giveUp();
 
     const req = view.request;
-    const repeat = { warmup: 1, repeat: 5 };
+    const repeat = { warmup: 1, repeat: measureRuns };
     for (const engine of ["wasm", "ts"]) {
         bench[engine] = "running";
         render();
@@ -987,6 +991,7 @@ function renderMeter() {
         const line = summary(sides, timeOf, phases, measured);
         compare = line.same ? "identical" : "different";
         html += line.html;
+        html += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
         if (line.detail !== undefined) say(line.detail);
         say("The lighter part of each bar is reading the input; the rest is generating the code.");
         if (sides.wasm.ok && sides.ts.ok) {
@@ -1009,7 +1014,9 @@ function renderMeter() {
         );
     }
 
-    if (measured) say(`Each engine ran ${bench.wasm.times.length + 1} times on this input; the first run is not counted.`);
+    if (measured) {
+        say(`Each engine ran once to warm up, then ${bench.wasm.times.length} timed runs on this input, one engine at a time, never both together.`);
+    }
     const boot = bootNote(lanes);
     if (boot) say(boot);
 
@@ -1019,7 +1026,7 @@ function renderMeter() {
 
     const measuring = bench !== undefined && bench.failure === undefined && !(isResult(bench.wasm) && isResult(bench.ts));
     const label = !measuring
-        ? "Measure warm runs (5×)"
+        ? `Measure warm runs (${measureRuns}×)`
         : bench.wasm === "running"
           ? `Measuring ${engineNames.wasm}…`
           : bench.ts === "running"
@@ -1028,9 +1035,12 @@ function renderMeter() {
     // aria-disabled rather than disabled, so that the button keeps the keyboard focus while it measures.
     const off = measuring || !result.ok;
     const focused = document.activeElement?.id === "measure";
-    html += `<div class="fine"><p>${fine.join(" ")}</p><button type="button" id="measure" class="measure" title="Runs both engines 6 times on this input, and compares the medians of the last 5"${
+    // The measurement: one warm-up run, then `measureRuns` timed runs, on
+    // quickertype and then on quicktype (measure(): one request per engine,
+    // in turn; the workers share one lane, so no two requests ever overlap).
+    html += `<div class="fine"><p>${fine.join(" ")}</p><div class="measure-box"><button type="button" id="measure" class="measure" aria-describedby="measure-how"${
         off ? ' aria-disabled="true"' : ""
-    }>${label}</button></div>`;
+    }>${label}</button><small id="measure-how">1 warm-up, then ${measureRuns} timed runs per engine; one engine at a time, never both together</small></div></div>`;
     els.meter.innerHTML = html;
     if (focused) document.getElementById("measure").focus();
 }

@@ -48,6 +48,16 @@
 // dropped one, and one deleted before a worker read it each show why in the
 // output pane, name the file and its CLI command, and leave nothing running.
 //
+// The speed story: the build refuses benchmark data that is incomplete or
+// inconsistent; the playground's headline, the note under its comparison and
+// the benchmarks page (benchmarks.html) say what site/data/benchmarks.json
+// and big-inputs.json hold; every chart and bar there has an accessible
+// label and a table; the charts take their colours from the theme; every
+// link resolves (pages and data here, anchors, files in this repository,
+// commits); and neither page scrolls sideways at 360 or 390 px. "Measure
+// warm runs" says what it does, and does it: one warm-up and 5 timed runs
+// per engine, one engine after the other.
+//
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
 // (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
 // Google Chrome or Chromium; without one the test says so and exits 0 (in
@@ -60,6 +70,18 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+    benchmarksFile,
+    bigInputsFile,
+    checkBenchmarks,
+    formatMiB,
+    formatMs as formatBenchMs,
+    links as benchLinks,
+    named as benchNamed,
+    readBenchmarks,
+    speedFacts,
+    times as speedup,
+} from "../benchmarks.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
 
@@ -265,12 +287,15 @@ async function launch(browser) {
         console.log(`  screenshot: ${file}`);
     }
 
-    /** A full load of `url` (via about:blank: a change of hash alone would not reload the page). */
-    async function navigate(url) {
+    /**
+     * A full load of `url` (via about:blank: a change of hash alone would not
+     * reload the page); the playground's, unless `playground` is false.
+     */
+    async function navigate(url, { playground = true } = {}) {
         await send("Page.navigate", { url: "about:blank" });
         await waitFor("location.href === 'about:blank'", "about:blank");
         await send("Page.navigate", { url });
-        await waitFor("document.readyState === 'complete' && globalThis.playground", "the page to load");
+        await waitFor(`document.readyState === 'complete' && ${playground ? "globalThis.playground" : "true"}`, "the page to load");
     }
 
     async function close() {
@@ -287,6 +312,24 @@ async function launch(browser) {
 
 // ---------------------------------------------------------------------------
 // The checks
+
+// The build refuses benchmark data the pages could not honestly show.
+const benchmarkData = readBenchmarks();
+const speedNow = speedFacts(benchmarkData.bench);
+{
+    const broken = (what, change) => {
+        const data = structuredClone(benchmarkData.bench);
+        change(data);
+        assert.throws(() => checkBenchmarks(data), (e) => e.message.startsWith("site/data/benchmarks.json: "), `the build accepted ${what}`);
+    };
+    broken("CLIs that wrote different files", (d) => (d.cli[0].identical = false));
+    broken("a row without quicktype's time", (d) => delete d.cli[1].results.typescript);
+    broken("a median below the minimum", (d) => (d.cli[2].results.rust.median_ms = d.cli[2].results.rust.min_ms / 2));
+    broken("no corpus run", (d) => (d.corpus = null));
+    broken("a short commit", (d) => (d.commits.quicktype = "c39af7d"));
+    broken("a benchmark the page names, missing", (d) => (d.cli = d.cli.filter((r) => r.name !== benchNamed.pokedex)));
+    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data is refused`);
+}
 
 const browser = findBrowser();
 if (browser === undefined) {
@@ -322,9 +365,9 @@ async function oneAtATime(what) {
 /** Checked on every page before leaving it. */
 let requestsChecked = 0;
 const navigateTo = page.navigate;
-page.navigate = async (target) => {
+page.navigate = async (target, options) => {
     requestsChecked += await oneAtATime(`the requests on ${await page.evaluate("location.href")}`);
-    await navigateTo(target);
+    await navigateTo(target, options);
 };
 
 /**
@@ -727,6 +770,21 @@ try {
     console.log(`ok: the engine switch: quicktype, (quickertype), with the note "${group.note}"`);
     await page.screenshot("default.png");
 
+    // The speed headline, from site/data/benchmarks.json: one sentence and two links.
+    const headline = await page.evaluate(`(() => {
+        const p = document.getElementById("speed");
+        return { text: p.textContent, links: [...p.querySelectorAll("a")].map((a) => [a.textContent, a.getAttribute("href")]), bottom: p.getBoundingClientRect().bottom };
+    })()`);
+    assert.equal(
+        headline.text,
+        `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
+    );
+    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.readme]]);
+    // It leaves the playground in view: the panes start in the first screen.
+    const panesTop = await page.evaluate("document.querySelector('.panes').getBoundingClientRect().top");
+    assert.ok(panesTop < 900 * 0.6, `the panes start at ${panesTop} px`);
+    console.log(`ok: the speed headline: "${headline.text}" (the panes start at ${Math.round(panesTop)} px)`);
+
     // just-types on: types only, as `quicktype --just-types`; the hash says
     // so and brings it back; off again, the converters are back.
     await click("opt-just-types");
@@ -972,6 +1030,15 @@ try {
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&e=quicktype");
     let compare = await comparedIdentical("quicktype after quickertype");
     console.log(`ok: switched to quicktype: only quicktype ran; ${compare}`);
+    const note = await page.evaluate(`(() => {
+        const p = document.querySelector("#meter .cli-note");
+        return p && { text: p.textContent, href: p.querySelector("a")?.getAttribute("href") };
+    })()`);
+    assert.deepEqual(note, {
+        text: `In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speedNow.upTo}× faster. Why`,
+        href: "./benchmarks.html#browser",
+    });
+    console.log(`ok: the note at the comparison: "${note.text}"`);
     ran = await switchEngine("wasm", "the switch back to quickertype");
     assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype ran");
     await sameAsCli("pokedex.json → TypeScript on quickertype again", "quicktype --lang typescript --top-level Pokedex pokedex.json");
@@ -979,13 +1046,50 @@ try {
     await comparedIdentical("quickertype after quicktype");
     console.log("ok: back on quickertype: nothing ran, the comparison stays");
 
-    // Warm runs: both engines, medians.
+    // Warm runs: both engines, medians. The control says what it does: one
+    // warm-up, then 5 timed runs per engine, one engine at a time; and it
+    // does that (the requests it sends, one after the other).
+    const measureControl = await page.evaluate(`(() => {
+        const button = document.getElementById("measure");
+        return { label: button.textContent, how: document.getElementById(button.getAttribute("aria-describedby"))?.textContent };
+    })()`);
+    assert.deepEqual(measureControl, {
+        label: "Measure warm runs (5×)",
+        how: "1 warm-up, then 5 timed runs per engine; one engine at a time, never both together",
+    });
+    await page.evaluate(`(() => {
+        globalThis.measureRequests = [];
+        for (const [engine, client] of Object.entries(playground.engines)) {
+            const send = client.send.bind(client);
+            client.send = (worker, request) => {
+                measureRequests.push({ engine, id: client.nextId, warmup: request.warmup, repeat: request.repeat });
+                return send(worker, request);
+            };
+        }
+    })()`);
     await page.evaluate("document.getElementById('measure').click()");
     await page.waitFor(measuredDone, "the warm measurement", 300_000);
     compare = await comparedIdentical("warm runs", true);
     const bench = await page.evaluate("({ wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })");
+    const measureRequests = await page.evaluate("measureRequests");
+    assert.deepEqual(
+        measureRequests.map(({ engine, warmup, repeat }) => ({ engine, warmup, repeat })),
+        [{ engine: "wasm", warmup: 1, repeat: 5 }, { engine: "ts", warmup: 1, repeat: 5 }],
+        "the measurement's requests",
+    );
+    assert.deepEqual([bench.wasm.times.length, bench.ts.times.length], [5, 5]);
+    assert.ok((await spanOf("ts", measureRequests[1].id)).sent >= (await spanOf("wasm", measureRequests[0].id)).received, "the engines were measured at the same time");
+    assert.match(
+        await page.evaluate("document.querySelector('#meter .fine p').textContent"),
+        / Each engine ran once to warm up, then 5 timed runs on this input, one engine at a time, never both together\./,
+    );
+    console.log(`ok: "${measureControl.label}": ${measureControl.how}; it sent one request per engine, { warmup: 1, repeat: 5 }, one after the other`);
     console.log(`ok: warm runs: ${compare}\n    quickertype ${medians(bench.wasm)}\n    quicktype   ${medians(bench.ts)}`);
     await page.screenshot("compare.png");
+    await page.screenshot("speed-playground-light.png");
+    await page.viewport(1440, 900, { dark: true });
+    await page.screenshot("speed-playground-dark.png");
+    await page.viewport(1440, 900);
 
     // A switch while warm runs are measured: its run waits its turn, after
     // the measurement's run on the other engine, never beside it; then the
@@ -1408,7 +1512,7 @@ try {
     );
     assert.match(largeOpened.status, /^quickertype ran it in \d[\d.]* m?s\.$/, "the large file's status");
     await sameAsCli(`Open file: rulings.json (${(rulings.text.length / 1e6).toFixed(1)} MB, ${rulings.records} records) → TypeScript`, "quicktype --lang typescript --top-level Rulings rulings.json");
-    await page.screenshot("large-file.png");
+    await page.screenshot("speed-large-file.png");
     ran = await switchEngine("ts", "quicktype on the 26 MB file", undefined);
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the 26 MB file ran");
     await sameAsCli("Open file: rulings.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Rulings rulings.json", "ts");
@@ -1441,7 +1545,7 @@ try {
         size: "3.0 GB",
         cli: true,
     });
-    await page.screenshot("file-too-large.png");
+    await page.screenshot("speed-file-too-large.png");
     await openFile(chosen("unreadable.json", readInput("pokedex.json")), { failing: true });
     await openFailed("a file that cannot be read", {
         title: "Could not read unreadable.json",
@@ -1493,6 +1597,175 @@ try {
     assert.equal(await page.evaluate("document.body.dataset.status"), "done");
     console.log(`ok: a file deleted after it was opened: "${gone.message}"; quickertype's result, read before, stays`);
 
+    // The benchmarks page: rendered from site/data/*.json at build time.
+    {
+        const { bench: data, big } = benchmarkData;
+        const benchUrl = `${url}benchmarks.html`;
+        await page.viewport(1440, 900);
+        await page.navigate(benchUrl, { playground: false });
+        const pageNow = await page.evaluate(`(() => {
+            const text = (selector) => [...document.querySelectorAll(selector)].map((n) => n.textContent.replace(/\\s+/g, " ").trim());
+            return {
+                title: document.title,
+                h1: text("h1"),
+                lead: text(".lead")[0],
+                tiles: [...document.querySelectorAll(".tile")].map((t) => t.querySelector("dd").textContent),
+                cli: [...document.querySelectorAll("#cli .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, r.querySelector(".bar-value").textContent, r.querySelector("text.tip").textContent]),
+                memory: [...document.querySelectorAll("#memory .bar-row")].map((r) => [r.querySelector(".bar-name").textContent, ...[...r.querySelectorAll("text.tip")].map((t) => t.textContent)]),
+                corpus: [...document.querySelectorAll("#corpus text.tip")].map((t) => t.textContent),
+                big: [...document.querySelectorAll("#big-files table.plain tbody tr")].map((r) => [...r.children].map((c) => c.textContent)),
+                report: [...document.querySelectorAll("#big-files .bars .bar-value")].map((v) => v.textContent),
+                browser: [...document.querySelectorAll("#browser .bar-row")].map((r) => [r.querySelector(".bar-value").textContent, r.querySelector(".bar-note").textContent]),
+                method: Object.fromEntries([...document.querySelectorAll("#method .facts div")].map((d) => [d.querySelector("dt").textContent, d.querySelector("dd").textContent])),
+                h2: text("h2"),
+            };
+        })()`);
+        assert.equal(pageNow.title, "Benchmarks — quickertype");
+        assert.deepEqual(pageNow.h1, ["Benchmarks"]);
+        assert.equal(pageNow.lead, `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory.`);
+        const pokedex = data.cli.find((r) => r.name === benchNamed.pokedex).results;
+        assert.deepEqual(pageNow.tiles, [
+            `${speedNow.upTo}×`,
+            speedup(speedNow.corpus),
+            speedup(pokedex.typescript.peak_rss_mib / pokedex.rust.peak_rss_mib),
+            big.reports[0].quickertype.replace(/^about /, "~"),
+        ]);
+        assert.deepEqual(
+            pageNow.cli,
+            data.cli.map((r) => [
+                r.name,
+                `${formatBenchMs(r.results.typescript.median_ms)} → ${formatBenchMs(r.results.rust.median_ms)}`,
+                speedup(r.results.typescript.median_ms / r.results.rust.median_ms),
+            ]),
+            "the CLI chart",
+        );
+        assert.deepEqual(
+            pageNow.memory,
+            benchNamed.memory.map((name) => {
+                const r = data.cli.find((row) => row.name === name).results;
+                return [name, formatMiB(r.typescript.peak_rss_mib), formatMiB(r.rust.peak_rss_mib)];
+            }),
+            "the memory chart",
+        );
+        assert.deepEqual(pageNow.corpus, [`${data.corpus.results.typescript.wall_s} s`, `${data.corpus.results.rust.wall_s} s`], "the corpus chart");
+        assert.deepEqual(
+            pageNow.big.map((cells) => cells.slice(1)),
+            big.measured.inputs.map((i) => [i.seconds >= 1 ? `${i.seconds} s` : formatBenchMs(i.seconds * 1000), formatMiB(i.peak_rss_mib)]),
+            "the big inputs",
+        );
+        assert.deepEqual(pageNow.report, [big.reports[0].quicktype, big.reports[0].quickertype], "the user's report");
+        const version = data.cli.find((r) => r.name === benchNamed.startup).results;
+        assert.deepEqual(
+            pageNow.browser.map(([total]) => total),
+            [formatBenchMs(pokedex.typescript.median_ms), formatBenchMs(pokedex.rust.median_ms)],
+            "the start-up chart",
+        );
+        assert.match(pageNow.browser[0][1], new RegExp(`^${formatBenchMs(version.typescript.median_ms)} start-up \\+ `));
+        assert.equal(pageNow.method.Date, new Date(`${data.date}T00:00:00Z`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }));
+        assert.ok(pageNow.method.Machine.startsWith(data.machine.cpu), pageNow.method.Machine);
+        assert.equal(pageNow.method.Command, data.command);
+        assert.ok(pageNow.method.quicktype.startsWith(data.commits.quicktype.slice(0, 7)), pageNow.method.quicktype);
+        assert.ok(pageNow.method.quickertype.startsWith(data.commits.quickertype.slice(0, 7)), pageNow.method.quickertype);
+        assert.deepEqual(pageNow.h2, ["Every CLI run, 96× to 8.1× faster".replace("96×", `${speedNow.upTo}×`).replace("8.1×", speedup(speedNow.lowest)), "Memory", `The whole test corpus, ${speedup(speedNow.corpus)} faster`, "Big files", "In the browser", "Method", "Get the CLI"]);
+        console.log(`ok: the benchmarks page says what the data holds: ${pageNow.cli.length} CLI benchmarks, ${pageNow.memory.length} memory rows, the corpus, ${pageNow.big.length} big inputs and a user's report, the method (${pageNow.method.Date})`);
+
+        // Accessible: every chart a figure with a caption; every bar an image
+        // with a name; every other drawing hidden; every chart's numbers in a table.
+        const a11y = await page.evaluate(`(() => {
+            const svgs = [...document.querySelectorAll("svg")].filter((s) => s.ownerSVGElement === null);
+            return {
+                figures: [...document.querySelectorAll("figure")].map((f) => f.querySelector("figcaption")?.textContent.trim() ?? ""),
+                unnamed: svgs.filter((s) => s.getAttribute("aria-hidden") !== "true" && !(s.getAttribute("role") === "img" && (s.getAttribute("aria-label") ?? "").trim() !== "")).length,
+                bars: svgs.filter((s) => s.getAttribute("role") === "img").map((s) => s.getAttribute("aria-label")),
+                charts: document.querySelectorAll("figure.chart .bars").length,
+                tables: [...document.querySelectorAll("figure.chart")].filter((f) => f.querySelector(".bars") !== null && f.querySelector("table") === null).map((f) => f.querySelector("figcaption").textContent),
+            };
+        })()`);
+        assert.ok(a11y.figures.length >= 6 && a11y.figures.every((c) => c !== ""), `figures without a caption: ${JSON.stringify(a11y.figures)}`);
+        assert.equal(a11y.unnamed, 0, "drawings neither named nor hidden");
+        for (const name of data.cli.map((r) => r.name)) {
+            assert.ok(a11y.bars.some((label) => label.startsWith(`${name}: quickertype `)), `no accessible label for ${name}`);
+        }
+        const reportTables = big.reports.length; // the user's report lists its two values beside the bars
+        assert.equal(a11y.tables.length, reportTables, `charts without a table: ${a11y.tables.join(", ")}`);
+        console.log(`ok: the charts are labelled: ${a11y.figures.length} figures with captions, ${a11y.bars.length} bars named (e.g. "${a11y.bars[2]}"), a table for each chart`);
+
+        // The charts' colours come from the theme: violet and gray, light and dark.
+        const fills = () =>
+            page.evaluate(`(() => {
+                const fill = (selector) => getComputedStyle(document.querySelector(selector)).fill;
+                return { ours: fill("#cli .bar-mark.ours rect"), theirs: fill("#memory .bar-mark.theirs rect"), panel: getComputedStyle(document.querySelector(".chart")).backgroundColor };
+            })()`);
+        const light = await fills();
+        assert.deepEqual(light, { ours: "rgb(98, 80, 214)", theirs: "rgb(138, 140, 153)", panel: "rgb(255, 255, 255)" });
+        await page.screenshot("speed-benchmarks-light.png", { full: true });
+        await page.viewport(1440, 900, { dark: true });
+        const dark = await fills();
+        assert.deepEqual(dark, { ours: "rgb(144, 133, 233)", theirs: "rgb(105, 108, 121)", panel: "rgb(26, 28, 35)" });
+        await page.screenshot("speed-benchmarks-dark.png", { full: true });
+        await page.viewport(1440, 900);
+        console.log("ok: the charts' colours follow the theme (light and dark)");
+
+        // Every link resolves: pages, data and anchors here; files in this
+        // repository; commits; the README.
+        const hrefs = await page.evaluate("[...new Set([...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')))]");
+        const repository = "https://github.com/EloB/quickertype";
+        const checked = [];
+        for (const href of hrefs) {
+            if (href.startsWith("#")) {
+                assert.ok(await page.evaluate(`document.getElementById(${JSON.stringify(href.slice(1))}) !== null`), `no ${href} on the page`);
+            } else if (href.startsWith("./")) {
+                const target = new URL(href, benchUrl);
+                const response = await fetch(target);
+                assert.equal(response.status, 200, `${href}: ${response.status}`);
+                if (href.startsWith("./data/")) {
+                    const source = href.endsWith("benchmarks.json") ? benchmarksFile : bigInputsFile;
+                    assert.deepEqual(await response.json(), JSON.parse(fs.readFileSync(source, "utf8")), `${href} is not ${path.basename(source)}`);
+                }
+                // An anchor (a playground link's hash is its state, as tested above).
+                if (target.hash !== "" && !target.hash.includes("=")) {
+                    const html = await (await fetch(new URL(target.pathname, benchUrl))).text();
+                    assert.ok(html.includes(`id="${target.hash.slice(1)}"`), `${href}: no such anchor`);
+                }
+            } else if (href.startsWith(`${repository}/blob/main/`)) {
+                const file = href.slice(`${repository}/blob/main/`.length);
+                assert.ok(fs.existsSync(path.join(repositoryRoot, file)), `${href}: ${file} is not in this repository`);
+            } else if (href.startsWith(`${repository}/commit/`) || href.startsWith("https://github.com/glideapps/quicktype/commit/")) {
+                const commit = href.split("/").pop();
+                assert.match(commit, /^[0-9a-f]{40}$/, href);
+                assert.ok([data.commits.quickertype, data.commits.quicktype, big.measured.commit].includes(commit), `${href}: not a commit the data names`);
+                if (href.startsWith(repository)) {
+                    const known = spawnSync("git", ["-C", repositoryRoot, "cat-file", "-e", `${commit}^{commit}`]);
+                    assert.equal(known.status, 0, `${href}: not a commit of this repository`);
+                }
+            } else {
+                assert.ok(
+                    [benchLinks.readme, repository, "https://github.com/glideapps/quicktype"].includes(href),
+                    `an unexpected link: ${href}`,
+                );
+            }
+            checked.push(href);
+        }
+        // The playground's links to this page resolve too.
+        assert.equal((await fetch(new URL("./benchmarks.html", url))).status, 200);
+        console.log(`ok: ${checked.length} links on the benchmarks page resolve (pages, data, anchors, repository files, commits)`);
+
+        // Phones: no sideways scrolling, at 360 and 390 px.
+        for (const width of [360, 390]) {
+            await page.viewport(width, 844, { mobile: true });
+            await page.navigate(benchUrl, { playground: false });
+            const sizes = await page.evaluate(`({
+                scroll: document.documentElement.scrollWidth,
+                overflowing: [...document.querySelectorAll("main *")].filter((n) => n.getBoundingClientRect().right > ${width} + 0.5 && n.closest("table") === null).map((n) => n.tagName + "." + n.getAttribute("class")).slice(0, 5),
+            })`);
+            assert.ok(sizes.scroll <= width, `the benchmarks page is ${sizes.scroll} px wide at ${width} px`);
+            assert.deepEqual(sizes.overflowing, [], `${width} px: past the right edge`);
+            if (width === 390) await page.screenshot("speed-benchmarks-390.png", { full: true });
+            console.log(`ok: the benchmarks page at ${width} px: no horizontal scrolling`);
+        }
+        await page.viewport(1440, 900);
+    }
+
     // Phones: stacked, no sideways scrolling, and a long command wrapped.
     for (const width of [360, 390]) {
         await page.viewport(width, 844, { mobile: true });
@@ -1503,7 +1776,10 @@ try {
         await comparedIdentical(`${width} px`);
         const scrollWidth = await page.evaluate("document.documentElement.scrollWidth");
         assert.ok(scrollWidth <= width, `${width} px: the page is ${scrollWidth} px wide`);
-        if (width === 390) await page.screenshot("mobile-390.png", { full: true });
+        if (width === 390) {
+            await page.screenshot("mobile-390.png", { full: true });
+            await page.screenshot("speed-playground-390.png");
+        }
         const { lines } = await commandShown(`${width} px`);
         assert.ok(lines > 1, `${width} px: the command is on ${lines} line(s)`);
         console.log(`ok: ${width} px wide, both engines compared, no horizontal scrolling; the command wraps onto ${lines} lines and copies whole`);
