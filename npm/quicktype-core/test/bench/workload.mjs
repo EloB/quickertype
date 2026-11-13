@@ -24,8 +24,9 @@ export function defaultRounds(length) {
  * its `engineStats` (to check that a WebAssembly side read its samples and
  * ran on the engine), and whether it runs on the TypeScript engine;
  * `inputs` are `{ name, text }`; `gc` collects garbage between runs if the
- * host lets it; `cpu`, if given, reads the process's CPU time (ms), which
- * is also reported.
+ * host lets it (and every run starts in a task of its own, after the
+ * finalizers of what was collected); `cpu`, if given, reads the process's
+ * CPU time (ms), which is also reported.
  */
 export async function measure(sides, inputs, { lang = "typescript", warmup = 3, rounds = defaultRounds, gc, cpu, onProgress } = {}) {
     const results = [];
@@ -39,6 +40,11 @@ export async function measure(sides, inputs, { lang = "typescript", warmup = 3, 
                 const index = (i + k) % sides.length;
                 const side = sides[index];
                 gc?.();
+                // Let the finalizers of the inputs just collected run (they
+                // free the engine's copies of their samples), as they do
+                // between the tasks of a program; a loop of awaits alone
+                // never lets them.
+                await new Promise((resolve) => setTimeout(resolve, 0));
                 if (side.ts) globalThis[engineKey] = "ts";
                 try {
                     const cpuStart = cpu?.();
