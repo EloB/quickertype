@@ -112,7 +112,7 @@ fn find_cases(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-fn snapshot(dir: &Path) -> BTreeMap<String, Vec<u8>> {
+pub(crate) fn snapshot(dir: &Path) -> BTreeMap<String, Vec<u8>> {
     fn walk(base: &Path, dir: &Path, acc: &mut BTreeMap<String, Vec<u8>>) {
         let Ok(entries) = fs::read_dir(dir) else {
             return;
@@ -133,7 +133,7 @@ fn snapshot(dir: &Path) -> BTreeMap<String, Vec<u8>> {
 }
 
 /// Describes the first differing line between two outputs.
-fn first_difference(expected: &[u8], actual: &[u8]) -> String {
+pub(crate) fn first_difference(expected: &[u8], actual: &[u8]) -> String {
     let expected = String::from_utf8_lossy(expected);
     let actual = String::from_utf8_lossy(actual);
     let (el, al): (Vec<&str>, Vec<&str>) =
@@ -236,7 +236,7 @@ fn run_case(
     Ok(elapsed)
 }
 
-fn build_cli(root: &Path) -> Result<Vec<String>, String> {
+pub(crate) fn build_cli(root: &Path) -> Result<Vec<String>, String> {
     let status = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
         .args(["build", "--release", "--package", "quicktype-cli"])
         .current_dir(root)
