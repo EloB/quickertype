@@ -24,6 +24,7 @@ import {
 } from "./Inference.js";
 import { makeTransformations } from "./MakeTransformations.js";
 import { messageError } from "./Messages.js";
+import { runNative, runNativeSync } from "./native/bridge.js";
 import type {
     Annotation,
     Location,
@@ -570,6 +571,20 @@ class Run implements RunContext {
 
         const [inputData, targetLanguage] = preRunResult;
 
+        // quicktype-wasm: eligible runs go to the WebAssembly engine.
+        const nativeResult = runNative(
+            this,
+            this._options,
+            inputData,
+            targetLanguage,
+        );
+        if (nativeResult !== undefined) {
+            const result = await nativeResult;
+            if (result !== undefined) {
+                return result;
+            }
+        }
+
         const graph = await this.makeGraph(inputData);
 
         return this.renderGraph(targetLanguage, graph);
@@ -582,6 +597,17 @@ class Run implements RunContext {
         }
 
         const [inputData, targetLanguage] = preRunResult;
+
+        // quicktype-wasm: eligible runs go to the WebAssembly engine.
+        const nativeResult = runNativeSync(
+            this,
+            this._options,
+            inputData,
+            targetLanguage,
+        );
+        if (nativeResult !== undefined) {
+            return nativeResult;
+        }
 
         const graph = this.makeGraphSync(inputData);
 
