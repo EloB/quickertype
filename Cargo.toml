@@ -16,7 +16,10 @@ authors = ["quicktype contributors"]
 [workspace.dependencies]
 quicktype-core = { path = "crates/quicktype-core" }
 quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
+quicktype-js-compat = { path = "crates/quicktype-js-compat" }
 indexmap = "2"
+regex = "1"
+ryu = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
