@@ -14,6 +14,10 @@
 // without `v` is older than the presets, and is read with quicktype's
 // defaults. The input text is kept in localStorage when the browser allows
 // it.
+//
+// A file larger than the editor shows (LARGE) is never read here: the page
+// posts the File itself to the workers, which read it (see worker.js), so
+// that its text never passes through the main thread.
 
 /* global __LANGUAGES__, __SAMPLES__, __GENERAL__ */
 
@@ -21,6 +25,7 @@ import { EngineClient, Lane, engineKinds } from "./engine-client.js";
 import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
+import { formatBytes, tooLarge, unreadable } from "./input-file.js";
 
 const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
@@ -28,7 +33,7 @@ const samples = __SAMPLES__;
 const general = __GENERAL__;
 
 const storageKey = "quickertype.input";
-/** Inputs longer than this (in characters) are not put in the editor or saved. */
+/** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
 const LARGE = 1_000_000;
 const defaultLanguage = "typescript";
 const defaultSample = "pokedex";
@@ -55,6 +60,8 @@ const els = {
     large: $("large"),
     largeName: $("large-name"),
     largeSize: $("large-size"),
+    largeStatus: $("large-status"),
+    largeNote: $("large-note"),
     largeEdit: $("large-edit"),
     inputInfo: $("input-info"),
     tabs: $("tabs"),
@@ -63,6 +70,7 @@ const els = {
     meter: $("meter"),
     notes: $("notes"),
     output: $("output"),
+    codeWrap: $("code-wrap"),
     code: $("code"),
     error: $("error"),
     cli: $("cli"),
@@ -88,12 +96,6 @@ function nameFromFile(fileName) {
     return /^[0-9]/.test(name) ? `T${name}` : name;
 }
 
-function formatBytes(n) {
-    if (n < 1000) return `${n} bytes`;
-    if (n < 1_000_000) return `${(n / 1000).toFixed(1)} kB`;
-    return `${(n / 1_000_000).toFixed(1)} MB`;
-}
-
 function formatMs(x) {
     if (x >= 10_000) return `${(x / 1000).toFixed(1)} s`;
     if (x >= 1000) return `${(x / 1000).toFixed(2)} s`;
@@ -116,8 +118,13 @@ function median(xs) {
 
 const state = {
     kind: "json",
+    /** The input's text; "" for a file too large for the editor, until it is shown there. */
     text: "",
-    /** { type: "sample", id } | { type: "file", fileName, size } | { type: "typed" } */
+    /** The file a large input is (a File), which the workers read; undefined for any other input. */
+    file: undefined,
+    /** Why the input, a file, could not be opened ({ title, message, link? }); every run shows it. */
+    unopened: undefined,
+    /** { type: "sample", id } | { type: "file", fileName, size, lastModified } | { type: "typed" } */
     source: { type: "typed" },
     /** The name from the sample or file name; used unless the user typed one. */
     autoName: "TopLevel",
@@ -207,7 +214,7 @@ function writeHash() {
 
 function saveInput() {
     try {
-        if (state.text.length > LARGE) {
+        if (state.file !== undefined || state.unopened !== undefined || state.text.length > LARGE) {
             localStorage.removeItem(storageKey);
         } else {
             const { kind, text, source, autoName } = state;
@@ -380,9 +387,12 @@ function renderCli() {
 }
 
 function showInput() {
-    const large = state.text.length > LARGE && !state.largeInEditor;
+    const unopened = state.unopened !== undefined;
+    const large = unopened || ((state.file !== undefined || state.text.length > LARGE) && !state.largeInEditor);
     els.input.hidden = large;
     els.large.hidden = !large;
+    els.largeNote.hidden = unopened;
+    els.largeEdit.hidden = unopened;
     if (large) {
         els.largeName.textContent = inputFileName();
         els.largeSize.textContent = formatBytes(state.source.size ?? utf8Length(state.text));
@@ -391,6 +401,29 @@ function showInput() {
     }
 
     showInputInfo();
+    renderInputStatus();
+}
+
+/**
+ * What happens to a large input, under its name (the editor does not show
+ * it): reading it, running it (with the time so far), how long its run took,
+ * or that it failed.
+ */
+function renderInputStatus() {
+    if (els.large.hidden) return;
+    const { status, shown } = view;
+    const name = engineNames[state.engine];
+    let text = "";
+    if (state.unopened !== undefined) text = "Can't be opened in the browser: see the output.";
+    else if (view.reading !== undefined) text = "Reading…";
+    else if (status === "running") text = `Running on ${name}… ${formatMs(performance.now() - view.runningSince)}`;
+    else if (shown.gen === generation && shown.result !== undefined) {
+        const result = shown.result;
+        if (!result.ok) text = result.ms === undefined ? "Not run: see the output." : `${engineNames[shown.engine]} stopped with an error: see the output.`;
+        else text = `${engineNames[shown.engine]} ran it in ${formatMs(result.ms)}.`;
+    }
+
+    if (els.largeStatus.textContent !== text) els.largeStatus.textContent = text;
 }
 
 function showInputInfo() {
@@ -432,6 +465,8 @@ const view = {
      * undefined; `failure` says why it stopped, if a worker failed.
      */
     bench: undefined,
+    /** A file being opened, { fileName, size }, until it is the input (or failed). */
+    reading: undefined,
     files: [],
     tab: 0,
     runningSince: 0,
@@ -442,6 +477,8 @@ const view = {
 };
 
 let generation = 0;
+/** Counts the inputs given: a file whose reading finishes after another input was given is not the input. */
+let opening = 0;
 let runTimer;
 let ticker;
 /** The runs under way; a measurement waits for them, so that it measures what they show. */
@@ -466,12 +503,13 @@ function runOptions() {
     return options;
 }
 
+/** The input and options as a worker takes them: a large file as the File, which the worker reads. */
 function request() {
     return {
         kind: state.kind,
         lang: state.lang.names[0],
         name: topLevelName(),
-        text: state.text,
+        ...(state.file !== undefined ? { file: state.file } : { text: state.text }),
         rendererOptions: rendererOptions(),
         options: runOptions(),
     };
@@ -491,6 +529,8 @@ const typingDelay = () => Math.min(1000, 200 + state.text.length / 5000);
  * lane runs them one after the other). A newer run replaces it.
  */
 function run({ compare = false } = {}) {
+    // A file that could not be opened: no run, its error again.
+    if (state.unopened !== undefined) return Promise.resolve(inputFailed(state.unopened));
     clearTimeout(runTimer);
     const gen = ++generation;
     const req = request();
@@ -499,7 +539,7 @@ function run({ compare = false } = {}) {
     // Whatever still waits for a worker is for an older request.
     engines.wasm.drop();
     engines.ts.drop();
-    if (!/\S/.test(req.text)) {
+    if (req.file === undefined ? !/\S/.test(req.text) : req.file.size === 0) {
         setRunning(false);
         view.status = "empty";
         view.shown = { gen, engine: state.engine, result: undefined, lang: languageNamed(req.lang), name: req.name };
@@ -612,8 +652,9 @@ async function measure() {
         const result = await engines[engine].run({ ...req, ...repeat });
         if (!current()) return;
         if (result === undefined) return giveUp();
-        if (result.workerFailure) {
-            // Said under the result shown, which stays; measuring again starts a new worker.
+        if (result.workerFailure || !timed(result)) {
+            // Said under the result shown, which stays; measuring again starts a new worker
+            // (or, for an input that could not be read, tries to read it again).
             bench[engine] = undefined;
             bench.failure = result.error.message;
             render();
@@ -636,6 +677,8 @@ function setRunning(running) {
         ticker = setInterval(() => {
             view.status = "running";
             renderMeter();
+            renderInputStatus();
+            renderStale();
         }, 150);
     }
 }
@@ -685,8 +728,10 @@ function renderCode() {
         els.error.innerHTML = `<p>Paste JSON or a JSON Schema on the left, load a sample, or drop a file there.</p>`;
     } else if (showError) {
         els.error.className = "error";
+        const { title, message, link } = result.error;
         const name = result.error.messageName ?? result.error.name;
-        els.error.innerHTML = `<p class="error-title">quicktype stopped with an error</p><pre class="error-message">${escapeHtml(result.error.message)}</pre>${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
+        const help = link === undefined ? "" : `<p class="error-help">Get <a href="${escapeHtml(link.href)}">${escapeHtml(link.text)}</a>.</p>`;
+        els.error.innerHTML = `<p class="error-title">${escapeHtml(title ?? "quicktype stopped with an error")}</p><pre class="error-message">${escapeHtml(message)}</pre>${help}${name ? `<p class="error-kind">${escapeHtml(name)}</p>` : ""}`;
     }
 
     // Drawn again only for another result (a new files array) or another tab.
@@ -855,6 +900,14 @@ function renderMeter() {
         return;
     }
 
+    if (view.reading !== undefined) {
+        const { fileName, size } = view.reading;
+        els.meter.innerHTML = `<div class="lane-line"><span class="engine-dot ${state.engine}"></span>Reading ${escapeHtml(fileName)} <span class="time muted">${formatBytes(size)}</span></div>`;
+        body.status = "running";
+        body.compare = "off";
+        return;
+    }
+
     // Nothing to show yet, or what is shown is for an older request.
     if (result === undefined || (status === "running" && shown.gen !== generation)) {
         const engine = state.engine;
@@ -962,10 +1015,18 @@ function renderMeter() {
     if (focused) document.getElementById("measure").focus();
 }
 
+/** While a newer request runs, the output shown is an older one's: dimmed, as stale. */
+function renderStale() {
+    const stale = view.reading !== undefined || (view.status === "running" && view.shown.gen !== generation);
+    els.codeWrap.classList.toggle("stale", stale);
+}
+
 function render() {
     renderMeter();
     renderTabs();
     renderCode();
+    renderStale();
+    renderInputStatus();
 }
 
 // ---------------------------------------------------------------------------
@@ -1003,9 +1064,17 @@ function download() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Replaces the input; a new sample or file also brings its own top-level name, unless `keepName`. */
-function setInput(text, source, kind, autoName, keepName = false) {
+/**
+ * Replaces the input (`file`: the File a large input is, which the workers
+ * read); a new sample or file also brings its own top-level name, unless
+ * `keepName`. A file still being opened is not the input any more.
+ */
+function setInput(text, source, kind, autoName, keepName = false, file = undefined) {
+    opening++;
+    view.reading = undefined;
     state.text = text;
+    state.file = file;
+    state.unopened = undefined;
     state.source = source;
     state.largeInEditor = false;
     state.kind = kind;
@@ -1017,35 +1086,101 @@ function setInput(text, source, kind, autoName, keepName = false) {
     saveInput();
 }
 
+/**
+ * An input that could not be loaded: `error` ({ title, message, link? }) is
+ * shown in the output pane. There is no current input then: what runs or
+ * waits is for the input before, and switching engine runs nothing until
+ * there is one. The input pane shows the input before.
+ */
+function inputFailed(error) {
+    clearTimeout(runTimer);
+    opening++;
+    const gen = ++generation;
+    view.request = undefined;
+    view.bench = undefined;
+    view.reading = undefined;
+    engines.wasm.drop();
+    engines.ts.drop();
+    setRunning(false);
+    view.status = "done";
+    view.shown = { gen, engine: state.engine, result: { ok: false, error, times: [] }, lang: state.lang, name: topLevelName() };
+    showInput();
+    render();
+}
+
 /** Loads a sample and runs it (`compare`: on both engines, for a link from compare mode). */
 async function loadSample(sample, keepName = false, compare = false) {
     try {
         setInput(await fetchSample(sample), { type: "sample", id: sample.id }, sample.kind, sample.name, keepName);
     } catch (e) {
-        // No current input: what runs or waits is for the input before, and
-        // switching engine runs nothing until there is one.
-        clearTimeout(runTimer);
-        const gen = ++generation;
-        view.request = undefined;
-        view.bench = undefined;
-        engines.wasm.drop();
-        engines.ts.drop();
-        setRunning(false);
-        view.status = "done";
-        const failure = { ok: false, error: { message: `Could not load the sample ${sample.path}: ${e.message}` }, times: [] };
-        view.shown = { gen, engine: state.engine, result: failure, lang: state.lang, name: topLevelName() };
-        render();
+        inputFailed({ title: "Could not load the sample", message: `Could not load the sample ${sample.path}: ${e.message}` });
         return;
     }
 
     void run({ compare });
 }
 
+/**
+ * Opens a file (from the file picker or a drop) and runs it. A file small
+ * enough for the editor is read here; a larger one is posted to the workers
+ * as it is, after a look at its first kilobyte (a JSON Schema?). A file too
+ * large to read as text, or one that cannot be read, is an error in the
+ * output pane.
+ */
 async function loadFile(file) {
-    const text = await file.text();
-    const schema = /\.schema(\.json)?$/i.test(file.name) || /"\$schema"\s*:/.test(text.slice(0, 1000));
-    setInput(text, { type: "file", fileName: file.name, size: file.size }, schema ? "schema" : "json", nameFromFile(file.name));
+    const { name, size, lastModified } = file;
+    const source = { type: "file", fileName: name, size, lastModified };
+    const schemaName = /\.schema(\.json)?$/i.test(name);
+    /** The file is the input, one that cannot be opened: the page names it (and the CLI command for it) and says why. */
+    const failed = (error) => {
+        setInput("", source, schemaName ? "schema" : "json", nameFromFile(name));
+        state.unopened = error;
+        saveInput();
+        showInput();
+        inputFailed(error);
+    };
+    const large = tooLarge(name, size);
+    if (large !== undefined) return failed(large);
+
+    const ticket = ++opening;
+    view.reading = { fileName: name, size };
+    render();
+    let text;
+    let head;
+    try {
+        if (size > LARGE) head = await file.slice(0, 1000).text();
+        else text = await file.text();
+    } catch (e) {
+        if (ticket === opening) failed(unreadable(name, e));
+        return;
+    }
+
+    // Another input came first.
+    if (ticket !== opening) return;
+    if (text === "" && size > 0) return failed(unreadable(name, new Error("the browser returned no text")));
+    const schema = schemaName || /"\$schema"\s*:/.test((head ?? text).slice(0, 1000));
+    setInput(text ?? "", source, schema ? "schema" : "json", nameFromFile(name), false, text === undefined ? file : undefined);
     void run();
+}
+
+/** Puts a large input in the editor, as asked: a file is read here then. */
+async function showLargeInEditor() {
+    if (state.file !== undefined && state.text === "") {
+        const ticket = opening;
+        const file = state.file;
+        try {
+            const text = await file.text();
+            if (ticket !== opening || state.file !== file) return;
+            state.text = text;
+        } catch (e) {
+            if (ticket === opening) inputFailed(unreadable(file.name, e));
+            return;
+        }
+    }
+
+    state.largeInEditor = true;
+    showInput();
+    els.input.focus();
 }
 
 let infoTimer;
@@ -1115,7 +1250,12 @@ function bind() {
     });
 
     els.input.addEventListener("input", () => {
+        // Typed text is the input now, not a file being opened, nor the file shown.
+        opening++;
+        view.reading = undefined;
         state.text = els.input.value;
+        state.file = undefined;
+        state.unopened = undefined;
         if (state.source.type !== "typed") {
             state.source = { type: "typed" };
             els.sample.value = "";
@@ -1131,11 +1271,7 @@ function bind() {
         schedule(typingDelay());
     });
 
-    els.largeEdit.addEventListener("click", () => {
-        state.largeInEditor = true;
-        showInput();
-        els.input.focus();
-    });
+    els.largeEdit.addEventListener("click", () => void showLargeInEditor());
 
     els.open.addEventListener("click", () => els.file.click());
     els.file.addEventListener("change", () => {

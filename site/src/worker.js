@@ -3,7 +3,7 @@
 // the page), another on the TypeScript engine (`?engine=ts`, quicktype);
 // each starts when the page first needs it.
 //
-// Request:  { id, kind: "json" | "schema", lang, name, text, rendererOptions,
+// Request:  { id, kind: "json" | "schema", lang, name, text | file, rendererOptions,
 //             options, warmup?, repeat? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
 //           { type: "result", id, ok, files | error, ms, times, inputTimes, ran, reason, first,
@@ -16,7 +16,13 @@
 // `times` are whole runs; `inputTimes` the part spent reading the input
 // (`addSource`: parsing the JSON or the schema), which is quicktype's
 // TypeScript code on both engines. The rest is generating the code.
+//
+// The input is `text`, or a `file` (a File, which the page posts without
+// reading it, so that a large file never passes through the page's main
+// thread): read here once, before the timed runs, and kept for the next
+// request on the same file (its name, size and modification time).
 
+import { tooLarge, unreadable } from "./input-file.js";
 import { boot } from "./worker-boot.js";
 
 import {
@@ -85,10 +91,48 @@ function serialize(result) {
 
 let runs = 0;
 
+/** The file read last: { key, text }. */
+let lastFile;
+
+/** The input's text: `text`, or the file's, read once per file. Throws { title, message, link? } if it cannot be read. */
+async function inputText({ text, file }) {
+    if (file === undefined) return text;
+    const key = JSON.stringify([file.name, file.size, file.lastModified, file.type]);
+    if (lastFile?.key === key) return lastFile.text;
+    const large = tooLarge(file.name, file.size);
+    if (large !== undefined) throw large;
+    // Let the previous file's text go before reading the next.
+    lastFile = undefined;
+    let read;
+    try {
+        read = await file.text();
+    } catch (e) {
+        throw unreadable(file.name, e);
+    }
+
+    // Browsers have been seen to read what they cannot hold as "".
+    if (read === "" && file.size > 0) throw unreadable(file.name, new Error("the browser returned no text"));
+    lastFile = { key, text: read };
+    return read;
+}
+
 async function handle(request) {
+    const first = runs === 0;
+    let text;
+    try {
+        text = await inputText(request);
+    } catch (error) {
+        // The input's error, not the engine's: no engine ran.
+        return { type: "result", id: request.id, ok: false, error, times: [], inputTimes: [], first, ran: undefined };
+    }
+
+    return timedRuns(request, text, first);
+}
+
+/** `warmup` untimed runs, then `repeat` timed ones, on `text`; the reply has the last run's result. */
+async function timedRuns(request, text, first) {
     const warmup = request.warmup ?? 0;
     const repeat = Math.max(1, request.repeat ?? 1);
-    const first = runs === 0;
     const times = [];
     const inputTimes = [];
     let reply;
@@ -97,7 +141,7 @@ async function handle(request) {
         const phases = {};
         const start = performance.now();
         try {
-            const result = await generate(request, phases);
+            const result = await generate({ ...request, text }, phases);
             const ms = performance.now() - start;
             if (i >= warmup) {
                 times.push(ms);

@@ -529,6 +529,16 @@ textarea:focus-visible {
     color: var(--ink);
 }
 
+/* Reading, running, or how long the run took: the input is not in the editor to show it. */
+.large-status {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.large-status:empty {
+    display: none;
+}
+
 .drop {
     display: none;
     position: absolute;
@@ -853,6 +863,12 @@ button.measure {
     flex-direction: column;
 }
 
+/* The output of an older input, while a newer one runs. */
+.code.stale pre#output {
+    opacity: 0.45;
+    transition: opacity 0.2s;
+}
+
 pre#output {
     flex: 1;
     min-height: 0;
@@ -916,6 +932,11 @@ pre#output:focus-visible {
 .error-kind {
     font: 12px var(--mono);
     color: var(--muted);
+}
+
+.error-help a {
+    color: var(--wasm);
+    font-weight: 600;
 }
 
 .empty {
@@ -1059,6 +1080,10 @@ pre#output:focus-visible {
     }
 
     .more summary::before {
+        transition: none;
+    }
+
+    .code.stale pre#output {
         transition: none;
     }
 }

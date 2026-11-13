@@ -39,6 +39,15 @@
 // measurement asked for while a run is under way; and a worker failing
 // after it loaded.
 //
+// Files are opened as a user opens them too: a click on "Open file", the
+// browser's file chooser, a file picked: JSON, the same file twice, JSON
+// Schema, an extension outside the chooser's filter, and a 26 MB file,
+// which the page posts to the workers unread (no main-thread task over
+// 200 ms, by a PerformanceObserver for long tasks). A file larger than a
+// browser's longest string (its size faked), one that cannot be read, a
+// dropped one, and one deleted before a worker read it each show why in the
+// output pane, name the file and its CLI command, and leave nothing running.
+//
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
 // (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
 // Google Chrome or Chromium; without one the test says so and exits 0 (in
@@ -169,8 +178,17 @@ async function launch(browser) {
     let nextId = 0;
     const pending = new Map();
     const problems = [];
+    /** Waiting for an event: { method, resolve }. */
+    const waiting = [];
     socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
+        if (message.id === undefined) {
+            for (const w of waiting.filter((w) => w.method === message.method)) {
+                waiting.splice(waiting.indexOf(w), 1);
+                w.resolve(message.params);
+            }
+        }
+
         if (message.id !== undefined) {
             pending.get(message.id)?.(message);
             pending.delete(message.id);
@@ -185,6 +203,18 @@ async function launch(browser) {
             const id = ++nextId;
             pending.set(id, (m) => (m.error ? reject(new Error(`${method}: ${m.error.message}`)) : resolve(m.result)));
             socket.send(JSON.stringify({ id, method, params }));
+        });
+
+    /** The next event `method` (its params), or a timeout. */
+    const next = (method, timeout = 30_000) =>
+        new Promise((resolve, reject) => {
+            const w = { method, resolve };
+            waiting.push(w);
+            setTimeout(() => {
+                if (!waiting.includes(w)) return;
+                waiting.splice(waiting.indexOf(w), 1);
+                reject(new Error(`no ${method} within ${timeout / 1000} s`));
+            }, timeout);
         });
 
     async function evaluate(expression) {
@@ -252,7 +282,7 @@ async function launch(browser) {
 
     await send("Runtime.enable");
     await send("Page.enable");
-    return { send, evaluate, waitFor, viewport, screenshot, navigate, close, problems };
+    return { send, next, evaluate, waitFor, viewport, screenshot, navigate, close, problems };
 }
 
 // ---------------------------------------------------------------------------
@@ -487,6 +517,113 @@ async function upload(file) {
     await page.waitFor(`playground.generation > ${before} && ${settled}`, `the run on ${path.basename(file)}`);
 }
 
+/**
+ * Opens `file` as a user does: a (trusted) click on "Open file", which opens
+ * the browser's file chooser, intercepted here, and the file picked in it.
+ */
+async function chooseFile(file) {
+    await page.send("Page.setInterceptFileChooserDialog", { enabled: true });
+    const box = await page.evaluate(
+        `(() => { const r = document.getElementById("open").getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+    );
+    const opened = page.next("Page.fileChooserOpened");
+    for (const type of ["mousePressed", "mouseReleased"]) {
+        await page.send("Input.dispatchMouseEvent", { type, x: box.x, y: box.y, button: "left", clickCount: 1 });
+    }
+
+    const chooser = await opened;
+    assert.equal(chooser.mode, "selectSingle");
+    await page.send("DOM.setFileInputFiles", { files: [file], backendNodeId: chooser.backendNodeId });
+}
+
+/** Opens `file` with "Open file" and waits for its run, or with `failing`, for the error it shows. */
+async function openFile(file, { failing = false, timeout = 60_000 } = {}) {
+    const before = await page.evaluate("playground.generation");
+    await chooseFile(file);
+    const until = failing ? `document.body.dataset.status === "error"` : `${settled} && document.body.dataset.status !== "running"`;
+    await page.waitFor(`playground.generation > ${before} && ${until}`, `opening ${path.basename(file)}`, timeout);
+}
+
+/**
+ * The input, a file, could not be opened: the output pane says so (its
+ * title, its message, and where to get the CLI, if `cli`); the input pane
+ * names the file and the command under the output is the CLI's for it
+ * (`command`); there is no request, nothing runs or waits, the output is not
+ * shown as stale, and neither switching engine nor another language runs
+ * anything (it says so again).
+ */
+async function openFailed(what, { title, message, command, size, cli: withCli = false }) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const shownNow = await page.evaluate(`({
+        status: document.body.dataset.status,
+        title: document.querySelector("#error .error-title")?.textContent,
+        message: document.querySelector("#error .error-message")?.textContent,
+        link: document.querySelector("#error .error-help a")?.href ?? null,
+        request: playground.view.request === undefined,
+        busy: playground.engines.wasm.isBusy || playground.engines.ts.isBusy,
+        stale: document.getElementById("code-wrap").classList.contains("stale"),
+        running: document.getElementById("meter").textContent.includes("Running") || document.getElementById("meter").textContent.includes("Reading"),
+    })`);
+    assert.equal(shownNow.title, title, `${what}: the title`);
+    if (message instanceof RegExp) assert.match(shownNow.message, message, `${what}: the message`);
+    else assert.equal(shownNow.message, message, `${what}: the message`);
+    assert.deepEqual(
+        { ...shownNow, title: undefined, message: undefined },
+        { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#readme" : null, request: true, busy: false, stale: false, running: false },
+        `${what}: the page after it`,
+    );
+    const input = () =>
+        page.evaluate(`({
+            name: document.getElementById("large").hidden ? null : document.getElementById("large-name").textContent,
+            size: document.getElementById("large-size").textContent,
+            status: document.getElementById("large-status").textContent,
+            edit: !document.getElementById("large-edit").hidden,
+            command: playground.cli(),
+        })`);
+    const expected = { name: command.split(" ").pop(), size, status: "Can't be opened in the browser: see the output.", edit: false, command };
+    assert.deepEqual(await input(), expected, `${what}: the input pane`);
+    const engine = await page.evaluate("playground.engine");
+    for (const other of [engine === "wasm" ? "ts" : "wasm", engine]) {
+        const ran = await switchEngine(other, `${what}: a switch to ${other}`);
+        assert.deepEqual(ran, { wasm: 0, ts: 0 }, `${what}: a switch to ${other} ran`);
+    }
+
+    const before = await runCounts();
+    await select("lang", "go");
+    const after = await runCounts();
+    assert.deepEqual([after.wasm - before.wasm, after.ts - before.ts], [0, 0], `${what}: another language ran`);
+    assert.equal(await page.evaluate(`document.querySelector("#error .error-message")?.textContent`), shownNow.message, `${what}: another language`);
+    assert.deepEqual(await input(), { ...expected, command: command.replace("--lang typescript", "--lang go") }, `${what}: the input pane, in Go`);
+    await select("lang", "typescript");
+    return shownNow;
+}
+
+/**
+ * A synthetic rulings.json: `bytes` of an array of small records, each with
+ * a long text string (seeded, so every run checks the same file).
+ */
+function rulingsJson(bytes) {
+    let seed = 42;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pick = (items) => items[Math.floor(random() * items.length)];
+    const words = "the a creature spell ability card player target controller graveyard battlefield if when this that you its until end of turn may be can't damage counter mana cost token copy library hand exile".split(" ");
+    const hex = (n) => Array.from({ length: n }, () => pick("0123456789abcdef")).join("");
+    const records = [];
+    for (let size = 2; size < bytes; ) {
+        const record = JSON.stringify({
+            object: "ruling",
+            oracle_id: `${hex(8)}-${hex(4)}-${hex(4)}-${hex(4)}-${hex(12)}`,
+            source: random() < 0.7 ? "wotc" : "scryfall",
+            published_at: `20${String(4 + Math.floor(random() * 20)).padStart(2, "0")}-${String(1 + Math.floor(random() * 12)).padStart(2, "0")}-${String(1 + Math.floor(random() * 28)).padStart(2, "0")}`,
+            comment: `${Array.from({ length: 15 + Math.floor(random() * 20) }, () => pick(words)).join(" ")}.`,
+        });
+        records.push(record);
+        size += record.length + 1;
+    }
+
+    return { text: `[${records.join(",")}]`, records: records.length };
+}
+
 /** "median 3.2 ms (reading the input 1.1, generating 2.1)" for one engine's warm runs. */
 function medians({ times, inputTimes }) {
     const median = (xs) => [...xs].sort((a, b) => a - b)[xs.length >> 1];
@@ -496,6 +633,8 @@ function medians({ times, inputTimes }) {
 }
 
 let failed = false;
+/** Temporary directories to remove at the end. */
+const cleanUp = [];
 try {
     console.log(`page: ${url}  browser: ${browser}`);
     console.log(`reference: ${cli}`);
@@ -1188,6 +1327,147 @@ try {
     }
     console.log("ok: after a sample does not load, switching engine runs nothing and the error stays");
 
+    // Opening files as a user does: "Open file", the browser's file chooser,
+    // a file picked. The file input is reset each time, so picking the same
+    // file again runs it again; a file the chooser's filter (accept) leaves
+    // out still opens, as JSON.
+    const chosenDir = fs.mkdtempSync(path.join(os.tmpdir(), "qt-site-chosen-"));
+    cleanUp.push(chosenDir);
+    const chosen = (name, content) => {
+        const file = path.join(chosenDir, name);
+        fs.writeFileSync(file, content);
+        sampleFiles[name] = file;
+        return file;
+    };
+    const readInput = (name) => fs.readFileSync(path.join(repositoryRoot, sampleFiles[name]));
+    await page.viewport(1440, 900);
+    await page.navigate(`${url}#v=2&l=typescript`);
+    await page.waitFor(settled, "the run before opening files");
+    const senatorsFile = chosen("senators.json", readInput("us-senators.json"));
+    for (const again of ["", " again"]) {
+        await openFile(senatorsFile);
+        await sameAsCli(`Open file: senators.json${again}`, "quicktype --lang typescript --top-level Senators senators.json");
+    }
+    await openFile(chosen("description.schema", readInput("description.schema")));
+    await sameAsCli("Open file: description.schema", "quicktype --src-lang schema --lang typescript --top-level Description description.schema");
+    await openFile(chosen("pokedex.backup", readInput("pokedex.json")));
+    await sameAsCli("Open file: pokedex.backup (outside the chooser's filter)", "quicktype --lang typescript --top-level Pokedex pokedex.backup");
+    console.log("ok: Open file through the browser's file chooser: JSON, the same file twice, JSON Schema, an extension outside the filter");
+
+    // A large file (26 MB, ~100k small records with long strings) never
+    // passes through the page's main thread: the page posts the File to the
+    // workers, which read it. No main-thread task takes over 200 ms from
+    // opening it to both engines' results, which are the CLI's.
+    const rulings = rulingsJson(26.5e6);
+    const rulingsFile = chosen("rulings.json", rulings.text);
+    await page.evaluate(`(() => {
+        globalThis.longTasks = [];
+        new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) longTasks.push(Math.round(entry.duration));
+        }).observe({ type: "longtask" });
+    })()`);
+    await openFile(rulingsFile, { timeout: 300_000 });
+    const largeOpened = await page.evaluate(`({
+        posted: playground.view.request.file instanceof File && playground.view.request.file.name,
+        text: "text" in playground.view.request,
+        kept: playground.state.text.length,
+        panel: !document.getElementById("large").hidden && !document.getElementById("large-name").hidden,
+        name: document.getElementById("large-name").textContent,
+        size: document.getElementById("large-size").textContent,
+        status: document.getElementById("large-status").textContent,
+    })`);
+    assert.deepEqual(
+        { ...largeOpened, status: undefined },
+        { posted: "rulings.json", text: false, kept: 0, panel: true, name: "rulings.json", size: "26.5 MB", status: undefined },
+        "the large file: posted as a File, not read on the page",
+    );
+    assert.match(largeOpened.status, /^quickertype ran it in \d[\d.]* m?s\.$/, "the large file's status");
+    await sameAsCli(`Open file: rulings.json (${(rulings.text.length / 1e6).toFixed(1)} MB, ${rulings.records} records) → TypeScript`, "quicktype --lang typescript --top-level Rulings rulings.json");
+    await page.screenshot("large-file.png");
+    ran = await switchEngine("ts", "quicktype on the 26 MB file", undefined);
+    assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the 26 MB file ran");
+    await sameAsCli("Open file: rulings.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Rulings rulings.json", "ts");
+    await comparedIdentical("the 26 MB file");
+    const longTasks = await page.evaluate("longTasks");
+    const longest = Math.max(0, ...longTasks);
+    assert.ok(longest <= 200, `a main-thread task took ${longest} ms with the 26 MB file (long tasks: ${longTasks.join(", ")} ms)`);
+    console.log(`ok: the 26 MB file is posted as a File and read in the workers; the longest main-thread task: ${longTasks.length === 0 ? "none over 50 ms" : `${longest} ms`}`);
+    ran = await switchEngine("wasm", "back to quickertype on the 26 MB file");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 });
+
+    // Files that cannot be read as text: one larger than a browser's
+    // longest string (its size faked: no multi-GB file is written), and one
+    // whose reading fails; through the file chooser and dropped. Each says
+    // why in the output pane and leaves nothing running.
+    await page.evaluate(`(() => {
+        const size = Object.getOwnPropertyDescriptor(Blob.prototype, "size").get;
+        Object.defineProperty(File.prototype, "size", { configurable: true, get() { return this.name.endsWith("huge.json") ? 3e9 : size.call(this); } });
+        const text = Blob.prototype.text;
+        File.prototype.text = function () {
+            return this.name === "unreadable.json" ? Promise.reject(new RangeError("Invalid string length")) : text.call(this);
+        };
+    })()`);
+    const tooLargeMessage = "This file is 3.0 GB. Browsers can't hold text this large in one piece; use the quickertype CLI, which handles multi-GB files.";
+    await openFile(chosen("huge.json", readInput("pokedex.json")), { failing: true });
+    await openFailed("a 3 GB file", {
+        title: "huge.json is too large for the browser",
+        message: tooLargeMessage,
+        command: "quicktype --lang typescript --top-level Huge huge.json",
+        size: "3.0 GB",
+        cli: true,
+    });
+    await page.screenshot("file-too-large.png");
+    await openFile(chosen("unreadable.json", readInput("pokedex.json")), { failing: true });
+    await openFailed("a file that cannot be read", {
+        title: "Could not read unreadable.json",
+        message: "Could not read unreadable.json: RangeError: Invalid string length",
+        command: "quicktype --lang typescript --top-level Unreadable unreadable.json",
+        size: `${(readInput("pokedex.json").length / 1000).toFixed(1)} kB`,
+    });
+    /** Drops a file `name` with `content` on the input side (as an expression for andRun). */
+    const drop = (name, content) =>
+        `(() => {
+            const data = new DataTransfer();
+            data.items.add(new File([${JSON.stringify(content)}], ${JSON.stringify(name)}, { type: "application/json" }));
+            document.getElementById("input-pane").dispatchEvent(new DragEvent("drop", { dataTransfer: data, bubbles: true, cancelable: true }));
+        })()`;
+    await andRun(drop("dropped-huge.json", "[1]"), "a dropped 3 GB file", `document.body.dataset.status === "error"`);
+    await openFailed("a dropped 3 GB file", {
+        title: "dropped-huge.json is too large for the browser",
+        message: tooLargeMessage,
+        command: "quicktype --lang typescript --top-level DroppedHuge dropped-huge.json",
+        size: "3.0 GB",
+        cli: true,
+    });
+    chosen("dropped.json", readInput("pokedex.json"));
+    await andRun(drop("dropped.json", readInput("pokedex.json").toString("utf8")), "a dropped file");
+    await sameAsCli("a dropped file: dropped.json → TypeScript", "quicktype --lang typescript --top-level Dropped dropped.json");
+    console.log(`ok: a file too large for a browser, one that cannot be read, and one dropped: "${tooLargeMessage}"`);
+
+    // A large file that is gone by the time a worker reads it: that engine
+    // says it could not read it; the other, which read it before, keeps its
+    // result.
+    const goneFile = chosen("gone.json", JSON.stringify(Array.from({ length: 12 }, () => JSON.parse(readInput("us-senators.json"))), undefined, 2));
+    await openFile(goneFile);
+    await sameAsCli("Open file: gone.json → TypeScript", "quicktype --lang typescript --top-level Gone gone.json");
+    fs.rmSync(goneFile);
+    ran = await switchEngine("ts", "quicktype on a file deleted after it was opened");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 });
+    const gone = await page.evaluate(`({
+        status: document.body.dataset.status,
+        title: document.querySelector("#error .error-title")?.textContent,
+        message: document.querySelector("#error .error-message")?.textContent,
+        large: document.getElementById("large-status").textContent,
+    })`);
+    assert.equal(gone.status, "error");
+    assert.equal(gone.title, "Could not read gone.json");
+    assert.match(gone.message, /^Could not read gone\.json: (NotReadableError|NotFoundError): ./);
+    assert.equal(gone.large, "Not run: see the output.");
+    ran = await switchEngine("wasm", "back to quickertype, which read the file before");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 });
+    assert.equal(await page.evaluate("document.body.dataset.status"), "done");
+    console.log(`ok: a file deleted after it was opened: "${gone.message}"; quickertype's result, read before, stays`);
+
     // Phones: stacked, no sideways scrolling, and a long command wrapped.
     for (const width of [360, 390]) {
         await page.viewport(width, 844, { mobile: true });
@@ -1220,6 +1500,7 @@ try {
         fs.rmSync(path.dirname(sampleFiles["big-senators.json"]), { recursive: true, force: true });
     }
 
+    for (const dir of cleanUp) fs.rmSync(dir, { recursive: true, force: true });
     await page.close();
     server.close();
 }
