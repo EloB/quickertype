@@ -735,7 +735,9 @@ test("the engine holds at most its limit of compressed forms, however many input
         for (let i = 0; i < 48; i++) {
             const input = await addAll("go", [["Big", [texts[i % 3]]]]);
             kept.push(input);
-            assert.ok(glue.jsonHeld() <= limit, `${glue.jsonHeld()} bytes held after ${i + 1} inputs`);
+            // The form just read into is not counted.
+            const others = glue.jsonHeld() - nativeSamples.formBytes(input._compressedJSON);
+            assert.ok(others <= limit, `${others} bytes held by the others after ${i + 1} inputs`);
             assert.deepEqual([...(await run(input, "go"))], expected[i % 3]);
             if (i === 15) pagesAfterWarmUp = glue.__memoryPages();
         }
@@ -768,18 +770,21 @@ test("inputs that are gone but not finalized are evicted too, and nothing is fil
         const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
         const nativeSamples = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "samples.js"))});
         const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
-        nativeSamples.setHeldLimit(4 << 20);
+        // Less than one input's form (some 2.4 MB): the forms but the one
+        // just read into hold none of the others.
+        nativeSamples.setHeldLimit(2 << 20);
         const glue = engine.engineSync();
         const text = JSON.stringify(Array.from({ length: 20000 }, (_, i) => ({ id: i, name: "n" + (i % 50), tags: ["a", "b"] })));
+        // What the forms but the one just read into hold.
         const read = () => {
             const input = qt.jsonInputForTargetLanguage("rust");
             input.addSourceSync({ name: "A", samples: [text] });
+            return glue.jsonHeld() - nativeSamples.formBytes(input._compressedJSON);
         };
         (async () => {
             const held = [];
             for (let i = 0; i < 40; i++) {
-                read();
-                held.push(glue.jsonHeld());
+                held.push(read());
                 // Collected (its weak reference cleared) after this job.
                 await new Promise((resolve) => setImmediate(resolve));
                 global.gc();
@@ -788,12 +793,82 @@ test("inputs that are gone but not finalized are evicted too, and nothing is fil
         })();
     `;
     const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
-    assert.ok(out.max <= 4 << 20, JSON.stringify(out));
+    assert.ok(out.max <= 2 << 20, JSON.stringify(out));
     // Each read came before the finalizers of the inputs collected just
     // before it had run: those were evicted (their tables exported, and
     // collected), the others freed by their finalizers. None was filled.
     assert.ok(out.evicted > 0, JSON.stringify(out));
     assert.equal(out.filled, 0, JSON.stringify(out));
+});
+
+// The limit is on the forms other than the one just read into, and those
+// are kept most recently used first while they fit: a form past the limit
+// on its own evicts nothing while it is read into (the small inputs used
+// before it stay), and is the one evicted once another input is read.
+test("a form past the limit on its own evicts nothing while it is read into, and goes first after", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const nativeSamples = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "samples.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const glue = engine.engineSync();
+        const big = (k, n) => JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: i, ["k" + (i % 40)]: "v" + k + "-" + (i % 300), tags: [k, "b"] })));
+        const small = (i) => '{"s' + i + '": [' + i + ', "x"], "o": {"p": ' + i + '}}';
+        const attempt = (onRead) => {
+            const smalls = [0, 1].map((i) => {
+                const input = qt.jsonInputForTargetLanguage("rust");
+                input.addSourceSync({ name: "S", samples: [small(i)] });
+                return input;
+            });
+            onRead("smalls");
+            const large = qt.jsonInputForTargetLanguage("rust");
+            const add = (input, name, text) => {
+                input.addSourceSync({ name, samples: [text] });
+                onRead(name, input);
+            };
+            add(large, "L0", big(0, 40000));
+            add(large, "L1", big(1, 2000));
+            add(smalls[0], "S0", small(2));
+            add(large, "L2", big(2, 2000));
+            add(smalls[1], "S1", small(3));
+            return [...smalls, large].map((input) => {
+                const inputData = new qt.InputData();
+                inputData.addInput(input);
+                const result = [...qt.quicktypeMultiFileSync({ lang: "rust", inputData })].map(([file, r]) => [file, r.lines]);
+                const c = input._compressedJSON;
+                return { result, strings: [...c._strings], objects: c._objects.map((o) => [...o]), arrays: c._arrays.map((a) => [...a]) };
+            });
+        };
+        let limit;
+        const steps = [];
+        const actual = attempt((name, input) => {
+            // The limit: just what the two small inputs hold.
+            if (input === undefined) {
+                limit = glue.jsonHeld() + 65536;
+                nativeSamples.setHeldLimit(limit);
+                return;
+            }
+            const current = nativeSamples.formBytes(input._compressedJSON) ?? 0;
+            steps.push({ name, current: current > limit, others: glue.jsonHeld() - current <= limit, read: engineStats.samplesRead, evicted: engineStats.evicted, filled: engineStats.tablesFilled });
+        });
+        globalThis[Symbol.for("quicktype-core.engine")] = "ts";
+        const expected = attempt(() => {});
+        console.log(JSON.stringify({ steps, same: JSON.stringify(actual) === JSON.stringify(expected) }));
+    `;
+    const out = JSON.parse(execFileSync(process.execPath, ["-e", script], { encoding: "utf8", maxBuffer: 1 << 26 }));
+    const step = (name, current, read, evicted, filled) => ({ name, current, others: true, read, evicted, filled });
+    assert.deepEqual(out.steps, [
+        // Past the limit on its own: the small inputs stay.
+        step("L0", true, 3, 0, 0),
+        step("L1", true, 4, 0, 0),
+        // Another input is read: the large one does not fit, and goes.
+        step("S0", false, 5, 1, 0),
+        // Its tables are filled, and TypeScript reads it from then on.
+        step("L2", false, 5, 1, 1),
+        // The other small input is still the engine's.
+        step("S1", false, 6, 1, 1),
+    ]);
+    assert.ok(out.same, "the tables and runs are TypeScript's");
 });
 
 // Running out of memory in the middle of a read traps the instance. The

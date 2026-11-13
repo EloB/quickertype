@@ -30,13 +30,13 @@
 // either: TypeScript's `JSON.parse` then throws V8's own error, from
 // `addSource`, as before.
 //
-// The compressed forms of all inputs together hold at most `heldLimit`
-// bytes of the engine's memory (`evict`): past that, the tables of the
-// least recently used are copied to JavaScript, where the garbage
-// collector sees them, and the forms are freed in the engine. The garbage
-// collector does not see the engine's memory, which never shrinks, so a
-// long-running process cannot rely on it to collect inputs before that
-// memory runs out.
+// The compressed forms of all inputs but the one just read into together
+// hold at most `heldLimit` bytes of the engine's memory (`evict`): past
+// that, the tables of those that do not fit, least recently used first,
+// are copied to JavaScript, where the garbage collector sees them, and the
+// forms are freed in the engine. The garbage collector does not see the
+// engine's memory, which never shrinks, so a long-running process cannot
+// rely on it to collect inputs before that memory runs out.
 //
 // The README ("JSON samples") has the argument for why this cannot be told
 // apart from TypeScript reading the samples.
@@ -85,6 +85,11 @@ interface NativeSamples {
     texts: string[] | undefined;
     /** The code units of the samples read. */
     textLength: number;
+    /**
+     * The bytes of its form, as `jsonHeld` counts them: what it added to
+     * that count when it was created and with each read (`evict`).
+     */
+    bytes: number;
     /** The table fields as they were (empty), restored by `materialize`. */
     readonly fields: Array<[string, PropertyDescriptor]>;
     /**
@@ -111,18 +116,20 @@ export function setKeptTexts(codeUnits: number): number {
 
 /**
  * The most bytes the compressed forms in an engine instance may hold
- * together (`jsonHeld`, the capacities of their tables) before the least
- * recently used are evicted (`evict`): 256 MiB. That is the form of about
- * 190 MB of JSON samples (a 104 MB sample takes 138 MiB), more than the
- * inputs of nearly any program are at once, so that eviction is a backstop
- * for inputs the garbage collector has not collected yet, not something
- * runs normally pay for (an evicted input's runs send its tables, which
- * costs what the engine reading its samples saved). It leaves most of the
+ * together (`jsonHeld`, the capacities of their tables), but for the one
+ * a sample was just read into, before the least recently used are evicted
+ * (`evict`): 256 MiB. That is the form of about 190 MB of JSON samples (a
+ * 104 MB sample takes 138 MiB), more than the inputs of nearly any
+ * program are at once, so that eviction is a backstop for inputs the
+ * garbage collector has not collected yet, not something runs normally
+ * pay for (an evicted input's runs send its tables, which costs what the
+ * engine reading its samples saved). It leaves most of the
  * instance's 4 GiB to reading samples and to runs, which need more than
  * the forms they make or use while they last (reading that sample peaks
- * at 461 MiB with its form; a run on it needs 114 MiB besides). The
- * engine's memory never shrinks, so a long-running process keeps about
- * the limit plus the largest of those.
+ * at 461 MiB with its form; a run on it needs 114 MiB besides). The form
+ * just read into is not counted (it is the one in use), so the forms hold
+ * at most the limit plus that one; the engine's memory never shrinks, so
+ * a long-running process keeps about the limit plus the largest of those.
  */
 let heldLimit = 256 * 1024 * 1024;
 
@@ -131,6 +138,15 @@ export function setHeldLimit(bytes: number): number {
     const old = heldLimit;
     heldLimit = bytes;
     return old;
+}
+
+/**
+ * For tests: the bytes of `cjson`'s form in the engine
+ * (`NativeSamples.bytes`), or `undefined` if the engine has none for it.
+ */
+export function formBytes(cjson: object): number | undefined {
+    const state = states.get(cjson);
+    return state === undefined || state.exported !== undefined ? undefined : state.bytes;
 }
 
 /**
@@ -424,8 +440,11 @@ function start(cjson: any, text: string): NativeSamples | undefined {
     const glue = engineForSample(text);
     if (glue === undefined) return undefined;
     let id: number | undefined;
+    let bytes = 0;
     try {
+        const held = glue.jsonHeld();
         id = glue.jsonCreate(config.dateTime, !!config.handleRefs, config.range?.min, config.range?.max);
+        bytes = glue.jsonHeld() - held;
     } catch (e) {
         engineFailed(glue, e);
         return undefined;
@@ -441,6 +460,7 @@ function start(cjson: any, text: string): NativeSamples | undefined {
         ownProperties: ownProperties(cjson),
         texts: [],
         textLength: 0,
+        bytes,
         fields,
     };
     internArrays.set(cjson, cjson.internArray);
@@ -469,24 +489,40 @@ function start(cjson: any, text: string): NativeSamples | undefined {
 
 /**
  * Keeps the forms in `current`'s engine instance within `heldLimit`
- * bytes after a sample was read into `current`: evicts the least recently
- * used others until they fit. An evicted form's tables are exported to
- * JavaScript (`NativeSamples.exported`) and the form is freed in the
- * engine; its `CompressedJSON` gets those tables when anything first uses
- * it (`materialize`), and is an ordinary one from then on. Whether that
+ * bytes after a sample was read into `current` (when the instance holds
+ * `held` bytes in all). `current` itself is exempt, however large: the
+ * limit is on the others together. If they are past it, they are kept
+ * most recently used first, each one as long as it still fits beside
+ * those kept before it, and the others are evicted. So a form past the
+ * limit on its own (one large input read in many samples, say) evicts
+ * nothing while it is read into, and is the one evicted once another
+ * input is read, rather than every smaller form used before it.
+ *
+ * An evicted form's tables are exported to JavaScript
+ * (`NativeSamples.exported`) and the form is freed in the engine; its
+ * `CompressedJSON` gets those tables when anything first uses it
+ * (`materialize`), and is an ordinary one from then on. Whether that
  * `CompressedJSON` is still used cannot be told: a `WeakRef` to it would
  * keep it alive until the current job ends, which in a loop of `await`s
  * is the whole loop. So the tables of one that is gone are exported too,
- * where the garbage collector sees them, and collected with it. `current`
- * itself stays, however large.
+ * where the garbage collector sees them, and collected with it.
  */
-function evict(current: NativeSamples): void {
+function evict(current: NativeSamples, held: number): void {
     const { glue } = current;
+    // The bytes of the others not looked at yet, and of those kept.
+    let rest = held - current.bytes;
+    let kept = 0;
+    if (rest <= heldLimit) return;
     try {
-        let held = glue.jsonHeld();
-        for (const state of recent) {
-            if (held <= heldLimit) return;
+        for (const state of [...recent].reverse()) {
             if (state === current || state.glue !== glue) continue;
+            if (kept + rest <= heldLimit) return;
+            rest -= state.bytes;
+            if (kept + state.bytes <= heldLimit) {
+                kept += state.bytes;
+                continue;
+            }
+
             const tables = exportTables(state);
             // The instance failed: `materialize` takes it from there.
             if (tables === undefined) return;
@@ -496,7 +532,6 @@ function evict(current: NativeSamples): void {
             registry.unregister(state);
             drop(glue, state.id);
             engineStats.evicted++;
-            held = glue.jsonHeld();
         }
     } catch (e) {
         engineFailed(glue, e);
@@ -726,8 +761,12 @@ function readSample(cjson: any, text: unknown): number | undefined {
     }
 
     let value: number;
+    let held: number;
     try {
+        const before = state.glue.jsonHeld();
         value = state.glue.jsonRead(state.id, text);
+        held = state.glue.jsonHeld();
+        state.bytes += held - before;
     } catch (e) {
         engineFailed(state.glue, e);
         return declined(cjson);
@@ -752,7 +791,7 @@ function readSample(cjson: any, text: unknown): number | undefined {
         }
 
         touch(state);
-        evict(state);
+        evict(state, held);
         return value;
     }
 

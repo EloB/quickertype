@@ -191,11 +191,15 @@ WebAssembly memory never shrinks, so a long-running process cannot count
 on its inputs being collected before the engine runs out of its 4 GiB. The
 compressed forms in an instance are therefore kept within **256 MiB**
 together, as the engine counts them (the capacities of their tables,
-`jsonHeld`). After a sample is read past that limit, the forms least
-recently used (read into, or leased by a run) are evicted, until the rest
-fit; the one just read stays, however large. An evicted form's tables are
-exported to JavaScript, where the garbage collector sees them, and the
-form is freed in the engine: the input's `CompressedJSON` gets those
+`jsonHeld`), all but the one a sample was just read into, which stays
+however large. After a sample is read, if the others are past that limit,
+they are kept most recently used (read into, or leased by a run) first,
+each one as long as it still fits beside those kept before it, and the
+rest are evicted. So a form past the limit on its own (a large input read
+in many samples) evicts none of the smaller ones while it is read into,
+and is the one evicted once another input is read. An evicted form's
+tables are exported to JavaScript, where the garbage collector sees them,
+and the form is freed in the engine: the input's `CompressedJSON` gets those
 tables when anything first uses it, and from then on it is an ordinary
 `CompressedJSON`, whose further samples TypeScript reads and whose runs
 send its tables. Whether that `CompressedJSON` is still in use cannot be
