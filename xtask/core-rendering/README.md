@@ -32,7 +32,7 @@ annotations the CLI prints to stderr. A few cases from quicktype's unit tests
 
 ## Scenarios
 
-A scenario (`scenarios/*.txt`) lists inputs (`input json|schema NAME <json>`),
+A scenario (`scenarios/*.txt`) lists inputs (`input json|jsonsamples|schema NAME <json>`),
 optional pipeline options, and renders (`render <lang> <json args>`); the
 language is documented at the top of `run-render-scenarios.mjs`. `probe` is a
 test language whose `ConvenienceRenderer` is configured per render and runs
