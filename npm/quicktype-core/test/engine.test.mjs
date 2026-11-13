@@ -36,14 +36,26 @@ async function json(lang, samples) {
     return inputData;
 }
 
-test("** matches the vectors recorded from Node (js-compat harness)", () => {
+// With `js-host-math` the engine's `**` is the host's Math.pow, so it must
+// equal this Node's result on every vector. The vectors were recorded with
+// Node on macOS arm64; other Node builds differ on a few of them (the sign
+// of NaN on x64, the last bit of some hard cases on Linux), so the recorded
+// values are only checked on the platform they were recorded on.
+test("** is this Node's Math.pow on the js-compat vectors", () => {
     const glue = engine.engineSync();
     const vectors = JSON.parse(
         fs.readFileSync(path.join(repositoryRoot, "crates", "quicktype-js-compat", "tests", "vectors", "number.json"), "utf8"),
     ).pow;
     assert.ok(vectors.length > 2000);
-    const mismatches = vectors.filter(([x, y, want]) => toHex(glue.__pow(fromHex(x), fromHex(y))) !== want);
+    const mismatches = vectors.filter(([x, y]) => {
+        const [a, b] = [fromHex(x), fromHex(y)];
+        return !Object.is(glue.__pow(a, b), Math.pow(a, b));
+    });
     assert.deepEqual(mismatches, []);
+    if (process.platform === "darwin" && process.arch === "arm64") {
+        const unlikeRecording = vectors.filter(([x, y, want]) => toHex(glue.__pow(fromHex(x), fromHex(y))) !== want);
+        assert.deepEqual(unlikeRecording, []);
+    }
 });
 
 test("** matches this Node's Math.pow on InferMaps-shaped inputs", () => {

@@ -134,7 +134,12 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     those cases (verified identical on 300k samples), as
     `quicktype_js_compat::number::pow` does; the `libm` crate is not (7–9%
     mismatches). On `wasm32` (feature `js-host-math`, which the WebAssembly
-    bindings enable) it calls the JavaScript host's own `Math.pow`.
+    bindings enable) it calls the JavaScript host's own `Math.pow`. Both
+    V8 and the port use the platform's `pow`, so results can differ between
+    platforms in the last bit (and in the sign of NaN), for the TypeScript
+    quicktype as for the port: parity holds against the reference on the
+    same platform. The golden corpus and the `pow` vectors were recorded on
+    macOS arm64; the tests compare other platforms with their own `pow`.
 13. **`JSON.stringify`** escaping and number output differ from
     `serde_json`; use `quicktype_js_compat::json`.
 
