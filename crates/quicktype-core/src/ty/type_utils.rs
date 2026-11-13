@@ -14,6 +14,7 @@ use crate::attributes::type_attributes::{
 };
 use crate::messages::Result;
 use crate::support::collection_utils::{EqualityMap, sort_by_string_key};
+use crate::support::recursion::guard;
 use crate::support::support::{assert, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::ty::Type;
@@ -264,19 +265,26 @@ pub fn separate_named_types(
 }
 
 /// `directlyReachableTypes(t, setForType)`.
+///
+/// Endless on a cycle that `set_for_type` never stops, e.g. a nullable
+/// union whose member is an array of the union itself (V8 overflows its
+/// stack): every level runs under [`guard`], which reports the same
+/// `RangeError`.
 pub fn directly_reachable_types<T: Clone + std::hash::Hash + Eq>(
     graph: &TypeGraph,
     t: TypeRef,
     set_for_type: &mut dyn FnMut(TypeRef) -> Result<Option<IndexSet<T>>>,
 ) -> Result<IndexSet<T>> {
-    if let Some(set) = set_for_type(t)? {
-        return Ok(set);
-    }
-    let mut result = IndexSet::new();
-    for c in graph.non_attribute_children(t)? {
-        result.extend(directly_reachable_types(graph, c, set_for_type)?);
-    }
-    Ok(result)
+    guard(|| {
+        if let Some(set) = set_for_type(t)? {
+            return Ok(set);
+        }
+        let mut result = IndexSet::new();
+        for c in graph.non_attribute_children(t)? {
+            result.extend(directly_reachable_types(graph, c, set_for_type)?);
+        }
+        Ok(result)
+    })
 }
 
 /// `directlyReachableSingleNamedType(type)`.
