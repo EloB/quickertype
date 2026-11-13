@@ -345,3 +345,34 @@ test("a module that fails to compile is not compiled again on every run", () => 
     assert.deepEqual(JSON.parse(out), [1, 0, 3]);
 });
 
+test("a module that is not the engine is instantiated once, not on every run", () => {
+    // The smallest valid module: it compiles and instantiates, but has none
+    // of the engine's exports. That is a load failure (the TypeScript engine
+    // runs), not an engine failure in each run (a rerun).
+    const script = `
+        globalThis[Symbol.for("quicktype-core.wasmModule")] = new Uint8Array([0, 0x61, 0x73, 0x6d, 1, 0, 0, 0]);
+        const qt = require(${JSON.stringify(packageRoot)});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const outputs = [];
+        for (let i = 0; i < 3; i++) {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: ["[1]"] });
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            outputs.push(qt.quicktypeMultiFileSync({ lang: "rust", inputData }).get("stdout").lines.length > 0);
+        }
+        console.log(JSON.stringify([
+            engine.compileAttempts(),
+            engine.instantiateAttempts(),
+            engineStats.wasm,
+            engineStats.ts,
+            engineStats.rerun,
+            engine.engineLoadError() !== undefined,
+            outputs,
+        ]));
+    `;
+    const out = execFileSync(process.execPath, ["-e", script], { encoding: "utf8" });
+    assert.deepEqual(JSON.parse(out), [1, 1, 0, 3, 0, true, [true, true, true]]);
+});
+

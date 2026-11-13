@@ -9,6 +9,10 @@ A Rust port of [quicktype](https://github.com/glideapps/quicktype) with a single
 - A Rust API (`quicktype-core` crate) that the CLI and the WASM bindings are
   built on.
 
+Playground: <https://elob.github.io/quickertype/>, quicktype's API on the
+WebAssembly engine in your browser, with a side-by-side run on the TypeScript
+engine.
+
 Exactness isn't a slogan here; it's tested. Every one of the 11,177 cases in
 `tests/golden` is a recorded run of the TypeScript quicktype CLI, and
 `cargo xtask parity` replays them against this implementation and compares
@@ -35,6 +39,7 @@ crates/
                                formatting, UTF-16 strings, sorting, JSON, pluralize, ...)
   quicktype-wasm/              WebAssembly bindings for the JS API
 npm/                           JS packages wrapping quicktype-wasm (same API as npm quicktype-core)
+site/                          the browser playground (GitHub Pages), built on npm/quicktype-core
 xtask/                         dev tasks: parity runner, side-by-side diff, golden recorder
 tests/
   inputs/                      quicktype's test inputs, copied verbatim
@@ -81,6 +86,14 @@ cd npm/quicktype-core && npm install
 npm run build                   # the WebAssembly engine + quicktype's TypeScript API
 npm test                        # package and engine tests
 npm run test:differential       # API calls against the reference quicktype-core vs ours
+```
+
+The playground needs that build:
+
+```sh
+node site/build.mjs             # into site/dist
+node site/test/serve.mjs        # http://127.0.0.1:8080/quickertype/
+node site/test/smoke.mjs        # headless Chrome, output compared with target/release/quicktype
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and

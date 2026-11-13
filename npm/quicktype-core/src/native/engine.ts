@@ -5,7 +5,8 @@
 //   next to the glue with `fs.readFileSync` and compiles it synchronously,
 //   so `quicktypeMultiFileSync` works from the first call.
 // * Browsers (and other hosts without Node's `fs`): compilation starts at
-//   import with `fetch` + `WebAssembly.compileStreaming`; `quicktype()`
+//   import with `fetch` + `WebAssembly.compileStreaming`, unless the
+//   TypeScript engine is forced (`engineMode()` is "ts"); `quicktype()`
 //   waits for it. `quicktypeMultiFileSync` uses the engine once it is
 //   ready and the TypeScript engine until then, so the API stays
 //   synchronous.
@@ -14,8 +15,10 @@
 //   `globalThis[Symbol.for("quicktype-core.wasmModule")]` before the first
 //   run, e.g. for bundlers that cannot emit the .wasm file as an asset.
 //
-// If the engine cannot be loaded, runs fall back to the TypeScript engine,
-// which produces the same output.
+// If the engine cannot be loaded (the file cannot be read, the module does
+// not compile, or it does not instantiate as this engine), runs fall back
+// to the TypeScript engine, which produces the same output, and loading is
+// not tried again on every run.
 
 import * as fs from "fs";
 
@@ -27,8 +30,26 @@ import { type WasmGlue, createGlue, wasmLocation } from "./wasm/glue.js";
 const host: any = globalThis;
 
 const suppliedModuleKey = Symbol.for("quicktype-core.wasmModule");
+const engineKey = Symbol.for("quicktype-core.engine");
+
+/**
+ * `QUICKTYPE_ENGINE` (or `globalThis[Symbol.for("quicktype-core.engine")]`):
+ * `ts` runs everything on the TypeScript engine; `wasm` uses the
+ * WebAssembly engine for every eligible run and fails if it cannot be
+ * loaded; anything else uses it when it can be loaded.
+ */
+export function engineMode(): "ts" | "wasm" | "auto" {
+    let mode = host[engineKey];
+    if (mode === undefined && typeof process !== "undefined") {
+        mode = process.env?.QUICKTYPE_ENGINE;
+    }
+
+    return mode === "ts" || mode === "wasm" ? mode : "auto";
+}
 
 let compiledModule: unknown;
+/** A compiled module that did not instantiate as this engine; it is not tried again. */
+let failedModule: unknown;
 let loadError: unknown;
 let compiling: Promise<void> | undefined;
 let current: WasmGlue | undefined;
@@ -45,13 +66,20 @@ let attempted = false;
 let attemptedWith: unknown;
 let attempts = 0;
 
+let instantiations = 0;
+
 /** How often the engine was compiled (or tried to be), for tests. */
 export function compileAttempts(): number {
     return attempts;
 }
 
+/** How often a compiled engine was instantiated (or tried to be), for tests. */
+export function instantiateAttempts(): number {
+    return instantiations;
+}
+
 function compileSync(): void {
-    if (compiledModule !== undefined) return;
+    if (compiledModule !== undefined && compiledModule !== failedModule) return;
     // A failure is final, unless the embedder supplies a module afterwards.
     const supplied = host[suppliedModuleKey];
     if (attempted && supplied === attemptedWith) return;
@@ -71,18 +99,22 @@ function compileSync(): void {
 async function compileAsync(): Promise<void> {
     attempts++;
     try {
-        const supplied = suppliedModule();
-        if (supplied !== undefined) {
-            compiledModule = supplied;
+        if (host[suppliedModuleKey] !== undefined && host[suppliedModuleKey] !== null) {
+            // As compileSync would: this module is not compiled again.
+            attempted = true;
+            attemptedWith = host[suppliedModuleKey];
+            compiledModule = suppliedModule();
+            loadError = undefined;
             return;
         }
 
-        const location = wasmLocation();
         const WA = host.WebAssembly;
+        const response = await host.fetch(wasmLocation());
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText} for ${response.url}`);
         let compiled: unknown;
         if (typeof WA.compileStreaming === "function") {
             try {
-                compiled = await WA.compileStreaming(host.fetch(location));
+                compiled = await WA.compileStreaming(response.clone());
             } catch {
                 // E.g. a server that does not send application/wasm.
                 compiled = undefined;
@@ -90,7 +122,6 @@ async function compileAsync(): Promise<void> {
         }
 
         if (compiled === undefined) {
-            const response = await host.fetch(location);
             compiled = await WA.compile(await response.arrayBuffer());
         }
 
@@ -111,14 +142,19 @@ function startCompiling(): Promise<void> {
 
 function instantiate(): WasmGlue | undefined {
     if (current !== undefined) return current;
-    if (compiledModule === undefined) return undefined;
+    if (compiledModule === undefined || compiledModule === failedModule) return undefined;
+    instantiations++;
     try {
         const glue = createGlue();
         glue.initSync({ module: compiledModule });
+        // A module that instantiates but is not this engine (it lacks the
+        // exports) fails here, once, rather than in every run.
+        glue.engineVersion();
         current = glue;
         return glue;
     } catch (e) {
         loadError = e;
+        failedModule = compiledModule;
         return undefined;
     }
 }
@@ -165,7 +201,9 @@ export function isDiscarded(glue: WasmGlue): boolean {
     return discarded.has(glue);
 }
 
-if (!isNode && typeof host.fetch === "function") {
-    // Browsers: compile in the background from the start.
+if (!isNode && typeof host.fetch === "function" && engineMode() !== "ts") {
+    // Browsers: compile in the background from the start, unless every run
+    // is to use the TypeScript engine (then the first run that may use the
+    // engine, should the mode change, compiles it).
     void startCompiling();
 }

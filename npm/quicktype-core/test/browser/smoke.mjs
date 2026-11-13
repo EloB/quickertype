@@ -9,7 +9,10 @@
 //   over as `globalThis[Symbol.for("quicktype-core.wasmModule")]`, so even
 //   the first run uses WebAssembly;
 // * "cjs": the CommonJS build bundled as an iife and loaded with a classic
-//   script tag, the .wasm file served next to the bundle.
+//   script tag, the .wasm file served next to the bundle;
+// * "ts": as "asset", with `Symbol.for("quicktype-core.engine")` set to
+//   "ts" before the import: every run is on the TypeScript engine and the
+//   .wasm file is never fetched.
 //
 // The outputs must equal what the same calls give in Node.
 //
@@ -79,6 +82,11 @@ const pages = {
 </script>`,
     cjs: `<!doctype html><meta charset="utf-8"><pre id="result">pending</pre>
 <script src="/cjs/bundle.js"></script>`,
+    ts: `<!doctype html><meta charset="utf-8"><pre id="result">pending</pre>
+<script type="module">
+    globalThis[Symbol.for("quicktype-core.engine")] = "ts";
+    await import("/app/js/bundle.js");
+</script>`,
 };
 
 async function serve(variant) {
@@ -89,10 +97,12 @@ async function serve(variant) {
     };
     const wasm = fs.readFileSync(wasmFile);
     // Where the glue's `new URL("../../../native/wasm/…", import.meta.url)` points from /app/js/.
-    if (variant === "asset") files["/native/wasm/quicktype_wasm_bg.wasm"] = ["application/wasm", wasm];
+    if (variant === "asset" || variant === "ts") files["/native/wasm/quicktype_wasm_bg.wasm"] = ["application/wasm", wasm];
     else if (variant === "cjs") files["/cjs/quicktype_wasm_bg.wasm"] = ["application/wasm", wasm];
     else files["/engine.wasm"] = ["application/wasm", wasm];
+    const requests = [];
     const server = http.createServer((request, response) => {
+        requests.push(request.url);
         const file = files[request.url];
         if (file === undefined) {
             response.writeHead(404);
@@ -104,6 +114,7 @@ async function serve(variant) {
         response.end(file[1]);
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    server.requests = requests;
     return server;
 }
 
@@ -217,10 +228,11 @@ const expectedEngines = {
     asset: [{ wasm: 0, ts: 1 }, { wasm: 1, ts: 1 }, { wasm: 2, ts: 1 }, { wasm: 3, ts: 1 }],
     supplied: [{ wasm: 1, ts: 0 }, { wasm: 2, ts: 0 }, { wasm: 3, ts: 0 }, { wasm: 4, ts: 0 }],
     cjs: [{ wasm: 0, ts: 1 }, { wasm: 1, ts: 1 }, { wasm: 2, ts: 1 }, { wasm: 3, ts: 1 }],
+    ts: [{ wasm: 0, ts: 1 }, { wasm: 0, ts: 2 }, { wasm: 0, ts: 3 }, { wasm: 0, ts: 4 }],
 };
 
 let failed = false;
-for (const variant of ["asset", "supplied", "cjs"]) {
+for (const variant of ["asset", "supplied", "cjs", "ts"]) {
     const server = await serve(variant);
     const url = `http://127.0.0.1:${server.address().port}/index.html`;
     if (process.argv.includes("--serve")) {
@@ -233,6 +245,9 @@ for (const variant of ["asset", "supplied", "cjs"]) {
         if (result.error !== undefined) throw new Error(result.error);
         assert.deepEqual(result.outputs, expected.outputs);
         assert.deepEqual(result.engines, expectedEngines[variant]);
+        if (variant === "ts") {
+            assert.deepEqual(server.requests.filter((r) => r.endsWith(".wasm")), [], "the .wasm was fetched");
+        }
         console.log(`${variant}: ok (engines per step: ${JSON.stringify(result.engines)})`);
     } catch (e) {
         failed = true;
