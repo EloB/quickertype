@@ -333,7 +333,19 @@ impl Ref {
         if length > suffix.len() + 1 {
             // `name.slice(0, name.length - suffix.length - 1)`, in UTF-16
             // units (the suffix is ASCII; without one, the last unit goes).
-            name = utf16::slice(&name, 0, Some((length - suffix.len() - 1) as i64)).to_owned();
+            let end = length - suffix.len() - 1;
+            let kept = utf16::slice(&name, 0, Some(end as i64));
+            // Without a suffix, a name ending in an astral character loses
+            // only its low surrogate: TypeScript keeps the high one, so `😀`
+            // gives a non-empty name, not `Something`. A lone surrogate
+            // stands as U+FFFD here (a name legalizes both to nothing, and
+            // Node prints both as U+FFFD; see "Lone surrogates" in
+            // docs/PARITY.md).
+            name = if utf16::len(kept) < end {
+                format!("{kept}\u{FFFD}")
+            } else {
+                kept.to_owned()
+            };
         }
         if name.is_empty() {
             return Ok("Something".to_owned());
@@ -2368,6 +2380,17 @@ mod tests {
         assert_eq!(Ref::parse("x.json#/a/0/b").unwrap().name().unwrap(), "0");
         assert_eq!(Ref::root(None).unwrap().to_string(), "#");
         assert_eq!(Ref::parse("#").unwrap().name().unwrap(), "Something");
+        // Cutting the last UTF-16 unit of an astral character keeps its
+        // high surrogate in TypeScript (here U+FFFD), so the name is not
+        // empty.
+        let name = |address: &str| Ref::root(Some(address)).unwrap().name().unwrap();
+        assert_eq!(name("😀"), "\u{FFFD}");
+        assert_eq!(name("a😀"), "a\u{FFFD}");
+        assert_eq!(name("😀😀"), "😀\u{FFFD}");
+        assert_eq!(name("a.😀"), "a.\u{FFFD}");
+        assert_eq!(name("😀.json"), "😀");
+        assert_eq!(name("Ünïcödé"), "Ünïcöd");
+        assert_eq!(Ref::root(Some("in/😀")).unwrap().to_string(), "in/😀#");
         assert_eq!(
             Ref::parse("100%.schema").unwrap_err().user_message(),
             "URI malformed"

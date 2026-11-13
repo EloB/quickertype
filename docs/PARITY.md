@@ -281,7 +281,18 @@ the others name the fix they need.
   In input JSON, both readers decode a `\u` escape that leaves a surrogate
   unpaired to U+FFFD (so two such keys or enum cases can collide), and
   `JSON.parse` errors that quote half of a surrogate pair show U+FFFD, as
-  Node prints them. No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
+  Node prints them. Where dropping the half would empty a string that
+  TypeScript keeps non-empty, the port keeps U+FFFD in its place instead:
+  `Ref.name` of an address without a suffix whose file name ends in an
+  astral character (`😀` is the lone `\ud83d` in TypeScript, not
+  `Something`). Names legalize U+FFFD and a lone surrogate alike (to
+  nothing; no language's identifier characters include either), and Node
+  writes both to stdout and stderr as U+FFFD, so CLI output is identical
+  (`tests/fuzz-regressions/schema-name-astral*`). What still differs is
+  the API's captured console output: with `--debug` options that print
+  type names (`debugPrintGraph`), the TypeScript engine passes
+  `console.log` a string holding the lone surrogate, the engine one
+  holding U+FFFD. No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
 - **Very deeply nested JSON.** Both JSON readers are iterative, but

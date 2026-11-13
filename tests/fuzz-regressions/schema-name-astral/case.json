@@ -1,0 +1,33 @@
+{
+  "description": "A JSON Schema whose address is one astral character and no suffix (top-level name, file name), reached by a $ref without a title: Ref.name drops the last UTF-16 unit and keeps the lone high surrogate, a non-empty name that legalizes to nothing (the type is then named from its alternatives), where the port dropped the whole character and named the type Something",
+  "foundIn": "cli",
+  "case": {
+    "lang": "typescript",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "😀",
+        "text": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"a\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"#\"\n      }\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "debug": [],
+    "cli": {
+      "schemaFile": "😀"
+    }
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "typescript",
+      "--src-lang",
+      "schema",
+      "in/😀"
+    ],
+    "dirs": [],
+    "exit": 0,
+    "files": []
+  }
+}
