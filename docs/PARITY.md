@@ -310,6 +310,16 @@ the others name the fix they need.
   measured on the reference CLI (Node 24.16): more than 3,731 nested
   folders, or arrays nested more than 2,830 deep. Inside nested folders
   Node's array limit is lower (less stack is left); that is not modelled.
+- **URL grammars (`--src-urls`).** TypeScript's `expand` recurses once
+  per nested array or `oneOf`, and `String(array)` once per nested array
+  when it reports a grammar that is not an object; the port counts both
+  and reports Node's `RangeError` where the reference CLI does (Node 24):
+  past 2,227 nested `expand` calls and 2,734 nested arrays. (A million
+  levels used to overflow the native stack.) A grammar whose arrays
+  multiply out exponentially (`["u", {"oneOf": ["a", "b"]}, …]` with
+  dozens of `oneOf`s) runs both out of memory: Node aborts at V8's heap
+  limit (`FATAL ERROR: … JavaScript heap out of memory`, after about a
+  minute for 2^28 URLs), the port allocates until the system refuses.
 - **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
   native compiler where the reference runs TypeScript 5.9 and
   typescript-json-schema, and emulates TS 5.9's union member order by
