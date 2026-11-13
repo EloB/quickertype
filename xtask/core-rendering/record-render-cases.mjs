@@ -31,8 +31,9 @@ import { fileURLToPath } from "node:url";
 import { format } from "node:util";
 
 import { dumpTransformation } from "./dump-transformation.mjs";
+import { referenceCheckout } from "../reference.mjs";
 
-const quicktype = resolve(process.argv[2] ?? "../quicktype");
+const quicktype = referenceCheckout(process.argv[2]);
 const languages = process.argv.length > 3 ? process.argv.slice(3) : ["rust"];
 const require = createRequire(join(quicktype, "package.json"));
 const dist = join(quicktype, "packages/quicktype-core/dist");

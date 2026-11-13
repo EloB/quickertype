@@ -24,8 +24,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const quicktypeDir = resolve(process.argv[2] ?? process.env.QUICKTYPE_DIR ?? join(repoRoot, "..", "quicktype"));
+const quicktypeDir = referenceCheckout(process.argv[2]);
 const require = createRequire(join(quicktypeDir, "packages/quicktype-graphql-input/dist/index.js"));
 const { getIntrospectionQuery } = require("graphql");
 const cli = join(quicktypeDir, "dist/index.js");

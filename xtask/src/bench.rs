@@ -807,7 +807,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             Some(cmd) => cmd.clone(),
             None => {
                 let script = find_reference(root).ok_or(
-                    "TypeScript CLI not found: set QUICKTYPE_REF, pass --ref, or use --no-ref",
+                    "TypeScript CLI not found: set QUICKTYPE_REFERENCE, pass --ref, or use --no-ref",
                 )?;
                 vec!["node".into(), script.to_string_lossy().into_owned()]
             }

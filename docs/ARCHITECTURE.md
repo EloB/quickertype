@@ -371,6 +371,12 @@ Loading in browsers and bundlers and the remaining differences are in the
 
 No Rust test needs Node; Node and a built quicktype checkout are needed to
 record fixtures and for `cargo xtask diff`. The npm tests run under Node.
+Each tool takes the checkout as a path argument where it has one, else from
+`$QUICKTYPE_REFERENCE`, else uses `quicktype/` next to this repository;
+`cargo xtask diff`, the npm tests and the recorders in `xtask/*/` (through
+[`xtask/reference.mjs`](../xtask/reference.mjs)) also look further up, which
+finds it from a worktree. The old names `QUICKTYPE_REF` and `QUICKTYPE_DIR`
+still work, with a warning.
 
 | Layer | Lives in | Run with | Recorded by |
 |---|---|---|---|

@@ -7,12 +7,14 @@
 //   node xtask/bench/in-process.mjs <quicktype checkout> [--iterations N] [--json]
 
 import { readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const args = process.argv.slice(2);
-const checkout = resolve(args[0] ?? "../quicktype");
+const checkout = referenceCheckout(args[0]);
 let iterations = 10;
 let json = false;
 for (let i = 1; i < args.length; i++) {

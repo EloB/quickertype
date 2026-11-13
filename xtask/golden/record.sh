@@ -3,7 +3,10 @@
 # the fixture corpus (record-hook.cjs + finalize.mjs) and the CLI-behavior
 # cases tests/golden/cli-* (record-cli.mjs).
 #
-#   cargo xtask golden [path-to-quicktype-checkout]   (default: ../quicktype)
+#   cargo xtask golden [path-to-quicktype-checkout]
+#
+# The checkout defaults to $QUICKTYPE_REFERENCE, else ../quicktype next to
+# this repository.
 #
 # The reference must be built (npm ci && npm run build). The commit it was
 # recorded from is written to tests/golden/REFERENCE.
@@ -11,7 +14,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REWRITE="$(cd "$HERE/../.." && pwd)"
-REF="$(cd "${1:-$REWRITE/../quicktype}" && pwd)"
+REF="$(cd "${1:-${QUICKTYPE_REFERENCE:-$REWRITE/../quicktype}}" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
