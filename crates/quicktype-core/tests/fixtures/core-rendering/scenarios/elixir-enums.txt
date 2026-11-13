@@ -1,0 +1,10 @@
+# Elixir enum cases that are not valid atoms (quoted), descriptions with
+# triple quotes and backslashes, and top-level arrays of unions and of
+# primitives.
+input schema Mode {"description": "A \"\"\"quoted\"\"\" \\ description\nover two lines.", "enum": ["ok", "x!", "y?", "a@b", "_u", "9a", "one-two", "", "with space", "q!x", "Ünï"]}
+input schema Mixed {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "object", "properties": {"z": {"type": "boolean"}}, "required": ["z"]}]}}
+input schema Doubles {"type": "array", "items": {"type": "number"}}
+pipeline {"lang": "elixir"}
+
+render elixir {}
+render elixir {"rendererOptions": {"namespace": "NS"}}

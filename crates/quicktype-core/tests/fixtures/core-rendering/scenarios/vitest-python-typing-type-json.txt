@@ -1,0 +1,8 @@
+# Port of quicktype's test/unit/python-typing-type.test.ts, the JSON half
+# of each render: an inferred integer-string union exercises the is_type
+# helper. tests/vitest_python.rs checks the typing.Type annotations.
+input jsonsamples MixedValues ["{\"mixed\":[null,1,\"1\",{}]}"]
+pipeline {"lang": "python"}
+
+render python {"rendererOptions": {"python-version": "3.6"}}
+render python {"rendererOptions": {"python-version": "3.7"}}

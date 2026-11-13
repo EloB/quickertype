@@ -1,0 +1,8 @@
+# Port of quicktype's test/unit/python-typing-type.test.ts, the schema
+# half of each render. tests/vitest_python.rs checks the typing.Type
+# annotations.
+input schema TopLevel {"type": "object", "properties": {"child": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}, "status": {"type": "string", "enum": ["ready", "done"]}, "value": {"oneOf": [{"type": "integer"}, {"type": "string"}]}}, "required": ["child", "status", "value"]}
+pipeline {"lang": "python"}
+
+render python {"rendererOptions": {"python-version": "3.6"}}
+render python {"rendererOptions": {"python-version": "3.7"}}

@@ -1,0 +1,30 @@
+# The Python renderers with every python-version, with and without
+# just-types (which the golden corpus has only for 3.10), pydantic,
+# nice-property-names and alphabetize (which dataclasses ignore), on
+# inferred JSON with stringified integers and booleans (transformers),
+# dates, times, date-times, UUIDs and heterogeneous arrays.
+input json TopLevel [{"count": "123", "flag": "true", "day": "2020-01-01", "at": "12:30:00", "when": "2020-01-01T00:00:00Z", "id": "a3bb189e-8bf9-3888-9912-ace4e6543002", "mixed": [1, "2", true, null, 1.5, {"a": 1}, [1]], "maybe": null, "maybeCount": "7", "someValue": 1, "nested": {"innerName": "x", "list": [{"v": 1}]}, "class": 1, "from_dict": 2, "Weird Key": 3}, {"count": "4", "flag": "false", "day": "2020-01-02", "at": "12:30:01", "when": "2020-01-01T00:00:01Z", "id": "a3bb189e-8bf9-3888-9912-ace4e6543003", "mixed": [], "maybe": "x", "maybeCount": null, "someValue": "y", "nested": {"innerName": "y", "list": []}, "class": 2, "from_dict": 3, "Weird Key": 4}]
+input json Counts {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9}
+input json Values [1, "2", true]
+pipeline {"lang": "python", "inferMaps": true}
+
+render python {}
+render python {"alphabetize": true}
+render python {"rendererOptions": {"python-version": "3.5"}}
+render python {"rendererOptions": {"python-version": "3.6"}}
+render python {"rendererOptions": {"python-version": "3.7"}}
+render python {"rendererOptions": {"python-version": "3.9"}}
+render python {"rendererOptions": {"python-version": "3.5", "just-types": true}}
+render python {"rendererOptions": {"python-version": "3.6", "just-types": true}}
+render python {"rendererOptions": {"python-version": "3.7", "just-types": true}}
+render python {"rendererOptions": {"python-version": "3.9", "just-types": true}}
+render python {"rendererOptions": {"just-types": true}, "alphabetize": true}
+render python {"rendererOptions": {"pydantic-base-model": true}}
+render python {"rendererOptions": {"pydantic-base-model": true, "python-version": "3.6"}}
+render python {"rendererOptions": {"pydantic-base-model": true, "just-types": true, "python-version": "3.9"}}
+render python {"rendererOptions": {"nice-property-names": false}}
+render python {"rendererOptions": {"nice-property-names": false, "python-version": "3.6"}}
+render python {"rendererOptions": {"python-version": "3.6"}, "alphabetize": true}
+render python {"indentation": "  "}
+render python {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block", "two"]}]}
+render python {"rendererOptions": {"python-version": "2.7"}}

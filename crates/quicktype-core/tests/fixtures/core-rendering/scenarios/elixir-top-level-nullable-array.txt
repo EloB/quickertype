@@ -1,0 +1,7 @@
+# An Elixir top-level array of a nullable union: TypeScript asks for the
+# (unnamed) union's module name and fails.
+input schema Maybe {"type": "array", "items": {"anyOf": [{"type": "integer"}, {"type": "null"}]}}
+pipeline {"lang": "elixir"}
+
+render elixir {}
+render elixir {"rendererOptions": {"just-types": true}}

@@ -1,0 +1,324 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "mixed",
+      12,
+      false
+     ],
+     [
+      "maybe",
+      9,
+      false
+     ],
+     [
+      "deep",
+      2,
+      false
+     ],
+     [
+      "map",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "deeper",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "deepest",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 5
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 6
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      8,
+      true
+     ],
+     [
+      "b",
+      8,
+      true
+     ],
+     [
+      "c",
+      8,
+      true
+     ],
+     [
+      "d",
+      8,
+      true
+     ],
+     [
+      "e",
+      8,
+      true
+     ],
+     [
+      "f",
+      8,
+      true
+     ],
+     [
+      "g",
+      8,
+      true
+     ],
+     [
+      "h",
+      8,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "v",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     10,
+     11
+    ]
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "string",
+    "a": {
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 13
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     14,
+     10,
+     16,
+     15,
+     5,
+     11
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "nested",
+      11,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Empty"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Strings"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "items": 11
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Empty",
+    17
+   ],
+   [
+    "Strings",
+    18
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This code may look unusually verbose for Ruby (and it is), but\n# it performs some subtle and complex validation of JSON data.\n#\n# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:\n#\n#   top_level = TopLevel.from_json! \"[…]\"\n#   puts top_level.first.map.h&.v.even?\n#\n#   empty = Empty.from_json! \"{…}\"\n#   puts empty\n#\n#   strings = Strings.from_json! \"[…]\"\n#   puts strings.first\n#\n# If from_json! succeeds, the value returned matches the schema.\n\nrequire 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule Types\n  include Dry.Types(default: :nominal)\n\n  Integer = Strict::Integer\n  Nil     = Strict::Nil\n  Bool    = Strict::Bool\n  Hash    = Strict::Hash\n  String  = Strict::String\n  Double  = Strict::Float | Strict::Integer\nend\n\nclass Deeper < Dry::Struct\n  attribute :deepest, Types.Array(Types.Array(Types::Integer))\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      deepest: d.fetch(\"deepest\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"deepest\" => deepest,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass Deep < Dry::Struct\n  attribute :deeper, Deeper\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      deeper: Deeper.from_dynamic!(d.fetch(\"deeper\")),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"deeper\" => deeper.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass A < Dry::Struct\n  attribute :v, Types::Integer\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      v: d.fetch(\"v\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"v\" => v,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass Map < Dry::Struct\n  attribute :a, A.optional\n  attribute :b, A.optional\n  attribute :c, A.optional\n  attribute :d, A.optional\n  attribute :e, A.optional\n  attribute :f, A.optional\n  attribute :g, A.optional\n  attribute :h, A.optional\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      a: d.key?(\"a\") ? A.from_dynamic!(d[\"a\"]) : nil,\n      b: d.key?(\"b\") ? A.from_dynamic!(d[\"b\"]) : nil,\n      c: d.key?(\"c\") ? A.from_dynamic!(d[\"c\"]) : nil,\n      d: d.key?(\"d\") ? A.from_dynamic!(d[\"d\"]) : nil,\n      e: d.key?(\"e\") ? A.from_dynamic!(d[\"e\"]) : nil,\n      f: d.key?(\"f\") ? A.from_dynamic!(d[\"f\"]) : nil,\n      g: d.key?(\"g\") ? A.from_dynamic!(d[\"g\"]) : nil,\n      h: d.key?(\"h\") ? A.from_dynamic!(d[\"h\"]) : nil,\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"a\" => a&.to_dynamic,\n      \"b\" => b&.to_dynamic,\n      \"c\" => c&.to_dynamic,\n      \"d\" => d&.to_dynamic,\n      \"e\" => e&.to_dynamic,\n      \"f\" => f&.to_dynamic,\n      \"g\" => g&.to_dynamic,\n      \"h\" => h&.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass MixedClass < Dry::Struct\n  attribute :nested, Types::String\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      nested: d.fetch(\"nested\"),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"nested\" => nested,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass MixedElement < Dry::Struct\n  attribute :bool,          Types::Bool.optional\n  attribute :double,        Types::Double.optional\n  attribute :integer_array, Types.Array(Types::Integer).optional\n  attribute :mixed_class,   MixedClass.optional\n  attribute :null,          Types::Nil.optional\n  attribute :string,        Types::String.optional\n\n  def self.from_dynamic!(d)\n    if schema.key(:bool).type.right.valid? d\n      return new(bool: d, integer_array: nil, mixed_class: nil, double: nil, null: nil, string: nil)\n    end\n    if schema.key(:double).type.right.valid? d\n      return new(double: d, integer_array: nil, bool: nil, mixed_class: nil, null: nil, string: nil)\n    end\n    if schema.key(:integer_array).type.right.valid? d\n      return new(integer_array: d, bool: nil, mixed_class: nil, double: nil, null: nil, string: nil)\n    end\n    begin\n      value = MixedClass.from_dynamic!(d)\n      if schema.key(:mixed_class).type.right.valid? value\n        return new(mixed_class: value, integer_array: nil, bool: nil, double: nil, null: nil, string: nil)\n      end\n    rescue\n    end\n    if schema.key(:null).type.right.valid? d\n      return new(null: d, integer_array: nil, bool: nil, mixed_class: nil, double: nil, string: nil)\n    end\n    if schema.key(:string).type.right.valid? d\n      return new(string: d, integer_array: nil, bool: nil, mixed_class: nil, double: nil, null: nil)\n    end\n    raise \"Invalid union\"\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    if bool != nil\n      bool\n    elsif double != nil\n      double\n    elsif integer_array != nil\n      integer_array\n    elsif mixed_class != nil\n      mixed_class.to_dynamic\n    elsif string != nil\n      string\n    else\n      nil\n    end\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass TopLevelElement < Dry::Struct\n  attribute :mixed, Types.Array(Types.Instance(MixedElement))\n  attribute :maybe, Types::String.optional\n  attribute :deep,  Deep\n  attribute :map,   Map\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n      mixed: d.fetch(\"mixed\").map { |x| MixedElement.from_dynamic!(x) },\n      maybe: d.fetch(\"maybe\"),\n      deep:  Deep.from_dynamic!(d.fetch(\"deep\")),\n      map:   Map.from_dynamic!(d.fetch(\"map\")),\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n      \"mixed\" => mixed.map { |x| x.to_dynamic },\n      \"maybe\" => maybe,\n      \"deep\"  => deep.to_dynamic,\n      \"map\"   => map.to_dynamic,\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass Empty < Dry::Struct\n\n  def self.from_dynamic!(d)\n    d = Types::Hash[d]\n    new(\n    )\n  end\n\n  def self.from_json!(json)\n    from_dynamic!(JSON.parse(json))\n  end\n\n  def to_dynamic\n    {\n    }\n  end\n\n  def to_json(options = nil)\n    JSON.generate(to_dynamic, options)\n  end\nend\n\nclass TopLevel\n  def self.from_json!(json)\n    top_level = JSON.parse(json, quirks_mode: true).map { |x| TopLevelElement.from_dynamic!(x) }\n    top_level.define_singleton_method(:to_json) do\n      JSON.generate(self.map { |x| x.to_dynamic })\n    end\n    top_level\n  end\nend\n\nclass Strings\n  def self.from_json!(json)\n    JSON.parse(json, quirks_mode: true).map { |x| Types::String[x] }\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "require 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule Types\n  include Dry.Types(default: :nominal)\n\n  Integer = Strict::Integer\n  Nil     = Strict::Nil\n  Bool    = Strict::Bool\n  Hash    = Strict::Hash\n  String  = Strict::String\n  Double  = Strict::Float | Strict::Integer\nend\n\nclass Deeper < Dry::Struct\n  attribute :deepest, Types.Array(Types.Array(Types::Integer))\nend\n\nclass Deep < Dry::Struct\n  attribute :deeper, Deeper\nend\n\nclass A < Dry::Struct\n  attribute :v, Types::Integer\nend\n\nclass Map < Dry::Struct\n  attribute :a, A.optional\n  attribute :b, A.optional\n  attribute :c, A.optional\n  attribute :d, A.optional\n  attribute :e, A.optional\n  attribute :f, A.optional\n  attribute :g, A.optional\n  attribute :h, A.optional\nend\n\nclass MixedClass < Dry::Struct\n  attribute :nested, Types::String\nend\n\nclass MixedElement < Dry::Struct\n  attribute :bool,          Types::Bool.optional\n  attribute :double,        Types::Double.optional\n  attribute :integer_array, Types.Array(Types::Integer).optional\n  attribute :mixed_class,   MixedClass.optional\n  attribute :null,          Types::Nil.optional\n  attribute :string,        Types::String.optional\nend\n\nclass TopLevelElement < Dry::Struct\n  attribute :mixed, Types.Array(Types.Instance(MixedElement))\n  attribute :maybe, Types::String.optional\n  attribute :deep,  Deep\n  attribute :map,   Map\nend\n\nclass Empty < Dry::Struct\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "ruby",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "strictness": "none",
+    "namespace": "A::B"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "# This code may look unusually verbose for Ruby (and it is), but\n# it performs some subtle and complex validation of JSON data.\n#\n# To parse this JSON, add 'dry-struct' and 'dry-types' gems, then do:\n#\n#   top_level = TopLevel.from_json! \"[…]\"\n#   puts top_level.first.map.h&.v.even?\n#\n#   empty = Empty.from_json! \"{…}\"\n#   puts empty\n#\n#   strings = Strings.from_json! \"[…]\"\n#   puts strings.first\n#\n# If from_json! succeeds, the value returned matches the schema.\n\nrequire 'json'\nrequire 'dry-types'\nrequire 'dry-struct'\n\nmodule A\n  module B\n    module Types\n      include Dry.Types(default: :nominal)\n    end\n\n    class Deeper < Dry::Struct\n      attribute :deepest, Types.Array(Types.Array(Types::Integer))\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          deepest: d.fetch(\"deepest\"),\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"deepest\" => deepest,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class Deep < Dry::Struct\n      attribute :deeper, Deeper\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          deeper: Deeper.from_dynamic!(d.fetch(\"deeper\")),\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"deeper\" => deeper.to_dynamic,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class A < Dry::Struct\n      attribute :v, Types::Integer\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          v: d.fetch(\"v\"),\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"v\" => v,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class Map < Dry::Struct\n      attribute :a, A.optional\n      attribute :b, A.optional\n      attribute :c, A.optional\n      attribute :d, A.optional\n      attribute :e, A.optional\n      attribute :f, A.optional\n      attribute :g, A.optional\n      attribute :h, A.optional\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          a: d.key?(\"a\") ? A.from_dynamic!(d[\"a\"]) : nil,\n          b: d.key?(\"b\") ? A.from_dynamic!(d[\"b\"]) : nil,\n          c: d.key?(\"c\") ? A.from_dynamic!(d[\"c\"]) : nil,\n          d: d.key?(\"d\") ? A.from_dynamic!(d[\"d\"]) : nil,\n          e: d.key?(\"e\") ? A.from_dynamic!(d[\"e\"]) : nil,\n          f: d.key?(\"f\") ? A.from_dynamic!(d[\"f\"]) : nil,\n          g: d.key?(\"g\") ? A.from_dynamic!(d[\"g\"]) : nil,\n          h: d.key?(\"h\") ? A.from_dynamic!(d[\"h\"]) : nil,\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"a\" => a&.to_dynamic,\n          \"b\" => b&.to_dynamic,\n          \"c\" => c&.to_dynamic,\n          \"d\" => d&.to_dynamic,\n          \"e\" => e&.to_dynamic,\n          \"f\" => f&.to_dynamic,\n          \"g\" => g&.to_dynamic,\n          \"h\" => h&.to_dynamic,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class MixedClass < Dry::Struct\n      attribute :nested, Types::String\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          nested: d.fetch(\"nested\"),\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"nested\" => nested,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class MixedElement < Dry::Struct\n      attribute :bool,          Types::Bool.optional\n      attribute :double,        Types::Double.optional\n      attribute :integer_array, Types.Array(Types::Integer).optional\n      attribute :mixed_class,   MixedClass.optional\n      attribute :null,          Types::Nil.optional\n      attribute :string,        Types::String.optional\n\n      def self.from_dynamic!(d)\n        if schema.key(:bool).type.right.valid? d\n          return new(bool: d, integer_array: nil, mixed_class: nil, double: nil, null: nil, string: nil)\n        end\n        if schema.key(:double).type.right.valid? d\n          return new(double: d, integer_array: nil, bool: nil, mixed_class: nil, null: nil, string: nil)\n        end\n        if schema.key(:integer_array).type.right.valid? d\n          return new(integer_array: d, bool: nil, mixed_class: nil, double: nil, null: nil, string: nil)\n        end\n        begin\n          value = MixedClass.from_dynamic!(d)\n          if schema.key(:mixed_class).type.right.valid? value\n            return new(mixed_class: value, integer_array: nil, bool: nil, double: nil, null: nil, string: nil)\n          end\n        rescue\n        end\n        if schema.key(:null).type.right.valid? d\n          return new(null: d, integer_array: nil, bool: nil, mixed_class: nil, double: nil, string: nil)\n        end\n        if schema.key(:string).type.right.valid? d\n          return new(string: d, integer_array: nil, bool: nil, mixed_class: nil, double: nil, null: nil)\n        end\n        raise \"Invalid union\"\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        if bool != nil\n          bool\n        elsif double != nil\n          double\n        elsif integer_array != nil\n          integer_array\n        elsif mixed_class != nil\n          mixed_class.to_dynamic\n        elsif string != nil\n          string\n        else\n          nil\n        end\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class TopLevelElement < Dry::Struct\n      attribute :mixed, Types.Array(Types.Instance(MixedElement))\n      attribute :maybe, Types::String.optional\n      attribute :deep,  Deep\n      attribute :map,   Map\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n          mixed: d.fetch(\"mixed\").map { |x| MixedElement.from_dynamic!(x) },\n          maybe: d.fetch(\"maybe\"),\n          deep:  Deep.from_dynamic!(d.fetch(\"deep\")),\n          map:   Map.from_dynamic!(d.fetch(\"map\")),\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n          \"mixed\" => mixed.map { |x| x.to_dynamic },\n          \"maybe\" => maybe,\n          \"deep\"  => deep.to_dynamic,\n          \"map\"   => map.to_dynamic,\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    class Empty < Dry::Struct\n\n      def self.from_dynamic!(d)\n        d = Types::Hash[d]\n        new(\n        )\n      end\n\n      def self.from_json!(json)\n        from_dynamic!(JSON.parse(json))\n      end\n\n      def to_dynamic\n        {\n        }\n      end\n\n      def to_json(options = nil)\n        JSON.generate(to_dynamic, options)\n      end\n    end\n\n    module A\n      module B\n        class TopLevel\n          def self.from_json!(json)\n            top_level = JSON.parse(json, quirks_mode: true).map { |x| TopLevelElement.from_dynamic!(x) }\n            top_level.define_singleton_method(:to_json) do\n              JSON.generate(self.map { |x| x.to_dynamic })\n            end\n            top_level\n          end\n        end\n      end\n    end\n\n    module A\n      module B\n        class Strings\n          def self.from_json!(json)\n            JSON.parse(json, quirks_mode: true).map { |x| Types::String[x] }\n          end\n        end\n      end\n    end\n  end\nend\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "ruby-json"
+}

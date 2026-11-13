@@ -1,0 +1,25 @@
+# The Ruby renderer on shapes and options the golden corpus has few of:
+# descriptions between attributes, constraints, optional and nullable
+# properties, unions, maps, date-times and UUIDs, recursive classes
+# (forward declarations), non-class top-levels, every strictness, nested
+# namespaces, just-types and leading comments.
+input schema TopLevel {"type": "object", "description": "The top level.\nSecond line.", "properties": {"small": {"type": "integer", "minimum": -5, "maximum": 100}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 1e21}, "name": {"type": "string", "minLength": 1, "maxLength": 3, "pattern": "^[a-z#\"\\\\]+$", "description": "The name."}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 4}, "optSmall": {"type": "integer", "minimum": 1}, "flag": {"type": "boolean", "description": "A flag\nover two lines."}, "kind": {"enum": ["one-two", "three \"four\"", "#{x}", "5"]}, "maybeKind": {"anyOf": [{"enum": ["a", "b"]}, {"type": "null"}]}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"$ref": "#/definitions/child"}]}, "maybeChoice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "null"}]}, "maybeInt": {"anyOf": [{"type": "integer"}, {"type": "null"}]}, "counts": {"type": "object", "additionalProperties": {"type": "integer"}}, "children": {"type": "object", "additionalProperties": {"$ref": "#/definitions/child"}}, "list": {"type": "array", "items": {"$ref": "#/definitions/child"}}, "maybeChild": {"anyOf": [{"$ref": "#/definitions/child"}, {"type": "null"}]}, "optChild": {"$ref": "#/definitions/child"}, "optList": {"type": "array", "items": {"type": "number"}}, "optMap": {"type": "object", "additionalProperties": {"type": "string"}}, "optKind": {"enum": ["x", "y"]}, "when": {"type": "string", "format": "date-time"}, "id": {"type": "string", "format": "uuid"}, "anything": {}, "nothing": {"type": "null"}, "self": {"$ref": "#"}, "class": {"type": "string"}, "_1": {"type": "integer"}}, "required": ["small", "ratio", "name", "tags", "flag", "kind", "maybeKind", "choice", "maybeChoice", "maybeInt", "counts", "children", "list", "maybeChild", "when", "id", "anything", "nothing", "class", "_1"], "definitions": {"child": {"type": "object", "description": "A child.", "properties": {"x": {"type": "number"}, "parent": {"$ref": "#"}}, "required": ["x"]}}}
+input schema Children {"type": "array", "items": {"type": "object", "properties": {"y": {"type": "string"}}, "required": ["y"]}}
+input schema Numbers {"type": "array", "items": {"type": "integer"}}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Choice {"anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "object", "properties": {"z": {"type": "boolean"}}}]}
+input schema Alias {"type": "string"}
+input schema Mode {"enum": ["on", "off"]}
+pipeline {"lang": "ruby"}
+
+render ruby {}
+render ruby {"alphabetize": true}
+render ruby {"rendererOptions": {"just-types": true}}
+render ruby {"rendererOptions": {"strictness": "coercible"}}
+render ruby {"rendererOptions": {"strictness": "none"}}
+render ruby {"rendererOptions": {"namespace": "Outer::Middle::Inner"}}
+render ruby {"rendererOptions": {"namespace": "Trailing::"}}
+render ruby {"rendererOptions": {"just-types": true, "namespace": "Only"}}
+render ruby {"indentation": "\t"}
+render ruby {"leadingComments": ["string comment", {"lines": ["line one", "line two"]}, {"descriptionBlock": ["block", "two"]}]}
+render ruby {"rendererOptions": {"strictness": "bogus"}}
