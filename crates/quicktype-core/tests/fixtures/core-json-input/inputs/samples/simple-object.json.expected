@@ -1,0 +1,42 @@
+### stream-typescript
+0: string | 0 | 1 enums: Lorem ipsum (1), ...
+1: integer | 1
+2: bool | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "date":1, "title":0, "validity":2
+### api-typescript
+0: string | 1 enums: Lorem ipsum (1), ...
+1: integer
+2: bool
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "title":0, "date":1, "validity":2
+### stream-schema
+0: string | 1 enums: Lorem ipsum (1), ...
+1: integer
+2: bool
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "title":0, "date":1, "validity":2
+### api-csharp
+0: string | 0 | 1 enums: Lorem ipsum (1), ...
+1: integer | 1
+2: bool | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "date":1, "title":0, "validity":2
+### stream-kotlin
+0: string | 1 enums: Lorem ipsum (1), ...
+1: integer
+2: bool
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "title":0, "date":1, "validity":2
+### api-swift
+0: string | 1 enums: Lorem ipsum (1), ...
+1: integer
+2: bool
+3: class TopLevel | children 1,0,2 | given TopLevel ()
+props 3: "title":0, "date":1, "validity":2
+### stream-python
+0: string | 0 | 1 enums: Lorem ipsum (1), ...
+1: integer | 1
+2: bool | 2
+3: class TopLevel | children 1,0,2 | 3 | given TopLevel ()
+props 3: "title":0, "date":1, "validity":2

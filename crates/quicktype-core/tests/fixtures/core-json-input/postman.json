@@ -1,0 +1,296 @@
+[
+ {
+  "input": "null",
+  "error": "Cannot read properties of null (reading 'item')"
+ },
+ {
+  "input": "1",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "\"x\"",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "[]",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "[1, {}]",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"item\": 1}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"item\": []}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"item\": [null]}",
+  "error": "Cannot read properties of null (reading 'item')"
+ },
+ {
+  "input": "{\"item\": [1, \"x\", [], {}]}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "﻿{}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"plain\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]}",
+  "sources": [
+   {
+    "name": "plain",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "plain"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"invalid bodies\",\"response\":[{\"body\":\"nope\"},{\"body\":1},{},[],2,{\"body\":\"[1]\"}]}",
+  "sources": [
+   {
+    "name": "invalid bodies",
+    "samples": [
+     "[1]"
+    ],
+    "description": "invalid bodies"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"no valid bodies\",\"response\":[{\"body\":\"{\"}]}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"null response\",\"response\":[null]}",
+  "error": "Cannot read properties of null (reading 'body')"
+ },
+ {
+  "input": "{\"name\":5,\"response\":[{\"body\":\"1\"}]}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"no array\",\"response\":{\"body\":\"1\"}}",
+  "sources": [],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"get\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":\"GET\",\"url\":{\"raw\":\"http://h/p?q\"},\"description\":\"desc\"}}",
+  "sources": [
+   {
+    "name": "get",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "get\n\nGET http://h/p?q\n\ndesc"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"url string\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":\"POST\",\"url\":\"http://h\"}}",
+  "sources": [
+   {
+    "name": "url string",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "url string"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"url null\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":\"POST\",\"url\":null}}",
+  "error": "Cannot use 'in' operator to search for 'raw' in null"
+ },
+ {
+  "input": "{\"name\":\"url null no method\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"url\":null}}",
+  "sources": [
+   {
+    "name": "url null no method",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "url null no method"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"url array\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":\"GET\",\"url\":[\"raw\"]}}",
+  "sources": [
+   {
+    "name": "url array",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "url array"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"raw types\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":1.5e+21,\"url\":{\"raw\":[1,null,[2,[3]],{\"x\":1},true]}}}",
+  "sources": [
+   {
+    "name": "raw types",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "raw types\n\n1.5e+21 1,,2,3,[object Object],true"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"method null\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"method\":null,\"url\":{\"raw\":null}}}",
+  "sources": [
+   {
+    "name": "method null",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "method null\n\nnull null"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"request array\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":[\"GET\"]}",
+  "sources": [
+   {
+    "name": "request array",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "request array"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"request falsy\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":\"\"}",
+  "sources": [
+   {
+    "name": "request falsy",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "request falsy"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"name\":\"description not string\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"description\":5}}",
+  "sources": [
+   {
+    "name": "description not string",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "description not string"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"info\":{\"description\":\"  top  \\n\"},\"item\":[{\"info\":{\"description\":\"folder\"},\"item\":[{\"name\":\"a\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]},{\"name\":\"b\",\"response\":[{\"body\":\"2\"},{\"body\":\"true\"}]}]},{\"name\":\"a\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}],\"request\":{\"description\":\"later a\"}},{\"item\":[],\"info\":{\"description\":7}},{\"item\":[{\"name\":\"c\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]}],\"info\":[\"description\"]},{\"item\":[{\"name\":\"d\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]}],\"info\":{\"description\":\"\"}}],\"name\":\"the collection\",\"response\":[{\"body\":\"{}\"}]}",
+  "sources": [
+   {
+    "name": "a",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "a"
+   },
+   {
+    "name": "b",
+    "samples": [
+     "2",
+     "true"
+    ],
+    "description": "b"
+   },
+   {
+    "name": "a",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "a\n\nlater a"
+   },
+   {
+    "name": "c",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "c"
+   },
+   {
+    "name": "d",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "d"
+   },
+   {
+    "name": "the collection",
+    "samples": [
+     "{}"
+    ],
+    "description": "the collection"
+   }
+  ],
+  "description": "folder\n\n\n\n  top"
+ },
+ {
+  "input": "{\"info\":{\"description\":\" ﻿ \"},\"item\":[{\"name\":\"x\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]}]}",
+  "sources": [
+   {
+    "name": "x",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "x"
+   }
+  ],
+  "description": null
+ },
+ {
+  "input": "{\"item\":[{\"item\":[{\"item\":[{\"name\":\"deep\",\"response\":[{\"body\":\"{\\\"a\\\":1}\"}]}]}],\"info\":{\"description\":\"mid\"}}],\"info\":{\"description\":\"root\"}}",
+  "sources": [
+   {
+    "name": "deep",
+    "samples": [
+     "{\"a\":1}"
+    ],
+    "description": "deep"
+   }
+  ],
+  "description": "mid\n\nroot"
+ }
+]

@@ -1,0 +1,175 @@
+### stream-typescript
+0: string | 0 | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer | 1
+2: none | 2
+3: array | children 2 | 3
+4: string | 4 | 1 enums: CES0500000003 (1), ...
+5: string | 5 | enum with no cases,integer-string
+6: string | 6 | 12 enums: M06 (3), ...
+7: string | 7 | 12 enums: June (3), ...
+8: string | 8 | 29 enums: 26.25 (1), ...
+9: string | 9 | 1 enums: P (2), ...
+10: string | 10 | 1 enums: preliminary (2), ...
+11: class | children 9,10 | 11
+12: array | children 11 | 12
+13: class | children 12,6,7,8,5 | 13
+14: array | children 13 | 14
+15: class | children 14,4 | 15
+16: array | children 15 | 16
+17: class | children 16 | 17
+18: class TopLevel | children 17,3,1,0 | 18 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "footnotes":12, "period":6, "periodName":7, "value":8, "year":5
+props 15: "data":14, "seriesID":4
+props 17: "series":16
+props 18: "Results":17, "message":3, "responseTime":1, "status":0
+### api-typescript
+0: string | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer
+2: none
+3: array | children 2
+4: string | 1 enums: CES0500000003 (1), ...
+5: string | enum with no cases,integer-string
+6: string | 12 enums: M06 (3), ...
+7: string | 12 enums: June (3), ...
+8: string | 29 enums: 26.25 (1), ...
+9: string | 1 enums: P (2), ...
+10: string | 1 enums: preliminary (2), ...
+11: class | children 9,10
+12: array | children 11
+13: class | children 12,6,7,8,5
+14: array | children 13
+15: class | children 14,4
+16: array | children 15
+17: class | children 16
+18: class TopLevel | children 17,3,1,0 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "year":5, "period":6, "periodName":7, "value":8, "footnotes":12
+props 15: "seriesID":4, "data":14
+props 17: "series":16
+props 18: "status":0, "responseTime":1, "message":3, "Results":17
+### stream-schema
+0: string | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer
+2: none
+3: array | children 2
+4: string | 1 enums: CES0500000003 (1), ...
+5: string | enum with no cases,integer-string
+6: string | 12 enums: M06 (3), ...
+7: string | 12 enums: June (3), ...
+8: string | 29 enums: 26.25 (1), ...
+9: string | 1 enums: P (2), ...
+10: string | 1 enums: preliminary (2), ...
+11: class | children 9,10
+12: array | children 11
+13: class | children 12,6,7,8,5
+14: array | children 13
+15: class | children 14,4
+16: array | children 15
+17: class | children 16
+18: class TopLevel | children 17,3,1,0 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "year":5, "period":6, "periodName":7, "value":8, "footnotes":12
+props 15: "seriesID":4, "data":14
+props 17: "series":16
+props 18: "status":0, "responseTime":1, "message":3, "Results":17
+### api-csharp
+0: string | 0 | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer | 1
+2: none | 2
+3: array | children 2 | 3
+4: string | 4 | 1 enums: CES0500000003 (1), ...
+5: string | 5 | enum with no cases,integer-string
+6: string | 6 | 12 enums: M06 (3), ...
+7: string | 7 | 12 enums: June (3), ...
+8: string | 8 | 29 enums: 26.25 (1), ...
+9: string | 9 | 1 enums: P (2), ...
+10: string | 10 | 1 enums: preliminary (2), ...
+11: class | children 9,10 | 11
+12: array | children 11 | 12
+13: class | children 12,6,7,8,5 | 13
+14: array | children 13 | 14
+15: class | children 14,4 | 15
+16: array | children 15 | 16
+17: class | children 16 | 17
+18: class TopLevel | children 17,3,1,0 | 18 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "footnotes":12, "period":6, "periodName":7, "value":8, "year":5
+props 15: "data":14, "seriesID":4
+props 17: "series":16
+props 18: "Results":17, "message":3, "responseTime":1, "status":0
+### stream-kotlin
+0: string | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer
+2: none
+3: array | children 2
+4: string | 1 enums: CES0500000003 (1), ...
+5: string | enum with no cases,integer-string
+6: string | 12 enums: M06 (3), ...
+7: string | 12 enums: June (3), ...
+8: string | 29 enums: 26.25 (1), ...
+9: string | 1 enums: P (2), ...
+10: string | 1 enums: preliminary (2), ...
+11: class | children 9,10
+12: array | children 11
+13: class | children 12,6,7,8,5
+14: array | children 13
+15: class | children 14,4
+16: array | children 15
+17: class | children 16
+18: class TopLevel | children 17,3,1,0 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "year":5, "period":6, "periodName":7, "value":8, "footnotes":12
+props 15: "seriesID":4, "data":14
+props 17: "series":16
+props 18: "status":0, "responseTime":1, "message":3, "Results":17
+### api-swift
+0: string | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer
+2: none
+3: array | children 2
+4: string | 1 enums: CES0500000003 (1), ...
+5: string | enum with no cases,integer-string
+6: string | 12 enums: M06 (3), ...
+7: string | 12 enums: June (3), ...
+8: string | 29 enums: 26.25 (1), ...
+9: string | 1 enums: P (2), ...
+10: string | 1 enums: preliminary (2), ...
+11: class | children 9,10
+12: array | children 11
+13: class | children 12,6,7,8,5
+14: array | children 13
+15: class | children 14,4
+16: array | children 15
+17: class | children 16
+18: class TopLevel | children 17,3,1,0 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "year":5, "period":6, "periodName":7, "value":8, "footnotes":12
+props 15: "seriesID":4, "data":14
+props 17: "series":16
+props 18: "status":0, "responseTime":1, "message":3, "Results":17
+### stream-python
+0: string | 0 | 1 enums: REQUEST_SUCCEEDED (1), ...
+1: integer | 1
+2: none | 2
+3: array | children 2 | 3
+4: string | 4 | 1 enums: CES0500000003 (1), ...
+5: string | 5 | enum with no cases,integer-string
+6: string | 6 | 12 enums: M06 (3), ...
+7: string | 7 | 12 enums: June (3), ...
+8: string | 8 | 29 enums: 26.25 (1), ...
+9: string | 9 | 1 enums: P (2), ...
+10: string | 10 | 1 enums: preliminary (2), ...
+11: class | children 9,10 | 11
+12: array | children 11 | 12
+13: class | children 12,6,7,8,5 | 13
+14: array | children 13 | 14
+15: class | children 14,4 | 15
+16: array | children 15 | 16
+17: class | children 16 | 17
+18: class TopLevel | children 17,3,1,0 | 18 | given TopLevel ()
+props 11: "code"?:9, "text"?:10
+props 13: "year":5, "period":6, "periodName":7, "value":8, "footnotes":12
+props 15: "seriesID":4, "data":14
+props 17: "series":16
+props 18: "status":0, "responseTime":1, "message":3, "Results":17

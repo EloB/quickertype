@@ -1,0 +1,70 @@
+### stream-typescript
+0: string | 0 | 1 enums: success (1), ...
+1: string | 1 | 6 enums: Peggy Whitson (1), ...
+2: string | 2 | 1 enums: ISS (6), ...
+3: class | children 2,1 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: class TopLevel | children 0,5,4 | 6 | given TopLevel ()
+props 3: "craft":2, "name":1
+props 6: "message":0, "number":5, "people":4
+### api-typescript
+0: string | 1 enums: success (1), ...
+1: string | 6 enums: Peggy Whitson (1), ...
+2: string | 1 enums: ISS (6), ...
+3: class | children 2,1
+4: array | children 3
+5: integer
+6: class TopLevel | children 0,5,4 | given TopLevel ()
+props 3: "name":1, "craft":2
+props 6: "message":0, "people":4, "number":5
+### stream-schema
+0: string | 1 enums: success (1), ...
+1: string | 6 enums: Peggy Whitson (1), ...
+2: string | 1 enums: ISS (6), ...
+3: class | children 2,1
+4: array | children 3
+5: integer
+6: class TopLevel | children 0,5,4 | given TopLevel ()
+props 3: "name":1, "craft":2
+props 6: "message":0, "people":4, "number":5
+### api-csharp
+0: string | 0 | 1 enums: success (1), ...
+1: string | 1 | 6 enums: Peggy Whitson (1), ...
+2: string | 2 | 1 enums: ISS (6), ...
+3: class | children 2,1 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: class TopLevel | children 0,5,4 | 6 | given TopLevel ()
+props 3: "craft":2, "name":1
+props 6: "message":0, "number":5, "people":4
+### stream-kotlin
+0: string | 1 enums: success (1), ...
+1: string | 6 enums: Peggy Whitson (1), ...
+2: string | 1 enums: ISS (6), ...
+3: class | children 2,1
+4: array | children 3
+5: integer
+6: class TopLevel | children 0,5,4 | given TopLevel ()
+props 3: "name":1, "craft":2
+props 6: "message":0, "people":4, "number":5
+### api-swift
+0: string | 1 enums: success (1), ...
+1: string | 6 enums: Peggy Whitson (1), ...
+2: string | 1 enums: ISS (6), ...
+3: class | children 2,1
+4: array | children 3
+5: integer
+6: class TopLevel | children 0,5,4 | given TopLevel ()
+props 3: "name":1, "craft":2
+props 6: "message":0, "people":4, "number":5
+### stream-python
+0: string | 0 | 1 enums: success (1), ...
+1: string | 1 | 6 enums: Peggy Whitson (1), ...
+2: string | 2 | 1 enums: ISS (6), ...
+3: class | children 2,1 | 3
+4: array | children 3 | 4
+5: integer | 5
+6: class TopLevel | children 0,5,4 | 6 | given TopLevel ()
+props 3: "name":1, "craft":2
+props 6: "message":0, "people":4, "number":5

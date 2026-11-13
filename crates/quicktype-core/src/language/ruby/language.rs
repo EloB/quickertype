@@ -3,9 +3,12 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
+    BooleanOption, EnumOption, OptionKind, RendererOption, RendererOptions, StringOption,
 };
+use crate::support::integer_range::IntegerRange;
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `rubyOptions.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -50,9 +53,6 @@ pub struct RubyTargetLanguage;
 // TODO(renderer): port the hooks RubyTargetLanguage overrides:
 // - makeRenderer
 // - defaultIndentation: "  "
-// - stringTypeMapping: uuid -> uuid, date-time -> date-time
-// - supportsOptionalClassProperties: true
-// - getSupportedIntegerRange: null
 impl TargetLanguage for RubyTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &RUBY_LANGUAGE_CONFIG
@@ -61,4 +61,31 @@ impl TargetLanguage for RubyTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         RUBY_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: arbitrary-precision integers.
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        None
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

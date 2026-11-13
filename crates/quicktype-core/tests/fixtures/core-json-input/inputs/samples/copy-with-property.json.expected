@@ -1,0 +1,35 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | 2 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### api-typescript
+0: integer
+1: string | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### stream-schema
+0: integer
+1: string | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | 2 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### stream-kotlin
+0: integer
+1: string | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### api-swift
+0: integer
+1: string | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | given TopLevel ()
+props 2: "copyWith":0, "name":1
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums: sample (1), ...
+2: class TopLevel | children 0,1 | 2 | given TopLevel ()
+props 2: "copyWith":0, "name":1

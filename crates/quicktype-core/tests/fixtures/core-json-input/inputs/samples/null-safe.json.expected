@@ -1,0 +1,112 @@
+### stream-typescript
+0: string | 0 | 2 enums: RmondJone (1), ...
+1: integer | 1
+2: null | 2
+3: union | children 1,2 | 3
+4: string | 4 | 1 enums: 科技园路. (1), ...
+5: string | 5 | 1 enums: 江苏苏州 (1), ...
+6: string | 6 | 1 enums: 中国 (1), ...
+7: class | children 5,6,4 | 7
+8: string | 8 | enum with no cases,date-time
+9: class | children 7,8,0,3 | 9
+10: array | children 9 | 10
+11: class TopLevel | children 10 | 11 | given TopLevel ()
+props 7: "city":5, "country":6, "street":4
+props 9: "address"?:7, "created_at"?:8, "name":0, "sex":3
+props 11: "item":10
+### api-typescript
+0: string | 2 enums: RmondJone (1), ...
+1: integer
+2: null
+3: union | children 1,2
+4: string | 1 enums: 科技园路. (1), ...
+5: string | 1 enums: 江苏苏州 (1), ...
+6: string | 1 enums: 中国 (1), ...
+7: class | children 5,6,4
+8: string | enum with no cases,date-time
+9: class | children 7,8,0,3
+10: array | children 9
+11: class TopLevel | children 10 | given TopLevel ()
+props 7: "street":4, "city":5, "country":6
+props 9: "name":0, "sex":3, "address"?:7, "created_at"?:8
+props 11: "item":10
+### stream-schema
+0: string | 2 enums: RmondJone (1), ...
+1: integer
+2: null
+3: union | children 1,2
+4: string | 1 enums: 科技园路. (1), ...
+5: string | 1 enums: 江苏苏州 (1), ...
+6: string | 1 enums: 中国 (1), ...
+7: class | children 5,6,4
+8: string | enum with no cases,date-time
+9: class | children 7,8,0,3
+10: array | children 9
+11: class TopLevel | children 10 | given TopLevel ()
+props 7: "street":4, "city":5, "country":6
+props 9: "name":0, "sex":3, "address"?:7, "created_at"?:8
+props 11: "item":10
+### api-csharp
+0: string | 0 | 2 enums: RmondJone (1), ...
+1: integer | 1
+2: null | 2
+3: union | children 1,2 | 3
+4: string | 4 | 1 enums: 科技园路. (1), ...
+5: string | 5 | 1 enums: 江苏苏州 (1), ...
+6: string | 6 | 1 enums: 中国 (1), ...
+7: class | children 5,6,4 | 7
+8: string | 8 | enum with no cases,date-time
+9: class | children 7,8,0,3 | 9
+10: array | children 9 | 10
+11: class TopLevel | children 10 | 11 | given TopLevel ()
+props 7: "city":5, "country":6, "street":4
+props 9: "address"?:7, "created_at"?:8, "name":0, "sex":3
+props 11: "item":10
+### stream-kotlin
+0: string | 2 enums: RmondJone (1), ...
+1: integer
+2: null
+3: union | children 1,2
+4: string | 1 enums: 科技园路. (1), ...
+5: string | 1 enums: 江苏苏州 (1), ...
+6: string | 1 enums: 中国 (1), ...
+7: class | children 5,6,4
+8: string | enum with no cases,date-time
+9: class | children 7,8,0,3
+10: array | children 9
+11: class TopLevel | children 10 | given TopLevel ()
+props 7: "street":4, "city":5, "country":6
+props 9: "name":0, "sex":3, "address"?:7, "created_at"?:8
+props 11: "item":10
+### api-swift
+0: string | 2 enums: RmondJone (1), ...
+1: integer
+2: null
+3: union | children 1,2
+4: string | 1 enums: 科技园路. (1), ...
+5: string | 1 enums: 江苏苏州 (1), ...
+6: string | 1 enums: 中国 (1), ...
+7: class | children 5,6,4
+8: string | enum with no cases,date-time
+9: class | children 7,8,0,3
+10: array | children 9
+11: class TopLevel | children 10 | given TopLevel ()
+props 7: "street":4, "city":5, "country":6
+props 9: "name":0, "sex":3, "address"?:7, "created_at"?:8
+props 11: "item":10
+### stream-python
+0: string | 0 | 2 enums: RmondJone (1), ...
+1: integer | 1
+2: null | 2
+3: union | children 1,2 | 3
+4: string | 4 | 1 enums: 科技园路. (1), ...
+5: string | 5 | 1 enums: 江苏苏州 (1), ...
+6: string | 6 | 1 enums: 中国 (1), ...
+7: class | children 5,6,4 | 7
+8: string | 8 | enum with no cases,date-time
+9: class | children 7,8,0,3 | 9
+10: array | children 9 | 10
+11: class TopLevel | children 10 | 11 | given TopLevel ()
+props 7: "street":4, "city":5, "country":6
+props 9: "name":0, "sex":3, "address"?:7, "created_at"?:8
+props 11: "item":10

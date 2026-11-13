@@ -1,0 +1,1742 @@
+[
+ {
+  "name": "cjson",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-128",
+    "127"
+   ],
+   [
+    "-32768",
+    "32767"
+   ],
+   [
+    "-2147483648",
+    "2147483647"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "c++",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "crystal",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "cs",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date-time"
+   ],
+   [
+    "time",
+    "date-time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "uri",
+    "uri"
+   ],
+   [
+    "integer-string",
+    "integer-string"
+   ],
+   [
+    "bool-string",
+    "bool-string"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "dart",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "elixir",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "elm",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "flow",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date-time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "go",
+  "stringTypeMapping": [
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "haskell",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "java",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date"
+   ],
+   [
+    "time",
+    "time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "javascript",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date-time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "javascript-prop-types",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date",
+    "date-time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "schema",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date"
+   ],
+   [
+    "time",
+    "time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "uri",
+    "uri"
+   ],
+   [
+    "integer-string",
+    "integer-string"
+   ],
+   [
+    "bool-string",
+    "bool-string"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "kotlin",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date"
+   ],
+   [
+    "time",
+    "time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "KotlinDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "objc",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "php",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "pike",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "python",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date"
+   ],
+   [
+    "time",
+    "time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "integer-string",
+    "integer-string"
+   ],
+   [
+    "bool-string",
+    "bool-string"
+   ]
+  ],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "ruby",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "rust",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": false,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-2147483648",
+    "2147483647"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "scala3",
+  "stringTypeMapping": [
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "smithy4a",
+  "stringTypeMapping": [],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "swift",
+  "stringTypeMapping": [
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": true,
+  "dateTimeRecognizer": "SwiftDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ],
+   [
+    "-9223372036854775808",
+    "9223372036854775807"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "typescript",
+  "stringTypeMapping": [
+   [
+    "date",
+    "date-time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "typescript-effect-schema",
+  "stringTypeMapping": [
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "bool-string",
+    "bool-string"
+   ],
+   [
+    "date",
+    "date"
+   ],
+   [
+    "time",
+    "time"
+   ],
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "integer-string",
+    "integer-string"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ },
+ {
+  "name": "typescript-zod",
+  "stringTypeMapping": [
+   [
+    "date-time",
+    "date-time"
+   ],
+   [
+    "uuid",
+    "uuid"
+   ],
+   [
+    "bool-string",
+    "bool-string"
+   ],
+   [
+    "integer-string",
+    "integer-string"
+   ]
+  ],
+  "supportsOptionalClassProperties": true,
+  "supportsUnionsWithBothNumberTypes": false,
+  "dateTimeRecognizer": "DefaultDateTimeRecognizer",
+  "integerRanges": [
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ],
+   [
+    "-9007199254740991",
+    "9007199254740991"
+   ]
+  ],
+  "optionSets": [
+   {},
+   {
+    "integer-size": "int8_t"
+   },
+   {
+    "integer-size": "int16_t"
+   },
+   {
+    "integer-size": "int32_t"
+   },
+   {
+    "integer-size": "bogus"
+   },
+   {
+    "integer-type": "force-i32"
+   },
+   {
+    "integer-type": "force-i64"
+   }
+  ]
+ }
+]

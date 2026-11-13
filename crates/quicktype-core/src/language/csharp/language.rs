@@ -2,10 +2,16 @@
 //!
 //! Language metadata and renderer option declarations.
 
+use super::utils::{TransformerNeed, need_transformer_for_type};
+use crate::messages::Result;
 use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
+use crate::ty::type_graph::TypeGraph;
+use crate::ty::type_ref::TypeRef;
 
 /// TS `cSharpOptions.framework`.
 pub const FRAMEWORK: EnumOption = EnumOption::new(
@@ -187,10 +193,6 @@ pub struct CSharpTargetLanguage;
 
 // TODO(renderer): port the hooks CSharpTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: date -> date-time, time -> date-time, date-time -> date-time, uuid -> uuid, uri -> uri, integer-string -> integer-string, bool-string -> bool-string
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
-// - needsTransformerForType
 impl TargetLanguage for CSharpTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_SHARP_LANGUAGE_CONFIG
@@ -199,4 +201,42 @@ impl TargetLanguage for CSharpTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         SYSTEM_TEXT_JSON_C_SHARP_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Date, TypeKind::DateTime),
+            (TypeKind::Time, TypeKind::DateTime),
+            (TypeKind::DateTime, TypeKind::DateTime),
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::Uri, TypeKind::Uri),
+            (TypeKind::IntegerString, TypeKind::IntegerString),
+            (TypeKind::BoolString, TypeKind::BoolString),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `needsTransformerForType`: `needTransformerForType(t)` is
+    /// neither `"none"` nor `"nullable"`.
+    fn needs_transformer_for_type(&self, graph: &TypeGraph, t: TypeRef) -> Result<bool> {
+        Ok(!matches!(
+            need_transformer_for_type(graph, t)?,
+            TransformerNeed::None | TransformerNeed::Nullable
+        ))
+    }
+
+    // End of inference hooks.
 }

@@ -6,6 +6,8 @@ use crate::renderer_options::{
     BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
 };
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `objectiveCOptions.features`.
 pub const FEATURES: EnumOption = EnumOption::new(
@@ -63,7 +65,6 @@ pub struct ObjectiveCTargetLanguage;
 
 // TODO(renderer): port the hooks ObjectiveCTargetLanguage overrides:
 // - makeRenderer
-// - stringTypeMapping: uuid -> uuid, date-time -> date-time
 impl TargetLanguage for ObjectiveCTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &OBJECTIVE_C_LANGUAGE_CONFIG
@@ -72,4 +73,18 @@ impl TargetLanguage for ObjectiveCTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         OBJECTIVE_C_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [
+            (TypeKind::Uuid, TypeKind::Uuid),
+            (TypeKind::DateTime, TypeKind::DateTime),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    // End of inference hooks.
 }

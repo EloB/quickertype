@@ -1,0 +1,99 @@
+### stream-typescript
+0: integer | 0
+1: class | 1
+2: string | 2 | 50 enums: ZW (1), ...
+3: string | 3 | 50 enums: Zimbabwe (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | enum with no cases,uri
+6: class | children 2,4,0,3,5 | 6
+7: array | children 6 | 7
+8: bool | 8
+9: class TopLevel | children 0,1,5,8,7 | 9 | given TopLevel ()
+props 1: 
+props 6: "code":2, "created_at":4, "id":0, "name":3, "updated_at":4, "uri":5
+props 9: "count":0, "facets":1, "limit":0, "next":5, "offset":0, "previous":8, "results":7
+### api-typescript
+0: integer
+1: class
+2: string | 50 enums: ZW (1), ...
+3: string | 50 enums: Zimbabwe (1), ...
+4: string | enum with no cases,date-time
+5: string | enum with no cases,uri
+6: class | children 2,4,0,3,5
+7: array | children 6
+8: bool
+9: class TopLevel | children 0,1,5,8,7 | given TopLevel ()
+props 1: 
+props 6: "code":2, "name":3, "created_at":4, "updated_at":4, "uri":5, "id":0
+props 9: "count":0, "facets":1, "results":7, "next":5, "limit":0, "offset":0, "previous":8
+### stream-schema
+0: integer
+1: class
+2: string | 50 enums: ZW (1), ...
+3: string | 50 enums: Zimbabwe (1), ...
+4: string | enum with no cases,date-time
+5: string | enum with no cases,uri
+6: class | children 2,4,0,3,5
+7: array | children 6
+8: bool
+9: class TopLevel | children 0,1,5,8,7 | given TopLevel ()
+props 1: 
+props 6: "code":2, "name":3, "created_at":4, "updated_at":4, "uri":5, "id":0
+props 9: "count":0, "facets":1, "results":7, "next":5, "limit":0, "offset":0, "previous":8
+### api-csharp
+0: integer | 0
+1: class | 1
+2: string | 2 | 50 enums: ZW (1), ...
+3: string | 3 | 50 enums: Zimbabwe (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | enum with no cases,uri
+6: class | children 2,4,0,3,5 | 6
+7: array | children 6 | 7
+8: bool | 8
+9: class TopLevel | children 0,1,5,8,7 | 9 | given TopLevel ()
+props 1: 
+props 6: "code":2, "created_at":4, "id":0, "name":3, "updated_at":4, "uri":5
+props 9: "count":0, "facets":1, "limit":0, "next":5, "offset":0, "previous":8, "results":7
+### stream-kotlin
+0: integer
+1: class
+2: string | 50 enums: ZW (1), ...
+3: string | 50 enums: Zimbabwe (1), ...
+4: string | 7 enums: 2015-04-24T01:46:50.422970Z (1), ...,date-time
+5: string | 7 enums: 2015-04-24T01:46:50.444040Z (1), ...,date-time
+6: string | enum with no cases,uri
+7: class | children 2,4,0,3,5,6
+8: array | children 7
+9: bool
+10: class TopLevel | children 0,1,6,9,8 | given TopLevel ()
+props 1: 
+props 7: "code":2, "name":3, "created_at":4, "updated_at":5, "uri":6, "id":0
+props 10: "count":0, "facets":1, "results":8, "next":6, "limit":0, "offset":0, "previous":9
+### api-swift
+0: integer
+1: class
+2: string | 50 enums: ZW (1), ...
+3: string | 50 enums: Zimbabwe (1), ...
+4: string | enum with no cases,date-time
+5: string | enum with no cases,uri
+6: class | children 2,4,0,3,5
+7: array | children 6
+8: bool
+9: class TopLevel | children 0,1,5,8,7 | given TopLevel ()
+props 1: 
+props 6: "code":2, "name":3, "created_at":4, "updated_at":4, "uri":5, "id":0
+props 9: "count":0, "facets":1, "results":7, "next":5, "limit":0, "offset":0, "previous":8
+### stream-python
+0: integer | 0
+1: class | 1
+2: string | 2 | 50 enums: ZW (1), ...
+3: string | 3 | 50 enums: Zimbabwe (1), ...
+4: string | 4 | enum with no cases,date-time
+5: string | 5 | enum with no cases,uri
+6: class | children 2,4,0,3,5 | 6
+7: array | children 6 | 7
+8: bool | 8
+9: class TopLevel | children 0,1,5,8,7 | 9 | given TopLevel ()
+props 1: 
+props 6: "code":2, "name":3, "created_at":4, "updated_at":4, "uri":5, "id":0
+props 9: "count":0, "facets":1, "results":7, "next":5, "limit":0, "offset":0, "previous":8

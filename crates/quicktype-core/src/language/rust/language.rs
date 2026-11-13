@@ -2,7 +2,10 @@
 //!
 //! Language metadata and renderer option declarations.
 
-use crate::renderer_options::{BooleanOption, EnumOption, OptionKind, RendererOption};
+use crate::renderer_options::{
+    BooleanOption, EnumOption, OptionKind, OptionValue, RendererOption, RendererOptions,
+};
+use crate::support::integer_range::{INT32_RANGE, INT64_RANGE, IntegerRange};
 use crate::target_language::{LanguageConfig, TargetLanguage};
 
 /// TS `rustOptions.density`.
@@ -95,8 +98,6 @@ pub const RUST_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RustTargetLanguage;
 
-// TODO(inference): port the hook RustTargetLanguage overrides:
-// - getSupportedIntegerRange: INT32_RANGE with `integer-type force-i32`, else INT64_RANGE
 impl TargetLanguage for RustTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &RUST_LANGUAGE_CONFIG
@@ -105,6 +106,27 @@ impl TargetLanguage for RustTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         RUST_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `getSupportedIntegerRange`: with `integer-type force-i32` every
+    /// integer renders as `i32`; `conservative` keeps the i64 range.
+    fn get_supported_integer_range(
+        &self,
+        renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        let force_i32 = matches!(
+            renderer_options.get(INTEGER_TYPE.name),
+            Some(OptionValue::String(t)) if t == "force-i32"
+        );
+        Some(if force_i32 {
+            INT32_RANGE.clone()
+        } else {
+            INT64_RANGE.clone()
+        })
+    }
+
+    // End of inference hooks.
 
     // Renderer hooks.
 

@@ -3,8 +3,9 @@
 //! Language metadata and renderer option declarations.
 
 use crate::renderer_options::{
-    BooleanOption, EnumOption, OptionKind, RendererOption, StringOption,
+    BooleanOption, EnumOption, OptionKind, RendererOption, RendererOptions, StringOption,
 };
+use crate::support::integer_range::{IntegerRange, JS_SAFE_INTEGER_RANGE};
 use crate::target_language::{LanguageConfig, TargetLanguage};
 
 /// TS `elmOptions.justTypes`.
@@ -49,9 +50,6 @@ pub struct ElmTargetLanguage;
 
 // TODO(renderer): port the hooks ElmTargetLanguage overrides:
 // - makeRenderer
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
-// - getSupportedIntegerRange: JS_SAFE_INTEGER_RANGE
 impl TargetLanguage for ElmTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &ELM_LANGUAGE_CONFIG
@@ -60,4 +58,26 @@ impl TargetLanguage for ElmTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         ELM_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `getSupportedIntegerRange`: JavaScript numbers are exact within ±(2^53 − 1).
+    fn get_supported_integer_range(
+        &self,
+        _renderer_options: &RendererOptions,
+    ) -> Option<IntegerRange> {
+        Some(JS_SAFE_INTEGER_RANGE.clone())
+    }
+
+    // End of inference hooks.
 }

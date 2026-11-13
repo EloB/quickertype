@@ -140,6 +140,7 @@ semantics were verified.
 | `wordwrap` 1.0.0 | hand port (`quicktype_js_compat::wordwrap`) | 407 texts at several widths compared to npm |
 | V8 `Array.prototype.sort` | port of `array-sort.tq` (`quicktype_js_compat::sort`) | 210 seeded comparator runs (consistent, fully inconsistent, noisy, run-shaped, NaN) up to 2,000 elements, 41 mixed number/string `<` tables and 60 default string sorts compared to Node 24 |
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
+| V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
 
 ## Known gaps
 
@@ -162,10 +163,30 @@ the others name the fix they need.
   `utf16_legalize_characters`, `combine_words` (via legalizers),
   `pluralize` and `combineNames` (`attributes/type_names.rs`, whose common
   prefix/suffix of a type's names can cut an astral character in half).
-  Lone surrogates in input JSON are not representable at all. No golden
-  input contains one. Fix: a WTF-16 JavaScript-string type at the
+  In input JSON, both readers decode a `\u` escape that leaves a surrogate
+  unpaired to U+FFFD (so two such keys or enum cases can collide), and
+  `JSON.parse` errors that quote half of a surrogate pair show U+FFFD, as
+  Node prints them. No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
+- **Very deeply nested JSON.** Both JSON readers are iterative, but
+  inference recurses once per nesting level, as in TypeScript. There the
+  JavaScript stack runs out somewhere between 500 and 1,000 levels
+  (`Maximum call stack size exceeded`, depending on Node's stack size); the
+  port goes much deeper but eventually overflows the native stack and
+  aborts. Fix: an explicit depth limit reporting the `RangeError`, or
+  iterative inference.
+- **Stack exhaustion in Postman collections.** The TypeScript recurses
+  through nested folders and through `String(array)` when it formats a
+  request's `method` and `url.raw`; the port is iterative and reports
+  Node's `RangeError` (`Maximum call stack size exceeded`) at the depths
+  measured on the reference CLI (Node 24.16): more than 3,731 nested
+  folders, or arrays nested more than 2,830 deep. Inside nested folders
+  Node's array limit is lower (less stack is left); that is not modelled.
+- **Postman collections that are not JSON** (temporary). `parseJSON` falls
+  back to YAML, which the JSON Schema input ports; until then
+  `sources_from_postman_collection` reports `JSON.parse`'s error for them
+  (`TODO(parse-json)` in `input/postman_collection.rs`).
 - **TypeScript input.** `quicktype-typescript-input` runs the TypeScript 7
   native compiler where the reference runs TypeScript 5.9 and
   typescript-json-schema, and emulates TS 5.9's union member order by

@@ -1,5 +1,7 @@
-//! `JSON.stringify`, as far as quicktype needs it.
+//! `JSON.stringify` and `JSON.parse`, as far as quicktype needs them.
 //!
+//! - [`parse()`]: `JSON.parse(text)` with V8's semantics and error messages
+//!   (see the [`parse`](mod@parse) module).
 //! - [`quote`]: `JSON.stringify(string)`. JavaScript escapes `"`, `\`, the
 //!   control characters below U+0020 (as `\b \t \n \f \r` or lowercase
 //!   `\u00XX`) and lone surrogates; everything else, including U+007F,
@@ -11,7 +13,8 @@
 //!   V8's `JSON.stringify(value, undefined, space)`.
 //!
 //! Out of scope: `toJSON` methods, replacer functions and arrays, `undefined`
-//! and function values (which `JSON.stringify` skips), `BigInt`, and parsing.
+//! and function values (which `JSON.stringify` skips), `BigInt`, and
+//! `JSON.parse`'s reviver.
 //! Object keys are written in the order the [`JsonValue::Object`] map holds
 //! them; to model a JavaScript object, insert keys with
 //! [`insert_js_property`], which reproduces JavaScript's own-property order.
@@ -19,7 +22,11 @@
 /// The map type of [`JsonValue::Object`], re-exported for building values.
 pub use indexmap::IndexMap;
 
+pub use self::parse::{JsonParseError, parse};
+
 use crate::number;
+
+pub mod parse;
 
 /// A JSON value. Objects keep their keys in insertion order.
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +43,42 @@ pub enum JsonValue {
     Array(Vec<JsonValue>),
     /// An object, written in the map's order.
     Object(IndexMap<String, JsonValue>),
+}
+
+/// Dropping a value never recurses (the derived drop glue would, once per
+/// nesting level), so the arbitrarily deep values [`parse()`] accepts
+/// cannot overflow the stack.
+impl Drop for JsonValue {
+    fn drop(&mut self) {
+        let mut children: Vec<JsonValue> = match self {
+            JsonValue::Array(items) if items.iter().any(JsonValue::has_children) => {
+                std::mem::take(items)
+            }
+            JsonValue::Object(map) if map.values().any(JsonValue::has_children) => {
+                std::mem::take(map).into_values().collect()
+            }
+            _ => return,
+        };
+        while let Some(mut child) = children.pop() {
+            match &mut child {
+                JsonValue::Array(items) => children.append(items),
+                JsonValue::Object(map) => children.extend(std::mem::take(map).into_values()),
+                _ => {}
+            }
+            // `child` is now childless and drops without recursing.
+        }
+    }
+}
+
+impl JsonValue {
+    /// Whether this is a non-empty array or object.
+    fn has_children(&self) -> bool {
+        match self {
+            JsonValue::Array(items) => !items.is_empty(),
+            JsonValue::Object(map) => !map.is_empty(),
+            _ => false,
+        }
+    }
 }
 
 /// `JSON.stringify(s)` for a string: `s` in double quotes, escaped.
@@ -232,7 +275,7 @@ pub fn insert_js_property<V>(map: &mut IndexMap<String, V>, key: String, value: 
 }
 
 /// The numeric value of an array-index key.
-fn array_index(key: &str) -> Option<u32> {
+pub(crate) fn array_index(key: &str) -> Option<u32> {
     if is_array_index(key) {
         key.parse().ok()
     } else {

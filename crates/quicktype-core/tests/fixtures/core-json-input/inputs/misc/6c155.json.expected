@@ -1,0 +1,259 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: string | 14 | 1 enums: US (2), ...
+15: string | 15 | 2 enums: MD (1), ...
+16: string | 16 | 2 enums: Fort Washington (1), ...
+17: string | 17 | 1 enums:  (2), ...
+18: string | 18 | 1 enums:  (2), ...
+19: null | 19
+20: string | 20 | 1 enums:  (2), ...
+21: string | 21 | 1 enums:  (2), ...
+22: string | 22 | 1 enums:  (2), ...
+23: string | 23 | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18 | 24
+25: string | 25 | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10 | 26
+27: array | children 26 | 27
+28: class TopLevel | children 5,27 | 28 | given TopLevel ()
+props 2: "developerMessage":1, "status":0
+props 3: "count":0, "page":0, "pagesize":0
+props 5: "executionTime":4, "responseInfo":2, "resultset":3
+props 12: "name":11, "uuid":10
+props 24: "administrative_area":15, "country":14, "fax_number":23, "locality":16, "mobile_number":22, "phone_number":20, "phone_number_extension":21, "postal_code":17, "sub_premise":19, "thoroughfare":18
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### api-typescript
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10
+13: array | children 12
+14: string | 1 enums: US (2), ...
+15: string | 2 enums: MD (1), ...
+16: string | 2 enums: Fort Washington (1), ...
+17: string | 1 enums:  (2), ...
+18: string | 1 enums:  (2), ...
+19: null
+20: string | 1 enums:  (2), ...
+21: string | 1 enums:  (2), ...
+22: string | 1 enums:  (2), ...
+23: string | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18
+25: string | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10
+27: array | children 26
+28: class TopLevel | children 5,27 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 24: "country":14, "administrative_area":15, "locality":16, "postal_code":17, "thoroughfare":18, "sub_premise":19, "phone_number":20, "phone_number_extension":21, "mobile_number":22, "fax_number":23
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### stream-schema
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10
+13: array | children 12
+14: string | 1 enums: US (2), ...
+15: string | 2 enums: MD (1), ...
+16: string | 2 enums: Fort Washington (1), ...
+17: string | 1 enums:  (2), ...
+18: string | 1 enums:  (2), ...
+19: null
+20: string | 1 enums:  (2), ...
+21: string | 1 enums:  (2), ...
+22: string | 1 enums:  (2), ...
+23: string | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18
+25: string | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10
+27: array | children 26
+28: class TopLevel | children 5,27 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 24: "country":14, "administrative_area":15, "locality":16, "postal_code":17, "thoroughfare":18, "sub_premise":19, "phone_number":20, "phone_number_extension":21, "mobile_number":22, "fax_number":23
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### api-csharp
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: string | 14 | 1 enums: US (2), ...
+15: string | 15 | 2 enums: MD (1), ...
+16: string | 16 | 2 enums: Fort Washington (1), ...
+17: string | 17 | 1 enums:  (2), ...
+18: string | 18 | 1 enums:  (2), ...
+19: null | 19
+20: string | 20 | 1 enums:  (2), ...
+21: string | 21 | 1 enums:  (2), ...
+22: string | 22 | 1 enums:  (2), ...
+23: string | 23 | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18 | 24
+25: string | 25 | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10 | 26
+27: array | children 26 | 27
+28: class TopLevel | children 5,27 | 28 | given TopLevel ()
+props 2: "developerMessage":1, "status":0
+props 3: "count":0, "page":0, "pagesize":0
+props 5: "executionTime":4, "responseInfo":2, "resultset":3
+props 12: "name":11, "uuid":10
+props 24: "administrative_area":15, "country":14, "fax_number":23, "locality":16, "mobile_number":22, "phone_number":20, "phone_number_extension":21, "postal_code":17, "sub_premise":19, "thoroughfare":18
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### stream-kotlin
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10
+13: array | children 12
+14: string | 1 enums: US (2), ...
+15: string | 2 enums: MD (1), ...
+16: string | 2 enums: Fort Washington (1), ...
+17: string | 1 enums:  (2), ...
+18: string | 1 enums:  (2), ...
+19: null
+20: string | 1 enums:  (2), ...
+21: string | 1 enums:  (2), ...
+22: string | 1 enums:  (2), ...
+23: string | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18
+25: string | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10
+27: array | children 26
+28: class TopLevel | children 5,27 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 24: "country":14, "administrative_area":15, "locality":16, "postal_code":17, "thoroughfare":18, "sub_premise":19, "phone_number":20, "phone_number_extension":21, "mobile_number":22, "fax_number":23
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### api-swift
+0: integer
+1: string | 1 enums: OK (1), ...
+2: class | children 1,0
+3: class | children 0
+4: double
+5: class | children 4,2,3
+6: none
+7: array | children 6
+8: string | unrestricted
+9: string | enum with no cases,integer-string
+10: string | enum with no cases,uuid
+11: string | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10
+13: array | children 12
+14: string | 1 enums: US (2), ...
+15: string | 2 enums: MD (1), ...
+16: string | 2 enums: Fort Washington (1), ...
+17: string | 1 enums:  (2), ...
+18: string | 1 enums:  (2), ...
+19: null
+20: string | 1 enums:  (2), ...
+21: string | 1 enums:  (2), ...
+22: string | 1 enums:  (2), ...
+23: string | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18
+25: string | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10
+27: array | children 26
+28: class TopLevel | children 5,27 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 24: "country":14, "administrative_area":15, "locality":16, "postal_code":17, "thoroughfare":18, "sub_premise":19, "phone_number":20, "phone_number_extension":21, "mobile_number":22, "fax_number":23
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27
+### stream-python
+0: integer | 0
+1: string | 1 | 1 enums: OK (1), ...
+2: class | children 1,0 | 2
+3: class | children 0 | 3
+4: double | 4
+5: class | children 4,2,3 | 5
+6: none | 6
+7: array | children 6 | 7
+8: string | 8 | unrestricted
+9: string | 9 | enum with no cases,integer-string
+10: string | 10 | enum with no cases,uuid
+11: string | 11 | 2 enums: Office of the Associate Attorney General (1), ...
+12: class | children 11,10 | 12
+13: array | children 12 | 13
+14: string | 14 | 1 enums: US (2), ...
+15: string | 15 | 2 enums: MD (1), ...
+16: string | 16 | 2 enums: Fort Washington (1), ...
+17: string | 17 | 1 enums:  (2), ...
+18: string | 18 | 1 enums:  (2), ...
+19: null | 19
+20: string | 20 | 1 enums:  (2), ...
+21: string | 21 | 1 enums:  (2), ...
+22: string | 22 | 1 enums:  (2), ...
+23: string | 23 | 1 enums:  (2), ...
+24: class | children 15,14,23,16,22,20,21,17,19,18 | 24
+25: string | 25 | enum with no cases,uri
+26: class | children 7,8,9,13,24,19,25,10 | 26
+27: array | children 26 | 27
+28: class TopLevel | children 5,27 | 28 | given TopLevel ()
+props 2: "status":0, "developerMessage":1
+props 3: "count":0, "pagesize":0, "page":0
+props 5: "responseInfo":2, "resultset":3, "executionTime":4
+props 12: "uuid":10, "name":11
+props 24: "country":14, "administrative_area":15, "locality":16, "postal_code":17, "thoroughfare":18, "sub_premise":19, "phone_number":20, "phone_number_extension":21, "mobile_number":22, "fax_number":23
+props 26: "attachment":7, "body":8, "changed":9, "component":13, "created":9, "date":9, "image":7, "location":24, "teaser":19, "title":8, "topic":7, "url":25, "uuid":10, "vuuid":10
+props 28: "metadata":5, "results":27

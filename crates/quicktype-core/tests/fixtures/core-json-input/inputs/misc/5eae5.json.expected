@@ -1,0 +1,49 @@
+### stream-typescript
+0: integer | 0
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | unrestricted
+3: class | children 1,0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "Date":1, "ID":0, "Sponsor":2, "Title":2
+### api-typescript
+0: integer
+1: string | enum with no cases,date-time
+2: string | unrestricted
+3: class | children 1,0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Date":1, "Title":2, "Sponsor":2
+### stream-schema
+0: integer
+1: string | enum with no cases,date-time
+2: string | unrestricted
+3: class | children 1,0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Date":1, "Title":2, "Sponsor":2
+### api-csharp
+0: integer | 0
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | unrestricted
+3: class | children 1,0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "Date":1, "ID":0, "Sponsor":2, "Title":2
+### stream-kotlin
+0: integer
+1: string | enum with no cases,date-time
+2: string | unrestricted
+3: class | children 1,0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Date":1, "Title":2, "Sponsor":2
+### api-swift
+0: integer
+1: string | enum with no cases,date-time
+2: string | unrestricted
+3: class | children 1,0,2
+4: array TopLevel | children 3 | given TopLevel ()
+props 3: "ID":0, "Date":1, "Title":2, "Sponsor":2
+### stream-python
+0: integer | 0
+1: string | 1 | enum with no cases,date-time
+2: string | 2 | unrestricted
+3: class | children 1,0,2 | 3
+4: array TopLevel | children 3 | 4 | given TopLevel ()
+props 3: "ID":0, "Date":1, "Title":2, "Sponsor":2

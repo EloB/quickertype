@@ -4,6 +4,8 @@
 
 use crate::renderer_options::{BooleanOption, OptionKind, RendererOption, StringOption};
 use crate::target_language::{LanguageConfig, TargetLanguage};
+use crate::ty::transformed_string_type::TypeKind;
+use crate::ty::type_builder_utils::StringTypeMapping;
 
 /// TS `goOptions.justTypes`.
 pub const JUST_TYPES: BooleanOption =
@@ -84,9 +86,6 @@ pub struct GoTargetLanguage;
 // TODO(renderer): port the hooks GoTargetLanguage overrides:
 // - makeRenderer
 // - defaultIndentation: "\t"
-// - stringTypeMapping: date-time -> date-time
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for GoTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &GOLANG_LANGUAGE_CONFIG
@@ -95,4 +94,25 @@ impl TargetLanguage for GoTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         GO_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    /// TS `stringTypeMapping`.
+    fn string_type_mapping(&self) -> StringTypeMapping {
+        [(TypeKind::DateTime, TypeKind::DateTime)]
+            .into_iter()
+            .collect()
+    }
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

@@ -1,0 +1,59 @@
+### stream-typescript
+0: string | 0 | 1 enums: EUR (1), ...
+1: string | 1 | enum with no cases,date
+2: double | 2
+3: class | children 2 | 3
+4: class TopLevel | children 0,1,3 | 4 | given TopLevel ()
+props 3: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":2, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":2, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":2, "USD":2, "ZAR":2
+props 4: "base":0, "date":1, "rates":3
+### api-typescript
+0: string | 1 enums: EUR (1), ...
+1: string | enum with no cases,date
+2: double
+3: integer
+4: class | children 2,3
+5: class TopLevel | children 0,1,4 | given TopLevel ()
+props 4: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":3, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":3, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":3, "USD":2, "ZAR":2
+props 5: "base":0, "date":1, "rates":4
+### stream-schema
+0: string | 1 enums: EUR (1), ...
+1: string | enum with no cases,date
+2: double
+3: class | children 2
+4: class TopLevel | children 0,1,3 | given TopLevel ()
+props 3: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":2, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":2, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":2, "USD":2, "ZAR":2
+props 4: "base":0, "date":1, "rates":3
+### api-csharp
+0: string | 0 | 1 enums: EUR (1), ...
+1: string | 1 | enum with no cases,date
+2: double | 2
+3: integer | 3
+4: class | children 2,3 | 4
+5: class TopLevel | children 0,1,4 | 5 | given TopLevel ()
+props 4: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":3, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":3, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":3, "USD":2, "ZAR":2
+props 5: "base":0, "date":1, "rates":4
+### stream-kotlin
+0: string | 1 enums: EUR (1), ...
+1: string | enum with no cases,date
+2: double
+3: class | children 2
+4: class TopLevel | children 0,1,3 | given TopLevel ()
+props 3: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":2, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":2, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":2, "USD":2, "ZAR":2
+props 4: "base":0, "date":1, "rates":3
+### api-swift
+0: string | 1 enums: EUR (1), ...
+1: string | enum with no cases,date
+2: double
+3: integer
+4: class | children 2,3
+5: class TopLevel | children 0,1,4 | given TopLevel ()
+props 4: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":3, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":3, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":3, "USD":2, "ZAR":2
+props 5: "base":0, "date":1, "rates":4
+### stream-python
+0: string | 0 | 1 enums: EUR (1), ...
+1: string | 1 | enum with no cases,date
+2: double | 2
+3: class | children 2 | 3
+4: class TopLevel | children 0,1,3 | 4 | given TopLevel ()
+props 3: "AUD":2, "CAD":2, "CHF":2, "CYP":2, "CZK":2, "DKK":2, "EEK":2, "GBP":2, "HKD":2, "HUF":2, "ISK":2, "JPY":2, "KRW":2, "LTL":2, "LVL":2, "MTL":2, "NOK":2, "NZD":2, "PLN":2, "ROL":2, "SEK":2, "SGD":2, "SIT":2, "SKK":2, "TRL":2, "USD":2, "ZAR":2
+props 4: "base":0, "date":1, "rates":3

@@ -49,8 +49,6 @@ pub struct HaskellTargetLanguage;
 
 // TODO(renderer): port the hooks HaskellTargetLanguage overrides:
 // - makeRenderer
-// - supportsOptionalClassProperties: true
-// - supportsUnionsWithBothNumberTypes: true
 impl TargetLanguage for HaskellTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &HASKELL_LANGUAGE_CONFIG
@@ -59,4 +57,18 @@ impl TargetLanguage for HaskellTargetLanguage {
     fn options(&self) -> &'static [RendererOption] {
         HASKELL_OPTIONS
     }
+
+    // Inference hooks.
+
+    /// TS `supportsOptionalClassProperties`.
+    fn supports_optional_class_properties(&self) -> bool {
+        true
+    }
+
+    /// TS `supportsUnionsWithBothNumberTypes`.
+    fn supports_unions_with_both_number_types(&self) -> bool {
+        true
+    }
+
+    // End of inference hooks.
 }

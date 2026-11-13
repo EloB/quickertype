@@ -1,0 +1,420 @@
+### stream-typescript
+0: string | 0 | 1 enums: gif (25), ...
+1: string | 1 | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | 2 | unrestricted
+3: string | 3 | enum with no cases,uri
+4: string | 4 | 1 enums:  (1), ...,uri
+5: string | 5 | 1 enums:  (1), ...,uri
+6: string | 6 | 10 enums:  (14), ...
+7: string | 7 | 1 enums:  (5), ...,uri
+8: string | 8 | 4 enums: pg (13), ...
+9: string | 9 | 1 enums:  (25), ...
+10: string | 10 | 14 enums: www.youtube.com (1), ...
+11: string | 11 | 1 enums:  (5), ...,uri
+12: integer | 12
+13: string | 13 | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 14 | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | 15 | enum with no cases,uri
+16: string | 16 | enum with no cases,integer-string
+17: class | children 16,15 | 17
+18: string | 18 | enum with no cases,uri
+19: string | 19 | enum with no cases,uri
+20: class | children 16,18,15,19 | 20
+21: class | children 16,15,19 | 21
+22: class | children 16,18 | 22
+23: class | children 16,15 | 23
+24: class | children 16,19 | 24
+25: string | 25 | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19 | 26
+27: class | children 18,16 | 27
+28: string | 28 | enum with no cases,uri
+29: class | children 16,28 | 29
+30: class | children 29,23,22,17,20,21,27,26,24 | 30
+31: string | 31 | enum with no cases,uri
+32: string | 32 | 1 enums:  (1), ...,uri
+33: string | 33 | 9 enums: hbo (1), ...
+34: string | 34 | 9 enums: HBO (1), ...
+35: string | 35 | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33 | 36
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6 | 37
+38: array | children 37 | 38
+39: class | children 12 | 39
+40: string | 40 | 1 enums: OK (1), ...
+41: string | 41 | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12 | 42
+43: class TopLevel | children 38,42,39 | 43 | given TopLevel ()
+props 17: "height":16, "size"?:16, "url":15, "width":16
+props 20: "height":16, "mp4":18, "mp4_size":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 21: "height":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 22: "height":16, "mp4":18, "mp4_size":16, "width":16
+props 23: "height":16, "size":16, "url":15, "width":16
+props 24: "height":16, "size":16, "url":19, "width":16
+props 26: "frames":16, "hash"?:25, "height":16, "mp4":18, "mp4_size":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 27: "mp4":18, "mp4_size":16
+props 29: "height":16, "size":16, "url":28, "width":16
+props 30: "480w_still"?:29, "downsized":23, "downsized_large":23, "downsized_medium":23, "downsized_small":22, "downsized_still":17, "fixed_height":20, "fixed_height_downsampled":21, "fixed_height_small":20, "fixed_height_small_still":17, "fixed_height_still":17, "fixed_width":20, "fixed_width_downsampled":21, "fixed_width_small":20, "fixed_width_small_still":17, "fixed_width_still":17, "hd"?:22, "looping":27, "original":26, "original_mp4":22, "original_still":17, "preview":22, "preview_gif":23, "preview_webp":24
+props 36: "avatar_url":31, "banner_url":32, "display_name":34, "profile_url":3, "twitter"?:35, "username":33
+props 37: "bitly_gif_url":4, "bitly_url":5, "content_url":9, "embed_url":3, "id":1, "images":30, "import_datetime":13, "is_indexable":12, "rating":8, "slug":2, "source":7, "source_post_url":11, "source_tld":10, "trending_datetime":14, "type":0, "url":3, "user"?:36, "username":6
+props 39: "count":12, "offset":12, "total_count":12
+props 42: "msg":40, "response_id":41, "status":12
+props 43: "data":38, "meta":42, "pagination":39
+### api-typescript
+0: string | 1 enums: gif (25), ...
+1: string | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | unrestricted
+3: string | enum with no cases,uri
+4: string | 1 enums:  (1), ...,uri
+5: string | 1 enums:  (1), ...,uri
+6: string | 10 enums:  (14), ...
+7: string | 1 enums:  (5), ...,uri
+8: string | 4 enums: pg (13), ...
+9: string | 1 enums:  (25), ...
+10: string | 14 enums: www.youtube.com (1), ...
+11: string | 1 enums:  (5), ...,uri
+12: integer
+13: string | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | enum with no cases,uri
+16: string | enum with no cases,integer-string
+17: class | children 16,15
+18: string | enum with no cases,uri
+19: string | enum with no cases,uri
+20: class | children 16,18,15,19
+21: class | children 16,15,19
+22: class | children 16,18
+23: class | children 16,15
+24: class | children 16,19
+25: string | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19
+27: class | children 18,16
+28: string | enum with no cases,uri
+29: class | children 16,28
+30: class | children 29,23,22,17,20,21,27,26,24
+31: string | enum with no cases,uri
+32: string | 1 enums:  (1), ...,uri
+33: string | 9 enums: hbo (1), ...
+34: string | 9 enums: HBO (1), ...
+35: string | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6
+38: array | children 37
+39: class | children 12
+40: string | 1 enums: OK (1), ...
+41: string | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12
+43: class TopLevel | children 38,42,39 | given TopLevel ()
+props 17: "url":15, "width":16, "height":16, "size"?:16
+props 20: "url":15, "width":16, "height":16, "size":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16
+props 21: "url":15, "width":16, "height":16, "size":16, "webp":19, "webp_size":16
+props 22: "width":16, "height":16, "mp4":18, "mp4_size":16
+props 23: "url":15, "width":16, "height":16, "size":16
+props 24: "url":19, "width":16, "height":16, "size":16
+props 26: "url":15, "width":16, "height":16, "size":16, "frames":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16, "hash"?:25
+props 27: "mp4":18, "mp4_size":16
+props 29: "url":28, "width":16, "height":16, "size":16
+props 30: "fixed_height_still":17, "original_still":17, "fixed_width":20, "fixed_height_small_still":17, "fixed_height_downsampled":21, "preview":22, "fixed_height_small":20, "downsized_still":17, "downsized":23, "downsized_large":23, "fixed_width_small_still":17, "preview_webp":24, "fixed_width_still":17, "fixed_width_small":20, "downsized_small":22, "fixed_width_downsampled":21, "downsized_medium":23, "original":26, "fixed_height":20, "looping":27, "original_mp4":22, "preview_gif":23, "hd"?:22, "480w_still"?:29
+props 36: "avatar_url":31, "banner_url":32, "profile_url":3, "username":33, "display_name":34, "twitter"?:35
+props 37: "type":0, "id":1, "slug":2, "url":3, "bitly_gif_url":4, "bitly_url":5, "embed_url":3, "username":6, "source":7, "rating":8, "content_url":9, "source_tld":10, "source_post_url":11, "is_indexable":12, "import_datetime":13, "trending_datetime":14, "images":30, "user"?:36
+props 39: "total_count":12, "count":12, "offset":12
+props 42: "status":12, "msg":40, "response_id":41
+props 43: "data":38, "pagination":39, "meta":42
+### stream-schema
+0: string | 1 enums: gif (25), ...
+1: string | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | unrestricted
+3: string | enum with no cases,uri
+4: string | 1 enums:  (1), ...,uri
+5: string | 1 enums:  (1), ...,uri
+6: string | 10 enums:  (14), ...
+7: string | 1 enums:  (5), ...,uri
+8: string | 4 enums: pg (13), ...
+9: string | 1 enums:  (25), ...
+10: string | 14 enums: www.youtube.com (1), ...
+11: string | 1 enums:  (5), ...,uri
+12: integer
+13: string | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | enum with no cases,uri
+16: string | enum with no cases,integer-string
+17: class | children 16,15
+18: string | enum with no cases,uri
+19: string | enum with no cases,uri
+20: class | children 16,18,15,19
+21: class | children 16,15,19
+22: class | children 16,18
+23: class | children 16,15
+24: class | children 16,19
+25: string | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19
+27: class | children 18,16
+28: string | enum with no cases,uri
+29: class | children 16,28
+30: class | children 29,23,22,17,20,21,27,26,24
+31: string | enum with no cases,uri
+32: string | 1 enums:  (1), ...,uri
+33: string | 9 enums: hbo (1), ...
+34: string | 9 enums: HBO (1), ...
+35: string | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6
+38: array | children 37
+39: class | children 12
+40: string | 1 enums: OK (1), ...
+41: string | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12
+43: class TopLevel | children 38,42,39 | given TopLevel ()
+props 17: "url":15, "width":16, "height":16, "size"?:16
+props 20: "url":15, "width":16, "height":16, "size":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16
+props 21: "url":15, "width":16, "height":16, "size":16, "webp":19, "webp_size":16
+props 22: "width":16, "height":16, "mp4":18, "mp4_size":16
+props 23: "url":15, "width":16, "height":16, "size":16
+props 24: "url":19, "width":16, "height":16, "size":16
+props 26: "url":15, "width":16, "height":16, "size":16, "frames":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16, "hash"?:25
+props 27: "mp4":18, "mp4_size":16
+props 29: "url":28, "width":16, "height":16, "size":16
+props 30: "fixed_height_still":17, "original_still":17, "fixed_width":20, "fixed_height_small_still":17, "fixed_height_downsampled":21, "preview":22, "fixed_height_small":20, "downsized_still":17, "downsized":23, "downsized_large":23, "fixed_width_small_still":17, "preview_webp":24, "fixed_width_still":17, "fixed_width_small":20, "downsized_small":22, "fixed_width_downsampled":21, "downsized_medium":23, "original":26, "fixed_height":20, "looping":27, "original_mp4":22, "preview_gif":23, "hd"?:22, "480w_still"?:29
+props 36: "avatar_url":31, "banner_url":32, "profile_url":3, "username":33, "display_name":34, "twitter"?:35
+props 37: "type":0, "id":1, "slug":2, "url":3, "bitly_gif_url":4, "bitly_url":5, "embed_url":3, "username":6, "source":7, "rating":8, "content_url":9, "source_tld":10, "source_post_url":11, "is_indexable":12, "import_datetime":13, "trending_datetime":14, "images":30, "user"?:36
+props 39: "total_count":12, "count":12, "offset":12
+props 42: "status":12, "msg":40, "response_id":41
+props 43: "data":38, "pagination":39, "meta":42
+### api-csharp
+0: string | 0 | 1 enums: gif (25), ...
+1: string | 1 | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | 2 | unrestricted
+3: string | 3 | enum with no cases,uri
+4: string | 4 | 1 enums:  (1), ...,uri
+5: string | 5 | 1 enums:  (1), ...,uri
+6: string | 6 | 10 enums:  (14), ...
+7: string | 7 | 1 enums:  (5), ...,uri
+8: string | 8 | 4 enums: pg (13), ...
+9: string | 9 | 1 enums:  (25), ...
+10: string | 10 | 14 enums: www.youtube.com (1), ...
+11: string | 11 | 1 enums:  (5), ...,uri
+12: integer | 12
+13: string | 13 | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 14 | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | 15 | enum with no cases,uri
+16: string | 16 | enum with no cases,integer-string
+17: class | children 16,15 | 17
+18: string | 18 | enum with no cases,uri
+19: string | 19 | enum with no cases,uri
+20: class | children 16,18,15,19 | 20
+21: class | children 16,15,19 | 21
+22: class | children 16,18 | 22
+23: class | children 16,15 | 23
+24: class | children 16,19 | 24
+25: string | 25 | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19 | 26
+27: class | children 18,16 | 27
+28: string | 28 | enum with no cases,uri
+29: class | children 16,28 | 29
+30: class | children 29,23,22,17,20,21,27,26,24 | 30
+31: string | 31 | enum with no cases,uri
+32: string | 32 | 1 enums:  (1), ...,uri
+33: string | 33 | 9 enums: hbo (1), ...
+34: string | 34 | 9 enums: HBO (1), ...
+35: string | 35 | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33 | 36
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6 | 37
+38: array | children 37 | 38
+39: class | children 12 | 39
+40: string | 40 | 1 enums: OK (1), ...
+41: string | 41 | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12 | 42
+43: class TopLevel | children 38,42,39 | 43 | given TopLevel ()
+props 17: "height":16, "size"?:16, "url":15, "width":16
+props 20: "height":16, "mp4":18, "mp4_size":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 21: "height":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 22: "height":16, "mp4":18, "mp4_size":16, "width":16
+props 23: "height":16, "size":16, "url":15, "width":16
+props 24: "height":16, "size":16, "url":19, "width":16
+props 26: "frames":16, "hash"?:25, "height":16, "mp4":18, "mp4_size":16, "size":16, "url":15, "webp":19, "webp_size":16, "width":16
+props 27: "mp4":18, "mp4_size":16
+props 29: "height":16, "size":16, "url":28, "width":16
+props 30: "480w_still"?:29, "downsized":23, "downsized_large":23, "downsized_medium":23, "downsized_small":22, "downsized_still":17, "fixed_height":20, "fixed_height_downsampled":21, "fixed_height_small":20, "fixed_height_small_still":17, "fixed_height_still":17, "fixed_width":20, "fixed_width_downsampled":21, "fixed_width_small":20, "fixed_width_small_still":17, "fixed_width_still":17, "hd"?:22, "looping":27, "original":26, "original_mp4":22, "original_still":17, "preview":22, "preview_gif":23, "preview_webp":24
+props 36: "avatar_url":31, "banner_url":32, "display_name":34, "profile_url":3, "twitter"?:35, "username":33
+props 37: "bitly_gif_url":4, "bitly_url":5, "content_url":9, "embed_url":3, "id":1, "images":30, "import_datetime":13, "is_indexable":12, "rating":8, "slug":2, "source":7, "source_post_url":11, "source_tld":10, "trending_datetime":14, "type":0, "url":3, "user"?:36, "username":6
+props 39: "count":12, "offset":12, "total_count":12
+props 42: "msg":40, "response_id":41, "status":12
+props 43: "data":38, "meta":42, "pagination":39
+### stream-kotlin
+0: string | 1 enums: gif (25), ...
+1: string | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | unrestricted
+3: string | enum with no cases,uri
+4: string | 1 enums:  (1), ...,uri
+5: string | 1 enums:  (1), ...,uri
+6: string | 10 enums:  (14), ...
+7: string | 1 enums:  (5), ...,uri
+8: string | 4 enums: pg (13), ...
+9: string | 1 enums:  (25), ...
+10: string | 14 enums: www.youtube.com (1), ...
+11: string | 1 enums:  (5), ...,uri
+12: integer
+13: string | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | enum with no cases,uri
+16: string | enum with no cases,integer-string
+17: class | children 16,15
+18: string | enum with no cases,uri
+19: string | enum with no cases,uri
+20: class | children 16,18,15,19
+21: class | children 16,15,19
+22: class | children 16,18
+23: class | children 16,15
+24: class | children 16,19
+25: string | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19
+27: class | children 18,16
+28: string | enum with no cases,uri
+29: class | children 16,28
+30: class | children 29,23,22,17,20,21,27,26,24
+31: string | enum with no cases,uri
+32: string | 1 enums:  (1), ...,uri
+33: string | 9 enums: hbo (1), ...
+34: string | 9 enums: HBO (1), ...
+35: string | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6
+38: array | children 37
+39: class | children 12
+40: string | 1 enums: OK (1), ...
+41: string | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12
+43: class TopLevel | children 38,42,39 | given TopLevel ()
+props 17: "url":15, "width":16, "height":16, "size"?:16
+props 20: "url":15, "width":16, "height":16, "size":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16
+props 21: "url":15, "width":16, "height":16, "size":16, "webp":19, "webp_size":16
+props 22: "width":16, "height":16, "mp4":18, "mp4_size":16
+props 23: "url":15, "width":16, "height":16, "size":16
+props 24: "url":19, "width":16, "height":16, "size":16
+props 26: "url":15, "width":16, "height":16, "size":16, "frames":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16, "hash"?:25
+props 27: "mp4":18, "mp4_size":16
+props 29: "url":28, "width":16, "height":16, "size":16
+props 30: "fixed_height_still":17, "original_still":17, "fixed_width":20, "fixed_height_small_still":17, "fixed_height_downsampled":21, "preview":22, "fixed_height_small":20, "downsized_still":17, "downsized":23, "downsized_large":23, "fixed_width_small_still":17, "preview_webp":24, "fixed_width_still":17, "fixed_width_small":20, "downsized_small":22, "fixed_width_downsampled":21, "downsized_medium":23, "original":26, "fixed_height":20, "looping":27, "original_mp4":22, "preview_gif":23, "hd"?:22, "480w_still"?:29
+props 36: "avatar_url":31, "banner_url":32, "profile_url":3, "username":33, "display_name":34, "twitter"?:35
+props 37: "type":0, "id":1, "slug":2, "url":3, "bitly_gif_url":4, "bitly_url":5, "embed_url":3, "username":6, "source":7, "rating":8, "content_url":9, "source_tld":10, "source_post_url":11, "is_indexable":12, "import_datetime":13, "trending_datetime":14, "images":30, "user"?:36
+props 39: "total_count":12, "count":12, "offset":12
+props 42: "status":12, "msg":40, "response_id":41
+props 43: "data":38, "pagination":39, "meta":42
+### api-swift
+0: string | 1 enums: gif (25), ...
+1: string | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | unrestricted
+3: string | enum with no cases,uri
+4: string | 1 enums:  (1), ...,uri
+5: string | 1 enums:  (1), ...,uri
+6: string | 10 enums:  (14), ...
+7: string | 1 enums:  (5), ...,uri
+8: string | 4 enums: pg (13), ...
+9: string | 1 enums:  (25), ...
+10: string | 14 enums: www.youtube.com (1), ...
+11: string | 1 enums:  (5), ...,uri
+12: integer
+13: string | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | enum with no cases,uri
+16: string | enum with no cases,integer-string
+17: class | children 16,15
+18: string | enum with no cases,uri
+19: string | enum with no cases,uri
+20: class | children 16,18,15,19
+21: class | children 16,15,19
+22: class | children 16,18
+23: class | children 16,15
+24: class | children 16,19
+25: string | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19
+27: class | children 18,16
+28: string | enum with no cases,uri
+29: class | children 16,28
+30: class | children 29,23,22,17,20,21,27,26,24
+31: string | enum with no cases,uri
+32: string | 1 enums:  (1), ...,uri
+33: string | 9 enums: hbo (1), ...
+34: string | 9 enums: HBO (1), ...
+35: string | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6
+38: array | children 37
+39: class | children 12
+40: string | 1 enums: OK (1), ...
+41: string | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12
+43: class TopLevel | children 38,42,39 | given TopLevel ()
+props 17: "url":15, "width":16, "height":16, "size"?:16
+props 20: "url":15, "width":16, "height":16, "size":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16
+props 21: "url":15, "width":16, "height":16, "size":16, "webp":19, "webp_size":16
+props 22: "width":16, "height":16, "mp4":18, "mp4_size":16
+props 23: "url":15, "width":16, "height":16, "size":16
+props 24: "url":19, "width":16, "height":16, "size":16
+props 26: "url":15, "width":16, "height":16, "size":16, "frames":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16, "hash"?:25
+props 27: "mp4":18, "mp4_size":16
+props 29: "url":28, "width":16, "height":16, "size":16
+props 30: "fixed_height_still":17, "original_still":17, "fixed_width":20, "fixed_height_small_still":17, "fixed_height_downsampled":21, "preview":22, "fixed_height_small":20, "downsized_still":17, "downsized":23, "downsized_large":23, "fixed_width_small_still":17, "preview_webp":24, "fixed_width_still":17, "fixed_width_small":20, "downsized_small":22, "fixed_width_downsampled":21, "downsized_medium":23, "original":26, "fixed_height":20, "looping":27, "original_mp4":22, "preview_gif":23, "hd"?:22, "480w_still"?:29
+props 36: "avatar_url":31, "banner_url":32, "profile_url":3, "username":33, "display_name":34, "twitter"?:35
+props 37: "type":0, "id":1, "slug":2, "url":3, "bitly_gif_url":4, "bitly_url":5, "embed_url":3, "username":6, "source":7, "rating":8, "content_url":9, "source_tld":10, "source_post_url":11, "is_indexable":12, "import_datetime":13, "trending_datetime":14, "images":30, "user"?:36
+props 39: "total_count":12, "count":12, "offset":12
+props 42: "status":12, "msg":40, "response_id":41
+props 43: "data":38, "pagination":39, "meta":42
+### stream-python
+0: string | 0 | 1 enums: gif (25), ...
+1: string | 1 | 25 enums: l41lZccR1oUigYeNa (1), ...
+2: string | 2 | unrestricted
+3: string | 3 | enum with no cases,uri
+4: string | 4 | 1 enums:  (1), ...,uri
+5: string | 5 | 1 enums:  (1), ...,uri
+6: string | 6 | 10 enums:  (14), ...
+7: string | 7 | 1 enums:  (5), ...,uri
+8: string | 8 | 4 enums: pg (13), ...
+9: string | 9 | 1 enums:  (25), ...
+10: string | 10 | 14 enums: www.youtube.com (1), ...
+11: string | 11 | 1 enums:  (5), ...,uri
+12: integer | 12
+13: string | 13 | 25 enums: 2015-09-10 14:53:30 (1), ...
+14: string | 14 | 21 enums: 2017-07-21 19:00:29 (1), ...
+15: string | 15 | enum with no cases,uri
+16: string | 16 | enum with no cases,integer-string
+17: class | children 16,15 | 17
+18: string | 18 | enum with no cases,uri
+19: string | 19 | enum with no cases,uri
+20: class | children 16,18,15,19 | 20
+21: class | children 16,15,19 | 21
+22: class | children 16,18 | 22
+23: class | children 16,15 | 23
+24: class | children 16,19 | 24
+25: string | 25 | 7 enums: e080427d96fe9b6a7c2fedb51afb813e (1), ...
+26: class | children 16,25,18,15,19 | 26
+27: class | children 18,16 | 27
+28: string | 28 | enum with no cases,uri
+29: class | children 16,28 | 29
+30: class | children 29,23,22,17,20,21,27,26,24 | 30
+31: string | 31 | enum with no cases,uri
+32: string | 32 | 1 enums:  (1), ...,uri
+33: string | 33 | 9 enums: hbo (1), ...
+34: string | 34 | 9 enums: HBO (1), ...
+35: string | 35 | 8 enums: @hbo (1), ...
+36: class | children 31,32,34,3,35,33 | 36
+37: class | children 4,5,9,3,1,30,13,12,8,2,7,11,10,14,0,36,6 | 37
+38: array | children 37 | 38
+39: class | children 12 | 39
+40: string | 40 | 1 enums: OK (1), ...
+41: string | 41 | 1 enums: 597d1a906164642e6fd6cee7 (1), ...
+42: class | children 40,41,12 | 42
+43: class TopLevel | children 38,42,39 | 43 | given TopLevel ()
+props 17: "url":15, "width":16, "height":16, "size"?:16
+props 20: "url":15, "width":16, "height":16, "size":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16
+props 21: "url":15, "width":16, "height":16, "size":16, "webp":19, "webp_size":16
+props 22: "width":16, "height":16, "mp4":18, "mp4_size":16
+props 23: "url":15, "width":16, "height":16, "size":16
+props 24: "url":19, "width":16, "height":16, "size":16
+props 26: "url":15, "width":16, "height":16, "size":16, "frames":16, "mp4":18, "mp4_size":16, "webp":19, "webp_size":16, "hash"?:25
+props 27: "mp4":18, "mp4_size":16
+props 29: "url":28, "width":16, "height":16, "size":16
+props 30: "fixed_height_still":17, "original_still":17, "fixed_width":20, "fixed_height_small_still":17, "fixed_height_downsampled":21, "preview":22, "fixed_height_small":20, "downsized_still":17, "downsized":23, "downsized_large":23, "fixed_width_small_still":17, "preview_webp":24, "fixed_width_still":17, "fixed_width_small":20, "downsized_small":22, "fixed_width_downsampled":21, "downsized_medium":23, "original":26, "fixed_height":20, "looping":27, "original_mp4":22, "preview_gif":23, "hd"?:22, "480w_still"?:29
+props 36: "avatar_url":31, "banner_url":32, "profile_url":3, "username":33, "display_name":34, "twitter"?:35
+props 37: "type":0, "id":1, "slug":2, "url":3, "bitly_gif_url":4, "bitly_url":5, "embed_url":3, "username":6, "source":7, "rating":8, "content_url":9, "source_tld":10, "source_post_url":11, "is_indexable":12, "import_datetime":13, "trending_datetime":14, "images":30, "user"?:36
+props 39: "total_count":12, "count":12, "offset":12
+props 42: "status":12, "msg":40, "response_id":41
+props 43: "data":38, "pagination":39, "meta":42
