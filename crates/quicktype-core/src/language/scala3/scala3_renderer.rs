@@ -17,8 +17,9 @@ use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
-use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
+use indexmap::IndexMap;
+
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
 use super::language::{FRAMEWORK, JUST_TYPES, PACKAGE_NAME};
@@ -127,14 +128,6 @@ pub fn emit_block<'a, R: ConvenienceRenderer<'a>>(
     r.indent(f)?;
     r.emit_line(close);
     Ok(())
-}
-
-/// The error of TS `matchType` for a kind it has no case for.
-pub(crate) fn unsupported<T>(kind: TypeKind) -> Result<T> {
-    if kind == TypeKind::Intersection {
-        return panic("Unknown type intersection");
-    }
-    type_not_supported(kind)
 }
 
 /// The methods of TS `Scala3Renderer` that subclasses may override. The
@@ -296,7 +289,7 @@ pub mod scala3_methods {
             }
             TypeKind::Uuid => "java.util.UUID".into(),
             kind if kind.is_transformed_string_type_kind() => "java.time.Instant".into(),
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -450,18 +443,37 @@ pub mod scala3_methods {
         )
     }
 
-    /// The members of a union type alias: the non-null members (by name),
-    /// then the null member's name.
-    pub fn union_member_types<'a, R: Scala3RendererFamily<'a>>(
+    /// `emitUnionDefinition(u, unionName)`: a union type alias.
+    ///
+    /// The TypeScript repeats this method, with codecs added, in
+    /// `CirceRenderer` and `UpickleRenderer`; so does the port.
+    pub fn emit_union_definition<'a, R: Scala3RendererFamily<'a>>(
         r: &mut R,
         u: TypeRef,
-        maybe_null: Option<TypeRef>,
-        non_nulls: &indexmap::IndexSet<TypeRef>,
-    ) -> Result<Vec<Source>> {
+        union_name: Name,
+    ) -> Result<()> {
+        let description = r.description_for_type(u)?;
+        r.emit_description(description)?;
+
+        // `sortBy(t)`: classes first, then the other kinds by name.
+        let graph = r.type_graph();
+        let mut sort_keys: IndexMap<TypeRef, String> = IndexMap::new();
+        for &member in graph.type_at(u)?.members()? {
+            let kind = graph.kind(member)?;
+            let key = if kind == TypeKind::Class {
+                kind.as_str().to_owned()
+            } else {
+                format!("_{}", kind.as_str())
+            };
+            sort_keys.insert(member, key);
+        }
+        let sort_by = |t: TypeRef| sort_keys.get(&t).cloned().unwrap_or_default();
+        let (maybe_null, non_nulls) =
+            remove_null_from_union(graph, u, NullRemovalSort::By(&sort_by))?;
         let mut the_types: Vec<Source> = Vec::new();
         r.for_each_union_member(
             u,
-            Some(non_nulls),
+            Some(&non_nulls),
             BlankLinePosition::None,
             None,
             |r, _, t, _| {
@@ -472,40 +484,15 @@ pub mod scala3_methods {
         if let Some(null_type) = maybe_null {
             the_types.push(r.name_for_union_member(u, null_type)?.into());
         }
-        Ok(the_types)
-    }
 
-    /// Emits `type Name = A | B | ...` without ending the line.
-    pub fn emit_union_type_alias<'a, R: Scala3RendererFamily<'a>>(
-        r: &mut R,
-        union_name: Name,
-        the_types: &[Source],
-    ) {
         r.emit_item(sl!["type ", union_name, " = "]);
-        for (i, t) in the_types.iter().enumerate() {
+        for (i, t) in the_types.into_iter().enumerate() {
             if i == 0 {
-                r.emit_item(t.clone());
+                r.emit_item(t);
             } else {
-                r.emit_item(sl![" | ", t.clone()]);
+                r.emit_item(sl![" | ", t]);
             }
         }
-    }
-
-    /// `emitUnionDefinition(u, unionName)`: a union type alias.
-    pub fn emit_union_definition<'a, R: Scala3RendererFamily<'a>>(
-        r: &mut R,
-        u: TypeRef,
-        union_name: Name,
-    ) -> Result<()> {
-        let description = r.description_for_type(u)?;
-        r.emit_description(description)?;
-
-        // TypeScript sorts the members by kind (`class` first) here, but
-        // `forEachUnionMember` orders them by name anyway.
-        let (maybe_null, non_nulls) =
-            remove_null_from_union(r.type_graph(), u, NullRemovalSort::None)?;
-        let the_types = union_member_types(r, u, maybe_null, &non_nulls)?;
-        emit_union_type_alias(r, union_name, &the_types);
         r.ensure_blank_line();
         Ok(())
     }

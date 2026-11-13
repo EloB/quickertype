@@ -2,13 +2,16 @@
 //!
 //! Renders a Smithy 2 model: structures, enums, untagged unions and the
 //! lists and maps they use.
+//!
+//! The TypeScript class started as a copy of `Scala3Renderer` (`emitBlock`,
+//! `scalaType`, the class-definition loop) and does not share code with
+//! it; the port mirrors that.
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
-use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -55,14 +58,6 @@ impl std::fmt::Debug for Smithy4sRenderer<'_> {
             .field("options", &self.options)
             .finish_non_exhaustive()
     }
-}
-
-/// The error of TS `matchType` for a kind it has no case for.
-fn unsupported<T>(kind: TypeKind) -> Result<T> {
-    if kind == TypeKind::Intersection {
-        return panic("Unknown type intersection");
-    }
-    type_not_supported(kind)
 }
 
 /// `String.fromCharCode(code)`.
@@ -127,7 +122,7 @@ impl<'a> Smithy4sRenderer<'a> {
                 }
                 self.name_for_named_type(t)?.into()
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 

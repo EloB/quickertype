@@ -99,14 +99,6 @@ impl std::fmt::Debug for HaskellRenderer<'_> {
     }
 }
 
-/// The error of TS `matchType` for a kind it has no case for.
-fn unsupported<T>(kind: TypeKind) -> Result<T> {
-    if kind == TypeKind::Intersection {
-        return crate::support::support::panic("Unknown type intersection");
-    }
-    type_not_supported(kind)
-}
-
 impl<'a> HaskellRenderer<'a> {
     /// `new HaskellRenderer(targetLanguage, renderContext, options)`.
     pub fn new(
@@ -161,7 +153,7 @@ impl<'a> HaskellRenderer<'a> {
                 }
                 single_word(vec![self.name_for_named_type(t)?.into()])
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -192,7 +184,7 @@ impl<'a> HaskellRenderer<'a> {
             TypeKind::Class | TypeKind::Map => "Object",
             TypeKind::Enum => "String",
             TypeKind::Union => "Object",
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         };
         Ok(single_word(vec![word.into()]))
     }

@@ -192,14 +192,38 @@ impl<'a> Scala3RendererFamily<'a> for UpickleRenderer<'a> {
 
     /// The type alias, and, for the first union with these members, a
     /// reader trying each member and a writer matching on them.
+    ///
+    /// Like the TypeScript, this repeats the base class's alias code and
+    /// the other framework's member ordering rather than sharing them.
     fn emit_union_definition(&mut self, u: TypeRef, union_name: Name) -> Result<()> {
         let description = self.description_for_type(u)?;
         self.emit_description(description)?;
 
         let (maybe_null, non_nulls) =
             remove_null_from_union(self.type_graph(), u, NullRemovalSort::None)?;
-        let the_types = scala3_methods::union_member_types(self, u, maybe_null, &non_nulls)?;
-        scala3_methods::emit_union_type_alias(self, union_name, &the_types);
+        let mut the_types: Vec<Source> = Vec::new();
+        self.for_each_union_member(
+            u,
+            Some(&non_nulls),
+            BlankLinePosition::None,
+            None,
+            |r, _, t, _| {
+                the_types.push(r.scala_type(t, false, false)?);
+                Ok(())
+            },
+        )?;
+        if let Some(null_type) = maybe_null {
+            the_types.push(self.name_for_union_member(u, null_type)?.into());
+        }
+
+        self.emit_item(sl!["type ", union_name, " = "]);
+        for (i, t) in the_types.iter().enumerate() {
+            if i == 0 {
+                self.emit_item(t.clone());
+            } else {
+                self.emit_item(sl![" | ", t.clone()]);
+            }
+        }
         let this_union_type = the_types
             .iter()
             .map(|x| self.sourcelike_to_string(x))

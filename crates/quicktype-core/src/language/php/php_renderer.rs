@@ -18,7 +18,7 @@ use crate::messages::{JsErrorName, QuickTypeError};
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::comments::CommentOptions;
-use crate::support::support::{defined, panic};
+use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{
     NullRemovalSort, directly_reachable_single_named_type, is_nullable, nullable_from_union,
@@ -113,14 +113,6 @@ impl std::fmt::Debug for PhpRenderer<'_> {
             .field("options", &self.options)
             .finish_non_exhaustive()
     }
-}
-
-/// The error of TS `matchType` for a kind it has no case for.
-fn unsupported<T>(kind: TypeKind) -> Result<T> {
-    if kind == TypeKind::Intersection {
-        return panic("Unknown type intersection");
-    }
-    type_not_supported(kind)
 }
 
 /// The runtime-dispatch order of union members (`sortedUnionMembers`).
@@ -536,7 +528,7 @@ impl<'a> PhpRenderer<'a> {
             TypeKind::Date => return js_error("transformedStringType.kind === \"date\""),
             TypeKind::DateTime => optionalize("DateTime".into()),
             kind if kind.is_transformed_string_type_kind() => optionalize("string".into()),
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -572,7 +564,7 @@ impl<'a> PhpRenderer<'a> {
             kind if kind.is_transformed_string_type_kind() => {
                 return js_error("transformedStringType.kind === \"unknown\"");
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         })
     }
 
@@ -672,7 +664,7 @@ impl<'a> PhpRenderer<'a> {
             kind if kind.is_transformed_string_type_kind() => {
                 return js_error("transformedStringType.kind === \"unknown\"");
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         }
         Ok(())
     }
@@ -799,7 +791,7 @@ impl<'a> PhpRenderer<'a> {
             kind if kind.is_transformed_string_type_kind() => {
                 return js_error("transformedStringType.kind === \"unknown\"");
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         }
         Ok(())
     }
@@ -948,7 +940,7 @@ impl<'a> PhpRenderer<'a> {
             kind if kind.is_transformed_string_type_kind() => {
                 return js_error("transformedStringType.kind === \"unknown\"");
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         }
         Ok(())
     }
@@ -1170,7 +1162,7 @@ impl<'a> PhpRenderer<'a> {
             kind if kind.is_transformed_string_type_kind() => {
                 return js_error(format!("transformedStringType.kind === {}", kind.as_str()));
             }
-            kind => return unsupported(kind),
+            kind => return match_type_unsupported(kind),
         }
         Ok(())
     }

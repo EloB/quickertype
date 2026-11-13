@@ -1,9 +1,13 @@
 //! Port of `packages/quicktype-core/src/language/Smithy4s/utils.ts`.
 //!
 //! Smithy identifier styling and backtick quoting.
+//!
+//! The TypeScript file is a copy of `Scala3/utils.ts` with Smithy's own
+//! keyword and symbol lists (and without the property-name rules); the port
+//! mirrors that duplication. Only the emulation of JavaScript's
+//! `parseFloat` is shared.
 
-use quicktype_js_compat::whitespace;
-
+use crate::language::scala3::utils::parse_float_is_number;
 use crate::naming::{Namer, fun_prefix_namer};
 use crate::support::strings::{
     all_lower_word_style, all_upper_word_style, combine_words, first_upper_word_style, is_digit,
@@ -11,18 +15,6 @@ use crate::support::strings::{
 };
 
 use super::constants::{INVALID_SYMBOLS, KEYWORDS};
-
-/// `!Number.isNaN(Number.parseFloat(s))`: whether `s` starts, after
-/// leading whitespace, with a decimal number or `Infinity` (optionally
-/// signed).
-fn parse_float_is_number(s: &str) -> bool {
-    let t = whitespace::trim_start(s);
-    let t = t.strip_prefix(['+', '-']).unwrap_or(t);
-    t.starts_with("Infinity")
-        || t.starts_with(|c: char| c.is_ascii_digit())
-        || t.strip_prefix('.')
-            .is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_digit()))
-}
 
 /// `shouldAddBacktick(paramName)`: whether a name is a keyword, contains an
 /// invalid symbol or starts like a number.
@@ -46,7 +38,8 @@ fn legalize_name(s: &str) -> String {
     legalize_characters(s, is_part_character)
 }
 
-/// `scalaNameStyle(isUpper, original)`: PascalCase or camelCase.
+/// `scalaNameStyle(isUpper, original)`: PascalCase or camelCase (the same
+/// as Scala 3's, duplicated in TypeScript).
 pub fn scala_name_style(is_upper: bool, original: &str) -> String {
     let words = split_into_words(original);
     combine_words(
