@@ -914,7 +914,9 @@ function renderMeter() {
         compare = line.same ? "identical" : "different";
         html += line.html;
         if (line.detail !== undefined) fine.push(line.detail);
-        fine.push("The lighter part of each bar is reading the input; the rest is generating the code.");
+        fine.push(
+            "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
+        );
         if (sides.wasm.ok && sides.ts.ok) {
             const overall = relative(phases(sides.wasm).total, phases(sides.ts).total);
             const generating = relative(phases(sides.wasm).generate, phases(sides.ts).generate);

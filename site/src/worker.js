@@ -14,8 +14,10 @@
 // them for its flags.
 //
 // `times` are whole runs; `inputTimes` the part spent reading the input
-// (`addSource`: parsing the JSON or the schema), which is quicktype's
-// TypeScript code on both engines. The rest is generating the code.
+// (`addSource`: parsing the JSON or the schema). The WebAssembly engine
+// reads JSON samples itself as they are added; a JSON Schema is parsed by
+// quicktype's TypeScript code on both engines. The rest is generating the
+// code.
 
 import { boot } from "./worker-boot.js";
 
@@ -57,8 +59,8 @@ function snapshot() {
 function whoRan(before) {
     if (engineStats.wasm > before.wasm) return { ran: "wasm" };
     if (engineStats.ts === before.ts) {
-        // It failed before the generation step (e.g. parsing the input,
-        // which is TypeScript code on both engines).
+        // It failed before the generation step (e.g. reading the input:
+        // a sample that is not JSON fails in addSource on both engines).
         return { ran: undefined };
     }
 
