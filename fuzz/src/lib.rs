@@ -53,11 +53,11 @@ impl RunConfig {
         let definitions = lang.option_definitions();
         let mut renderer_options = RendererOptions::new();
         if !definitions.is_empty() {
-            for pair in pairs.chunks_exact(2) {
-                let definition = &definitions[pair[0] as usize % definitions.len()];
+            for [option, value] in pairs.as_chunks::<2>().0 {
+                let definition = &definitions[*option as usize % definitions.len()];
                 renderer_options.set(
                     definition.name.clone().into_owned(),
-                    option_value(definition.option_type, definition.values, pair[1]),
+                    option_value(definition.option_type, definition.values, *value),
                 );
             }
         }
