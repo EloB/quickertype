@@ -1,5 +1,7 @@
-//! `JSON.stringify`, as far as quicktype needs it.
+//! `JSON.stringify` and `JSON.parse`, as far as quicktype needs them.
 //!
+//! - [`parse()`]: `JSON.parse(text)` with V8's semantics and error messages
+//!   (see the [`parse`](mod@parse) module).
 //! - [`quote`]: `JSON.stringify(string)`. JavaScript escapes `"`, `\`, the
 //!   control characters below U+0020 (as `\b \t \n \f \r` or lowercase
 //!   `\u00XX`) and lone surrogates; everything else, including U+007F,
@@ -11,7 +13,8 @@
 //!   V8's `JSON.stringify(value, undefined, space)`.
 //!
 //! Out of scope: `toJSON` methods, replacer functions and arrays, `undefined`
-//! and function values (which `JSON.stringify` skips), `BigInt`, and parsing.
+//! and function values (which `JSON.stringify` skips), `BigInt`, and
+//! `JSON.parse`'s reviver.
 //! Object keys are written in the order the [`JsonValue::Object`] map holds
 //! them; to model a JavaScript object, insert keys with
 //! [`insert_js_property`], which reproduces JavaScript's own-property order.
@@ -19,7 +22,11 @@
 /// The map type of [`JsonValue::Object`], re-exported for building values.
 pub use indexmap::IndexMap;
 
+pub use self::parse::{JsonParseError, parse};
+
 use crate::number;
+
+pub mod parse;
 
 /// A JSON value. Objects keep their keys in insertion order.
 #[derive(Debug, Clone, PartialEq)]
