@@ -395,3 +395,32 @@ the others name the fix they need.
   its own (current) Unicode version; the two can still disagree for
   characters assigned in a Unicode version only one of them has. Naming
   (`unicode-properties`, Unicode 12.0) is unaffected.
+
+## Bugs kept for parity
+
+The port reproduces quicktype's output, including code that is wrong. These
+are bugs in the generated code, found while porting or reviewing, that the
+port keeps because the golden output contains them. Each is worth fixing
+upstream first; the port follows when the reference moves.
+
+- **C# (`--lang cs`, both frameworks).** In a converter's `switch` over
+  the JSON token, the `JsonToken.Null` (`JsonTokenType.Null`) case ends
+  with `break` without a `;` when its transformer does not return on every
+  path, which does not compile.
+- **C (`--lang cjson`).**
+  - A top-level map of integers, booleans, doubles or enums stores the
+    value itself as the pointer (`hashtable_add(x->value, e->string,
+    cJSON_GetNumberValue(e), sizeof(int64_t *))`); creating JSON from it
+    then dereferences address 1, 2, … and deleting it frees them. The
+    top-level list path allocates each value; the map path does not.
+  - Top-level lists of a non-nullable type mark `null` elements with
+    `(void *)0xDEADBEAF`, which the delete function then frees; every other
+    check in the generated code compares against `0xDEADBEEF`.
+  - Enum getters call `strcmp(cJSON_GetStringValue(j), …)` without checking
+    that `j` is a string; an array of enums inside a class reaches them
+    unchecked, so `{"tags": [1]}` passes `NULL` to `strcmp`.
+  - Pattern constraints ignore what `regcomp` returns, so `regexec` and
+    `regfree` can run on a regex that never compiled. JSON Schema patterns
+    are ECMAScript syntax and often not POSIX extended (`\d`, lookahead).
+  - Maps of classes or unions parse every value twice: once to validate
+    (then deleted) and once more for the value stored.

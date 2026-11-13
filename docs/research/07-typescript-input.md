@@ -565,8 +565,7 @@ fn main() -> io::Result<()> {
 
 ## Appendix B — spike artifacts
 
-Under
-`ts7-spike/ (a local working directory, not committed)`:
+The spike's working directory (throwaway, not committed) held:
 
 * `corpus/` (596 cases);
 * `exp/ref.cjs` (reference harness), `exp/tjs7.mjs` (TJS port on TS 7), `exp/compare.mjs` and `exp/show.mjs`;
