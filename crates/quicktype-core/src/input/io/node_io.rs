@@ -407,7 +407,9 @@ mod std_io {
 
     #[cfg(feature = "http")]
     fn http_get(url: &str, headers: &[(String, String)]) -> Result<HttpResponse, IoError> {
-        let mut request = ureq::get(url);
+        // Node's fetch follows up to 20 redirects.
+        let agent = ureq::AgentBuilder::new().redirects(20).build();
+        let mut request = agent.get(url);
         for (name, value) in headers {
             request = request.set(name, value);
         }
