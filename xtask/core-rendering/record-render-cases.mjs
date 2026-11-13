@@ -552,12 +552,14 @@ async function recordCli(spec) {
     captured = undefined;
     if (rec.graph === undefined || rec.render === undefined) return "skip: did not render";
     const quiet = spec.args.includes("--quiet");
-    if (stdout !== joinStdout(rec.files, quiet)) return "mismatch: stdout differs from the rendered files";
+    const consolePrefix = (rec.console ?? []).map((line) => `${line}\n`).join("");
+    if (stdout !== consolePrefix + joinStdout(rec.files, quiet)) return "mismatch: stdout differs from the rendered files";
     const fixture = {
         id: spec.id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
+        console: rec.console,
         stdoutText: stdout,
         quiet: quiet ? true : undefined,
         files: rec.files.map((f) => ({ name: f.name, annotations: quiet ? undefined : f.annotations })),
