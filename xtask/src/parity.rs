@@ -7,6 +7,23 @@
 //! The run is a *ratchet*: `tests/parity-baseline.txt` lists the case ids
 //! that are known to pass. A run fails if any of those regress; newly passing
 //! cases are reported and recorded with `--update-baseline`.
+//!
+//! Two kinds of steps exist:
+//!
+//! - **File steps** (the fixture corpus): the step must exit 0 (or fail, with
+//!   `expect_failure`) and write exactly `files`.
+//! - **CLI-behavior steps** (the `cli-*` fixtures, recorded by
+//!   `xtask/golden/record-cli.mjs`): the step has an `exit` code, and its
+//!   stdout and stderr must equal `step<N>.stdout` / `step<N>.stderr` in the
+//!   case directory (a missing file means empty output). An optional `stdin`
+//!   names a file that is piped to the process. Before comparing, the
+//!   absolute inputs directory in the actual output is replaced by `{INPUTS}`
+//!   and the work directory by `{CWD}`, exactly as the recorder did.
+//!
+//! A case may set extra environment variables with `env`. Every step runs
+//! with `TZ=UTC` and `NODE_NO_WARNINGS=1`, and without `FORCE_COLOR`,
+//! `NO_COLOR` and `NODE_OPTIONS`, so the developer's shell cannot change the
+//! result.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -39,6 +56,9 @@ struct Case {
     /// create output directories itself).
     #[serde(default)]
     dirs: Vec<String>,
+    /// Extra environment variables for every step.
+    #[serde(default)]
+    env: BTreeMap<String, String>,
     steps: Vec<Step>,
 }
 
@@ -48,7 +68,18 @@ struct Step {
     files: Vec<String>,
     #[serde(default)]
     expect_failure: bool,
+    /// File (usually below `{INPUTS}`) piped to stdin; stdin is empty otherwise.
+    #[serde(default)]
+    stdin: Option<String>,
+    /// Expected exit code. Its presence makes this a CLI-behavior step whose
+    /// stdout and stderr are compared as well.
+    #[serde(default)]
+    exit: Option<i32>,
 }
+
+/// Environment variables removed from every step: they would let the
+/// developer's shell change colors or inject Node flags.
+const SCRUBBED_ENV: &[&str] = &["FORCE_COLOR", "NO_COLOR", "NODE_OPTIONS"];
 
 struct Options {
     bin: Option<Vec<String>>,
@@ -132,6 +163,85 @@ fn snapshot(dir: &Path) -> BTreeMap<String, Vec<u8>> {
     acc
 }
 
+/// Replaces every occurrence of `from` in `haystack` with `to`.
+fn replace_bytes(haystack: &[u8], from: &[u8], to: &[u8]) -> Vec<u8> {
+    if from.is_empty() {
+        return haystack.to_vec();
+    }
+    let mut out = Vec::with_capacity(haystack.len());
+    let mut i = 0;
+    while i < haystack.len() {
+        if haystack[i..].starts_with(from) {
+            out.extend_from_slice(to);
+            i += from.len();
+        } else {
+            out.push(haystack[i]);
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Replaces absolute paths in captured output by their placeholders, longest
+/// path first (both the given and the canonical form of each directory).
+fn normalize_output(output: &[u8], placeholders: &[(String, &str)]) -> Vec<u8> {
+    let mut pairs: Vec<&(String, &str)> = placeholders.iter().collect();
+    pairs.sort_by_key(|(path, _)| std::cmp::Reverse(path.len()));
+    let mut out = output.to_vec();
+    for (path, placeholder) in pairs {
+        out = replace_bytes(&out, path.as_bytes(), placeholder.as_bytes());
+    }
+    out
+}
+
+/// The given and the canonical form of `dir`, for output normalization.
+fn path_forms(dir: &Path, placeholder: &'static str) -> Vec<(String, &'static str)> {
+    let mut forms = vec![(dir.to_string_lossy().into_owned(), placeholder)];
+    if let Ok(canonical) = dir.canonicalize() {
+        let canonical = canonical.to_string_lossy().into_owned();
+        if canonical != forms[0].0 {
+            forms.push((canonical, placeholder));
+        }
+    }
+    forms
+}
+
+/// Compares one captured stream of a CLI-behavior step with its golden file.
+fn check_stream(
+    case_dir: &Path,
+    step: usize,
+    stream: &str,
+    actual: &[u8],
+    placeholders: &[(String, &str)],
+) -> Result<(), String> {
+    let path = case_dir.join(format!("step{step}.{stream}"));
+    let expected = match fs::read(&path) {
+        Ok(bytes) => bytes,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => vec![],
+        Err(e) => return Err(format!("golden {}: {e}", path.display())),
+    };
+    let actual = normalize_output(actual, placeholders);
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(format!(
+            "step {step}: {stream} differs at {}",
+            first_difference(&expected, &actual)
+        ))
+    }
+}
+
+/// The first non-blank stderr line, shortened, for failure summaries.
+fn first_stderr_line(stderr: &[u8]) -> String {
+    String::from_utf8_lossy(stderr)
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .chars()
+        .take(200)
+        .collect()
+}
+
 /// Describes the first differing line between two outputs.
 fn first_difference(expected: &[u8], actual: &[u8]) -> String {
     let expected = String::from_utf8_lossy(expected);
@@ -166,6 +276,9 @@ fn run_case(
         fs::create_dir_all(work.join(dir)).map_err(|e| e.to_string())?;
     }
 
+    let mut placeholders = path_forms(Path::new(inputs), "{INPUTS}");
+    placeholders.extend(path_forms(work, "{CWD}"));
+
     let mut elapsed = Duration::ZERO;
     for (i, step) in case.steps.iter().enumerate() {
         let before = snapshot(work);
@@ -174,34 +287,54 @@ fn run_case(
             .iter()
             .map(|a| a.replace("{INPUTS}", inputs))
             .collect();
-        let start = Instant::now();
-        let out = Command::new(&bin[0])
+        let stdin = match &step.stdin {
+            Some(path) => {
+                let path = path.replace("{INPUTS}", inputs);
+                Stdio::from(fs::File::open(&path).map_err(|e| format!("stdin {path}: {e}"))?)
+            }
+            None => Stdio::null(),
+        };
+        let mut command = Command::new(&bin[0]);
+        command
             .args(&bin[1..])
             .args(&args)
             .current_dir(work)
-            .stdin(Stdio::null())
+            .stdin(stdin)
+            .env("TZ", "UTC")
+            .env("NODE_NO_WARNINGS", "1")
+            .envs(&case.env);
+        for name in SCRUBBED_ENV {
+            if !case.env.contains_key(*name) {
+                command.env_remove(name);
+            }
+        }
+        let start = Instant::now();
+        let out = command
             .output()
             .map_err(|e| format!("step {i}: cannot spawn {}: {e}", bin[0]))?;
         elapsed += start.elapsed();
 
-        if step.expect_failure {
+        if let Some(expected_exit) = step.exit {
+            let actual_exit = out.status.code();
+            if actual_exit != Some(expected_exit) {
+                return Err(format!(
+                    "step {i}: exit {} (expected {expected_exit}): {}",
+                    actual_exit.map_or_else(|| "signal".to_owned(), |c| c.to_string()),
+                    first_stderr_line(&out.stderr)
+                ));
+            }
+            check_stream(case_dir, i, "stdout", &out.stdout, &placeholders)?;
+            check_stream(case_dir, i, "stderr", &out.stderr, &placeholders)?;
+        } else if step.expect_failure {
             if out.status.success() {
                 return Err(format!("step {i}: expected failure, but exited 0"));
             }
             continue;
-        }
-        if !out.status.success() {
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            let first: String = stderr
-                .lines()
-                .find(|l| !l.trim().is_empty())
-                .unwrap_or("")
-                .chars()
-                .take(200)
-                .collect();
+        } else if !out.status.success() {
             return Err(format!(
-                "step {i}: exit {}: {first}",
-                out.status.code().unwrap_or(-1)
+                "step {i}: exit {}: {}",
+                out.status.code().unwrap_or(-1),
+                first_stderr_line(&out.stderr)
             ));
         }
 
