@@ -62,7 +62,7 @@ use crate::input::io::{GrowStack, LocalBoxFuture, grow_stack};
 use crate::input::json_schema_store::{JsonSchema, JsonSchemaStore, SchemaCache};
 use crate::input::path_element::PathElement;
 use crate::messages::{
-    ErrorKind, JsErrorName, MessageValue, QuickTypeError, Result, message_error,
+    ErrorKind, JsErrorName, MessageValue, QuickTypeError, RefValue, Result, message_error,
 };
 use crate::run::RunContext;
 use crate::support::collection_utils::{EqualityMap, JsEquals, JsHash, add_hash_code, hash_string};
@@ -366,7 +366,11 @@ impl Ref {
 
     /// The `Ref` as a message property (it has its own `toString`).
     pub fn message_value(&self) -> MessageValue {
-        MessageValue::Display(self.to_string())
+        MessageValue::Ref(Box::new(RefValue {
+            display: self.to_string(),
+            address: self.address_uri.as_ref().map(ToString::to_string),
+            path: self.path.clone(),
+        }))
     }
 
     /// `lookup(local, path, root)`.

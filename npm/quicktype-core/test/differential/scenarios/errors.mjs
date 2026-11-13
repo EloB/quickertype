@@ -25,6 +25,51 @@ function scenario(category, name, run, lang) {
     return { id: `${category}/${name}`, category, group: category, lang, run };
 }
 
+/**
+ * What a script can read of a JSON Schema `Ref` in an error's properties
+ * (compare.mjs compares a `Ref` by its `toString()` alone).
+ */
+function describeRef(ref) {
+    const get = (f) => {
+        try {
+            return f();
+        } catch (e) {
+            return `throws ${e?.message}`;
+        }
+    };
+    return {
+        class: ref.constructor?.name,
+        toString: ref.toString(),
+        path: ref.path,
+        definitionName: ref.definitionName,
+        hasAddress: ref.hasAddress,
+        address: get(() => ref.address),
+        isRoot: ref.isRoot,
+        name: get(() => ref.name),
+        hashCode: get(() => ref.hashCode()),
+    };
+}
+
+/** The error `run` fails with, its `Ref` properties described in full. */
+async function refsOfError(run) {
+    try {
+        await run();
+        return "no error";
+    } catch (e) {
+        const properties = {};
+        for (const [key, value] of Object.entries(e.properties ?? {})) {
+            // A `Ref`, or anything else with its own `toString()`.
+            const own = value !== null && typeof value === "object" && value.toString !== Object.prototype.toString;
+            properties[key] = own ? describeRef(value) : value;
+        }
+
+        return { messageName: e.messageName, message: e.message, properties };
+    }
+}
+
+/** Property keys that `Ref.toString()` cannot tell apart from a path, or that URI parsing changes. */
+const awkwardKeys = ["a/b", "/", "a~1b", "~0", "~", "a\nb", "a\r\nb", "\t", "a%2Fb", "a%25b", "100%", "%", "a#b", "a?b", "a b", "ä/ö"];
+
 const schemaErrors = {
     "type is a number": { type: 5 },
     "type list with a number": { type: ["string", 1] },
@@ -128,6 +173,52 @@ export function scenarios() {
         d.addInput(input);
         return qt.quicktypeMultiFile({ lang: "typescript", inputData: d });
     });
+    // ---- Refs in error properties, rebuilt from the engine's ------------
+    for (const key of awkwardKeys) {
+        // At a property: the ref's path ends in the key.
+        err(`ref: property ${JSON.stringify(key)}`, async (qt) =>
+            refsOfError(async () =>
+                qt.quicktypeMultiFile({
+                    lang: "typescript",
+                    inputData: await schema(qt, { type: "object", properties: { ok: { type: "string" }, [key]: { type: 5 } } }),
+                }),
+            ),
+        );
+        // At a definition, by URI fragment ending in "/" (each definition a
+        // top-level): `definitionName` is the key.
+        err(`ref: definition ${JSON.stringify(key)}`, async (qt) =>
+            refsOfError(async () => {
+                const input = new qt.JSONSchemaInput(undefined);
+                await input.addSource({
+                    name: "Defs",
+                    schema: JSON.stringify({ definitions: { ok: { type: "string" }, [key]: { type: "object", required: 5 } } }),
+                    uris: ["#/definitions/"],
+                });
+                const inputData = new qt.InputData();
+                inputData.addInput(input);
+                return qt.quicktypeMultiFile({ lang: "typescript", inputData });
+            }),
+        );
+        // A `$ref` that does not resolve, and a top-level whose name (the
+        // address) has the key in it.
+        err(`ref: missing definition ${JSON.stringify(key)}`, async (qt) =>
+            refsOfError(async () =>
+                qt.quicktypeMultiFile({
+                    lang: "typescript",
+                    inputData: await schema(qt, { type: "object", properties: { a: { $ref: `#/definitions/${key}` } }, definitions: { x: {} } }),
+                }),
+            ),
+        );
+        err(`ref: address ${JSON.stringify(key)}`, async (qt) =>
+            refsOfError(async () =>
+                qt.quicktypeMultiFile({
+                    lang: "typescript",
+                    inputData: await schema(qt, { type: "object", properties: { a: { type: 5 } } }, `dir/${key}.json`),
+                }),
+            ),
+        );
+    }
+
     err("two string schema sources", async (qt) => {
         const d = new qt.InputData();
         for (const text of ['{"type":"string"}', '{"type":"number"}']) {

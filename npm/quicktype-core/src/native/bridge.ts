@@ -4,6 +4,8 @@
 // run, and turning its outcome back into what the TypeScript engine would
 // have returned or thrown.
 
+import URI from "urijs";
+
 import {
     IssueAnnotationData,
     anyTypeIssueAnnotation,
@@ -127,47 +129,43 @@ function prepareSchemaInput(input: any, ctx: RunContext): JSONSchemaStore {
     return maybeSchemaStore;
 }
 
-/**
- * The `Ref` whose `toString()` is `text`, if there is one. `Ref.parse`
- * finds it unless URI parsing drops characters of the path (line breaks
- * and tabs in a property name); then the address and the path elements
- * are rebuilt separately, as `Ref.parseURI` would split them.
- */
-function refFromDisplay(text: string): Ref | undefined {
-    try {
-        const ref = Ref.parse(text);
-        if (ref.toString() === text) return ref;
-        const hash = text.indexOf("#");
-        if (hash < 0) return undefined;
-        const address = text.slice(0, hash);
-        let fragment = text.slice(hash + 1);
-        const path: PathElement[] = [];
-        if (fragment.startsWith("/")) {
-            path.push({ kind: PathElementKind.Root });
-            fragment = fragment.slice(1);
+/** How the engine sends a JSON Schema `Ref`: its address and path elements. */
+type RefPlaceholder = {
+    address?: string;
+    path: Array<{ kind: PathElementKind; key?: string; index?: number }>;
+};
+
+/** The `Ref` the engine sent as `placeholder`, rebuilt exactly. */
+function refFromPlaceholder(placeholder: RefPlaceholder): Ref {
+    const path = placeholder.path.map((e): PathElement => {
+        switch (e.kind) {
+            case PathElementKind.KeyOrIndex:
+                return { kind: PathElementKind.KeyOrIndex, key: e.key as string };
+            case PathElementKind.Type:
+                return { kind: PathElementKind.Type, index: e.index as number };
+            case PathElementKind.Root:
+                return { kind: PathElementKind.Root };
+            default:
+                return { kind: PathElementKind.Object };
         }
-
-        if (fragment !== "") {
-            for (const key of fragment.split("/")) path.push({ kind: PathElementKind.KeyOrIndex, key });
-        }
-
-        const rebuilt = new Ref(address === "" ? undefined : Ref.parse(address).addressURI, path);
-        if (rebuilt.toString() === text) return rebuilt;
-    } catch {
-        // Not a ref.
-    }
-
-    return undefined;
+    });
+    const ref = new Ref(undefined, path);
+    // The address is already normalized; `new Ref` would normalize it once
+    // more, which decodes percent escapes a second time.
+    if (placeholder.address !== undefined) ref.addressURI = new URI(placeholder.address);
+    return ref;
 }
 
-/** Turns the engine's `Ref` placeholders back into `Ref`s. */
+/** Turns the engine's `Ref` (and other `toString()`) placeholders back into objects. */
 function rehydrateProperty(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(rehydrateProperty);
     if (value === null || typeof value !== "object") return value;
+    const ref = (value as any).__qtRef;
+    if (ref !== undefined) return refFromPlaceholder(ref);
     const display = (value as any).__qtDisplay;
     if (display !== undefined) {
         const text: string = display.display;
-        return refFromDisplay(text) ?? { toString: () => text };
+        return { toString: () => text };
     }
 
     const result: Record<string, unknown> = {};
