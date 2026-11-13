@@ -548,3 +548,20 @@ fn utf8_split_between_stream_chunks_decodes_like_node() {
         "Error: Syntax error in input JSON cut: Parser has expected a string value.\n"
     );
 }
+
+/// A read that fails after the sample was opened (a symbolic link to a
+/// directory) is Node's stream error, `read` without a path. (The reference
+/// crashes with it as an unhandled `error` event; see docs/PARITY.md.)
+#[cfg(unix)]
+#[test]
+fn a_failed_read_is_node_s_read_error() {
+    let dir = work_dir("read-error");
+    fs::create_dir(dir.join("adir")).unwrap();
+    std::os::unix::fs::symlink("adir", dir.join("alink")).unwrap();
+    let output = quicktype_in(&dir, &["--lang", "ts", "alink"], None);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        stderr(&output),
+        "Error: EISDIR: illegal operation on a directory, read.\n"
+    );
+}

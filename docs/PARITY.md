@@ -319,7 +319,8 @@ the others name the fix they need.
   `messages::JsException`s.)
 - **Node I/O corner cases.** `StdIo` reads a directory as empty text (as
   Node does on macOS, where the corpus was recorded; Linux Node reports
-  `EISDIR`), reports unreadable files (`EACCES`) as a `MiscReadError`
+  `EISDIR`; JSON samples, which are read as streams, fail with Node's
+  stream error `EISDIR: illegal operation on a directory, read` instead), reports unreadable files (`EACCES`) as a `MiscReadError`
   where Node crashes with an unhandled stream error, and resolves symbolic
   links with POSIX path rules on every platform.
 - **Stack depth.** Where Node's stack overflows, the JSON Schema input

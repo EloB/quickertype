@@ -513,7 +513,7 @@ mod std_io {
     /// A reader whose errors wrap the [`IoError`] Node would report.
     struct NodeReader<R> {
         inner: R,
-        error: Box<dyn Fn(&std::io::Error) -> IoError>,
+        error: fn(&std::io::Error) -> IoError,
     }
 
     impl<R: Read> Read for NodeReader<R> {
@@ -532,28 +532,28 @@ mod std_io {
         /// Opens the source to be read chunk by chunk (as a
         /// [`JsonSample::Reader`](crate::JsonSample::Reader)) rather than
         /// whole ([`read`](Self::read) with [`StdIo`]): a URL's text from
-        /// memory, standard input, or the file. Opening and reading fail
-        /// with the errors [`StdIo`]'s `read_file` and `read_stdin` report
-        /// (a read error wraps its [`IoError`]); a directory reads as empty
-        /// text, as Node reads it on macOS.
+        /// memory, standard input, or the file, as Node's `ReadStream`s do.
+        /// Opening a file fails with Node's `open` error (`ENOENT: …, open
+        /// 'x'`); a read that fails after that is Node's `read` error,
+        /// without a path (`EISDIR: illegal operation on a directory,
+        /// read` for a symbolic link to a directory), wrapped in the
+        /// reader's [`std::io::Error`].
         pub fn open_std(self) -> Result<Box<dyn Read>, IoError> {
+            let read_error: fn(&std::io::Error) -> IoError = |e| IoError::from_fs(e, "read", None);
             match self {
                 super::Readable::Text(text) => {
                     Ok(Box::new(std::io::Cursor::new(text.into_bytes())))
                 }
                 super::Readable::Stdin => Ok(Box::new(NodeReader {
                     inner: std::io::stdin(),
-                    error: Box::new(|e| IoError::from_fs(e, "read", None)),
+                    error: read_error,
                 })),
                 super::Readable::File(path) => {
-                    if std::fs::metadata(&path).is_ok_and(|m| m.is_dir()) {
-                        return Ok(Box::new(std::io::empty()));
-                    }
                     let file =
                         std::fs::File::open(&path).map_err(|e| node_error(&e, "open", &path))?;
                     Ok(Box::new(NodeReader {
                         inner: file,
-                        error: Box::new(move |e| node_error(e, "open", &path)),
+                        error: read_error,
                     }))
                 }
             }
