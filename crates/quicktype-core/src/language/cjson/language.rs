@@ -136,8 +136,6 @@ pub const C_JSON_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CJsonTargetLanguage;
 
-// TODO(renderer): port the hooks CJSONTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for CJsonTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &C_JSON_LANGUAGE_CONFIG
@@ -179,4 +177,23 @@ impl TargetLanguage for CJsonTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// TS `makeRenderer` + `render`.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let options = super::cjson_renderer::CJsonOptions::parse(renderer_options)?;
+        let renderer = super::cjson_renderer::CJsonRenderer::new(self, render_context, options);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }
