@@ -95,8 +95,7 @@ pub const RUST_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RustTargetLanguage;
 
-// TODO(renderer): port the hooks RustTargetLanguage overrides:
-// - makeRenderer
+// TODO(inference): port the hook RustTargetLanguage overrides:
 // - getSupportedIntegerRange: INT32_RANGE with `integer-type force-i32`, else INT64_RANGE
 impl TargetLanguage for RustTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
