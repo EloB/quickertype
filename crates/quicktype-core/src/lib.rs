@@ -165,4 +165,4 @@ pub use crate::messages::{
 pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
 pub use crate::support::comments::{Comment, CommentOptions};
 pub use crate::support::parse_json::parse_json;
-pub use crate::support::support::{ConsoleSink, console_log, set_console_sink};
+pub use crate::support::support::{ConsoleSink, capture_console, console_log, set_console_sink};
