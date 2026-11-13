@@ -97,7 +97,7 @@ fn make_enum_info(
     t: TypeRef,
 ) -> Result<Option<EnumInfo>> {
     let string_types = string_types_for_type(graph, t)?;
-    let Some(cases) = string_types.mapped_cases(string_type_mapping) else {
+    let (Some(cases), _) = string_types.apply_string_type_mapping(string_type_mapping) else {
         return Ok(None);
     };
     if cases.is_empty() {
@@ -208,8 +208,8 @@ fn replace_string(
     let attributes = graph
         .attributes(t)?
         .filter(|a| a.kind() != TypeAttributeKind::StringTypes);
-    // `applyStringTypeMapping`, without copying the cases.
-    let Some(cases) = string_types.mapped_cases(string_type_mapping) else {
+    let (cases, transformations) = string_types.apply_string_type_mapping(string_type_mapping);
+    let Some(cases) = cases else {
         return builder.get_string_type(
             attributes,
             Some(StringTypes::unrestricted()),
@@ -251,7 +251,6 @@ fn replace_string(
         }
     }
 
-    let transformations = &string_types.mapped_transformations(string_type_mapping);
     // FIXME (TypeScript): probably wrong, or at least overly conservative;
     // this is for identity attributes (like URI attributes) that would keep
     // two string types apart.
@@ -260,7 +259,7 @@ fn replace_string(
         return builder.get_primitive_type(kind, attributes, Some(forwarding_ref));
     }
 
-    for &k in transformations {
+    for &k in &transformations {
         types.push(builder.get_primitive_type(k, TypeAttributes::new(), None)?);
     }
     assert(!types.is_empty(), "We got an empty string type")?;

@@ -147,48 +147,25 @@ impl StringTypes {
         }
     }
 
-    /// `applyStringTypeMapping(mapping)`: unrestricted if any transformation
-    /// maps to `string`.
-    pub fn apply_string_type_mapping(&self, mapping: &StringTypeMapping) -> StringTypes {
-        StringTypes {
-            cases: self.mapped_cases(mapping).cloned(),
-            transformations: self.mapped_transformations(mapping),
-        }
-    }
-
-    /// Whether the mapping makes restricted string types unrestricted (a
-    /// transformation maps to `string`).
-    fn mapping_unrestricts(&self, mapping: &StringTypeMapping) -> bool {
-        self.is_restricted()
-            && self
-                .transformations
-                .iter()
-                .any(|&kind| mapping.get(kind) == TypeKind::String)
-    }
-
-    /// The `cases` of [`apply_string_type_mapping`](Self::apply_string_type_mapping),
-    /// without copying them.
-    pub fn mapped_cases(&self, mapping: &StringTypeMapping) -> Option<&IndexMap<String, u64>> {
-        if self.mapping_unrestricts(mapping) {
-            None
-        } else {
-            self.cases.as_ref()
-        }
-    }
-
-    /// The `transformations` of
-    /// [`apply_string_type_mapping`](Self::apply_string_type_mapping).
-    pub fn mapped_transformations(&self, mapping: &StringTypeMapping) -> IndexSet<TypeKind> {
+    /// `applyStringTypeMapping(mapping)`, with the cases borrowed instead of
+    /// copied: the mapped string types' cases (`None`: unrestricted, also
+    /// if any transformation maps to `string`) and transformations.
+    pub fn apply_string_type_mapping(
+        &self,
+        mapping: &StringTypeMapping,
+    ) -> (Option<&IndexMap<String, u64>>, IndexSet<TypeKind>) {
         if !self.is_restricted() {
-            self.transformations.clone()
-        } else if self.mapping_unrestricts(mapping) {
-            IndexSet::new()
-        } else {
-            self.transformations
-                .iter()
-                .map(|&kind| mapping.get(kind))
-                .collect()
+            return (None, self.transformations.clone());
         }
+        let mut kinds = IndexSet::new();
+        for &kind in &self.transformations {
+            let mapped = mapping.get(kind);
+            if mapped == TypeKind::String {
+                return (None, IndexSet::new());
+            }
+            kinds.insert(mapped);
+        }
+        (self.cases.as_ref(), kinds)
     }
 }
 
@@ -367,9 +344,11 @@ mod tests {
         let mut st = StringTypes::from_case("2020-01-01", 1);
         st.transformations.insert(TypeKind::Date);
         let mut m = StringTypeMapping::new();
-        assert!(!st.apply_string_type_mapping(&m).is_restricted());
+        assert_eq!(st.apply_string_type_mapping(&m), (None, IndexSet::new()));
         m.set(TypeKind::Date, TypeKind::Date);
-        assert!(st.apply_string_type_mapping(&m).is_restricted());
+        let (cases, transformations) = st.apply_string_type_mapping(&m);
+        assert_eq!(cases, st.cases.as_ref());
+        assert_eq!(transformations, IndexSet::from([TypeKind::Date]));
     }
 
     struct NoDates;

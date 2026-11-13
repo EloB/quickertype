@@ -155,6 +155,10 @@ impl Namer {
     /// get the namer's prefixes, `"<prefix>_<first proposal>"`, one after
     /// the other across the whole group, then numeric suffixes
     /// `"<first proposal>_<n>"` with one counter for the group.
+    ///
+    /// This is TS `Namer.assignNames`, kept as part of the public API; the
+    /// naming algorithm itself ([`assign_names`](crate::naming::assign_names)) calls
+    /// `assign_names_avoiding`, which shares the forbidden set across groups.
     pub fn assign_names(
         &self,
         naming: &Naming,
