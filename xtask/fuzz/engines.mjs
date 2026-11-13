@@ -177,9 +177,11 @@ export function cliInvocation(kase) {
                 args.push(sampleFile(0, j));
             });
         } else {
-            // One file per top-level in a directory; the file name is the top-level name.
+            // One file per top-level in a directory, named after it; a
+            // top-level with several samples is a subdirectory of them.
             for (const tl of kase.topLevels) {
-                files.set(`in/${tl.name}.json`, tl.samples[0]);
+                if (tl.samples.length === 1) files.set(`in/${tl.name}.json`, tl.samples[0]);
+                else tl.samples.forEach((s, j) => files.set(`in/${tl.name}/s${j}.json`, s));
             }
 
             args.push("in");
@@ -223,7 +225,6 @@ export function cliInvocation(kase) {
 export function cliCompatible(kase) {
     if (kase.src === "schema" && kase.schemas.length > 1) return false;
     if (kase.src === "json" && kase.topLevels.length > 1) {
-        if (kase.topLevels.some((tl) => tl.samples.length !== 1)) return false;
         const names = kase.topLevels.map((tl) => tl.name);
         if (names.some((n) => n === "" || n.includes("/") || n.startsWith(".") || n.length > 100)) return false;
         if (new Set(names.map((n) => n.toLowerCase())).size !== names.length) return false;
@@ -283,7 +284,10 @@ export async function runCli(command, invocation, timeoutMs = 120_000) {
     const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "qt-fuzz-cli-")));
     try {
         for (const d of ["in", ...invocation.dirs]) fs.mkdirSync(path.join(dir, d), { recursive: true });
-        for (const [file, text] of invocation.files) fs.writeFileSync(path.join(dir, file), text);
+        for (const [file, text] of invocation.files) {
+            fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+            fs.writeFileSync(path.join(dir, file), text);
+        }
         const before = snapshot(dir);
         const r = await runProcess(command[0], [...command.slice(1), ...invocation.args], dir, timeoutMs);
         const after = snapshot(dir);
