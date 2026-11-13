@@ -4,6 +4,8 @@
 //! `NSObject` model classes with KVC-based JSON conversion, boxed enums,
 //! and C functions that marshal the top-levels.
 
+use std::collections::HashMap;
+
 use crate::attributes::constraints::{
     min_max_items_for_type, min_max_length_for_type, min_max_value_for_type, pattern_for_type,
 };
@@ -12,7 +14,7 @@ use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::naming::Namer;
 use crate::renderer_options::RendererOptions;
 use crate::support::comments::CommentOptions;
-use crate::support::recursion::guard;
+use crate::support::recursion::{guard, stack_overflow};
 use crate::support::strings::{camel_case, fast_is_upper_case, repeat_string, string_escape};
 use crate::support::support::{assert, defined};
 use crate::target_language::TargetLanguage;
@@ -1505,24 +1507,45 @@ impl<'a> ObjectiveCRenderer<'a> {
         self.finish_current_file()
     }
 
-    /// The `needsMap(t)` function of the `needsMap` getter.
-    fn type_needs_map(&self, t: TypeRef) -> Result<bool> {
-        // Endless on a cycle of classes (V8 overflows its stack).
+    /// The `needsMap(t)` function of the `needsMap` getter, memoized in
+    /// `memo`: `Some(result)` once decided, `None` while `t`'s properties
+    /// are being visited.
+    ///
+    /// TypeScript recomputes every type each time, which gives the same
+    /// results (`needsMap` is deterministic), except that a type reached
+    /// again from its own properties recurses through the same properties
+    /// forever until V8 overflows its stack; that is reported here as soon
+    /// as the type is re-entered.
+    fn type_needs_map(
+        &self,
+        t: TypeRef,
+        memo: &mut HashMap<TypeRef, Option<bool>>,
+    ) -> Result<bool> {
         guard(|| {
-            let graph = self.type_graph();
-            let ty = graph.type_at(t)?;
-            match ty.kind() {
-                TypeKind::Map | TypeKind::Array => Ok(true),
+            match memo.get(&t) {
+                Some(Some(result)) => return Ok(*result),
+                // Endless on a cycle of classes (V8 overflows its stack).
+                Some(None) => return Err(stack_overflow()),
+                None => {}
+            }
+            let ty = self.type_graph().type_at(t)?;
+            let result = match ty.kind() {
+                TypeKind::Map | TypeKind::Array => true,
                 TypeKind::Class => {
+                    memo.insert(t, None);
+                    let mut result = false;
                     for p in ty.properties()?.values() {
-                        if self.type_needs_map(p.type_ref)? {
-                            return Ok(true);
+                        if self.type_needs_map(p.type_ref, memo)? {
+                            result = true;
+                            break;
                         }
                     }
-                    Ok(false)
+                    result
                 }
-                _ => Ok(false),
-            }
+                _ => false,
+            };
+            memo.insert(t, Some(result));
+            Ok(result)
         })
     }
 
@@ -1530,8 +1553,9 @@ impl<'a> ObjectiveCRenderer<'a> {
     /// that needs) a map or an array.
     fn needs_map(&self) -> Result<bool> {
         // TODO this isn't complete (needs union support, for example)
+        let mut memo = HashMap::new();
         for t in self.type_graph().all_types_unordered() {
-            if self.type_needs_map(t)? {
+            if self.type_needs_map(t, &mut memo)? {
                 return Ok(true);
             }
         }

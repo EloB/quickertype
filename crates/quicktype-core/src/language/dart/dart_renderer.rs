@@ -96,8 +96,6 @@ pub struct DartRenderer<'a> {
     property_naming_function: Namer,
     /// `enumCaseNamingFunction` (a module-level singleton in TypeScript).
     enum_case_naming_function: Namer,
-    /// `_gettersAndSettersForPropertyName`.
-    getters_and_setters_for_property_name: HashMap<Name, (Name, Name)>,
     /// `_needEnumValues`.
     need_enum_values: bool,
     /// `classCounter`.
@@ -131,7 +129,6 @@ impl<'a> DartRenderer<'a> {
             type_naming_function: type_naming_function(),
             property_naming_function: property_naming_function(),
             enum_case_naming_function: enum_case_naming_function(),
-            getters_and_setters_for_property_name: HashMap::new(),
             need_enum_values: false,
             class_counter: 0,
             class_property_counter: 0,
@@ -425,11 +422,12 @@ impl<'a> DartRenderer<'a> {
     // If the first time is the unionType type, after nullableFromUnion conversion,
     // the isNullable property will become false, which is obviously wrong,
     // so add isNullable property
-    /// `fromDynamicExpression(isNullable, t, ...dynamic)`.
+    /// `fromDynamicExpression(isNullable, t, ...dynamic)` (`nullable` is
+    /// TS `isNullable`).
     #[allow(clippy::wrong_self_convention)] // named after TypeScript's `fromDynamicExpression`
     fn from_dynamic_expression(
         &self,
-        is_nullable: bool,
+        nullable: bool,
         t: TypeRef,
         dynamic: Source,
     ) -> Result<Source> {
@@ -437,7 +435,7 @@ impl<'a> DartRenderer<'a> {
         guard(|| {
             let graph = self.type_graph();
             let null_check = |value: &Source| -> Source {
-                if is_nullable {
+                if nullable {
                     sl![value.clone(), " == null ? null : "]
                 } else {
                     sl![]
@@ -478,7 +476,7 @@ impl<'a> DartRenderer<'a> {
                     value.clone(),
                     ")"
                 ];
-                Ok(if is_nullable {
+                Ok(if nullable {
                     sl![value, " == null ? null : ", checked]
                 } else {
                     checked
@@ -511,11 +509,11 @@ impl<'a> DartRenderer<'a> {
                 TypeKind::Array => {
                     let items = ty.items()?;
                     self.map_list(
-                        is_nullable || is_nullable_type(graph, t)?,
+                        nullable || is_nullable(graph, t)?,
                         self.dart_type(items, false, false)?,
                         dynamic,
                         self.from_dynamic_expression(
-                            is_nullable_type(graph, items)?,
+                            is_nullable(graph, items)?,
                             items,
                             "x".into(),
                         )?,
@@ -523,16 +521,16 @@ impl<'a> DartRenderer<'a> {
                     )?
                 }
                 TypeKind::Class => {
-                    self.map_class(is_nullable || is_nullable_type(graph, t)?, t, dynamic)?
+                    self.map_class(nullable || is_nullable(graph, t)?, t, dynamic)?
                 }
                 TypeKind::Map => {
                     let values = ty.map_values()?;
                     self.map_map(
-                        is_nullable_type(graph, t)? || is_nullable,
+                        is_nullable(graph, t)? || nullable,
                         self.dart_type(values, false, false)?,
                         dynamic,
                         self.from_dynamic_expression(
-                            is_nullable_type(graph, values)?,
+                            is_nullable(graph, values)?,
                             values,
                             "v".into(),
                         )?,
@@ -540,7 +538,7 @@ impl<'a> DartRenderer<'a> {
                 }
                 TypeKind::Enum => {
                     let value = sl![self.enum_values_name(t)?, ".map[", dynamic.clone(), "]!"];
-                    if is_nullable && !self.options.required_properties {
+                    if nullable && !self.options.required_properties {
                         sl![dynamic, " == null ? null : ", value]
                     } else {
                         value
@@ -549,7 +547,7 @@ impl<'a> DartRenderer<'a> {
                 TypeKind::Union => match nullable_from_union(graph, t)? {
                     None => dynamic,
                     Some(maybe_nullable) => self.from_dynamic_expression(
-                        is_nullable_type(graph, t)?,
+                        is_nullable(graph, t)?,
                         maybe_nullable,
                         dynamic,
                     )?,
@@ -562,9 +560,7 @@ impl<'a> DartRenderer<'a> {
                     ")"
                 ],
                 TypeKind::DateTime | TypeKind::Date => {
-                    if (is_nullable_type(graph, t)? || is_nullable)
-                        && !self.options.required_properties
-                    {
+                    if (is_nullable(graph, t)? || nullable) && !self.options.required_properties {
                         sl![
                             dynamic.clone(),
                             " == null ? null : ",
@@ -586,20 +582,15 @@ impl<'a> DartRenderer<'a> {
     // If the first time is the unionType type, after nullableFromUnion conversion,
     // the isNullable property will become false, which is obviously wrong,
     // so add isNullable property
-    /// `toDynamicExpression(isNullable, t, ...dynamic)`.
-    fn to_dynamic_expression(
-        &self,
-        is_nullable: bool,
-        t: TypeRef,
-        dynamic: Source,
-    ) -> Result<Source> {
+    /// `toDynamicExpression(isNullable, t, ...dynamic)` (`nullable` is TS
+    /// `isNullable`).
+    fn to_dynamic_expression(&self, nullable: bool, t: TypeRef, dynamic: Source) -> Result<Source> {
         // Endless on a cycle through a nullable union (V8 overflows its stack).
         guard(|| {
             let graph = self.type_graph();
             let ty = graph.type_at(t)?;
             let nullable_unless_required = |t: TypeRef| -> Result<bool> {
-                Ok(!self.options.required_properties
-                    && (is_nullable_type(graph, t)? || is_nullable))
+                Ok(!self.options.required_properties && (is_nullable(graph, t)? || nullable))
             };
             Ok(match ty.kind() {
                 TypeKind::Any
@@ -611,14 +602,10 @@ impl<'a> DartRenderer<'a> {
                 TypeKind::Array => {
                     let items = ty.items()?;
                     self.map_list(
-                        is_nullable_type(graph, t)? || is_nullable,
+                        is_nullable(graph, t)? || nullable,
                         "dynamic".into(),
                         dynamic,
-                        self.to_dynamic_expression(
-                            is_nullable_type(graph, items)?,
-                            items,
-                            "x".into(),
-                        )?,
+                        self.to_dynamic_expression(is_nullable(graph, items)?, items, "x".into())?,
                         None,
                     )?
                 }
@@ -632,11 +619,11 @@ impl<'a> DartRenderer<'a> {
                 TypeKind::Map => {
                     let values = ty.map_values()?;
                     self.map_map(
-                        is_nullable_type(graph, t)? || is_nullable,
+                        is_nullable(graph, t)? || nullable,
                         "dynamic".into(),
                         dynamic,
                         self.to_dynamic_expression(
-                            is_nullable_type(graph, values)?,
+                            is_nullable(graph, values)?,
                             values,
                             "v".into(),
                         )?,
@@ -645,11 +632,9 @@ impl<'a> DartRenderer<'a> {
                 TypeKind::Enum => sl![self.enum_values_name(t)?, ".reverse[", dynamic, "]"],
                 TypeKind::Union => match nullable_from_union(graph, t)? {
                     None => dynamic,
-                    Some(maybe_nullable) => self.to_dynamic_expression(
-                        is_nullable_type(graph, t)?,
-                        maybe_nullable,
-                        dynamic,
-                    )?,
+                    Some(maybe_nullable) => {
+                        self.to_dynamic_expression(is_nullable(graph, t)?, maybe_nullable, dynamic)?
+                    }
                 },
                 TypeKind::DateTime => {
                     if nullable_unless_required(t)? {
@@ -1091,11 +1076,6 @@ fn js_number(n: f64) -> String {
     quicktype_js_compat::number::to_string(n)
 }
 
-/// `t.isNullable` (named apart from the `isNullable` parameters).
-fn is_nullable_type(graph: &crate::ty::type_graph::TypeGraph, t: TypeRef) -> Result<bool> {
-    is_nullable(graph, t)
-}
-
 /// The comma after an enum case: `","` for the first and middle cases,
 /// TypeScript's `[]` (nothing) otherwise.
 fn enum_case_comma(position: ForEachPosition) -> Source {
@@ -1185,10 +1165,10 @@ impl<'a> ConvenienceRenderer<'a> for DartRenderer<'a> {
         _json_name: &str,
         name: Name,
     ) -> Result<Vec<Name>> {
-        let getter_and_setter_names = self.make_names_for_property_getter_and_setter(name);
-        self.getters_and_setters_for_property_name
-            .insert(name, getter_and_setter_names);
-        Ok(vec![getter_and_setter_names.0, getter_and_setter_names.1])
+        // TS also stores the names in `_gettersAndSettersForPropertyName`,
+        // which nothing reads.
+        let (getter_name, setter_name) = self.make_names_for_property_getter_and_setter(name);
+        Ok(vec![getter_name, setter_name])
     }
 
     fn make_named_type_dependency_names(&mut self, t: TypeRef, name: Name) -> Result<Vec<Name>> {
