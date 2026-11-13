@@ -319,28 +319,28 @@ pub fn normalize(path: &str) -> String {
     if is_sep(code) {
         is_absolute = true;
         if is_sep(b[1]) {
-            if let Some((server_end, share_start, j)) = unc_root(b) {
-                if j == len || j != share_start {
-                    let first_part = &path[2..server_end];
-                    if first_part == "." || first_part == "?" {
-                        // A device root (`\\.\PHYSICALDRIVE0`, `\\?\C:\x`).
-                        device = Some(format!("\\\\{first_part}"));
-                        root_end = 4;
-                        let possible = match path.find(':') {
-                            Some(colon) if colon + 1 >= 4 => &path[4..colon + 1],
-                            _ => "",
-                        };
-                        if is_reserved_name(possible, possible.len().checked_sub(1)) {
-                            device = Some(format!("\\\\?\\{possible}"));
-                            root_end = 4 + possible.len();
-                        }
-                    } else if j == len {
-                        // A UNC root only.
-                        return format!("\\\\{first_part}\\{}\\", &path[share_start..]);
-                    } else {
-                        device = Some(format!("\\\\{first_part}\\{}", &path[share_start..j]));
-                        root_end = j;
+            if let Some((server_end, share_start, j)) = unc_root(b)
+                && (j == len || j != share_start)
+            {
+                let first_part = &path[2..server_end];
+                if first_part == "." || first_part == "?" {
+                    // A device root (`\\.\PHYSICALDRIVE0`, `\\?\C:\x`).
+                    device = Some(format!("\\\\{first_part}"));
+                    root_end = 4;
+                    let possible = match path.find(':') {
+                        Some(colon) if colon + 1 >= 4 => &path[4..colon + 1],
+                        _ => "",
+                    };
+                    if is_reserved_name(possible, possible.len().checked_sub(1)) {
+                        device = Some(format!("\\\\?\\{possible}"));
+                        root_end = 4 + possible.len();
                     }
+                } else if j == len {
+                    // A UNC root only.
+                    return format!("\\\\{first_part}\\{}\\", &path[share_start..]);
+                } else {
+                    device = Some(format!("\\\\{first_part}\\{}", &path[share_start..j]));
+                    root_end = j;
                 }
             }
         } else {
