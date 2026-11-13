@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "err": {
+      "items": {
+        "$ref": "#/$defs/FtthChildren"
+      }
+    }
+  },
+  "$defs": {
+    "FtthChildren": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GammaMeta"
+      }
+    },
+    "GammaMeta": {
+      "$ref": "#/$defs/FtthChildren"
+    }
+  }
+}

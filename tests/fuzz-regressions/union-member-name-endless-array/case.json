@@ -1,0 +1,34 @@
+{
+  "description": "An array type that contains itself (T = T[]) named as a union member: TypeScript overflows the stack in typeNameForUnionMember; the port must fail the same way instead of overflowing the native stack",
+  "seed": 10435,
+  "foundIn": "api",
+  "case": {
+    "seed": 10435,
+    "lang": "typescript-effect-schema",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "TopLevel",
+        "text": "{\n  \"properties\": {\n    \"err\": {\n      \"items\": {\n        \"$ref\": \"#/$defs/FtthChildren\"\n      }\n    }\n  },\n  \"$defs\": {\n    \"FtthChildren\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"$ref\": \"#/$defs/GammaMeta\"\n      }\n    },\n    \"GammaMeta\": {\n      \"$ref\": \"#/$defs/FtthChildren\"\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "cli": {}
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "typescript-effect-schema",
+      "--src-lang",
+      "schema",
+      "--top-level",
+      "TopLevel",
+      "in/schema.json"
+    ],
+    "dirs": [],
+    "exit": 1,
+    "files": []
+  }
+}

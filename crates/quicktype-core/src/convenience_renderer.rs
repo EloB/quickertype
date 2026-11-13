@@ -57,6 +57,7 @@ use crate::support::collection_utils::{
 };
 use crate::support::comments::{Comment, CommentOptions};
 use crate::support::fast_hash::HashMap;
+use crate::support::recursion::guard;
 use crate::support::strings::trim_end;
 use crate::support::support::{assert, defined, non_null, panic};
 use crate::target_language::TargetLanguage;
@@ -1054,6 +1055,16 @@ pub mod defaults {
     }
 
     fn type_name_for_union_member<'a, R: ConvenienceRenderer<'a>>(
+        r: &R,
+        t: TypeRef,
+        pieces: &mut Vec<Piece>,
+    ) -> Result<()> {
+        // Endless for an array or map that contains itself (`T = T[]`),
+        // where TypeScript overflows the stack.
+        guard(|| type_name_for_union_member_unguarded(r, t, pieces))
+    }
+
+    fn type_name_for_union_member_unguarded<'a, R: ConvenienceRenderer<'a>>(
         r: &R,
         t: TypeRef,
         pieces: &mut Vec<Piece>,
