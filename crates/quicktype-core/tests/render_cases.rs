@@ -18,6 +18,24 @@ use std::path::Path;
 use render_support::{build_graph, first_difference, gather_and_render};
 use serde_json::Value;
 
+/// The CLI's stdout for a multi-file result (`writeOutput` without `--out`):
+/// every file under a `// <name>` header, separated by a blank line.
+fn join_stdout(result: &quicktype_core::target_language::MultiFileRenderResult) -> String {
+    let several = result.len() > 1;
+    result
+        .iter()
+        .map(|(name, serialized)| {
+            let text = serialized.lines.join("\n");
+            if several {
+                format!("// {name}\n\n{text}")
+            } else {
+                text
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     let mut graph = build_graph(&fixture["graph"]).map_err(|e| format!("graph: {e}"))?;
     let result = gather_and_render(&mut graph, &fixture["gather"], &fixture["render"])
@@ -28,16 +46,35 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
     if names != expected_names {
         return Err(format!("files {names:?}, expected {expected_names:?}"));
     }
+    // Several files printed to stdout (no `--out`): compare them joined the
+    // way the CLI's `writeOutput` prints them.
+    if let Some(stdout) = fixture["stdout"].as_str() {
+        let expected = fs::read_to_string(golden_dir.join(stdout))
+            .map_err(|e| format!("cannot read golden {stdout}: {e}"))?;
+        let actual = join_stdout(&result);
+        if actual != expected {
+            return Err(format!(
+                "stdout differs at {}",
+                first_difference(&expected, &actual)
+            ));
+        }
+    }
     for file in files {
         let name = file["name"].as_str().unwrap_or_default();
-        let expected = match file["golden"].as_str() {
-            Some(golden) => fs::read_to_string(golden_dir.join(golden))
-                .map_err(|e| format!("cannot read golden {golden}: {e}"))?,
-            None => file["text"].as_str().unwrap_or_default().to_owned(),
-        };
         let serialized = &result[name];
+        let expected = match (file["golden"].as_str(), file["text"].as_str()) {
+            (Some(golden), _) => Some(
+                fs::read_to_string(golden_dir.join(golden))
+                    .map_err(|e| format!("cannot read golden {golden}: {e}"))?,
+            ),
+            (None, Some(text)) => Some(text.to_owned()),
+            (None, None) if fixture["stdout"].is_string() => None,
+            (None, None) => return Err(format!("{name}: no golden or text")),
+        };
         let actual = serialized.lines.join("\n");
-        if actual != expected {
+        if let Some(expected) = expected
+            && actual != expected
+        {
             return Err(format!(
                 "{name} differs at {}",
                 first_difference(&expected, &actual)

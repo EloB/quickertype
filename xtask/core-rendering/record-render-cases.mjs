@@ -24,7 +24,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
@@ -258,6 +258,15 @@ function caseFileName(id) {
     return `${id.replace(/[/\\]/g, "__")}.json`;
 }
 
+// What the CLI's writeOutput prints for a render without --out: the files
+// separated by a blank line, each under a `// <name>` header when there are
+// several (multi-file languages such as Java).
+function joinStdout(files) {
+    return files
+        .map((f) => (files.length > 1 ? `// ${f.name}\n\n${f.text}` : f.text))
+        .join("\n");
+}
+
 async function recordGolden(id) {
     const c = JSON.parse(readFileSync(join(goldenDir, id, "case.json"), "utf8"));
     if (c.steps.length !== 1) return "skip: several steps";
@@ -268,6 +277,8 @@ async function recordGolden(id) {
     if (!languages.includes(lang)) return undefined;
     const args = step.args.map((a) => a.replaceAll("{INPUTS}", inputsDir));
     const work = mkdtempSync(join(tmpdir(), "qt-render-"));
+    // Directories the case expects to exist (Java writes into src/main/java/...).
+    for (const d of c.dirs ?? []) mkdirSync(join(work, d), { recursive: true });
     captured = {};
     drawnNames = new Set();
     let stdout;
@@ -279,28 +290,40 @@ async function recordGolden(id) {
     const rec = captured;
     captured = undefined;
     if (rec.graph === undefined || rec.render === undefined) return "skip: did not render";
+    // The CLI writes every file next to --out (Java: src/main/java/io/quicktype/).
+    const outIndex = step.args.indexOf("--out");
+    const outDirRel = outIndex < 0 ? "." : posix.dirname(step.args[outIndex + 1]);
+    const goldenFile = (f) => posix.join(outDirRel, f.name);
     // Check the intercepted render against the golden recording.
     if (step.files.length > 0) {
         for (const f of rec.files) {
-            const golden = readFileSync(join(goldenDir, id, "step0", f.name), "utf8");
+            const golden = readFileSync(join(goldenDir, id, "step0", goldenFile(f)), "utf8");
             if (golden !== f.text) throw new Error(`${id}: ${f.name} differs from golden`);
         }
         if (step.files.length !== rec.files.length) throw new Error(`${id}: file count differs`);
     } else {
         const golden = readFileSync(join(goldenDir, id, "step0.stdout"), "utf8");
-        if (rec.files.length !== 1 || golden !== stdout || stdout !== rec.files[0].text) {
+        if (rec.files.length === 0 || golden !== stdout || stdout !== joinStdout(rec.files)) {
             throw new Error(`${id}: stdout differs from golden`);
         }
     }
     const quiet = step.args.includes("--quiet");
+    // Several files printed to stdout: the fixture names the stdout golden
+    // once (`stdout`) and the test joins the rendered files like the CLI.
+    const multiFileStdout = step.files.length === 0 && rec.files.length > 1;
     const fixture = {
         id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
+        stdout: multiFileStdout ? `${id}/step0.stdout` : undefined,
         files: rec.files.map((f) => ({
             name: f.name,
-            golden: step.files.length > 0 ? `${id}/step0/${f.name}` : `${id}/step0.stdout`,
+            golden: multiFileStdout
+                ? undefined
+                : step.files.length > 0
+                  ? `${id}/step0/${goldenFile(f)}`
+                  : `${id}/step0.stdout`,
             annotations: quiet ? undefined : f.annotations,
         })),
     };

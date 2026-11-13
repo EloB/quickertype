@@ -30,6 +30,12 @@ and compares every file and, for cases without `--quiet`, the issue
 annotations the CLI prints to stderr. A few cases from quicktype's unit tests
 (API calls) carry their expected output inline.
 
+Multi-file languages (Java) write every file next to `--out`, into the
+case's `dirs`, which the recorder creates first. When such a render goes to
+stdout, the CLI prints the files under `// <name>` headers; the fixture then
+names the stdout golden once (`stdout`) and the test joins the rendered
+files the same way.
+
 ## Scenarios
 
 A scenario (`scenarios/*.txt`) lists inputs (`input json|schema NAME <json>`),
