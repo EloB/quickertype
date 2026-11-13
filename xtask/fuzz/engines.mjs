@@ -184,12 +184,24 @@ export function cliInvocation(kase) {
 
             args.push("in");
         }
+    } else if (kase.src === "graphql") {
+        args.push("--src-lang", "graphql", "--graphql-schema", "in/schema.gqlschema", "--top-level", kase.graphql.name);
+        files.set("in/schema.gqlschema", kase.graphql.schema);
+        for (const q of kase.graphql.queries) {
+            // Several query files are top-levels named after the file.
+            const file = kase.graphql.queries.length === 1 ? "in/query.graphql" : `in/${q.name}.graphql`;
+            files.set(file, q.query);
+            args.push(file);
+        }
     } else {
         args.push("--src-lang", "schema");
         const [s] = kase.schemas;
-        args.push("--top-level", s.name);
-        files.set("in/schema.json", s.text);
-        args.push("in/schema.json");
+        // The file name matters: without --top-level it names the top-level.
+        // (With a chosen file name, no --top-level: the file names it.)
+        const file = `in/${kase.cli?.schemaFile ?? "schema.json"}`;
+        if (kase.cli?.schemaFile === undefined) args.push("--top-level", s.name);
+        files.set(file, s.text);
+        args.push(file);
     }
 
     for (const [name, value] of Object.entries(kase.rendererOptions)) {

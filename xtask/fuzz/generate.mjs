@@ -26,6 +26,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { genGraphQL } from "./graphql-gen.mjs";
 import { arr, lit, num, obj, str, toText } from "./json-text.mjs";
 import { Rng } from "./rng.mjs";
 
@@ -951,11 +952,12 @@ function genLeadingComments(rng) {
 export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, src } = {}) {
     const rng = new Rng(seed);
     const lang = rng.pick(languages);
-    const kind = src ?? (rng.chance(0.6) ? "json" : "schema");
+    const kind = src ?? rng.weighted([[57, "json"], [38, "schema"], [5, "graphql"]]);
     const kase = { seed, lang, src: kind };
     const inputRng = rng.fork();
     if (kind === "json") kase.topLevels = genJsonTopLevels(inputRng, lang);
-    else kase.schemas = genSchemas(inputRng);
+    else if (kind === "schema") kase.schemas = genSchemas(inputRng);
+    else kase.graphql = { name: inputRng.chance(0.6) ? "TopLevel" : capitalize(compoundName(inputRng)), ...genGraphQL(inputRng, genKey, DESCRIPTIONS) };
     const optionRng = rng.fork();
     kase.rendererOptions = genRendererOptions(optionRng, optionDefinitions[lang] ?? []);
     kase.flags = genFlags(optionRng);
@@ -974,5 +976,8 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
     kase.cli = {};
     if (extraRng.chance(0.3)) kase.cli.out = extraRng.pick(["out/Output", "out/model", "out/My-Types", "out/x.y"]);
     if (extraRng.chance(0.2)) kase.cli.quiet = true;
+    if (kind === "schema" && extraRng.chance(0.15)) {
+        kase.cli.schemaFile = extraRng.pick(["schema", "Ünïcödé", "日本.schema", "x.y.z", "😀.json", "a b.json", "Top-Level", ".json", "ñ.ñ"]);
+    }
     return kase;
 }

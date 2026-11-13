@@ -86,13 +86,17 @@ let done = 0;
 let crashed = 0;
 const begun = Date.now();
 
-function tally(lang, src, mode, status, engine) {
+const notWasm = [];
+function tally(seed, lang, src, mode, status, engine) {
     const key = `${mode}`;
     counts[key] ??= { total: 0, same: 0, diff: 0, timeout: 0, skip: 0, notWasm: 0 };
     const c = counts[key];
     c.total++;
     c[status]++;
-    if ((mode === "api" || mode === "stream") && engine !== "wasm" && status !== "skip" && status !== "timeout") c.notWasm++;
+    if ((mode === "api" || mode === "stream") && engine !== "wasm" && status !== "skip" && status !== "timeout") {
+        c.notWasm++;
+        if (notWasm.length < 500) notWasm.push(`${seed}-${mode}:${engine}`);
+    }
     counts.byLang ??= {};
     counts.byLang[lang] ??= 0;
     counts.byLang[lang]++;
@@ -134,7 +138,7 @@ function startWorker(id) {
             const { result } = m;
             done++;
             for (const r of result.results) {
-                tally(result.lang, result.src, r.mode, r.status, r.engine);
+                tally(result.seed, result.lang, result.src, r.mode, r.status, r.engine);
                 if (r.status === "diff") {
                     diffs.push({ seed: result.seed, lang: result.lang, mode: r.mode, detail: r.detail });
                     console.log(`DIFF seed ${result.seed} ${result.lang} ${result.src} ${r.mode}${r.engine ? ` [${r.engine}]` : ""}: ${String(r.detail).slice(0, 300)}`);
@@ -177,7 +181,7 @@ const commit = (() => {
         return undefined;
     }
 })();
-const summary = { reference, commit, start, last: next - 1, cases: done, crashed, counts, diffs, seconds: (Date.now() - begun) / 1000 };
+const summary = { reference, commit, start, last: next - 1, cases: done, crashed, counts, diffs, notWasm, seconds: (Date.now() - begun) / 1000 };
 fs.writeFileSync(path.join(config.outDir, "summary.json"), `${JSON.stringify(summary, undefined, 1)}\n`);
 console.log(`\n${done} cases, seeds ${start}..${next - 1}, ${diffs.length} divergences (${crashed} worker crashes); summary: ${path.join(config.outDir, "summary.json")}`);
 process.exit(diffs.length > 0 ? 1 : 0);

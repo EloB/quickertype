@@ -32,8 +32,10 @@ export function scenarios() {
         .readdirSync(casesDir)
         .sort()
         .filter((name) => fs.existsSync(path.join(casesDir, name, "case.json")))
-        .map((name) => {
-            const { case: kase } = JSON.parse(fs.readFileSync(path.join(casesDir, name, "case.json"), "utf8"));
+        .map((name) => [name, JSON.parse(fs.readFileSync(path.join(casesDir, name, "case.json"), "utf8")).case])
+        // GraphQL input needs quicktype-graphql-input; those cases run through the CLI only.
+        .filter(([, kase]) => kase.src !== "graphql")
+        .map(([name, kase]) => {
             return {
                 id: `fuzz/${name}`,
                 category: "fuzz",

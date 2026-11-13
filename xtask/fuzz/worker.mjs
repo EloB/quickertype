@@ -17,6 +17,7 @@ const definitions = optionDefinitions(checker.sides.ref.qt);
 /** The modes a seed runs in (seeded, so a seed always runs the same way). */
 export function modesFor(seed, kase, config) {
     const rng = new Rng(seed ^ 0x5eed);
+    if (kase.src === "graphql") return config.modes.includes("cli") ? ["cli"] : [];
     const modes = [];
     if (config.modes.includes("api")) modes.push("api");
     if (config.modes.includes("stream") && kase.src === "json" && rng.chance(config.streamRate)) modes.push("stream");

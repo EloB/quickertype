@@ -269,6 +269,46 @@ async function shrinkInputs() {
                 );
             }
         }
+    } else if (current.src === "graphql") {
+        if (current.graphql.name !== "TopLevel") {
+            await attempt((c) => {
+                c.graphql.name = "TopLevel";
+                return c;
+            });
+        }
+
+        for (let q = current.graphql.queries.length - 1; q >= 0 && current.graphql.queries.length > 1; q--) {
+            await attempt((c) => {
+                c.graphql.queries.splice(q, 1);
+                return c;
+            });
+        }
+
+        // Each query, line by line (ddmin), then the schema as a tree.
+        for (let q = 0; q < current.graphql.queries.length; q++) {
+            let lines = current.graphql.queries[q].query.split("\n");
+            for (let chunk = Math.max(1, lines.length >> 1); chunk >= 1; chunk = chunk === 1 ? 0 : chunk >> 1) {
+                for (let at = 0; at < lines.length; ) {
+                    const candidate = [...lines.slice(0, at), ...lines.slice(at + chunk)];
+                    if (await attempt((c) => {
+                        c.graphql.queries[q].query = candidate.join("\n");
+                        return c;
+                    })) {
+                        lines = candidate;
+                    } else {
+                        at += chunk;
+                    }
+                }
+            }
+        }
+
+        await shrinkTree(
+            (c) => parse(c.graphql.schema),
+            (c, tree) => {
+                c.graphql.schema = toText(tree);
+                return c;
+            },
+        );
     } else {
         for (let i = current.schemas.length - 1; i >= 1; i--) {
             await attempt((c) => {
@@ -305,6 +345,8 @@ await shrinkOptions();
 await attempt((c) => {
     if (c.src === "json") {
         for (const tl of c.topLevels) tl.samples = tl.samples.map((s) => (parse(s) === undefined ? s : toText(parse(s), "  ")));
+    } else if (c.src === "graphql") {
+        if (parse(c.graphql.schema) !== undefined) c.graphql.schema = toText(parse(c.graphql.schema), "  ");
     } else {
         for (const s of c.schemas) if (parse(s.text) !== undefined) s.text = toText(parse(s.text), "  ");
     }

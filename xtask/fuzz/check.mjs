@@ -28,6 +28,8 @@ export async function makeChecker({ reference, bin }) {
      */
     async function check(kase, mode) {
         if (mode === "stream" && kase.src !== "json") return { status: "skip" };
+        // The WebAssembly engine has no GraphQL input: GraphQL runs only through the CLIs.
+        if (kase.src === "graphql" && mode !== "cli") return { status: "skip" };
         if (mode === "cli") {
             if (!cliCompatible(kase)) return { status: "skip" };
             const invocation = cliInvocation(kase);
@@ -52,7 +54,7 @@ export async function makeChecker({ reference, bin }) {
         result.engine = engine;
         if (engine === "rerun" && result.status === "same") {
             result.status = "diff";
-            result.detail = "the WebAssembly engine failed (trap or stack overflow); TypeScript redid the run";
+            result.detail = `the WebAssembly engine failed (trap or stack overflow); TypeScript redid the run: ${String(stats.lastFailure).slice(0, 2000)}`;
         }
 
         return result;
