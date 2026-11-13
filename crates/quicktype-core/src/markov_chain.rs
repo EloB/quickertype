@@ -15,6 +15,7 @@
 
 mod decode;
 
+use std::borrow::Cow;
 use std::sync::LazyLock;
 
 use quicktype_js_compat::json::{self, IndexMap, JsonValue};
@@ -47,7 +48,8 @@ pub struct MarkovChain {
     pub depth: usize,
     /// Dense `[first][second][third]` indexes into `probabilities`, by
     /// alphabet position. Code zero is the fixed unseen probability.
-    pub probability_codes: Vec<u8>,
+    /// Borrowed from the binary for the shipped chain (see [`shared`]).
+    pub probability_codes: Cow<'static, [u8]>,
     /// The quantized probability levels, as single-precision floats.
     pub probabilities: Vec<f32>,
 }
@@ -58,7 +60,7 @@ pub fn load() -> MarkovChain {
         decode(ENCODED_MARKOV_CHAIN.trim_end()).expect("the embedded Markov chain decodes");
     MarkovChain {
         depth: DEPTH,
-        probability_codes,
+        probability_codes: Cow::Owned(probability_codes),
         probabilities,
     }
 }
@@ -74,7 +76,7 @@ fn precomputed() -> MarkovChain {
         &include!(concat!(env!("OUT_DIR"), "/markov_chain_probabilities.rs"));
     MarkovChain {
         depth: DEPTH,
-        probability_codes: CODES.to_vec(),
+        probability_codes: Cow::Borrowed(CODES),
         probabilities: PROBABILITIES.to_vec(),
     }
 }

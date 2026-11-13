@@ -365,7 +365,7 @@ fn markov_chain_ts() {
         int(&vectors["codes_length"]),
     );
     let mut histogram = vec![0i64; mc.probabilities.len()];
-    for &code in &mc.probability_codes {
+    for &code in mc.probability_codes.iter() {
         histogram[usize::from(code)] += 1;
     }
     let want: Vec<i64> = arr(&vectors["codes_histogram"]).iter().map(int).collect();
