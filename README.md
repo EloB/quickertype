@@ -40,6 +40,7 @@ docs/                          architecture, parity rules, roadmap, research not
 `crates/quicktype-core/src` mirrors `packages/quicktype-core/src` file for file
 (snake_case; `Type/` becomes `ty/`), so every Rust module has one obvious
 TypeScript counterpart.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) maps the crates and one run end to end.
 
 ## Development
 
