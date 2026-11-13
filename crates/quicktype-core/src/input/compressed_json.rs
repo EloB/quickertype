@@ -16,7 +16,7 @@
 //! - [`CompressedJsonFromString`]: the JavaScript API's reader, `JSON.parse`
 //!   semantics (`1.0` is an integer, array-index keys come first, the last
 //!   duplicate key wins, V8's error messages);
-//! - [`CompressedJsonFromStream`](super::compressed_json_from_stream::CompressedJsonFromStream):
+//! - [`CompressedJsonFromStream`](crate::input::compressed_json_from_stream::CompressedJsonFromStream):
 //!   the CLI's reader, stream-json semantics (`1.0` is a double, source key
 //!   order, duplicate keys kept, stream-json's error messages).
 //!
@@ -82,7 +82,7 @@ struct Context {
 /// The compressed form of the JSON samples of one input, and the builder
 /// readers fill it with (TS `CompressedJSON<T>`).
 ///
-/// One instance holds all samples of a [`JsonInput`](super::inputs::JsonInput):
+/// One instance holds all samples of a [`JsonInput`](crate::input::inputs::JsonInput):
 /// they share the string table.
 pub struct CompressedJson {
     date_time_recognizer: Box<dyn DateTimeRecognizer>,
@@ -418,7 +418,7 @@ fn intern(strings: &mut Vec<String>, indexes: &mut HashMap<String, u32>, s: &str
     index
 }
 
-/// An exception while reading a sample. [`JsonInput`](super::inputs::JsonInput)
+/// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
 /// `MiscJSONParseError`.
 #[derive(Clone, Debug, PartialEq)]
@@ -469,7 +469,7 @@ pub trait CompressedJsonReader {
 
     /// `parse(sample)`. Reading itself is synchronous in Rust; the future
     /// exists so readers that wait for input can be added without changing
-    /// [`JsonInput`](super::inputs::JsonInput).
+    /// [`JsonInput`](crate::input::inputs::JsonInput).
     fn parse(&mut self, sample: Self::Sample) -> impl Future<Output = Result<Value, ParseError>> {
         std::future::ready(self.parse_sync(sample))
     }

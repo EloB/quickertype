@@ -3,7 +3,7 @@
 //! that it is driven by.
 //!
 //! This is how the CLI reads JSON samples, and it differs from `JSON.parse`
-//! ([`CompressedJsonFromString`](super::compressed_json::CompressedJsonFromString)):
+//! ([`CompressedJsonFromString`](crate::input::compressed_json::CompressedJsonFromString)):
 //!
 //! - a number is a `double` iff its literal contains `.`, `e` or `E`, or it
 //!   is a whole number outside the target's integer range (compared as a

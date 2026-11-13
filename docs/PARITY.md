@@ -153,10 +153,23 @@ the others name the fix they need.
   `utf16_legalize_characters`, `combine_words` (via legalizers),
   `pluralize` and `combineNames` (`attributes/type_names.rs`, whose common
   prefix/suffix of a type's names can cut an astral character in half).
-  Lone surrogates in input JSON are not representable at all. No golden
-  input contains one. Fix: a WTF-16 JavaScript-string type at the
+  In input JSON, both readers decode a `\u` escape that leaves a surrogate
+  unpaired to U+FFFD (so two such keys or enum cases can collide), and
+  `JSON.parse` errors that quote half of a surrogate pair show U+FFFD, as
+  Node prints them. No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
   API boundary (input strings, names, emitted string literals), with `&str`
   only where text is known to be well-formed.
+- **Very deeply nested JSON.** Both JSON readers are iterative, but
+  inference recurses once per nesting level, as in TypeScript. There the
+  JavaScript stack runs out somewhere between 500 and 1,000 levels
+  (`Maximum call stack size exceeded`, depending on Node's stack size); the
+  port goes much deeper but eventually overflows the native stack and
+  aborts. Fix: an explicit depth limit reporting the `RangeError`, or
+  iterative inference.
+- **Postman collections that are not JSON** (temporary). `parseJSON` falls
+  back to YAML, which the JSON Schema input ports; until then
+  `sources_from_postman_collection` reports `JSON.parse`'s error for them
+  (`TODO(parse-json)` in `input/postman_collection.rs`).
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or
   stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
   trace on stderr and exit code 1. The Rust CLI prints

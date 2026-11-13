@@ -343,7 +343,7 @@ struct JsonTopLevel {
 /// The JSON samples input (TS `JSONInput<T>`), generic over how samples
 /// are read: [`CompressedJsonFromString`] (`JSON.parse`, the JavaScript
 /// API) or
-/// [`CompressedJsonFromStream`](super::compressed_json_from_stream::CompressedJsonFromStream)
+/// [`CompressedJsonFromStream`](crate::input::compressed_json_from_stream::CompressedJsonFromStream)
 /// (stream-json, the CLI).
 ///
 /// ```

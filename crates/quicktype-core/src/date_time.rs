@@ -43,7 +43,7 @@ impl DateTimeRecognizer for DefaultDateTimeRecognizer {
 }
 
 /// `DefaultDateTimeRecognizer.isDate`: `^(\d\d\d\d)-(\d\d)-(\d\d)$`, a
-/// non-zero year, month 1–12 and day 1–[`DAYS`]`[month]`.
+/// non-zero year, month 1–12 and day 1–`DAYS[month]` (February has 29).
 pub fn default_is_date(s: &str) -> bool {
     let Some([year, month, day]) = parse_date(s) else {
         return false;
