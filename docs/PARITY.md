@@ -62,6 +62,12 @@ findings per area, with file and line references.
   (`QuickTypeError::unsupported`, e.g. a language without a renderer,
   which no built-in language is) run on the TypeScript engine and are
   reported separately from those identical on WebAssembly.
+- **Round trip:** `xtask/roundtrip/` runs quicktype's own fixture suite
+  with our binary: the generated code is compiled and must round-trip the
+  samples and reject the expected-failure ones. It also runs the fixtures'
+  later steps, which the corpus does not record (JSON to JSON Schema to the
+  language, TypeScript to C#). The `roundtrip` workflow runs it weekly
+  against the TypeScript CLI as the baseline.
 
 Known gap: the `schema-golang-leading-comments` fixture drives the library API
 rather than the CLI, so it has no CLI recording. The `golang-leading-comments`
@@ -441,3 +447,24 @@ upstream first; the port follows when the reference moves.
     are ECMAScript syntax and often not POSIX extended (`\d`, lookahead).
   - Maps of classes or unions parse every value twice: once to validate
     (then deleted) and once more for the value stored.
+
+Found by quicktype's own fixtures run with our binary (`xtask/roundtrip`),
+failing with the TypeScript CLI as well; each is worth reporting upstream:
+
+- **Ruby (`--lang ruby`), `schema-ruby` with
+  `recursive-union-flattening.schema`.** A class's attribute names a union
+  class (`Types.Instance(XElement)` in `class X`) before that class is
+  defined, and the forward declarations do not include it, so loading the
+  file fails with `uninitialized constant X::XElement
+  (NameError)`. Upstream CI runs `schema-ruby-syntax`, not `schema-ruby`.
+- **Java with `--datetime-provider legacy`, `schema-java-datetime-legacy`
+  with `optional-date-time.schema`.** `parseAllDateTimeString` returns
+  `null` when no format matches, so an invalid date-time is read as `null`
+  instead of rejected, and the expected-failure sample is accepted.
+  Upstream CI never runs this fixture (its Java job is `java,schema-java`).
+- **Python (`--lang python`), `python` with `misc/a0496.json`.**
+  `from_dict` assigns each property to a local variable of its name; a
+  property `from_date` shadows the `from_date` converter function there, so
+  `from_date(obj["to_date"])` fails: mypy reports `"date" not callable`
+  (the local's type), and Python a `NameError`. Upstream CI sets
+  `QUICKTEST`, which leaves out the `misc` inputs.
