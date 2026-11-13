@@ -484,7 +484,9 @@ function inst(rng, shape, budget, escapes) {
                 const key = mapKey(rng, shape.keys, i);
                 if (seen.has(key)) continue;
                 seen.add(key);
-                const value = budget.nodes > 0 || shape.value.k !== "class" ? inst(rng, shape.value, budget, escapes) : lit("null");
+                // Past the budget only leaves, so big maps stay big but cheap.
+                const leaf = !["class", "array", "map", "union", "tree"].includes(shape.value.k);
+                const value = budget.nodes > 0 || leaf ? inst(rng, shape.value, budget, escapes) : lit("null");
                 entries.push([str(key, escapes), value]);
             }
 

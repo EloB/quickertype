@@ -7,7 +7,7 @@
 //   node xtask/fuzz/fuzz.mjs [--seed N] [--count N | --minutes M] [-j N]
 //                            [--modes api,stream,cli] [--stream-rate R] [--cli-rate R]
 //                            [--lang a,b] [--src json|schema] [--out DIR]
-//                            [--reference DIR] [--bin PATH]
+//                            [--reference DIR] [--bin PATH] [--hang-minutes M]
 //   node xtask/fuzz/fuzz.mjs --print SEED      print the case a seed generates
 //   node xtask/fuzz/fuzz.mjs --replay FILE [--mode M]
 //                                              rerun a saved divergence or case file
@@ -29,6 +29,13 @@ const option = (name, fallback) => {
 };
 
 const reference = findReference(option("--reference"));
+const commit = (() => {
+    try {
+        return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
+    } catch {
+        return undefined;
+    }
+})();
 const bin = option("--bin");
 
 if (args.includes("--print")) {
@@ -60,6 +67,7 @@ const start = Number(option("--seed", String(Date.now() % 1_000_000_000)));
 const minutes = option("--minutes") !== undefined ? Number(option("--minutes")) : undefined;
 const count = Number(option("--count", minutes === undefined ? "1000" : String(Number.MAX_SAFE_INTEGER)));
 const jobs = Number(option("-j", "4"));
+const hangMinutes = Number(option("--hang-minutes", "10"));
 const config = {
     reference,
     bin,
@@ -118,7 +126,18 @@ function startWorker(id) {
         });
         let current;
         let served = 0;
+        let since = Date.now();
+        let killedForHang = false;
+        // A run that never yields (CPU-bound in either engine) defeats the
+        // in-process timeouts: kill the worker and record the seed.
+        const watchdog = setInterval(() => {
+            if (inFlight.has(id) && Date.now() - since > hangMinutes * 60_000) {
+                killedForHang = true;
+                child.kill("SIGKILL");
+            }
+        }, 15_000);
         const feed = () => {
+            since = Date.now();
             // Recycle workers now and then (both quicktype-cores hold caches).
             current = served++ < 400 ? nextSeed() : undefined;
             if (current === undefined) {
@@ -149,13 +168,15 @@ function startWorker(id) {
             feed();
         });
         child.on("exit", (code, signal) => {
+            clearInterval(watchdog);
             const seed = inFlight.get(id);
             inFlight.delete(id);
             if (seed !== undefined) {
                 crashed++;
-                diffs.push({ seed, mode: "?", detail: `worker died (${code ?? signal})` });
-                console.log(`CRASH seed ${seed}: worker died (${code ?? signal})`);
-                fs.writeFileSync(path.join(config.outDir, `${seed}-crash.json`), `${JSON.stringify({ seed, detail: `worker died (${code ?? signal})` })}\n`);
+                const detail = killedForHang ? `no result after ${hangMinutes} minutes (killed)` : `worker died (${code ?? signal})`;
+                diffs.push({ seed, mode: "?", detail });
+                console.log(`CRASH seed ${seed}: ${detail}`);
+                fs.writeFileSync(path.join(config.outDir, `${seed}-crash.json`), `${JSON.stringify({ seed, commit, detail })}\n`);
             }
 
             resolve(seed !== undefined || served > 400);
@@ -174,13 +195,6 @@ function progress() {
 
 await Promise.all(Array.from({ length: jobs }, (_, i) => startWorker(i)));
 progress();
-const commit = (() => {
-    try {
-        return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
-    } catch {
-        return undefined;
-    }
-})();
 const summary = { reference, commit, start, last: next - 1, cases: done, crashed, counts, diffs, notWasm, seconds: (Date.now() - begun) / 1000 };
 fs.writeFileSync(path.join(config.outDir, "summary.json"), `${JSON.stringify(summary, undefined, 1)}\n`);
 console.log(`\n${done} cases, seeds ${start}..${next - 1}, ${diffs.length} divergences (${crashed} worker crashes); summary: ${path.join(config.outDir, "summary.json")}`);
