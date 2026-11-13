@@ -60,22 +60,25 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
    type hashing must reproduce the JS hash functions and probing; a derived
    `Eq` + `HashMap` changes which duplicate wins.
 5. **Sorting:** default `sort()` compares UTF-16 code units and is stable;
-   Rust `str` ordering differs above U+FFFF. Use `js_compat` comparators.
-   Comparators that are inconsistent (e.g. `quicktypePropertyOrder` mixing
-   numbers and strings) depend on V8's TimSort, so use the `js_compat`
-   TimSort port, never `sort_by` (which may panic or differ).
+   Rust `str` ordering differs above U+FFFF. Compare strings with
+   `quicktype_js_compat::sort::compare_utf16`. Comparators that are
+   inconsistent (e.g. `quicktypePropertyOrder` mixing numbers and strings)
+   depend on V8's TimSort, so sort with `quicktype_js_compat::sort::sort_by`
+   (a port of it), never `slice::sort_by` (which may panic or differ).
 
 ### Strings and Unicode
 
 6. **Strings are UTF-16 in JS.** `length`, indexing, `slice`, `s[0]`,
    table-column widths, word wrapping and interning limits all count UTF-16
-   code units. Use the `js_compat` helpers; never index `str` bytes.
+   code units. Use `quicktype_js_compat::utf16`; never index `str` bytes.
 7. **Character categories come from `unicode-properties` 1.4.1** (Unicode
-   12.0; unassigned code points are `Cc`, not `Cn`), via a table generated
-   from the npm package. Rust's `char` methods give different answers.
+   12.0; unassigned code points are `Cc`, not `Cn`), via the table that
+   `xtask/js-compat/gen-unicode.mjs` generates from the npm package
+   (`quicktype_js_compat::unicode`). Rust's `char` methods give different
+   answers.
 8. **Case mapping:** Rust `to_uppercase`/`to_lowercase` match Node on every
    code point. Whitespace does not: JS `\s`/`trim()` and Rust differ at
-   U+0085 and U+FEFF; use `js_compat`.
+   U+0085 and U+FEFF; use `quicktype_js_compat::whitespace`.
 9. **Regexes:** the `regex` crate suffices (no lookaround/backreferences
    are used), but translate JS semantics explicitly: JS `\d` is ASCII-only,
    `.` excludes line terminators, `/i` without `/u` is ASCII-ish.
@@ -83,8 +86,8 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
 ### Numbers and JSON
 
 10. **Number formatting** must match JS `Number.prototype.toString`
-    (`1e+21`, `1e-7`, `-0` → `"0"`). Use `js_compat::number` (ryu digits + JS
-    layout), never `format!("{}")`.
+    (`1e+21`, `1e-7`, `-0` → `"0"`). Use `quicktype_js_compat::number::to_string`
+    (ryu digits + JS layout), never `format!("{}")`.
 11. **Two JSON parsers.** The CLI reads JSON with stream-json (literal-text
     number classification: `1.0` is a double, duplicate keys are kept,
     source key order, its own error text). The JS API uses `JSON.parse`
@@ -92,16 +95,18 @@ Details and evidence for every rule are in `docs/research/` (01 type graph,
     error text). Port both; do not use `serde_json` for inputs.
 12. **`Math.pow`/`**`:** V8 uses the platform `pow` with special cases
     `y == 2 → x*x` and `y == 0.5 → sqrt(x)`. Natively use `f64::powf` plus
-    those cases (verified identical on 300k samples); the `libm` crate is
-    not (7–9% mismatches). WASM needs a correctly rounded `pow` port.
+    those cases (verified identical on 300k samples), as
+    `quicktype_js_compat::number::pow` does; the `libm` crate is not (7–9%
+    mismatches). WASM needs a correctly rounded `pow` port.
 13. **`JSON.stringify`** escaping and number output differ from
-    `serde_json`; use `js_compat::json`.
+    `serde_json`; use `quicktype_js_compat::json`.
 
 ### Libraries and errors
 
 14. **Hand-port, don't substitute:** `pluralize` 8.0.0, `urijs` 1.19.11
     (not the `url` crate), `wordwrap`, `command-line-args`/`-usage`,
-    `stream-json`. No Rust crate matches them exactly.
+    `stream-json`. No Rust crate matches them exactly. (`pluralize` and
+    `wordwrap` live in `quicktype_js_compat`.)
 15. **Errors are output.** quicktype's `messageError` texts (including
     `String.replace` `$`-pattern quirks), and the Node/V8 messages that leak
     through (ENOENT text, `JSON.parse` errors, `fetch failed`), must match.
@@ -119,13 +124,36 @@ semantics were verified.
 | JS library | Rust replacement | Verified how |
 |---|---|---|
 | `collection-utils` (sets/maps) | `indexmap` | insertion-ordered, as is collection-utils (research 06) |
+| V8 `Number.prototype.toString` | `ryu` 1.x digits + ECMAScript layout (`quicktype_js_compat::number`) | 0 mismatches over 2,000,000 random and decimal-like doubles against Node 24, plus 10k committed vectors. Rust's own `{:e}` digits differ on 1,141 of them (round-half-even ties). |
+| `pluralize` 8.0.0 | hand port (`quicktype_js_compat::pluralize`) on `regex` 1.x | the rules are translated with JS non-`u` `/i` semantics (ASCII-only folding, ASCII `\b`/`\w`, UTF-16 unit matching); `singular`/`plural`/`isSingular`/`isPlural` agree with npm on 4,501 words (corpus names, rule-shaped random words, `ſ`, Kelvin sign, astral) |
+| `unicode-properties` 1.4.1 | table generated by `xtask/js-compat/gen-unicode.mjs` (`quicktype_js_compat::unicode`) | `getCategory` of every code point 0..=U+10FFFF and the predicates compared to the npm package |
+| `wordwrap` 1.0.0 | hand port (`quicktype_js_compat::wordwrap`) | 407 texts at several widths compared to npm |
+| V8 `Array.prototype.sort` | port of `array-sort.tq` (`quicktype_js_compat::sort`) | 210 seeded comparator runs (consistent, fully inconsistent, noisy, run-shaped, NaN) up to 2,000 elements, 41 mixed number/string `<` tables and 60 default string sorts compared to Node 24 |
+| `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
 
 ## Known gaps
 
-Behavior the port deliberately does not reproduce, because it depends on the
-JavaScript runtime rather than on quicktype. None of it is reachable through
-the golden corpus.
+Known divergences from the reference that no golden case exercises. Some are
+deliberate (behavior of the JavaScript runtime rather than of quicktype);
+the others name the fix they need.
 
+- **`pow` on WASM (Phase 6 blocker).** `quicktype_js_compat::number::pow`
+  matches V8 natively because both call the platform `pow`. On `wasm32`
+  there is none: `f64::powf` is compiler-builtins' port of `libm`, which
+  disagrees with Node in the last bit on about 7% of inputs. Through
+  `markov_chain::evaluate` this can flip `InferMaps`' class-versus-map
+  decision for names near the threshold. Fix: a correctly rounded `pow` for
+  `wasm32` (marked `TODO(wasm)` in `number.rs`).
+- **Lone surrogates.** JavaScript strings can hold unpaired UTF-16
+  surrogates (JSON `"\ud800"`, or a slice that cuts a surrogate pair); Rust
+  `String`s cannot. Wherever the TypeScript produces one, the port drops it:
+  `utf16::units_to_string`, `utf16::slice`/`substring`,
+  `json::gap_from_str`, and through them `strings::utf16_concat_map`,
+  `utf16_legalize_characters`, `combine_words` (via legalizers) and
+  `pluralize`. Lone surrogates in input JSON are not representable at all.
+  No golden input contains one. Fix: a WTF-16 JavaScript-string type at the
+  API boundary (input strings, names, emitted string literals), with `&str`
+  only where text is known to be well-formed.
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or
   stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
   trace on stderr and exit code 1. The Rust CLI prints

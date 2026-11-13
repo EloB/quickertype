@@ -1,0 +1,23 @@
+[package]
+name = "quicktype-js-compat"
+description = "JavaScript-exact helpers (number formatting, UTF-16 strings, V8 sort, JSON.stringify, pluralize, ...) for the quicktype Rust port"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+name = "quicktype_js_compat"
+
+[dependencies]
+indexmap.workspace = true
+regex.workspace = true
+ryu.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true
