@@ -1,0 +1,1 @@
+{"id":"unit/rust-empty-top-levels/no-definitions","graph":{"types":[],"topLevels":[]},"gather":{"destructive":false,"randomNames":0},"render":{"lang":"rust","filename":"stdout","alphabetize":false,"rendererOptions":{},"indentation":null},"files":[{"name":"stdout","text":"use serde::{Serialize, Deserialize};\n","annotations":[]}]}

@@ -1,0 +1,129 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "a",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "main.out",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "line [\"first file\"]",
+    "finish \"First.txt\"",
+    "line [\"second file\"]",
+    "blank 1",
+    "finish \"Second.txt\"",
+    "reopen \"first.TXT\"",
+    "line [\"appended to first\"]",
+    "finish \"first.txt\"",
+    "line [\"second again\"]",
+    "finish \"Second.txt\"",
+    "reopen \"SECOND.txt\"",
+    "indent 1",
+    "line [\"indented after reopen\"]",
+    "finish \"Second.txt\"",
+    "line [\"rest\"]"
+   ],
+   "files": [
+    {
+     "name": "First.txt",
+     "text": "first file\n",
+     "annotations": []
+    },
+    {
+     "name": "Second.txt",
+     "text": "second again\n    indented after reopen\n",
+     "annotations": []
+    },
+    {
+     "name": "first.txt",
+     "text": "first file\nappended to first\n",
+     "annotations": []
+    },
+    {
+     "name": "main.out",
+     "text": "rest\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file Second.txt more than once. If performing multi-file output this warning can be safely ignored.",
+    "[WARNING] Tried to emit file Second.txt more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  },
+  {
+   "lang": "probe",
+   "filename": "empty.out",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "finish \"only.txt\""
+   ],
+   "files": [
+    {
+     "name": "only.txt",
+     "text": "",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "nothing.out",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [],
+   "files": [],
+   "console": []
+  }
+ ],
+ "id": "emit-multi-file"
+}

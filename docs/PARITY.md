@@ -30,6 +30,16 @@ findings per area, with file and line references.
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
   over many inputs. Use it for anything outside the corpus.
+- **Renderers in isolation:** `xtask/core-rendering/record-render-cases.mjs`
+  runs the reference CLI on every golden case of a language, dumps the type
+  graph that reaches `gatherNames` and checks the intercepted
+  `renderGraphAndSerialize` result against the golden files;
+  `tests/render_cases.rs` rebuilds the graph (same type indexes) and runs the
+  Rust `gather_names` and renderer on it, comparing files and issue
+  annotations. `run-render-scenarios.mjs` / `tests/render_scenarios.rs` do
+  the same for hand-written scenarios, rendered with real languages or a
+  configurable probe renderer that exercises the framework directly. See
+  `docs/RENDERERS.md`.
 - **JS API:** a differential suite (planned, `npm/`) runs the same API calls
   against npm `quicktype-core` and our WASM package and compares results.
 
@@ -168,6 +178,13 @@ the others name the fix they need.
   trace on stderr and exit code 1. The Rust CLI prints
   `Error: cannot write to <stream>: <error>.` and exits 1. (EPIPE is exact:
   exit 0, no output.)
+- **Rendering one graph twice.** A TypeScript `ConvenienceRenderer` stores
+  the names it assigns in the graph's attribute store, so a second
+  `renderGraphAndSerialize` on the same `TypeGraph` reuses stale names and
+  fails with `Internal error: No name for Named` (or `Defined value
+  expected`). Rust renderers keep their names to themselves, so a second
+  render succeeds. Only reachable through the library API; the CLI and
+  `quicktype()` build a new graph per run.
 - **chalk-template features quicktype never uses.** Style arguments and hex
   colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
   exit 2 as not implemented. Style names that are other properties of the

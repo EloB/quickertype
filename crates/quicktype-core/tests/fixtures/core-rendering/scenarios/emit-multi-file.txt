@@ -1,0 +1,30 @@
+# finishFile stores the current context under a file name; reopening a
+# finished file (case-insensitively) continues it; finishing a name twice
+# warns on stdout and keeps the file's position; whatever is left at the end
+# is finished under the given output file name.
+input json TopLevel {"a": 1}
+
+render probe {"filename": "main.out"} script
+line ["first file"]
+finish "First.txt"
+line ["second file"]
+blank 1
+finish "Second.txt"
+reopen "first.TXT"
+line ["appended to first"]
+finish "first.txt"
+line ["second again"]
+finish "Second.txt"
+reopen "SECOND.txt"
+indent 1
+line ["indented after reopen"]
+finish "Second.txt"
+line ["rest"]
+end
+
+render probe {"filename": "empty.out"} script
+finish "only.txt"
+end
+
+render probe {"filename": "nothing.out"} script
+end

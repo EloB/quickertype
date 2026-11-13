@@ -1,0 +1,591 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "byName",
+      1,
+      true
+     ],
+     [
+      "children",
+      4,
+      true
+     ],
+     [
+      "next",
+      6,
+      true
+     ],
+     [
+      "pair",
+      7,
+      true
+     ],
+     [
+      "value",
+      15,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "byName"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     2,
+     3
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "byName"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 0
+   },
+   {
+    "k": "null",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     5,
+     3
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "children"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 0
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     0,
+     3
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pair"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     8,
+     3
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pair"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "kind",
+      9,
+      true
+     ],
+     [
+      "left",
+      7,
+      true
+     ],
+     [
+      "right",
+      11,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     10,
+     3
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "leaf"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "members": [
+     12,
+     3
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "leaf"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "n",
+      13,
+      true
+     ],
+     [
+      "up",
+      7,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "n"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     14,
+     3
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "n"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     0,
+     16,
+     18,
+     3
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "items": 17
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     0,
+     16,
+     18
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "declarations"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "define ValueElement\ndefine TopLevelValue\ndefine TopLevel\ndefine Leaf\ndefine Pair\ndefine Kind\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "fwd": true
+   },
+   "script": [
+    "declarations"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "define Kind\nforward Leaf\nforward Pair\ndefine Leaf\ndefine Pair\nforward TopLevel\ndefine TopLevelValue\ndefine ValueElement\ndefine TopLevel\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "fwd": true,
+    "forwardKinds": [
+     "union",
+     "class"
+    ]
+   },
+   "script": [
+    "declarations"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "define Kind\nforward Leaf\nforward #11\nforward Pair\nforward #7\ndefine Leaf\ndefine #11\ndefine Pair\ndefine #7\nforward ValueElement\nforward TopLevelValue\nforward #6\nforward #4\nforward #1\nforward TopLevel\ndefine ValueElement\ndefine TopLevelValue\ndefine #6\ndefine #4\ndefine #1\ndefine TopLevel\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "fwd": true,
+    "forwardKinds": [
+     "enum"
+    ]
+   },
+   "script": [
+    "declarations"
+   ],
+   "error": "Cannot resolve cycle because it doesn't contain types that can be forward declared",
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "breakers": [
+     "array",
+     "map"
+    ]
+   },
+   "script": [
+    "cyclebreakers"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "breaker #0 class\nbreaker #7 union\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "breakers": []
+   },
+   "script": [
+    "cyclebreakers"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "breaker #0 class\nbreaker #7 union\nbreaker #16 array\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "breakers": [
+     "array"
+    ],
+    "canBreak": [
+     "union"
+    ]
+   },
+   "script": [
+    "cyclebreakers"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "breaker #1 union\nbreaker #6 union\nbreaker #7 union\nbreaker #15 union\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "breakers": [],
+    "canBreak": [
+     "enum"
+    ]
+   },
+   "script": [
+    "cyclebreakers"
+   ],
+   "error": "Internal error: Found a cycle that cannot be broken",
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "cyclebreakers"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "breaker #0 class\nbreaker #7 union\nbreaker #16 array\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\nuse std::collections::HashMap;\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum ValueElement {\n    PurpleString(String),\n\n    TopLevel(Box<TopLevel>),\n\n    UnionArray(Vec<ValueElement>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum TopLevelValue {\n    PurpleString(String),\n\n    TopLevel(Box<TopLevel>),\n\n    UnionArray(Vec<ValueElement>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub by_name: Option<HashMap<String, TopLevel>>,\n\n    pub children: Option<Vec<TopLevel>>,\n\n    pub next: Option<Box<TopLevel>>,\n\n    pub pair: Box<Option<Pair>>,\n\n    pub value: Option<TopLevelValue>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Leaf {\n    pub n: Option<i64>,\n\n    pub up: Box<Option<Pair>>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Pair {\n    pub kind: Option<Kind>,\n\n    pub left: Box<Option<Pair>>,\n\n    pub right: Option<Leaf>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"snake_case\")]\npub enum Kind {\n    A,\n\n    B,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "declarations"
+}

@@ -1,0 +1,739 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "camelCaseProp",
+       [
+        "A camel case property."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "big",
+      1,
+      true
+     ],
+     [
+      "camelCaseProp",
+      4,
+      true
+     ],
+     [
+      "half",
+      6,
+      true
+     ],
+     [
+      "kebab",
+      8,
+      false
+     ],
+     [
+      "list",
+      9,
+      true
+     ],
+     [
+      "maybeSelf",
+      12,
+      true
+     ],
+     [
+      "mixed",
+      13,
+      true
+     ],
+     [
+      "nullableRecursiveUnion",
+      15,
+      true
+     ],
+     [
+      "pascal",
+      16,
+      true
+     ],
+     [
+      "recursiveUnion",
+      18,
+      false
+     ],
+     [
+      "screaming",
+      19,
+      true
+     ],
+     [
+      "self",
+      11,
+      false
+     ],
+     [
+      "small",
+      21,
+      false
+     ],
+     [
+      "type",
+      4,
+      true
+     ],
+     [
+      "ünicode name",
+      22,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "minMax": [
+      0,
+      3000000000
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "big"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     2,
+     3
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      0,
+      3000000000
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "big"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    },
+    "members": [
+     5,
+     3
+    ]
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Alias"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "minMax": [
+      0,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "half"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     7,
+     3
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      0,
+      null
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "half"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kebab"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "one-two",
+     "three-four"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     10,
+     3
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 11
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLeve",
+       "self"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "propertyDescriptions": [
+      [
+       "camelCaseProp",
+       [
+        "A camel case property."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "big",
+      1,
+      true
+     ],
+     [
+      "camelCaseProp",
+      4,
+      true
+     ],
+     [
+      "half",
+      6,
+      true
+     ],
+     [
+      "kebab",
+      8,
+      false
+     ],
+     [
+      "list",
+      9,
+      true
+     ],
+     [
+      "maybeSelf",
+      12,
+      true
+     ],
+     [
+      "mixed",
+      13,
+      true
+     ],
+     [
+      "nullableRecursiveUnion",
+      15,
+      true
+     ],
+     [
+      "pascal",
+      16,
+      true
+     ],
+     [
+      "recursiveUnion",
+      18,
+      false
+     ],
+     [
+      "screaming",
+      19,
+      true
+     ],
+     [
+      "self",
+      11,
+      false
+     ],
+     [
+      "small",
+      21,
+      false
+     ],
+     [
+      "type",
+      4,
+      true
+     ],
+     [
+      "ünicode name",
+      22,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeSelf"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     11,
+     3
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "mixed"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     14,
+     3
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "mixed"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "a b",
+     "c-d",
+     "eF"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nullableRecursiveUnion"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     11,
+     3,
+     5
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pascal"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     17,
+     3
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pascal"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "OneTwo",
+     "Three"
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "recursiveUnion"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     11,
+     5
+    ]
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "screaming"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     20,
+     3
+    ]
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "screaming"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "ONE_TWO",
+     "THREE"
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      -5,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "small"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "ünicode name"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "members": [
+     23,
+     3
+    ]
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "ünicode name"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Numbers"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 25
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Number"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     27,
+     3,
+     5
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Numbers",
+    24
+   ],
+   [
+    "Alias",
+    5
+   ],
+   [
+    "Choice",
+    26
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\npub type Numbers = Vec<f64>;\npub type Alias = String;\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub big: Option<i64>,\n\n    /// A camel case property.\n    pub camel_case_prop: Option<String>,\n\n    pub half: Option<i64>,\n\n    pub kebab: Kebab,\n\n    pub list: Option<Vec<TopLeve>>,\n\n    pub maybe_self: Option<Box<TopLeve>>,\n\n    pub mixed: Option<Mixed>,\n\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n\n    pub pascal: Option<Pascal>,\n\n    pub recursive_union: RecursiveUnion,\n\n    pub screaming: Option<Screaming>,\n\n    #[serde(rename = \"self\")]\n    pub top_level_self: Box<TopLeve>,\n\n    pub small: i32,\n\n    #[serde(rename = \"type\")]\n    pub top_level_type: Option<String>,\n\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    pub nicode_name: Option<bool>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"kebab-case\")]\npub enum Kebab {\n    #[serde(rename = \"one-two\")]\n    OneTwo,\n\n    #[serde(rename = \"three-four\")]\n    ThreeFour,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum RecursiveUnion {\n    PurpleString(String),\n\n    TopLeve(Box<TopLeve>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum NullableRecursiveUnion {\n    PurpleString(String),\n\n    TopLeve(Box<TopLeve>),\n}\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLeve {\n    pub big: Option<i64>,\n\n    /// A camel case property.\n    pub camel_case_prop: Option<String>,\n\n    pub half: Option<i64>,\n\n    pub kebab: Kebab,\n\n    pub list: Option<Vec<TopLeve>>,\n\n    pub maybe_self: Option<Box<TopLeve>>,\n\n    pub mixed: Option<Mixed>,\n\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n\n    pub pascal: Option<Pascal>,\n\n    pub recursive_union: RecursiveUnion,\n\n    pub screaming: Option<Screaming>,\n\n    #[serde(rename = \"self\")]\n    pub top_leve_self: Box<TopLeve>,\n\n    pub small: i32,\n\n    #[serde(rename = \"type\")]\n    pub top_leve_type: Option<String>,\n\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    pub nicode_name: Option<bool>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub enum Mixed {\n    #[serde(rename = \"a b\")]\n    AB,\n\n    #[serde(rename = \"c-d\")]\n    CD,\n\n    #[serde(rename = \"eF\")]\n    EF,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum Pascal {\n    #[serde(rename = \"OneTwo\")]\n    OneTwo,\n\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"SCREAMING_SNAKE_CASE\")]\npub enum Screaming {\n    #[serde(rename = \"ONE_TWO\")]\n    OneTwo,\n\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Choice {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "integer-type": "force-i32",
+    "skip-serializing-none": true,
+    "density": "dense"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\npub type Numbers = Vec<f64>;\npub type Alias = String;\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub big: Option<i32>,\n    /// A camel case property.\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub camel_case_prop: Option<String>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub half: Option<i32>,\n    pub kebab: Kebab,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub list: Option<Vec<TopLeve>>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub maybe_self: Option<Box<TopLeve>>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub mixed: Option<Mixed>,\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub pascal: Option<Pascal>,\n    pub recursive_union: RecursiveUnion,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub screaming: Option<Screaming>,\n    #[serde(rename = \"self\")]\n    pub top_level_self: Box<TopLeve>,\n    pub small: i32,\n    #[serde(rename = \"type\")]\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub top_level_type: Option<String>,\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub nicode_name: Option<bool>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"kebab-case\")]\npub enum Kebab {\n    #[serde(rename = \"one-two\")]\n    OneTwo,\n    #[serde(rename = \"three-four\")]\n    ThreeFour,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum RecursiveUnion {\n    PurpleString(String),\n    TopLeve(Box<TopLeve>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum NullableRecursiveUnion {\n    PurpleString(String),\n    TopLeve(Box<TopLeve>),\n}\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLeve {\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub big: Option<i32>,\n    /// A camel case property.\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub camel_case_prop: Option<String>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub half: Option<i32>,\n    pub kebab: Kebab,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub list: Option<Vec<TopLeve>>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub maybe_self: Option<Box<TopLeve>>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub mixed: Option<Mixed>,\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub pascal: Option<Pascal>,\n    pub recursive_union: RecursiveUnion,\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub screaming: Option<Screaming>,\n    #[serde(rename = \"self\")]\n    pub top_leve_self: Box<TopLeve>,\n    pub small: i32,\n    #[serde(rename = \"type\")]\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub top_leve_type: Option<String>,\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    #[serde(skip_serializing_if = \"Option::is_none\")]\n    pub nicode_name: Option<bool>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub enum Mixed {\n    #[serde(rename = \"a b\")]\n    AB,\n    #[serde(rename = \"c-d\")]\n    CD,\n    #[serde(rename = \"eF\")]\n    EF,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum Pascal {\n    #[serde(rename = \"OneTwo\")]\n    OneTwo,\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"SCREAMING_SNAKE_CASE\")]\npub enum Screaming {\n    #[serde(rename = \"ONE_TWO\")]\n    OneTwo,\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Choice {\n    Integer(i32),\n    PurpleString(String),\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "leading-comments": false
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "use serde::{Serialize, Deserialize};\n\npub type Numbers = Vec<f64>;\npub type Alias = String;\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLevel {\n    pub big: Option<i64>,\n\n    /// A camel case property.\n    pub camel_case_prop: Option<String>,\n\n    pub half: Option<i64>,\n\n    pub kebab: Kebab,\n\n    pub list: Option<Vec<TopLeve>>,\n\n    pub maybe_self: Option<Box<TopLeve>>,\n\n    pub mixed: Option<Mixed>,\n\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    pub nicode_name: Option<bool>,\n\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n\n    pub pascal: Option<Pascal>,\n\n    pub recursive_union: RecursiveUnion,\n\n    pub screaming: Option<Screaming>,\n\n    pub small: i32,\n\n    #[serde(rename = \"self\")]\n    pub top_level_self: Box<TopLeve>,\n\n    #[serde(rename = \"type\")]\n    pub top_level_type: Option<String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"kebab-case\")]\npub enum Kebab {\n    #[serde(rename = \"one-two\")]\n    OneTwo,\n\n    #[serde(rename = \"three-four\")]\n    ThreeFour,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum RecursiveUnion {\n    PurpleString(String),\n\n    TopLeve(Box<TopLeve>),\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum NullableRecursiveUnion {\n    PurpleString(String),\n\n    TopLeve(Box<TopLeve>),\n}\n\n/// The top level.\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub struct TopLeve {\n    pub big: Option<i64>,\n\n    /// A camel case property.\n    pub camel_case_prop: Option<String>,\n\n    pub half: Option<i64>,\n\n    pub kebab: Kebab,\n\n    pub list: Option<Vec<TopLeve>>,\n\n    pub maybe_self: Option<Box<TopLeve>>,\n\n    pub mixed: Option<Mixed>,\n\n    #[serde(rename = \"ünicode\\u{2028}name\")]\n    pub nicode_name: Option<bool>,\n\n    pub nullable_recursive_union: Option<NullableRecursiveUnion>,\n\n    pub pascal: Option<Pascal>,\n\n    pub recursive_union: RecursiveUnion,\n\n    pub screaming: Option<Screaming>,\n\n    pub small: i32,\n\n    #[serde(rename = \"self\")]\n    pub top_leve_self: Box<TopLeve>,\n\n    #[serde(rename = \"type\")]\n    pub top_leve_type: Option<String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"camelCase\")]\npub enum Mixed {\n    #[serde(rename = \"a b\")]\n    AB,\n\n    #[serde(rename = \"c-d\")]\n    CD,\n\n    #[serde(rename = \"eF\")]\n    EF,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum Pascal {\n    #[serde(rename = \"OneTwo\")]\n    OneTwo,\n\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(rename_all = \"SCREAMING_SNAKE_CASE\")]\npub enum Screaming {\n    #[serde(rename = \"ONE_TWO\")]\n    OneTwo,\n\n    Three,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\n#[serde(untagged)]\npub enum Choice {\n    Integer(i64),\n\n    PurpleString(String),\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "rust-schema"
+}

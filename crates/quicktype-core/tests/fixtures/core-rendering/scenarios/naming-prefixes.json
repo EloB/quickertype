@@ -1,0 +1,837 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "fixed": false,
+    "props": [
+     [
+      "x0",
+      1,
+      false
+     ],
+     [
+      "x1",
+      5,
+      false
+     ],
+     [
+      "x2",
+      26,
+      false
+     ],
+     [
+      "x3",
+      29,
+      false
+     ],
+     [
+      "x4",
+      32,
+      false
+     ],
+     [
+      "x5",
+      35,
+      false
+     ],
+     [
+      "x6",
+      38,
+      false
+     ],
+     [
+      "x7",
+      41,
+      false
+     ],
+     [
+      "x8",
+      44,
+      false
+     ],
+     [
+      "x9",
+      47,
+      false
+     ],
+     [
+      "x10",
+      8,
+      false
+     ],
+     [
+      "x11",
+      11,
+      false
+     ],
+     [
+      "x12",
+      14,
+      false
+     ],
+     [
+      "x13",
+      17,
+      false
+     ],
+     [
+      "x14",
+      20,
+      false
+     ],
+     [
+      "x15",
+      23,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      2,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      3,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f0",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "integer",
+    "a": {}
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      6,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      7,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f1",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      10,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f10",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      12,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      13,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f11",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      15,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      16,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f12",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      18,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      19,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f13",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      21,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      22,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f14",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      24,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      25,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f15",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      27,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      28,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f2",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      30,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      31,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f3",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      33,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      34,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f4",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      36,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      37,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f5",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      39,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      40,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f6",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      42,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      43,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f7",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      45,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      46,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f8",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      48,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "item",
+      49,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "class",
+    "a": {},
+    "fixed": false,
+    "props": [
+     [
+      "f9",
+      4,
+      false
+     ]
+    ],
+    "add": null
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": true,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    x0 <- \"x0\"\n    x1 <- \"x1\"\n    x10 <- \"x10\"\n    x11 <- \"x11\"\n    x12 <- \"x12\"\n    x13 <- \"x13\"\n    x14 <- \"x14\"\n    x15 <- \"x15\"\n    x2 <- \"x2\"\n    x3 <- \"x3\"\n    x4 <- \"x4\"\n    x5 <- \"x5\"\n    x6 <- \"x6\"\n    x7 <- \"x7\"\n    x8 <- \"x8\"\n    x9 <- \"x9\"\nclass X0 (x0)\n    item <- \"item\"\nclass X0Item (item)\n    item <- \"item\"\nclass PurpleItem (item)\n    f0 <- \"f0\"\nclass X1 (x1)\n    item <- \"item\"\nclass X1Item (item)\n    item <- \"item\"\nclass FluffyItem (item)\n    f1 <- \"f1\"\nclass X10 (x10)\n    item <- \"item\"\nclass X10Item (item)\n    item <- \"item\"\nclass TentacledItem (item)\n    f10 <- \"f10\"\nclass X11 (x11)\n    item <- \"item\"\nclass X11Item (item)\n    item <- \"item\"\nclass StickyItem (item)\n    f11 <- \"f11\"\nclass X12 (x12)\n    item <- \"item\"\nclass X12Item (item)\n    item <- \"item\"\nclass IndigoItem (item)\n    f12 <- \"f12\"\nclass X13 (x13)\n    item <- \"item\"\nclass X13Item (item)\n    item <- \"item\"\nclass IndecentItem (item)\n    f13 <- \"f13\"\nclass X14 (x14)\n    item <- \"item\"\nclass X14Item (item)\n    item <- \"item\"\nclass HilariousItem (item)\n    f14 <- \"f14\"\nclass X15 (x15)\n    item <- \"item\"\nclass X15Item (item)\n    item <- \"item\"\nclass AmbitiousItem (item)\n    f15 <- \"f15\"\nclass X2 (x2)\n    item <- \"item\"\nclass X2Item (item)\n    item <- \"item\"\nclass CunningItem (item)\n    f2 <- \"f2\"\nclass X3 (x3)\n    item <- \"item\"\nclass X3Item (item)\n    item <- \"item\"\nclass MagentaItem (item)\n    f3 <- \"f3\"\nclass X4 (x4)\n    item <- \"item\"\nclass X4Item (item)\n    item <- \"item\"\nclass FriskyItem (item)\n    f4 <- \"f4\"\nclass X5 (x5)\n    item <- \"item\"\nclass X5Item (item)\n    item <- \"item\"\nclass MischievousItem (item)\n    f5 <- \"f5\"\nclass X6 (x6)\n    item <- \"item\"\nclass X6Item (item)\n    item <- \"item\"\nclass BraggadociousItem (item)\n    f6 <- \"f6\"\nclass X7 (x7)\n    item <- \"item\"\nclass X7Item (item)\n    item <- \"item\"\nclass Item1 (item)\n    f7 <- \"f7\"\nclass X8 (x8)\n    item <- \"item\"\nclass X8Item (item)\n    item <- \"item\"\nclass Item2 (item)\n    f8 <- \"f8\"\nclass X9 (x9)\n    item <- \"item\"\nclass X9Item (item)\n    item <- \"item\"\nclass Item3 (item)\n    f9 <- \"f9\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "types": {
+     "style": "underscore",
+     "prefixes": [
+      "A",
+      "B"
+     ]
+    }
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top top_level -> class #0\n\nclass top_level (TopLevel)\n    x0 <- \"x0\"\n    x1 <- \"x1\"\n    x2 <- \"x2\"\n    x3 <- \"x3\"\n    x4 <- \"x4\"\n    x5 <- \"x5\"\n    x6 <- \"x6\"\n    x7 <- \"x7\"\n    x8 <- \"x8\"\n    x9 <- \"x9\"\n    x10 <- \"x10\"\n    x11 <- \"x11\"\n    x12 <- \"x12\"\n    x13 <- \"x13\"\n    x14 <- \"x14\"\n    x15 <- \"x15\"\nclass x0 (x0)\n    item <- \"item\"\nclass x0_item (item)\n    item <- \"item\"\nclass a_item (item)\n    f0 <- \"f0\"\nclass x1 (x1)\n    item <- \"item\"\nclass x1_item (item)\n    item <- \"item\"\nclass b_item (item)\n    f1 <- \"f1\"\nclass x10 (x10)\n    item <- \"item\"\nclass x10_item (item)\n    item <- \"item\"\nclass item_1 (item)\n    f10 <- \"f10\"\nclass x11 (x11)\n    item <- \"item\"\nclass x11_item (item)\n    item <- \"item\"\nclass item_2 (item)\n    f11 <- \"f11\"\nclass x12 (x12)\n    item <- \"item\"\nclass x12_item (item)\n    item <- \"item\"\nclass item_3 (item)\n    f12 <- \"f12\"\nclass x13 (x13)\n    item <- \"item\"\nclass x13_item (item)\n    item <- \"item\"\nclass item_4 (item)\n    f13 <- \"f13\"\nclass x14 (x14)\n    item <- \"item\"\nclass x14_item (item)\n    item <- \"item\"\nclass item_5 (item)\n    f14 <- \"f14\"\nclass x15 (x15)\n    item <- \"item\"\nclass x15_item (item)\n    item <- \"item\"\nclass item_6 (item)\n    f15 <- \"f15\"\nclass x2 (x2)\n    item <- \"item\"\nclass x2_item (item)\n    item <- \"item\"\nclass item_7 (item)\n    f2 <- \"f2\"\nclass x3 (x3)\n    item <- \"item\"\nclass x3_item (item)\n    item <- \"item\"\nclass item_8 (item)\n    f3 <- \"f3\"\nclass x4 (x4)\n    item <- \"item\"\nclass x4_item (item)\n    item <- \"item\"\nclass item_9 (item)\n    f4 <- \"f4\"\nclass x5 (x5)\n    item <- \"item\"\nclass x5_item (item)\n    item <- \"item\"\nclass item_10 (item)\n    f5 <- \"f5\"\nclass x6 (x6)\n    item <- \"item\"\nclass x6_item (item)\n    item <- \"item\"\nclass item_11 (item)\n    f6 <- \"f6\"\nclass x7 (x7)\n    item <- \"item\"\nclass x7_item (item)\n    item <- \"item\"\nclass item_12 (item)\n    f7 <- \"f7\"\nclass x8 (x8)\n    item <- \"item\"\nclass x8_item (item)\n    item <- \"item\"\nclass item_13 (item)\n    f8 <- \"f8\"\nclass x9 (x9)\n    item <- \"item\"\nclass x9_item (item)\n    item <- \"item\"\nclass item_14 (item)\n    f9 <- \"f9\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "probe",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {
+    "types": {
+     "style": "pascal",
+     "prefixes": []
+    }
+   },
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "top TopLevel -> class #0\n\nclass TopLevel (TopLevel)\n    x0 <- \"x0\"\n    x1 <- \"x1\"\n    x2 <- \"x2\"\n    x3 <- \"x3\"\n    x4 <- \"x4\"\n    x5 <- \"x5\"\n    x6 <- \"x6\"\n    x7 <- \"x7\"\n    x8 <- \"x8\"\n    x9 <- \"x9\"\n    x10 <- \"x10\"\n    x11 <- \"x11\"\n    x12 <- \"x12\"\n    x13 <- \"x13\"\n    x14 <- \"x14\"\n    x15 <- \"x15\"\nclass X0 (x0)\n    item <- \"item\"\nclass X0Item (item)\n    item <- \"item\"\nclass Item1 (item)\n    f0 <- \"f0\"\nclass X1 (x1)\n    item <- \"item\"\nclass X1Item (item)\n    item <- \"item\"\nclass Item2 (item)\n    f1 <- \"f1\"\nclass X10 (x10)\n    item <- \"item\"\nclass X10Item (item)\n    item <- \"item\"\nclass Item3 (item)\n    f10 <- \"f10\"\nclass X11 (x11)\n    item <- \"item\"\nclass X11Item (item)\n    item <- \"item\"\nclass Item4 (item)\n    f11 <- \"f11\"\nclass X12 (x12)\n    item <- \"item\"\nclass X12Item (item)\n    item <- \"item\"\nclass Item5 (item)\n    f12 <- \"f12\"\nclass X13 (x13)\n    item <- \"item\"\nclass X13Item (item)\n    item <- \"item\"\nclass Item6 (item)\n    f13 <- \"f13\"\nclass X14 (x14)\n    item <- \"item\"\nclass X14Item (item)\n    item <- \"item\"\nclass Item7 (item)\n    f14 <- \"f14\"\nclass X15 (x15)\n    item <- \"item\"\nclass X15Item (item)\n    item <- \"item\"\nclass Item8 (item)\n    f15 <- \"f15\"\nclass X2 (x2)\n    item <- \"item\"\nclass X2Item (item)\n    item <- \"item\"\nclass Item9 (item)\n    f2 <- \"f2\"\nclass X3 (x3)\n    item <- \"item\"\nclass X3Item (item)\n    item <- \"item\"\nclass Item10 (item)\n    f3 <- \"f3\"\nclass X4 (x4)\n    item <- \"item\"\nclass X4Item (item)\n    item <- \"item\"\nclass Item11 (item)\n    f4 <- \"f4\"\nclass X5 (x5)\n    item <- \"item\"\nclass X5Item (item)\n    item <- \"item\"\nclass Item12 (item)\n    f5 <- \"f5\"\nclass X6 (x6)\n    item <- \"item\"\nclass X6Item (item)\n    item <- \"item\"\nclass Item13 (item)\n    f6 <- \"f6\"\nclass X7 (x7)\n    item <- \"item\"\nclass X7Item (item)\n    item <- \"item\"\nclass Item14 (item)\n    f7 <- \"f7\"\nclass X8 (x8)\n    item <- \"item\"\nclass X8Item (item)\n    item <- \"item\"\nclass Item15 (item)\n    f8 <- \"f8\"\nclass X9 (x9)\n    item <- \"item\"\nclass X9Item (item)\n    item <- \"item\"\nclass Item16 (item)\n    f9 <- \"f9\"\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "rust",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Example code that deserializes and serializes the model.\n// extern crate serde;\n// #[macro_use]\n// extern crate serde_derive;\n// extern crate serde_json;\n//\n// use generated_module::TopLevel;\n//\n// fn main() {\n//     let json = r#\"{\"answer\": 42}\"#;\n//     let model: TopLevel = serde_json::from_str(&json).unwrap();\n// }\n\nuse serde::{Serialize, Deserialize};\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TopLevel {\n    pub x0: X0,\n\n    pub x1: X1,\n\n    pub x2: X2,\n\n    pub x3: X3,\n\n    pub x4: X4,\n\n    pub x5: X5,\n\n    pub x6: X6,\n\n    pub x7: X7,\n\n    pub x8: X8,\n\n    pub x9: X9,\n\n    pub x10: X10,\n\n    pub x11: X11,\n\n    pub x12: X12,\n\n    pub x13: X13,\n\n    pub x14: X14,\n\n    pub x15: X15,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X0 {\n    pub item: X0Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X0Item {\n    pub item: PurpleItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct PurpleItem {\n    pub f0: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X1 {\n    pub item: X1Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X1Item {\n    pub item: FluffyItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct FluffyItem {\n    pub f1: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X10 {\n    pub item: X10Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X10Item {\n    pub item: TentacledItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TentacledItem {\n    pub f10: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X11 {\n    pub item: X11Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X11Item {\n    pub item: StickyItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct StickyItem {\n    pub f11: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X12 {\n    pub item: X12Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X12Item {\n    pub item: IndigoItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct IndigoItem {\n    pub f12: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X13 {\n    pub item: X13Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X13Item {\n    pub item: IndecentItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct IndecentItem {\n    pub f13: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X14 {\n    pub item: X14Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X14Item {\n    pub item: HilariousItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct HilariousItem {\n    pub f14: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X15 {\n    pub item: X15Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X15Item {\n    pub item: AmbitiousItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct AmbitiousItem {\n    pub f15: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X2 {\n    pub item: X2Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X2Item {\n    pub item: CunningItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct CunningItem {\n    pub f2: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X3 {\n    pub item: X3Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X3Item {\n    pub item: MagentaItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct MagentaItem {\n    pub f3: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X4 {\n    pub item: X4Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X4Item {\n    pub item: FriskyItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct FriskyItem {\n    pub f4: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X5 {\n    pub item: X5Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X5Item {\n    pub item: MischievousItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct MischievousItem {\n    pub f5: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X6 {\n    pub item: X6Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X6Item {\n    pub item: BraggadociousItem,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct BraggadociousItem {\n    pub f6: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X7 {\n    pub item: X7Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X7Item {\n    pub item: Item1,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item1 {\n    pub f7: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X8 {\n    pub item: X8Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X8Item {\n    pub item: Item2,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item2 {\n    pub f8: i64,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X9 {\n    pub item: X9Item,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct X9Item {\n    pub item: Item3,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct Item3 {\n    pub f9: i64,\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "naming-prefixes"
+}

@@ -1,0 +1,10 @@
+# Rust naming: rename_all heuristics for structs and enums, keyword
+# collisions, escaping of JSON names in #[serde(rename)], and names that
+# style to nothing.
+input json TopLevel {"camelOne": 1, "camelTwo": 2, "snake_one": 3, "type": "t", "Option": 1, "self": 2, "Self": 3, "ünïcødé": 4, "with\"quote": 5, "tab\there": 6, "123": 7, "": 8, "_": 9, "__": 10, "a-b": 11, "UPPER": 12, "Box": {"HashMap": {"x": 1}}, "String": [{"Vec": 1}], "emoji😀": 13}
+input json Allcamel {"oneTwo": 1, "threeFour": 2, "five": 3}
+input json AllKebab {"one-two": 1, "three-four": 2}
+input json Screaming {"ONE_TWO": 1, "THREE_FOUR": 2, "FIVE": 3}
+
+render rust {"alphabetize": true}
+render rust {}
