@@ -393,7 +393,11 @@ against the package's own vendored TypeScript engine (`QUICKTYPE_REFERENCE=self`
 1. Check out the commit next to this repository as `../quicktype` and build
    it (`npm ci && npm run build`).
 2. `cargo xtask golden ../quicktype` rewrites `tests/golden` and
-   `tests/golden/REFERENCE` (commit, Node version, date).
+   `tests/golden/REFERENCE` (commit, Node version, date). If the version in
+   quicktype's `package.json` changed, set `QUICKTYPE_VERSION` in
+   `crates/quicktype-cli/src/main.rs` to it: `--version` prints quicktype's
+   version (the `cli-version` cases), not this port's own (the workspace
+   version, see [RELEASING.md](RELEASING.md)).
 3. `cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"`: the
    new corpus must pass completely against the reference itself.
 4. `cargo xtask parity`: the regressions are what changed upstream. Port it

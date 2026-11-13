@@ -3,12 +3,16 @@ resolver = "3"
 members = ["crates/*", "xtask"]
 default-members = ["crates/*"]
 
+# The port's own version (semver), independent of quicktype's. The CLI
+# reports quicktype's version for parity instead (`QUICKTYPE_VERSION` in
+# crates/quicktype-cli/src/main.rs); see docs/RELEASING.md.
 [workspace.package]
-version = "24.0.0"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 license = "Apache-2.0"
-repository = "https://github.com/glideapps/quicktype"
+repository = "https://github.com/EloB/quickertype"
+homepage = "https://github.com/EloB/quickertype"
 authors = ["quicktype contributors"]
 
 # Shared dependency versions. Several exist specifically to reproduce

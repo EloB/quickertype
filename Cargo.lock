@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-cli"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "indexmap",
  "mimalloc",
@@ -403,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-core"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "brotli-decompressor",
  "flate2",
@@ -420,7 +420,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-graphql-input"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "indexmap",
  "quicktype-core",
@@ -430,7 +430,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-js-compat"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "indexmap",
  "regex",
@@ -444,7 +444,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-typescript-input"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "quicktype-js-compat",
  "serde",
@@ -454,7 +454,7 @@ dependencies = [
 
 [[package]]
 name = "quicktype-wasm"
-version = "24.0.0"
+version = "0.1.0"
 dependencies = [
  "indexmap",
  "js-sys",
