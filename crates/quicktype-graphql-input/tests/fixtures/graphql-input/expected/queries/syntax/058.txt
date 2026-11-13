@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Invalid Unicode escape sequence: "\u{}".

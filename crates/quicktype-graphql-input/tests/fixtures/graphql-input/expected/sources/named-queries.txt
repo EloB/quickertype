@@ -1,0 +1,33 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: integer | 0
+1: null | 1
+2: union count | children 0,1 | 2 | given count (data_count)
+3: class data | children 0 | 3 | given data (A_data)
+4: union | children 3,1 | 4
+5: string | 5 | unrestricted
+6: class error | children 5 | 6 | given error (graphQLError)
+7: array errors | children 6 | 7 | given errors (graphQLErrors)
+8: class A | children 4,7 | 8 | given A ()
+9: union hello | children 1,5 | 9 | given hello,name (data_hello,User_name)
+10: class data | children 9 | 10 | given data (B_data)
+11: union | children 10,1 | 11
+12: class B | children 11,7 | 12 | given B ()
+13: class User | children 9 | 13 | given User (viewer,data_User,data_viewer)
+14: union viewer | children 13,1 | 14 | given viewer (data_viewer)
+15: class data | children 13 | 15 | given data (Second_data)
+16: union | children 15,1 | 16
+17: class Second | children 16,7 | 17 | given Second ()
+# properties
+3 properties [["count",0,false]]
+6 properties [["message",5,false]]
+8 properties [["data",4,false],["errors",7,true]]
+10 properties [["hello",9,false]]
+12 properties [["data",11,false],["errors",7,true]]
+13 properties [["name",9,false]]
+15 properties [["viewer",13,false]]
+17 properties [["data",16,false],["errors",7,true]]
+# top-levels
+"A": 8
+"B": 12
+"Second": 17

@@ -7,12 +7,13 @@
 //! the input parses them.
 
 use quicktype_core::{ErrorKind, JsonSchemaSourceData, QuickTypeError, Readable, parse_json};
+use quicktype_graphql_input::GraphQlSourceData;
 
 use crate::cli_options::CliOptions;
 use crate::js;
 use crate::messages::{CliError, message_error};
 use crate::node_fs;
-use crate::type_source::{GraphQlTypeSource, JsonTypeSource, TypeSource};
+use crate::type_source::{JsonTypeSource, TypeSource};
 use crate::url_grammar::urls_from_url_grammar;
 
 /// `sourceFromFileOrUrlArray(name, filesOrUrls, httpHeaders)`: one JSON
@@ -128,7 +129,7 @@ async fn read_files_or_urls_in_directory(
             Some(&schema.file_name),
         )?;
         for (name, query) in graphql_sources {
-            sources_in_dir.push(TypeSource::GraphQl(GraphQlTypeSource {
+            sources_in_dir.push(TypeSource::GraphQl(GraphQlSourceData {
                 name,
                 schema: schema.clone(),
                 query,

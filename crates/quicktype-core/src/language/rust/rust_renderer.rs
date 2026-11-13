@@ -7,6 +7,7 @@ use crate::attributes::constraints::min_max_value_for_type;
 use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::renderer_options::RendererOptions;
+use crate::support::recursion::guard;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{NullRemovalSort, nullable_from_union, remove_null_from_union};
 
@@ -138,52 +139,55 @@ impl<'a> RustRenderer<'a> {
 
     /// `rustType(t, withIssues)`.
     fn rust_type(&self, t: TypeRef, with_issues: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        Ok(match ty.kind() {
-            TypeKind::Any => maybe_annotated(
-                with_issues,
-                any_type_issue_annotation(),
-                "Option<serde_json::Value>",
-            ),
-            TypeKind::Null => maybe_annotated(
-                with_issues,
-                null_type_issue_annotation(),
-                "Option<serde_json::Value>",
-            ),
-            TypeKind::Bool => "bool".into(),
-            TypeKind::Integer => self.get_integer_type(t)?.into(),
-            TypeKind::Double => "f64".into(),
-            TypeKind::String => "String".into(),
-            TypeKind::Array => sl!["Vec<", self.rust_type(ty.items()?, with_issues)?, ">"],
-            TypeKind::Class => self.name_for_named_type(t)?.into(),
-            TypeKind::Map => sl![
-                "HashMap<String, ",
-                self.rust_type(ty.map_values()?, with_issues)?,
-                ">"
-            ],
-            TypeKind::Enum => self.name_for_named_type(t)?.into(),
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return self.nullable_rust_type(nullable, with_issues);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            Ok(match ty.kind() {
+                TypeKind::Any => maybe_annotated(
+                    with_issues,
+                    any_type_issue_annotation(),
+                    "Option<serde_json::Value>",
+                ),
+                TypeKind::Null => maybe_annotated(
+                    with_issues,
+                    null_type_issue_annotation(),
+                    "Option<serde_json::Value>",
+                ),
+                TypeKind::Bool => "bool".into(),
+                TypeKind::Integer => self.get_integer_type(t)?.into(),
+                TypeKind::Double => "f64".into(),
+                TypeKind::String => "String".into(),
+                TypeKind::Array => sl!["Vec<", self.rust_type(ty.items()?, with_issues)?, ">"],
+                TypeKind::Class => self.name_for_named_type(t)?.into(),
+                TypeKind::Map => sl![
+                    "HashMap<String, ",
+                    self.rust_type(ty.map_values()?, with_issues)?,
+                    ">"
+                ],
+                TypeKind::Enum => self.name_for_named_type(t)?.into(),
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return self.nullable_rust_type(nullable, with_issues);
+                    }
+                    let (has_null, _) = remove_null_from_union(graph, t, NullRemovalSort::None)?;
+                    let is_cycle_breaker = self.is_cycle_breaker_type(t)?;
+                    let name: Source = if is_cycle_breaker {
+                        sl!["Box<", self.name_for_named_type(t)?, ">"]
+                    } else {
+                        self.name_for_named_type(t)?.into()
+                    };
+                    if has_null.is_some() {
+                        sl!["Option<", name, ">"]
+                    } else {
+                        name
+                    }
                 }
-                let (has_null, _) = remove_null_from_union(graph, t, NullRemovalSort::None)?;
-                let is_cycle_breaker = self.is_cycle_breaker_type(t)?;
-                let name: Source = if is_cycle_breaker {
-                    sl!["Box<", self.name_for_named_type(t)?, ">"]
-                } else {
-                    self.name_for_named_type(t)?.into()
-                };
-                if has_null.is_some() {
-                    sl!["Option<", name, ">"]
-                } else {
-                    name
+                TypeKind::Intersection => {
+                    return crate::support::support::panic("Unknown type intersection");
                 }
-            }
-            TypeKind::Intersection => {
-                return crate::support::support::panic("Unknown type intersection");
-            }
-            kind => return type_not_supported(kind),
+                kind => return type_not_supported(kind),
+            })
         })
     }
 

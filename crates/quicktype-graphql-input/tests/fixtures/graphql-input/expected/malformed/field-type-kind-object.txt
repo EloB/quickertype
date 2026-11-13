@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Type of kind [object Object] has neither name nor ofType

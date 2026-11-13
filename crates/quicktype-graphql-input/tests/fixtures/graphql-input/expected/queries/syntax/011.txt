@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Expected "on", found Name "User".

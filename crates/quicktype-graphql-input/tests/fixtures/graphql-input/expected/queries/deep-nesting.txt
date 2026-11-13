@@ -1,0 +1,139 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union name | children 1,0 | 2 | given name (User_name)
+3: class User | children 2 | 3 | given User (best,User_User,User_best)
+4: union best | children 3,1 | 4 | given best (User_best)
+5: class User | children 4 | 5 | given User (best,User_User,User_best)
+6: union best | children 5,1 | 6 | given best (User_best)
+7: class User | children 6 | 7 | given User (best,User_User,User_best)
+8: union best | children 7,1 | 8 | given best (User_best)
+9: class User | children 8 | 9 | given User (best,User_User,User_best)
+10: union best | children 9,1 | 10 | given best (User_best)
+11: class User | children 10 | 11 | given User (best,User_User,User_best)
+12: union best | children 11,1 | 12 | given best (User_best)
+13: class User | children 12 | 13 | given User (best,User_User,User_best)
+14: union best | children 13,1 | 14 | given best (User_best)
+15: class User | children 14 | 15 | given User (best,User_User,User_best)
+16: union best | children 15,1 | 16 | given best (User_best)
+17: class User | children 16 | 17 | given User (best,User_User,User_best)
+18: union best | children 17,1 | 18 | given best (User_best)
+19: class User | children 18 | 19 | given User (best,User_User,User_best)
+20: union best | children 19,1 | 20 | given best (User_best)
+21: class User | children 20 | 21 | given User (best,User_User,User_best)
+22: union best | children 21,1 | 22 | given best (User_best)
+23: class User | children 22 | 23 | given User (best,User_User,User_best)
+24: union best | children 23,1 | 24 | given best (User_best)
+25: class User | children 24 | 25 | given User (best,User_User,User_best)
+26: union best | children 25,1 | 26 | given best (User_best)
+27: class User | children 26 | 27 | given User (best,User_User,User_best)
+28: union best | children 27,1 | 28 | given best (User_best)
+29: class User | children 28 | 29 | given User (best,User_User,User_best)
+30: union best | children 29,1 | 30 | given best (User_best)
+31: class User | children 30 | 31 | given User (best,User_User,User_best)
+32: union best | children 31,1 | 32 | given best (User_best)
+33: class User | children 32 | 33 | given User (best,User_User,User_best)
+34: union best | children 33,1 | 34 | given best (User_best)
+35: class User | children 34 | 35 | given User (best,User_User,User_best)
+36: union best | children 35,1 | 36 | given best (User_best)
+37: class User | children 36 | 37 | given User (best,User_User,User_best)
+38: union best | children 37,1 | 38 | given best (User_best)
+39: class User | children 38 | 39 | given User (best,User_User,User_best)
+40: union best | children 39,1 | 40 | given best (User_best)
+41: class User | children 40 | 41 | given User (best,User_User,User_best)
+42: union best | children 41,1 | 42 | given best (User_best)
+43: class User | children 42 | 43 | given User (best,User_User,User_best)
+44: union best | children 43,1 | 44 | given best (User_best)
+45: class User | children 44 | 45 | given User (best,User_User,User_best)
+46: union best | children 45,1 | 46 | given best (User_best)
+47: class User | children 46 | 47 | given User (best,User_User,User_best)
+48: union best | children 47,1 | 48 | given best (User_best)
+49: class User | children 48 | 49 | given User (best,User_User,User_best)
+50: union best | children 49,1 | 50 | given best (User_best)
+51: class User | children 50 | 51 | given User (best,User_User,User_best)
+52: union best | children 51,1 | 52 | given best (User_best)
+53: class User | children 52 | 53 | given User (best,User_User,User_best)
+54: union best | children 53,1 | 54 | given best (User_best)
+55: class User | children 54 | 55 | given User (best,User_User,User_best)
+56: union best | children 55,1 | 56 | given best (User_best)
+57: class User | children 56 | 57 | given User (best,User_User,User_best)
+58: union best | children 57,1 | 58 | given best (User_best)
+59: class User | children 58 | 59 | given User (best,User_User,User_best)
+60: union best | children 59,1 | 60 | given best (User_best)
+61: class User | children 60 | 61 | given User (best,User_User,User_best)
+62: union best | children 61,1 | 62 | given best (User_best)
+63: class User | children 62 | 63 | given User (best,User_User,User_best)
+64: union best | children 63,1 | 64 | given best (User_best)
+65: class User | children 64 | 65 | given User (best,User_User,User_best)
+66: union best | children 65,1 | 66 | given best (User_best)
+67: class User | children 66 | 67 | given User (best,User_User,User_best)
+68: union best | children 67,1 | 68 | given best (User_best)
+69: class User | children 68 | 69 | given User (best,User_User,User_best)
+70: union best | children 69,1 | 70 | given best (User_best)
+71: class User | children 70 | 71 | given User (best,User_User,User_best)
+72: union best | children 71,1 | 72 | given best (User_best)
+73: class User | children 72 | 73 | given User (best,User_User,User_best)
+74: union best | children 73,1 | 74 | given best (User_best)
+75: class User | children 74 | 75 | given User (best,User_User,User_best)
+76: union best | children 75,1 | 76 | given best (User_best)
+77: class User | children 76 | 77 | given User (best,User_User,User_best)
+78: union best | children 77,1 | 78 | given best (User_best)
+79: class User | children 78 | 79 | given User (best,User_User,User_best)
+80: union best | children 79,1 | 80 | given best (User_best)
+81: class User | children 80 | 81 | given User (best,User_User,User_best)
+82: union best | children 81,1 | 82 | given best (User_best)
+83: class User | children 82 | 83 | given User (viewer,data_User,data_viewer)
+84: union viewer | children 83,1 | 84 | given viewer (data_viewer)
+85: class data | children 83 | 85 | given data (TopLevel_data)
+86: union | children 85,1 | 86
+87: class error | children 0 | 87 | given error (graphQLError)
+88: array errors | children 87 | 88 | given errors (graphQLErrors)
+89: class TopLevel | children 86,88 | 89 | given TopLevel ()
+# properties
+3 properties [["name",2,false]]
+5 properties [["best",4,false]]
+7 properties [["best",6,false]]
+9 properties [["best",8,false]]
+11 properties [["best",10,false]]
+13 properties [["best",12,false]]
+15 properties [["best",14,false]]
+17 properties [["best",16,false]]
+19 properties [["best",18,false]]
+21 properties [["best",20,false]]
+23 properties [["best",22,false]]
+25 properties [["best",24,false]]
+27 properties [["best",26,false]]
+29 properties [["best",28,false]]
+31 properties [["best",30,false]]
+33 properties [["best",32,false]]
+35 properties [["best",34,false]]
+37 properties [["best",36,false]]
+39 properties [["best",38,false]]
+41 properties [["best",40,false]]
+43 properties [["best",42,false]]
+45 properties [["best",44,false]]
+47 properties [["best",46,false]]
+49 properties [["best",48,false]]
+51 properties [["best",50,false]]
+53 properties [["best",52,false]]
+55 properties [["best",54,false]]
+57 properties [["best",56,false]]
+59 properties [["best",58,false]]
+61 properties [["best",60,false]]
+63 properties [["best",62,false]]
+65 properties [["best",64,false]]
+67 properties [["best",66,false]]
+69 properties [["best",68,false]]
+71 properties [["best",70,false]]
+73 properties [["best",72,false]]
+75 properties [["best",74,false]]
+77 properties [["best",76,false]]
+79 properties [["best",78,false]]
+81 properties [["best",80,false]]
+83 properties [["best",82,false]]
+85 properties [["viewer",83,false]]
+87 properties [["message",0,false]]
+89 properties [["data",86,false],["errors",88,true]]
+# top-levels
+"TopLevel": 89

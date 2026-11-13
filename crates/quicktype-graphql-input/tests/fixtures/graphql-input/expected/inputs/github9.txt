@@ -1,0 +1,32 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union clientMutationId | children 1,0 | 2 | given clientMutationId (AddReactionPayload_clientMutationId)
+3: enum ReactionContent | 3 | given ReactionContent (content,Reaction_ReactionContent,Reaction_content,ReactionGroup_ReactionContent,ReactionGroup_content)
+4: union content | children 3,1 | 4 | given content (Reaction_content,ReactionGroup_content)
+5: class reaction | children 3 | 5 | given Reaction,ReactionGroup (reaction,AddReactionPayload_Reaction,AddReactionPayload_reaction,reactionGroups,Reactable_ReactionGroup,Reactable_reactionGroups)
+6: union reaction | children 5,1 | 6 | given reaction,reactionGroups (AddReactionPayload_reaction,Reactable_reactionGroups)
+7: bool | 7
+8: union viewerCanReact | children 7,1 | 8 | given viewerCanReact (Reactable_viewerCanReact)
+9: array | children 5 | 9
+10: union reactionGroups | children 9,1 | 10 | given reactionGroups (Reactable_reactionGroups)
+11: class Reactable | children 10,7 | 11 | given Reactable (subject,AddReactionPayload_Reactable,AddReactionPayload_subject)
+12: union subject | children 11,1 | 12 | given subject (AddReactionPayload_subject)
+13: class AddReactionPayload | children 2,5,11 | 13 | given AddReactionPayload (addReaction,data_AddReactionPayload,data_addReaction)
+14: union addReaction | children 13,1 | 14 | given addReaction (data_addReaction)
+15: class data | children 14 | 15 | given data (AddReaction_data)
+16: union | children 15,1 | 16
+17: class error | children 0 | 17 | given error (graphQLError)
+18: array errors | children 17 | 18 | given errors (graphQLErrors)
+19: class AddReaction | children 16,18 | 19 | given AddReaction ()
+# properties
+3 cases ["THUMBS_UP","THUMBS_DOWN","LAUGH","HOORAY","CONFUSED","HEART"]
+5 properties [["content",3,false]]
+11 properties [["viewerCanReact",7,false],["reactionGroups",10,false]]
+13 properties [["clientMutationId",2,false],["reaction",5,false],["subject",11,false]]
+15 properties [["addReaction",14,false]]
+17 properties [["message",0,false]]
+19 properties [["data",16,false],["errors",18,true]]
+# top-levels
+"TopLevel": 19

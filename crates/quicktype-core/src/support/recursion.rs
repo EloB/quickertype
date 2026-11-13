@@ -66,6 +66,15 @@ pub fn guard<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
     }
     DEPTH.with(|d| d.set(depth + 1));
     let _leave = Leave;
+    grow_stack(f)
+}
+
+/// Runs `f`, one level of a recursion that must not overflow the native
+/// stack but has no depth limit of its own: on a fresh stack segment if
+/// the current stack is nearly exhausted. For recursions whose depth the
+/// input bounds (nesting in a document) where the port deliberately goes
+/// deeper than Node's stack; see "Known gaps" in `docs/PARITY.md`.
+pub fn grow_stack<R>(f: impl FnOnce() -> R) -> R {
     stacker::maybe_grow(RED_ZONE, STACK_SEGMENT, f)
 }
 

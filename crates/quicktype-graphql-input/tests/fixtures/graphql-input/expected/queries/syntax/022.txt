@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Name "true" is reserved and cannot be used for an enum value.

@@ -4,6 +4,14 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- **Parity 10,796 / 11,177 (96.6%), 0 regressions.** Merged Go + JSON
+  Schema output, GraphQL input (hand port of graphql-js 16's parser;
+  228 input cases, 2,510 parser vectors, 38 introspection runs identical),
+  and a recursion-guard sweep (14 languages used to abort on cyclic
+  schemas; all now return the reference's RangeError). Every input type and
+  every output language except C is on `main`; the remaining 381 cases all
+  need the C renderer (in progress).
+- Phase 7 (benchmarks + hot paths) started.
 - JS API after merging wave 2: languages the engine lacks (cJSON, Go, JSON
   Schema output) fall back to the TypeScript engine via
   `QuickTypeError::unsupported`/`has_renderer`. Differential suite: 18,718

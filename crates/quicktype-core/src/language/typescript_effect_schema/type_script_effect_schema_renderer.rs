@@ -15,6 +15,7 @@ use crate::graph::Graph;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     is_letter_or_underscore, split_into_words, string_escape, utf16_string_escape,
@@ -153,19 +154,21 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
         required: bool,
         coerce_strings: bool,
     ) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            let name = self.name_for_named_type(t)?;
-            if self.emitted_objects.contains(&name) {
-                return Ok(sl![name]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                let name = self.name_for_named_type(t)?;
+                if self.emitted_objects.contains(&name) {
+                    return Ok(sl![name]);
+                }
+
+                return Ok(sl!["S.suspend(() => ", name, ")"]);
             }
 
-            return Ok(sl!["S.suspend(() => ", name, ")"]);
-        }
-
-        let matched: Source = match kind {
+            let matched: Source = match kind {
             TypeKind::Any => "S.Any".into(),
             TypeKind::Null => "S.Null".into(),
             TypeKind::Bool => "S.Boolean".into(),
@@ -271,11 +274,12 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             kind => return type_not_supported(kind),
         };
 
-        if required {
-            return Ok(sl![matched]);
-        }
+            if required {
+                return Ok(sl![matched]);
+            }
 
-        Ok(matched)
+            Ok(matched)
+        })
     }
 
     /// `stringSchema(t)`.

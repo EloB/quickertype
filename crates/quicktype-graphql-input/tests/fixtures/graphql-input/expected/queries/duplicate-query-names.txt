@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Duplicate query name A

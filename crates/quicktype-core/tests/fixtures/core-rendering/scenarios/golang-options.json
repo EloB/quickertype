@@ -1,0 +1,739 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "nu",
+       [
+        "A nullable string, described at some length so that the description needs to be wrapped over more than one line of the generated comment."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "anything",
+      1,
+      true
+     ],
+     [
+      "kind",
+      2,
+      true
+     ],
+     [
+      "list",
+      3,
+      true
+     ],
+     [
+      "nothing",
+      7,
+      true
+     ],
+     [
+      "nu",
+      8,
+      true
+     ],
+     [
+      "times",
+      9,
+      false
+     ],
+     [
+      "u",
+      11,
+      true
+     ],
+     [
+      "when",
+      17,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "kind"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "x-y",
+     "z"
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 4
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "list"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "members": [
+     5,
+     6
+    ]
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    }
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nu"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nu"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     7,
+     6
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "times"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 10
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Other"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     5,
+     12,
+     14,
+     7,
+     6
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 13
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 7
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "u"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      15,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     16,
+     5
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "x"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Other"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 10
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Other",
+    17
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage main\n\nimport \"bytes\"\nimport \"errors\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n\tvar r Other\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n\ntype UClass struct {\n\tX *X `json:\"x\"`\n}\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n\tx.BoolArray = nil\n\tx.UClass = nil\n\tvar c UClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.UClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       40,
+       91,
+       40,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       43,
+       91,
+       43,
+       102
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       22,
+       91,
+       22,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       25,
+       91,
+       25,
+       102
+      ]
+     ]
+    },
+    {
+     "name": "Other.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n\tvar r Other\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "UClass.go",
+     "text": "package main\n\ntype UClass struct {\n\tX *X `json:\"x\"`\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Kind.go",
+     "text": "package main\n\nimport \"encoding/json\"\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "List.go",
+     "text": "package main\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "UUnion.go",
+     "text": "package main\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n\tx.BoolArray = nil\n\tx.UClass = nil\n\tvar c UClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.UClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "X.go",
+     "text": "package main\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.go",
+     "text": "package main\n\nimport \"bytes\"\nimport \"encoding/json\"\nimport \"errors\"\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file TopLevel.go more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types-and-package": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package main\n\ntype Other []time.Time\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n\ntype UClass struct {\n\tX *X `json:\"x\"`\n}\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       6,
+       91,
+       6,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       9,
+       91,
+       9,
+       102
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types-and-package": true,
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Previous file wasn't finished: Other.go",
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "type Other []time.Time\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n\ntype UClass struct {\n\tX *X `json:\"x\"`\n}\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       4,
+       91,
+       4,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       7,
+       91,
+       7,
+       102
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true,
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Internal error: Previous file wasn't finished: Other.go",
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "omit-empty": true,
+    "field-tags": "json,yaml,xml"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage main\n\nimport \"bytes\"\nimport \"errors\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n\tvar r Other\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\" yaml:\"anything\" xml:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\" yaml:\"kind,omitempty\" xml:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\" yaml:\"list,omitempty\" xml:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\" yaml:\"nothing\" xml:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\" yaml:\"nu\" xml:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\" yaml:\"times\" xml:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\" yaml:\"u\" xml:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\" yaml:\"when,omitempty\" xml:\"when,omitempty\"`\n}\n\ntype UClass struct {\n\tX *X `json:\"x\" yaml:\"x\" xml:\"x\"`\n}\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n\tx.BoolArray = nil\n\tx.UClass = nil\n\tvar c UClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.UClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       40,
+       91,
+       40,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       43,
+       91,
+       43,
+       102
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "field-tags": "",
+    "package": "model"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage model\n\nimport \"bytes\"\nimport \"errors\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n\tvar r Other\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `:\"anything\"`\n\tKind                                                                                      *Kind                `:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `:\"times\"`\n\tU                                                                                         *UUnion              `:\"u\"`\n\tWhen                                                                                      *[]time.Time         `:\"when,omitempty\"`\n}\n\ntype UClass struct {\n\tX *X `:\"x\"`\n}\n\ntype Kind string\n\nconst (\n\tXY Kind = \"x-y\"\n\tZ  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XY, Z: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n\tx.BoolArray = nil\n\tx.UClass = nil\n\tvar c UClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.UClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       40,
+       91,
+       40,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       43,
+       91,
+       43,
+       102
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "enum-type-name-suffix": true,
+    "multi-file-output": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "TopLevel.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n\tvar r TopLevel\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n\tAnything                                                                                  interface{}          `json:\"anything\"`\n\tKind                                                                                      *Kind                `json:\"kind,omitempty\"`\n\tList                                                                                      *[]List              `json:\"list,omitempty\"`\n\tNothing                                                                                   interface{}          `json:\"nothing\"`\n\t// A nullable string, described at some length so that the description needs to be wrapped                     \n\t// over more than one line of the generated comment.                                                           \n\tNu                                                                                        *string              `json:\"nu\"`\n\tTimes                                                                                     map[string]time.Time `json:\"times\"`\n\tU                                                                                         *UUnion              `json:\"u\"`\n\tWhen                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       22,
+       91,
+       22,
+       102
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       25,
+       91,
+       25,
+       102
+      ]
+     ]
+    },
+    {
+     "name": "Other.go",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage main\n\nimport \"encoding/json\"\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n\tvar r Other\n\terr := json.Unmarshal(data, &r)\n\treturn r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n\treturn json.Marshal(r)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "UClass.go",
+     "text": "package main\n\ntype UClass struct {\n\tX *X `json:\"x\"`\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "Kind.go",
+     "text": "package main\n\nimport \"encoding/json\"\n\ntype Kind string\n\nconst (\n\tXYKind Kind = \"x-y\"\n\tZKind  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n\tvar value string\n\tif err := json.Unmarshal(data, &value); err != nil { return err }\n\tswitch Kind(value) {\n\tcase XYKind, ZKind: *x = Kind(value); return nil\n\t}\n\treturn invalidKind(value)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "List.go",
+     "text": "package main\n\ntype List struct {\n\tInteger *int64\n\tString  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "UUnion.go",
+     "text": "package main\n\ntype UUnion struct {\n\tBoolArray []bool\n\tInteger   *int64\n\tString    *string\n\tUClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n\tx.BoolArray = nil\n\tx.UClass = nil\n\tvar c UClass\n\tobject, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t\tx.UClass = &c\n\t}\n\treturn nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "X.go",
+     "text": "package main\n\ntype X struct {\n\tDouble  *float64\n\tInteger *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n\tobject, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n\tif err != nil {\n\t\treturn err\n\t}\n\tif object {\n\t}\n\treturn nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n\treturn marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n",
+     "annotations": []
+    },
+    {
+     "name": "JSONSchemaSupport.go",
+     "text": "package main\n\nimport \"bytes\"\nimport \"encoding/json\"\nimport \"errors\"\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n\tif pi != nil {\n\t\t\t*pi = nil\n\t}\n\tif pf != nil {\n\t\t\t*pf = nil\n\t}\n\tif pb != nil {\n\t\t\t*pb = nil\n\t}\n\tif ps != nil {\n\t\t\t*ps = nil\n\t}\n\n\tdec := json.NewDecoder(bytes.NewReader(data))\n\tdec.UseNumber()\n\ttok, err := dec.Token()\n\tif err != nil {\n\t\t\treturn false, err\n\t}\n\n\tswitch v := tok.(type) {\n\tcase json.Number:\n\t\t\tif pi != nil {\n\t\t\t\t\ti, err := v.Int64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pi = &i\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t}\n\t\t\tif pf != nil {\n\t\t\t\t\tf, err := v.Float64()\n\t\t\t\t\tif err == nil {\n\t\t\t\t\t\t\t*pf = &f\n\t\t\t\t\t\t\treturn false, nil\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Unparsable number\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain number\")\n\tcase float64:\n\t\t\treturn false, errors.New(\"Decoder should not return float64\")\n\tcase bool:\n\t\t\tif pb != nil {\n\t\t\t\t\t*pb = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain bool\")\n\tcase string:\n\t\t\tif haveEnum {\n\t\t\t\t\treturn false, json.Unmarshal(data, pe)\n\t\t\t}\n\t\t\tif ps != nil {\n\t\t\t\t\t*ps = &v\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain string\")\n\tcase nil:\n\t\t\tif nullable {\n\t\t\t\t\treturn false, nil\n\t\t\t}\n\t\t\treturn false, errors.New(\"Union does not contain null\")\n\tcase json.Delim:\n\t\t\tif v == '{' {\n\t\t\t\t\tif haveObject {\n\t\t\t\t\t\t\treturn true, json.Unmarshal(data, pc)\n\t\t\t\t\t}\n\t\t\t\t\tif haveMap {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pm)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain object\")\n\t\t\t}\n\t\t\tif v == '[' {\n\t\t\t\t\tif haveArray {\n\t\t\t\t\t\t\treturn false, json.Unmarshal(data, pa)\n\t\t\t\t\t}\n\t\t\t\t\treturn false, errors.New(\"Union does not contain array\")\n\t\t\t}\n\t\t\treturn false, errors.New(\"Cannot handle delimiter\")\n\t}\n\treturn false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n\tif pi != nil {\n\t\t\treturn json.Marshal(*pi)\n\t}\n\tif pf != nil {\n\t\t\treturn json.Marshal(*pf)\n\t}\n\tif pb != nil {\n\t\t\treturn json.Marshal(*pb)\n\t}\n\tif ps != nil {\n\t\t\treturn json.Marshal(*ps)\n\t}\n\tif haveArray {\n\t\t\treturn json.Marshal(pa)\n\t}\n\tif haveObject {\n\t\t\treturn json.Marshal(pc)\n\t}\n\tif haveMap {\n\t\t\treturn json.Marshal(pm)\n\t}\n\tif haveEnum {\n\t\t\treturn json.Marshal(pe)\n\t}\n\tif nullable {\n\t\t\treturn json.Marshal(nil)\n\t}\n\treturn nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": []
+    }
+   ],
+   "console": [
+    "[WARNING] Tried to emit file TopLevel.go more than once. If performing multi-file output this warning can be safely ignored."
+   ]
+  },
+  {
+   "lang": "golang",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": "  ",
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// To parse and unparse this JSON data, add this code to your project and do:\n//\n//    topLevel, err := UnmarshalTopLevel(bytes)\n//    bytes, err = topLevel.Marshal()\n//\n//    other, err := UnmarshalOther(bytes)\n//    bytes, err = other.Marshal()\n\npackage main\n\nimport \"bytes\"\nimport \"errors\"\n\nimport \"encoding/json\"\n\nfunc UnmarshalTopLevel(data []byte) (TopLevel, error) {\n  var r TopLevel\n  err := json.Unmarshal(data, &r)\n  return r, err\n}\n\nfunc (r *TopLevel) Marshal() ([]byte, error) {\n  return json.Marshal(r)\n}\n\ntype Other []time.Time\n\nfunc UnmarshalOther(data []byte) (Other, error) {\n  var r Other\n  err := json.Unmarshal(data, &r)\n  return r, err\n}\n\nfunc (r *Other) Marshal() ([]byte, error) {\n  return json.Marshal(r)\n}\n\n// The top level.\ntype TopLevel struct {\n  Anything                                                                                  interface{}          `json:\"anything\"`\n  Kind                                                                                      *Kind                `json:\"kind,omitempty\"`\n  List                                                                                      *[]List              `json:\"list,omitempty\"`\n  Nothing                                                                                   interface{}          `json:\"nothing\"`\n  // A nullable string, described at some length so that the description needs to be wrapped                     \n  // over more than one line of the generated comment.                                                           \n  Nu                                                                                        *string              `json:\"nu\"`\n  Times                                                                                     map[string]time.Time `json:\"times\"`\n  U                                                                                         *UUnion              `json:\"u\"`\n  When                                                                                      *[]time.Time         `json:\"when,omitempty\"`\n}\n\ntype UClass struct {\n  X *X `json:\"x\"`\n}\n\ntype Kind string\n\nconst (\n  XY Kind = \"x-y\"\n  Z  Kind = \"z\"\n)\n\ntype invalidKind string\nfunc (x invalidKind) Error() string { return \"invalid Kind: \" + string(x) }\n\nfunc (x *Kind) UnmarshalJSON(data []byte) error {\n  var value string\n  if err := json.Unmarshal(data, &value); err != nil { return err }\n  switch Kind(value) {\n  case XY, Z: *x = Kind(value); return nil\n  }\n  return invalidKind(value)\n}\n\ntype List struct {\n  Integer *int64\n  String  *string\n}\n\nfunc (x *List) UnmarshalJSON(data []byte) error {\n  object, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, false, nil, false, nil, false, nil, false, nil, false)\n  if err != nil {\n    return err\n  }\n  if object {\n  }\n  return nil\n}\n\nfunc (x *List) MarshalJSON() ([]byte, error) {\n  return marshalUnion(x.Integer, nil, nil, x.String, false, nil, false, nil, false, nil, false, nil, false)\n}\n\ntype UUnion struct {\n  BoolArray []bool\n  Integer   *int64\n  String    *string\n  UClass    *UClass\n}\n\nfunc (x *UUnion) UnmarshalJSON(data []byte) error {\n  x.BoolArray = nil\n  x.UClass = nil\n  var c UClass\n  object, err := unmarshalUnion(data, &x.Integer, nil, nil, &x.String, true, &x.BoolArray, true, &c, false, nil, false, nil, true)\n  if err != nil {\n    return err\n  }\n  if object {\n    x.UClass = &c\n  }\n  return nil\n}\n\nfunc (x *UUnion) MarshalJSON() ([]byte, error) {\n  return marshalUnion(x.Integer, nil, nil, x.String, x.BoolArray != nil, x.BoolArray, x.UClass != nil, x.UClass, false, nil, false, nil, true)\n}\n\ntype X struct {\n  Double  *float64\n  Integer *int64\n}\n\nfunc (x *X) UnmarshalJSON(data []byte) error {\n  object, err := unmarshalUnion(data, &x.Integer, &x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n  if err != nil {\n    return err\n  }\n  if object {\n  }\n  return nil\n}\n\nfunc (x *X) MarshalJSON() ([]byte, error) {\n  return marshalUnion(x.Integer, x.Double, nil, nil, false, nil, false, nil, false, nil, false, nil, false)\n}\n\nfunc unmarshalUnion(data []byte, pi **int64, pf **float64, pb **bool, ps **string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) (bool, error) {\n  if pi != nil {\n      *pi = nil\n  }\n  if pf != nil {\n      *pf = nil\n  }\n  if pb != nil {\n      *pb = nil\n  }\n  if ps != nil {\n      *ps = nil\n  }\n\n  dec := json.NewDecoder(bytes.NewReader(data))\n  dec.UseNumber()\n  tok, err := dec.Token()\n  if err != nil {\n      return false, err\n  }\n\n  switch v := tok.(type) {\n  case json.Number:\n      if pi != nil {\n          i, err := v.Int64()\n          if err == nil {\n              *pi = &i\n              return false, nil\n          }\n      }\n      if pf != nil {\n          f, err := v.Float64()\n          if err == nil {\n              *pf = &f\n              return false, nil\n          }\n          return false, errors.New(\"Unparsable number\")\n      }\n      return false, errors.New(\"Union does not contain number\")\n  case float64:\n      return false, errors.New(\"Decoder should not return float64\")\n  case bool:\n      if pb != nil {\n          *pb = &v\n          return false, nil\n      }\n      return false, errors.New(\"Union does not contain bool\")\n  case string:\n      if haveEnum {\n          return false, json.Unmarshal(data, pe)\n      }\n      if ps != nil {\n          *ps = &v\n          return false, nil\n      }\n      return false, errors.New(\"Union does not contain string\")\n  case nil:\n      if nullable {\n          return false, nil\n      }\n      return false, errors.New(\"Union does not contain null\")\n  case json.Delim:\n      if v == '{' {\n          if haveObject {\n              return true, json.Unmarshal(data, pc)\n          }\n          if haveMap {\n              return false, json.Unmarshal(data, pm)\n          }\n          return false, errors.New(\"Union does not contain object\")\n      }\n      if v == '[' {\n          if haveArray {\n              return false, json.Unmarshal(data, pa)\n          }\n          return false, errors.New(\"Union does not contain array\")\n      }\n      return false, errors.New(\"Cannot handle delimiter\")\n  }\n  return false, errors.New(\"Cannot unmarshal union\")\n}\n\nfunc marshalUnion(pi *int64, pf *float64, pb *bool, ps *string, haveArray bool, pa interface{}, haveObject bool, pc interface{}, haveMap bool, pm interface{}, haveEnum bool, pe interface{}, nullable bool) ([]byte, error) {\n  if pi != nil {\n      return json.Marshal(*pi)\n  }\n  if pf != nil {\n      return json.Marshal(*pf)\n  }\n  if pb != nil {\n      return json.Marshal(*pb)\n  }\n  if ps != nil {\n      return json.Marshal(*ps)\n  }\n  if haveArray {\n      return json.Marshal(pa)\n  }\n  if haveObject {\n      return json.Marshal(pc)\n  }\n  if haveMap {\n      return json.Marshal(pm)\n  }\n  if haveEnum {\n      return json.Marshal(pe)\n  }\n  if nullable {\n      return json.Marshal(nil)\n  }\n  return nil, errors.New(\"Union must not be null\")\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       40,
+       92,
+       40,
+       103
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       43,
+       92,
+       43,
+       103
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "golang-options"
+}

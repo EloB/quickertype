@@ -18,6 +18,7 @@ use crate::messages::{JsErrorName, QuickTypeError};
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::comments::CommentOptions;
+use crate::support::recursion::guard;
 use crate::support::support::defined;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{
@@ -298,55 +299,58 @@ impl<'a> PhpRenderer<'a> {
     /// non-nullable union, e.g. `MixedClass|int|string`. With `json_side`
     /// the types are those of the decoded JSON value.
     fn php_union_type(&self, u: TypeRef, json_side: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let label = |kind: TypeKind| -> Option<&'static str> {
-            match kind {
-                TypeKind::Any => Some("mixed"),
-                TypeKind::Array => Some("array"),
-                TypeKind::Bool => Some("bool"),
-                TypeKind::Class if json_side => Some("stdClass"),
-                TypeKind::DateTime if json_side => Some("string"),
-                TypeKind::DateTime => Some("DateTime"),
-                TypeKind::Double => Some("float"),
-                TypeKind::Enum if json_side => Some("string"),
-                TypeKind::Integer => Some("int"),
-                TypeKind::Map => Some("stdClass"),
-                TypeKind::String => Some("string"),
-                TypeKind::Uuid => Some("string"),
-                _ => None,
-            }
-        };
-        let (members, null_type) = self.sorted_union_members(u)?;
-        let mut parts: Vec<Source> = Vec::new();
-        let mut seen: IndexSet<&'static str> = IndexSet::new();
-        for member in members {
-            let kind = graph.kind(member)?;
-            let hint: Source = if let Some(label) = label(kind) {
-                // Members can render to the same PHP type, like a string
-                // and a UUID member — mention it only once.
-                if !seen.insert(label) {
-                    continue;
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let label = |kind: TypeKind| -> Option<&'static str> {
+                match kind {
+                    TypeKind::Any => Some("mixed"),
+                    TypeKind::Array => Some("array"),
+                    TypeKind::Bool => Some("bool"),
+                    TypeKind::Class if json_side => Some("stdClass"),
+                    TypeKind::DateTime if json_side => Some("string"),
+                    TypeKind::DateTime => Some("DateTime"),
+                    TypeKind::Double => Some("float"),
+                    TypeKind::Enum if json_side => Some("string"),
+                    TypeKind::Integer => Some("int"),
+                    TypeKind::Map => Some("stdClass"),
+                    TypeKind::String => Some("string"),
+                    TypeKind::Uuid => Some("string"),
+                    _ => None,
                 }
-                label.into()
-            } else if kind == TypeKind::Class || kind == TypeKind::Enum {
-                self.name_for_named_type(member)?.into()
-            } else {
-                return js_error(format!(
-                    "PHP cannot represent union member type \"{}\"",
-                    kind.as_str()
-                ));
             };
+            let (members, null_type) = self.sorted_union_members(u)?;
+            let mut parts: Vec<Source> = Vec::new();
+            let mut seen: IndexSet<&'static str> = IndexSet::new();
+            for member in members {
+                let kind = graph.kind(member)?;
+                let hint: Source = if let Some(label) = label(kind) {
+                    // Members can render to the same PHP type, like a string
+                    // and a UUID member — mention it only once.
+                    if !seen.insert(label) {
+                        continue;
+                    }
+                    label.into()
+                } else if kind == TypeKind::Class || kind == TypeKind::Enum {
+                    self.name_for_named_type(member)?.into()
+                } else {
+                    return js_error(format!(
+                        "PHP cannot represent union member type \"{}\"",
+                        kind.as_str()
+                    ));
+                };
 
-            if !parts.is_empty() {
-                parts.push("|".into());
+                if !parts.is_empty() {
+                    parts.push("|".into());
+                }
+                parts.push(hint);
             }
-            parts.push(hint);
-        }
 
-        if null_type.is_some() {
-            parts.push("|null".into());
-        }
-        Ok(Source::Sequence(parts))
+            if null_type.is_some() {
+                parts.push("|null".into());
+            }
+            Ok(Source::Sequence(parts))
+        })
     }
 
     /// `unionMemberTypeCheck(t, expr, jsonSide)`: the runtime check whether
@@ -500,35 +504,42 @@ impl<'a> PhpRenderer<'a> {
         prefix: &str,
         suffix: &str,
     ) -> Result<Source> {
-        let optionalize = |s: Source| {
-            sl![
-                if is_optional { prefix } else { "" },
-                s,
-                if is_optional { suffix } else { "" }
-            ]
-        };
-        let graph = self.type_graph();
-        Ok(match graph.kind(t)? {
-            TypeKind::Any => maybe_annotated(is_optional, any_type_issue_annotation(), "mixed"),
-            TypeKind::Null => maybe_annotated(is_optional, null_type_issue_annotation(), "mixed"),
-            TypeKind::Bool => optionalize("bool".into()),
-            TypeKind::Integer => optionalize("int".into()),
-            TypeKind::Double => optionalize("float".into()),
-            TypeKind::String => optionalize("string".into()),
-            TypeKind::Array => optionalize("array".into()),
-            TypeKind::Class | TypeKind::Enum => optionalize(self.name_for_named_type(t)?.into()),
-            TypeKind::Map => optionalize("stdClass".into()),
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return self.php_type(nullable, true, prefix, suffix);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let optionalize = |s: Source| {
+                sl![
+                    if is_optional { prefix } else { "" },
+                    s,
+                    if is_optional { suffix } else { "" }
+                ]
+            };
+            let graph = self.type_graph();
+            Ok(match graph.kind(t)? {
+                TypeKind::Any => maybe_annotated(is_optional, any_type_issue_annotation(), "mixed"),
+                TypeKind::Null => {
+                    maybe_annotated(is_optional, null_type_issue_annotation(), "mixed")
                 }
-                self.php_union_type(t, false)?
-            }
-            TypeKind::Time => return js_error("transformedStringType.kind === \"time\""),
-            TypeKind::Date => return js_error("transformedStringType.kind === \"date\""),
-            TypeKind::DateTime => optionalize("DateTime".into()),
-            kind if kind.is_transformed_string_type_kind() => optionalize("string".into()),
-            kind => return match_type_unsupported(kind),
+                TypeKind::Bool => optionalize("bool".into()),
+                TypeKind::Integer => optionalize("int".into()),
+                TypeKind::Double => optionalize("float".into()),
+                TypeKind::String => optionalize("string".into()),
+                TypeKind::Array => optionalize("array".into()),
+                TypeKind::Class | TypeKind::Enum => {
+                    optionalize(self.name_for_named_type(t)?.into())
+                }
+                TypeKind::Map => optionalize("stdClass".into()),
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return self.php_type(nullable, true, prefix, suffix);
+                    }
+                    self.php_union_type(t, false)?
+                }
+                TypeKind::Time => return js_error("transformedStringType.kind === \"time\""),
+                TypeKind::Date => return js_error("transformedStringType.kind === \"date\""),
+                TypeKind::DateTime => optionalize("DateTime".into()),
+                kind if kind.is_transformed_string_type_kind() => optionalize("string".into()),
+                kind => return match_type_unsupported(kind),
+            })
         })
     }
 
@@ -544,27 +555,30 @@ impl<'a> PhpRenderer<'a> {
 
     /// `phpConvertType(className, t)`: the type of the decoded JSON value.
     fn php_convert_type(&self, t: TypeRef) -> Result<Source> {
-        let graph = self.type_graph();
-        Ok(match graph.kind(t)? {
-            TypeKind::Any | TypeKind::Null => "mixed".into(),
-            TypeKind::Bool => "bool".into(),
-            TypeKind::Integer => "int".into(),
-            TypeKind::Double => "float".into(),
-            TypeKind::String => "string".into(),
-            TypeKind::Array => "array".into(),
-            TypeKind::Class | TypeKind::Map => "stdClass".into(),
-            TypeKind::Enum => "string".into(), // TODO number this.nameForNamedType(enumType),
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return Ok(sl!["?", self.php_convert_type(nullable)?]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            Ok(match graph.kind(t)? {
+                TypeKind::Any | TypeKind::Null => "mixed".into(),
+                TypeKind::Bool => "bool".into(),
+                TypeKind::Integer => "int".into(),
+                TypeKind::Double => "float".into(),
+                TypeKind::String => "string".into(),
+                TypeKind::Array => "array".into(),
+                TypeKind::Class | TypeKind::Map => "stdClass".into(),
+                TypeKind::Enum => "string".into(), // TODO number this.nameForNamedType(enumType),
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return Ok(sl!["?", self.php_convert_type(nullable)?]);
+                    }
+                    self.php_union_type(t, true)?
                 }
-                self.php_union_type(t, true)?
-            }
-            TypeKind::DateTime | TypeKind::Uuid => "string".into(),
-            kind if kind.is_transformed_string_type_kind() => {
-                return js_error("transformedStringType.kind === \"unknown\"");
-            }
-            kind => return match_type_unsupported(kind),
+                TypeKind::DateTime | TypeKind::Uuid => "string".into(),
+                kind if kind.is_transformed_string_type_kind() => {
+                    return js_error("transformedStringType.kind === \"unknown\"");
+                }
+                kind => return match_type_unsupported(kind),
+            })
         })
     }
 
@@ -583,90 +597,98 @@ impl<'a> PhpRenderer<'a> {
         lhs: &[Source],
         args: &[Source],
     ) -> Result<()> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let comment = |s: &str| [Source::from(s)];
-        match ty.kind() {
-            TypeKind::Any => self.emit_parts(&[lhs, args, &comment("; /*any*/")]),
-            TypeKind::Null => self.emit_parts(&[lhs, args, &comment("; /*null*/")]),
-            TypeKind::Bool => self.emit_parts(&[lhs, args, &comment("; /*bool*/")]),
-            TypeKind::Integer => self.emit_parts(&[lhs, args, &comment("; /*int*/")]),
-            TypeKind::Double => self.emit_parts(&[lhs, args, &comment("; /*float*/")]),
-            TypeKind::String => self.emit_parts(&[lhs, args, &comment("; /*string*/")]),
-            TypeKind::Array => {
-                let items = ty.items()?;
-                self.emit_parts(&[lhs, &comment("array_map(function ($value) {")]);
-                self.indent(|r| {
-                    r.php_to_obj_convert(class_name, items, &["return ".into()], &["$value".into()])
-                })?;
-                self.emit_parts(&[&comment("}, "), args, &comment(");")]);
-            }
-            TypeKind::Class => {
-                self.emit_parts(&[lhs, args, &["->to(); ".into(), "/*class*/".into()]]);
-            }
-            TypeKind::Map => {
-                let values = ty.map_values()?;
-                self.emit_line("$out = new stdClass();");
-                let mut line = vec![Source::from("foreach (")];
-                line.extend_from_slice(args);
-                line.push(" as $k => $v)".into());
-                self.emit_block(line, |r| {
-                    r.php_to_obj_convert(
-                        class_name,
-                        values,
-                        &["$out->$k = ".into()],
-                        &["$v".into()],
-                    )
-                })?;
-                self.emit_line("return $out;");
-            }
-            TypeKind::Enum => {
-                let name: Source = self.name_for_named_type(t)?.into();
-                self.emit_parts(&[
-                    lhs,
-                    &[name, "::to(".into()],
-                    args,
-                    &["); ".into(), "/*enum*/".into()],
-                ]);
-            }
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    self.emit_parts(&[&comment("if (!is_null("), args, &comment(")) {")]);
-                    self.indent(|r| r.php_to_obj_convert(class_name, nullable, lhs, args))?;
-                    self.emit_line("} else {");
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let comment = |s: &str| [Source::from(s)];
+            match ty.kind() {
+                TypeKind::Any => self.emit_parts(&[lhs, args, &comment("; /*any*/")]),
+                TypeKind::Null => self.emit_parts(&[lhs, args, &comment("; /*null*/")]),
+                TypeKind::Bool => self.emit_parts(&[lhs, args, &comment("; /*bool*/")]),
+                TypeKind::Integer => self.emit_parts(&[lhs, args, &comment("; /*int*/")]),
+                TypeKind::Double => self.emit_parts(&[lhs, args, &comment("; /*float*/")]),
+                TypeKind::String => self.emit_parts(&[lhs, args, &comment("; /*string*/")]),
+                TypeKind::Array => {
+                    let items = ty.items()?;
+                    self.emit_parts(&[lhs, &comment("array_map(function ($value) {")]);
                     self.indent(|r| {
-                        r.emit_parts(&[lhs, &comment(" null;")]);
-                        Ok(())
-                    })?;
-                    self.emit_line("}");
-                    return Ok(());
-                }
-
-                self.emit_union_dispatch(
-                    t,
-                    args,
-                    false,
-                    &mut |r, member| r.php_to_obj_convert(class_name, member, lhs, args),
-                    &mut |r| {
-                        r.emit_line(sl![
-                            "throw new Exception('Union value has no matching member in ",
+                        r.php_to_obj_convert(
                             class_name,
-                            "');"
-                        ]);
-                        Ok(())
-                    },
-                )?;
+                            items,
+                            &["return ".into()],
+                            &["$value".into()],
+                        )
+                    })?;
+                    self.emit_parts(&[&comment("}, "), args, &comment(");")]);
+                }
+                TypeKind::Class => {
+                    self.emit_parts(&[lhs, args, &["->to(); ".into(), "/*class*/".into()]]);
+                }
+                TypeKind::Map => {
+                    let values = ty.map_values()?;
+                    self.emit_line("$out = new stdClass();");
+                    let mut line = vec![Source::from("foreach (")];
+                    line.extend_from_slice(args);
+                    line.push(" as $k => $v)".into());
+                    self.emit_block(line, |r| {
+                        r.php_to_obj_convert(
+                            class_name,
+                            values,
+                            &["$out->$k = ".into()],
+                            &["$v".into()],
+                        )
+                    })?;
+                    self.emit_line("return $out;");
+                }
+                TypeKind::Enum => {
+                    let name: Source = self.name_for_named_type(t)?.into();
+                    self.emit_parts(&[
+                        lhs,
+                        &[name, "::to(".into()],
+                        args,
+                        &["); ".into(), "/*enum*/".into()],
+                    ]);
+                }
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        self.emit_parts(&[&comment("if (!is_null("), args, &comment(")) {")]);
+                        self.indent(|r| r.php_to_obj_convert(class_name, nullable, lhs, args))?;
+                        self.emit_line("} else {");
+                        self.indent(|r| {
+                            r.emit_parts(&[lhs, &comment(" null;")]);
+                            Ok(())
+                        })?;
+                        self.emit_line("}");
+                        return Ok(());
+                    }
+
+                    self.emit_union_dispatch(
+                        t,
+                        args,
+                        false,
+                        &mut |r, member| r.php_to_obj_convert(class_name, member, lhs, args),
+                        &mut |r| {
+                            r.emit_line(sl![
+                                "throw new Exception('Union value has no matching member in ",
+                                class_name,
+                                "');"
+                            ]);
+                            Ok(())
+                        },
+                    )?;
+                }
+                TypeKind::DateTime => {
+                    self.emit_parts(&[lhs, args, &comment("->format(\"Y-m-d\\\\TH:i:s.uP\");")]);
+                }
+                TypeKind::Uuid => self.emit_parts(&[lhs, args, &comment("; /*uuid*/")]),
+                kind if kind.is_transformed_string_type_kind() => {
+                    return js_error("transformedStringType.kind === \"unknown\"");
+                }
+                kind => return match_type_unsupported(kind),
             }
-            TypeKind::DateTime => {
-                self.emit_parts(&[lhs, args, &comment("->format(\"Y-m-d\\\\TH:i:s.uP\");")]);
-            }
-            TypeKind::Uuid => self.emit_parts(&[lhs, args, &comment("; /*uuid*/")]),
-            kind if kind.is_transformed_string_type_kind() => {
-                return js_error("transformedStringType.kind === \"unknown\"");
-            }
-            kind => return match_type_unsupported(kind),
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     /// `transformDateTime(className, attrName, scopeAttrName)`.
@@ -697,103 +719,106 @@ impl<'a> PhpRenderer<'a> {
         lhs: &[Source],
         args: &[Source],
     ) -> Result<()> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let comment = |s: &str| [Source::from(s)];
-        match ty.kind() {
-            TypeKind::Any => self.emit_parts(&[lhs, args, &comment("; /*any*/")]),
-            TypeKind::Null => self.emit_parts(&[lhs, args, &comment("; /*null*/")]),
-            TypeKind::Bool => self.emit_parts(&[lhs, args, &comment("; /*bool*/")]),
-            TypeKind::Integer => self.emit_parts(&[lhs, args, &comment("; /*int*/")]),
-            TypeKind::Double => self.emit_parts(&[lhs, args, &comment("; /*float*/")]),
-            TypeKind::String => self.emit_parts(&[lhs, args, &comment("; /*string*/")]),
-            TypeKind::Array => {
-                let items = ty.items()?;
-                self.emit_parts(&[lhs, &comment(" array_map(function ($value) {")]);
-                self.indent(|r| {
-                    r.php_from_obj_convert(
-                        class_name,
-                        items,
-                        &["return ".into()],
-                        &["$value".into()],
-                    )
-                })?;
-                self.emit_parts(&[&comment("}, "), args, &comment(");")]);
-            }
-            TypeKind::Class => {
-                let name: Source = self.name_for_named_type(t)?.into();
-                self.emit_parts(&[
-                    lhs,
-                    &[name, "::from(".into()],
-                    args,
-                    &["); ".into(), "/*class*/".into()],
-                ]);
-            }
-            TypeKind::Map => {
-                let values = ty.map_values()?;
-                self.emit_line("$out = new stdClass();");
-                let mut line = vec![Source::from("foreach (")];
-                line.extend_from_slice(args);
-                line.push(" as $k => $v)".into());
-                self.emit_block(line, |r| {
-                    r.php_from_obj_convert(
-                        class_name,
-                        values,
-                        &["$out->$k = ".into()],
-                        &["$v".into()],
-                    )
-                })?;
-                self.emit_line("return $out;");
-            }
-            TypeKind::Enum => {
-                let name: Source = self.name_for_named_type(t)?.into();
-                self.emit_parts(&[
-                    lhs,
-                    &[name, "::from(".into()],
-                    args,
-                    &["); ".into(), "/*enum*/".into()],
-                ]);
-            }
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    self.emit_parts(&[&comment("if (!is_null("), args, &comment(")) {")]);
-                    self.indent(|r| r.php_from_obj_convert(class_name, nullable, lhs, args))?;
-                    self.emit_line("} else {");
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let comment = |s: &str| [Source::from(s)];
+            match ty.kind() {
+                TypeKind::Any => self.emit_parts(&[lhs, args, &comment("; /*any*/")]),
+                TypeKind::Null => self.emit_parts(&[lhs, args, &comment("; /*null*/")]),
+                TypeKind::Bool => self.emit_parts(&[lhs, args, &comment("; /*bool*/")]),
+                TypeKind::Integer => self.emit_parts(&[lhs, args, &comment("; /*int*/")]),
+                TypeKind::Double => self.emit_parts(&[lhs, args, &comment("; /*float*/")]),
+                TypeKind::String => self.emit_parts(&[lhs, args, &comment("; /*string*/")]),
+                TypeKind::Array => {
+                    let items = ty.items()?;
+                    self.emit_parts(&[lhs, &comment(" array_map(function ($value) {")]);
                     self.indent(|r| {
-                        r.emit_parts(&[lhs, &comment(" null;")]);
-                        Ok(())
-                    })?;
-                    self.emit_line("}");
-                    return Ok(());
-                }
-
-                self.emit_union_dispatch(
-                    t,
-                    args,
-                    true,
-                    &mut |r, member| r.php_from_obj_convert(class_name, member, lhs, args),
-                    &mut |r| {
-                        r.emit_line(sl![
-                            "throw new Exception('Cannot deserialize union value in ",
+                        r.php_from_obj_convert(
                             class_name,
-                            "');"
-                        ]);
-                        Ok(())
-                    },
-                )?;
+                            items,
+                            &["return ".into()],
+                            &["$value".into()],
+                        )
+                    })?;
+                    self.emit_parts(&[&comment("}, "), args, &comment(");")]);
+                }
+                TypeKind::Class => {
+                    let name: Source = self.name_for_named_type(t)?.into();
+                    self.emit_parts(&[
+                        lhs,
+                        &[name, "::from(".into()],
+                        args,
+                        &["); ".into(), "/*class*/".into()],
+                    ]);
+                }
+                TypeKind::Map => {
+                    let values = ty.map_values()?;
+                    self.emit_line("$out = new stdClass();");
+                    let mut line = vec![Source::from("foreach (")];
+                    line.extend_from_slice(args);
+                    line.push(" as $k => $v)".into());
+                    self.emit_block(line, |r| {
+                        r.php_from_obj_convert(
+                            class_name,
+                            values,
+                            &["$out->$k = ".into()],
+                            &["$v".into()],
+                        )
+                    })?;
+                    self.emit_line("return $out;");
+                }
+                TypeKind::Enum => {
+                    let name: Source = self.name_for_named_type(t)?.into();
+                    self.emit_parts(&[
+                        lhs,
+                        &[name, "::from(".into()],
+                        args,
+                        &["); ".into(), "/*enum*/".into()],
+                    ]);
+                }
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        self.emit_parts(&[&comment("if (!is_null("), args, &comment(")) {")]);
+                        self.indent(|r| r.php_from_obj_convert(class_name, nullable, lhs, args))?;
+                        self.emit_line("} else {");
+                        self.indent(|r| {
+                            r.emit_parts(&[lhs, &comment(" null;")]);
+                            Ok(())
+                        })?;
+                        self.emit_line("}");
+                        return Ok(());
+                    }
+
+                    self.emit_union_dispatch(
+                        t,
+                        args,
+                        true,
+                        &mut |r, member| r.php_from_obj_convert(class_name, member, lhs, args),
+                        &mut |r| {
+                            r.emit_line(sl![
+                                "throw new Exception('Cannot deserialize union value in ",
+                                class_name,
+                                "');"
+                            ]);
+                            Ok(())
+                        },
+                    )?;
+                }
+                TypeKind::DateTime => {
+                    self.emit_line(sl!["$tmp = ", "new DateTime(", args.to_vec(), ");"]);
+                    self.transform_date_time(class_name, "".into(), sl!["$tmp"])?;
+                    self.emit_line("return $tmp;");
+                }
+                TypeKind::Uuid => self.emit_parts(&[lhs, args, &comment("; /*uuid*/")]),
+                kind if kind.is_transformed_string_type_kind() => {
+                    return js_error("transformedStringType.kind === \"unknown\"");
+                }
+                kind => return match_type_unsupported(kind),
             }
-            TypeKind::DateTime => {
-                self.emit_line(sl!["$tmp = ", "new DateTime(", args.to_vec(), ");"]);
-                self.transform_date_time(class_name, "".into(), sl!["$tmp"])?;
-                self.emit_line("return $tmp;");
-            }
-            TypeKind::Uuid => self.emit_parts(&[lhs, args, &comment("; /*uuid*/")]),
-            kind if kind.is_transformed_string_type_kind() => {
-                return js_error("transformedStringType.kind === \"unknown\"");
-            }
-            kind => return match_type_unsupported(kind),
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     /// `phpSampleConvert(className, t, lhs, args, idx, suffix)`: a sample
@@ -807,142 +832,146 @@ impl<'a> PhpRenderer<'a> {
         idx: u32,
         suffix: &str,
     ) -> Result<()> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let args_part = Source::Sequence(args.to_vec());
-        let idx_string = idx.to_string();
-        // `" /*", `${idx}`, ":", args, "*/"`
-        let trailer = |open: &str| -> [Source; 4] {
-            [
-                open.into(),
-                idx_string.clone().into(),
-                ":".into(),
-                sl![args_part.clone(), "*/"],
-            ]
-        };
-        match ty.kind() {
-            TypeKind::Any => self.emit_parts(&[
-                lhs,
-                &[
-                    "'AnyType::".into(),
-                    class_name.into(),
-                    "::".into(),
-                    args_part.clone(),
-                    format!("::{idx}").into(),
-                    "'".into(),
-                    suffix.into(),
-                ],
-                &trailer("/*"),
-            ]),
-            TypeKind::Null => {
-                self.emit_parts(&[lhs, &["null".into(), suffix.into()], &trailer(" /*")]);
-            }
-            TypeKind::Bool => {
-                self.emit_parts(&[lhs, &["true".into(), suffix.into()], &trailer(" /*")]);
-            }
-            TypeKind::Integer => self.emit_parts(&[
-                lhs,
-                &[idx_string.clone().into(), suffix.into()],
-                &trailer(" /*"),
-            ]),
-            TypeKind::Double => {
-                let value = f64::from(idx);
-                self.emit_parts(&[
-                    lhs,
-                    &[js_number(value + value / 1000.0).into(), suffix.into()],
-                    &trailer(" /*"),
-                ]);
-            }
-            TypeKind::String => self.emit_parts(&[
-                lhs,
-                &[
-                    "'".into(),
-                    class_name.into(),
-                    "::".into(),
-                    args_part.clone(),
-                    format!("::{idx}").into(),
-                    "'".into(),
-                    suffix.into(),
-                ],
-                &trailer(" /*"),
-            ]),
-            TypeKind::Array => {
-                let items = ty.items()?;
-                self.emit_parts(&[lhs, &[" array(".into()]]);
-                self.indent(|r| r.php_sample_convert(class_name, items, &[], &[], idx, ""))?;
-                self.emit_parts(&[&[")".into(), suffix.into()], &trailer(" /* ")]);
-            }
-            TypeKind::Class => {
-                let name: Source = self.name_for_named_type(t)?.into();
-                self.emit_parts(&[
-                    lhs,
-                    &[name, "::sample()".into(), suffix.into()],
-                    &trailer(" /*"),
-                ]);
-            }
-            TypeKind::Map => {
-                // An immediately-invoked closure, so the sample is an
-                // expression and can nest inside arrays and other maps.
-                let values = ty.map_values()?;
-                self.emit_parts(&[lhs, &[" (function () {".into()]]);
-                self.indent(|r| {
-                    r.emit_line("$out = new stdClass();");
-                    r.php_sample_convert(
-                        class_name,
-                        values,
-                        &["$out->{'".into(), class_name.into(), "'} = ".into()],
-                        args,
-                        idx,
-                        ";",
-                    )?;
-                    r.emit_line("return $out;");
-                    Ok(())
-                })?;
-                self.emit_parts(&[&["})()".into(), suffix.into()], &trailer(" /* ")]);
-            }
-            TypeKind::Enum => {
-                let name: Source = self.name_for_named_type(t)?.into();
-                self.emit_parts(&[
-                    lhs,
-                    &[name, "::sample()".into(), suffix.into(), " /*enum*/".into()],
-                ]);
-            }
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return self.php_sample_convert(class_name, nullable, lhs, args, idx, suffix);
-                }
-
-                // Any member's sample is a valid sample for the union.
-                let (members, _) = self.sorted_union_members(t)?;
-                let first = defined(members.first().copied())?;
-                return self.php_sample_convert(class_name, first, lhs, args, idx, suffix);
-            }
-            TypeKind::DateTime => {
-                let x = lodash_pad2(&(1 + idx % 31).to_string());
-                self.emit_parts(&[
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let args_part = Source::Sequence(args.to_vec());
+            let idx_string = idx.to_string();
+            // `" /*", `${idx}`, ":", args, "*/"`
+            let trailer = |open: &str| -> [Source; 4] {
+                [
+                    open.into(),
+                    idx_string.clone().into(),
+                    ":".into(),
+                    sl![args_part.clone(), "*/"],
+                ]
+            };
+            match ty.kind() {
+                TypeKind::Any => self.emit_parts(&[
                     lhs,
                     &[
-                        "DateTime::createFromFormat(DateTimeInterface::ISO8601, '".into(),
-                        format!("2020-12-{x}T12:{x}:{x}+00:00").into(),
-                        "')".into(),
+                        "'AnyType::".into(),
+                        class_name.into(),
+                        "::".into(),
+                        args_part.clone(),
+                        format!("::{idx}").into(),
+                        "'".into(),
                         suffix.into(),
                     ],
-                ]);
+                    &trailer("/*"),
+                ]),
+                TypeKind::Null => {
+                    self.emit_parts(&[lhs, &["null".into(), suffix.into()], &trailer(" /*")]);
+                }
+                TypeKind::Bool => {
+                    self.emit_parts(&[lhs, &["true".into(), suffix.into()], &trailer(" /*")]);
+                }
+                TypeKind::Integer => self.emit_parts(&[
+                    lhs,
+                    &[idx_string.clone().into(), suffix.into()],
+                    &trailer(" /*"),
+                ]),
+                TypeKind::Double => {
+                    let value = f64::from(idx);
+                    self.emit_parts(&[
+                        lhs,
+                        &[js_number(value + value / 1000.0).into(), suffix.into()],
+                        &trailer(" /*"),
+                    ]);
+                }
+                TypeKind::String => self.emit_parts(&[
+                    lhs,
+                    &[
+                        "'".into(),
+                        class_name.into(),
+                        "::".into(),
+                        args_part.clone(),
+                        format!("::{idx}").into(),
+                        "'".into(),
+                        suffix.into(),
+                    ],
+                    &trailer(" /*"),
+                ]),
+                TypeKind::Array => {
+                    let items = ty.items()?;
+                    self.emit_parts(&[lhs, &[" array(".into()]]);
+                    self.indent(|r| r.php_sample_convert(class_name, items, &[], &[], idx, ""))?;
+                    self.emit_parts(&[&[")".into(), suffix.into()], &trailer(" /* ")]);
+                }
+                TypeKind::Class => {
+                    let name: Source = self.name_for_named_type(t)?.into();
+                    self.emit_parts(&[
+                        lhs,
+                        &[name, "::sample()".into(), suffix.into()],
+                        &trailer(" /*"),
+                    ]);
+                }
+                TypeKind::Map => {
+                    // An immediately-invoked closure, so the sample is an
+                    // expression and can nest inside arrays and other maps.
+                    let values = ty.map_values()?;
+                    self.emit_parts(&[lhs, &[" (function () {".into()]]);
+                    self.indent(|r| {
+                        r.emit_line("$out = new stdClass();");
+                        r.php_sample_convert(
+                            class_name,
+                            values,
+                            &["$out->{'".into(), class_name.into(), "'} = ".into()],
+                            args,
+                            idx,
+                            ";",
+                        )?;
+                        r.emit_line("return $out;");
+                        Ok(())
+                    })?;
+                    self.emit_parts(&[&["})()".into(), suffix.into()], &trailer(" /* ")]);
+                }
+                TypeKind::Enum => {
+                    let name: Source = self.name_for_named_type(t)?.into();
+                    self.emit_parts(&[
+                        lhs,
+                        &[name, "::sample()".into(), suffix.into(), " /*enum*/".into()],
+                    ]);
+                }
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return self
+                            .php_sample_convert(class_name, nullable, lhs, args, idx, suffix);
+                    }
+
+                    // Any member's sample is a valid sample for the union.
+                    let (members, _) = self.sorted_union_members(t)?;
+                    let first = defined(members.first().copied())?;
+                    return self.php_sample_convert(class_name, first, lhs, args, idx, suffix);
+                }
+                TypeKind::DateTime => {
+                    let x = lodash_pad2(&(1 + idx % 31).to_string());
+                    self.emit_parts(&[
+                        lhs,
+                        &[
+                            "DateTime::createFromFormat(DateTimeInterface::ISO8601, '".into(),
+                            format!("2020-12-{x}T12:{x}:{x}+00:00").into(),
+                            "')".into(),
+                            suffix.into(),
+                        ],
+                    ]);
+                }
+                TypeKind::Uuid => self.emit_parts(&[
+                    lhs,
+                    &[
+                        "'9277b8fb-2a65-4663-a36c-8d417e2d284b'".into(),
+                        suffix.into(),
+                    ],
+                    &trailer(" /*"),
+                ]),
+                kind if kind.is_transformed_string_type_kind() => {
+                    return js_error("transformedStringType.kind === \"unknown\"");
+                }
+                kind => return match_type_unsupported(kind),
             }
-            TypeKind::Uuid => self.emit_parts(&[
-                lhs,
-                &[
-                    "'9277b8fb-2a65-4663-a36c-8d417e2d284b'".into(),
-                    suffix.into(),
-                ],
-                &trailer(" /*"),
-            ]),
-            kind if kind.is_transformed_string_type_kind() => {
-                return js_error("transformedStringType.kind === \"unknown\"");
-            }
-            kind => return match_type_unsupported(kind),
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     /// `throw new Exception("Attribute Error:<class>::<attr>");`.
@@ -966,188 +995,190 @@ impl<'a> PhpRenderer<'a> {
         scope_attr_name: &str,
         skip_primitive_type_check: bool,
     ) -> Result<()> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
 
-        let validate_range = |r: &mut Self| -> Result<()> {
-            let (min, max) = match min_max_value_for_type(r.type_graph(), t)? {
-                Some(m) => (m.0, m.1),
-                None => (None, None),
-            };
-            if let Some(min) = min {
-                r.emit_line(format!(
-                    "if ({scope_attr_name} < {}) throw new Exception(\"Attribute Error\");",
-                    js_number(min)
-                ));
-            }
-            if let Some(max) = max {
-                r.emit_line(format!(
-                    "if ({scope_attr_name} > {}) throw new Exception(\"Attribute Error\");",
-                    js_number(max)
-                ));
-            }
-            Ok(())
-        };
-        let is = |r: &mut Self, isfn: &str| -> Result<()> {
-            r.emit_block(sl!["if (!", isfn, "(", scope_attr_name, "))"], |r| {
-                r.emit_attribute_error(class_name, attr_name);
-                Ok(())
-            })
-        };
-
-        match ty.kind() {
-            TypeKind::Any => {
-                // Every value is a valid `any`; there is nothing to check.
-            }
-            TypeKind::Null => is(self, "is_null")?,
-            TypeKind::Bool => {
-                if !skip_primitive_type_check {
-                    is(self, "is_bool")?;
-                }
-            }
-            TypeKind::Integer => {
-                if !skip_primitive_type_check {
-                    is(self, "is_integer")?;
-                }
-                validate_range(self)?;
-            }
-            TypeKind::Double => {
-                if !skip_primitive_type_check {
-                    // PHP integers are acceptable wherever floats are, and
-                    // json_decode gives an int for a whole JSON number.
-                    self.emit_block(
-                        sl![
-                            "if (!is_float(",
-                            scope_attr_name,
-                            ") && !is_int(",
-                            scope_attr_name,
-                            "))"
-                        ],
-                        |r| {
-                            r.emit_attribute_error(class_name, attr_name);
-                            Ok(())
-                        },
-                    )?;
-                }
-                validate_range(self)?;
-            }
-            TypeKind::String => {
-                if !skip_primitive_type_check {
-                    is(self, "is_string")?;
-                }
-                let invalid = |r: &mut Self| {
-                    r.emit_line("throw new Exception(\"Attribute Error\");");
-                    Ok(())
-                };
-                let (min, max) = match min_max_length_for_type(graph, t)? {
+            let validate_range = |r: &mut Self| -> Result<()> {
+                let (min, max) = match min_max_value_for_type(r.type_graph(), t)? {
                     Some(m) => (m.0, m.1),
                     None => (None, None),
                 };
-                for (operator, bound) in [("<", min), (">", max)] {
-                    if let Some(bound) = bound {
+                if let Some(min) = min {
+                    r.emit_line(format!(
+                        "if ({scope_attr_name} < {}) throw new Exception(\"Attribute Error\");",
+                        js_number(min)
+                    ));
+                }
+                if let Some(max) = max {
+                    r.emit_line(format!(
+                        "if ({scope_attr_name} > {}) throw new Exception(\"Attribute Error\");",
+                        js_number(max)
+                    ));
+                }
+                Ok(())
+            };
+            let is = |r: &mut Self, isfn: &str| -> Result<()> {
+                r.emit_block(sl!["if (!", isfn, "(", scope_attr_name, "))"], |r| {
+                    r.emit_attribute_error(class_name, attr_name);
+                    Ok(())
+                })
+            };
+
+            match ty.kind() {
+                TypeKind::Any => {
+                    // Every value is a valid `any`; there is nothing to check.
+                }
+                TypeKind::Null => is(self, "is_null")?,
+                TypeKind::Bool => {
+                    if !skip_primitive_type_check {
+                        is(self, "is_bool")?;
+                    }
+                }
+                TypeKind::Integer => {
+                    if !skip_primitive_type_check {
+                        is(self, "is_integer")?;
+                    }
+                    validate_range(self)?;
+                }
+                TypeKind::Double => {
+                    if !skip_primitive_type_check {
+                        // PHP integers are acceptable wherever floats are, and
+                        // json_decode gives an int for a whole JSON number.
+                        self.emit_block(
+                            sl![
+                                "if (!is_float(",
+                                scope_attr_name,
+                                ") && !is_int(",
+                                scope_attr_name,
+                                "))"
+                            ],
+                            |r| {
+                                r.emit_attribute_error(class_name, attr_name);
+                                Ok(())
+                            },
+                        )?;
+                    }
+                    validate_range(self)?;
+                }
+                TypeKind::String => {
+                    if !skip_primitive_type_check {
+                        is(self, "is_string")?;
+                    }
+                    let invalid = |r: &mut Self| {
+                        r.emit_line("throw new Exception(\"Attribute Error\");");
+                        Ok(())
+                    };
+                    let (min, max) = match min_max_length_for_type(graph, t)? {
+                        Some(m) => (m.0, m.1),
+                        None => (None, None),
+                    };
+                    for (operator, bound) in [("<", min), (">", max)] {
+                        if let Some(bound) = bound {
+                            self.emit_block(
+                                format!(
+                                    "if (preg_match_all('/./us', {scope_attr_name}) {operator} {})",
+                                    js_number(bound)
+                                ),
+                                invalid,
+                            )?;
+                        }
+                    }
+                    if let Some(pattern) = pattern_for_type(graph, t)? {
                         self.emit_block(
                             format!(
-                                "if (preg_match_all('/./us', {scope_attr_name}) {operator} {})",
-                                js_number(bound)
+                                "if (preg_match('~{}~u', {scope_attr_name}) !== 1)",
+                                string_escape(&pattern).replace('~', "\\~")
                             ),
                             invalid,
                         )?;
                     }
                 }
-                if let Some(pattern) = pattern_for_type(graph, t)? {
-                    self.emit_block(
-                        format!(
-                            "if (preg_match('~{}~u', {scope_attr_name}) !== 1)",
-                            string_escape(&pattern).replace('~', "\\~")
-                        ),
-                        invalid,
-                    )?;
-                }
-            }
-            TypeKind::Array => {
-                is(self, "is_array")?;
-                let (min, max) = match min_max_items_for_type(graph, t)? {
-                    Some(m) => (m.0, m.1),
-                    None => (None, None),
-                };
-                if let Some(min) = min {
-                    self.emit_line(format!(
+                TypeKind::Array => {
+                    is(self, "is_array")?;
+                    let (min, max) = match min_max_items_for_type(graph, t)? {
+                        Some(m) => (m.0, m.1),
+                        None => (None, None),
+                    };
+                    if let Some(min) = min {
+                        self.emit_line(format!(
                         "if (count({scope_attr_name}) < {}) throw new Exception(\"Attribute Error\");",
                         js_number(min)
                     ));
-                }
-                if let Some(max) = max {
-                    self.emit_line(format!(
+                    }
+                    if let Some(max) = max {
+                        self.emit_line(format!(
                         "if (count({scope_attr_name}) > {}) throw new Exception(\"Attribute Error\");",
                         js_number(max)
                     ));
-                }
-                self.emit_line(sl![
-                    "array_walk(",
-                    scope_attr_name,
-                    ", function(",
-                    scope_attr_name,
-                    "_v) {"
-                ]);
-                let items = ty.items()?;
-                self.indent(|r| {
-                    r.php_validate(
-                        class_name,
-                        items,
-                        attr_name,
-                        &format!("{scope_attr_name}_v"),
-                        false,
-                    )
-                })?;
-                self.emit_line("});");
-            }
-            TypeKind::Class => {
-                self.emit_line(sl![scope_attr_name, "->validate();"]);
-            }
-            TypeKind::Map => {
-                let values = ty.map_values()?;
-                self.emit_line(sl!["foreach (", scope_attr_name, " as $k => $v) {"]);
-                self.indent(|r| r.php_validate(class_name, values, attr_name, "$v", false))?;
-                self.emit_line("}");
-            }
-            TypeKind::Enum => {
-                let php_type = self.php_type_plain(t)?;
-                self.emit_line(sl![php_type, "::to(", scope_attr_name, ");"]);
-            }
-            TypeKind::Union => {
-                if let Some(nullable) = nullable_from_union(graph, t)? {
-                    return self.emit_block(sl!["if (!is_null(", scope_attr_name, "))"], |r| {
+                    }
+                    self.emit_line(sl![
+                        "array_walk(",
+                        scope_attr_name,
+                        ", function(",
+                        scope_attr_name,
+                        "_v) {"
+                    ]);
+                    let items = ty.items()?;
+                    self.indent(|r| {
                         r.php_validate(
                             class_name,
-                            nullable,
+                            items,
                             attr_name,
-                            scope_attr_name,
-                            skip_primitive_type_check,
+                            &format!("{scope_attr_name}_v"),
+                            false,
                         )
-                    });
+                    })?;
+                    self.emit_line("});");
                 }
+                TypeKind::Class => {
+                    self.emit_line(sl![scope_attr_name, "->validate();"]);
+                }
+                TypeKind::Map => {
+                    let values = ty.map_values()?;
+                    self.emit_line(sl!["foreach (", scope_attr_name, " as $k => $v) {"]);
+                    self.indent(|r| r.php_validate(class_name, values, attr_name, "$v", false))?;
+                    self.emit_line("}");
+                }
+                TypeKind::Enum => {
+                    let php_type = self.php_type_plain(t)?;
+                    self.emit_line(sl![php_type, "::to(", scope_attr_name, ");"]);
+                }
+                TypeKind::Union => {
+                    if let Some(nullable) = nullable_from_union(graph, t)? {
+                        return self.emit_block(sl!["if (!is_null(", scope_attr_name, "))"], |r| {
+                            r.php_validate(
+                                class_name,
+                                nullable,
+                                attr_name,
+                                scope_attr_name,
+                                skip_primitive_type_check,
+                            )
+                        });
+                    }
 
-                self.emit_union_dispatch(
-                    t,
-                    &[scope_attr_name.into()],
-                    false,
-                    &mut |r, member| {
-                        r.php_validate(class_name, member, attr_name, scope_attr_name, false)
-                    },
-                    &mut |r| {
-                        r.emit_attribute_error(class_name, attr_name);
-                        Ok(())
-                    },
-                )?;
-            }
-            TypeKind::DateTime => {
-                self.transform_date_time(class_name, attr_name.clone(), sl![scope_attr_name])?;
-            }
-            TypeKind::Uuid => {
-                if !skip_primitive_type_check {
-                    is(self, "is_string")?;
+                    self.emit_union_dispatch(
+                        t,
+                        &[scope_attr_name.into()],
+                        false,
+                        &mut |r, member| {
+                            r.php_validate(class_name, member, attr_name, scope_attr_name, false)
+                        },
+                        &mut |r| {
+                            r.emit_attribute_error(class_name, attr_name);
+                            Ok(())
+                        },
+                    )?;
                 }
-                self.emit_block(
+                TypeKind::DateTime => {
+                    self.transform_date_time(class_name, attr_name.clone(), sl![scope_attr_name])?;
+                }
+                TypeKind::Uuid => {
+                    if !skip_primitive_type_check {
+                        is(self, "is_string")?;
+                    }
+                    self.emit_block(
                     sl![
                         "if (!preg_match('/^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/', ",
                         scope_attr_name,
@@ -1158,13 +1189,14 @@ impl<'a> PhpRenderer<'a> {
                         Ok(())
                     },
                 )?;
+                }
+                kind if kind.is_transformed_string_type_kind() => {
+                    return js_error(format!("transformedStringType.kind === {}", kind.as_str()));
+                }
+                kind => return match_type_unsupported(kind),
             }
-            kind if kind.is_transformed_string_type_kind() => {
-                return js_error(format!("transformedStringType.kind === {}", kind.as_str()));
-            }
-            kind => return match_type_unsupported(kind),
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     /// `emitFromMethod(names, p, className, name, desc)`.

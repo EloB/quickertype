@@ -17,6 +17,7 @@ use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
 use crate::support::comments::CommentOptions;
 use crate::support::converters::ConvertersOptions;
+use crate::support::recursion::guard;
 use crate::support::strings::{
     WordStyle, all_lower_word_style, capitalize, combine_words, first_upper_word_style,
     split_into_words, utf16_string_escape,
@@ -203,22 +204,24 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
 
     /// `typeMapTypeFor(t, required)`: the validator of `t`.
     fn type_map_type_for(&self, t: TypeRef, required: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        let kind = ty.kind();
-        if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
-            if self.is_cycle_breaker_type(t)? {
-                let name = self.name_for_named_type(t)?;
-                return Ok(sl![
-                    "(...args) => ",
-                    self.sourcelike_to_string(&sl!["_", name])?,
-                    "(...args)"
-                ]);
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            let kind = ty.kind();
+            if matches!(kind, TypeKind::Class | TypeKind::Object | TypeKind::Enum) {
+                if self.is_cycle_breaker_type(t)? {
+                    let name = self.name_for_named_type(t)?;
+                    return Ok(sl![
+                        "(...args) => ",
+                        self.sourcelike_to_string(&sl!["_", name])?,
+                        "(...args)"
+                    ]);
+                }
+                return Ok(sl!["_", self.name_for_named_type(t)?]);
             }
-            return Ok(sl!["_", self.name_for_named_type(t)?]);
-        }
 
-        let matched: Source = match kind {
+            let matched: Source = match kind {
             TypeKind::Any => "PropTypes.any".into(),
             TypeKind::Null => "PropTypes.oneOf([null])".into(),
             TypeKind::Bool => "PropTypes.bool".into(),
@@ -281,20 +284,21 @@ impl<'a> JavaScriptPropTypesRenderer<'a> {
             kind => return type_not_supported(kind),
         };
 
-        let allows_null = kind == TypeKind::Null
-            || (kind == TypeKind::Union && find_member(graph, t, TypeKind::Null)?.is_some());
-        if required && allows_null {
-            return Ok(sl![
-                "(props, name, ...args) => props[name] === undefined ? new Error(\"Expected required property\") : PropTypes.oneOfType([",
-                matched,
-                "])(props, name, ...args)"
-            ]);
-        }
-        if required {
-            return Ok(sl!["PropTypes.oneOfType([", matched, "]).isRequired"]);
-        }
+            let allows_null = kind == TypeKind::Null
+                || (kind == TypeKind::Union && find_member(graph, t, TypeKind::Null)?.is_some());
+            if required && allows_null {
+                return Ok(sl![
+                    "(props, name, ...args) => props[name] === undefined ? new Error(\"Expected required property\") : PropTypes.oneOfType([",
+                    matched,
+                    "])(props, name, ...args)"
+                ]);
+            }
+            if required {
+                return Ok(sl!["PropTypes.oneOfType([", matched, "]).isRequired"]);
+            }
 
-        Ok(matched)
+            Ok(matched)
+        })
     }
 
     /// `typeMapTypeForProperty(p)`.

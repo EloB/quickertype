@@ -90,8 +90,9 @@ Cross-cutting items each language package must pick up:
 
 ## Phase 5 — Remaining inputs
 
-GraphQL (`quicktype-graphql-input`), Postman collections, URL sources and
-`--graphql-introspect`.
+GraphQL (`quicktype-graphql-input`, with a port of graphql-js's parser) and
+`--graphql-introspect` — ✅ done (`feat/graphql-input`); Postman
+collections, URL sources.
 
 ## Phase 5b — TypeScript input (via the TypeScript 7 native compiler) — ✅ schema generation done; CLI wiring in Phase 3
 

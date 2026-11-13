@@ -278,6 +278,10 @@ pub enum JsErrorName {
     ReferenceError,
     /// `URIError`, e.g. `URI malformed` from `decodeURIComponent`.
     URIError,
+    /// graphql-js's `GraphQLError`, e.g. `Syntax Error: Expected Name,
+    /// found <EOF>.` from `graphql.parse`. Not a JavaScript global: a host
+    /// that rethrows it needs graphql-js's class.
+    GraphQLError,
 }
 
 impl JsErrorName {
@@ -290,6 +294,7 @@ impl JsErrorName {
             JsErrorName::RangeError => "RangeError",
             JsErrorName::ReferenceError => "ReferenceError",
             JsErrorName::URIError => "URIError",
+            JsErrorName::GraphQLError => "GraphQLError",
         }
     }
 
@@ -302,6 +307,7 @@ impl JsErrorName {
             JsErrorName::RangeError,
             JsErrorName::ReferenceError,
             JsErrorName::URIError,
+            JsErrorName::GraphQLError,
         ]
         .into_iter()
         .find(|n| n.as_str() == name)
