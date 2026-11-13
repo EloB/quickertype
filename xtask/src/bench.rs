@@ -31,6 +31,8 @@ report (median and min wall time, peak RSS, speedup).
 
   --ref \"<cmd ...>\"      TypeScript CLI (default: node <checkout>/dist/index.js,
                          found like `cargo xtask diff` does)
+  --ref-dir <dir>        the quicktype checkout --in-process benchmarks (default:
+                         the checkout of --ref's dist/index.js)
   --no-ref               do not run the TypeScript CLI
   --bin \"<cmd ...>\"      our CLI (default: builds target/release/quicktype)
   --baseline \"<cmd ...>\" an older build of ours to compare with (\"before\")
@@ -48,6 +50,7 @@ report (median and min wall time, peak RSS, speedup).
 
 struct Options {
     reference: Option<Vec<String>>,
+    ref_dir: Option<PathBuf>,
     no_ref: bool,
     ours: Option<Vec<String>>,
     baseline: Option<Vec<String>>,
@@ -62,6 +65,7 @@ struct Options {
 fn parse_options(args: Vec<String>) -> Result<Options, String> {
     let mut o = Options {
         reference: None,
+        ref_dir: None,
         no_ref: false,
         ours: None,
         baseline: None,
@@ -78,6 +82,7 @@ fn parse_options(args: Vec<String>) -> Result<Options, String> {
         let mut value = || args.next().ok_or_else(|| format!("missing value for {a}"));
         match a.as_str() {
             "--ref" => o.reference = Some(split(value()?)),
+            "--ref-dir" => o.ref_dir = Some(PathBuf::from(value()?)),
             "--no-ref" => o.no_ref = true,
             "--bin" => o.ours = Some(split(value()?)),
             "--baseline" => o.baseline = Some(split(value()?)),
@@ -496,12 +501,18 @@ fn generate_json(records: usize, seed: u64) -> String {
     out
 }
 
-fn write_generated_inputs(dir: &Path) -> Result<(), String> {
-    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+/// Writes the generated inputs that `benches` use (an argument names them
+/// as `{BENCH}/<name>`), unless they are already up to date.
+fn write_generated_inputs(dir: &Path, benches: &[Bench]) -> Result<(), String> {
     for (name, records) in [
         ("generated-small.json", 6_000),
         ("generated-large.json", 60_000),
     ] {
+        let reference = format!("{{BENCH}}/{name}");
+        if !benches.iter().any(|b| b.args.contains(&reference.as_str())) {
+            continue;
+        }
+        fs::create_dir_all(dir).map_err(|e| e.to_string())?;
         let text = generate_json(records, 0x5EED_0000 + records as u64);
         let path = dir.join(name);
         if fs::read(&path).ok().as_deref() != Some(text.as_bytes()) {
@@ -784,6 +795,12 @@ fn ratio(slow: f64, fast: f64) -> String {
 
 pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     let o = parse_options(args)?;
+    // Found (or refused) up front, before minutes of other benchmarks.
+    let in_process_checkout = if o.in_process && !o.no_ref {
+        Some(reference_checkout(root, &o)?)
+    } else {
+        None
+    };
     let mut tools = vec![];
     if !o.no_ref {
         let cmd = match &o.reference {
@@ -820,7 +837,6 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     });
 
     let bench_dir = root.join("target/bench");
-    write_generated_inputs(&bench_dir)?;
     let inputs = root.join("tests/inputs").to_string_lossy().into_owned();
     let bench_dir_str = bench_dir.to_string_lossy().into_owned();
 
@@ -833,6 +849,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
                     .any(|f| b.name.contains(f.as_str()) || b.group.contains(f.as_str()))
         })
         .collect();
+    write_generated_inputs(&bench_dir, &selected)?;
 
     let mut rows: Vec<(&Bench, Vec<Stats>, bool)> = vec![];
     for b in &selected {
@@ -883,21 +900,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
 
     let mut in_process = vec![];
     if o.in_process {
-        let checkout = if o.no_ref {
-            None
-        } else {
-            match &o.reference {
-                Some(cmd) => cmd
-                    .last()
-                    .map(PathBuf::from)
-                    .filter(|p| p.ends_with("dist/index.js"))
-                    .and_then(|p| p.parent()?.parent().map(Path::to_path_buf)),
-                None => {
-                    find_reference(root).and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
-                }
-            }
-        };
-        in_process = run_in_process(root, o.iterations, checkout.as_deref())?;
+        in_process = run_in_process(root, o.iterations, in_process_checkout.as_deref())?;
     }
 
     let report = render_report(&o, &tools, &rows, &corpus, &in_process);
@@ -1067,6 +1070,35 @@ fn render_report(
 
 // ---------------------------------------------------------------------------
 // In process.
+
+/// The TypeScript checkout for the in-process benchmark: `--ref-dir`, else
+/// the checkout of `--ref`'s `dist/index.js`, else the one `cargo xtask diff`
+/// finds. An error, never a silent skip, if there is none.
+fn reference_checkout(root: &Path, o: &Options) -> Result<PathBuf, String> {
+    let checkout = match (&o.ref_dir, &o.reference) {
+        (Some(dir), _) => Some(dir.clone()),
+        (None, Some(cmd)) => cmd
+            .iter()
+            .map(PathBuf::from)
+            .find(|p| p.ends_with("dist/index.js"))
+            .and_then(|p| p.parent()?.parent().map(Path::to_path_buf)),
+        (None, None) => {
+            find_reference(root).and_then(|p| p.parent()?.parent().map(Path::to_path_buf))
+        }
+    };
+    let checkout = checkout.ok_or(
+        "--in-process: cannot tell which quicktype checkout --ref runs; \
+         pass --ref-dir <checkout> (or --no-ref to skip TypeScript)",
+    )?;
+    let core = checkout.join("packages/quicktype-core/dist/index.js");
+    if !core.is_file() {
+        return Err(format!(
+            "--in-process: {} not found; build the quicktype checkout, or pass --ref-dir",
+            core.display()
+        ));
+    }
+    Ok(checkout)
+}
 
 struct InProcess {
     label: &'static str,
