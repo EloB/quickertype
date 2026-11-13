@@ -140,6 +140,12 @@ impl fmt::Display for IoError {
 impl std::error::Error for IoError {}
 
 /// libuv's error code and message for an I/O error.
+/// Bytes as UTF-8 text, invalid sequences replaced (Node's `utf8`
+/// decoding). Valid text, the usual case, is taken over without copying.
+fn utf8_lossy(bytes: Vec<u8>) -> String {
+    String::from_utf8(bytes).unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned())
+}
+
 fn errno_text(e: &std::io::Error) -> (&'static str, &'static str) {
     use std::io::ErrorKind as K;
     match e.kind() {
@@ -444,9 +450,7 @@ pub async fn readable_from_file_or_url(
                     "TypeError: Cannot read properties of null (reading 'getReader')".to_owned(),
                 );
             };
-            return Ok(Some(Readable::Text(
-                String::from_utf8_lossy(&body).into_owned(),
-            )));
+            return Ok(Some(Readable::Text(utf8_lossy(body))));
         }
         if io.is_node() {
             if file_or_url == "-" {
@@ -502,7 +506,7 @@ mod std_io {
 
     #[cfg(not(feature = "http"))]
     use super::IoErrorKind;
-    use super::{HttpResponse, Io, IoError, RequestInit, StdIo};
+    use super::{HttpResponse, Io, IoError, RequestInit, StdIo, utf8_lossy};
     use crate::input::io::LocalBoxFuture;
 
     /// The error of a failed file system call on `path`.
@@ -534,7 +538,7 @@ mod std_io {
                     return Ok(String::new());
                 }
                 std::fs::read(path)
-                    .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                    .map(utf8_lossy)
                     .map_err(|e| node_error(&e, "open", path))
             })
         }
@@ -545,7 +549,7 @@ mod std_io {
                 std::io::stdin()
                     .read_to_end(&mut bytes)
                     .map_err(|e| IoError::from_fs(&e, "read", None))?;
-                Ok(String::from_utf8_lossy(&bytes).into_owned())
+                Ok(utf8_lossy(bytes))
             })
         }
 
