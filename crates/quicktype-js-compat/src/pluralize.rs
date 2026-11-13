@@ -17,6 +17,15 @@
 //!   its own upper case), else lower case. It works on UTF-16 code units, like
 //!   everything in JavaScript.
 //!
+//! - **Speed.** Compiling the 64 rule regexes up front cost several
+//!   milliseconds per process, more than a whole small quicktype run. So each
+//!   rule list (singular, plural) is compiled on first use into one
+//!   multi-pattern automaton that reports *which* rules match a word, and a
+//!   rule's own regex is compiled only when it is the one that applies (its
+//!   captures build the replacement). The automaton reports a pattern exactly
+//!   when that pattern's regex matches, so the first matching rule from the
+//!   end is the same.
+//!
 //! The rules are JavaScript regular expressions with the `i` flag and without
 //! `u`. They are translated to `regex`-crate syntax with JavaScript's meaning
 //! (see `translate`): ASCII-only case folding (`/s$/i` matches `S` but not
@@ -24,10 +33,12 @@
 //! `\b`, and matching on UTF-16 code units, so that a negated class like
 //! `[^aeiou]` consumes half of a surrogate pair exactly as JavaScript does.
 
-use std::sync::LazyLock;
+use std::sync::{LazyLock, OnceLock};
 
 use indexmap::{IndexMap, IndexSet};
 use regex::{Captures, Regex};
+use regex_automata::nfa::thompson::WhichCaptures;
+use regex_automata::{Input, MatchKind, PatternSet, meta};
 
 use crate::{number, utf16};
 
@@ -283,14 +294,78 @@ const UNCOUNTABLE_RULES: &[&str] = &[
     "/sheep$/i",
 ];
 
-struct Rule {
-    regex: Regex,
-    replacement: &'static str,
+/// A rule list (plural or singular rules, then the uncountable patterns),
+/// in the order `pluralize.js` adds them.
+struct Rules {
+    /// Each rule's translated pattern.
+    patterns: Vec<String>,
+    /// Each rule's replacement template.
+    replacements: Vec<&'static str>,
+    /// Every pattern in one automaton, for `which rules match this word`:
+    /// with `MatchKind::All`, an overlapping search reports each pattern
+    /// that matches anywhere, exactly as its own `is_match` would.
+    selector: meta::Regex,
+    /// Each rule's own regex, compiled when it first applies to a word.
+    regexes: Vec<OnceLock<Regex>>,
 }
 
+impl Rules {
+    fn new(rules: &[(&str, &'static str)]) -> Self {
+        let mut patterns = Vec::new();
+        let mut replacements = Vec::new();
+        for &(rule, replacement) in rules {
+            patterns.push(sanitize_rule(rule));
+            replacements.push(replacement);
+        }
+        for &rule in UNCOUNTABLE_RULES {
+            if rule.starts_with('/') {
+                patterns.push(sanitize_rule(rule));
+                replacements.push("$0");
+            }
+        }
+        let selector = meta::Regex::builder()
+            .configure(
+                meta::Config::new()
+                    .match_kind(MatchKind::All)
+                    .auto_prefilter(false)
+                    .which_captures(WhichCaptures::None),
+            )
+            .build_many(&patterns)
+            .unwrap_or_else(|e| panic!("pluralize rules do not translate: {e}"));
+        let regexes = patterns.iter().map(|_| OnceLock::new()).collect();
+        Rules {
+            patterns,
+            replacements,
+            selector,
+            regexes,
+        }
+    }
+
+    #[cfg(test)]
+    fn len(&self) -> usize {
+        self.patterns.len()
+    }
+
+    /// The rules whose pattern matches `encoded`; `sanitizeWord` tries
+    /// them last added first (`.iter().rev()`).
+    fn matching(&self, encoded: &str) -> PatternSet {
+        let mut matches = PatternSet::new(self.selector.pattern_len());
+        self.selector
+            .which_overlapping_matches(&Input::new(encoded), &mut matches);
+        matches
+    }
+
+    /// Rule `index`'s regex (`rule[0]`).
+    fn regex(&self, index: usize) -> &Regex {
+        self.regexes[index].get_or_init(|| {
+            Regex::new(&self.patterns[index])
+                .unwrap_or_else(|e| panic!("pluralize rule {index} does not translate: {e}"))
+        })
+    }
+}
+
+/// The word tables: irregular words and uncountable words.
 struct Tables {
-    plural_rules: Vec<Rule>,
-    singular_rules: Vec<Rule>,
     uncountables: IndexSet<String>,
     /// Singular → plural.
     irregular_singles: IndexMap<String, String>,
@@ -300,8 +375,6 @@ struct Tables {
 
 static TABLES: LazyLock<Tables> = LazyLock::new(|| {
     let mut tables = Tables {
-        plural_rules: Vec::new(),
-        singular_rules: Vec::new(),
         uncountables: IndexSet::new(),
         irregular_singles: IndexMap::new(),
         irregular_plurals: IndexMap::new(),
@@ -313,33 +386,27 @@ static TABLES: LazyLock<Tables> = LazyLock::new(|| {
             .insert(single.clone(), plural.clone());
         tables.irregular_plurals.insert(plural, single);
     }
-    for &(rule, replacement) in PLURAL_RULES {
-        tables.plural_rules.push(sanitize_rule(rule, replacement));
-    }
-    for &(rule, replacement) in SINGULAR_RULES {
-        tables.singular_rules.push(sanitize_rule(rule, replacement));
-    }
     for &rule in UNCOUNTABLE_RULES {
-        if rule.starts_with('/') {
-            tables.plural_rules.push(sanitize_rule(rule, "$0"));
-            tables.singular_rules.push(sanitize_rule(rule, "$0"));
-        } else {
+        if !rule.starts_with('/') {
             tables.uncountables.insert(rule.to_lowercase());
         }
     }
     tables
 });
 
-/// `sanitizeRule`: compiles a `/source/i` literal, or a plain word as
-/// `/^word$/i`.
-fn sanitize_rule(rule: &str, replacement: &'static str) -> Rule {
-    let source = match rule.strip_prefix('/').and_then(|r| r.strip_suffix("/i")) {
-        Some(source) => source.to_owned(),
-        None => format!("^{rule}$"),
-    };
-    let regex = Regex::new(&translate(&source))
-        .unwrap_or_else(|e| panic!("pluralize rule {rule} does not translate: {e}"));
-    Rule { regex, replacement }
+/// The pluralization rules.
+static PLURAL: LazyLock<Rules> = LazyLock::new(|| Rules::new(PLURAL_RULES));
+
+/// The singularization rules.
+static SINGULAR: LazyLock<Rules> = LazyLock::new(|| Rules::new(SINGULAR_RULES));
+
+/// `sanitizeRule`: the pattern of a `/source/i` literal, or of a plain word
+/// as `/^word$/i`, in `regex`-crate syntax.
+fn sanitize_rule(rule: &str) -> String {
+    match rule.strip_prefix('/').and_then(|r| r.strip_suffix("/i")) {
+        Some(source) => translate(source),
+        None => translate(&format!("^{rule}$")),
+    }
 }
 
 /// Translates the source of a JavaScript regex with flag `i` (and without
@@ -565,14 +632,14 @@ fn interpolate(template: &str, captures: &Captures<'_>, offset: usize, word: &[u
 
 /// `replace(word, rule)`: `word.replace(rule[0], ...)`, rewriting the first
 /// match (`captures`, found on `encoded`) with the interpolated,
-/// case-restored replacement.
-fn replace(word: &[u16], encoded: &str, rule: &Rule, captures: &Captures<'_>) -> Vec<u16> {
+/// case-restored `replacement` (`rule[1]`).
+fn replace(word: &[u16], encoded: &str, replacement: &str, captures: &Captures<'_>) -> Vec<u16> {
     let Some(whole) = captures.get(0) else {
         return word.to_vec();
     };
     let index = encoded[..whole.start()].chars().count();
     let matched = decode_units(whole.as_str());
-    let result = interpolate(rule.replacement, captures, index, word);
+    let result = interpolate(replacement, captures, index, word);
     let restored = if matched.is_empty() {
         // An empty match takes its case from the preceding unit. (At index 0
         // JavaScript would throw; no rule matches empty there.)
@@ -591,16 +658,18 @@ fn replace(word: &[u16], encoded: &str, rule: &Rule, captures: &Captures<'_>) ->
 }
 
 /// `sanitizeWord(token, word, rules)`.
-fn sanitize_word(tables: &Tables, token: &str, word: &[u16], rules: &[Rule]) -> Vec<u16> {
+fn sanitize_word(tables: &Tables, token: &str, word: &[u16], rules: &Rules) -> Vec<u16> {
     if token.is_empty() || tables.uncountables.contains(token) {
         return word.to_vec();
     }
     let encoded = encode_units(word);
-    // `rule[0].test(word)`, then `word.replace(rule[0], ...)` on the same
-    // first match: one search per rule.
-    for rule in rules.iter().rev() {
-        if let Some(captures) = rule.regex.captures(&encoded) {
-            return replace(word, &encoded, rule, &captures);
+    // `rule[0].test(word)` for each rule from the last, then
+    // `word.replace(rule[0], ...)` on the same first match. The selector
+    // finds the rules that pass the test in one search; only the one that
+    // applies runs its own regex.
+    for index in rules.matching(&encoded).iter().rev().map(|p| p.as_usize()) {
+        if let Some(captures) = rules.regex(index).captures(&encoded) {
+            return replace(word, &encoded, rules.replacements[index], &captures);
         }
     }
     word.to_vec()
@@ -611,7 +680,7 @@ fn replace_word(
     word: &str,
     replace_map: &IndexMap<String, String>,
     keep_map: &IndexMap<String, String>,
-    rules: &[Rule],
+    rules: &Rules,
 ) -> String {
     let tables = &*TABLES;
     let token = word.to_lowercase();
@@ -631,7 +700,7 @@ fn check_word(
     word: &str,
     replace_map: &IndexMap<String, String>,
     keep_map: &IndexMap<String, String>,
-    rules: &[Rule],
+    rules: &Rules,
 ) -> bool {
     let tables = &*TABLES;
     let token = word.to_lowercase();
@@ -652,7 +721,7 @@ pub fn singular(word: &str) -> String {
         word,
         &tables.irregular_plurals,
         &tables.irregular_singles,
-        &tables.singular_rules,
+        &SINGULAR,
     )
 }
 
@@ -663,7 +732,7 @@ pub fn plural(word: &str) -> String {
         word,
         &tables.irregular_singles,
         &tables.irregular_plurals,
-        &tables.plural_rules,
+        &PLURAL,
     )
 }
 
@@ -674,7 +743,7 @@ pub fn is_singular(word: &str) -> bool {
         word,
         &tables.irregular_plurals,
         &tables.irregular_singles,
-        &tables.singular_rules,
+        &SINGULAR,
     )
 }
 
@@ -685,7 +754,7 @@ pub fn is_plural(word: &str) -> bool {
         word,
         &tables.irregular_singles,
         &tables.irregular_plurals,
-        &tables.plural_rules,
+        &PLURAL,
     )
 }
 
@@ -711,8 +780,13 @@ mod tests {
     #[test]
     fn tables_compile() {
         let tables = &*TABLES;
-        assert_eq!(tables.plural_rules.len(), 33);
-        assert_eq!(tables.singular_rules.len(), 31);
+        assert_eq!(PLURAL.len(), 33);
+        assert_eq!(SINGULAR.len(), 31);
+        for rules in [&*PLURAL, &*SINGULAR] {
+            for index in 0..rules.len() {
+                rules.regex(index);
+            }
+        }
         assert_eq!(tables.uncountables.len(), 94);
         assert_eq!(tables.irregular_singles.len(), 47);
         assert_eq!(tables.irregular_plurals.len(), 43);

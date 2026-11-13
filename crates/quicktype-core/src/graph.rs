@@ -7,12 +7,12 @@
 //! stacks (so deep type graphs cannot overflow the stack) that visit nodes
 //! in exactly the order the recursive TypeScript does.
 
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use indexmap::IndexSet;
 
 use crate::messages::Result;
+use crate::support::fast_hash::HashMap;
 use crate::support::support::{assert, assert_default, defined};
 
 fn count_component_graph_nodes(components: &[Vec<usize>]) -> Result<usize> {

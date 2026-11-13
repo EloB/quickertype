@@ -216,8 +216,8 @@ impl<'a> NewtonsoftCSharpRenderer<'a> {
             |r| {
                 // Sometimes multiple top-levels will resolve to the same type, so we have to take care
                 // not to emit more than one extension method for the same type.
-                let mut seen_types: std::collections::HashSet<TypeRef> =
-                    std::collections::HashSet::new();
+                let mut seen_types: crate::support::fast_hash::HashSet<TypeRef> =
+                    crate::support::fast_hash::HashSet::default();
                 r.for_each_top_level(BlankLinePosition::None, |r, t, _, _| {
                     // FIXME: Make ToJson a Named
                     if seen_types.insert(t) {

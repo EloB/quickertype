@@ -2,6 +2,22 @@
 
 Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
+## 2026-11-13 (later)
+
+- **Parity 11,177 / 11,177 (100%), 0 regressions.** Merged the C (cJSON)
+  renderer (379/379 render cases) and Object.prototype enum option values
+  (`--array-type toString` and friends behave as in TypeScript; every enum
+  option x 12 names x 3 inputs, 0 of 1,980 runs differ).
+- Merged Phase 7's first round (`docs/BENCHMARKS.md`): the CLI is 8–96x
+  faster than the TypeScript CLI, the golden corpus runs 46x faster,
+  streamed samples and block-allocated `CompressedJSON` (2.6 GB input:
+  7.2 → 6.2 GB peak).
+- JS API differential suite: 18,742 scenarios, 0 different, 1 known gap;
+  the whole corpus (9,970) now runs on WebAssembly (C no longer falls back).
+- `docs/ARCHITECTURE.md` for maintainers; `PARITY.md` lists the generated
+  code bugs kept for parity; gitleaks config and CI job; CI runs the
+  TypeScript input tests with the TypeScript 7.0.2 compiler.
+
 ## 2026-11-13
 
 - Merged `feat/wasm-js-api` (Phase 6): the npm `quicktype-core` package is

@@ -6,6 +6,7 @@ pub mod chance;
 pub mod collection_utils;
 pub mod comments;
 pub mod converters;
+pub mod fast_hash;
 pub mod integer_range;
 pub mod parse_json;
 pub mod recursion;

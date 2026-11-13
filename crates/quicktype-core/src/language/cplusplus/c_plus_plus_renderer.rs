@@ -5,7 +5,6 @@
 //! into one header or (`--source-style multi-source`) one header per type.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
@@ -22,6 +21,7 @@ use crate::declaration_ir::{Declaration, DeclarationKind};
 use crate::renderer_options::RendererOptions;
 use crate::support::collection_utils::{SameValueZero, array_intercalate};
 use crate::support::comments::CommentOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::strings::{NamingStyle, make_name_style, string_escape};
 use crate::support::support::{assert, defined, panic};
@@ -266,11 +266,11 @@ impl<'a> CPlusPlusRenderer<'a> {
             generated_files: IndexSet::new(),
             current_filename: None,
             all_type_names: IndexSet::new(),
-            getters_and_setters_for_property_name: HashMap::new(),
+            getters_and_setters_for_property_name: HashMap::default(),
             member_name_style,
             named_type_name_style,
-            generated_global_names: HashMap::new(),
-            generated_member_names: HashMap::new(),
+            generated_global_names: HashMap::default(),
+            generated_member_names: HashMap::default(),
             forbidden_global_names: Vec::new(),
             member_naming_function,
             string_type: if options.wstring {
@@ -284,7 +284,7 @@ impl<'a> CPlusPlusRenderer<'a> {
             nullopt_type,
             variant_type,
             variant_index_method_name,
-            recursive_unions: RefCell::new(HashMap::new()),
+            recursive_unions: RefCell::new(HashMap::default()),
             options,
         };
         renderer.setup_global_names();

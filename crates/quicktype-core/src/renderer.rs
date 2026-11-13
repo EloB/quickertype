@@ -16,8 +16,6 @@
 //!   [`ConvenienceRendererExt`](crate::convenience_renderer::ConvenienceRendererExt)
 //!   trait, because the callback needs the whole renderer.
 
-use std::collections::HashMap;
-
 use indexmap::IndexMap;
 
 use crate::annotation::AnnotationData;
@@ -25,6 +23,7 @@ use crate::messages::{ErrorKind, QuickTypeError, Result};
 use crate::naming::Names;
 use crate::source::{Source, annotated};
 use crate::support::comments::Comment;
+use crate::support::fast_hash::HashMap;
 use crate::support::support::{assert, console_log, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::type_graph::TypeGraph;
@@ -290,7 +289,7 @@ impl<'a> RendererCore<'a> {
             contexts: vec![EmitContext::new()],
             current: 0,
             finished_files: IndexMap::new(),
-            finished_emit_contexts: HashMap::new(),
+            finished_emit_contexts: HashMap::default(),
         }
     }
 

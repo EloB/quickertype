@@ -7,7 +7,6 @@
 //! [`resolve_intersections`](super::resolve_intersections) to handle first.
 
 use std::cell::{Cell, RefCell};
-use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use indexmap::IndexSet;
@@ -15,6 +14,7 @@ use indexmap::IndexSet;
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::make_replacer;
 use crate::messages::{ErrorKind, MessageValue, Result, message_assert};
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::assert;
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -41,7 +41,7 @@ fn union_key_for_types(
     types: impl IntoIterator<Item = TypeRef>,
 ) -> Result<String> {
     let mut atoms: Vec<usize> = Vec::new();
-    let mut seen: HashSet<usize> = HashSet::new();
+    let mut seen: HashSet<usize> = HashSet::default();
     let mut stack: Vec<TypeRef> = types.into_iter().collect();
     // The set of atoms does not depend on the visiting order, so an
     // explicit stack replaces the recursion.
@@ -69,7 +69,7 @@ fn union_key_for_types(
 /// `containsIntersection(t, new Set())`: whether an intersection is
 /// reachable from `t` through unions.
 fn contains_intersection(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
-    let mut seen: HashSet<usize> = HashSet::new();
+    let mut seen: HashSet<usize> = HashSet::default();
     let mut stack = vec![t];
     while let Some(t) = stack.pop() {
         if !seen.insert(t.index()) {
@@ -199,7 +199,7 @@ pub fn flatten_unions(
         conflate_numbers,
         make_object_types,
         needs_repeat: Cell::new(false),
-        union_key_to_ref: RefCell::new(HashMap::new()),
+        union_key_to_ref: RefCell::new(HashMap::default()),
     });
 
     let mut non_canonical_unions: Vec<TypeRef> = Vec::new();

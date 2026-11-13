@@ -32,10 +32,13 @@
 //! name, and object keys are interned when they are read rather than when
 //! their value is committed.
 
-use std::collections::HashMap;
+use std::cell::RefCell;
 use std::fmt;
+use std::hash::BuildHasher as _;
+use std::io::Read;
 use std::rc::Rc;
 
+use hashbrown::HashTable;
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::utf16;
 
@@ -43,6 +46,7 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
+use crate::support::fast_hash::{BuildHasher, HashMap};
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
@@ -89,6 +93,50 @@ pub enum JsonSample {
     /// The raw bytes of a file, URL body or standard input, read with the
     /// CLI's stream-json semantics (TS `CompressedJSONFromStream`).
     Stream(Vec<u8>),
+    /// A file, standard input or any byte stream, read chunk by chunk with
+    /// the CLI's stream-json semantics, so that it is never held whole (TS
+    /// `CompressedJSONFromStream` on a Node `Readable`).
+    Reader(SampleReader),
+}
+
+/// The byte stream of a [`JsonSample::Reader`]. It is shared, so that a
+/// [`JsonSample`] can be cloned, and compares by identity.
+///
+/// A stream can be read once. In TypeScript, a sample whose `Readable` was
+/// already consumed (the same stream added twice) reads as empty input and
+/// fails with stream-json's `Parser has expected a value`; here reading a
+/// `SampleReader` (or a clone of it) a second time is an error that says
+/// so. The CLI opens a new stream for every sample, so it never does.
+#[derive(Clone)]
+pub struct SampleReader(Rc<RefCell<Option<Box<dyn Read>>>>);
+
+impl SampleReader {
+    /// A sample read from `reader`. To report a failed read as Node's
+    /// exception, let the reader's [`std::io::Error`] wrap an
+    /// [`IoError`](crate::input::io::node_io::IoError) (see
+    /// [`CompressedJson::parse_stream_reader`]).
+    pub fn new(reader: impl Read + 'static) -> Self {
+        SampleReader(Rc::new(RefCell::new(Some(Box::new(reader)))))
+    }
+
+    /// The stream, unless it was read already.
+    fn take(&self) -> Option<Box<dyn Read>> {
+        self.0.borrow_mut().take()
+    }
+}
+
+impl PartialEq for SampleReader {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for SampleReader {}
+
+impl fmt::Debug for SampleReader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("SampleReader(..)")
+    }
 }
 
 impl From<String> for JsonSample {
@@ -124,11 +172,213 @@ pub struct CompressedJson {
     root_value: Option<Value>,
     ctx: Option<Context>,
     context_stack: Vec<Context>,
-    strings: Vec<Rc<str>>,
-    /// Only looked up, never iterated; shares its keys with `strings`.
-    string_indexes: HashMap<Rc<str>, u32>,
-    objects: Vec<Vec<(Value, Value)>>,
-    arrays: Vec<Vec<Value>>,
+    strings: Strings,
+    /// Every object's key/value pairs.
+    objects: Runs<(Value, Value)>,
+    /// Every array's elements.
+    arrays: Runs<Value>,
+    /// Emptied buffers of finished objects and arrays, for the next ones.
+    spare_objects: Vec<Vec<(Value, Value)>>,
+    spare_arrays: Vec<Vec<Value>>,
+}
+
+/// The number of items a block of [`Runs`] or [`Strings`] holds at least.
+const BLOCK: usize = 1 << 16;
+
+/// How many emptied buffers [`CompressedJson`] keeps for reuse while a
+/// sample is read, and the largest capacity (in items) it keeps.
+const SPARE_BUFFERS: usize = 64;
+const SPARE_CAPACITY: usize = 4096;
+
+/// Keeps an emptied buffer for reuse, unless there are enough or it is
+/// large.
+fn keep_spare<T>(spares: &mut Vec<Vec<T>>, spare: Option<Vec<T>>) {
+    if let Some(mut spare) = spare
+        && spares.len() < SPARE_BUFFERS
+        && spare.capacity() <= SPARE_CAPACITY
+    {
+        spare.clear();
+        spares.push(spare);
+    }
+}
+
+/// Where a run is: its block, and its start and length in it.
+#[derive(Clone, Copy, Debug)]
+struct Span {
+    block: u32,
+    start: u32,
+    len: u32,
+}
+
+/// A table of runs (every object's entries, or every array's elements):
+/// each run is contiguous, in blocks of at least [`BLOCK`] items that are
+/// never reallocated. So a large input's tables grow without copying what
+/// they hold, and take one allocation per block instead of one per object
+/// or array.
+#[derive(Debug)]
+struct Runs<T> {
+    blocks: Vec<Vec<T>>,
+    spans: Vec<Span>,
+}
+
+impl<T: Copy> Runs<T> {
+    fn new() -> Self {
+        Runs {
+            blocks: Vec::new(),
+            spans: Vec::new(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.spans.len()
+    }
+
+    /// Appends a run, taking `items` over as its own block if it is too
+    /// large to share one (no copy); returns the run's index.
+    fn push(&mut self, items: Vec<T>) -> Result<(u32, Option<Vec<T>>)> {
+        let index = u32::try_from(self.spans.len())
+            .map_err(|_| QuickTypeError::internal("Too many objects or arrays"))?;
+        let len = u32::try_from(items.len())
+            .map_err(|_| QuickTypeError::internal("Too many values in one object or array"))?;
+        let fits = self
+            .blocks
+            .last()
+            .is_some_and(|b| b.capacity() - b.len() >= items.len());
+        let (block, start, spare) = if fits {
+            let block = self.blocks.len() - 1;
+            let start = self.blocks[block].len();
+            self.blocks[block].extend_from_slice(&items);
+            (block, start, Some(items))
+        } else if items.len() >= BLOCK {
+            self.blocks.push(items);
+            (self.blocks.len() - 1, 0, None)
+        } else {
+            let mut block = Vec::with_capacity(BLOCK);
+            block.extend_from_slice(&items);
+            self.blocks.push(block);
+            (self.blocks.len() - 1, 0, Some(items))
+        };
+        self.spans.push(Span {
+            block: block as u32,
+            start: start as u32,
+            len,
+        });
+        Ok((index, spare))
+    }
+
+    fn get(&self, index: usize) -> Option<&[T]> {
+        let span = self.spans.get(index)?;
+        let start = span.start as usize;
+        self.blocks
+            .get(span.block as usize)?
+            .get(start..start + span.len as usize)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &[T]> {
+        (0..self.len()).filter_map(|i| self.get(i))
+    }
+}
+
+/// The interned strings (TS `_strings` and `_stringIndexes`): the text
+/// once, in blocks that are never reallocated, and a hash table of string
+/// indexes for looking a text up.
+struct Strings {
+    blocks: Vec<String>,
+    spans: Vec<Span>,
+    /// Indexes into `spans`, hashed by text; only looked up.
+    indexes: HashTable<u32>,
+    hasher: BuildHasher,
+}
+
+impl Strings {
+    fn new() -> Self {
+        Strings {
+            blocks: Vec::new(),
+            spans: Vec::new(),
+            indexes: HashTable::new(),
+            hasher: BuildHasher::default(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.spans.len()
+    }
+
+    fn get(&self, index: usize) -> Option<&str> {
+        let span = self.spans.get(index)?;
+        let start = span.start as usize;
+        self.blocks
+            .get(span.block as usize)?
+            .get(start..start + span.len as usize)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &str> {
+        (0..self.len()).filter_map(|i| self.get(i))
+    }
+
+    /// `internString(s)`: the index of `s`, appended if it is not there
+    /// yet. `"__proto__"` is never found and gets a new index each time
+    /// (TypeScript's index is a plain object). Hashes `s` once.
+    fn intern(&mut self, s: &str) -> u32 {
+        if s == "__proto__" {
+            return self.append(s, None);
+        }
+        let hash = self.hasher.hash_one(s);
+        if let Some(index) = self.find_hashed(s, hash) {
+            return index;
+        }
+        self.append(s, Some(hash))
+    }
+
+    /// Appends a string of an imported table: found from then on if it is
+    /// the first with its text (and not `"__proto__"`).
+    fn import(&mut self, s: &str) -> u32 {
+        let hash = self.hasher.hash_one(s);
+        let findable = s != "__proto__" && self.find_hashed(s, hash).is_none();
+        self.append(s, findable.then_some(hash))
+    }
+
+    fn find_hashed(&self, s: &str, hash: u64) -> Option<u32> {
+        self.indexes
+            .find(hash, |&i| self.get(i as usize) == Some(s))
+            .copied()
+    }
+
+    /// Appends `s`, registered for lookups under `hash` if given; returns
+    /// its index.
+    fn append(&mut self, s: &str, hash: Option<u64>) -> u32 {
+        let index = self.spans.len() as u32;
+        let fits = self
+            .blocks
+            .last()
+            .is_some_and(|b| b.capacity() - b.len() >= s.len());
+        if !fits {
+            self.blocks.push(String::with_capacity(s.len().max(BLOCK)));
+        }
+        let block = self.blocks.len() - 1;
+        let start = self.blocks[block].len();
+        self.blocks[block].push_str(s);
+        self.spans.push(Span {
+            block: block as u32,
+            start: start as u32,
+            len: s.len() as u32,
+        });
+        if let Some(hash) = hash {
+            let Strings {
+                blocks,
+                spans,
+                indexes,
+                hasher,
+            } = self;
+            let text = |i: u32| {
+                let span = spans[i as usize];
+                let start = span.start as usize;
+                &blocks[span.block as usize][start..start + span.len as usize]
+            };
+            indexes.insert_unique(hash, index, |&i| hasher.hash_one(text(i)));
+        }
+        index
+    }
 }
 
 impl fmt::Debug for CompressedJson {
@@ -165,10 +415,11 @@ impl CompressedJson {
             root_value: None,
             ctx: None,
             context_stack: Vec::new(),
-            strings: Vec::new(),
-            string_indexes: HashMap::new(),
-            objects: Vec::new(),
-            arrays: Vec::new(),
+            strings: Strings::new(),
+            objects: Runs::new(),
+            arrays: Runs::new(),
+            spare_objects: Vec::new(),
+            spare_arrays: Vec::new(),
         }
     }
 
@@ -247,14 +498,14 @@ impl CompressedJson {
     }
 
     fn string_at(&self, index: u32) -> Result<&str> {
-        Ok(defined(self.strings.get(index as usize))?)
+        defined(self.strings.get(index as usize))
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
     /// the reader produced them; keys are [`Value::InternedString`]s.
     pub fn get_object_for_value(&self, v: Value) -> Result<&[(Value, Value)]> {
         match v {
-            Value::Object(i) => Ok(defined(self.objects.get(i as usize))?),
+            Value::Object(i) => defined(self.objects.get(i as usize)),
             _ => panic("Trying to get index for value with invalid tag"),
         }
     }
@@ -262,7 +513,7 @@ impl CompressedJson {
     /// `getArrayForValue(v)`: the array's elements.
     pub fn get_array_for_value(&self, v: Value) -> Result<&[Value]> {
         match v {
-            Value::Array(i) => Ok(defined(self.arrays.get(i as usize))?),
+            Value::Array(i) => defined(self.arrays.get(i as usize)),
             _ => panic("Trying to get index for value with invalid tag"),
         }
     }
@@ -284,16 +535,7 @@ impl CompressedJson {
     /// never found again and gets a new index each time (harmless: strings
     /// are compared by content).
     fn intern_string(&mut self, s: &str) -> u32 {
-        if let Some(&index) = self.string_indexes.get(s) {
-            return index;
-        }
-        let index = self.strings.len() as u32;
-        let s: Rc<str> = Rc::from(s);
-        if &*s != "__proto__" {
-            self.string_indexes.insert(Rc::clone(&s), index);
-        }
-        self.strings.push(s);
-        index
+        self.strings.intern(s)
     }
 
     /// `makeString(s)`.
@@ -306,11 +548,7 @@ impl CompressedJson {
         self.ctx
             .as_ref()
             .and_then(|ctx| ctx.current_key)
-            .is_some_and(|key| {
-                self.strings
-                    .get(key as usize)
-                    .is_some_and(|k| &**k == "$ref")
-            })
+            .is_some_and(|key| self.strings.get(key as usize).is_some_and(|k| k == "$ref"))
     }
 
     /// `commitValue(value)`.
@@ -375,6 +613,9 @@ impl CompressedJson {
 
     /// `finish()`: the root value of the sample just read.
     pub fn finish(&mut self) -> Result<Value> {
+        // The buffers are kept for one sample at a time.
+        self.spare_objects = Vec::new();
+        self.spare_arrays = Vec::new();
         let Some(value) = self.root_value.take() else {
             return panic("Finished without root document");
         };
@@ -403,8 +644,9 @@ impl CompressedJson {
     /// `pushObjectContext()`: an object starts.
     pub fn push_object_context(&mut self) {
         self.push_context();
+        let buffer = self.spare_objects.pop().unwrap_or_default();
         if let Some(ctx) = &mut self.ctx {
-            ctx.current_object = Some(Vec::new());
+            ctx.current_object = Some(buffer);
         }
     }
 
@@ -421,16 +663,17 @@ impl CompressedJson {
             return panic("Object ended but not started");
         };
         self.pop_context()?;
-        let index = self.objects.len() as u32;
-        self.objects.push(object);
+        let (index, spare) = self.objects.push(object)?;
+        keep_spare(&mut self.spare_objects, spare);
         self.commit_value(Value::Object(index))
     }
 
     /// `pushArrayContext()`: an array starts.
     pub fn push_array_context(&mut self) {
         self.push_context();
+        let buffer = self.spare_arrays.pop().unwrap_or_default();
         if let Some(ctx) = &mut self.ctx {
-            ctx.current_array = Some(Vec::new());
+            ctx.current_array = Some(buffer);
         }
     }
 
@@ -440,8 +683,8 @@ impl CompressedJson {
             return panic("Array ended but not started");
         };
         self.pop_context()?;
-        let index = self.arrays.len() as u32;
-        self.arrays.push(array);
+        let (index, spare) = self.arrays.push(array)?;
+        keep_spare(&mut self.spare_arrays, spare);
         self.commit_value(Value::Array(index))
     }
 
@@ -449,6 +692,8 @@ impl CompressedJson {
     /// read further samples (the TypeScript leaves the state as is; it is
     /// never used again because the error ends the run).
     pub fn reset_partial_sample(&mut self) {
+        self.spare_objects = Vec::new();
+        self.spare_arrays = Vec::new();
         self.root_value = None;
         self.ctx = None;
         self.context_stack.clear();
@@ -459,6 +704,12 @@ impl CompressedJson {
         match sample {
             JsonSample::String(text) => self.parse_string(&text),
             JsonSample::Stream(bytes) => self.parse_stream(&bytes),
+            JsonSample::Reader(reader) => match reader.take() {
+                Some(mut stream) => self.parse_stream_reader(&mut *stream),
+                None => Err(ParseError::Read(QuickTypeError::internal(
+                    "This JsonSample::Reader's stream was already read; a SampleReader can be read once",
+                ))),
+            },
         }
     }
 
@@ -534,8 +785,8 @@ impl CompressedJson {
     /// with `roots` (sample values) encoded against it; the inverse of
     /// [`CompressedJson::from_tables`].
     pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
-        let mut strings: Vec<String> = self.strings.iter().map(|s| s.to_string()).collect();
-        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::new();
+        let mut strings: Vec<String> = self.strings.iter().map(str::to_owned).collect();
+        let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::default();
         let mut encode = |v: Value| {
             encode_value(v, |kind| {
                 *kind_indexes.entry(kind).or_insert_with(|| {
@@ -546,7 +797,7 @@ impl CompressedJson {
         };
         let mut objects = Vec::new();
         let mut object_offsets = Vec::with_capacity(self.objects.len());
-        for object in &self.objects {
+        for object in self.objects.iter() {
             object_offsets.push(objects.len() as u32);
             for &(key, value) in object {
                 objects.push(encode(key));
@@ -555,7 +806,7 @@ impl CompressedJson {
         }
         let mut arrays = Vec::new();
         let mut array_offsets = Vec::with_capacity(self.arrays.len());
-        for array in &self.arrays {
+        for array in self.arrays.iter() {
             array_offsets.push(arrays.len() as u32);
             arrays.extend(array.iter().map(|&v| encode(v)));
         }
@@ -580,12 +831,8 @@ impl CompressedJson {
     ) -> Result<Self> {
         let mut cjson = CompressedJson::new(date_time_recognizer, handle_refs, None);
         for s in &tables.strings {
-            let s: Rc<str> = Rc::from(s.as_str());
-            if &*s != "__proto__" {
-                let index = cjson.strings.len() as u32;
-                cjson.string_indexes.entry(Rc::clone(&s)).or_insert(index);
-            }
-            cjson.strings.push(s);
+            // The first of equal strings is the one found.
+            cjson.strings.import(s);
         }
         let ranges = |offsets: &[u32], len: usize| -> Result<Vec<(usize, usize)>> {
             let mut ranges = Vec::with_capacity(offsets.len());
@@ -616,14 +863,14 @@ impl CompressedJson {
                 }
                 object.push((key, cjson.decode_value(pair[1], object_count, array_count)?));
             }
-            cjson.objects.push(object);
+            cjson.objects.push(object)?;
         }
         for (start, end) in array_ranges {
             let array = tables.arrays[start..end]
                 .iter()
                 .map(|&v| cjson.decode_value(v, object_count, array_count))
                 .collect::<Result<Vec<_>>>()?;
-            cjson.arrays.push(array);
+            cjson.arrays.push(array)?;
         }
         Ok(cjson)
     }
@@ -726,7 +973,8 @@ fn encode_value(v: Value, kind_index: impl FnOnce(TypeKind) -> u32) -> i32 {
 
 /// An exception while reading a sample. [`JsonInput`](crate::input::inputs::JsonInput)
 /// reports its [`message`](Self::message) (TS `errorMessage(e)`) as a
-/// `MiscJSONParseError`.
+/// `MiscJSONParseError`, except for [`Read`](Self::Read) errors, which it
+/// reports as they are.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParseError {
     /// A JavaScript exception thrown by the JSON parser: `JSON.parse`'s
@@ -734,6 +982,9 @@ pub enum ParseError {
     Js(JsException),
     /// A quicktype error raised while building the compressed form.
     Quicktype(QuickTypeError),
+    /// The sample's stream could not be read (in TypeScript, the stream's
+    /// `error` event).
+    Read(QuickTypeError),
 }
 
 impl ParseError {
@@ -741,7 +992,7 @@ impl ParseError {
     pub fn message(&self) -> &str {
         match self {
             ParseError::Js(e) => e.message(),
-            ParseError::Quicktype(e) => e.user_message(),
+            ParseError::Quicktype(e) | ParseError::Read(e) => e.user_message(),
         }
     }
 }
@@ -767,6 +1018,27 @@ mod tests {
 
     fn cjson(range: Option<IntegerRange>) -> CompressedJson {
         CompressedJson::new(Box::new(DefaultDateTimeRecognizer), false, range)
+    }
+
+    #[test]
+    fn integer_string_fits_the_range() {
+        use crate::support::integer_range::INT32_RANGE;
+        let r = cjson(Some(INT32_RANGE.clone()));
+        for (s, fits) in [
+            ("0", true),
+            ("-0", true),
+            ("2147483647", true),
+            ("2147483648", false),
+            ("-2147483648", true),
+            ("-2147483649", false),
+            ("000000000000000001", true),
+            ("-000000000000000001", true),
+            ("999999999999999999", false),
+            ("99999999999999999999", false),
+        ] {
+            assert_eq!(r.integer_string_fits(s), fits, "{s}");
+        }
+        assert!(cjson(None).integer_string_fits("99999999999999999999"));
     }
 
     #[test]
@@ -831,7 +1103,7 @@ mod tests {
         r.parse_string(r#"[{"a":"a","__proto__":1},{"a":2,"__proto__":3}]"#)
             .unwrap();
         // "a" once; "__proto__" every time, like the TypeScript.
-        let texts: Vec<&str> = r.strings.iter().map(|s| &**s).collect();
+        let texts: Vec<&str> = r.strings.iter().collect();
         assert_eq!(texts, ["a", "__proto__", "__proto__"]);
     }
 
@@ -854,6 +1126,52 @@ mod tests {
         assert_eq!(r.parse_string("1"), Ok(Value::Integer));
     }
 
+    /// Runs and strings spread over many blocks, including runs larger
+    /// than a block, read back as they were added.
+    #[test]
+    fn runs_and_strings_across_blocks() {
+        let mut runs: Runs<u32> = Runs::new();
+        let mut expected: Vec<Vec<u32>> = Vec::new();
+        for i in 0..20_000u32 {
+            let len = match i % 7 {
+                0 => 0,
+                3 => 97,
+                _ => (i % 13) as usize,
+            };
+            let len = if i == 10_000 { BLOCK + 3 } else { len };
+            let run: Vec<u32> = (0..len as u32).map(|j| i * 1000 + j).collect();
+            let (index, _) = runs.push(run.clone()).unwrap();
+            assert_eq!(index, i);
+            expected.push(run);
+        }
+        assert!(runs.blocks.len() > 3);
+        assert!(runs.iter().eq(expected.iter().map(Vec::as_slice)));
+
+        let mut r = cjson(None);
+        let texts: Vec<String> = (0..20_000).map(|i| format!("string number {i}")).collect();
+        let indexes: Vec<u32> = texts.iter().map(|t| r.intern_string(t)).collect();
+        assert!(r.strings.blocks.len() > 3);
+        for (text, &index) in texts.iter().zip(&indexes) {
+            assert_eq!(r.intern_string(text), index);
+            assert_eq!(r.string_at(index).unwrap(), text);
+        }
+    }
+
+    /// A stream sample can be read once; reading it again (or a clone of
+    /// it) is an error, not empty input.
+    #[test]
+    fn a_sample_reader_is_read_once() {
+        let mut r = cjson(None);
+        let sample = JsonSample::Reader(SampleReader::new(std::io::Cursor::new(b"[1]".to_vec())));
+        assert!(matches!(
+            r.parse_sample(sample.clone()),
+            Ok(Value::Array(_))
+        ));
+        let error = r.parse_sample(sample).unwrap_err();
+        assert!(matches!(error, ParseError::Read(_)), "{error:?}");
+        assert!(error.message().contains("already read"), "{error:?}");
+    }
+
     #[test]
     fn tables_round_trip() {
         let mut r = cjson(Some(INT64_RANGE.clone()));
@@ -867,8 +1185,8 @@ mod tests {
         let imported =
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
                 .unwrap();
-        assert_eq!(imported.objects, r.objects);
-        assert_eq!(imported.arrays, r.arrays);
+        assert!(imported.objects.iter().eq(r.objects.iter()));
+        assert!(imported.arrays.iter().eq(r.arrays.iter()));
         let (objects, arrays) = imported.counts();
         let decoded: Vec<Value> = roots
             .iter()

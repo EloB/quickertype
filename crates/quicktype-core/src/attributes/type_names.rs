@@ -16,7 +16,6 @@
 //! default generator, which [`init_type_names`] resets.
 
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use indexmap::IndexSet;
@@ -24,6 +23,7 @@ use indexmap::IndexSet;
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::Result;
 use crate::support::chance::Chance;
+use crate::support::fast_hash::HashSet;
 use crate::support::strings::snake_case;
 use crate::support::support::panic;
 use quicktype_js_compat::utf16;
@@ -49,7 +49,7 @@ impl TypeNameGenerator {
     pub fn new() -> Self {
         TypeNameGenerator(RefCell::new(RandomNames {
             chance: Chance::new(31415),
-            used: HashSet::new(),
+            used: HashSet::default(),
         }))
     }
 

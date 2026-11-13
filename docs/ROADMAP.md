@@ -60,7 +60,7 @@ the rewrite pipeline and the Rust renderer end to end: the first
 golden-corpus passes for generated code. Then Go as the second pilot
 (aligned tables, `DependencyName`, GraphQL).
 
-## Phase 4 — Language fan-out (parallel) — ✅ all languages except C done; C in progress
+## Phase 4 — Language fan-out (parallel) — ✅ done (all 27 languages; parity 11,177 / 11,177)
 
 Eight packages along base-class families (research 04), so no two edit the
 same files:
@@ -87,6 +87,19 @@ Cross-cutting items each language package must pick up:
 - Dedupe `transformers.rs`'s `lookup_*` helpers with
   `attributes::type_attributes::{transformation_for_type, follow_target_type}`
   (generic over `TypeLookup`).
+- Move the remaining per-language `intercalate` and JS number-formatting
+  copies to `support::collection_utils::array_intercalate` and
+  `quicktype_js_compat::number::to_string`; switch the Rust renderer to
+  `match_type_unsupported`.
+- Stale "not ported yet" comments (`input/inputs.rs`, `tests/run.rs`,
+  `tests/json_input_vitest.rs`, `tests/json_schema_vitest.rs`) and the
+  CLI's own `trim`/whitespace helpers in `js.rs`, which duplicate
+  `quicktype_js_compat::whitespace`.
+- `input/io/node_io.rs` says the WASM build implements `Io`; it implements
+  `JsonSchemaStore::get` through the facade's stores instead.
+- One name for the reference checkout's environment variable
+  (`QUICKTYPE_REF`, `QUICKTYPE_REFERENCE`, `QUICKTYPE_DIR` today), and a
+  recorder for `crates/quicktype-core/tests/data/target_languages.json`.
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 
@@ -135,9 +148,42 @@ cases. Feasibility spike: `docs/research/07-typescript-input.md`.
       (including ports of quicktype's API-level Vitest tests), in CI
       against the package's own TypeScript engine
 - [ ] `quicktype-graphql-input` on the engine (after Phase 5's GraphQL input)
-- [ ] npm distribution of the native CLI (per-platform binary packages)
+- [ ] The engine parses plain JSON text itself (with `JSON.parse`
+      semantics) instead of receiving quicktype's TypeScript-built
+      `CompressedJSON` tables: in browsers the warm engine is only about
+      as fast as warm TypeScript today, because reading the input is still
+      TypeScript and the tables are converted at the boundary
+- [ ] The facade's fallback for `Object.prototype` enum option values can
+      go to the engine now (after a differential run)
+- [ ] Browser playground on GitHub Pages (`site/`)
+- [ ] Distribution: per-platform npm packages of the native CLI,
+      `cargo-dist` release archives and installers, and the TypeScript 7
+      compiler built from pinned source and shipped next to the binary
+      (`cargo xtask tsc`)
 
-## Phase 7 — Performance — 🚧 in progress
+## Phase 7 — Performance — ✅ first round done
 
 Benchmarks against the TypeScript implementation (startup, small and large
 inputs, the full corpus), profiling, and optimization without changing output.
+
+- [x] `cargo xtask bench` (CLI vs TypeScript CLI, corpus, in process vs
+      warm TypeScript) and the first round of profiling-driven
+      optimizations: see [BENCHMARKS.md](BENCHMARKS.md) (CLI 8–96× faster
+      than TypeScript, the engine 2.4× faster in process).
+- [x] Streamed JSON samples (64 KiB chunks, Node's chunked UTF-8
+      decoding) and `CompressedJSON` in blocks: 2.6 GB input 7.2 → 6.2 GB
+      peak memory, output identical.
+- [ ] Share identical per-string attribute sets during inference (about
+      2–3 GB of a 2.6 GB input's peak), keeping the exact counts enum
+      inference needs.
+
+## Phase 8 — Big inputs (planned)
+
+Inference from running tallies instead of a full copy of the document, then
+parallel chunks (threads in the CLI, workers in browsers) whose tallies merge
+in file order. quicktype's decision code stays as it is; the tallies (counts,
+distinct values, first-seen order, combined string attributes) must equal
+what it computes from the full value lists. The current path stays as the
+reference: every test and a seeded random-document generator run both paths
+and require identical output. Memory then grows with the number of distinct
+fields and strings instead of the file size.

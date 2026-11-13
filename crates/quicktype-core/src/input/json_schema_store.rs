@@ -7,7 +7,6 @@
 //! TypeScript abstract class; the JSON Schema input then reports
 //! `Could not fetch schema …`.
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
@@ -15,6 +14,7 @@ use quicktype_js_compat::json::JsonValue;
 
 use crate::input::io::{LocalBoxFuture, grow_stack};
 use crate::messages::{MessageValue, Result};
+use crate::support::fast_hash::HashMap;
 use crate::support::support::console_log;
 
 /// `JSONSchema`: a schema document or any part of one, as the JavaScript

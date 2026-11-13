@@ -12,8 +12,6 @@
 //! - [`kotlin_hooks`]: the `ConvenienceRenderer` hooks `KotlinRenderer`
 //!   overrides.
 
-use std::collections::HashMap;
-
 use indexmap::IndexSet;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
@@ -21,6 +19,7 @@ use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::{EnumValue, RendererOptions};
 use crate::support::acronyms::AcronymStyleOptions;
+use crate::support::fast_hash::HashMap;
 use crate::support::recursion::guard;
 use crate::support::support::panic;
 use crate::target_language::TargetLanguage;
@@ -272,7 +271,7 @@ pub fn base_emit_union_definition<'a, R: KotlinRenderer<'a>>(
     r.emit_description(description)?;
 
     let graph = r.type_graph();
-    let mut sort_keys: HashMap<TypeRef, String> = HashMap::new();
+    let mut sort_keys: HashMap<TypeRef, String> = HashMap::default();
     for &m in graph.type_at(u)?.members()? {
         sort_keys.insert(m, union_member_sort_key(graph.kind(m)?));
     }

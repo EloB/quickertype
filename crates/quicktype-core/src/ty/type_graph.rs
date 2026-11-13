@@ -24,7 +24,6 @@
 //! list.
 
 use std::cell::OnceCell;
-use std::collections::HashSet;
 
 use indexmap::{IndexMap, IndexSet};
 
@@ -34,6 +33,7 @@ use crate::graph::Graph;
 use crate::graph_rewriting::{Replacer, make_replacer};
 use crate::messages::{ErrorKind, MessageValue, Result, message_error};
 use crate::support::collection_utils::set_subtract;
+use crate::support::fast_hash::HashSet;
 use crate::support::support::{assert, console_log, defined, must_not_happen, panic};
 use crate::ty::provenance_type_attribute_kind::ProvenanceTypeAttributeKind;
 use crate::ty::transformed_string_type::TypeKind;
@@ -239,7 +239,7 @@ impl TypeGraph {
         &self,
         mut predicate: impl FnMut(&TypeGraph, TypeRef) -> Result<bool>,
     ) -> Result<IndexSet<TypeRef>> {
-        let mut seen: HashSet<TypeRef> = HashSet::new();
+        let mut seen: HashSet<TypeRef> = HashSet::default();
         let mut types: IndexSet<TypeRef> = IndexSet::new();
         // An explicit stack instead of recursion, visiting in the same order.
         let mut stack: Vec<(IndexSet<TypeRef>, usize)> = Vec::new();
