@@ -22,6 +22,11 @@ const { DefaultDateTimeRecognizer } = require(path.join(packageRoot, "dist", "Da
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
+/** No run holds samples it did not take over or let go of. */
+function noLeases() {
+    assert.equal(engine.engineSync().__jsonLeases(), 0);
+}
+
 /** `f()` with the engine mode `mode` ("ts": TypeScript reads everything). */
 async function inMode(mode, f) {
     if (mode === undefined) return f();
@@ -157,6 +162,67 @@ test("runs use the engine's samples, as often as the input is used", async () =>
         assert.deepEqual([...(await run(input, lang))], [...expected]);
         assert.equal(engineStats.wasm, before.wasm + 4);
     }
+
+    noLeases();
+});
+
+// A run holds the samples it was encoded with from then on, not from when
+// it starts on the engine (after `engineAsync()` resolves): in between, a
+// run on the TypeScript engine can fill the input's tables, which drops
+// the engine's copy, and another input can be read into the engine.
+const Custom = class extends Object.getPrototypeOf(qt.languageNamed("typescript")).constructor {};
+
+test("a run keeps its samples while a run on TypeScript fills the tables", async () => {
+    const attempt = async () => {
+        const input = qt.jsonInputForTargetLanguage("typescript");
+        await input.addSource({ name: "A", samples: ['{"a": [1, {"b": true}]}'] });
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        const pending = qt.quicktypeMultiFile({ lang: "typescript", inputData });
+        const fallback = qt.quicktypeMultiFileSync({ lang: new Custom(), inputData });
+        return { first: [...(await pending)], fallback: [...fallback], inside: inside(input) };
+    };
+    const expected = await inMode("ts", attempt);
+    const before = { ...engineStats };
+    assert.deepEqual(await attempt(), expected);
+    assert.equal(engineStats.samplesRead, before.samplesRead + 1);
+    assert.equal(engineStats.wasm, before.wasm + 1);
+    noLeases();
+});
+
+test("a run keeps its samples when another input is read into the engine meanwhile", () => {
+    // In a fresh process, so that the second input would take the first's
+    // place in the engine (its slot) if ids were reused.
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        const Custom = class extends Object.getPrototypeOf(qt.languageNamed("typescript")).constructor {};
+        const glue = engine.engineSync();
+        const attempt = async () => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            await input.addSource({ name: "A", samples: ['{"a": [1, {"b": true}]}'] });
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            const pending = qt.quicktypeMultiFile({ lang: "typescript", inputData });
+            qt.quicktypeMultiFileSync({ lang: new Custom(), inputData });
+            // The same shape, other names: read into the engine, where the
+            // first input's samples were until the run above filled its tables.
+            const other = qt.jsonInputForTargetLanguage("typescript");
+            other.addSourceSync({ name: "Other", samples: ['{"x": ["s", {"y": 2.5}]}'] });
+            return [...(await pending)];
+        };
+        (async () => {
+            const actual = await attempt().catch((e) => "error: " + e.message);
+            const stats = [engineStats.samplesRead, engineStats.wasm, glue.__jsonLeases()];
+            globalThis[Symbol.for("quicktype-core.engine")] = "ts";
+            const expected = await attempt();
+            console.log(JSON.stringify([actual, expected, stats]));
+        })();
+    `;
+    const [actual, expected, stats] = JSON.parse(execFileSync(process.execPath, ["-e", script], { encoding: "utf8" }));
+    assert.deepEqual(actual, expected);
+    assert.deepEqual(stats, [2, 1, 0]);
 });
 
 /** The outcome of `f`, its error as plain data. */

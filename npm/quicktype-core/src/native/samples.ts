@@ -11,8 +11,9 @@
 // empty until something reads them: its four table fields become accessors
 // that, on first use, fill them by reading the same texts, in the same
 // order, with TypeScript's own code (`materialize`). A run on the engine
-// uses the engine's copy (`sharedSamples`, encode.ts), so the TypeScript
-// parse and the conversion of the tables are both skipped.
+// holds the engine's copy from when it is encoded (`leaseSamples`,
+// encode.ts), so the TypeScript parse and the conversion of the tables are
+// both skipped.
 //
 // Everything else is read by TypeScript, as before, after the tables are
 // filled: samples that are not strings or not well-formed UTF-16; samples
@@ -295,14 +296,18 @@ function isSharedRoot(value: number): boolean {
 }
 
 /**
- * The id of `cjson`'s compressed form in `glue` for a run whose JSON
- * input has these root values, or `undefined` (after filling the
- * TypeScript tables, if the engine has read samples into `cjson`) if the
- * run must send the tables: the engine instance is another one, the
- * configuration changed since, or a root value is not one the engine
- * returned.
+ * A hold on `cjson`'s compressed form in `glue` for a run whose JSON
+ * input has these root values, taken now, when the run is encoded: the
+ * lease the run's request carries, which keeps the samples the run is
+ * encoded with until it starts, whatever happens to `cjson` meanwhile (a
+ * run on the TypeScript engine may fill its tables, which drops the
+ * compressed form). `undefined` (after filling the TypeScript tables, if
+ * the engine has read samples into `cjson`) if the run must send the
+ * tables: the engine instance is another one, the configuration changed
+ * since, or a root value is not one the engine returned. A run that does
+ * not start lets go of its leases (`releaseLeases`).
  */
-export function sharedSamples(cjson: any, glue: WasmGlue | undefined, roots: number[]): number | undefined {
+export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: number[]): number | undefined {
     const state = states.get(cjson);
     if (state === undefined) return undefined;
     const config = configOf(cjson);
@@ -319,7 +324,30 @@ export function sharedSamples(cjson: any, glue: WasmGlue | undefined, roots: num
         return undefined;
     }
 
-    return state.id;
+    let lease: number | undefined;
+    try {
+        lease = glue.jsonAcquire(state.id);
+    } catch (e) {
+        engineFailed(glue, e);
+    }
+
+    if (lease === undefined) materialize(cjson);
+    return lease;
+}
+
+/**
+ * Lets go of the leases of a run that is not going to `glue` after all,
+ * or that started there (a lease the run took over is gone already).
+ */
+export function releaseLeases(glue: WasmGlue, leases: number[]): void {
+    for (const lease of leases.splice(0)) {
+        if (isDiscarded(glue)) return;
+        try {
+            glue.jsonRelease(lease);
+        } catch (e) {
+            engineFailed(glue, e);
+        }
+    }
 }
 
 /** `materialize`, then TypeScript reads the sample. */

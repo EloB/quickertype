@@ -5,7 +5,26 @@
 // dist/esm/native/wasm/glue.js; the .wasm file is
 // dist/native/wasm/quicktype_wasm_bg.wasm.
 
-/** The exports of crates/quicktype-wasm (see its crate documentation). */
+/**
+ * A `CompressedJSON`'s tables as the engine exports them (`jsonExport`):
+ * the strings joined, with their lengths in UTF-16 code units, and each
+ * object's keys and values (and each array's elements) in turn, encoded as
+ * TypeScript encodes `Value`s.
+ */
+export interface ExportedTables {
+    strings: string;
+    stringLengths: Uint32Array;
+    objects: Int32Array;
+    objectOffsets: Uint32Array;
+    arrays: Int32Array;
+    arrayOffsets: Uint32Array;
+}
+
+/**
+ * The exports of crates/quicktype-wasm (see its crate documentation). Ids
+ * of runs, compressed samples and leases are never reused
+ * (crates/quicktype-wasm/src/slots.rs).
+ */
 export interface WasmGlue {
     initSync(options: { module: unknown }): unknown;
     runSync(request: unknown, host: unknown): unknown;
@@ -17,7 +36,11 @@ export interface WasmGlue {
     jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number;
     jsonRead(id: number, text: string): number;
     jsonDrop(id: number): void;
+    jsonExport(id: number): ExportedTables | undefined;
+    jsonAcquire(id: number): number | undefined;
+    jsonRelease(lease: number): void;
     __jsonCount(): number;
+    __jsonLeases(): number;
     __memoryGrowths(): number;
     __memoryPages(): number;
     engineVersion(): string;

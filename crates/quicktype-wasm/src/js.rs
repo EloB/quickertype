@@ -152,9 +152,9 @@ extern "C" {
     fn top_level_sample_counts(this: &InputObject) -> Vec<u32>;
     #[wasm_bindgen(method, getter, js_name = topLevelSamples)]
     fn top_level_samples(this: &InputObject) -> Vec<i32>;
-    /// The id of the compressed samples (`jsonShared`).
+    /// The run's lease on the compressed samples (`jsonShared`).
     #[wasm_bindgen(method, getter)]
-    fn samples(this: &InputObject) -> u32;
+    fn lease(this: &InputObject) -> f64;
     // JSON Schema
     #[wasm_bindgen(method, getter, js_name = storeId)]
     fn store_id(this: &InputObject) -> u32;
@@ -302,8 +302,8 @@ fn decode_input(input: &InputObject) -> Result<InputRequest> {
             })
         }
         "jsonShared" => {
-            let compressed_json = crate::samples::shared(input.samples())
-                .ok_or_else(|| wire(WireError::new("unknown JSON samples")))?;
+            let compressed_json = crate::samples::take_lease(input.lease())
+                .ok_or_else(|| wire(WireError::new("unknown JSON samples lease")))?;
             Ok(InputRequest::JsonShared {
                 compressed_json,
                 top_levels: decode_top_levels(input)?,

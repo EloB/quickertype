@@ -13,12 +13,12 @@
 // `EnumOption.getEnumValue`). Every other run uses the TypeScript engine,
 // which gives the same result by construction.
 //
-// The request carries JSON samples as the id of the compressed form the
-// engine read them into as they were added (samples.ts), or else as the
-// tables of their `CompressedJSON` (parsed with `JSON.parse` and V8's error
-// messages), and JSON Schema inputs as their already normalized sources;
-// the schemas themselves stay in JavaScript and are fetched through the
-// input's own store while the engine runs.
+// The request carries JSON samples as a lease on the compressed form the
+// engine read them into as they were added (samples.ts), taken here, or
+// else as the tables of their `CompressedJSON` (parsed with `JSON.parse`
+// and V8's error messages), and JSON Schema inputs as their already
+// normalized sources; the schemas themselves stay in JavaScript and are
+// fetched through the input's own store while the engine runs.
 
 import { DefaultDateTimeRecognizer } from "../DateTime.js";
 import { CompressedJSONFromString } from "../input/CompressedJSON.js";
@@ -30,7 +30,7 @@ import { SwiftDateTimeRecognizer } from "../language/Swift/utils.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
 
 import { currentEngine } from "./engine.js";
-import { sharedSamples } from "./samples.js";
+import { leaseSamples, releaseLeases } from "./samples.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -45,8 +45,12 @@ export interface EncodedRun {
      * run must go to that instance (or to the TypeScript engine).
      */
     sharedGlue?: WasmGlue;
-    /** The `CompressedJSON`s of `jsonShared` inputs, kept alive for the run. */
-    shared: object[];
+    /**
+     * The leases of `jsonShared` inputs on their samples in `sharedGlue`:
+     * the run takes them over when it starts there; otherwise they must
+     * be released (`releaseLeases`).
+     */
+    leases: number[];
 }
 
 const nativeInputsKey = Symbol.for("quicktype-core.nativeInputs");
@@ -338,11 +342,11 @@ function encodeJSONInput(input: any, encoded: EncodedRun): Record<string, unknow
         topLevelSamples: new Int32Array(samples),
     };
     const glue = currentEngine();
-    const id = sharedSamples(cjson, glue, samples);
-    if (id !== undefined) {
+    const lease = leaseSamples(cjson, glue, samples);
+    if (lease !== undefined) {
         encoded.sharedGlue = glue;
-        encoded.shared.push(cjson);
-        return { kind: "jsonShared", samples: id, ...topLevels };
+        encoded.leases.push(lease);
+        return { kind: "jsonShared", lease, ...topLevels };
     }
 
     const strings: string[] = cjson._strings;
@@ -479,6 +483,7 @@ export function encodeRun(
     inputData: InputData,
     targetLanguage: TargetLanguage,
 ): EncodedRun | undefined {
+    let encoded: EncodedRun | undefined;
     try {
         const lang = builtinLanguageName(targetLanguage);
         if (lang === undefined) fail();
@@ -508,7 +513,7 @@ export function encodeRun(
         );
 
         const schemaInputs: JSONSchemaInput[] = [];
-        const encoded: EncodedRun = { request: {}, schemaInputs, shared: [] };
+        encoded = { request: {}, schemaInputs, leases: [] };
         const inputs: unknown[] = [];
         for (const input of (inputData as any)._inputs as Set<any>) {
             if (input === null || typeof input !== "object") fail();
@@ -539,6 +544,7 @@ export function encodeRun(
         encoded.request = request;
         return encoded;
     } catch (e) {
+        if (encoded?.sharedGlue !== undefined) releaseLeases(encoded.sharedGlue, encoded.leases);
         if (e === ineligible) return undefined;
         throw e;
     }

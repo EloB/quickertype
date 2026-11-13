@@ -30,6 +30,7 @@ import {
     engineSync,
     isDiscarded,
 } from "./engine.js";
+import { releaseLeases } from "./samples.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -681,22 +682,32 @@ export function runNative(
     }
 
     return engineAsync().then((glue) => {
-        if (glue === undefined) {
-            if (mode === "wasm") throw engineLoadError();
-            engineStats.ts++;
-            return undefined;
-        }
+        try {
+            if (glue === undefined) {
+                if (mode === "wasm") throw engineLoadError();
+                engineStats.ts++;
+                return undefined;
+            }
 
-        if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
-            // The instance that read the samples failed in the meantime.
-            engineStats.ts++;
-            engineStats.rerun++;
-            return undefined;
-        }
+            if (encoded.sharedGlue !== undefined && encoded.sharedGlue !== glue) {
+                // The instance that read the samples failed in the meantime.
+                engineStats.ts++;
+                engineStats.rerun++;
+                return undefined;
+            }
 
-        if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
-        return runOnEngine(glue, encoded, run, options);
+            if (useTypeScript(glue, encoded, targetLanguage)) return undefined;
+            return runOnEngine(glue, encoded, run, options);
+        } finally {
+            // The run has taken its leases over if it started.
+            releaseRun(encoded);
+        }
     });
+}
+
+/** Lets go of whatever leases of `encoded` its run did not take over. */
+function releaseRun(encoded: EncodedRun): void {
+    if (encoded.sharedGlue !== undefined) releaseLeases(encoded.sharedGlue, encoded.leases);
 }
 
 /** `runSync()` on the WebAssembly engine, or `undefined` (see `runNative`). */
@@ -718,6 +729,21 @@ export function runNativeSync(
         return undefined;
     }
 
+    try {
+        return runEncodedSync(run, options, encoded, targetLanguage, mode);
+    } finally {
+        // The run has taken its leases over if it started.
+        releaseRun(encoded);
+    }
+}
+
+function runEncodedSync(
+    run: RunContext,
+    options: any,
+    encoded: EncodedRun,
+    targetLanguage: TargetLanguage,
+    mode: "wasm" | "auto",
+): MultiFileRenderResult | undefined {
     const glue = engineSync();
     if (glue === undefined) {
         if (mode === "wasm" && engineLoadError() !== undefined) {

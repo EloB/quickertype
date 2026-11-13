@@ -8,7 +8,8 @@
 //!
 //! - [`run_sync`] (for `quicktypeMultiFileSync()`) runs it to the end;
 //! - [`start`], [`poll`] and [`settle`] (for `quicktype()` and
-//!   `quicktypeMultiFile()`) run it as a future that the facade drives:
+//!   `quicktypeMultiFile()`) run it as a future that the facade drives
+//!   (by run id, see [`slots`]):
 //!   JSON Schema documents are fetched while types are built, through the
 //!   facade's own store, at exactly the points where TypeScript awaits
 //!   `JSONSchemaStore.get`. When a fetch settles, the facade calls
@@ -51,6 +52,7 @@ mod allocator;
 pub mod assemble;
 pub mod js;
 pub mod samples;
+pub mod slots;
 pub mod wire;
 
 use std::cell::{Cell, RefCell};
@@ -62,6 +64,8 @@ use std::task::{Context, Poll, Waker};
 use wasm_bindgen::prelude::*;
 
 use crate::js::JsHost;
+use crate::slots::Slots;
+use crate::wire::Request;
 
 type RunFuture = Pin<Box<dyn Future<Output = JsValue>>>;
 
@@ -73,7 +77,7 @@ struct PendingRun {
 
 thread_local! {
     /// The runs started with [`start`] and not finished, by run id.
-    static RUNS: RefCell<Vec<Option<PendingRun>>> = const { RefCell::new(Vec::new()) };
+    static RUNS: RefCell<Slots<PendingRun>> = const { RefCell::new(Slots::new()) };
     /// The runs executing right now, innermost last (a run that calls into
     /// JavaScript can be re-entered).
     static ACTIVE: RefCell<Vec<Rc<JsHost>>> = const { RefCell::new(Vec::new()) };
@@ -122,11 +126,13 @@ fn install() {
 }
 
 /// The run as a future of its outcome.
-fn run_future(request: JsValue, host: Rc<JsHost>) -> RunFuture {
+fn run_future(
+    request: Result<Request, quicktype_core::QuickTypeError>,
+    host: Rc<JsHost>,
+) -> RunFuture {
     Box::pin(async move {
         let result = async {
-            let request = js::decode_request(&request)?;
-            let options = assemble::assemble(request, Rc::new(Rc::clone(&host)))?;
+            let options = assemble::assemble(request?, Rc::new(Rc::clone(&host)))?;
             quicktype_core::quicktype_multi_file(options).await
         }
         .await;
@@ -150,38 +156,28 @@ pub fn run_sync(request: JsValue, host: JsValue) -> JsValue {
 }
 
 /// `Run.run()` after `preRun()`: registers the run and returns its id. Call
-/// [`poll`] to make progress.
+/// [`poll`] to make progress. The request is read right away, so the run
+/// holds its JSON samples (it takes over their leases) from here on.
 #[wasm_bindgen]
-pub fn start(request: JsValue, host: JsValue) -> u32 {
+pub fn start(request: JsValue, host: JsValue) -> std::result::Result<f64, JsValue> {
     install();
     let host = JsHost::new(host);
     let run = PendingRun {
-        future: Some(run_future(request, Rc::clone(&host))),
+        future: Some(run_future(js::decode_request(&request), Rc::clone(&host))),
         host,
     };
-    RUNS.with(|runs| {
-        let mut runs = runs.borrow_mut();
-        match runs.iter().position(Option::is_none) {
-            Some(free) => {
-                runs[free] = Some(run);
-                free as u32
-            }
-            None => {
-                runs.push(Some(run));
-                (runs.len() - 1) as u32
-            }
-        }
-    })
+    RUNS.with(|runs| runs.borrow_mut().insert(run))
+        .map_err(|_| JsValue::from_str("too many runs at once"))
 }
 
 /// Runs run `id` until it finishes or waits for a host call: returns the
 /// outcome, or `undefined` while it waits (the facade polls again after
 /// [`settle`]).
 #[wasm_bindgen]
-pub fn poll(id: u32) -> JsValue {
+pub fn poll(id: f64) -> JsValue {
     let taken = RUNS.with(|runs| {
         let mut runs = runs.borrow_mut();
-        let run = runs.get_mut(id as usize)?.as_mut()?;
+        let run = runs.get_mut(id)?;
         Some((run.future.take()?, Rc::clone(&run.host)))
     });
     let Some((mut future, host)) = taken else {
@@ -197,19 +193,19 @@ pub fn poll(id: u32) -> JsValue {
     });
     match polled {
         Poll::Ready(outcome) => {
-            RUNS.with(|runs| runs.borrow_mut()[id as usize] = None);
+            drop(RUNS.with(|runs| runs.borrow_mut().remove(id)));
             outcome
         }
         Poll::Pending if host.waiting() => {
             RUNS.with(|runs| {
-                if let Some(Some(run)) = runs.borrow_mut().get_mut(id as usize) {
+                if let Some(run) = runs.borrow_mut().get_mut(id) {
                     run.future = Some(future);
                 }
             });
             JsValue::UNDEFINED
         }
         Poll::Pending => {
-            RUNS.with(|runs| runs.borrow_mut()[id as usize] = None);
+            drop(RUNS.with(|runs| runs.borrow_mut().remove(id)));
             js::internal_error_outcome("The engine is waiting for nothing")
         }
     }
@@ -218,12 +214,8 @@ pub fn poll(id: u32) -> JsValue {
 /// Drops run `id`: the facade gave up on it (its promise can no longer be
 /// observed), so its future and host objects need not be kept.
 #[wasm_bindgen]
-pub fn cancel(id: u32) {
-    let dropped = RUNS.with(|runs| {
-        runs.borrow_mut()
-            .get_mut(id as usize)
-            .and_then(Option::take)
-    });
+pub fn cancel(id: f64) {
+    let dropped = RUNS.with(|runs| runs.borrow_mut().remove(id));
     // Dropped outside the borrow: dropping runs no JavaScript, but keep the
     // table free either way.
     drop(dropped);
@@ -233,19 +225,14 @@ pub fn cancel(id: u32) {
 #[doc(hidden)]
 #[wasm_bindgen(js_name = __pendingRuns)]
 pub fn pending_runs() -> u32 {
-    RUNS.with(|runs| runs.borrow().iter().filter(|r| r.is_some()).count() as u32)
+    RUNS.with(|runs| runs.borrow().len() as u32)
 }
 
 /// Settles host call `call_id` of run `id` with `value` (`ok`) or the
 /// exception it threw.
 #[wasm_bindgen]
-pub fn settle(id: u32, call_id: u32, ok: bool, value: JsValue) {
-    let host = RUNS.with(|runs| {
-        runs.borrow()
-            .get(id as usize)
-            .and_then(Option::as_ref)
-            .map(|run| Rc::clone(&run.host))
-    });
+pub fn settle(id: f64, call_id: u32, ok: bool, value: JsValue) {
+    let host = RUNS.with(|runs| runs.borrow().get(id).map(|run| Rc::clone(&run.host)));
     if let Some(host) = host {
         host.settle(call_id, if ok { Ok(value) } else { Err(value) });
     }
