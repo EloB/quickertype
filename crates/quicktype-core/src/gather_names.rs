@@ -111,6 +111,19 @@ fn members_sorted_by_kind(graph: &TypeGraph, t: TypeRef) -> Result<Vec<TypeRef>>
 /// `addAlternatives(existing, alternatives)` on a stored value (`None`:
 /// TS `undefined`): extends the set in place; it becomes `null` (TS) once
 /// it reaches the threshold.
+/// `parts.join("_")`, without the formatting machinery (alternative names
+/// are built for every name of every type).
+fn underscored(parts: &[&str]) -> String {
+    let mut s = String::with_capacity(parts.iter().map(|p| p.len() + 1).sum());
+    for (i, part) in parts.iter().enumerate() {
+        if i > 0 {
+            s.push('_');
+        }
+        s.push_str(part);
+    }
+    s
+}
+
 fn add_alternatives(
     existing: Option<Alternatives>,
     alternatives: Vec<String>,
@@ -259,12 +272,12 @@ impl Gatherer<'_> {
                                 let mut alternatives = Vec::new();
                                 for name in names.iter() {
                                     alternatives.extend(
-                                        ancestor_names.iter().map(|an| format!("{an}_{name}")),
+                                        ancestor_names.iter().map(|an| underscored(&[an, name])),
                                     );
                                     alternatives.extend(
                                         ancestor_names
                                             .iter()
-                                            .map(|an| format!("{an}_{name}_{kind}")),
+                                            .map(|an| underscored(&[an, name, kind.as_str()])),
                                     );
                                 }
                                 ancestor_alternatives =
@@ -279,7 +292,7 @@ impl Gatherer<'_> {
                     if direct_alternatives != Some(None) {
                         let alternatives = names
                             .iter()
-                            .map(|name| format!("{name}_{suffix}"))
+                            .map(|name| underscored(&[name, suffix]))
                             .collect();
                         direct_alternatives = add_alternatives(direct_alternatives, alternatives);
                     }
@@ -436,7 +449,7 @@ pub fn gather_names(graph: &mut TypeGraph, destructive: bool, debug_print: bool)
             continue;
         };
         let kind = graph.kind(t)?;
-        let alternatives = names.iter().map(|name| format!("{name}_{kind}"));
+        let alternatives = names.iter().map(|name| underscored(&[name, kind.as_str()]));
         match direct_alternatives_for_type.entry(t) {
             Entry::Occupied(mut e) => match e.get_mut() {
                 None => continue,
