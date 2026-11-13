@@ -295,7 +295,14 @@ the others name the fix they need.
   in `needTransformerForType`. Endless recursions fail identically. A
   finite graph nested deeper than either limit could differ, but in
   TypeScript graph rewriting already overflows at about 335 nested arrays,
-  so no such graph reaches a TypeScript renderer.
+  so no such graph reaches a TypeScript renderer. Graph rewriting's
+  recursion (`forceReconstituteTypeRef`, once per level of the graph's
+  depth) runs under the guard too, so a graph nested 1,000 calls deep
+  (about 500 nested nullable lists or classes) fails there with the
+  `RangeError`, where TypeScript fails at about 400 (measured with GraphQL
+  lists and selection sets). A GraphQL field type of 100,000 nested lists
+  used to overflow the CLI's native stack there, and a JSON Schema chain
+  of 1,500 maps a 2 MB one (`tests/deep_schemas.rs`).
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports
@@ -361,9 +368,9 @@ the others name the fix they need.
   itself overflows somewhere between about 750 and 1,200 levels. The
   generation stages (inference, rewrites, rendering) recurse on the native
   stack; the CLI runs them on a thread with a 256 MB stack (`STACK_SIZE`
-  in `crates/quicktype-cli/src/main.rs`), and inference, whose depth the
-  input decides, is limited like Node's. See "Very deeply nested JSON"
-  and "Endless recursion over the type graph".
+  in `crates/quicktype-cli/src/main.rs`), and inference and graph
+  rewriting, whose depth the input decides, are limited like Node's. See
+  "Very deeply nested JSON" and "Endless recursion over the type graph".
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
   recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
