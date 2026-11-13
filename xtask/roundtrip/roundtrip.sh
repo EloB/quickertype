@@ -105,7 +105,7 @@ cmd_run() {
     if [ -n "$ts" ]; then
         bin="node $dir/dist/index.js"
     elif [ -z "$bin" ]; then
-        (cd "$repo" && cargo build --release --quiet -p quicktype-cli)
+        (cd "$repo" && cargo build --release --quiet -p quickertype)
         bin="$repo/target/release/quicktype"
     fi
     if [ -z "$results" ]; then
@@ -146,7 +146,7 @@ cmd_steps() {
     git -C "$dir" apply --reverse --check "$patch" 2>/dev/null ||
         die "$dir has no harness patch; run: $0 prepare $dir"
     if [ -z "$bin" ]; then
-        (cd "$repo" && cargo build --release --quiet -p quicktype-cli)
+        (cd "$repo" && cargo build --release --quiet -p quickertype)
         bin="$repo/target/release/quicktype"
     fi
     local work status=0
