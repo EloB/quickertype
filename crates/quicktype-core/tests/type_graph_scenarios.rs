@@ -30,8 +30,11 @@ use quicktype_core::attributes::type_names::{
     singularize_type_names,
 };
 use quicktype_core::graph_rewriting::make_replacer;
+use quicktype_core::language::csharp::language::CSharpTargetLanguage;
+use quicktype_core::language::python::language::PythonTargetLanguage;
 use quicktype_core::messages::{QuickTypeError, Result};
 use quicktype_core::support::support::set_console_sink;
+use quicktype_core::target_language::TargetLanguage;
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::ClassProperty;
 use quicktype_core::ty::ty::structurally_compatible;
@@ -49,7 +52,6 @@ use quicktype_core::ty::type_utils::{
 };
 use quicktype_core::unify_classes::{unify_types, union_builder_for_unification};
 
-use quicktype_core::attributes::constraints::{min_max_length_for_type, min_max_value_for_type};
 use quicktype_core::make_transformations::make_transformations;
 use quicktype_core::rewrites::combine_classes::combine_classes;
 use quicktype_core::rewrites::expand_strings::{EnumInference, expand_strings};
@@ -59,7 +61,6 @@ use quicktype_core::rewrites::infer_maps::infer_maps;
 use quicktype_core::rewrites::replace_object_type::replace_object_type;
 use quicktype_core::rewrites::resolve_intersections::resolve_intersections;
 use quicktype_core::transformers::{downcast_transformation, transformation_for_type};
-use quicktype_core::ty::type_utils::nullable_from_union;
 
 fn err(message: impl Into<String>) -> QuickTypeError {
     QuickTypeError::internal(message)
@@ -72,69 +73,6 @@ fn parse_number(s: &str) -> Option<f64> {
 fn parse_min_max(v: &str) -> MinMaxConstraint {
     let (lo, hi) = v.split_once(':').unwrap_or((v, ""));
     MinMaxConstraint(parse_number(lo), parse_number(hi))
-}
-
-/// `needTransformerForType` of the C# renderer (`language/CSharp/utils.ts`).
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum CSharpNeed {
-    Automatic,
-    Manual,
-    Nullable,
-    None,
-}
-
-fn csharp_need_transformer_for_type(graph: &TypeGraph, t: TypeRef) -> Result<CSharpNeed> {
-    let ty = graph.type_at(t)?;
-    Ok(match ty.kind() {
-        TypeKind::Union => match nullable_from_union(graph, t)? {
-            None => CSharpNeed::Automatic,
-            Some(n) => {
-                if csharp_need_transformer_for_type(graph, n)? == CSharpNeed::Manual {
-                    CSharpNeed::Nullable
-                } else {
-                    CSharpNeed::None
-                }
-            }
-        },
-        TypeKind::Array => match csharp_need_transformer_for_type(graph, ty.items()?)? {
-            CSharpNeed::Manual | CSharpNeed::Nullable => CSharpNeed::Automatic,
-            _ => CSharpNeed::None,
-        },
-        TypeKind::Enum => CSharpNeed::Automatic,
-        TypeKind::Double | TypeKind::Integer => {
-            if min_max_value_for_type(graph, t)?.is_some() {
-                CSharpNeed::Manual
-            } else {
-                CSharpNeed::None
-            }
-        }
-        TypeKind::IntegerString | TypeKind::BoolString => CSharpNeed::Manual,
-        TypeKind::String => {
-            if min_max_length_for_type(graph, t)?.is_some() {
-                CSharpNeed::Manual
-            } else {
-                CSharpNeed::None
-            }
-        }
-        _ => CSharpNeed::None,
-    })
-}
-
-/// `PythonTargetLanguage.needsTransformerForType`.
-fn python_needs_transformer_for_type(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
-    let ty = graph.type_at(t)?;
-    if ty.is_union() {
-        for &m in ty.members()? {
-            if python_needs_transformer_for_type(graph, m)? {
-                return Ok(true);
-            }
-        }
-        return Ok(false);
-    }
-    Ok(matches!(
-        ty.kind(),
-        TypeKind::IntegerString | TypeKind::BoolString
-    ))
 }
 
 /// The `stm=` flag: `none` (every transformed kind to itself, the
@@ -605,11 +543,8 @@ impl Interpreter {
                 };
                 let needs = |graph: &TypeGraph, t: TypeRef| -> Result<bool> {
                     match language {
-                        "csharp" => Ok(!matches!(
-                            csharp_need_transformer_for_type(graph, t)?,
-                            CSharpNeed::None | CSharpNeed::Nullable
-                        )),
-                        "python" => python_needs_transformer_for_type(graph, t),
+                        "csharp" => CSharpTargetLanguage.needs_transformer_for_type(graph, t),
+                        "python" => PythonTargetLanguage.needs_transformer_for_type(graph, t),
                         _ if language.starts_with("kinds=") => Ok(kinds.contains(&graph.kind(t)?)),
                         _ => Err(err(format!("unknown language {language}"))),
                     }
