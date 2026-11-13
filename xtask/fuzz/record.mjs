@@ -3,6 +3,7 @@
 // tests/fuzz-regressions/<name>/, from the reference:
 //
 //   node xtask/fuzz/record.mjs <case.min.json> <name> "<what it checks>" [--reference DIR]
+//   node xtask/fuzz/record.mjs tests/fuzz-regressions/<name>/case.json
 //
 // The case directory holds
 //
@@ -17,7 +18,10 @@
 // crates/quicktype-cli/tests/fuzz_regressions.rs replays the CLI step with
 // our binary; the npm differential suite's `fuzz` scenarios run the case
 // through the JavaScript API against the reference quicktype-core.
-// Re-running this script re-records a case.
+// Re-running this script re-records a case; given a recorded case.json,
+// it re-records that case under its own name and description (run it on
+// every case and check that git sees no change, to verify that the
+// committed bytes are still what the reference produces).
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -30,19 +34,25 @@ const option = (name) => {
     return i < 0 ? undefined : args.splice(i, 2)[1];
 };
 const reference = findReference(option("--reference"));
-const [file, name, description] = args;
-if (file === undefined || name === undefined || description === undefined || !/^[a-z0-9][a-z0-9-]*$/.test(name)) {
+const casesDir = path.join(repoRoot, "tests", "fuzz-regressions");
+const [file, nameArg, descriptionArg] = args;
+const saved = file === undefined ? undefined : JSON.parse(fs.readFileSync(file, "utf8"));
+// A recorded case.json re-records itself.
+const recorded = file !== undefined && path.basename(file) === "case.json" && path.dirname(path.dirname(path.resolve(file))) === casesDir;
+const name = nameArg ?? (recorded ? path.basename(path.dirname(path.resolve(file))) : undefined);
+const description = descriptionArg ?? (recorded ? saved.description : undefined);
+if (saved === undefined || name === undefined || description === undefined || !/^[a-z0-9][a-z0-9-]*$/.test(name)) {
     console.error('usage: node xtask/fuzz/record.mjs <case.json> <name: [a-z0-9-]+> "<description>"');
+    console.error("       node xtask/fuzz/record.mjs tests/fuzz-regressions/<name>/case.json");
     process.exit(2);
 }
 
-const saved = JSON.parse(fs.readFileSync(file, "utf8"));
 const kase = saved.case ?? saved;
-const dir = path.join(repoRoot, "tests", "fuzz-regressions", name);
+const dir = path.join(casesDir, name);
 fs.rmSync(dir, { recursive: true, force: true });
 fs.mkdirSync(dir, { recursive: true });
 
-const record = { description, seed: saved.seed, foundIn: saved.mode, case: kase };
+const record = { description, seed: saved.seed, foundIn: saved.mode ?? saved.foundIn, case: kase };
 if (cliCompatible(kase)) {
     const invocation = cliInvocation(kase);
     const result = await runCli(cliCommands(reference).ref, invocation);
