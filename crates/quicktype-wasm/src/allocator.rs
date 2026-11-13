@@ -47,11 +47,17 @@ impl GrowAhead {
             return;
         }
         GROWTHS.fetch_add(1, Ordering::Relaxed);
-        let Ok(reserve) = Layout::from_size_align(pages * PAGE / 4, 16) else {
+        // A quarter of the memory, in pages first: 65,536 pages (4 GiB)
+        // times the page size would overflow `usize`.
+        let bytes = (pages / 4).saturating_mul(PAGE);
+        if bytes == 0 {
+            return;
+        }
+        let Ok(reserve) = Layout::from_size_align(bytes, 16) else {
             return;
         };
-        // SAFETY: a fresh, non-zero-sized layout; the block is freed with
-        // the same layout.
+        // SAFETY: a non-zero-sized layout; the block is freed with the same
+        // layout.
         unsafe {
             let block = System.alloc(reserve);
             if !block.is_null() {
