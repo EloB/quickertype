@@ -37,7 +37,10 @@
 //! [`quicktype_js_compat::json::parse`], the port of V8's parser
 //! ([`parse_string_value_into`](super::parse_string_value_into)). Should
 //! that parser accept a text this reader rejects, the value it returns is
-//! processed instead: the grammar is V8's either way.
+//! processed instead: the grammar is V8's either way. That value cannot be
+//! checked against [`StringSampleLimits`], so with any limits such a
+//! sample is declined instead ([`Decline::Unchecked`]), as is a text too
+//! long for the tape.
 //!
 //! Duplicate keys are found without a set per object: every key of the
 //! key table has a *stamp*, the serial number of the last object that had
@@ -60,7 +63,7 @@ use quicktype_js_compat::json::is_array_index;
 
 use super::{
     CompressedJson, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
-    parse_string_value_into,
+    parse_string_value_into, syntax_error,
 };
 use crate::messages::{QuickTypeError, Result};
 use crate::support::fast_hash::{BuildHasher, HashMap};
@@ -89,6 +92,13 @@ impl Default for StringSampleLimits {
     }
 }
 
+impl StringSampleLimits {
+    /// Whether these are no limits at all ([`Default`]).
+    fn is_none(self) -> bool {
+        self == StringSampleLimits::default()
+    }
+}
+
 /// Why [`CompressedJson::read_string_sample`] did not return a value.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ReadStringError {
@@ -101,13 +111,19 @@ pub enum ReadStringError {
     Declined(Decline),
 }
 
-/// Which of the [`StringSampleLimits`] a sample exceeds.
+/// Which of the [`StringSampleLimits`] a sample exceeds, or why it could
+/// not be checked against them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Decline {
     /// Nested deeper than `max_depth`.
     TooDeep,
     /// A `\u` escape leaves a surrogate unpaired.
     LoneSurrogate,
+    /// The one-pass reader cannot read the sample (it is too long for the
+    /// reader's tape, or the reader rejects a text that the port of V8's
+    /// parser accepts), and the value read whole cannot be checked against
+    /// limits other than the default ones.
+    Unchecked,
 }
 
 /// The object keys the reader has read, by key id: the first pass finds
@@ -1051,7 +1067,7 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
 ) -> Result<S::Root, ReadStringError> {
     if u32::try_from(text.len()).is_err() {
         // Too long for the tape's offsets: read the value whole.
-        return parse_string_value_into(sink, text).map_err(ReadStringError::Parse);
+        return read_whole(sink, text, limits);
     }
     sink.string_reader().reserve_serials(text.len());
     let mut recorder = Recorder::new(sink, text, limits);
@@ -1072,10 +1088,30 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
         }
         Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
         // V8's message, from the port of its parser.
-        Err(Stop::Syntax) => parse_string_value_into(sink, text).map_err(ReadStringError::Parse),
+        Err(Stop::Syntax) => read_whole(sink, text, limits),
     };
     sink.string_reader().finish_sample(nodes);
     result
+}
+
+/// What the one-pass reader falls back on: `JSON.parse` with the port of
+/// V8's parser (for its error message, or for a text too long for the
+/// tape), then `process` the value. The value read whole cannot be checked
+/// against `limits` (its strings hold U+FFFD where the text has a lone
+/// surrogate), so with any limits a sample that parses is declined, and
+/// nothing is committed: only without limits is it read.
+fn read_whole<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+    limits: StringSampleLimits,
+) -> Result<S::Root, ReadStringError> {
+    if limits.is_none() {
+        return parse_string_value_into(sink, text).map_err(ReadStringError::Parse);
+    }
+    match quicktype_js_compat::json::parse(text) {
+        Ok(_) => Err(ReadStringError::Declined(Decline::Unchecked)),
+        Err(e) => Err(ReadStringError::Parse(syntax_error(&e))),
+    }
 }
 
 #[cfg(test)]

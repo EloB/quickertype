@@ -1183,13 +1183,17 @@ pub(crate) fn parse_string_value_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
 ) -> Result<S::Root, ParseError> {
-    let json = json::parse(text)
-        .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
+    let json = json::parse(text).map_err(|e| syntax_error(&e))?;
     let result = process(sink, &json).and_then(|()| sink.finish());
     if result.is_err() {
         sink.reset_partial_sample();
     }
     Ok(result?)
+}
+
+/// `JSON.parse`'s `SyntaxError` for what the port of V8's parser rejected.
+fn syntax_error(e: &json::JsonParseError) -> ParseError {
+    ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message()))
 }
 
 /// `process(json)`, iteratively: emits `json` into `sink` in

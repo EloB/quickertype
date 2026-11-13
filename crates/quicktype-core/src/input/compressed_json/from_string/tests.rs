@@ -547,6 +547,65 @@ fn limits() {
     ));
 }
 
+/// What the reader falls back on (for a text it rejects but V8's parser
+/// accepts, or one too long for its tape) reads the value whole, which
+/// cannot be checked against limits: with any, a sample that parses is
+/// declined and nothing is committed, so lone surrogates and nesting
+/// beyond them never get in; without limits, it is read as `process`
+/// reads it.
+#[test]
+fn the_fallback_honors_the_limits() {
+    let limits = StringSampleLimits {
+        max_depth: Some(3),
+        lone_surrogates: false,
+    };
+    let arrays = |n: usize| format!("{}{}", "[".repeat(n), "]".repeat(n));
+    let mut r = reader(None, false);
+    r.parse_string(r#"{"a": ["b"]}"#).unwrap();
+    let before = r.table_counts();
+    for text in [
+        r#"["\ud800"]"#,
+        r#"{"\udc00": 1}"#,
+        r#"["\ud800A"]"#,
+        "[[[[1]]]]",
+        r#"{"a": {"b": {"c": []}}}"#,
+        &arrays(PROCESS_MAX_DEPTH + 1),
+        "[1]",
+    ] {
+        assert_eq!(
+            read_whole(&mut r, text, limits),
+            Err(ReadStringError::Declined(Decline::Unchecked)),
+            "{text}"
+        );
+        assert_eq!(r.table_counts(), before, "{text}");
+    }
+    // Not JSON: V8's error, and nothing committed.
+    assert_eq!(
+        read_whole(&mut r, "[1,", limits),
+        Err(ReadStringError::Parse(ParseError::Js(
+            crate::messages::JsException::new(
+                crate::messages::JsErrorName::SyntaxError,
+                "Unexpected end of JSON input"
+            )
+        )))
+    );
+    assert_eq!(r.table_counts(), before);
+    // Without limits: read, a lone surrogate as U+FFFD, and too deep for
+    // `process` as it fails.
+    let none = StringSampleLimits::default();
+    assert_eq!(
+        read_whole(&mut r, r#"["\ud800"]"#, none),
+        Ok(Value::Array(1))
+    );
+    assert_eq!(
+        read_whole(&mut r, &arrays(PROCESS_MAX_DEPTH + 1), none),
+        Err(ReadStringError::Parse(ParseError::Quicktype(
+            stack_overflow()
+        )))
+    );
+    assert_eq!(r.to_tables(&[]).0.strings, ["b", "a", "\u{FFFD}"]);
+}
+
 /// Objects nested a million levels deep are read without recursion (and
 /// fail as `process` does), and a large reordered object without
 /// quadratic work.
