@@ -163,17 +163,24 @@ Two changes target multi-GB inputs (measured separately from the tables
 above, on the same machine):
 
 - **Streaming.** The CLI used to read each JSON sample (a file or standard
-  input) whole before parsing it. It now reads 64 KiB chunks through a
-  decoding window, as TypeScript's stream-json does: only the current
-  token is kept, every look-ahead reads more first, and UTF-8 split
-  between chunks decodes as Node's `StringDecoder` does
-  (`quicktype_js_compat::utf8::Decoder`). Values and errors cannot depend
-  on the chunking: unit tests read every sample input and every prefix of
-  a tricky document in chunks of 1 to 16 bytes, and `cargo xtask diff`
-  found 213 files with split, invalid and truncated sequences at the 64,
-  128 and 192 KiB boundaries (plus BOM, empty and whitespace-only input)
-  identical to the TypeScript CLI, from files and from standard input.
-  URL bodies are still fetched whole, then read the same way.
+  input) whole before parsing it. It now reads chunks (8 KiB at first,
+  doubling up to 64 KiB) through a decoding window, as TypeScript's
+  stream-json does: only the current token is kept (whitespace is dropped
+  while it is skipped; a single huge token, such as a 1 GB string, is held
+  whole), every look-ahead reads more first, and UTF-8 split between
+  chunks decodes as Node's `StringDecoder` does
+  (`quicktype_js_compat::utf8::Decoder`). A read that fails after the open
+  is Node's stream error (`EISDIR: illegal operation on a directory,
+  read`), as the reference reports it. Values and errors cannot depend on
+  the chunking: unit tests read every sample input and every prefix of a
+  tricky document in chunks of 1 to 16 bytes and of 8 KiB, and `cargo
+  xtask diff` found 285 files identical to the TypeScript CLI, from files
+  and from standard input: split, invalid and truncated sequences at the
+  8, 16, 64, 128 and 192 KiB boundaries, 350,000 bytes of whitespace, a
+  300,000-character string, BOM, empty and whitespace-only input. URL
+  bodies are still fetched whole, then read the same way. A sample given
+  as bytes (`JsonSample::Stream`, the Rust API) is decoded once and
+  tokenized in memory, borrowing valid UTF-8.
 - **Compact CompressedJSON.** Objects' entries and arrays' elements live in
   shared blocks of at least 64K items that are never reallocated (each
   object or array a 12-byte span) instead of one `Vec` per object or
@@ -187,6 +194,16 @@ above, on the same machine):
 | generated (40 MB) | 345 ms, 177.5 MiB | 350 ms, 154.2 MiB |
 | 60 × generated (40 MB) in one array, 2.6 GB | 19.0 s, 6.73 GiB | 18.8 s, 5.76 GiB |
 | 10.5 M objects with ~200-character strings, 2.6 GB | 6.5 s, 4.32 GiB | 6.0 s, 3.86 GiB |
+
+After a second review (spare buffers capped and released after each
+sample, strings hashed once, the tokenizer generic over its text instead
+of a `Cow`, the in-memory path for byte samples), the numbers stay the
+same: 40 MB in 357.9 ms (median of 30, against 357.5 ms before those
+changes) and 150 MiB, the 2.6 GB record file in 19.6 s and 6.18 GB. 500
+small files (2.4 MB, `--src` a directory of copies of the small sample
+inputs) take 63.5 ms (64.3 ms before), and reading the same 500 samples
+as bytes in process (`CompressedJson::parse_stream`, best of 30) takes
+2.01 ms instead of 2.21 ms.
 
 Output is byte-identical in every case. The streaming alone does not
 lower these peaks: the whole-file buffer was already freed before type
