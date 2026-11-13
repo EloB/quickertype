@@ -51,7 +51,9 @@
 // change runs it, and a reload brings it back). One deleted before a
 // worker read it says so for that engine.
 // A worker keeps a large file's text only while requests carry that file: it
-// lets it go once a sample is loaded.
+// lets it go once a sample is loaded. "Show in the editor" reads a large file
+// once, however often it is clicked ("Reading…" until then), and is not
+// offered for an input over 50 MB (its size faked), which says why.
 //
 // The speed story: the build refuses benchmark data that is incomplete or
 // inconsistent, or that would make a summary claim false; test data derived
@@ -1776,6 +1778,72 @@ try {
     await sameAsCli("a sample after gone.json", "quicktype --lang typescript --top-level Pokedex pokedex.json");
     assert.deepEqual(await fromKeptText(), { ok: false, title: "Could not read gone.json" }, "quickertype's worker kept the large file after a sample");
     console.log("ok: a worker lets a large file's text go once a request does not carry that file (a sample)");
+
+    // "Show in the editor" reads a large file once, however often it is
+    // clicked: "Reading…" (aria-disabled) until the text is in the editor.
+    // An input over 50 MB (its size faked) is not offered: the note says
+    // why, and a click anyway reads nothing.
+    const editorFile = chosen("editor.json", JSON.stringify(Array.from({ length: 12 }, () => JSON.parse(readInput("us-senators.json"))), undefined, 2));
+    await page.evaluate(`(() => {
+        globalThis.editorReads = 0;
+        const size = Object.getOwnPropertyDescriptor(Blob.prototype, "size").get;
+        Object.defineProperty(File.prototype, "size", { configurable: true, get() { return this.name === "editor-60mb.json" ? 60e6 : size.call(this); } });
+        const text = Blob.prototype.text;
+        File.prototype.text = function () {
+            if (!this.name.startsWith("editor")) return text.call(this);
+            editorReads++;
+            return new Promise((resolve) => setTimeout(resolve, 500)).then(() => text.call(this));
+        };
+    })()`);
+    await openFile(editorFile);
+    await sameAsCli("Open file: editor.json → TypeScript", "quicktype --lang typescript --top-level Editor editor.json");
+    const editButton = `(() => { const b = document.getElementById("large-edit"); return { label: b.textContent, disabled: b.getAttribute("aria-disabled"), shown: !b.hidden }; })()`;
+    assert.deepEqual(await page.evaluate(editButton), { label: "Show in the editor", disabled: null, shown: true });
+    const whileReading = await page.evaluate(`(() => {
+        const button = document.getElementById("large-edit");
+        button.click();
+        const busy = ${editButton};
+        button.click();
+        button.click();
+        return busy;
+    })()`);
+    assert.deepEqual(whileReading, { label: "Reading…", disabled: "true", shown: true }, "the button while the file is read");
+    await page.waitFor("!document.getElementById('input').hidden", "the large file in the editor");
+    const inEditor = await page.evaluate(`({
+        reads: editorReads,
+        length: document.getElementById("input").value.length,
+        focused: document.activeElement.id,
+        button: ${editButton},
+    })`);
+    assert.deepEqual(inEditor, {
+        reads: 1,
+        length: fs.readFileSync(editorFile, "utf8").length,
+        focused: "input",
+        button: { label: "Show in the editor", disabled: null, shown: true },
+    });
+    const tooBigForEditor = chosen("editor-60mb.json", readInput("pokedex.json"));
+    await openFile(tooBigForEditor);
+    await sameAsCli("Open file: editor-60mb.json (60 MB, faked) → TypeScript", "quicktype --lang typescript --top-level Editor60mb editor-60mb.json");
+    const refused = await page.evaluate(`(async () => {
+        const reads = editorReads;
+        document.getElementById("large-edit").click();
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        return {
+            size: document.getElementById("large-size").textContent,
+            note: document.getElementById("large-note").textContent,
+            button: !document.getElementById("large-edit").hidden,
+            editor: !document.getElementById("input").hidden,
+            reads: editorReads - reads,
+        };
+    })()`);
+    assert.deepEqual(refused, {
+        size: "60.0 MB",
+        note: "Too large to show in the editor (over 50.0 MB), which would freeze the page; it runs all the same.",
+        button: false,
+        editor: false,
+        reads: 0,
+    });
+    console.log(`ok: "Show in the editor" reads a large file once, however often it is clicked ("Reading…" until then); over 50 MB it is not offered: "${refused.note}"`);
 
     // The benchmarks page: rendered from site/data/*.json at build time.
     {

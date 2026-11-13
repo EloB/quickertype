@@ -37,6 +37,8 @@ const speed = __SPEED__;
 const storageKey = "quickertype.input";
 /** Inputs longer than this (in characters; files, in bytes) are not put in the editor or saved. */
 const LARGE = 1_000_000;
+/** Inputs larger than this are not put in the editor even when asked: a text box that large freezes the page. */
+const EDITOR_MAX = 50_000_000;
 const defaultLanguage = "typescript";
 const defaultSample = "pokedex";
 const defaultEngine = "wasm";
@@ -395,12 +397,35 @@ function showInput() {
     if (large) {
         els.largeName.textContent = inputFileName();
         els.largeSize.textContent = formatBytes(state.source.size ?? utf8Length(state.text));
+        renderLargeEdit();
     } else if (els.input.value !== state.text) {
         els.input.value = state.text;
     }
 
     showInputInfo();
     renderInputStatus();
+}
+
+/** The large input's size, as far as fitting it in the editor goes (a file's bytes, or the text's characters). */
+const editorSize = () => (state.file !== undefined ? state.file.size : state.text.length);
+
+/**
+ * Under a large input: why the editor does not show it, and "Show in the
+ * editor" ("Reading…", and disabled, while the file is read for it); for
+ * an input over EDITOR_MAX, which the editor cannot show without freezing
+ * the page, only why.
+ */
+function renderLargeEdit() {
+    const fits = editorSize() <= EDITOR_MAX;
+    els.largeNote.textContent = fits
+        ? "Not shown in the editor, which would slow the page down; it runs all the same."
+        : `Too large to show in the editor (over ${formatBytes(EDITOR_MAX)}), which would freeze the page; it runs all the same.`;
+    els.largeEdit.hidden = !fits;
+    const reading = editorReading !== undefined;
+    els.largeEdit.textContent = reading ? "Reading…" : "Show in the editor";
+    // aria-disabled rather than disabled, so that the button keeps the keyboard focus.
+    if (reading) els.largeEdit.setAttribute("aria-disabled", "true");
+    else els.largeEdit.removeAttribute("aria-disabled");
 }
 
 /**
@@ -479,6 +504,8 @@ const view = {
 let generation = 0;
 /** Counts the inputs given: a file whose reading finishes after another input was given is not the input. */
 let opening = 0;
+/** The File being read to show it in the editor, until it is (or another input is given); another click waits for it. */
+let editorReading;
 let runTimer;
 let ticker;
 /** The runs under way; a measurement waits for them, so that it measures what they show. */
@@ -1096,6 +1123,7 @@ function download() {
 function setInput(text, source, kind, autoName, keepName = false, file = undefined) {
     opening++;
     view.reading = undefined;
+    editorReading = undefined;
     state.text = text;
     state.file = file;
     state.source = source;
@@ -1181,11 +1209,19 @@ async function loadFile(file) {
     void run();
 }
 
-/** Puts a large input in the editor, as asked: a file is read here then. */
+/**
+ * Puts a large input in the editor, as asked: a file is read here then,
+ * once however often it is asked ("Reading…" until it is in the editor).
+ * Not an input over EDITOR_MAX: the page offers no button for it, and
+ * says why.
+ */
 async function showLargeInEditor() {
+    if (editorReading !== undefined || editorSize() > EDITOR_MAX) return;
     if (state.file !== undefined && state.text === "") {
         const ticket = opening;
         const file = state.file;
+        editorReading = file;
+        renderLargeEdit();
         try {
             const text = await file.text();
             if (ticket !== opening || state.file !== file) return;
@@ -1193,6 +1229,11 @@ async function showLargeInEditor() {
         } catch (e) {
             if (ticket === opening) inputFailed(unreadable(file.name, e));
             return;
+        } finally {
+            if (editorReading === file) {
+                editorReading = undefined;
+                renderLargeEdit();
+            }
         }
     }
 
