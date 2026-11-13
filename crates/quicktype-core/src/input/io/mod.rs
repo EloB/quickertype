@@ -19,6 +19,7 @@ use std::thread::{self, Thread};
 #[cfg(feature = "http")]
 mod fetch;
 pub mod node_io;
+mod request;
 
 /// A boxed future that need not be `Send` (JavaScript values are not).
 pub type LocalBoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;

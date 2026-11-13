@@ -37,11 +37,12 @@ use std::io::Read;
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use indexmap::IndexMap;
 use url::Url;
 
-use crate::input::io::node_io::{HttpResponse, IoError, IoErrorKind, RequestInit};
-use crate::messages::JsErrorName;
+use crate::input::io::node_io::{HttpResponse, IoError, RequestInit};
+use crate::input::io::request::{
+    HeaderList, check_body, check_byte_strings, header_list, request_method, type_error,
+};
 
 /// The ports fetch refuses to connect to (`badPorts` of the Fetch
 /// standard).
@@ -67,11 +68,6 @@ fn fetch_failed() -> IoError {
     type_error("fetch failed")
 }
 
-/// A `TypeError` from building or sending the request.
-fn type_error(message: impl Into<String>) -> IoError {
-    IoError::new(IoErrorKind::Network, JsErrorName::TypeError, message)
-}
-
 fn agent() -> &'static ureq::Agent {
     static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
     AGENT.get_or_init(|| {
@@ -83,64 +79,6 @@ fn agent() -> &'static ureq::Agent {
             .timeout_write(Duration::from_secs(300))
             .build()
     })
-}
-
-/// A request header list: lower-case name → (name as first given, value).
-type HeaderList = IndexMap<String, (String, String)>;
-
-/// webidl's `ByteString` conversion: every UTF-16 code unit must be at most
-/// 255.
-fn check_byte_string(s: &str) -> Result<(), IoError> {
-    for (index, unit) in s.encode_utf16().enumerate() {
-        if unit > 255 {
-            return Err(type_error(format!(
-                "Cannot convert argument to a ByteString because the character at index {index} has a value of {unit} which is greater than 255."
-            )));
-        }
-    }
-    Ok(())
-}
-
-/// An HTTP token character (RFC 9110), as `isValidHTTPToken` checks.
-fn is_token_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || "!#$%&'*+-.^_`|~".contains(c)
-}
-
-fn is_http_whitespace(c: char) -> bool {
-    matches!(c, '\t' | '\n' | '\r' | ' ')
-}
-
-/// `new Headers(init)` for the record `NodeIO` passes, then the defaults.
-fn header_list(headers: &[(String, String)]) -> Result<HeaderList, IoError> {
-    let mut list = HeaderList::new();
-    for (name, value) in headers {
-        let value = value.trim_matches(is_http_whitespace);
-        if name.is_empty() || !name.chars().all(is_token_char) {
-            return Err(type_error(format!(
-                "Headers.append: \"{name}\" is an invalid header name."
-            )));
-        }
-        if value.starts_with(['\t', ' '])
-            || value.ends_with(['\t', ' '])
-            || value.contains(['\0', '\n', '\r'])
-        {
-            return Err(type_error(format!(
-                "Headers.append: \"{value}\" is an invalid header value."
-            )));
-        }
-        let key = name.to_ascii_lowercase();
-        match list.get_mut(&key) {
-            Some((_, existing)) => {
-                let delimiter = if key == "cookie" { "; " } else { ", " };
-                existing.push_str(delimiter);
-                existing.push_str(value);
-            }
-            None => {
-                list.insert(key, (name.clone(), value.to_owned()));
-            }
-        }
-    }
-    Ok(list)
 }
 
 /// Adds undici's default request headers for `url`.
@@ -179,10 +117,6 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
     )
 }
 
-/// The methods undici normalizes to upper case (`normalizeMethodRecord`;
-/// `patch` and `PATCH` stay as they are).
-const NORMALIZED_METHODS: [&str; 6] = ["DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"];
-
 /// The headers that describe a request body, dropped when a redirect turns
 /// the request into a `GET`.
 const REQUEST_BODY_HEADERS: [&str; 5] = [
@@ -193,36 +127,6 @@ const REQUEST_BODY_HEADERS: [&str; 5] = [
     "content-length",
 ];
 
-/// The `method` of `new Request(input, { method })`: validated and
-/// normalized like undici.
-fn request_method(method: &str) -> Result<String, IoError> {
-    if method == "patch" || method == "PATCH" {
-        return Ok(method.to_owned());
-    }
-    if NORMALIZED_METHODS.contains(&method)
-        || NORMALIZED_METHODS
-            .iter()
-            .any(|m| m.to_ascii_lowercase() == method)
-    {
-        return Ok(method.to_ascii_uppercase());
-    }
-    if method.is_empty() || !method.chars().all(is_token_char) {
-        return Err(type_error(format!(
-            "'{method}' is not a valid HTTP method."
-        )));
-    }
-    let upper_case = method.to_ascii_uppercase();
-    if matches!(upper_case.as_str(), "CONNECT" | "TRACE" | "TRACK") {
-        return Err(type_error(format!(
-            "'{method}' HTTP method is unsupported."
-        )));
-    }
-    if NORMALIZED_METHODS.contains(&upper_case.as_str()) {
-        return Ok(upper_case);
-    }
-    Ok(method.to_owned())
-}
-
 /// `fetch(input, { method, headers, body })`.
 pub(crate) fn fetch_with_init(
     input: &str,
@@ -232,11 +136,7 @@ pub(crate) fn fetch_with_init(
     // (the headers' and the method's ByteString conversions, in member
     // order), then the URL is parsed, then the method, the headers and the
     // body are checked.
-    for (name, value) in init.headers {
-        check_byte_string(name)?;
-        check_byte_string(value)?;
-    }
-    check_byte_string(init.method)?;
+    check_byte_strings(init)?;
     let mut url =
         Url::parse(input).map_err(|_| type_error(format!("Failed to parse URL from {input}")))?;
     if !url.username().is_empty() || url.password().is_some() {
@@ -246,11 +146,9 @@ pub(crate) fn fetch_with_init(
     }
     let mut method = request_method(init.method)?;
     let mut list = header_list(init.headers)?;
+    check_body(&method, init.body)?;
     let mut body = init.body;
     if body.is_some() {
-        if method == "GET" || method == "HEAD" {
-            return Err(type_error("Request with GET/HEAD method cannot have body."));
-        }
         list.entry("content-type".to_owned()).or_insert_with(|| {
             (
                 "content-type".to_owned(),

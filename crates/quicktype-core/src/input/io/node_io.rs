@@ -25,6 +25,7 @@ use quicktype_js_compat::json::insert_js_property;
 use quicktype_js_compat::whitespace;
 
 use crate::input::io::LocalBoxFuture;
+use crate::input::io::request::check_request;
 use crate::messages::{ErrorKind, JsErrorName, Result, message_error};
 use crate::support::windows_paths::file_path_from_file_uri;
 
@@ -208,24 +209,26 @@ pub trait Io {
     /// [`fetch`](Self::fetch), plus undici's `TypeError`s for a bad method
     /// or a body on a `GET`.
     ///
-    /// The default implementation handles a `GET` without a body with
-    /// [`fetch`](Self::fetch) and fails for anything else.
+    /// The default implementation checks the request like undici's `new
+    /// Request` (the `ByteString` conversions, the method, the headers, no
+    /// body on a `GET` or `HEAD`; not the URL, which [`fetch`](Self::fetch)
+    /// checks), so those errors read the same for every `Io`. It then sends
+    /// a `GET` with [`fetch`](Self::fetch) and fails for any other method.
     fn fetch_with_init<'a>(
         &'a self,
         url: &'a str,
         init: RequestInit<'a>,
     ) -> LocalBoxFuture<'a, std::result::Result<HttpResponse, IoError>> {
-        if init.method == "GET" && init.body.is_none() {
-            return self.fetch(url, init.headers);
-        }
-        let method = init.method.to_owned();
-        Box::pin(async move {
-            Err(IoError::new(
+        let error = match check_request(&init) {
+            Ok(method) if method == "GET" => return self.fetch(url, init.headers),
+            Ok(method) => IoError::new(
                 IoErrorKind::Other,
                 JsErrorName::Error,
-                format!("this Io cannot send {method} requests with a body"),
-            ))
-        })
+                format!("this Io cannot send {method} requests"),
+            ),
+            Err(error) => error,
+        };
+        Box::pin(async move { Err(error) })
     }
 
     /// `isNode` (`browser-or-node`): whether files and stdin exist at all.
