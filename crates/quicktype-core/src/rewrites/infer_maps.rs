@@ -120,23 +120,25 @@ pub fn infer_maps(
     conflate_numbers: bool,
     debug_print_reconstitution: bool,
 ) -> Result<Option<TypeGraph>> {
-    let mut classes_to_replace: Vec<Vec<TypeRef>> = Vec::new();
+    // The classes to replace, with the types of their map values (what
+    // `shouldBeMap` returns; TypeScript computes it again in the replacer).
+    let mut map_values: IndexMap<TypeRef, IndexSet<TypeRef>> = IndexMap::new();
     for o in graph.all_named_types_separated()?.objects {
         let t = graph.type_at(o)?;
         if !t.is_class() || t.is_fixed() {
             continue;
         }
-        if should_be_map(graph, t.properties()?)?.is_some() {
-            classes_to_replace.push(vec![o]);
+        if let Some(values) = should_be_map(graph, t.properties()?)? {
+            map_values.insert(o, values);
         }
     }
+    let classes_to_replace: Vec<Vec<TypeRef>> = map_values.keys().map(|&c| vec![c]).collect();
 
     let replacer = make_replacer(move |set_of_one_class, builder, forwarding_ref| {
         let c = *defined(set_of_one_class.first())?;
         let graph = builder.original_graph()?;
-        let properties = graph.type_at(c)?.properties()?;
 
-        let Some(should_be) = should_be_map(graph, properties)? else {
+        let Some(should_be) = map_values.get(&c) else {
             return panic(format!(
                 "We shouldn't be replacing class {} with a map",
                 graph.combined_name(c)?
@@ -146,7 +148,7 @@ pub fn infer_maps(
         // The class's attributes go to the values as well as to the map.
         let attributes = graph.attributes(c)?;
         let values = unify_types(
-            &should_be,
+            should_be,
             attributes,
             builder,
             &union_builder_for_unification(false, false, conflate_numbers),

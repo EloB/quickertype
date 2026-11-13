@@ -21,7 +21,7 @@ use crate::ty::type_builder::TypeBuilder;
 use crate::ty::type_builder_utils::StringTypeMapping;
 use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
-use crate::ty::type_utils::{try_make_groups_to_flatten, union_is_canonical};
+use crate::ty::type_utils::{make_groups_to_flatten, union_is_canonical};
 use crate::unify_classes::{UnifyUnionBuilder, unify_types};
 
 /// The state the replacer and the unification callback share.
@@ -57,8 +57,8 @@ fn union_key_for_types(
             atoms.push(index);
         }
     }
+    // `seen` already keeps the atoms unique.
     atoms.sort_unstable();
-    atoms.dedup();
     Ok(atoms
         .iter()
         .map(usize::to_string)
@@ -210,28 +210,32 @@ pub fn flatten_unions(
     }
 
     let mut found_intersection = false;
-    let groups = try_make_groups_to_flatten(graph, non_canonical_unions, &mut |members| {
-        message_assert(
-            !members.is_empty(),
-            ErrorKind::IRNoEmptyUnions,
-            Vec::<(&str, MessageValue)>::new(),
-        )?;
-        let mut has_intersection = false;
-        for &m in members {
-            if graph.kind(m)? == TypeKind::Intersection {
-                has_intersection = true;
-                break;
+    let groups = make_groups_to_flatten(
+        graph,
+        non_canonical_unions,
+        Some(&mut |members| {
+            message_assert(
+                !members.is_empty(),
+                ErrorKind::IRNoEmptyUnions,
+                Vec::<(&str, MessageValue)>::new(),
+            )?;
+            let mut has_intersection = false;
+            for &m in members {
+                if graph.kind(m)? == TypeKind::Intersection {
+                    has_intersection = true;
+                    break;
+                }
             }
-        }
-        if !has_intersection {
-            return Ok(true);
-        }
-        // FIXME (TypeScript): `resolveIntersections` can introduce unions
-        // that need flattening, so the two passes have to know about each
-        // other.
-        found_intersection = true;
-        Ok(false)
-    })?;
+            if !has_intersection {
+                return Ok(true);
+            }
+            // FIXME (TypeScript): `resolveIntersections` can introduce unions
+            // that need flattening, so the two passes have to know about each
+            // other.
+            found_intersection = true;
+            Ok(false)
+        }),
+    )?;
 
     let replacer_state = Rc::clone(&state);
     let replacer = make_replacer(move |types, builder, forwarding_ref| {

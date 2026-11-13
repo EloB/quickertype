@@ -312,10 +312,21 @@ impl Interpreter {
                         cases_spec
                             .split(',')
                             .map(|c| {
-                                let (k, n) = c.split_once(':').unwrap_or((c, "1"));
-                                (k.to_owned(), n.parse().unwrap_or(1))
+                                let parts: Vec<&str> = c.split(':').collect();
+                                match parts.as_slice() {
+                                    [k, n]
+                                        if (1..=15).contains(&n.len())
+                                            && n.bytes().all(|b| b.is_ascii_digit()) =>
+                                    {
+                                        Ok((
+                                            (*k).to_owned(),
+                                            n.parse().map_err(|_| err("bad count"))?,
+                                        ))
+                                    }
+                                    _ => Err(err(format!("bad string case {c}"))),
+                                }
                             })
-                            .collect()
+                            .collect::<Result<_>>()?
                     };
                     let kinds: IndexSet<TypeKind> = match kinds_spec {
                         None => IndexSet::new(),

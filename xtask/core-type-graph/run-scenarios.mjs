@@ -18,7 +18,8 @@
 //   prim V kind ATTRS                     getPrimitiveType(kind, attrs, fwd)
 //   str V unrestricted|cases=a:1,b:2[/K,K] ATTRS
 //                                         getStringType(attrs, stringTypes, fwd); the cases may
-//                                         be empty, `/K,K` adds transformed string kinds
+//                                         be empty, each needs a count (1 to 15 digits), `/K,K`
+//                                         adds transformed string kinds
 //   enum V a,b,c ATTRS                    getEnumType(attrs, cases, fwd)
 //   arr V ITEMS ATTRS / uarr V ATTRS      getArrayType / getUniqueArrayType
 //   items V ITEMS                         setArrayItems
@@ -336,8 +337,11 @@ function runScenario(text) {
                             casesSpec === ""
                                 ? []
                                 : casesSpec.split(",").map((c) => {
-                                      const [k, n] = c.split(":");
-                                      return [k, Number(n)];
+                                      const parts = c.split(":");
+                                      if (parts.length !== 2 || !/^[0-9]{1,15}$/.test(parts[1])) {
+                                          throw new Error(`bad string case ${c}`);
+                                      }
+                                      return [parts[0], Number(parts[1])];
                                   }),
                         );
                         const kinds = kindsSpec === undefined ? [] : kindsSpec.split(",");

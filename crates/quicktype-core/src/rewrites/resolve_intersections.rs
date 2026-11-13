@@ -88,7 +88,6 @@ pub struct IntersectionAccumulator {
     object_data: IntersectionObjectData,
     object_attributes: TypeAttributes,
     lost_type_attributes: Cell<bool>,
-    no_enum_cases: IndexSet<String>,
 }
 
 impl Default for IntersectionAccumulator {
@@ -108,7 +107,6 @@ impl IntersectionAccumulator {
             object_data: Some((IndexMap::new(), Some(IndexSet::new()))),
             object_attributes: TypeAttributes::new(),
             lost_type_attributes: Cell::new(false),
-            no_enum_cases: IndexSet::new(),
         }
     }
 
@@ -316,10 +314,8 @@ impl UnionTypeProvider for IntersectionAccumulator {
         &self.object_data
     }
 
-    /// Enums never get here (`addType` rejects them); TypeScript panics
-    /// with "We don't support enums in intersections".
-    fn enum_cases(&self) -> &IndexSet<String> {
-        &self.no_enum_cases
+    fn enum_cases(&self) -> Result<&IndexSet<String>> {
+        panic("We don't support enums in intersections")
     }
 
     fn get_member_kinds(&self) -> Result<IndexMap<TypeKind, TypeAttributes>> {
