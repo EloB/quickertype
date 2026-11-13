@@ -741,52 +741,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_string(&mut self, text: &str) -> Result<Value, ParseError> {
-        let json = json::parse(text)
-            .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
-        let result = self.process(&json).and_then(|()| self.finish());
-        if result.is_err() {
-            self.reset_partial_sample();
-        }
-        Ok(result?)
-    }
-
-    /// `process(json)`, iteratively.
-    fn process(&mut self, json: &JsonValue) -> Result<()> {
-        enum Step<'a> {
-            Value(&'a JsonValue),
-            Key(&'a str),
-            FinishObject,
-            FinishArray,
-        }
-        let mut steps = vec![Step::Value(json)];
-        while let Some(step) = steps.pop() {
-            match step {
-                Step::Value(JsonValue::Null) => self.commit_null()?,
-                Step::Value(JsonValue::Bool(b)) => self.commit_boolean(*b)?,
-                Step::Value(JsonValue::String(s)) => self.commit_string(s)?,
-                Step::Value(JsonValue::Number(n)) => {
-                    let is_double = self.parsed_number_is_double(*n);
-                    self.commit_number(is_double)?;
-                }
-                Step::Value(JsonValue::Array(items)) => {
-                    self.push_array_context();
-                    steps.push(Step::FinishArray);
-                    steps.extend(items.iter().rev().map(Step::Value));
-                }
-                Step::Value(JsonValue::Object(map)) => {
-                    self.push_object_context();
-                    steps.push(Step::FinishObject);
-                    for (key, value) in map.iter().rev() {
-                        steps.push(Step::Value(value));
-                        steps.push(Step::Key(key));
-                    }
-                }
-                Step::Key(key) => self.set_property_key(key)?,
-                Step::FinishObject => self.finish_object()?,
-                Step::FinishArray => self.finish_array()?,
-            }
-        }
-        Ok(())
+        parse_string_into(self, text)
     }
 
     /// The compressed form with a JavaScript `CompressedJSON`'s encoding,
@@ -960,8 +915,70 @@ pub(crate) trait JsonSink {
     fn finish(&mut self) -> Result<Self::Root>;
     /// `integerStringFits(integerString)`.
     fn integer_string_fits(&self, integer_string: &str) -> bool;
-    /// Forgets a sample a reader failed on.
+    /// `parsedNumberIsDouble(n)`.
+    fn parsed_number_is_double(&self, n: f64) -> bool;
+    /// Forgets a sample a reader failed on: the next sample reads as if the
+    /// failed one had never started. Nothing it added is counted or
+    /// referenced any more (`CompressedJson` keeps the objects, arrays and
+    /// strings it finished in its tables, unreferenced; the tallies free
+    /// the sample's nodes).
     fn reset_partial_sample(&mut self);
+}
+
+/// [`CompressedJson::parse_string`] into any [`JsonSink`]: `JSON.parse`,
+/// then `process` the value. A sample that fails is forgotten
+/// ([`JsonSink::reset_partial_sample`]).
+pub(crate) fn parse_string_into<S: JsonSink>(
+    sink: &mut S,
+    text: &str,
+) -> Result<S::Root, ParseError> {
+    let json = json::parse(text)
+        .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
+    let result = process(sink, &json).and_then(|()| sink.finish());
+    if result.is_err() {
+        sink.reset_partial_sample();
+    }
+    Ok(result?)
+}
+
+/// `process(json)`, iteratively: emits `json` into `sink` in
+/// `Object.getOwnPropertyNames` order.
+fn process<S: JsonSink>(sink: &mut S, json: &JsonValue) -> Result<()> {
+    enum Step<'a> {
+        Value(&'a JsonValue),
+        Key(&'a str),
+        FinishObject,
+        FinishArray,
+    }
+    let mut steps = vec![Step::Value(json)];
+    while let Some(step) = steps.pop() {
+        match step {
+            Step::Value(JsonValue::Null) => sink.commit_null()?,
+            Step::Value(JsonValue::Bool(b)) => sink.commit_boolean(*b)?,
+            Step::Value(JsonValue::String(s)) => sink.commit_string(s)?,
+            Step::Value(JsonValue::Number(n)) => {
+                let is_double = sink.parsed_number_is_double(*n);
+                sink.commit_number(is_double)?;
+            }
+            Step::Value(JsonValue::Array(items)) => {
+                sink.push_array_context()?;
+                steps.push(Step::FinishArray);
+                steps.extend(items.iter().rev().map(Step::Value));
+            }
+            Step::Value(JsonValue::Object(map)) => {
+                sink.push_object_context()?;
+                steps.push(Step::FinishObject);
+                for (key, value) in map.iter().rev() {
+                    steps.push(Step::Value(value));
+                    steps.push(Step::Key(key));
+                }
+            }
+            Step::Key(key) => sink.set_property_key(key)?,
+            Step::FinishObject => sink.finish_object()?,
+            Step::FinishArray => sink.finish_array()?,
+        }
+    }
+    Ok(())
 }
 
 impl JsonSink for CompressedJson {
@@ -1011,6 +1028,10 @@ impl JsonSink for CompressedJson {
 
     fn integer_string_fits(&self, integer_string: &str) -> bool {
         CompressedJson::integer_string_fits(self, integer_string)
+    }
+
+    fn parsed_number_is_double(&self, n: f64) -> bool {
+        CompressedJson::parsed_number_is_double(self, n)
     }
 
     fn reset_partial_sample(&mut self) {

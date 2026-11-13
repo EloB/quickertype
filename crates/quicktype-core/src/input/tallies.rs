@@ -27,18 +27,22 @@
 //! string cases, not with the size of the samples.
 //! [`tally_inference`](super::tally_inference) infers types from it.
 //!
-//! [`TallyBuilder`] is the [`JsonSink`] that fills a tree of nodes from a
-//! reader's events (or from the values of a [`CompressedJson`], for samples
-//! read with `JSON.parse` semantics), classifying strings exactly as
-//! `CompressedJSON.commitString` does. [`Tallies::merge`] appends one tree
-//! to another, as if the second tree's samples had followed the first's.
+//! [`TallyBuilder`] is the [`JsonSink`] that reads each sample into a tree
+//! of nodes of its own from a reader's events (the stream-json tokenizer's,
+//! or those of a `JSON.parse` sample's parsed value), classifying strings
+//! exactly as `CompressedJSON.commitString` does; a sample that fails is
+//! freed whole. [`Tallies::merge`] appends one tree to another, as if the
+//! second tree's samples had followed the first's; it changes nothing
+//! unless it succeeds.
 
+#[cfg(test)]
+use std::cell::Cell;
 use std::fmt;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
 
-use super::compressed_json::{CompressedJson, JsonSink, Strings, Value};
+use super::compressed_json::{CompressedJson, JsonSink, Strings};
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
 };
@@ -211,20 +215,60 @@ fn add_produced(combined: &mut Option<TypeAttributes>, attributes: &TypeAttribut
     combine_into(combined, attributes.clone())
 }
 
+/// The attribute combinations of two string tallies, one after the other
+/// (with and without enum inference): see [`StringTally::combined_with`].
+type Combined = (Option<TypeAttributes>, Option<TypeAttributes>);
+
+/// `a` with `b` combined into it, as [`combine_into`] does, if that takes
+/// a combination; `None` if `b` adds nothing or `a` is empty, where the
+/// result is `a` or `b` as they are.
+fn combined(
+    a: &Option<TypeAttributes>,
+    b: &Option<TypeAttributes>,
+) -> Result<Option<TypeAttributes>> {
+    match (a, b) {
+        (Some(a), Some(b)) if !b.is_empty() => Ok(Some(combine_type_attributes2(
+            CombinationKind::Union,
+            a,
+            b,
+        )?)),
+        _ => Ok(None),
+    }
+}
+
+/// Sets `target` to `target` combined with `other`, given what [`combined`]
+/// computed for them.
+fn take_combined(
+    target: &mut Option<TypeAttributes>,
+    other: Option<TypeAttributes>,
+    combined: Option<TypeAttributes>,
+) {
+    match combined {
+        Some(c) => *target = Some(c),
+        None if target.is_none() => *target = other.filter(|a| !a.is_empty()),
+        None => {}
+    }
+}
+
 impl StringTally {
-    /// Appends `other`'s strings after this one's.
-    fn merge(&mut self, other: StringTally) -> Result<()> {
+    /// The fallible part of appending `other`'s strings after these: the
+    /// combined attributes, computed without changing anything.
+    fn combined_with(&self, other: &StringTally) -> Result<Combined> {
+        Ok((
+            combined(&self.with_enums, &other.with_enums)?,
+            combined(&self.without_enums, &other.without_enums)?,
+        ))
+    }
+
+    /// Appends `other`'s strings after these, with the attributes
+    /// [`combined_with`](Self::combined_with) computed for them.
+    fn append(&mut self, other: StringTally, (with_enums, without_enums): Combined) {
         for (id, count) in other.cases {
             *self.cases.entry(id).or_insert(0) += count;
         }
-        if let Some(a) = other.with_enums {
-            combine_into(&mut self.with_enums, a)?;
-        }
-        if let Some(a) = other.without_enums {
-            combine_into(&mut self.without_enums, a)?;
-        }
+        take_combined(&mut self.with_enums, other.with_enums, with_enums);
+        take_combined(&mut self.without_enums, other.without_enums, without_enums);
         self.not_interned |= other.not_interned;
-        Ok(())
     }
 }
 
@@ -256,34 +300,80 @@ pub(crate) struct ObjectTally {
     pub(crate) proto: Option<NodeId>,
 }
 
+/// Records `count` occurrences of `__proto__` after the first `keys` keys
+/// in `runs` (see [`ObjectTally::proto_runs`]).
+pub(crate) fn add_proto_occurrences(runs: &mut Vec<(u32, u64)>, keys: usize, count: u64) {
+    let position = keys as u32;
+    match runs.last_mut() {
+        Some((p, n)) if *p == position => *n += count,
+        _ => runs.push((position, count)),
+    }
+}
+
+/// The property names in `propertyNames` order, of `keys` keys and the
+/// `__proto__` occurrences `runs`: `Some(i)` for the `i`th key, `None` for
+/// `count` occurrences of `__proto__`.
+pub(crate) fn property_names(
+    runs: &[(u32, u64)],
+    keys: usize,
+) -> impl Iterator<Item = (Option<usize>, u64)> + '_ {
+    let mut runs = runs.iter().peekable();
+    let mut key = 0;
+    std::iter::from_fn(move || {
+        if let Some(&&(position, count)) = runs.peek()
+            && position as usize <= key
+        {
+            runs.next();
+            return Some((None, count));
+        }
+        if key < keys {
+            key += 1;
+            return Some((Some(key - 1), 1));
+        }
+        None
+    })
+}
+
 impl ObjectTally {
     /// Records an occurrence of `__proto__`.
     fn add_proto_occurrences(&mut self, count: u64) {
-        let position = self.keys.len() as u32;
-        match self.proto_runs.last_mut() {
-            Some((p, n)) if *p == position => *n += count,
-            _ => self.proto_runs.push((position, count)),
-        }
+        add_proto_occurrences(&mut self.proto_runs, self.keys.len(), count);
     }
 
     /// The property names in `propertyNames` order: `Some(i)` for the
     /// `i`th key, `None` for `count` occurrences of `__proto__`.
     pub(crate) fn property_names(&self) -> impl Iterator<Item = (Option<usize>, u64)> + '_ {
-        let mut runs = self.proto_runs.iter().peekable();
-        let mut key = 0;
-        std::iter::from_fn(move || {
-            if let Some(&&(position, count)) = runs.peek()
-                && position as usize <= key
+        property_names(&self.proto_runs, self.keys.len())
+    }
+
+    /// Appends `other`'s objects after these. The values of a key both
+    /// have are joined by a merge step of their own; `other`'s last
+    /// `__proto__` value replaces this one's, which goes to `replaced`.
+    fn append(&mut self, other: ObjectTally, replaced: &mut Vec<NodeId>) {
+        self.count += other.count;
+        let mut runs = other.proto_runs.into_iter().peekable();
+        for (i, (id, tally)) in other.keys.into_iter().enumerate() {
+            while let Some(&(position, count)) = runs.peek()
+                && position as usize <= i
             {
+                self.add_proto_occurrences(count);
                 runs.next();
-                return Some((None, count));
             }
-            if key < self.keys.len() {
-                key += 1;
-                return Some((Some(key - 1), 1));
+            match self.keys.get_mut(&id) {
+                Some(existing) => existing.count += tally.count,
+                None => {
+                    self.keys.insert(id, tally);
+                }
             }
-            None
-        })
+        }
+        for (_, count) in runs {
+            self.add_proto_occurrences(count);
+        }
+        if let Some(proto) = other.proto
+            && let Some(old) = self.proto.replace(proto)
+        {
+            replaced.push(old);
+        }
     }
 }
 
@@ -307,6 +397,19 @@ pub(crate) struct Tallies {
     /// Nodes no tree uses any more, for reuse.
     free: Vec<NodeId>,
     strings: Strings,
+    /// Makes the next [`merge`](Self::merge) fail after planning this many
+    /// steps (for tests).
+    #[cfg(test)]
+    pub(crate) fail_merge_at: Cell<Option<usize>>,
+}
+
+/// One pair of places [`Tallies::merge`] joins: the values at `from` are
+/// appended to those at `into`.
+struct MergeStep {
+    into: NodeId,
+    from: NodeId,
+    /// If both places have strings, their combined attributes.
+    strings: Option<Combined>,
 }
 
 impl fmt::Debug for Tallies {
@@ -336,6 +439,8 @@ impl Tallies {
             nodes: Vec::new(),
             free: Vec::new(),
             strings: Strings::new(),
+            #[cfg(test)]
+            fail_merge_at: Cell::new(None),
         }
     }
 
@@ -353,6 +458,44 @@ impl Tallies {
     #[cfg(test)]
     pub(crate) fn live_nodes(&self) -> usize {
         self.nodes.len() - self.free.len()
+    }
+
+    /// The tree at `node` with keys and cases as text, independent of node
+    /// numbers (for tests).
+    #[cfg(test)]
+    pub(crate) fn dump(&self, node: NodeId) -> String {
+        let n = self.node(node).unwrap();
+        let mut out = format!("{:?}", n.kinds);
+        if let Some(s) = &n.strings {
+            let cases: Vec<(&str, u64)> = s
+                .cases
+                .iter()
+                .map(|(&id, &c)| (self.text(id).unwrap(), c))
+                .collect();
+            out += &format!(
+                " strings{cases:?} {:?} {:?} {}",
+                s.with_enums, s.without_enums, s.not_interned
+            );
+        }
+        if let Some(o) = &n.object {
+            out += &format!(" objects {} {:?} {{", o.count, o.proto_runs);
+            for (&id, k) in &o.keys {
+                out += &format!(
+                    "{:?}×{}: {}, ",
+                    self.text(id).unwrap(),
+                    k.count,
+                    self.dump(k.node)
+                );
+            }
+            if let Some(p) = o.proto {
+                out += &format!("__proto__: {}", self.dump(p));
+            }
+            out += "}";
+        }
+        if let Some(items) = n.items {
+            out += &format!(" items [{}]", self.dump(items));
+        }
+        out
     }
 
     /// A new, empty tree; returns its root.
@@ -378,65 +521,92 @@ impl Tallies {
     }
 
     /// Appends the samples of the tree `from` to those of the tree `into`,
-    /// as if they had been read after them, and frees what is left of
-    /// `from`.
+    /// as if they had been read after them. `from` is used up: its nodes
+    /// move to `into` or are freed.
+    ///
+    /// All or nothing: everything that can fail (looking nodes up,
+    /// combining string attributes) is done before `into` changes, so
+    /// after an error `into` is as it was, and `from` is freed.
     pub(crate) fn merge(&mut self, into: NodeId, from: NodeId) -> Result<()> {
-        let mut stack = vec![(into, from)];
-        while let Some((a, b)) = stack.pop() {
-            let b_node = std::mem::take(defined(self.nodes.get_mut(b as usize))?);
-            self.free.push(b);
-            let mut freed = Vec::new();
-            let a_node = defined(self.nodes.get_mut(a as usize))?;
-            for kind in b_node.kinds.iter() {
-                a_node.kinds.add(kind);
+        match self.plan_merge(into, from) {
+            Ok(steps) => {
+                self.commit_merge(steps);
+                Ok(())
             }
-            match (a_node.items, b_node.items) {
-                (Some(x), Some(y)) => stack.push((x, y)),
-                (None, items) => a_node.items = items,
-                (Some(_), None) => {}
-            }
-            if let Some(y) = b_node.strings {
-                match &mut a_node.strings {
-                    Some(x) => x.merge(*y)?,
-                    None => a_node.strings = Some(y),
-                }
-            }
-            match (&mut a_node.object, b_node.object) {
-                (_, None) => {}
-                (None, y) => a_node.object = y,
-                (Some(x), Some(y)) => {
-                    x.count += y.count;
-                    for (key, run) in y.property_names() {
-                        match key {
-                            None => x.add_proto_occurrences(run),
-                            Some(i) => {
-                                let Some((&id, &tally)) = y.keys.get_index(i) else {
-                                    return panic("Key index out of range");
-                                };
-                                match x.keys.get_mut(&id) {
-                                    Some(existing) => {
-                                        existing.count += tally.count;
-                                        stack.push((existing.node, tally.node));
-                                    }
-                                    None => {
-                                        x.keys.insert(id, tally);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if let Some(proto) = y.proto
-                        && let Some(old) = x.proto.replace(proto)
-                    {
-                        freed.push(old);
-                    }
-                }
-            }
-            for old in freed {
-                self.free_tree(old);
+            Err(e) => {
+                self.free_tree(from);
+                Err(e)
             }
         }
-        Ok(())
+    }
+
+    /// The pairs of places a merge joins (those where both trees have
+    /// values), and the string attributes they combine to; changes nothing.
+    fn plan_merge(&self, into: NodeId, from: NodeId) -> Result<Vec<MergeStep>> {
+        #[cfg(test)]
+        let fail_at = self.fail_merge_at.take();
+        let mut steps = Vec::new();
+        let mut pending = vec![(into, from)];
+        while let Some((a, b)) = pending.pop() {
+            #[cfg(test)]
+            if fail_at == Some(steps.len()) {
+                return panic("Injected merge failure");
+            }
+            let (x, y) = (self.node(a)?, self.node(b)?);
+            if let (Some(i), Some(j)) = (x.items, y.items) {
+                pending.push((i, j));
+            }
+            if let (Some(xo), Some(yo)) = (&x.object, &y.object) {
+                for (id, key) in &yo.keys {
+                    if let Some(existing) = xo.keys.get(id) {
+                        pending.push((existing.node, key.node));
+                    }
+                }
+            }
+            let strings = match (&x.strings, &y.strings) {
+                (Some(xs), Some(ys)) => Some(xs.combined_with(ys)?),
+                _ => None,
+            };
+            steps.push(MergeStep {
+                into: a,
+                from: b,
+                strings,
+            });
+        }
+        Ok(steps)
+    }
+
+    /// Carries out the steps [`plan_merge`](Self::plan_merge) planned. The
+    /// trees are as they were when it planned them (it took `&self`, and
+    /// each node is in at most one step), so every node exists and every
+    /// pair of strings has its combination: nothing here can fail.
+    fn commit_merge(&mut self, steps: Vec<MergeStep>) {
+        let mut replaced = Vec::new();
+        for step in steps {
+            let y = std::mem::take(&mut self.nodes[step.from as usize]);
+            self.free.push(step.from);
+            let x = &mut self.nodes[step.into as usize];
+            for kind in y.kinds.iter() {
+                x.kinds.add(kind);
+            }
+            // Items both have are a step of their own.
+            if x.items.is_none() {
+                x.items = y.items;
+            }
+            match (&mut x.strings, y.strings) {
+                (Some(xs), Some(ys)) => xs.append(*ys, step.strings.unwrap_or_default()),
+                (None, ys) => x.strings = ys,
+                (Some(_), None) => {}
+            }
+            match (&mut x.object, y.object) {
+                (Some(xo), Some(yo)) => xo.append(*yo, &mut replaced),
+                (None, yo) => x.object = yo,
+                (Some(_), None) => {}
+            }
+        }
+        for old in replaced {
+            self.free_tree(old);
+        }
     }
 }
 
@@ -461,36 +631,49 @@ enum Frame {
     },
 }
 
-/// Fills the tree at `root` with samples, one value at a time: a
-/// [`JsonSink`] for the readers, and [`add_compressed_value`] for values
-/// of a [`CompressedJson`].
-///
-/// [`add_compressed_value`]: TallyBuilder::add_compressed_value
+/// Reads samples into tallies, one value at a time: the [`JsonSink`] of
+/// the readers. Each sample goes to a tree of its own, which
+/// [`finish`](JsonSink::finish) returns; a sample that fails is freed
+/// ([`reset_partial_sample`](JsonSink::reset_partial_sample), or when the
+/// builder is dropped), so it leaves nothing behind but the text of its
+/// keys and strings in the shared string table, which nothing refers to.
+/// Appending a sample to others is [`Tallies::merge`]'s job.
 pub(crate) struct TallyBuilder<'a> {
     tallies: &'a mut Tallies,
     /// The reading configuration: date/time recognizer, `$ref` handling,
     /// integer range.
     config: &'a CompressedJson,
-    root: NodeId,
+    /// The tree of the sample being read, from its first value until
+    /// `finish` returns it.
+    root: Option<NodeId>,
     frames: Vec<Frame>,
 }
 
 impl<'a> TallyBuilder<'a> {
-    /// A builder that adds samples to the tree at `root`, configured as
-    /// `config` reads.
-    pub(crate) fn new(tallies: &'a mut Tallies, config: &'a CompressedJson, root: NodeId) -> Self {
+    /// A builder that reads samples as `config` reads them.
+    pub(crate) fn new(tallies: &'a mut Tallies, config: &'a CompressedJson) -> Self {
         TallyBuilder {
             tallies,
             config,
-            root,
+            root: None,
             frames: Vec::new(),
         }
     }
 
-    /// The node the next value goes to (TS `commitValue`'s destination).
-    fn destination(&self) -> Result<NodeId> {
+    /// The node the next value goes to (TS `commitValue`'s destination);
+    /// the sample's root value starts its tree.
+    fn destination(&mut self) -> Result<NodeId> {
         match self.frames.last() {
-            None => Ok(self.root),
+            None => {
+                if self.root.is_some() {
+                    return panic(
+                        "Committing value but nowhere to commit to - root value still there.",
+                    );
+                }
+                let root = self.tallies.new_tree()?;
+                self.root = Some(root);
+                Ok(root)
+            }
             Some(Frame::Object {
                 value: Some(node), ..
             }) => Ok(*node),
@@ -560,86 +743,26 @@ impl<'a> TallyBuilder<'a> {
 
     /// A string of a transformed kind with an attribute producer (`uri`,
     /// `Tag.TransformedString`): the producer's attributes, then the kind.
-    fn add_transformed_string(&mut self, s: &str) -> Result<()> {
-        let Some(kind) =
-            infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer())
-        else {
-            return panic("TransformedString does not have a kind");
-        };
-        let Some(producer) = transformed_string_type_attributes_producer(kind) else {
-            return panic("TransformedString does not have attribute producer");
-        };
-        let attributes = producer(s);
+    fn add_transformed_string(
+        &mut self,
+        kind: TypeKind,
+        attributes: &TypeAttributes,
+    ) -> Result<()> {
         let node = self.destination()?;
         let strings = self.strings_mut(node)?;
         strings.not_interned = true;
-        add_produced(&mut strings.with_enums, &attributes)?;
+        add_produced(&mut strings.with_enums, attributes)?;
         add_transformation(&mut strings.with_enums, kind)?;
-        add_produced(&mut strings.without_enums, &attributes)?;
+        add_produced(&mut strings.without_enums, attributes)?;
         add_transformation(&mut strings.without_enums, kind)?;
         self.value_done();
         Ok(())
     }
-
-    /// Adds the value `value` of `cjson` (a sample read with `JSON.parse`
-    /// semantics) as the readers would emit it: its strings are classified
-    /// already.
-    pub(crate) fn add_compressed_value(
-        &mut self,
-        cjson: &CompressedJson,
-        value: Value,
-    ) -> Result<()> {
-        enum Step {
-            Value(Value),
-            Key(Value),
-            FinishObject,
-            FinishArray,
-        }
-        let mut steps = vec![Step::Value(value)];
-        while let Some(step) = steps.pop() {
-            match step {
-                Step::Value(v) => match v {
-                    Value::Null => self.add_kind(TypeKind::Null)?,
-                    Value::False | Value::True => self.add_kind(TypeKind::Bool)?,
-                    Value::Integer => self.add_kind(TypeKind::Integer)?,
-                    Value::Double => self.add_kind(TypeKind::Double)?,
-                    Value::InternedString(_) => self.add_case(cjson.get_string_for_value(v)?)?,
-                    Value::UninternedString => self.add_uninterned()?,
-                    Value::StringFormat(kind) => self.add_string_format(kind)?,
-                    Value::TransformedString(_) => {
-                        self.add_transformed_string(cjson.get_string_for_value(v)?)?;
-                    }
-                    Value::Object(_) => {
-                        self.push_object_context()?;
-                        steps.push(Step::FinishObject);
-                        for &(key, value) in cjson.get_object_for_value(v)?.iter().rev() {
-                            steps.push(Step::Value(value));
-                            steps.push(Step::Key(key));
-                        }
-                    }
-                    Value::Array(_) => {
-                        self.push_array_context()?;
-                        steps.push(Step::FinishArray);
-                        steps.extend(
-                            cjson
-                                .get_array_for_value(v)?
-                                .iter()
-                                .rev()
-                                .map(|&v| Step::Value(v)),
-                        );
-                    }
-                },
-                Step::Key(key) => self.set_property_key(cjson.get_string_for_value(key)?)?,
-                Step::FinishObject => self.finish_object()?,
-                Step::FinishArray => self.finish_array()?,
-            }
-        }
-        self.finish()
-    }
 }
 
 impl JsonSink for TallyBuilder<'_> {
-    type Root = ();
+    /// The tree of the sample.
+    type Root = NodeId;
 
     fn commit_null(&mut self) -> Result<()> {
         self.add_kind(TypeKind::Null)
@@ -670,10 +793,10 @@ impl JsonSink for TallyBuilder<'_> {
             return self.add_case(s);
         }
         match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
-            Some(kind) if transformed_string_type_attributes_producer(kind).is_some() => {
-                self.add_transformed_string(s)
-            }
-            Some(kind) => self.add_string_format(kind),
+            Some(kind) => match transformed_string_type_attributes_producer(kind) {
+                Some(producer) => self.add_transformed_string(kind, &producer(s)),
+                None => self.add_string_format(kind),
+            },
             None if utf16::len(s) <= 64 => self.add_case(s),
             None => self.add_uninterned(),
         }
@@ -701,6 +824,7 @@ impl JsonSink for TallyBuilder<'_> {
             nodes,
             free,
             strings,
+            ..
         } = &mut *self.tallies;
         let mut replaced = None;
         let (value, next_key) = if key == "__proto__" {
@@ -793,19 +917,38 @@ impl JsonSink for TallyBuilder<'_> {
         }
     }
 
-    fn finish(&mut self) -> Result<()> {
+    fn finish(&mut self) -> Result<NodeId> {
         if !self.frames.is_empty() {
             return panic("Finished with contexts present");
         }
-        Ok(())
+        match self.root.take() {
+            Some(root) => Ok(root),
+            None => panic("Finished without root document"),
+        }
     }
 
     fn integer_string_fits(&self, integer_string: &str) -> bool {
         self.config.integer_string_fits(integer_string)
     }
 
+    fn parsed_number_is_double(&self, n: f64) -> bool {
+        self.config.parsed_number_is_double(n)
+    }
+
+    /// Frees the failed sample's tree: the tallies are as they were before
+    /// it (but for the text of its keys and strings).
     fn reset_partial_sample(&mut self) {
         self.frames.clear();
+        if let Some(root) = self.root.take() {
+            self.tallies.free_tree(root);
+        }
+    }
+}
+
+impl Drop for TallyBuilder<'_> {
+    /// Frees a sample that was started but not finished.
+    fn drop(&mut self) {
+        self.reset_partial_sample();
     }
 }
 
@@ -813,58 +956,32 @@ impl JsonSink for TallyBuilder<'_> {
 mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
+    use crate::input::compressed_json::parse_string_into;
     use crate::input::compressed_json_from_stream::parse_stream_into;
 
     fn config(handle_refs: bool) -> CompressedJson {
         CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), handle_refs)
     }
 
-    /// Reads `samples` into the tree `root`.
-    fn read(tallies: &mut Tallies, config: &CompressedJson, root: NodeId, samples: &[&str]) {
-        for sample in samples {
-            parse_stream_into(
-                &mut TallyBuilder::new(tallies, config, root),
-                sample.as_bytes(),
-            )
-            .expect("valid JSON");
+    /// Reads `samples` (at least one), each into a tree of its own, and
+    /// merges them in order; returns the tree.
+    fn read(tallies: &mut Tallies, config: &CompressedJson, samples: &[&str]) -> NodeId {
+        let trees: Vec<NodeId> = samples
+            .iter()
+            .map(|sample| {
+                parse_stream_into(&mut TallyBuilder::new(tallies, config), sample.as_bytes())
+                    .expect("valid JSON")
+            })
+            .collect();
+        let (&first, rest) = trees.split_first().expect("a sample");
+        for &tree in rest {
+            tallies.merge(first, tree).unwrap();
         }
+        first
     }
 
-    /// The tree at `node` with keys and cases as text, independent of node
-    /// numbers.
     fn dump(tallies: &Tallies, node: NodeId) -> String {
-        let n = tallies.node(node).unwrap();
-        let mut out = format!("{:?}", n.kinds);
-        if let Some(s) = &n.strings {
-            let cases: Vec<(&str, u64)> = s
-                .cases
-                .iter()
-                .map(|(&id, &c)| (tallies.text(id).unwrap(), c))
-                .collect();
-            out += &format!(
-                " strings{cases:?} {:?} {:?} {}",
-                s.with_enums, s.without_enums, s.not_interned
-            );
-        }
-        if let Some(o) = &n.object {
-            out += &format!(" objects {} {:?} {{", o.count, o.proto_runs);
-            for (&id, k) in &o.keys {
-                out += &format!(
-                    "{:?}×{}: {}, ",
-                    tallies.text(id).unwrap(),
-                    k.count,
-                    dump(tallies, k.node)
-                );
-            }
-            if let Some(p) = o.proto {
-                out += &format!("__proto__: {}", dump(tallies, p));
-            }
-            out += "}";
-        }
-        if let Some(items) = n.items {
-            out += &format!(" items [{}]", dump(tallies, items));
-        }
-        out
+        tallies.dump(node)
     }
 
     #[test]
@@ -901,11 +1018,9 @@ mod tests {
     fn proto_is_listed_at_each_occurrence_with_its_last_value() {
         let config = config(false);
         let mut tallies = Tallies::new();
-        let root = tallies.new_tree().unwrap();
-        read(
+        let root = read(
             &mut tallies,
             &config,
-            root,
             &[r#"[{"a":1,"__proto__":1,"__proto__":{"x":2},"b":1},{"__proto__":"s","a":2}]"#],
         );
         let items = tallies.node(root).unwrap().items.unwrap();
@@ -925,40 +1040,133 @@ mod tests {
     fn replaced_proto_values_are_freed() {
         let config = config(false);
         let mut tallies = Tallies::new();
-        let root = tallies.new_tree().unwrap();
         let one = r#"{"__proto__":{"a":{"b":[1]}}}"#;
-        read(&mut tallies, &config, root, &[one]);
+        let root = read(&mut tallies, &config, &[one]);
         let after_one = tallies.live_nodes();
-        read(&mut tallies, &config, root, &[one, one, one]);
+        let more = read(&mut tallies, &config, &[one, one, one]);
+        tallies.merge(root, more).unwrap();
         assert_eq!(tallies.live_nodes(), after_one);
+        // Also within one sample.
+        let mut within = Tallies::new();
+        read(
+            &mut within,
+            &config,
+            &[r#"[{"__proto__":{"a":{"b":[1]}},"__proto__":{"a":{"b":[1]}}}]"#],
+        );
+        let mut once = Tallies::new();
+        read(&mut once, &config, &[r#"[{"__proto__":{"a":{"b":[1]}}}]"#]);
+        assert_eq!(within.live_nodes(), once.live_nodes());
     }
 
+    const SAMPLES: [&str; 4] = [
+        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01"}"#,
+        r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]}]"#,
+        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg"}"#,
+        r#""long string, long string, long string, long string, long string, too""#,
+    ];
+
+    /// Merging the samples' trees gives the tree of the elements of one
+    /// array of them, read in one go, however the samples are grouped.
     #[test]
     fn merging_trees_is_reading_on() {
-        let samples = [
-            r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01"}"#,
-            r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]}]"#,
-            r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg"}"#,
-            r#""long string, long string, long string, long string, long string, too""#,
-        ];
         let config = config(true);
         let mut one = Tallies::new();
-        let root = one.new_tree().unwrap();
-        read(&mut one, &config, root, &samples);
-        for split in 0..=samples.len() {
+        let root = read(&mut one, &config, &[&format!("[{}]", SAMPLES.join(","))]);
+        let items = one.node(root).unwrap().items.unwrap();
+        for split in 1..SAMPLES.len() {
             let mut two = Tallies::new();
-            let a = two.new_tree().unwrap();
-            read(&mut two, &config, a, &samples[..split]);
-            let b = two.new_tree().unwrap();
-            read(&mut two, &config, b, &samples[split..]);
+            let a = read(&mut two, &config, &SAMPLES[..split]);
+            let b = read(&mut two, &config, &SAMPLES[split..]);
             two.merge(a, b).unwrap();
-            assert_eq!(dump(&two, a), dump(&one, root), "split at {split}");
-            assert_eq!(two.live_nodes(), one.live_nodes(), "split at {split}");
+            assert_eq!(dump(&two, a), dump(&one, items), "split at {split}");
+            // All but the array's node.
+            assert_eq!(two.live_nodes(), one.live_nodes() - 1, "split at {split}");
         }
     }
 
+    /// A merge that fails anywhere leaves the tree merged into as it was
+    /// and frees the other one.
     #[test]
-    fn compressed_values_tally_as_read() {
+    fn a_failed_merge_changes_nothing() {
+        let config = config(false);
+        let first = [
+            r#"{"a":[1,{"b":"x"}],"c":{"d":"2020-01-01","g":[[1]]},"__proto__":{"p":1}}"#,
+            SAMPLES[0],
+        ];
+        let second = [
+            r#"{"a":[2.5,{"b":"http://h/y.png","e":null}],"c":{"d":"y","f":[true],"g":[["s"]]},"__proto__":[1]}"#,
+            SAMPLES[2],
+        ];
+        let mut expected = Tallies::new();
+        let all = read(
+            &mut expected,
+            &config,
+            &[first[0], first[1], second[0], second[1]],
+        );
+        let steps = {
+            let mut tallies = Tallies::new();
+            let a = read(&mut tallies, &config, &first);
+            let b = read(&mut tallies, &config, &second);
+            tallies.plan_merge(a, b).unwrap().len()
+        };
+        assert!(steps > 10, "{steps} steps");
+        for fail_at in 0..steps {
+            let mut tallies = Tallies::new();
+            let a = read(&mut tallies, &config, &first);
+            let before = (dump(&tallies, a), tallies.live_nodes());
+            let b = read(&mut tallies, &config, &second);
+            tallies.fail_merge_at.set(Some(fail_at));
+            assert!(tallies.merge(a, b).is_err(), "failing at step {fail_at}");
+            assert_eq!(
+                (dump(&tallies, a), tallies.live_nodes()),
+                before,
+                "failing at step {fail_at}"
+            );
+            // The tree takes the next merge as if nothing had happened.
+            let b = read(&mut tallies, &config, &second);
+            tallies.merge(a, b).unwrap();
+            assert_eq!(dump(&tallies, a), dump(&expected, all));
+            assert_eq!(tallies.live_nodes(), expected.live_nodes());
+        }
+    }
+
+    /// A sample that fails part way, at any point, is forgotten: the next
+    /// sample reads as if it had been the only one.
+    #[test]
+    fn a_failed_sample_leaves_nothing_behind() {
+        let config = config(false);
+        let good = r#"{"a":[1,{"b":"x"}],"c":"2020-01-01","__proto__":{"q":[]}}"#;
+        let broken = r#"{"a":[2.5,{"b":"y","z":[null,{"w":"http://h/a.png"}]}],"c":"q","__proto__":{"p":1},"d":{"e":[[1]]}}"#;
+        let mut expected = Tallies::new();
+        let tree = read(&mut expected, &config, &[good]);
+        let expected = (dump(&expected, tree), expected.live_nodes());
+        for cut in 1..broken.len() {
+            let mut tallies = Tallies::new();
+            let mut builder = TallyBuilder::new(&mut tallies, &config);
+            assert!(parse_stream_into(&mut builder, &broken.as_bytes()[..cut]).is_err());
+            let tree = parse_stream_into(&mut builder, good.as_bytes()).unwrap();
+            drop(builder);
+            assert_eq!(
+                (dump(&tallies, tree), tallies.live_nodes()),
+                expected,
+                "cut at {cut}"
+            );
+        }
+        // A builder dropped in the middle of a sample frees it too.
+        let mut tallies = Tallies::new();
+        let mut builder = TallyBuilder::new(&mut tallies, &config);
+        builder.push_object_context().unwrap();
+        builder.set_property_key("a").unwrap();
+        builder.push_array_context().unwrap();
+        builder.commit_null().unwrap();
+        drop(builder);
+        assert_eq!(tallies.live_nodes(), 0);
+    }
+
+    /// `JSON.parse` samples emit what the stream reader emits for text both
+    /// read alike.
+    #[test]
+    fn text_samples_tally_as_streamed() {
         let samples = [
             r##"{"a":[1,"x",1.5,"2020-01-01T00:00:00Z"],"$ref":"#/a","u":"http://h/x.png"}"##,
             r#"{"__proto__":[{"b":"0123"}],"e":{},"f":[[]],"g":"7"}"#,
@@ -966,21 +1174,16 @@ mod tests {
         for handle_refs in [false, true] {
             let config = config(handle_refs);
             let mut streamed = Tallies::new();
-            let root = streamed.new_tree().unwrap();
-            read(&mut streamed, &config, root, &samples);
-            let mut cjson = super::super::compressed_json::CompressedJson::with_int64_range(
-                Box::new(DefaultDateTimeRecognizer),
-                handle_refs,
-            );
-            let mut walked = Tallies::new();
-            let walked_root = walked.new_tree().unwrap();
-            for sample in samples {
-                let value = cjson.parse_stream(sample.as_bytes()).unwrap();
-                TallyBuilder::new(&mut walked, &config, walked_root)
-                    .add_compressed_value(&cjson, value)
-                    .unwrap();
-            }
-            assert_eq!(dump(&walked, walked_root), dump(&streamed, root));
+            let root = read(&mut streamed, &config, &samples);
+            let mut parsed = Tallies::new();
+            let trees: Vec<NodeId> = samples
+                .iter()
+                .map(|sample| {
+                    parse_string_into(&mut TallyBuilder::new(&mut parsed, &config), sample).unwrap()
+                })
+                .collect();
+            parsed.merge(trees[0], trees[1]).unwrap();
+            assert_eq!(dump(&parsed, trees[0]), dump(&streamed, root));
         }
     }
 
@@ -988,11 +1191,9 @@ mod tests {
     fn string_attributes_combine_once_per_change() {
         let config = config(false);
         let mut tallies = Tallies::new();
-        let root = tallies.new_tree().unwrap();
-        read(
+        let root = read(
             &mut tallies,
             &config,
-            root,
             &[r#"["2020-01-01","x","http://h/a.PNG","2020-01-02","https://h/b.png","12:00:00Z"]"#],
         );
         let items = tallies.node(root).unwrap().items.unwrap();
