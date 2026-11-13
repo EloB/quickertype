@@ -383,29 +383,32 @@ function isFresh(cjson: any): boolean {
 }
 
 /**
- * The engine instance to read a sample of `length` code units on, if
- * reading it there is worth it. Samples never wait for the engine to be
- * compiled where that is asynchronous (browsers), and in Node a sample
- * compiles it only if it is large: compiling takes some 20 ms of CPU, a
- * run that goes to the TypeScript engine (a custom language, say) gains
- * nothing from it, and a small sample reads about as fast in TypeScript.
- * Once the engine is compiled (by the first run that uses it, or a large
- * sample), every sample is read there; instantiating it is cheap, and a
- * run would do it anyway.
+ * The engine instance to read sample `text` on, if reading it there is
+ * worth it. Samples never wait for the engine to be compiled where that
+ * is asynchronous (browsers), and in Node a sample compiles it only if it
+ * is large: compiling takes some 20 ms of CPU, a run that goes to the
+ * TypeScript engine (a custom language, say) gains nothing from it, and a
+ * small sample reads about as fast in TypeScript. Once the engine is
+ * compiled (by the first run that uses it, or a large sample), every
+ * sample is read there; instantiating it is cheap, and a run would do it
+ * anyway. Only then is the text scanned for lone surrogates (the engine
+ * reads it as UTF-8), and before a large sample compiles the engine.
  */
-function engineForSample(length: number): WasmGlue | undefined {
-    return engineIfCompiled() ?? (length >= compileForSample ? engineSync() : undefined);
+function engineForSample(text: string): WasmGlue | undefined {
+    const compiled = engineIfCompiled();
+    if (compiled === undefined && text.length < compileForSample) return undefined;
+    if (!isWellFormed(text)) return undefined;
+    return compiled ?? engineSync();
 }
 
 /**
  * Starts reading `cjson`'s samples on the engine, if it is exactly a
  * fresh `CompressedJSONFromString` (see the top) with its original
- * methods, for a sample of `length` code units: a compressed form in the
- * engine, and the table fields replaced by accessors that fill them on
- * first use. What is checked here holds for the later samples as long as
- * `readsAsStarted`.
+ * methods, for sample `text`: a compressed form in the engine, and the
+ * table fields replaced by accessors that fill them on first use. What is
+ * checked here holds for the later samples as long as `readsAsStarted`.
  */
-function start(cjson: any, length: number): NativeSamples | undefined {
+function start(cjson: any, text: string): NativeSamples | undefined {
     if (
         Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype ||
         !hasOnlyBuiltinFields(cjson) ||
@@ -418,7 +421,7 @@ function start(cjson: any, length: number): NativeSamples | undefined {
 
     const config = configOf(cjson);
     if (config === undefined || !isFresh(cjson)) return undefined;
-    const glue = engineForSample(length);
+    const glue = engineForSample(text);
     if (glue === undefined) return undefined;
     let id: number | undefined;
     try {
@@ -706,12 +709,19 @@ function declined(cjson: object): undefined {
 /** The reader `CompressedJSONFromString.parseSync` asks first (see the top). */
 function readSample(cjson: any, text: unknown): number | undefined {
     let state = states.get(cjson);
-    if (typeof text !== "string" || engineMode() === "ts" || !isWellFormed(text)) return declined(cjson);
+    if (typeof text !== "string" || engineMode() === "ts") return declined(cjson);
+    // The text is scanned for lone surrogates only once the engine is to
+    // read it (here, or in `start`).
     if (state === undefined) {
         if (registry === undefined) return undefined;
-        state = start(cjson, text.length);
+        state = start(cjson, text);
         if (state === undefined) return undefined;
-    } else if (state.exported !== undefined || isDiscarded(state.glue) || !readsAsStarted(cjson, state)) {
+    } else if (
+        state.exported !== undefined ||
+        isDiscarded(state.glue) ||
+        !readsAsStarted(cjson, state) ||
+        !isWellFormed(text)
+    ) {
         return declined(cjson);
     }
 
