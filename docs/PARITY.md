@@ -425,7 +425,11 @@ the others name the fix they need.
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them
     with `String(value)`, so `1` and `"1"` coincide. Introspection results
-    only ever have strings there.
+    only ever have strings there. `String(value)` of nested arrays
+    recurses in Node and overflows past 2,710 levels (measured for a type
+    name, which becomes a property key); the port's conversion is
+    iterative and fails with the `RangeError` at the same depth
+    everywhere.
   - A type named `__proto__` (not a valid GraphQL name) becomes the
     prototype of TypeScript's `types` object. The port finds it under
     `__proto__`, but not, as TypeScript does, its own properties (`kind`,

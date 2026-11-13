@@ -8,6 +8,7 @@
 //! those reads, truthiness, `===`, and `String(value)` for the template
 //! literals of quicktype's messages.
 
+use quicktype_core::support::recursion::stack_overflow;
 use quicktype_core::{JsErrorName, QuickTypeError, Result};
 use quicktype_js_compat::json::{self, JsonValue};
 
@@ -109,33 +110,74 @@ impl<'a> JsVal<'a> {
         }
     }
 
-    /// `String(value)`, as a template literal converts it.
-    pub(crate) fn to_js_string(self) -> String {
+    /// `String(value)`, as a template literal converts it; V8's
+    /// `RangeError` for arrays nested deeper than
+    /// [`STRING_ARRAY_MAX_DEPTH`].
+    pub(crate) fn to_js_string(self) -> Result<String> {
         match self {
-            JsVal::Undefined => "undefined".to_owned(),
-            JsVal::Str(s) => s.to_owned(),
+            JsVal::Undefined => Ok("undefined".to_owned()),
+            JsVal::Str(s) => Ok(s.to_owned()),
             JsVal::Json(v) => json_to_string(v),
         }
     }
 }
 
-/// `String(value)` of a JSON value: arrays joined with commas (`null`
-/// elements empty), objects `[object Object]`.
-fn json_to_string(value: &JsonValue) -> String {
+/// The deepest array nesting `String(value)` survives in the reference CLI
+/// (Node 24) when it turns a type's name into a property key: 2,710
+/// arrays around the name. Elsewhere Node has a little more or less stack
+/// left; that is not modelled.
+const STRING_ARRAY_MAX_DEPTH: usize = 2_710;
+
+/// `String(value)` of anything but an array.
+fn scalar_to_string(value: &JsonValue) -> String {
     match value {
         JsonValue::Null => "null".to_owned(),
         JsonValue::Bool(b) => b.to_string(),
         JsonValue::Number(n) => quicktype_js_compat::number::to_string(*n),
         JsonValue::String(s) => s.clone(),
-        JsonValue::Array(items) => items
-            .iter()
-            .map(|item| match item {
-                JsonValue::Null => String::new(),
-                other => json_to_string(other),
-            })
-            .collect::<Vec<_>>()
-            .join(","),
-        JsonValue::Object(_) => "[object Object]".to_owned(),
+        JsonValue::Array(_) | JsonValue::Object(_) => "[object Object]".to_owned(),
+    }
+}
+
+/// `String(value)` of a JSON value: arrays joined with commas (`null`
+/// elements empty), iteratively; objects `[object Object]`.
+fn json_to_string(value: &JsonValue) -> Result<String> {
+    let JsonValue::Array(items) = value else {
+        return Ok(scalar_to_string(value));
+    };
+    // (remaining elements, the text so far, whether an element was written)
+    let mut stack = vec![(items.iter(), String::new(), false)];
+    loop {
+        let Some((elements, text, started)) = stack.last_mut() else {
+            return Ok(String::new());
+        };
+        match elements.next() {
+            Some(element) => {
+                if *started {
+                    text.push(',');
+                }
+                *started = true;
+                match element {
+                    JsonValue::Array(inner) => {
+                        if stack.len() >= STRING_ARRAY_MAX_DEPTH {
+                            return Err(stack_overflow());
+                        }
+                        stack.push((inner.iter(), String::new(), false));
+                    }
+                    JsonValue::Null => {}
+                    other => text.push_str(&scalar_to_string(other)),
+                }
+            }
+            None => {
+                let Some((_, text, _)) = stack.pop() else {
+                    return Ok(String::new());
+                };
+                match stack.last_mut() {
+                    Some((_, parent, _)) => parent.push_str(&text),
+                    None => return Ok(text),
+                }
+            }
+        }
     }
 }
 
@@ -168,10 +210,16 @@ mod tests {
     fn strings_like_javascript() {
         let v = parse(r#"[1, null, "a", [2, [3]], {"x": 1}, true, 1e21]"#).unwrap();
         assert_eq!(
-            JsVal::Json(&v).to_js_string(),
+            JsVal::Json(&v).to_js_string().unwrap(),
             "1,,a,2,3,[object Object],true,1e+21"
         );
-        assert_eq!(JsVal::Undefined.to_js_string(), "undefined");
+        assert_eq!(JsVal::Undefined.to_js_string().unwrap(), "undefined");
+        let nested = |n: usize| parse(&format!("{}\"x\"{}", "[".repeat(n), "]".repeat(n))).unwrap();
+        assert_eq!(JsVal::Json(&nested(2_710)).to_js_string().unwrap(), "x");
+        for n in [2_711, 1_000_000] {
+            let e = JsVal::Json(&nested(n)).to_js_string().unwrap_err();
+            assert_eq!(e.user_message(), "Maximum call stack size exceeded");
+        }
     }
 
     #[test]

@@ -203,18 +203,18 @@ impl<'a> GqlSchema<'a> {
             t.get("description")?;
             schema.arena.push(GqlType::new(kind, name));
             let index = schema.arena.len() - 1;
-            schema.types.set(name.to_js_string(), index);
+            schema.types.set(name.to_js_string()?, index);
         }
         for t in types.iterate("schema.__schema.types")? {
             let name = t.get("name")?;
             if !name.truthy() {
                 return panic("This cannot happen");
             }
-            let target = schema.types.get(&name.to_js_string());
+            let target = schema.types.get(&name.to_js_string()?);
             schema.add_type_fields(target, t)?;
         }
 
-        let Some(query_type) = schema.types.get(&query_type_name()?.to_js_string()) else {
+        let Some(query_type) = schema.types.get(&query_type_name()?.to_js_string()?) else {
             return panic("Query type not found.");
         };
         schema.query_type = query_type;
@@ -227,7 +227,7 @@ impl<'a> GqlSchema<'a> {
         if mutation_type_name.is_null() {
             return panic("Mutation type doesn't have a name.");
         }
-        let Some(mutation_type) = schema.types.get(&mutation_type_name.to_js_string()) else {
+        let Some(mutation_type) = schema.types.get(&mutation_type_name.to_js_string()?) else {
             return panic("Mutation type not found.");
         };
         schema.mutation_type = Some(mutation_type);
@@ -317,16 +317,16 @@ impl<'a> GqlSchema<'a> {
         grow_stack(|| {
             let name = t.get("name")?;
             if name.truthy() {
-                return match self.types.get(&name.to_js_string()) {
+                return match self.types.get(&name.to_js_string()?) {
                     Some(named_type) => Ok(named_type),
-                    None => panic(format!("Type {} not found", name.to_js_string())),
+                    None => panic(format!("Type {} not found", name.to_js_string()?)),
                 };
             }
             let of_type = t.get("ofType")?;
             if !of_type.truthy() {
                 return panic(format!(
                     "Type of kind {} has neither name nor ofType",
-                    t.get("kind")?.to_js_string()
+                    t.get("kind")?.to_js_string()?
                 ));
             }
             let kind = t.get("kind")?;
@@ -389,7 +389,7 @@ fn get_field(schema: &GqlSchema<'_>, t: Option<GqlTypeRef>, name: &str) -> Resul
     let Some(fields) = schema.get(t).and_then(|t| t.fields.as_ref()) else {
         return panic(format!(
             "Required field {name} in type {} which doesn't have fields.",
-            schema.name(t).to_js_string()
+            schema.name(t).to_js_string()?
         ));
     };
     for f in fields {
@@ -399,7 +399,7 @@ fn get_field(schema: &GqlSchema<'_>, t: Option<GqlTypeRef>, name: &str) -> Resul
     }
     panic(format!(
         "Required field {name} not defined on type {}.",
-        schema.name(t).to_js_string()
+        schema.name(t).to_js_string()?
     ))
 }
 
@@ -717,11 +717,13 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                     else {
                         return panic("Enum type doesn't have values");
                     };
-                    let values: IndexSet<String> =
-                        enum_values.iter().map(|v| v.to_js_string()).collect();
+                    let values: IndexSet<String> = enum_values
+                        .iter()
+                        .map(|v| v.to_js_string())
+                        .collect::<Result<_>>()?;
                     let type_name = schema.name(field_type);
                     let (name, enum_field_name) = if type_name.truthy() {
-                        (type_name.to_js_string(), field_name)
+                        (type_name.to_js_string()?, field_name)
                     } else {
                         (field_name.to_owned(), "")
                     };
@@ -761,7 +763,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                     )?;
                     remove_null(builder, inner)?
                 }
-                None => return assert_never(schema.kind(field_type).to_js_string()),
+                None => return assert_never(schema.kind(field_type).to_js_string()?),
             };
             if optional {
                 result = make_nullable(builder, result, field_name, "", containing_type_name)?;
@@ -796,7 +798,10 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         if !gql_name.truthy() {
             return panic("Object, interface, or union type doesn't have a name.");
         }
-        let name_or_override = override_name.map_or_else(|| gql_name.to_js_string(), str::to_owned);
+        let name_or_override = match override_name {
+            Some(name) => name.to_owned(),
+            None => gql_name.to_js_string()?,
+        };
         let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
         let mut selections: Vec<PendingSelection<'_>> =
             expand_selection_set(selection_set, Some(gql_type), false).collect();
