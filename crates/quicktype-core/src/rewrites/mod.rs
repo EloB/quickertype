@@ -1,4 +1,5 @@
-//! Port of `packages/quicktype-core/src/rewrites/index.ts`.
+//! The modules of `packages/quicktype-core/src/rewrites/`, one per TypeScript
+//! file (the directory has no `index.ts`).
 
 pub mod combine_classes;
 pub mod expand_strings;

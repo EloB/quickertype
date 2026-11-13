@@ -1,12 +1,22 @@
 [package]
-name = "quicktype-js-compat"
+name = "quickertype-js-compat"
 description = "JavaScript-exact helpers (number formatting, UTF-16 strings, V8 sort, JSON.stringify, pluralize, ...) for the quicktype Rust port"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
 authors.workspace = true
+keywords = ["quicktype", "javascript", "json", "v8", "utf-16"]
+categories = ["encoding", "value-formatting", "parser-implementations"]
+include = ["/src/", "/LICENSE", "/NOTICE"]
+
+[package.metadata.dist]
+# dist builds installers for the `quickertype` CLI only; this crate is
+# published to crates.io by .github/workflows/publish-crates.yml.
+dist = false
 
 [lib]
 name = "quicktype_js_compat"

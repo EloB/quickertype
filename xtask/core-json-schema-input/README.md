@@ -16,7 +16,7 @@ Node.
 
 ```sh
 node xtask/core-json-schema-input/run-schema-inputs.mjs ../quicktype
-cargo test -p quicktype-core --features http --test json_schema_input -- --nocapture
+cargo test -p quickertype-core --features http --test json_schema_input -- --nocapture
 ```
 
 The schema cases are every `tests/inputs/schema/*.schema` as the CLI adds

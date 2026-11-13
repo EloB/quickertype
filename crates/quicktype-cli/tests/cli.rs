@@ -13,6 +13,9 @@ use std::process::{Command, Output, Stdio};
 
 const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
 
+/// The separator Node's `path.join` uses: `path.win32`'s on Windows.
+const SEP: char = if cfg!(windows) { '\\' } else { '/' };
+
 fn inputs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/inputs")
 }
@@ -118,9 +121,10 @@ fn a_missing_output_directory_is_node_s_error() {
         None,
     );
     assert_eq!(output.status.code(), Some(1));
+    // `path.join(path.dirname(out), filename)`: `\` on Windows.
     assert_eq!(
         stderr(&output),
-        "Error: ENOENT: no such file or directory, open 'missing-dir/TopLevel.rs'.\n"
+        format!("Error: ENOENT: no such file or directory, open 'missing-dir{SEP}TopLevel.rs'.\n")
     );
 }
 
@@ -191,9 +195,12 @@ fn directories_cannot_mix_json_with_schemas() {
     fs::write(data.join("Mixed/b.schema"), "{}").unwrap();
     let output = quicktype_in(&dir, &["--lang", "rust", "data"], None);
     assert_eq!(output.status.code(), Some(1));
+    // `path.join(dataDir, x)`: `\` on Windows.
     assert_eq!(
         stderr(&output),
-        "Error: Cannot mix JSON samples with JSON Schems, GraphQL, or TypeScript in input subdirectory data/Mixed.\n"
+        format!(
+            "Error: Cannot mix JSON samples with JSON Schems, GraphQL, or TypeScript in input subdirectory data{SEP}Mixed.\n"
+        )
     );
 }
 
@@ -248,10 +255,10 @@ fn builds_a_markov_chain() {
 fn url_grammars_name_their_top_levels() {
     let dir = work_dir("src-urls");
     let samples = inputs().join("json/samples");
-    let grammar = format!(
-        r#"{{"Started": ["{}/", {{"oneOf": ["getting-started"]}}, ".json"]}}"#,
-        samples.display()
-    );
+    // The directory as a JSON string (a Windows path has backslashes).
+    let prefix = serde_json::to_string(&format!("{}/", samples.display())).unwrap();
+    let grammar =
+        format!(r#"{{"Started": [{prefix}, {{"oneOf": ["getting-started"]}}, ".json"]}}"#);
     fs::write(dir.join("grammar.json"), grammar).unwrap();
     let output = quicktype_in(
         &dir,
@@ -376,8 +383,7 @@ fn deep_inputs_do_not_overflow_the_stack() {
 
 /// Runs `args` on TypeScript sources written to a fresh directory (the
 /// TypeScript input only accepts files below the working directory).
-/// `None` (with a note) without the TypeScript 7 compiler, or while the
-/// target language's renderer is not ported yet.
+/// `None` (with a note) without the TypeScript 7 compiler.
 fn typescript_input(name: &str, source: &str, args: &[&str]) -> Option<Output> {
     let dir = work_dir(name);
     fs::write(dir.join("input.ts"), source).unwrap();
@@ -385,9 +391,7 @@ fn typescript_input(name: &str, source: &str, args: &[&str]) -> Option<Output> {
     all_args.push("input.ts");
     let output = quicktype_in(&dir, &all_args, None);
     let error = stderr(&output);
-    if error.contains("requires the TypeScript 7.0.2 compiler")
-        || error.contains("renderer is not ported yet")
-    {
+    if error.contains("requires the TypeScript 7.0.2 compiler") {
         eprintln!("skipped: {error}");
         return None;
     }

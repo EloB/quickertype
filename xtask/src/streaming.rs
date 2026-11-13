@@ -80,7 +80,7 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             "test",
             "--release",
             "-p",
-            "quicktype-core",
+            "quickertype-core",
             "--test",
             "streaming_inference",
             "--",

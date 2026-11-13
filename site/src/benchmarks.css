@@ -1,0 +1,372 @@
+/* The benchmarks page: one column of text, figures and charts. The colours
+   and what both pages share are in base.css; the charts' pair is
+   --viz-ours (quickertype) and --viz-theirs (quicktype). */
+
+@import "./base.css";
+
+.doc {
+    width: min(100%, 880px);
+    margin: 0 auto;
+    padding: 4px 16px 40px;
+}
+
+.doc section {
+    margin-top: 44px;
+}
+
+.doc section.intro {
+    margin-top: 12px;
+}
+
+.doc h1 {
+    font-size: 30px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+.doc h2 {
+    margin-bottom: 8px;
+    font-size: 20px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+.doc section > p {
+    max-width: 72ch;
+}
+
+.doc section > p + p {
+    margin-top: 10px;
+}
+
+.doc code {
+    font: 12.5px var(--mono);
+    overflow-wrap: anywhere;
+}
+
+.doc a {
+    color: var(--wasm);
+}
+
+.lead {
+    margin-top: 8px;
+    max-width: 60ch;
+    font-size: 17px;
+    line-height: 1.45;
+}
+
+/* ---- The four figures ---------------------------------------------------- */
+
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 185px), 1fr));
+    gap: 12px;
+    margin: 20px 0 0;
+}
+
+/* The value first on screen, the term first for screen readers. */
+.tile {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--panel);
+}
+
+.tile dd {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 650;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.tile dt {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.tile code {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.measured-on {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ---- Charts -------------------------------------------------------------- */
+
+.chart {
+    margin: 16px 0 0;
+    padding: 16px;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--panel);
+}
+
+.chart figcaption {
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.legend {
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.key {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border-radius: 3px;
+    vertical-align: -1px;
+}
+
+.legend .key:not(:first-child) {
+    margin-left: 14px;
+}
+
+.key.ours {
+    background: var(--viz-ours);
+}
+
+.key.theirs {
+    background: var(--viz-theirs);
+}
+
+.key.part {
+    background: var(--muted);
+}
+
+.key.part.startup {
+    opacity: 0.35;
+}
+
+.bars-group {
+    margin: 16px 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.chart > .bars-group:first-of-type {
+    margin-top: 0;
+}
+
+.bars {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Narrow: the name and the value on a line, the bar under them. */
+.bar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name value" "bar bar";
+    gap: 2px 12px;
+    align-items: baseline;
+}
+
+.bar-name {
+    grid-area: name;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.bar-value {
+    grid-area: value;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.bar-value b {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.bars-svg {
+    grid-area: bar;
+    display: block;
+    width: 100%;
+    overflow: visible;
+}
+
+/* What a bar is made of, under it. */
+.bar-row.noted {
+    grid-template-areas: "name value" "bar bar" "note note";
+}
+
+.bar-note {
+    grid-area: note;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Wide: name, bar, value. */
+@media (min-width: 760px) {
+    .bar-row {
+        grid-template-columns: 15.5rem minmax(0, 1fr) 9.5rem;
+        grid-template-areas: "name bar value";
+        align-items: center;
+    }
+
+    .bar-row.noted {
+        grid-template-areas: "name bar value" ". note note";
+    }
+}
+
+.bar-mark.ours rect,
+rect.bar-mark.ours {
+    fill: var(--viz-ours);
+}
+
+.bar-mark.theirs rect,
+rect.bar-mark.theirs {
+    fill: var(--viz-theirs);
+}
+
+/* The part of a bar that is start-up: a tint of the bar's own colour. */
+.bar-mark rect.startup {
+    opacity: 0.35;
+}
+
+/* A bar that goes on further than drawn. */
+rect.more {
+    fill: var(--viz-theirs);
+    opacity: 0.3;
+}
+
+.tip {
+    fill: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* A benchmark where quickertype is slower: its value says so, in the error colour. */
+.slower .tip {
+    fill: var(--bad);
+}
+
+/* ---- Tables -------------------------------------------------------------- */
+
+.table-view {
+    margin-top: 14px;
+    font-size: 13px;
+}
+
+.table-view summary {
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.table-view[open] summary {
+    margin-bottom: 8px;
+}
+
+.table-view table,
+table.plain {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+caption {
+    padding-bottom: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--rule);
+    font-weight: normal;
+    text-align: left;
+    vertical-align: top;
+}
+
+thead th {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+tbody th {
+    min-width: 10em;
+    padding-right: 12px;
+}
+
+.num {
+    padding-left: 14px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.fineprint {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.fineprint.warn {
+    color: var(--bad);
+}
+
+/* ---- Method --------------------------------------------------------------- */
+
+.facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 6px 18px;
+    margin: 12px 0 14px;
+}
+
+.facts div {
+    display: contents;
+}
+
+.facts dt {
+    color: var(--muted);
+}
+
+.facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+    .facts {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .facts dd {
+        margin-bottom: 8px;
+    }
+
+    .tile dd {
+        font-size: 30px;
+    }
+}

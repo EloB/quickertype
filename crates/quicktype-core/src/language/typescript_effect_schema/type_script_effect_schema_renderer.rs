@@ -13,6 +13,7 @@ use crate::graph::Graph;
 use crate::language::javascript::utils::legalize_name;
 use crate::renderer_options::RendererOptions;
 use crate::support::acronyms::{AcronymStyleOptions, acronym_style};
+use crate::support::collection_utils::array_intercalate;
 use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::recursion::guard;
 use crate::support::strings::{
@@ -21,7 +22,7 @@ use crate::support::strings::{
 };
 use crate::support::support::assert;
 use crate::target_language::TargetLanguage;
-use quicktype_js_compat::number::to_string as js_number;
+use quicktype_js_compat::number;
 
 use super::language::JUST_SCHEMA;
 
@@ -187,14 +188,14 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                 if let Some(min_items) = min_items.filter(|&m| m > 0.0) {
                     schema.extend([
                         ".pipe(S.minItems(".into(),
-                        js_number(min_items).into(),
+                        number::to_string(min_items).into(),
                         "))".into(),
                     ]);
                 }
                 if let Some(max_items) = max_items {
                     schema.extend([
                         ".pipe(S.maxItems(".into(),
-                        js_number(max_items).into(),
+                        number::to_string(max_items).into(),
                         "))".into(),
                     ]);
                 }
@@ -234,15 +235,11 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                     let child = children.remove(0);
                     sl!["S.NullOr(", child, ")"]
                 } else {
-                    let mut parts: Vec<Source> = vec!["S.Union(".into()];
-                    for (i, child) in children.into_iter().enumerate() {
-                        if i > 0 {
-                            parts.push(", ".into());
-                        }
-                        parts.push(child);
-                    }
-                    parts.push(if nullable { ", S.Null)" } else { ")" }.into());
-                    Source::Sequence(parts)
+                    sl![
+                        "S.Union(",
+                        array_intercalate(", ".into(), children),
+                        if nullable { ", S.Null)" } else { ")" }
+                    ]
                 }
             }
             TypeKind::Uuid => "S.UUID".into(),
@@ -270,7 +267,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
                 }
             }
             k if k.is_transformed_string_type_kind() => "S.String".into(),
-            kind => return type_not_supported(kind),
+            kind => return match_type_unsupported(kind),
         };
 
             if required {
@@ -294,7 +291,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             schema.push(
                 format!(
                     ".pipe(S.filter(value => Array.from(value).length >= {}))",
-                    js_number(min)
+                    number::to_string(min)
                 )
                 .into(),
             );
@@ -303,7 +300,7 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
             schema.push(
                 format!(
                     ".pipe(S.filter(value => Array.from(value).length <= {}))",
-                    js_number(max)
+                    number::to_string(max)
                 )
                 .into(),
             );
@@ -330,14 +327,14 @@ impl<'a> TypeScriptEffectSchemaRenderer<'a> {
         if let Some(min) = min {
             schema.extend([
                 ".pipe(S.greaterThanOrEqualTo(".into(),
-                js_number(min).into(),
+                number::to_string(min).into(),
                 "))".into(),
             ]);
         }
         if let Some(max) = max {
             schema.extend([
                 ".pipe(S.lessThanOrEqualTo(".into(),
-                js_number(max).into(),
+                number::to_string(max).into(),
                 "))".into(),
             ]);
         }

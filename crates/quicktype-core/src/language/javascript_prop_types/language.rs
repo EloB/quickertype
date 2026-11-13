@@ -2,9 +2,9 @@
 //!
 //! Language metadata and renderer option declarations.
 
-use crate::renderer_options::{
-    EnumOption, OptionKind, RendererOption, RendererOptions, acronym_option, converters_option,
-};
+use crate::renderer_options::{EnumOption, OptionKind, RendererOption, RendererOptions};
+use crate::support::acronyms::acronym_option;
+use crate::support::converters::converters_option;
 use crate::support::integer_range::{IntegerRange, JS_SAFE_INTEGER_RANGE};
 use crate::target_language::{LanguageConfig, TargetLanguage};
 use crate::ty::transformed_string_type::TypeKind;

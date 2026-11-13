@@ -18,6 +18,8 @@ import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const shapes = {
     items: ['{"type":"array","items":', "}"],
     tuple: ['{"type":"array","items":[', "]}"],
@@ -59,7 +61,7 @@ if (mode === "--child") {
     }
 } else {
     const self = fileURLToPath(import.meta.url);
-    const quicktype = resolve(mode ?? process.env.QUICKTYPE_DIR ?? "../quicktype");
+    const quicktype = referenceCheckout(mode);
     const ok = (s, n) =>
         spawnSync(process.execPath, [self, "--child", quicktype, s, String(n)], { encoding: "utf8" }).stdout.trim() === "ok";
     for (const s of Object.keys(shapes)) {

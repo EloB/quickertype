@@ -9,7 +9,12 @@
 // * main.js and style.css: the page;
 // * quicktype.wasm: the engine, compiled by the worker and handed to
 //   quicktype-core (see src/worker-boot.js);
-// * samples/: inputs from quicktype's test suite (tests/inputs).
+// * samples/: inputs from quicktype's test suite (tests/inputs);
+// * benchmarks.html and benchmarks.css: the benchmarks page, rendered here
+//   from site/data/benchmarks.json (`cargo xtask bench --json`) and
+//   site/data/big-inputs.json, which are checked first (see benchmarks.mjs)
+//   and published beside it (data/); the playground's speed headline and
+//   the note at its comparison come from the same numbers.
 //
 // The languages and their options, and quicktype's general (run-level)
 // options, are read from quicktype-core's API here, at build time, and
@@ -25,6 +30,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
+import { benchmarksFile, benchmarksPageHtml, bigInputsFile, headlineHtml, readBenchmarks, speedFacts, times } from "./benchmarks.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { hashKeys } from "./src/hash.js";
 
@@ -247,6 +253,12 @@ async function bundle(entry, define) {
 const languageList = languages();
 const general = generalOptions();
 checkNames(languageList, general);
+// The benchmark numbers: checked before anything is written; what they
+// show but someone should look at (a benchmark where quickertype is slower)
+// is said here.
+const benchmarks = readBenchmarks();
+for (const warning of benchmarks.warnings) console.warn(`warning: ${warning}`);
+const speed = speedFacts(benchmarks.bench);
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(path.join(dist, "samples"), { recursive: true });
@@ -262,6 +274,7 @@ const mainFile = writeHashed(
     "js",
     await bundle("main.js", {
         __WORKER_FILE__: JSON.stringify(`./${workerFile}`),
+        __SPEED__: JSON.stringify({ upTo: speed.upTo }),
         __LANGUAGES__: JSON.stringify(languageList),
         __GENERAL__: JSON.stringify(general),
         __SAMPLES__: JSON.stringify(
@@ -269,19 +282,18 @@ const mainFile = writeHashed(
         ),
     }),
 );
-const styleFile = writeHashed(
-    "style",
-    "css",
+const css = async (entry) =>
     (
         await esbuild.build({
-            entryPoints: [path.join(src, "style.css")],
+            entryPoints: [path.join(src, entry)],
             bundle: true,
             minify: !dev,
             write: false,
             logLevel: "warning",
         })
-    ).outputFiles[0].contents,
-);
+    ).outputFiles[0].contents;
+const styleFile = writeHashed("style", "css", await css("style.css"));
+const benchmarksStyleFile = writeHashed("benchmarks", "css", await css("benchmarks.css"));
 
 for (const { file } of samples) {
     fs.copyFileSync(path.join(repositoryRoot, "tests", "inputs", file), path.join(dist, "samples", path.basename(file)));
@@ -295,13 +307,29 @@ const html = fs
     .replaceAll("%QUICKTYPE_COMMIT%", commit)
     .replaceAll("%QUICKTYPE_SHORT%", short)
     .replaceAll("%QUICKTYPE_DATE%", date)
-    .replaceAll("%QUICKTYPE_DATE_LONG%", long);
+    .replaceAll("%QUICKTYPE_DATE_LONG%", long)
+    .replace("%SPEED_HEADLINE%", headlineHtml(speed));
 if (/%[A-Z_]+%/.test(html)) throw new Error(`a placeholder is left in index.html: ${/%[A-Z_]+%/.exec(html)[0]}`);
 fs.writeFileSync(path.join(dist, "index.html"), html);
 
+const benchmarksHtml = fs
+    .readFileSync(path.join(src, "benchmarks.html"), "utf8")
+    .replace("%STYLE%", `./${benchmarksStyleFile}`)
+    .replace(
+        "%DESCRIPTION%",
+        `quickertype, quicktype rewritten in Rust: the CLI is up to ${speed.upTo}× faster than quicktype's (about ${speed.typical}× on typical files), ${times(speed.corpus)} on its whole test corpus, with the same output.`,
+    )
+    .replace("%CONTENT%", () => benchmarksPageHtml(benchmarks));
+if (/%[A-Z_]+%/.test(benchmarksHtml.replace(/data:image\/svg\+xml,[^"]*/, ""))) {
+    throw new Error("a placeholder is left in benchmarks.html");
+}
+fs.writeFileSync(path.join(dist, "benchmarks.html"), benchmarksHtml);
+fs.mkdirSync(path.join(dist, "data"));
+for (const file of [benchmarksFile, bigInputsFile]) fs.copyFileSync(file, path.join(dist, "data", path.basename(file)));
+
 const kib = (n) => `${(n / 1024).toFixed(1)} KiB`;
 console.log("site/dist:");
-for (const file of [mainFile, styleFile, "index.html", workerFile, wasmFile]) {
+for (const file of [mainFile, styleFile, "index.html", benchmarksStyleFile, "benchmarks.html", workerFile, wasmFile]) {
     const content = fs.readFileSync(path.join(dist, file));
     console.log(`  ${file.padEnd(34)} ${kib(content.length).padStart(12)}  ${kib(gzipSync(content, { level: 9 }).length).padStart(11)} gzipped`);
 }

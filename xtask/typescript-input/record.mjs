@@ -27,6 +27,8 @@ import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { referenceCheckout } from "../reference.mjs";
+
 const here = path.dirname(new URL(import.meta.url).pathname);
 const corpus = path.resolve(process.env.TS_INPUT_CORPUS ?? path.join(here, "../../crates/quicktype-typescript-input/tests/corpus"));
 
@@ -57,7 +59,7 @@ if (process.argv[2] === "--case") {
     process.exit(0);
 }
 
-const checkout = path.resolve(process.argv[2] ?? path.join(here, "../../../quicktype"));
+const checkout = referenceCheckout(process.argv[2]);
 const filter = process.argv[3] ? new RegExp(process.argv[3]) : null;
 const req = createRequire(path.join(checkout, "package.json"));
 const tjsPkg = req.resolve("typescript-json-schema/package.json");

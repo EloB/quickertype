@@ -24,7 +24,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # The whole history: the benchmarks page links the quickertype
+      # commits its numbers were measured at, and the smoke test checks
+      # they are commits of this repository.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.99"
@@ -44,7 +49,7 @@ jobs:
         working-directory: npm/quicktype-core
       - run: node site/build.mjs
       # The smoke test compares the page's output with the CLI's.
-      - run: cargo build --release --package quicktype-cli
+      - run: cargo build --release --package quickertype
       - run: node site/test/smoke.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

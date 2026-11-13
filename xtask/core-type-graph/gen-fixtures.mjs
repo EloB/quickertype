@@ -4,10 +4,12 @@
 // Usage: node xtask/core-type-graph/gen-fixtures.mjs ../quicktype
 import { writeFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const quicktype = resolve(process.argv[2] ?? "../quicktype");
+import { referenceCheckout } from "../reference.mjs";
+
+const quicktype = referenceCheckout(process.argv[2]);
 const require = createRequire(join(quicktype, "package.json"));
 const core = join(quicktype, "packages/quicktype-core/dist");
 const { Chance } = require(join(core, "support/Chance.js"));

@@ -3,7 +3,13 @@
 # the fixture corpus (record-hook.cjs + finalize.mjs) and the CLI-behavior
 # cases tests/golden/cli-* (record-cli.mjs).
 #
-#   cargo xtask golden [path-to-quicktype-checkout]   (default: ../quicktype)
+#   cargo xtask golden [path-to-quicktype-checkout]
+#
+# The checkout defaults to $QUICKTYPE_REFERENCE, else the deprecated
+# $QUICKTYPE_REF or $QUICKTYPE_DIR (with a one-line warning), else the first
+# of ../quicktype and ../../quicktype next to this repository that is built,
+# in the same order as `cargo xtask diff` and xtask/reference.mjs.
+# QUICKTYPE_REFERENCE=self only applies to the npm differential suite.
 #
 # The reference must be built (npm ci && npm run build). The commit it was
 # recorded from is written to tests/golden/REFERENCE.
@@ -11,7 +17,43 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REWRITE="$(cd "$HERE/../.." && pwd)"
-REF="$(cd "${1:-$REWRITE/../quicktype}" && pwd)"
+
+reference_checkout() {
+    if [ -n "${1:-}" ]; then
+        echo "$1"
+        return
+    fi
+    if [ "${QUICKTYPE_REFERENCE:-}" = self ]; then
+        echo "QUICKTYPE_REFERENCE=self only applies to the npm differential suite; set it to a quicktype checkout" >&2
+        return 1
+    fi
+    if [ -n "${QUICKTYPE_REFERENCE:-}" ]; then
+        echo "$QUICKTYPE_REFERENCE"
+        return
+    fi
+    local old
+    for old in QUICKTYPE_REF QUICKTYPE_DIR; do
+        if [ -n "${!old:-}" ]; then
+            echo "warning: $old is deprecated; set QUICKTYPE_REFERENCE instead" >&2
+            echo "${!old}"
+            return
+        fi
+    done
+    local up candidates candidate
+    up="$(dirname "$REWRITE")"
+    candidates=("$up/quicktype" "$(dirname "$up")/quicktype")
+    for candidate in "${candidates[@]}"; do
+        if [ -f "$candidate/dist/index.js" ]; then
+            echo "$candidate"
+            return
+        fi
+    done
+    echo "no built quicktype checkout (with dist/index.js) at ${candidates[0]} or ${candidates[1]}: build one, set QUICKTYPE_REFERENCE or pass its path" >&2
+    return 1
+}
+
+REF="$(reference_checkout "${1:-}")" || exit 1
+REF="$(cd "$REF" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 

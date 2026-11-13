@@ -1,4 +1,4 @@
-//! Port of `quicktype/src/CompressedJSONFromStream.ts`.
+//! Port of `src/CompressedJSONFromStream.ts`.
 //!
 //! The reader is in quicktype-core, as `CompressedJson::parse_stream`
 //! (`quicktype_core::input::compressed_json_from_stream`), because the Rust

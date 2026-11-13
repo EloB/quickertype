@@ -2,7 +2,9 @@
 //!
 //! A frozen type graph: an arena of [`Type`]s indexed by [`TypeRef`], their
 //! attributes (the attribute store, which stays mutable for `GatherNames`),
-//! and the named top-level types in insertion order.
+//! and the named top-level types in insertion order. [`TypeLookup`] reads
+//! the types of a frozen graph or of one a [`TypeBuilder`] is still
+//! building.
 //!
 //! Graphs are never modified structurally. A *rewrite* builds a new graph
 //! (serial + 1) by reconstituting the old one through a
@@ -570,5 +572,37 @@ impl TypeGraph {
             console_log(&self.type_text(i)?);
         }
         Ok(())
+    }
+}
+
+/// Read access to the types of a graph, frozen or under construction
+/// (`derefTypeRef` / `attributesForTypeRef` with a `TypeGraph` whose builder
+/// may still be running).
+pub trait TypeLookup {
+    /// The kind of the type `t`.
+    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind>;
+    /// The attributes of the type `t`.
+    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes>;
+}
+
+impl TypeLookup for TypeGraph {
+    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
+        self.kind(t)
+    }
+
+    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
+        self.attributes(t)
+    }
+}
+
+impl TypeLookup for TypeBuilder<'_> {
+    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
+        assert_type_ref_graph(t, self.serial())?;
+        Ok(self.type_at_index(t.index())?.kind())
+    }
+
+    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
+        assert_type_ref_graph(t, self.serial())?;
+        Ok(self.at_index(t.index())?.1)
     }
 }

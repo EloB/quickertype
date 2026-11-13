@@ -25,7 +25,8 @@ tasks:
                      run the TypeScript CLI and ours side by side and compare (--help)
   bench [options]    time ours against the TypeScript CLI, Markdown report (--help)
   golden [ref-dir]   re-record tests/golden from a built TypeScript quicktype checkout
-                     (default ref-dir: ../quicktype)
+                     (default ref-dir: $QUICKTYPE_REFERENCE, else ../quicktype
+                     or ../../quicktype)
   streaming-fuzz [options]
                      generated inputs through inference from running tallies and from
                      the compressed form; outputs must be identical (--help)
