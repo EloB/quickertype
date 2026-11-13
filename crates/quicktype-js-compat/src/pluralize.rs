@@ -346,15 +346,13 @@ impl Rules {
         self.patterns.len()
     }
 
-    /// The rules whose pattern matches `encoded`, last added first (the
-    /// order in which `sanitizeWord` tries them).
-    fn matching(&self, encoded: &str) -> Vec<usize> {
+    /// The rules whose pattern matches `encoded`; `sanitizeWord` tries
+    /// them last added first (`.iter().rev()`).
+    fn matching(&self, encoded: &str) -> PatternSet {
         let mut matches = PatternSet::new(self.selector.pattern_len());
         self.selector
             .which_overlapping_matches(&Input::new(encoded), &mut matches);
-        let mut indexes: Vec<usize> = matches.iter().map(|p| p.as_usize()).collect();
-        indexes.reverse();
-        indexes
+        matches
     }
 
     /// Rule `index`'s regex (`rule[0]`).
@@ -669,7 +667,7 @@ fn sanitize_word(tables: &Tables, token: &str, word: &[u16], rules: &Rules) -> V
     // `word.replace(rule[0], ...)` on the same first match. The selector
     // finds the rules that pass the test in one search; only the one that
     // applies runs its own regex.
-    for index in rules.matching(&encoded) {
+    for index in rules.matching(&encoded).iter().rev().map(|p| p.as_usize()) {
         if let Some(captures) = rules.regex(index).captures(&encoded) {
             return replace(word, &encoded, rules.replacements[index], &captures);
         }
