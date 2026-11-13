@@ -41,3 +41,35 @@
 - Unit tests for a module live next to it (`#[cfg(test)] mod tests`). When
   quicktype has a Vitest test for the behavior (`test/unit/*.test.ts`), port
   it and keep its name.
+
+## Fuzzing
+
+`fuzz/` holds [cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz) targets
+that look for crashes (any panic: release builds abort on one), hangs and
+runaway memory. It is a workspace of its own and needs a nightly toolchain,
+which only it uses:
+
+```sh
+rustup toolchain install nightly
+cargo install cargo-fuzz
+node fuzz/seed-corpora.mjs            # seed corpora from tests/inputs and the vectors
+cargo +nightly fuzz list
+cargo +nightly fuzz run pipeline -s none -- -max_len=16384 -timeout=30
+```
+
+The targets: `json_stream` and `json_parse` (the two JSON readers),
+`json_schema` (with `$ref`s between in-memory documents), `graphql_parse`,
+`graphql_input`, `yaml`, `uri`, `number`, `cli_args` (the CLI's option
+parsing) and `pipeline` (JSON to every language with arbitrary run and
+renderer options). Each file in `fuzz/fuzz_targets` describes its input
+format. `-s none` turns off AddressSanitizer: the code has no `unsafe`, and
+ASan misreads `stacker`'s stack switching.
+
+A finding is written to `fuzz/artifacts/<target>/`. Minimize it with
+`cargo +nightly fuzz tmin -s none <target> <file>`. For `pipeline`,
+`json_schema` and `graphql_input`, running the target on the file with
+`QUICKTYPE_FUZZ_EXPLAIN=<dir>` writes the inputs to `<dir>` and prints the
+equivalent `quicktype` command line, to compare with the TypeScript CLI
+(`cargo xtask diff`). Fix the port to do what quicktype does, and add a
+regression test. `.github/workflows/fuzz.yml` runs every target for a few
+minutes each week.
