@@ -633,7 +633,7 @@ fn flush_high_surrogate(out: &mut String, pending_high: &mut Option<u16>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::json::stringify;
+    use crate::json::{JsonValue, stringify};
 
     fn ok(text: &str) -> String {
         stringify(&parse(text).unwrap(), None)
@@ -656,6 +656,18 @@ mod tests {
         assert_eq!(ok(r#"{"__proto__":1}"#), r#"{"__proto__":1}"#);
         assert_eq!(ok("1e400"), "null");
         assert_eq!(ok("\"\\ud800x\""), "\"\u{FFFD}x\"");
+    }
+
+    // Port of the strict-JSON case of test/unit/parse-json.test.ts (its BOM
+    // and YAML cases are `parseJSON`'s, not `JSON.parse`'s).
+    #[test]
+    fn parses_strict_json() {
+        let JsonValue::Object(map) = parse(r#"{"name":"quicktype","count":2}"#).unwrap() else {
+            panic!("an object")
+        };
+        assert_eq!(map["name"], JsonValue::String("quicktype".to_owned()));
+        assert_eq!(map["count"], JsonValue::Number(2.0));
+        assert_eq!(map.len(), 2);
     }
 
     #[test]
