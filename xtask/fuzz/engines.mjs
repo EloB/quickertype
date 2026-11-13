@@ -89,6 +89,16 @@ export function loadSides(reference) {
     };
 }
 
+/** The CLI's `--debug` components and the quicktype options they set. */
+export const DEBUG_OPTIONS = [
+    ["print-graph", "debugPrintGraph"],
+    ["print-reconstitution", "debugPrintReconstitution"],
+    ["print-gather-names", "debugPrintGatherNames"],
+    ["print-transformations", "debugPrintTransformations"],
+    ["print-schema-resolving", "debugPrintSchemaResolving"],
+    ["provenance", "checkProvenance"],
+];
+
 /** quicktype options for a case (what the CLI's makeQuicktypeOptions would give, plus API extras). */
 export function quicktypeOptions(kase, inputData, withApiExtras = true) {
     const options = {
@@ -99,6 +109,10 @@ export function quicktypeOptions(kase, inputData, withApiExtras = true) {
         allPropertiesOptional: kase.flags.allPropertiesOptional === true,
     };
     for (const [name] of INFERENCE_FLAGS) options[name] = kase.flags[name] !== false;
+    for (const [component, name] of DEBUG_OPTIONS) {
+        if (kase.debug?.includes(component)) options[name] = true;
+    }
+
     if (withApiExtras) {
         for (const key of ["indentation", "leadingComments", "outputFilename"]) {
             if (kase.api?.[key] !== undefined) options[key] = kase.api[key];
@@ -132,7 +146,7 @@ export async function runInProcess(side, kase, mode) {
         inputData.addInput(input);
     } else {
         const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
-        for (const s of kase.schemas) await input.addSource({ name: s.name, schema: s.text });
+        for (const s of kase.schemas) await input.addSource(s.uris === undefined ? { name: s.name, schema: s.text } : { name: s.name, schema: s.text, uris: s.uris });
         inputData.addInput(input);
     }
 
@@ -187,6 +201,7 @@ export function cliInvocation(kase) {
     if (kase.flags.alphabetizeProperties) args.push("--alphabetize-properties");
     if (kase.flags.allPropertiesOptional) args.push("--all-properties-optional");
     if (kase.cli?.quiet) args.push("--quiet");
+    if (kase.debug !== undefined && kase.debug.length > 0) args.push("--debug", kase.debug.join(","));
     if (kase.cli?.out !== undefined) args.push("--out", kase.cli.out);
     if (args.some((a) => a.includes("\0"))) return undefined;
     return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
@@ -194,6 +209,7 @@ export function cliInvocation(kase) {
 
 /** Whether a CLI run can reproduce the case at all (one sample per top-level for directories). */
 export function cliCompatible(kase) {
+    if (kase.src === "schema" && kase.schemas.length > 1) return false;
     if (kase.src === "json" && kase.topLevels.length > 1) {
         if (kase.topLevels.some((tl) => tl.samples.length !== 1)) return false;
         const names = kase.topLevels.map((tl) => tl.name);

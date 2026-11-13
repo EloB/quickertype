@@ -91,6 +91,13 @@ async function shrinkOptions() {
         });
     }
 
+    for (let i = (current.debug ?? []).length - 1; i >= 0; i--) {
+        await attempt((c) => {
+            c.debug.splice(i, 1);
+            return c;
+        });
+    }
+
     for (const part of ["api", "cli"]) {
         for (const key of Object.keys(current[part] ?? {})) {
             await attempt((c) => {
@@ -263,6 +270,13 @@ async function shrinkInputs() {
             }
         }
     } else {
+        for (let i = current.schemas.length - 1; i >= 1; i--) {
+            await attempt((c) => {
+                c.schemas.splice(i, 1);
+                return c;
+            });
+        }
+
         for (let i = 0; i < current.schemas.length; i++) {
             if (current.schemas[i].name !== "TopLevel") {
                 await attempt((c) => {

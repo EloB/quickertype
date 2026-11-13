@@ -279,6 +279,8 @@ function genShape(rng, depth, pool) {
         [depth > 0 ? 1.5 : 0, "map"],
         [depth > 0 ? 1.5 : 0, "union"],
         [depth > 1 ? 0.7 : 0, "tree"],
+        [depth > 0 ? 0.6 : 0, "collide"],
+        [depth > 1 ? 0.2 : 0, "deep"],
         [2.5, "enum"],
     ]);
     let shape;
@@ -339,6 +341,40 @@ function genShape(rng, depth, pool) {
                 depth: rng.range(1, 4),
             };
             break;
+        case "collide": {
+            // Keys that differ only in case and punctuation: the same name
+            // once styled, so naming has to make them unique.
+            const words = [rng.pick(COMMON_WORDS), rng.chance(0.6) ? rng.pick(COMMON_WORDS) : rng.pick(ACRONYMS)];
+            const variants = [
+                words.join("_"), words.join("-"), words.join(" "), words.join("."), words.join(""),
+                words[0] + capitalize(words[1]), words.map(capitalize).join(""), words.join("_").toUpperCase(),
+                `_${words.join("_")}`, `${words.join("_")}_`, words.map((w) => w.toUpperCase()).join(""),
+                `${words[0]}${words[1].toUpperCase()}`, `${words.join("")}1`, ` ${words.join(" ")}`, `$${words.join("")}`,
+            ];
+            const props = rng.sample(variants, rng.range(2, 6)).map((key) => ({
+                key,
+                shape: genShape(rng, depth - 1, pool),
+                presence: rng.weighted([[3, 1], [1, 0.5]]),
+                nullP: 0,
+            }));
+            shape = { k: "class", props };
+            break;
+        }
+        case "deep": {
+            // Long chains of nested arrays or single-property objects.
+            const levels = rng.range(5, 60);
+            let inner = genShape(rng, 0, pool);
+            const asArray = rng.chance(0.5);
+            const key = genKey(rng);
+            for (let i = 0; i < levels; i++) {
+                inner = asArray || rng.chance(0.1)
+                    ? { k: "array", item: inner, len: [1, 1] }
+                    : { k: "class", props: [{ key, shape: inner, presence: 1, nullP: 0 }] };
+            }
+
+            shape = inner;
+            break;
+        }
         case "enum":
             shape = genEnumShape(rng);
             break;
@@ -494,6 +530,27 @@ function sprinkleRefs(rng, node) {
     }
 }
 
+/** Valid text with unusual whitespace, or (mostly) text that is not JSON at all. */
+function oddText(rng, text) {
+    const cut = rng.int(text.length + 1);
+    const junk = ["NaN", "Infinity", "-", "01", "1.", ".5", "+1", "'x'", "undefined", "\u0000", "tru", "nul", "[", "]",
+        "{", "}", ":", ",", '"', "\\"];
+    const broken = ['{"a":1,}', "[1,]", "{a:1}", '{"a" 1}', "[1 2]", '"unterminated', '{"a":"\t"}', '{"\\x":1}', "1e",
+        "-01", "[-]", '{"a":01}'];
+    return rng.weighted([
+        [2, () => text.slice(0, cut)],
+        [1, () => `${text},`],
+        [1, () => `${text} ${text}`],
+        [1, () => `${text}\n${text}\n`],
+        [1, () => `﻿${text}`],
+        [1, () => `\r\n ${text.replace(/\n/g, "\r\n")}\t\r\n`],
+        [1, () => `${text.slice(0, cut)}/* comment */${text.slice(cut)}`],
+        [1, () => `${text.slice(0, cut)}${rng.pick(junk)}${text.slice(cut)}`],
+        [1, () => ""],
+        [1, () => rng.pick(broken)],
+    ])();
+}
+
 function genJsonTopLevels(rng, lang) {
     const pool = [];
     const n = rng.weighted([[7, 1], [2, 2], [1, 3]]);
@@ -530,7 +587,9 @@ function genJsonTopLevels(rng, lang) {
             if (rng.chance(0.03)) tree = inst(rng, genShape(rng, 1, pool), budget, escapes);
             if (rng.chance(0.08)) sprinkleRefs(rng, tree);
             const indent = rng.weighted([[5, undefined], [4, "  "], [1, "\t"]]);
-            samples.push(toText(tree, indent));
+            let text = toText(tree, indent);
+            if (rng.chance(0.03)) text = oddText(rng, text);
+            samples.push(text);
         }
 
         topLevels.push({ name, samples });
@@ -580,6 +639,22 @@ class SchemaGen {
         if (rng.chance(0.03)) entries.push([str("default"), this.anyValue(depth)]);
         if (rng.chance(0.03)) entries.push([str("examples"), arr([this.anyValue(depth)])]);
         if (rng.chance(0.03)) entries.push([str("nullable"), lit("true")]);
+        if (rng.chance(0.03)) {
+            // Keywords quicktype ignores.
+            const ignored = rng.pick([
+                [str("not"), obj([[str("type"), str("null")]])],
+                [str("if"), obj([])],
+                [str("readOnly"), lit("true")],
+                [str("deprecated"), lit("true")],
+                [str("$comment"), str("a comment")],
+                [str("uniqueItems"), lit("true")],
+                [str("multipleOf"), num("2")],
+                [str("propertyNames"), obj([[str("pattern"), str("^a")]])],
+                [str("contentMediaType"), str("text/plain")],
+            ]);
+            entries.push(ignored);
+        }
+
         return entries;
     }
 
@@ -652,6 +727,16 @@ class SchemaGen {
                     props.push([str(key), this.schema(depth - 1)]);
                 }
 
+                if (rng.chance(0.04) && props.length > 0) {
+                    // Draft 3: `required: true` on the property itself.
+                    const [, p] = rng.pick(props);
+                    if (p.t === "o") p.e.push([str("required"), lit(rng.chance(0.8) ? "true" : "false")]);
+                }
+
+                if (rng.chance(0.03) && props.length > 0) {
+                    e.push([str("qt-accessors"), obj(props.filter(() => rng.chance(0.5)).map(([k]) => [k, str(genKey(rng))]))]);
+                }
+
                 if (rng.chance(0.95)) e.push([str("properties"), obj(props)]);
                 if (rng.chance(0.6)) {
                     const required = props.filter(() => rng.chance(0.6)).map(([k]) => k);
@@ -693,6 +778,7 @@ class SchemaGen {
 
                 if (rng.chance(0.05)) e.push(this.typeOf(rng.pick(["object", "string", "number"])));
                 e.push([str(key), arr(cases)]);
+                if (key !== "allOf" && rng.chance(0.03)) e.push([str("qt-accessors"), arr(cases.map(() => str(genKey(rng))))]);
                 if (rng.chance(0.1)) e.push([str(key === "anyOf" ? "oneOf" : "anyOf"), arr([this.schema(depth - 1), this.schema(depth - 1)])]);
                 break;
             }
@@ -702,7 +788,7 @@ class SchemaGen {
                 const n = rng.weighted([[1, 1], [5, rng.range(2, 5)], [2, rng.range(5, 15)]]);
                 const values = [];
                 for (let i = 0; i < n; i++) values.push(schemaEnumValue(rng, valueKind));
-                e.push([str("enum"), arr(values)]);
+                e.push([str("enum"), arr(rng.chance(0.02) ? [] : values)]);
                 if (rng.chance(0.03)) e.push([str("qt-enum-values"), obj(values.filter((v) => v.t === "s").map((v) => [v, str(genKey(rng))]))]);
                 break;
             }
@@ -758,6 +844,13 @@ class SchemaGen {
             root = obj([[str("type"), str("object")], [str("properties"), obj(props)]]);
             if (rng.chance(0.5)) root.e.push([str("required"), arr(props.filter(() => rng.chance(0.5)).map(([k]) => k))]);
             if (rng.chance(0.3)) root.e.push([str("additionalProperties"), lit("false")]);
+            if (rng.chance(0.08) && props.length > 0) {
+                // A reference into the schema's own properties.
+                const [target] = rng.pick(props);
+                const pointer = JSON.parse(`"${target.raw}"`).replace(/~/g, "~0").replace(/\//g, "~1");
+                props.push([str(`${genKey(rng)}Ref`), obj([[str("$ref"), str(`#/properties/${encodeURIComponent(pointer)}`)]])]);
+            }
+
             this.decorate(root.e, depth);
         }
 
@@ -774,8 +867,23 @@ class SchemaGen {
 
 function genSchemas(rng) {
     const name = rng.weighted([[6, "TopLevel"], [3, capitalize(compoundName(rng))], [1, genKey(rng)]]);
-    const tree = new SchemaGen(rng).root();
-    return [{ name, text: toText(tree, rng.weighted([[3, "  "], [1, undefined], [1, "    "]])) }];
+    const gen = new SchemaGen(rng);
+    const tree = gen.root();
+    const text = toText(tree, rng.weighted([[3, "  "], [1, undefined], [1, "    "]]));
+    const schemas = [{ name, text }];
+    if (gen.definitions.length > 0 && rng.chance(0.12)) {
+        // More top-levels from the same document, by URI fragment (API runs only).
+        for (const def of rng.sample(gen.definitions, rng.range(1, 2))) {
+            const pointer = encodeURIComponent(def.replace(/~/g, "~0").replace(/\//g, "~1"));
+            schemas.push({
+                name: rng.chance(0.7) ? def : rng.pick([name, "TopLevel", genKey(rng)]),
+                text,
+                uris: [`#/${gen.defsKey}/${pointer}`],
+            });
+        }
+    }
+
+    return schemas;
 }
 
 // ---- Options -----------------------------------------------------------------
@@ -856,6 +964,13 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
     if (extraRng.chance(0.1)) kase.api.indentation = extraRng.pick(["\t", " ", "    ", "", "   "]);
     if (extraRng.chance(0.08)) kase.api.leadingComments = genLeadingComments(extraRng);
     if (extraRng.chance(0.15)) kase.api.outputFilename = extraRng.pick(["Foo.x", "out.ts", "my-file.go", "Model.java", "a.b.c", "x", "Top Level.swift"]);
+    kase.debug = [];
+    if (extraRng.chance(0.06)) {
+        const components = ["print-graph", "print-reconstitution", "print-gather-names", "print-transformations", "provenance"];
+        if (kind === "schema") components.push("print-schema-resolving");
+        kase.debug = extraRng.sample(components, extraRng.range(1, 2));
+    }
+
     kase.cli = {};
     if (extraRng.chance(0.3)) kase.cli.out = extraRng.pick(["out/Output", "out/model", "out/My-Types", "out/x.y"]);
     if (extraRng.chance(0.2)) kase.cli.quiet = true;

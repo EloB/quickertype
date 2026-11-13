@@ -12,7 +12,7 @@
 //   node xtask/fuzz/fuzz.mjs --replay FILE [--mode M]
 //                                              rerun a saved divergence or case file
 
-import { fork } from "node:child_process";
+import { execFileSync, fork } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -170,7 +170,14 @@ function progress() {
 
 await Promise.all(Array.from({ length: jobs }, (_, i) => startWorker(i)));
 progress();
-const summary = { reference, start, last: next - 1, cases: done, crashed, counts, diffs, seconds: (Date.now() - begun) / 1000 };
+const commit = (() => {
+    try {
+        return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
+    } catch {
+        return undefined;
+    }
+})();
+const summary = { reference, commit, start, last: next - 1, cases: done, crashed, counts, diffs, seconds: (Date.now() - begun) / 1000 };
 fs.writeFileSync(path.join(config.outDir, "summary.json"), `${JSON.stringify(summary, undefined, 1)}\n`);
 console.log(`\n${done} cases, seeds ${start}..${next - 1}, ${diffs.length} divergences (${crashed} worker crashes); summary: ${path.join(config.outDir, "summary.json")}`);
 process.exit(diffs.length > 0 ? 1 : 0);

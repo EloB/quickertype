@@ -16,6 +16,16 @@ const inferenceFlags = [
     "inferBooleanStrings", "combineClasses", "ignoreJsonRefs",
 ];
 
+/** The CLI's `--debug` components and the quicktype options they set. */
+const debugOptions = [
+    ["print-graph", "debugPrintGraph"],
+    ["print-reconstitution", "debugPrintReconstitution"],
+    ["print-gather-names", "debugPrintGatherNames"],
+    ["print-transformations", "debugPrintTransformations"],
+    ["print-schema-resolving", "debugPrintSchemaResolving"],
+    ["provenance", "checkProvenance"],
+];
+
 export function scenarios() {
     if (!fs.existsSync(casesDir)) return [];
     return fs
@@ -38,7 +48,7 @@ export function scenarios() {
                         inputData.addInput(input);
                     } else {
                         const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
-                        for (const s of kase.schemas) await input.addSource({ name: s.name, schema: s.text });
+                        for (const s of kase.schemas) await input.addSource(s.uris === undefined ? { name: s.name, schema: s.text } : { name: s.name, schema: s.text, uris: s.uris });
                         inputData.addInput(input);
                     }
 
@@ -51,6 +61,7 @@ export function scenarios() {
                         ...kase.api,
                     };
                     for (const flag of inferenceFlags) options[flag] = kase.flags[flag] !== false;
+                    for (const [component, name] of debugOptions) if (kase.debug?.includes(component)) options[name] = true;
                     return await qt.quicktypeMultiFile(options);
                 },
             };
