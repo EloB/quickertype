@@ -13,6 +13,7 @@ use crate::convenience_renderer::prelude::*;
 use crate::convenience_renderer::{ConvenienceRendererCore, ForbiddenWordsInfo};
 use crate::source::{MultiWord, multi_word, paren_if_needed, single_word};
 use crate::support::comments::CommentOptions;
+use crate::support::recursion::guard;
 use crate::support::strings::string_escape;
 use crate::target_language::TargetLanguage;
 use crate::ty::type_utils::{
@@ -62,45 +63,48 @@ impl<'a> PikeRenderer<'a> {
 
     /// `sourceFor(t)`: the Pike type of `t`.
     fn source_for(&self, t: TypeRef) -> Result<MultiWord> {
-        let graph = self.type_graph();
-        let ty = graph.type_at(t)?;
-        if matches!(
-            ty.kind(),
-            TypeKind::Class | TypeKind::Object | TypeKind::Enum
-        ) {
-            return Ok(single_word(vec![self.name_for_named_type(t)?.into()]));
-        }
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let ty = graph.type_at(t)?;
+            if matches!(
+                ty.kind(),
+                TypeKind::Class | TypeKind::Object | TypeKind::Enum
+            ) {
+                return Ok(single_word(vec![self.name_for_named_type(t)?.into()]));
+            }
 
-        Ok(match ty.kind() {
-            TypeKind::Any | TypeKind::Null => single_word(vec!["mixed".into()]),
-            TypeKind::Bool => single_word(vec!["bool".into()]),
-            TypeKind::Integer => single_word(vec!["int".into()]),
-            TypeKind::Double => single_word(vec!["float".into()]),
-            TypeKind::String => single_word(vec!["string".into()]),
-            TypeKind::Array => single_word(vec![sl![
-                "array(",
-                self.source_for(ty.items()?)?.source,
-                ")"
-            ]]),
-            TypeKind::Map => {
-                let value_source = self.source_for(ty.map_values()?)?.source;
-                single_word(vec![sl!["mapping(string:", value_source, ")"]])
-            }
-            TypeKind::Union => {
-                if nullable_from_union(graph, t)?.is_some() {
-                    // `unionType.getChildren()`: the members sorted by kind.
-                    let mut children = Vec::new();
-                    for c in graph.children(t)? {
-                        children.push(paren_if_needed(self.source_for(c)?));
-                    }
-                    return multi_word("|", children);
+            Ok(match ty.kind() {
+                TypeKind::Any | TypeKind::Null => single_word(vec!["mixed".into()]),
+                TypeKind::Bool => single_word(vec!["bool".into()]),
+                TypeKind::Integer => single_word(vec!["int".into()]),
+                TypeKind::Double => single_word(vec!["float".into()]),
+                TypeKind::String => single_word(vec!["string".into()]),
+                TypeKind::Array => single_word(vec![sl![
+                    "array(",
+                    self.source_for(ty.items()?)?.source,
+                    ")"
+                ]]),
+                TypeKind::Map => {
+                    let value_source = self.source_for(ty.map_values()?)?.source;
+                    single_word(vec![sl!["mapping(string:", value_source, ")"]])
                 }
-                single_word(vec![self.name_for_named_type(t)?.into()])
-            }
-            TypeKind::Intersection => {
-                return crate::support::support::panic("Unknown type intersection");
-            }
-            kind => return type_not_supported(kind),
+                TypeKind::Union => {
+                    if nullable_from_union(graph, t)?.is_some() {
+                        // `unionType.getChildren()`: the members sorted by kind.
+                        let mut children = Vec::new();
+                        for c in graph.children(t)? {
+                            children.push(paren_if_needed(self.source_for(c)?));
+                        }
+                        return multi_word("|", children);
+                    }
+                    single_word(vec![self.name_for_named_type(t)?.into()])
+                }
+                TypeKind::Intersection => {
+                    return crate::support::support::panic("Unknown type intersection");
+                }
+                kind => return type_not_supported(kind),
+            })
         })
     }
 

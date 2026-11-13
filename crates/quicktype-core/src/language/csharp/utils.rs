@@ -13,6 +13,7 @@ use crate::attributes::constraints::{min_max_length_for_type, min_max_value_for_
 use crate::messages::Result;
 use crate::naming::{Namer, fun_prefix_namer};
 use crate::source::Source;
+use crate::support::recursion::guard;
 use crate::support::strings::{
     WordInName, combine_words, first_upper_word_style, split_into_words, utf16_legalize_characters,
 };
@@ -50,48 +51,51 @@ pub enum TransformerNeed {
 /// `needTransformerForType(t)`: whether (and how) the C# converters must
 /// transform values of type `t`.
 pub fn need_transformer_for_type(graph: &TypeGraph, t: TypeRef) -> Result<TransformerNeed> {
-    let ty = graph.type_at(t)?;
-    if ty.is_union() {
-        let Some(nullable) = nullable_from_union(graph, t)? else {
-            return Ok(TransformerNeed::Automatic);
-        };
-        if need_transformer_for_type(graph, nullable)? == TransformerNeed::Manual {
-            return Ok(TransformerNeed::Nullable);
-        }
-        return Ok(TransformerNeed::None);
-    }
-
-    if ty.is_array() {
-        let items_need = need_transformer_for_type(graph, ty.items()?)?;
-        if matches!(
-            items_need,
-            TransformerNeed::Manual | TransformerNeed::Nullable
-        ) {
-            return Ok(TransformerNeed::Automatic);
-        }
-        return Ok(TransformerNeed::None);
-    }
-
-    if ty.is_enum() {
-        return Ok(TransformerNeed::Automatic);
-    }
-    Ok(match ty.kind() {
-        TypeKind::Double | TypeKind::Integer => {
-            if min_max_value_for_type(graph, t)?.is_some() {
-                TransformerNeed::Manual
-            } else {
-                TransformerNeed::None
+    // Endless on a cycle through a nullable union (V8 overflows its stack).
+    guard(|| {
+        let ty = graph.type_at(t)?;
+        if ty.is_union() {
+            let Some(nullable) = nullable_from_union(graph, t)? else {
+                return Ok(TransformerNeed::Automatic);
+            };
+            if need_transformer_for_type(graph, nullable)? == TransformerNeed::Manual {
+                return Ok(TransformerNeed::Nullable);
             }
+            return Ok(TransformerNeed::None);
         }
-        TypeKind::IntegerString | TypeKind::BoolString => TransformerNeed::Manual,
-        TypeKind::String => {
-            if min_max_length_for_type(graph, t)?.is_some() {
-                TransformerNeed::Manual
-            } else {
-                TransformerNeed::None
+
+        if ty.is_array() {
+            let items_need = need_transformer_for_type(graph, ty.items()?)?;
+            if matches!(
+                items_need,
+                TransformerNeed::Manual | TransformerNeed::Nullable
+            ) {
+                return Ok(TransformerNeed::Automatic);
             }
+            return Ok(TransformerNeed::None);
         }
-        _ => TransformerNeed::None,
+
+        if ty.is_enum() {
+            return Ok(TransformerNeed::Automatic);
+        }
+        Ok(match ty.kind() {
+            TypeKind::Double | TypeKind::Integer => {
+                if min_max_value_for_type(graph, t)?.is_some() {
+                    TransformerNeed::Manual
+                } else {
+                    TransformerNeed::None
+                }
+            }
+            TypeKind::IntegerString | TypeKind::BoolString => TransformerNeed::Manual,
+            TypeKind::String => {
+                if min_max_length_for_type(graph, t)?.is_some() {
+                    TransformerNeed::Manual
+                } else {
+                    TransformerNeed::None
+                }
+            }
+            _ => TransformerNeed::None,
+        })
     })
 }
 
@@ -221,4 +225,43 @@ pub fn is_value_type(graph: &TypeGraph, t: TypeRef) -> Result<bool> {
             | TypeKind::DateTime
             | TypeKind::Uuid
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::attributes::type_attributes::TypeAttributes;
+    use crate::messages::JsErrorName;
+    use crate::ty::type_builder::TypeBuilder;
+    use crate::ty::type_builder_utils::get_no_string_type_mapping;
+
+    /// `T = (T[] | null)`: TypeScript's `needTransformerForType` recurses
+    /// until V8's stack overflows.
+    #[test]
+    fn need_transformer_for_a_cyclic_nullable_union_is_a_range_error() {
+        let mut b =
+            TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+        let null = b
+            .get_primitive_type(TypeKind::Null, TypeAttributes::new(), None)
+            .unwrap();
+        let array = b
+            .get_unique_array_type(TypeAttributes::new(), None)
+            .unwrap();
+        let union = b
+            .get_unique_union_type(
+                TypeAttributes::new(),
+                Some([array, null].into_iter().collect()),
+                None,
+            )
+            .unwrap();
+        b.set_array_items(array, union).unwrap();
+        b.add_top_level("TopLevel", union).unwrap();
+        let graph = b.finish().unwrap();
+
+        let e = need_transformer_for_type(&graph, union).unwrap_err();
+        let js = e.as_js_exception().unwrap();
+        assert_eq!(js.name(), JsErrorName::RangeError);
+        assert_eq!(js.message(), "Maximum call stack size exceeded");
+        assert_eq!(crate::support::recursion::depth(), 0);
+    }
 }

@@ -10,6 +10,7 @@
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::prelude::*;
 use crate::renderer_options::RendererOptions;
+use crate::support::recursion::guard;
 use crate::support::support::assert;
 use crate::transformers::follow_target_type;
 use crate::ty::type_utils::{
@@ -271,50 +272,53 @@ pub trait CSharpRenderer<'a>: ConvenienceRenderer<'a> {
 
     /// `csType(t, follow, withIssues)`.
     fn cs_type(&self, t: TypeRef, follow: Follow, with_issues: bool) -> Result<Source> {
-        let graph = self.type_graph();
-        let actual_type = match follow {
-            Follow::Target => follow_target_type(graph, t)?,
-            Follow::None => t,
-        };
-        let ty = graph.type_at(actual_type)?;
-        let type_for_any = self.cs().options.type_for_any;
-        Ok(match ty.kind() {
-            TypeKind::Any => {
-                maybe_annotated(with_issues, any_type_issue_annotation(), type_for_any)
-            }
-            TypeKind::Null => {
-                maybe_annotated(with_issues, null_type_issue_annotation(), type_for_any)
-            }
-            TypeKind::Bool => "bool".into(),
-            TypeKind::Integer => "long".into(),
-            TypeKind::Double => self.double_type().into(),
-            TypeKind::String => "string".into(),
-            TypeKind::Array => {
-                let items_type = self.cs_type(ty.items()?, follow, with_issues)?;
-                if self.cs().options.use_list {
-                    sl!["List<", items_type, ">"]
-                } else {
-                    sl![items_type, "[]"]
+        // Endless on a cycle through a nullable union (V8 overflows its stack).
+        guard(|| {
+            let graph = self.type_graph();
+            let actual_type = match follow {
+                Follow::Target => follow_target_type(graph, t)?,
+                Follow::None => t,
+            };
+            let ty = graph.type_at(actual_type)?;
+            let type_for_any = self.cs().options.type_for_any;
+            Ok(match ty.kind() {
+                TypeKind::Any => {
+                    maybe_annotated(with_issues, any_type_issue_annotation(), type_for_any)
                 }
-            }
-            TypeKind::Class => self.name_for_named_type(actual_type)?.into(),
-            TypeKind::Map => sl![
-                "Dictionary<string, ",
-                self.cs_type(ty.map_values()?, follow, with_issues)?,
-                ">"
-            ],
-            TypeKind::Enum => self.name_for_named_type(actual_type)?.into(),
-            TypeKind::Union => match nullable_from_union(graph, actual_type)? {
-                Some(nullable) => self.nullable_cs_type(nullable, Follow::None, false)?,
-                None => self.name_for_named_type(actual_type)?.into(),
-            },
-            kind if kind.is_primitive_string_type_kind() => {
-                cs_type_for_transformed_string_type(kind)?
-            }
-            TypeKind::Intersection => {
-                return crate::support::support::panic("Unknown type intersection");
-            }
-            kind => return type_not_supported(kind),
+                TypeKind::Null => {
+                    maybe_annotated(with_issues, null_type_issue_annotation(), type_for_any)
+                }
+                TypeKind::Bool => "bool".into(),
+                TypeKind::Integer => "long".into(),
+                TypeKind::Double => self.double_type().into(),
+                TypeKind::String => "string".into(),
+                TypeKind::Array => {
+                    let items_type = self.cs_type(ty.items()?, follow, with_issues)?;
+                    if self.cs().options.use_list {
+                        sl!["List<", items_type, ">"]
+                    } else {
+                        sl![items_type, "[]"]
+                    }
+                }
+                TypeKind::Class => self.name_for_named_type(actual_type)?.into(),
+                TypeKind::Map => sl![
+                    "Dictionary<string, ",
+                    self.cs_type(ty.map_values()?, follow, with_issues)?,
+                    ">"
+                ],
+                TypeKind::Enum => self.name_for_named_type(actual_type)?.into(),
+                TypeKind::Union => match nullable_from_union(graph, actual_type)? {
+                    Some(nullable) => self.nullable_cs_type(nullable, Follow::None, false)?,
+                    None => self.name_for_named_type(actual_type)?.into(),
+                },
+                kind if kind.is_primitive_string_type_kind() => {
+                    cs_type_for_transformed_string_type(kind)?
+                }
+                TypeKind::Intersection => {
+                    return crate::support::support::panic("Unknown type intersection");
+                }
+                kind => return type_not_supported(kind),
+            })
         })
     }
 
