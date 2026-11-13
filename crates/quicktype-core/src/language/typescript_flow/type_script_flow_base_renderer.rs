@@ -94,7 +94,7 @@ impl TypeScriptFlowState {
 /// to [`JavaScriptRenderer`] by a blanket impl). Defaults are the bodies
 /// in [`typescript_flow_base_methods`] or, for methods this class does not
 /// override, in
-/// [`javascript_methods`](crate::language::javascript::java_script_renderer::javascript_methods).
+/// [`javascript_methods`].
 pub trait TypeScriptFlowBaseRenderer<'a>: ConvenienceRenderer<'a> {
     /// The fields of TS `TypeScriptFlowBaseRenderer`.
     fn ts_flow(&self) -> &TypeScriptFlowState;
