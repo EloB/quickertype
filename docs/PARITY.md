@@ -26,6 +26,10 @@ findings per area, with file and line references.
   against quicktype's own output snapshot (`OUTPUT_SNAPSHOT_DIR`).
 - **Self-check:** the corpus must pass 100% against the reference itself:
   `cargo xtask parity --strict --bin "node ../quicktype/dist/index.js"`.
+- **Live side by side:** `cargo xtask diff -- <quicktype args>` runs the
+  TypeScript CLI and ours on the same arguments in separate temp dirs and
+  compares exit code, stdout, stderr and files; `--each <dir>` repeats it
+  over many inputs. Use it for anything outside the corpus.
 - **JS API:** a differential suite (planned, `npm/`) runs the same API calls
   against npm `quicktype-core` and our WASM package and compares results.
 
