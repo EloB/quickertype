@@ -1,0 +1,11 @@
+# Fixed (language-specific) and free accessor names for enum cases, union
+# members and properties: Haskell appends the enum name to a fixed case
+# name (`[name, enumName]`), the others use the names as they are.
+input schema TopLevel {"type": "object", "properties": {"color": {"type": "string", "enum": ["red", "green", "blue"], "qt-accessors": {"red": {"haskell": "Fire", "php": "FIRE", "scala3": "Fire", "smithy4a": "Fire"}, "green": "grass", "blue": {"*": "ocean"}}}, "value": {"oneOf": [{"type": "boolean"}, {"type": "number"}], "qt-accessors": [{"haskell": "Presence", "scala3": "PresenceValue", "smithy4a": "P", "php": "presence"}, "amount"]}, "name": {"type": "string"}}, "qt-accessors": {"name": {"haskell": "theName", "php": "theName", "scala3": "theName", "smithy4a": "theName"}}, "required": ["color", "value", "name"]}
+pipeline {"lang": "haskell"}
+
+render haskell {}
+render scala3 {}
+render scala3 {"rendererOptions": {"framework": "upickle"}}
+render smithy4a {}
+render php {}

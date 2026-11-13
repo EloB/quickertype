@@ -1,0 +1,13 @@
+# The PHP renderer on JSON samples: maps of maps and lists of maps in the
+# converters and the immediately-invoked sample closures, optional and
+# nullable properties, heterogeneous lists, top-level lists of classes and
+# of primitives.
+input jsonsamples TopLevel ["{\"name\": \"x\", \"count\": 1, \"ratio\": 1.5, \"nested\": {\"a\": {\"k\": 1}, \"b\": {\"k\": 2}, \"c\": {\"k\": 3}, \"d\": {\"k\": 4}, \"e\": {\"k\": 5}, \"f\": {\"k\": 6}}, \"rows\": [[{\"x\": 1}], []], \"mixed\": [1, \"a\", [1], {\"z\": true}], \"maybe\": null, \"flags\": [true, false]}", "{\"name\": \"y\", \"count\": 2, \"ratio\": 3, \"nested\": {}, \"rows\": [], \"mixed\": [], \"maybe\": \"s\", \"extra\": {\"deep\": [{\"q\": 1.5}]}, \"flags\": []}"]
+input json People [{"first": "a", "age": 3}, {"first": "b"}]
+input json Numbers [1, 2.5]
+input json Answer 42
+pipeline {"lang": "php", "inferMaps": true}
+
+render php {}
+render php {"rendererOptions": {"with-set": true, "fast-get": true}}
+render php {"indentation": "\t"}

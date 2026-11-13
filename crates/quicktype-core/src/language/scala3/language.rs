@@ -49,8 +49,6 @@ pub const SCALA3_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Scala3TargetLanguage;
 
-// TODO(renderer): port the hooks Scala3TargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for Scala3TargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &SCALA3_LANGUAGE_CONFIG
@@ -83,4 +81,36 @@ impl TargetLanguage for Scala3TargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    /// `makeRenderer`: `--just-types` wins over whatever `--framework`
+    /// says.
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        renderer_options: &crate::renderer_options::RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        use super::scala3_renderer::{Framework, Scala3Options, Scala3Renderer};
+        use crate::convenience_renderer::render_with;
+        let options = Scala3Options::parse(renderer_options)?;
+        if options.just_types {
+            let renderer = Scala3Renderer::new(self, render_context, options);
+            return render_with(renderer, given_output_filename, alphabetize_properties);
+        }
+        match options.framework {
+            Framework::Upickle => {
+                let renderer =
+                    super::upickle_renderer::UpickleRenderer::new(self, render_context, options);
+                render_with(renderer, given_output_filename, alphabetize_properties)
+            }
+            Framework::Circe => {
+                let renderer =
+                    super::circe_renderer::CirceRenderer::new(self, render_context, options);
+                render_with(renderer, given_output_filename, alphabetize_properties)
+            }
+        }
+    }
 }

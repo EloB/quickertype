@@ -1,0 +1,20 @@
+# The PHP renderer on schema shapes: number, length, pattern and item
+# constraints in the validators, date-time and UUID members, unions with
+# class, enum, list, map and date-time members (JSON-side enum checks),
+# nested maps and lists in the converters and samples, property names that
+# need escaping, top-level primitives, primitive arrays and maps of
+# classes, and the options.
+input schema TopLevel {"type": "object", "description": "The top level.", "properties": {"id": {"type": "integer", "minimum": 1, "maximum": 100, "description": "An identifier."}, "ratio": {"type": "number", "minimum": 0.5, "maximum": 99.5}, "name": {"type": "string", "minLength": 2, "maxLength": 10, "pattern": "^[a-z~']+$", "description": "A name.\nOn two lines."}, "tags": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 5}, "matrix": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}}, "lookup": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": {"type": "integer"}}}, "listMap": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}, "when": {"type": "string", "format": "date-time"}, "uuid": {"type": "string", "format": "uuid"}, "choice": {"anyOf": [{"type": "integer"}, {"type": "string"}, {"$ref": "#/definitions/entry"}, {"type": "array", "items": {"type": "string"}}, {"type": "object", "additionalProperties": {"type": "number"}}, {"type": "boolean"}, {"type": "null"}]}, "pick": {"anyOf": [{"type": "number"}, {"enum": ["x", "y"]}, {"type": "string", "format": "date-time"}]}, "status": {"enum": ["open", "it's", "a\\b", "line\nbreak", "Ünï", "type", "_", ""]}, "?>weird\nname": {"type": "string"}, "this": {"type": "string"}, "_": {"type": "boolean"}, "a b": {"type": "string"}, "toString": {"type": "string"}, "a`b": {"type": "string"}, "anything": {}, "nothing": {"type": "null"}, "maybeList": {"anyOf": [{"type": "array", "items": {"type": "integer"}}, {"type": "null"}]}, "maybeMap": {"anyOf": [{"type": "object", "additionalProperties": {"type": "string"}}, {"type": "null"}]}, "optionalEntry": {"$ref": "#/definitions/entry"}, "entries": {"type": "array", "items": {"$ref": "#/definitions/entry"}}, "empty": {"type": "object", "properties": {}, "additionalProperties": false}}, "required": ["id", "ratio", "name", "tags", "matrix", "lookup", "listMap", "when", "uuid", "choice", "pick", "status", "?>weird\nname", "this", "_", "nothing", "entries", "empty", "a b", "toString"], "definitions": {"entry": {"type": "object", "description": "An entry.", "properties": {"value": {"type": "number", "description": "The value."}, "next": {"$ref": "#/definitions/entry"}}, "required": ["value"]}}}
+input schema Count {"type": "integer"}
+input schema Names {"type": "array", "items": {"type": "string"}}
+input schema Registry {"type": "object", "additionalProperties": {"$ref": "#/definitions/item"}, "definitions": {"item": {"type": "object", "properties": {"label": {"type": "string"}}, "required": ["label"]}}}
+input schema Scores {"type": "object", "additionalProperties": {"type": "number"}}
+input schema Either {"anyOf": [{"type": "integer"}, {"type": "string"}]}
+pipeline {"lang": "php"}
+
+render php {}
+render php {"rendererOptions": {"with-get": false, "with-set": true, "with-closing": true}}
+render php {"rendererOptions": {"fast-get": true, "acronym-style": "camel"}}
+render php {"rendererOptions": {"acronym-style": "lowerCase", "no-with-get": true}}
+render php {"leadingComments": ["Leading comment", {"lines": ["line one"]}], "alphabetize": true}
+render php {"rendererOptions": {"acronym-style": "bogus"}}

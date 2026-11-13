@@ -1,0 +1,78 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "health",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "health"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "ok",
+     "error"
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "haskell",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "{-# LANGUAGE StrictData #-}\n{-# LANGUAGE OverloadedStrings #-}\n\nmodule QuickType\n    ( TopLevel (..)\n    , Health (..)\n    , decodeTopLevel\n    ) where\n\nimport Data.Aeson\nimport Data.Aeson.Types (emptyObject)\nimport Data.ByteString.Lazy (ByteString)\nimport Data.HashMap.Strict (HashMap)\nimport Data.Text (Text)\n\ndata TopLevel = TopLevel\n    { healthTopLevel :: Health\n    } deriving (Show)\n\ndata Health\n    = OkHealth\n    | ErrorHealth\n    deriving (Show)\n\ndecodeTopLevel :: ByteString -> Maybe TopLevel\ndecodeTopLevel = decode\n\ninstance ToJSON TopLevel where\n    toJSON (TopLevel healthTopLevel) =\n        object $ foldMap (maybe [] pure)\n        [ Just $ \"health\" .= healthTopLevel\n        ]\n\ninstance FromJSON TopLevel where\n    parseJSON (Object v) = TopLevel\n        <$> v .: \"health\"\n\ninstance ToJSON Health where\n    toJSON OkHealth = \"ok\"\n    toJSON ErrorHealth = \"error\"\n\ninstance FromJSON Health where\n    parseJSON = withText \"Health\" parseText\n        where\n            parseText \"ok\" = return OkHealth\n            parseText \"error\" = return ErrorHealth\n",
+     "annotations": []
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "vitest-haskell-enum-case-naming"
+}

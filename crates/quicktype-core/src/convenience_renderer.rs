@@ -2336,7 +2336,8 @@ fn comment_line_escapes(delimiters: &[Option<&str>]) -> Vec<(&'static str, &'sta
 pub mod prelude {
     pub use super::{
         ConvenienceRenderer, ConvenienceRendererCore, ConvenienceRendererExt, ForbiddenWord,
-        ForbiddenWordsInfo, constant_proposer, defaults, render_with, type_not_supported,
+        ForbiddenWordsInfo, constant_proposer, defaults, match_type_unsupported, render_with,
+        type_not_supported,
     };
     pub use crate::forward_convenience_renderer_hooks;
     pub use crate::messages::Result;
@@ -2356,6 +2357,17 @@ pub mod prelude {
 /// `matchType` for a kind it has no case for.
 pub fn type_not_supported<T>(kind: TypeKind) -> Result<T> {
     panic(format!("Unsupported type {kind} in non-exhaustive match"))
+}
+
+/// The error of TS `matchType` for any kind it has no case for: an
+/// intersection reaches `matchTypeExhaustive`'s `Unknown type intersection`,
+/// every other kind (`none`, `object`, a transformed string kind without a
+/// case) is [`type_not_supported`].
+pub fn match_type_unsupported<T>(kind: TypeKind) -> Result<T> {
+    if kind == TypeKind::Intersection {
+        return panic("Unknown type intersection");
+    }
+    type_not_supported(kind)
 }
 
 /// A two-level family of renderers built with
@@ -2513,6 +2525,24 @@ mod family_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn match_type_errors_like_typescript() {
+        let message = |kind| {
+            match_type_unsupported::<()>(kind)
+                .unwrap_err()
+                .user_message()
+                .to_owned()
+        };
+        assert_eq!(
+            message(TypeKind::Intersection),
+            "Internal error: Unknown type intersection"
+        );
+        assert_eq!(
+            message(TypeKind::Object),
+            "Internal error: Unsupported type object in non-exhaustive match"
+        );
+    }
 
     #[test]
     fn split_description_like_typescript() {

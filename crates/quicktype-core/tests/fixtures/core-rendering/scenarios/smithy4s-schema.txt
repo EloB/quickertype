@@ -1,0 +1,13 @@
+# The Smithy4s renderer on schema features: descriptions on structures,
+# properties, enums and unions, enum values with spaces (the namer removes
+# only the first one), keyword and symbol property names, any and null
+# types, nullable unions, top-level maps and unions, recursive types and
+# empty structures.
+input schema TopLevel {"type": "object", "description": "The top level.\nSecond line.", "properties": {"plain": {"type": "string", "description": "A plain property."}, "described": {"type": "integer", "description": "Several\nlines."}, "color": {"enum": ["light red", "dark  blue", "green"], "description": "A colour."}, "case": {"type": "boolean"}, "val": {"type": "string"}, "a.b": {"type": "string"}, "x_": {"type": "number"}, "3d": {"type": "string"}, "anything": {}, "nothing": {"type": "null"}, "maybe": {"anyOf": [{"type": "string"}, {"type": "null"}]}, "maybeList": {"anyOf": [{"type": "array", "items": {"type": "integer"}}, {"type": "null"}]}, "union": {"description": "A union.", "anyOf": [{"type": "integer"}, {"type": "string"}, {"type": "array", "items": {"type": "string"}}, {"type": "object", "additionalProperties": {"type": "integer"}}, {"type": "null"}]}, "self": {"$ref": "#"}, "children": {"type": "array", "items": {"$ref": "#"}}, "lookup": {"type": "object", "additionalProperties": {"$ref": "#/definitions/entry"}}, "empty": {"type": "object", "properties": {}, "additionalProperties": false}, "when": {"type": "string", "format": "date-time"}}, "required": ["plain", "color", "case", "union", "lookup", "nothing"], "definitions": {"entry": {"type": "object", "description": "An entry.", "properties": {"value": {"type": "number"}}, "required": ["value"]}}}
+input schema Index {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}
+input schema Either {"anyOf": [{"type": "integer"}, {"$ref": "#/definitions/thing"}], "definitions": {"thing": {"type": "object", "properties": {"t": {"type": "string"}}}}}
+pipeline {"lang": "smithy4a"}
+
+render smithy4a {}
+render smithy4a {"rendererOptions": {"package": "org.acme", "just-types": "false"}}
+render smithy4a {"alphabetize": true}

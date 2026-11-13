@@ -1,0 +1,1062 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     },
+     "propertyDescriptions": [
+      [
+       "id",
+       [
+        "An identifier."
+       ]
+      ],
+      [
+       "name",
+       [
+        "A name.\nOn two lines."
+       ]
+      ]
+     ],
+     "description": [
+      "The top level."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "?>weird\nname",
+      1,
+      false
+     ],
+     [
+      "_",
+      2,
+      false
+     ],
+     [
+      "a b",
+      1,
+      false
+     ],
+     [
+      "a`b",
+      1,
+      true
+     ],
+     [
+      "anything",
+      3,
+      true
+     ],
+     [
+      "choice",
+      4,
+      false
+     ],
+     [
+      "empty",
+      12,
+      false
+     ],
+     [
+      "entries",
+      13,
+      false
+     ],
+     [
+      "id",
+      14,
+      false
+     ],
+     [
+      "listMap",
+      15,
+      false
+     ],
+     [
+      "lookup",
+      16,
+      false
+     ],
+     [
+      "matrix",
+      18,
+      false
+     ],
+     [
+      "maybeList",
+      20,
+      true
+     ],
+     [
+      "maybeMap",
+      22,
+      true
+     ],
+     [
+      "name",
+      24,
+      false
+     ],
+     [
+      "nothing",
+      11,
+      false
+     ],
+     [
+      "optionalEntry",
+      8,
+      true
+     ],
+     [
+      "pick",
+      25,
+      false
+     ],
+     [
+      "ratio",
+      28,
+      false
+     ],
+     [
+      "status",
+      29,
+      false
+     ],
+     [
+      "tags",
+      30,
+      false
+     ],
+     [
+      "this",
+      1,
+      false
+     ],
+     [
+      "toString",
+      1,
+      false
+     ],
+     [
+      "uuid",
+      31,
+      false
+     ],
+     [
+      "when",
+      26,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "?>weird\nname",
+       "a b",
+       "a`b",
+       "this",
+       "toString",
+       "Name",
+       "label",
+       "Either"
+      ],
+      "alts": [],
+      "d": 2
+     },
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "bool",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "_"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "any",
+    "a": {}
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "choice"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     10,
+     6,
+     5,
+     2,
+     11,
+     1
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Names"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entry"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "propertyDescriptions": [
+      [
+       "value",
+       [
+        "The value."
+       ]
+      ]
+     ],
+     "description": [
+      "An entry."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      7,
+      true
+     ],
+     [
+      "value",
+      9,
+      true
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {},
+    "members": [
+     8,
+     9
+    ]
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entry"
+      ],
+      "alts": [],
+      "d": 0
+     },
+     "propertyDescriptions": [
+      [
+       "value",
+       [
+        "The value."
+       ]
+      ]
+     ],
+     "description": [
+      "An entry."
+     ]
+    },
+    "fixed": true,
+    "props": [
+     [
+      "next",
+      8,
+      true
+     ],
+     [
+      "value",
+      9,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "double",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "value"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "integer",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Count"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    }
+   },
+   {
+    "k": "null",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "nothing"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "empty"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": true,
+    "props": [],
+    "add": null
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "entries"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 8
+   },
+   {
+    "k": "integer",
+    "a": {
+     "minMax": [
+      1,
+      100
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "id"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "listMap"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 5
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "lookup"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 17
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "lookup"
+      ],
+      "alts": [],
+      "d": 6
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 10
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 19
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "matrix"
+      ],
+      "alts": [],
+      "d": 5
+     }
+    },
+    "items": 9
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     21,
+     11
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeList"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "items": 10
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeMap"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     23,
+     11
+    ]
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "maybeMap"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 1
+   },
+   {
+    "k": "string",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "name"
+      ],
+      "alts": [],
+      "d": 3
+     },
+     "minMaxLength": [
+      2,
+      10
+     ],
+     "pattern": "^[a-z~']+$",
+     "stringTypes": {
+      "cases": null,
+      "tx": []
+     }
+    }
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pick"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    },
+    "members": [
+     9,
+     27,
+     26
+    ]
+   },
+   {
+    "k": "date-time",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "when"
+      ],
+      "alts": [],
+      "d": 2
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "pick"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "x",
+     "y"
+    ]
+   },
+   {
+    "k": "double",
+    "a": {
+     "minMax": [
+      0.5,
+      99.5
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "ratio"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "enum",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "status"
+      ],
+      "alts": [],
+      "d": 4
+     }
+    },
+    "cases": [
+     "open",
+     "it's",
+     "a\\b",
+     "line\nbreak",
+     "Ünï",
+     "type",
+     "_",
+     ""
+    ]
+   },
+   {
+    "k": "array",
+    "a": {
+     "minMaxItems": [
+      1,
+      5
+     ],
+     "names": {
+      "t": "regular",
+      "names": [
+       "tags"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    },
+    "items": 1
+   },
+   {
+    "k": "uuid",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "uuid"
+      ],
+      "alts": [],
+      "d": 3
+     }
+    }
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Registry"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 33
+   },
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "item"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "label",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "map",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Scores"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": false,
+    "props": [],
+    "add": 9
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "Either"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     10,
+     1
+    ]
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ],
+   [
+    "Count",
+    10
+   ],
+   [
+    "Names",
+    5
+   ],
+   [
+    "Registry",
+    32
+   ],
+   [
+    "Scores",
+    34
+   ],
+   [
+    "Either",
+    35
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport io.circe.syntax._\nimport io.circe._\nimport cats.syntax.functor._\n\n// If a union has a null in, then we'll need this too... \ntype NullValue = None.type\n\ntype Count = Long\ntype Names = List[String]\ngiven (using ev : String): Encoder[Seq[String]] = Encoder.encodeSeq[String]\ntype Registry = Map[String, Item]\n\ngiven (using ev : Item): Encoder[Map[String, Item]] = Encoder.encodeMap[String, Item]\ntype Scores = Map[String, Double]\n\ngiven (using ev : Double): Encoder[Map[String, Double]] = Encoder.encodeMap[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    val weirdName : String,\n    val empty : Boolean,\n    val `a b` : String,\n    val topLevelAB : Option[String] = None,\n    val anything : Option[Json] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[Json] = None,\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n)\n\nobject TopLevel:\n    given io.circe.derivation.Configuration =\n        io.circe.derivation.Configuration.default.withTransformMemberNames(\n            io.circe.derivation.renaming.replaceWith(\n                \"weirdName\" -> \"?>weird\\nname\",\n                \"empty\" -> \"_\",\n                \"topLevelAB\" -> \"a`b\",\n                \"toStringValue\" -> \"toString\"\n            )\n        )\n    given io.circe.Codec.AsObject[TopLevel] = io.circe.derivation.ConfiguredCodec.derived\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\ngiven Decoder[Choice] = {\n    List[Decoder[Choice]](\n        Decoder[String].widen,\n        Decoder[Boolean].widen,\n        Decoder[Long].widen,\n        Decoder[Seq[String]].widen,\n        Decoder[ChoiceEntry].widen,\n        Decoder[NullValue].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Choice] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Boolean => Encoder.encodeBoolean(enc1)\n    case enc2 : Long => Encoder.encodeLong(enc2)\n    case enc3 : Seq[String] => Encoder.encodeSeq[String].apply(enc3)\n    case enc4 : ChoiceEntry => Encoder.AsObject[ChoiceEntry].apply(enc4)\n    case enc5 : NullValue => Encoder.encodeNone(enc5)\n}\n\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n) derives Encoder.AsObject, Decoder\n\ntype Next = Double | EntryElement\ngiven Decoder[Next] = {\n    List[Decoder[Next]](\n        Decoder[Double].widen,\n        Decoder[EntryElement].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Next] = Encoder.instance {\n    case enc0 : Double => Encoder.encodeDouble(enc0)\n    case enc1 : EntryElement => Encoder.AsObject[EntryElement].apply(enc1)\n}\n\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n) derives Encoder.AsObject, Decoder\n\ntype PickUnion = java.time.Instant | Double | PickEnum\ngiven Decoder[PickUnion] = {\n    List[Decoder[PickUnion]](\n        Decoder[PickEnum].widen,\n        Decoder[Double].widen,\n        Decoder[java.time.Instant].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[PickUnion] = Encoder.instance {\n    case enc0 : PickEnum => summon[Encoder[PickEnum]].apply(enc0)\n    case enc1 : Double => Encoder.encodeDouble(enc1)\n    case enc2 : java.time.Instant => summon[Encoder[java.time.Instant]].apply(enc2)\n}\n\nenum PickEnum : \n    case X\n    case Y\n\ngiven Decoder[PickEnum] = Decoder.decodeString.emap {\n    case \"x\" => scala.Right(PickEnum.X)\n    case \"y\" => scala.Right(PickEnum.Y)\n    case other => scala.Left(\"invalid PickEnum: \" + other)\n}\ngiven Encoder[PickEnum] = Encoder.encodeString.contramap {\n    case PickEnum.X => \"x\"\n    case PickEnum.Y => \"y\"\n}\n\nenum Status : \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\ngiven Decoder[Status] = Decoder.decodeString.emap {\n    case \"open\" => scala.Right(Status.Open)\n    case \"it's\" => scala.Right(Status.ItS)\n    case \"a\\\\b\" => scala.Right(Status.AB)\n    case \"line\\nbreak\" => scala.Right(Status.LineBreak)\n    case \"Ünï\" => scala.Right(Status.Ünï)\n    case \"type\" => scala.Right(Status.Type)\n    case \"_\" => scala.Right(Status.Empty)\n    case \"\" => scala.Right(Status.Status)\n    case other => scala.Left(\"invalid Status: \" + other)\n}\ngiven Encoder[Status] = Encoder.encodeString.contramap {\n    case Status.Open => \"open\"\n    case Status.ItS => \"it's\"\n    case Status.AB => \"a\\\\b\"\n    case Status.LineBreak => \"line\\nbreak\"\n    case Status.Ünï => \"Ünï\"\n    case Status.Type => \"type\"\n    case Status.Empty => \"_\"\n    case Status.Status => \"\"\n}\n\ncase class Empty()  derives Encoder.AsObject, Decoder\n\ncase class Item (\n    val label : String\n) derives Encoder.AsObject, Decoder\n\ntype Either = Long | String\ngiven Decoder[Either] = {\n    List[Decoder[Either]](\n        Decoder[String].widen,\n        Decoder[Long].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Either] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Long => Encoder.encodeLong(enc1)\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       27,
+       26,
+       27,
+       30
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       49,
+       18,
+       49,
+       30
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "upickle"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\n// Custom pickler so that missing keys and JSON nulls both read as None,\n// and None is left out when writing (upickle's default for Option is a\n// JSON array).\nobject OptionPickler extends upickle.AttributeTagged:\n    import upickle.default.Writer\n    import upickle.default.Reader\n    override implicit def OptionWriter[T: Writer]: Writer[Option[T]] =\n        implicitly[Writer[T]].comap[Option[T]] {\n            case None => null.asInstanceOf[T]\n            case Some(x) => x\n        }\n\n    override implicit def OptionReader[T: Reader]: Reader[Option[T]] = {\n        new Reader.Delegate[Any, Option[T]](implicitly[Reader[T]].map(Some(_))){\n        override def visitNull(index: Int) = None\n        }\n    }\nend OptionPickler\n\n// If a union has a null in, then we'll need this too...\ntype NullValue = None.type\ngiven OptionPickler.ReadWriter[NullValue] = OptionPickler.readwriter[ujson.Value].bimap[NullValue](\n    _ => ujson.Null,\n    json => if json.isNull then None else throw new upickle.core.Abort(\"not null\")\n)\ngiven OptionPickler.ReadWriter[java.time.Instant] = OptionPickler.readwriter[ujson.Value].bimap(\n    value => ujson.Str(value.toString),\n    json => json match\n        case ujson.Str(value) => java.time.Instant.parse(value)\n        case other => throw new upickle.core.Abort(\"expected date-time, got \" + other)\n)\ngiven OptionPickler.ReadWriter[java.util.UUID] = OptionPickler.readwriter[String].bimap(\n    _.toString,\n    value =>\n        val uuid = java.util.UUID.fromString(value)\n        if uuid.toString.equalsIgnoreCase(value) then uuid else throw new upickle.core.Abort(\"invalid UUID\")\n)\n\nobject JsonExt:\n    val valueReader = OptionPickler.readwriter[ujson.Value]\n\n    // upickle's built-in primitive readers are lenient -- the numeric and\n    // boolean readers accept strings, and the string reader accepts\n    // numbers and booleans -- so untagged unions need strict readers to\n    // pick the right member.\n    val strictString: OptionPickler.Reader[String] = valueReader.map {\n        case ujson.Str(s) => s\n        case json => throw new upickle.core.Abort(\"expected string, got \" + json)\n    }\n    val strictLong: OptionPickler.Reader[Long] = valueReader.map {\n        case ujson.Num(n) if n.isWhole => n.toLong\n        case json => throw new upickle.core.Abort(\"expected integer, got \" + json)\n    }\n    val strictDouble: OptionPickler.Reader[Double] = valueReader.map {\n        case ujson.Num(n) => n\n        case json => throw new upickle.core.Abort(\"expected number, got \" + json)\n    }\n    val strictBoolean: OptionPickler.Reader[Boolean] = valueReader.map {\n        case ujson.Bool(b) => b\n        case json => throw new upickle.core.Abort(\"expected boolean, got \" + json)\n    }\n\n    def badMerge[T](r1: => OptionPickler.Reader[?], rest: OptionPickler.Reader[?]*): OptionPickler.Reader[T] = valueReader.map { json =>\n        var t: T | Null = null\n        val stack       = Vector.newBuilder[Throwable]\n        (r1 +: rest).foreach { reader =>\n            if t == null then\n            try\n                t = OptionPickler.read[T](json, trace = true)(using reader.asInstanceOf[OptionPickler.Reader[T]])\n            catch\n                case exc => stack += exc\n        }\n        if t != null then t.nn else throw new Exception(json.toString(), stack.result().headOption.getOrElse(null))\n    }\nend JsonExt\ngiven OptionPickler.Reader[Long] = JsonExt.strictLong\n\n\ntype Count = Long\ntype Names = List[String]\ntype Registry = Map[String, Item]\ntype Scores = Map[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    @upickle.implicits.key(\"?>weird\\nname\")\n    val weirdName : String,\n    @upickle.implicits.key(\"_\")\n    val empty : Boolean,\n    val `a b` : String,\n    @upickle.implicits.key(\"a`b\")\n    val topLevelAB : Option[String] = None,\n    val anything : Option[ujson.Value] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[ujson.Value],\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    @upickle.implicits.key(\"toString\")\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n) derives OptionPickler.ReadWriter\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\ngiven unionReaderChoice: OptionPickler.Reader[Choice] = JsonExt.badMerge[Choice](\n    JsonExt.strictString,\n    JsonExt.strictBoolean,\n    JsonExt.strictLong,\n    summon[OptionPickler.Reader[Seq[String]]],\n    summon[OptionPickler.Reader[ChoiceEntry]],\n    summon[OptionPickler.Reader[NullValue]],\n    )\n\ngiven unionWriterChoice: OptionPickler.Writer[Choice] = OptionPickler.writer[ujson.Value].comap[Choice]{ _v =>\n    (_v: @unchecked) match \n        case v: String => OptionPickler.writeJs[String](v)\n        case v: Boolean => OptionPickler.writeJs[Boolean](v)\n        case v: Long => OptionPickler.writeJs[Long](v)\n        case v: Seq[String] => OptionPickler.writeJs[Seq[String]](v)\n        case v: ChoiceEntry => OptionPickler.writeJs[ChoiceEntry](v)\n        case v: NullValue => OptionPickler.writeJs[NullValue](v)\n}\n\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n) derives OptionPickler.ReadWriter\n\ntype Next = Double | EntryElement\ngiven unionReaderNext: OptionPickler.Reader[Next] = JsonExt.badMerge[Next](\n    JsonExt.strictDouble,\n    summon[OptionPickler.Reader[EntryElement]],\n    )\n\ngiven unionWriterNext: OptionPickler.Writer[Next] = OptionPickler.writer[ujson.Value].comap[Next]{ _v =>\n    (_v: @unchecked) match \n        case v: Double => OptionPickler.writeJs[Double](v)\n        case v: EntryElement => OptionPickler.writeJs[EntryElement](v)\n}\n\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n) derives OptionPickler.ReadWriter\n\ntype PickUnion = java.time.Instant | Double | PickEnum\ngiven unionReaderPickUnion: OptionPickler.Reader[PickUnion] = JsonExt.badMerge[PickUnion](\n    summon[OptionPickler.Reader[PickEnum]],\n    JsonExt.strictDouble,\n    summon[OptionPickler.Reader[java.time.Instant]],\n    )\n\ngiven unionWriterPickUnion: OptionPickler.Writer[PickUnion] = OptionPickler.writer[ujson.Value].comap[PickUnion]{ _v =>\n    (_v: @unchecked) match \n        case v: PickEnum => OptionPickler.writeJs[PickEnum](v)\n        case v: Double => OptionPickler.writeJs[Double](v)\n        case v: java.time.Instant => OptionPickler.writeJs[java.time.Instant](v)\n}\n\nenum PickEnum : \n    case X\n    case Y\n\ngiven OptionPickler.ReadWriter[PickEnum] = OptionPickler.readwriter[String].bimap[PickEnum](\n    {\n        case PickEnum.X => \"x\"\n        case PickEnum.Y => \"y\"\n    },\n    {\n        case \"x\" => PickEnum.X\n        case \"y\" => PickEnum.Y\n        case other => throw new upickle.core.Abort(\"invalid PickEnum: \" + other)\n    }\n)\n\nenum Status : \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\ngiven OptionPickler.ReadWriter[Status] = OptionPickler.readwriter[String].bimap[Status](\n    {\n        case Status.Open => \"open\"\n        case Status.ItS => \"it's\"\n        case Status.AB => \"a\\\\b\"\n        case Status.LineBreak => \"line\\nbreak\"\n        case Status.Ünï => \"Ünï\"\n        case Status.Type => \"type\"\n        case Status.Empty => \"_\"\n        case Status.Status => \"\"\n    },\n    {\n        case \"open\" => Status.Open\n        case \"it's\" => Status.ItS\n        case \"a\\\\b\" => Status.AB\n        case \"line\\nbreak\" => Status.LineBreak\n        case \"Ünï\" => Status.Ünï\n        case \"type\" => Status.Type\n        case \"_\" => Status.Empty\n        case \"\" => Status.Status\n        case other => throw new upickle.core.Abort(\"invalid Status: \" + other)\n    }\n)\n\ncase class Empty()\n derives OptionPickler.ReadWriter\ncase class Item (\n    val label : String\n) derives OptionPickler.ReadWriter\n\ntype Either = Long | String\ngiven unionReaderEither: OptionPickler.Reader[Either] = JsonExt.badMerge[Either](\n    JsonExt.strictString,\n    JsonExt.strictLong,\n    )\n\ngiven unionWriterEither: OptionPickler.Writer[Either] = OptionPickler.writer[ujson.Value].comap[Either]{ _v =>\n    (_v: @unchecked) match \n        case v: String => OptionPickler.writeJs[String](v)\n        case v: Long => OptionPickler.writeJs[Long](v)\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       96,
+       26,
+       96,
+       37
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       118,
+       18,
+       118,
+       37
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\ntype Count = Long\ntype Names = List[String]\ntype Registry = Map[String, Item]\ntype Scores = Map[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    val weirdName : String,\n    val empty : Boolean,\n    val `a b` : String,\n    val topLevelAB : Option[String] = None,\n    val anything : Option[Any] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[Any] = None,\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n)\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n)\n\ntype Next = Double | EntryElement\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n)\n\ntype PickUnion = java.time.Instant | Double | PickEnum\nenum PickEnum :  \n    case X\n    case Y\n\n\nenum Status :  \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\n\ncase class Empty()\n\ncase class Item (\n    val label : String\n)\n\ntype Either = Long | String",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       15,
+       26,
+       15,
+       29
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       37,
+       18,
+       37,
+       29
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "just-types": true,
+    "framework": "upickle",
+    "package": "com.example"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package com.example\n\ntype Count = Long\ntype Names = List[String]\ntype Registry = Map[String, Item]\ntype Scores = Map[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    val weirdName : String,\n    val empty : Boolean,\n    val `a b` : String,\n    val topLevelAB : Option[String] = None,\n    val anything : Option[Any] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[Any],\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n)\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n)\n\ntype Next = Double | EntryElement\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n)\n\ntype PickUnion = java.time.Instant | Double | PickEnum\nenum PickEnum :  \n    case X\n    case Y\n\n\nenum Status :  \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\n\ncase class Empty()\n\ncase class Item (\n    val label : String\n)\n\ntype Either = Long | String",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       15,
+       26,
+       15,
+       29
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       37,
+       18,
+       37,
+       29
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "upickle"
+   },
+   "indentation": null,
+   "leadingComments": [
+    "A leading comment"
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// A leading comment\n\npackage quicktype\n\n// Custom pickler so that missing keys and JSON nulls both read as None,\n// and None is left out when writing (upickle's default for Option is a\n// JSON array).\nobject OptionPickler extends upickle.AttributeTagged:\n    import upickle.default.Writer\n    import upickle.default.Reader\n    override implicit def OptionWriter[T: Writer]: Writer[Option[T]] =\n        implicitly[Writer[T]].comap[Option[T]] {\n            case None => null.asInstanceOf[T]\n            case Some(x) => x\n        }\n\n    override implicit def OptionReader[T: Reader]: Reader[Option[T]] = {\n        new Reader.Delegate[Any, Option[T]](implicitly[Reader[T]].map(Some(_))){\n        override def visitNull(index: Int) = None\n        }\n    }\nend OptionPickler\n\n// If a union has a null in, then we'll need this too...\ntype NullValue = None.type\ngiven OptionPickler.ReadWriter[NullValue] = OptionPickler.readwriter[ujson.Value].bimap[NullValue](\n    _ => ujson.Null,\n    json => if json.isNull then None else throw new upickle.core.Abort(\"not null\")\n)\ngiven OptionPickler.ReadWriter[java.time.Instant] = OptionPickler.readwriter[ujson.Value].bimap(\n    value => ujson.Str(value.toString),\n    json => json match\n        case ujson.Str(value) => java.time.Instant.parse(value)\n        case other => throw new upickle.core.Abort(\"expected date-time, got \" + other)\n)\ngiven OptionPickler.ReadWriter[java.util.UUID] = OptionPickler.readwriter[String].bimap(\n    _.toString,\n    value =>\n        val uuid = java.util.UUID.fromString(value)\n        if uuid.toString.equalsIgnoreCase(value) then uuid else throw new upickle.core.Abort(\"invalid UUID\")\n)\n\nobject JsonExt:\n    val valueReader = OptionPickler.readwriter[ujson.Value]\n\n    // upickle's built-in primitive readers are lenient -- the numeric and\n    // boolean readers accept strings, and the string reader accepts\n    // numbers and booleans -- so untagged unions need strict readers to\n    // pick the right member.\n    val strictString: OptionPickler.Reader[String] = valueReader.map {\n        case ujson.Str(s) => s\n        case json => throw new upickle.core.Abort(\"expected string, got \" + json)\n    }\n    val strictLong: OptionPickler.Reader[Long] = valueReader.map {\n        case ujson.Num(n) if n.isWhole => n.toLong\n        case json => throw new upickle.core.Abort(\"expected integer, got \" + json)\n    }\n    val strictDouble: OptionPickler.Reader[Double] = valueReader.map {\n        case ujson.Num(n) => n\n        case json => throw new upickle.core.Abort(\"expected number, got \" + json)\n    }\n    val strictBoolean: OptionPickler.Reader[Boolean] = valueReader.map {\n        case ujson.Bool(b) => b\n        case json => throw new upickle.core.Abort(\"expected boolean, got \" + json)\n    }\n\n    def badMerge[T](r1: => OptionPickler.Reader[?], rest: OptionPickler.Reader[?]*): OptionPickler.Reader[T] = valueReader.map { json =>\n        var t: T | Null = null\n        val stack       = Vector.newBuilder[Throwable]\n        (r1 +: rest).foreach { reader =>\n            if t == null then\n            try\n                t = OptionPickler.read[T](json, trace = true)(using reader.asInstanceOf[OptionPickler.Reader[T]])\n            catch\n                case exc => stack += exc\n        }\n        if t != null then t.nn else throw new Exception(json.toString(), stack.result().headOption.getOrElse(null))\n    }\nend JsonExt\ngiven OptionPickler.Reader[Long] = JsonExt.strictLong\n\n\ntype Count = Long\ntype Names = List[String]\ntype Registry = Map[String, Item]\ntype Scores = Map[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    @upickle.implicits.key(\"?>weird\\nname\")\n    val weirdName : String,\n    @upickle.implicits.key(\"_\")\n    val empty : Boolean,\n    val `a b` : String,\n    @upickle.implicits.key(\"a`b\")\n    val topLevelAB : Option[String] = None,\n    val anything : Option[ujson.Value] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[ujson.Value],\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    @upickle.implicits.key(\"toString\")\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n) derives OptionPickler.ReadWriter\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\ngiven unionReaderChoice: OptionPickler.Reader[Choice] = JsonExt.badMerge[Choice](\n    JsonExt.strictString,\n    JsonExt.strictBoolean,\n    JsonExt.strictLong,\n    summon[OptionPickler.Reader[Seq[String]]],\n    summon[OptionPickler.Reader[ChoiceEntry]],\n    summon[OptionPickler.Reader[NullValue]],\n    )\n\ngiven unionWriterChoice: OptionPickler.Writer[Choice] = OptionPickler.writer[ujson.Value].comap[Choice]{ _v =>\n    (_v: @unchecked) match \n        case v: String => OptionPickler.writeJs[String](v)\n        case v: Boolean => OptionPickler.writeJs[Boolean](v)\n        case v: Long => OptionPickler.writeJs[Long](v)\n        case v: Seq[String] => OptionPickler.writeJs[Seq[String]](v)\n        case v: ChoiceEntry => OptionPickler.writeJs[ChoiceEntry](v)\n        case v: NullValue => OptionPickler.writeJs[NullValue](v)\n}\n\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n) derives OptionPickler.ReadWriter\n\ntype Next = Double | EntryElement\ngiven unionReaderNext: OptionPickler.Reader[Next] = JsonExt.badMerge[Next](\n    JsonExt.strictDouble,\n    summon[OptionPickler.Reader[EntryElement]],\n    )\n\ngiven unionWriterNext: OptionPickler.Writer[Next] = OptionPickler.writer[ujson.Value].comap[Next]{ _v =>\n    (_v: @unchecked) match \n        case v: Double => OptionPickler.writeJs[Double](v)\n        case v: EntryElement => OptionPickler.writeJs[EntryElement](v)\n}\n\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n) derives OptionPickler.ReadWriter\n\ntype PickUnion = java.time.Instant | Double | PickEnum\ngiven unionReaderPickUnion: OptionPickler.Reader[PickUnion] = JsonExt.badMerge[PickUnion](\n    summon[OptionPickler.Reader[PickEnum]],\n    JsonExt.strictDouble,\n    summon[OptionPickler.Reader[java.time.Instant]],\n    )\n\ngiven unionWriterPickUnion: OptionPickler.Writer[PickUnion] = OptionPickler.writer[ujson.Value].comap[PickUnion]{ _v =>\n    (_v: @unchecked) match \n        case v: PickEnum => OptionPickler.writeJs[PickEnum](v)\n        case v: Double => OptionPickler.writeJs[Double](v)\n        case v: java.time.Instant => OptionPickler.writeJs[java.time.Instant](v)\n}\n\nenum PickEnum : \n    case X\n    case Y\n\ngiven OptionPickler.ReadWriter[PickEnum] = OptionPickler.readwriter[String].bimap[PickEnum](\n    {\n        case PickEnum.X => \"x\"\n        case PickEnum.Y => \"y\"\n    },\n    {\n        case \"x\" => PickEnum.X\n        case \"y\" => PickEnum.Y\n        case other => throw new upickle.core.Abort(\"invalid PickEnum: \" + other)\n    }\n)\n\nenum Status : \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\ngiven OptionPickler.ReadWriter[Status] = OptionPickler.readwriter[String].bimap[Status](\n    {\n        case Status.Open => \"open\"\n        case Status.ItS => \"it's\"\n        case Status.AB => \"a\\\\b\"\n        case Status.LineBreak => \"line\\nbreak\"\n        case Status.Ünï => \"Ünï\"\n        case Status.Type => \"type\"\n        case Status.Empty => \"_\"\n        case Status.Status => \"\"\n    },\n    {\n        case \"open\" => Status.Open\n        case \"it's\" => Status.ItS\n        case \"a\\\\b\" => Status.AB\n        case \"line\\nbreak\" => Status.LineBreak\n        case \"Ünï\" => Status.Ünï\n        case \"type\" => Status.Type\n        case \"_\" => Status.Empty\n        case \"\" => Status.Status\n        case other => throw new upickle.core.Abort(\"invalid Status: \" + other)\n    }\n)\n\ncase class Empty()\n derives OptionPickler.ReadWriter\ncase class Item (\n    val label : String\n) derives OptionPickler.ReadWriter\n\ntype Either = Long | String\ngiven unionReaderEither: OptionPickler.Reader[Either] = JsonExt.badMerge[Either](\n    JsonExt.strictString,\n    JsonExt.strictLong,\n    )\n\ngiven unionWriterEither: OptionPickler.Writer[Either] = OptionPickler.writer[ujson.Value].comap[Either]{ _v =>\n    (_v: @unchecked) match \n        case v: String => OptionPickler.writeJs[String](v)\n        case v: Long => OptionPickler.writeJs[Long](v)\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       98,
+       26,
+       98,
+       37
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       120,
+       18,
+       120,
+       37
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": [
+    {
+     "lines": [
+      "one",
+      "two"
+     ]
+    }
+   ],
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "// one\n// two\n\npackage quicktype\n\nimport io.circe.syntax._\nimport io.circe._\nimport cats.syntax.functor._\n\n// If a union has a null in, then we'll need this too... \ntype NullValue = None.type\n\ntype Count = Long\ntype Names = List[String]\ngiven (using ev : String): Encoder[Seq[String]] = Encoder.encodeSeq[String]\ntype Registry = Map[String, Item]\n\ngiven (using ev : Item): Encoder[Map[String, Item]] = Encoder.encodeMap[String, Item]\ntype Scores = Map[String, Double]\n\ngiven (using ev : Double): Encoder[Map[String, Double]] = Encoder.encodeMap[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    val weirdName : String,\n    val empty : Boolean,\n    val `a b` : String,\n    val topLevelAB : Option[String] = None,\n    val anything : Option[Json] = None,\n    val choice : Choice,\n    val empty : Empty,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[Json] = None,\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val `this` : String,\n    val toStringValue : String,\n    val uuid : java.util.UUID,\n    val when : java.time.Instant\n)\n\nobject TopLevel:\n    given io.circe.derivation.Configuration =\n        io.circe.derivation.Configuration.default.withTransformMemberNames(\n            io.circe.derivation.renaming.replaceWith(\n                \"weirdName\" -> \"?>weird\\nname\",\n                \"empty\" -> \"_\",\n                \"topLevelAB\" -> \"a`b\",\n                \"toStringValue\" -> \"toString\"\n            )\n        )\n    given io.circe.Codec.AsObject[TopLevel] = io.circe.derivation.ConfiguredCodec.derived\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\ngiven Decoder[Choice] = {\n    List[Decoder[Choice]](\n        Decoder[String].widen,\n        Decoder[Boolean].widen,\n        Decoder[Long].widen,\n        Decoder[Seq[String]].widen,\n        Decoder[ChoiceEntry].widen,\n        Decoder[NullValue].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Choice] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Boolean => Encoder.encodeBoolean(enc1)\n    case enc2 : Long => Encoder.encodeLong(enc2)\n    case enc3 : Seq[String] => Encoder.encodeSeq[String].apply(enc3)\n    case enc4 : ChoiceEntry => Encoder.AsObject[ChoiceEntry].apply(enc4)\n    case enc5 : NullValue => Encoder.encodeNone(enc5)\n}\n\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n) derives Encoder.AsObject, Decoder\n\ntype Next = Double | EntryElement\ngiven Decoder[Next] = {\n    List[Decoder[Next]](\n        Decoder[Double].widen,\n        Decoder[EntryElement].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Next] = Encoder.instance {\n    case enc0 : Double => Encoder.encodeDouble(enc0)\n    case enc1 : EntryElement => Encoder.AsObject[EntryElement].apply(enc1)\n}\n\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n) derives Encoder.AsObject, Decoder\n\ntype PickUnion = java.time.Instant | Double | PickEnum\ngiven Decoder[PickUnion] = {\n    List[Decoder[PickUnion]](\n        Decoder[PickEnum].widen,\n        Decoder[Double].widen,\n        Decoder[java.time.Instant].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[PickUnion] = Encoder.instance {\n    case enc0 : PickEnum => summon[Encoder[PickEnum]].apply(enc0)\n    case enc1 : Double => Encoder.encodeDouble(enc1)\n    case enc2 : java.time.Instant => summon[Encoder[java.time.Instant]].apply(enc2)\n}\n\nenum PickEnum : \n    case X\n    case Y\n\ngiven Decoder[PickEnum] = Decoder.decodeString.emap {\n    case \"x\" => scala.Right(PickEnum.X)\n    case \"y\" => scala.Right(PickEnum.Y)\n    case other => scala.Left(\"invalid PickEnum: \" + other)\n}\ngiven Encoder[PickEnum] = Encoder.encodeString.contramap {\n    case PickEnum.X => \"x\"\n    case PickEnum.Y => \"y\"\n}\n\nenum Status : \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\ngiven Decoder[Status] = Decoder.decodeString.emap {\n    case \"open\" => scala.Right(Status.Open)\n    case \"it's\" => scala.Right(Status.ItS)\n    case \"a\\\\b\" => scala.Right(Status.AB)\n    case \"line\\nbreak\" => scala.Right(Status.LineBreak)\n    case \"Ünï\" => scala.Right(Status.Ünï)\n    case \"type\" => scala.Right(Status.Type)\n    case \"_\" => scala.Right(Status.Empty)\n    case \"\" => scala.Right(Status.Status)\n    case other => scala.Left(\"invalid Status: \" + other)\n}\ngiven Encoder[Status] = Encoder.encodeString.contramap {\n    case Status.Open => \"open\"\n    case Status.ItS => \"it's\"\n    case Status.AB => \"a\\\\b\"\n    case Status.LineBreak => \"line\\nbreak\"\n    case Status.Ünï => \"Ünï\"\n    case Status.Type => \"type\"\n    case Status.Empty => \"_\"\n    case Status.Status => \"\"\n}\n\ncase class Empty()  derives Encoder.AsObject, Decoder\n\ncase class Item (\n    val label : String\n) derives Encoder.AsObject, Decoder\n\ntype Either = Long | String\ngiven Decoder[Either] = {\n    List[Decoder[Either]](\n        Decoder[String].widen,\n        Decoder[Long].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Either] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Long => Encoder.encodeLong(enc1)\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       30,
+       26,
+       30,
+       30
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       52,
+       18,
+       52,
+       30
+      ]
+     ]
+    }
+   ],
+   "console": []
+  },
+  {
+   "lang": "scala3",
+   "filename": "out.txt",
+   "alphabetize": true,
+   "rendererOptions": {
+    "framework": "circe"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "files": [
+    {
+     "name": "out.txt",
+     "text": "package quicktype\n\nimport io.circe.syntax._\nimport io.circe._\nimport cats.syntax.functor._\n\n// If a union has a null in, then we'll need this too... \ntype NullValue = None.type\n\ntype Count = Long\ntype Names = List[String]\ngiven (using ev : String): Encoder[Seq[String]] = Encoder.encodeSeq[String]\ntype Registry = Map[String, Item]\n\ngiven (using ev : Item): Encoder[Map[String, Item]] = Encoder.encodeMap[String, Item]\ntype Scores = Map[String, Double]\n\ngiven (using ev : Double): Encoder[Map[String, Double]] = Encoder.encodeMap[String, Double]\n\n/**\n * The top level.\n */\ncase class TopLevel (\n    val `a b` : String,\n    val anything : Option[Json] = None,\n    val choice : Choice,\n    val empty : Boolean,\n    val entries : Seq[EntryElement],\n\n    /**\n     * An identifier.\n     */\n    val id : Long,\n\n    val listMap : Map[String, Seq[String]],\n    val lookup : Map[String, Map[String, Long]],\n    val matrix : Seq[Seq[Double]],\n    val maybeList : Option[Seq[Long]] = None,\n    val maybeMap : Option[Map[String, String]] = None,\n\n    /**\n     * A name.\n     * On two lines.\n     */\n    val name : String,\n\n    val nothing : Option[Json] = None,\n    val optionalEntry : Option[EntryElement] = None,\n    val pick : PickUnion,\n    val ratio : Double,\n    val status : Status,\n    val tags : Seq[String],\n    val toStringValue : String,\n    val topLevelAB : Option[String] = None,\n    val empty : Empty,\n    val `this` : String,\n    val uuid : java.util.UUID,\n    val weirdName : String,\n    val when : java.time.Instant\n)\n\nobject TopLevel:\n    given io.circe.derivation.Configuration =\n        io.circe.derivation.Configuration.default.withTransformMemberNames(\n            io.circe.derivation.renaming.replaceWith(\n                \"empty\" -> \"_\",\n                \"toStringValue\" -> \"toString\",\n                \"topLevelAB\" -> \"a`b\",\n                \"weirdName\" -> \"?>weird\\nname\"\n            )\n        )\n    given io.circe.Codec.AsObject[TopLevel] = io.circe.derivation.ConfiguredCodec.derived\n\ntype Choice = Boolean | ChoiceEntry | Long | Seq[String] | String | NullValue\ngiven Decoder[Choice] = {\n    List[Decoder[Choice]](\n        Decoder[String].widen,\n        Decoder[Boolean].widen,\n        Decoder[Long].widen,\n        Decoder[Seq[String]].widen,\n        Decoder[ChoiceEntry].widen,\n        Decoder[NullValue].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Choice] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Boolean => Encoder.encodeBoolean(enc1)\n    case enc2 : Long => Encoder.encodeLong(enc2)\n    case enc3 : Seq[String] => Encoder.encodeSeq[String].apply(enc3)\n    case enc4 : ChoiceEntry => Encoder.AsObject[ChoiceEntry].apply(enc4)\n    case enc5 : NullValue => Encoder.encodeNone(enc5)\n}\n\n/**\n * An entry.\n */\ncase class ChoiceEntry (\n    val next : Option[Next] = None,\n\n    /**\n     * The value.\n     */\n    val value : Option[Double] = None\n) derives Encoder.AsObject, Decoder\n\ntype Next = Double | EntryElement\ngiven Decoder[Next] = {\n    List[Decoder[Next]](\n        Decoder[Double].widen,\n        Decoder[EntryElement].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Next] = Encoder.instance {\n    case enc0 : Double => Encoder.encodeDouble(enc0)\n    case enc1 : EntryElement => Encoder.AsObject[EntryElement].apply(enc1)\n}\n\n/**\n * An entry.\n */\ncase class EntryElement (\n    val next : Option[EntryElement] = None,\n\n    /**\n     * The value.\n     */\n    val value : Double\n) derives Encoder.AsObject, Decoder\n\ntype PickUnion = java.time.Instant | Double | PickEnum\ngiven Decoder[PickUnion] = {\n    List[Decoder[PickUnion]](\n        Decoder[PickEnum].widen,\n        Decoder[Double].widen,\n        Decoder[java.time.Instant].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[PickUnion] = Encoder.instance {\n    case enc0 : PickEnum => summon[Encoder[PickEnum]].apply(enc0)\n    case enc1 : Double => Encoder.encodeDouble(enc1)\n    case enc2 : java.time.Instant => summon[Encoder[java.time.Instant]].apply(enc2)\n}\n\nenum PickEnum : \n    case X\n    case Y\n\ngiven Decoder[PickEnum] = Decoder.decodeString.emap {\n    case \"x\" => scala.Right(PickEnum.X)\n    case \"y\" => scala.Right(PickEnum.Y)\n    case other => scala.Left(\"invalid PickEnum: \" + other)\n}\ngiven Encoder[PickEnum] = Encoder.encodeString.contramap {\n    case PickEnum.X => \"x\"\n    case PickEnum.Y => \"y\"\n}\n\nenum Status : \n    case Open\n    case ItS\n    case AB\n    case LineBreak\n    case Ünï\n    case Type\n    case Empty\n    case Status\n\ngiven Decoder[Status] = Decoder.decodeString.emap {\n    case \"open\" => scala.Right(Status.Open)\n    case \"it's\" => scala.Right(Status.ItS)\n    case \"a\\\\b\" => scala.Right(Status.AB)\n    case \"line\\nbreak\" => scala.Right(Status.LineBreak)\n    case \"Ünï\" => scala.Right(Status.Ünï)\n    case \"type\" => scala.Right(Status.Type)\n    case \"_\" => scala.Right(Status.Empty)\n    case \"\" => scala.Right(Status.Status)\n    case other => scala.Left(\"invalid Status: \" + other)\n}\ngiven Encoder[Status] = Encoder.encodeString.contramap {\n    case Status.Open => \"open\"\n    case Status.ItS => \"it's\"\n    case Status.AB => \"a\\\\b\"\n    case Status.LineBreak => \"line\\nbreak\"\n    case Status.Ünï => \"Ünï\"\n    case Status.Type => \"type\"\n    case Status.Empty => \"_\"\n    case Status.Status => \"\"\n}\n\ncase class Empty()  derives Encoder.AsObject, Decoder\n\ncase class Item (\n    val label : String\n) derives Encoder.AsObject, Decoder\n\ntype Either = Long | String\ngiven Decoder[Either] = {\n    List[Decoder[Either]](\n        Decoder[String].widen,\n        Decoder[Long].widen,\n    ).reduceLeft(_ or _)\n}\n\ngiven Encoder[Either] = Encoder.instance {\n    case enc0 : String => Encoder.encodeString(enc0)\n    case enc1 : Long => Encoder.encodeLong(enc1)\n}\n",
+     "annotations": [
+      [
+       "quicktype cannot infer this type because there is no data about it in the input.",
+       24,
+       26,
+       24,
+       30
+      ],
+      [
+       "The only value for this in the input is null, which means you probably need a more complete input sample.",
+       46,
+       18,
+       46,
+       30
+      ]
+     ]
+    }
+   ],
+   "console": []
+  }
+ ],
+ "id": "scala3-shapes"
+}

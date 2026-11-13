@@ -1,0 +1,6 @@
+# Port of quicktype's test/unit/php-unions.test.ts, "reserved words are not
+# used as class names".
+input jsonsamples TopLevel ["{\"mixed\": {\"a\": 1}}"]
+pipeline {"lang": "php"}
+
+render php {}
