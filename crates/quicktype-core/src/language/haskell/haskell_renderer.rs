@@ -250,16 +250,12 @@ impl<'a> HaskellRenderer<'a> {
 
     /// `enumCaseName(name, enumName)`: the name itself if it is a
     /// `DependencyName` (which already ends in the enum's name), else
-    /// `[name, enumName]`.
-    ///
-    /// [`make_name_for_enum_case`](ConvenienceRenderer::make_name_for_enum_case)
-    /// always makes a dependency name; the only other enum case names are
-    /// the fixed names of `qt-accessors`.
+    /// `[name, enumName]` (the fixed names of `qt-accessors`).
     fn enum_case_name(&self, name: Name, enum_name: Name) -> Source {
-        if self.naming().is_fixed(name) {
-            sl![name, enum_name]
-        } else {
+        if self.naming().is_dependency_name(name) {
             name.into()
+        } else {
+            sl![name, enum_name]
         }
     }
 
