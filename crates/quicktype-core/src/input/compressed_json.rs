@@ -39,18 +39,22 @@ use std::io::Read;
 use std::rc::Rc;
 
 use hashbrown::HashTable;
-use quicktype_js_compat::json::{self, JsonValue};
+use quicktype_js_compat::json::JsonValue;
 use quicktype_js_compat::utf16;
 
 use crate::attributes::string_types::infer_transformed_string_type_kind_for_string;
 use crate::date_time::DateTimeRecognizer;
-use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
+use crate::messages::{JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
 use crate::support::fast_hash::{BuildHasher, HashMap};
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
+
+mod from_string;
+
+pub use from_string::{Decline, ReadStringError, StringSampleLimits};
 
 /// One JSON value in compressed form (TS `Value`, a tag plus an index).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -180,6 +184,8 @@ pub struct CompressedJson {
     /// Emptied buffers of finished objects and arrays, for the next ones.
     spare_objects: Vec<Vec<(Value, Value)>>,
     spare_arrays: Vec<Vec<Value>>,
+    /// What [`parse_string`](Self::parse_string) keeps between samples.
+    string_reader: from_string::StringReaderState,
 }
 
 /// The number of items a block of [`Runs`] or [`Strings`] holds at least.
@@ -420,6 +426,7 @@ impl CompressedJson {
             arrays: Runs::new(),
             spare_objects: Vec::new(),
             spare_arrays: Vec::new(),
+            string_reader: from_string::StringReaderState::default(),
         }
     }
 
@@ -604,7 +611,11 @@ impl CompressedJson {
                     Value::TransformedString(self.intern_string(s))
                 }
                 Some(kind) => Value::StringFormat(kind),
-                None if utf16::len(s) <= 64 => self.make_string(s),
+                // At most 64 UTF-16 code units (each of 1 to 3 UTF-8
+                // bytes, or 4 bytes for a pair).
+                None if s.len() <= 64 || (s.len() <= 192 && utf16::len(s) <= 64) => {
+                    self.make_string(s)
+                }
                 None => Value::UninternedString,
             }
         };
@@ -653,6 +664,11 @@ impl CompressedJson {
     /// `setPropertyKey(key)`: the key of the next value in the object.
     pub fn set_property_key(&mut self, key: &str) -> Result<()> {
         let key = self.intern_string(key);
+        self.set_property_key_index(key)
+    }
+
+    /// `setPropertyKey(key)` for a key interned already.
+    fn set_property_key_index(&mut self, key: u32) -> Result<()> {
         self.context()?.current_key = Some(key);
         Ok(())
     }
@@ -714,7 +730,9 @@ impl CompressedJson {
     }
 
     /// `CompressedJSONFromString.parseSync(input)`: `JSON.parse`, then
-    /// `process` the value in `Object.getOwnPropertyNames` order.
+    /// `process` the value in `Object.getOwnPropertyNames` order, read in
+    /// one pass over the text and committed without building the value
+    /// (see [`read_string_sample`](Self::read_string_sample)).
     ///
     /// ```
     /// use quicktype_core::date_time::DefaultDateTimeRecognizer;
@@ -732,13 +750,15 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_string(&mut self, text: &str) -> Result<Value, ParseError> {
-        let json = json::parse(text)
-            .map_err(|e| ParseError::Js(JsException::new(JsErrorName::SyntaxError, e.message())))?;
-        let result = self.process(&json).and_then(|()| self.finish());
-        if result.is_err() {
-            self.reset_partial_sample();
+        match self.read_string_sample(text, StringSampleLimits::default()) {
+            Ok(value) => Ok(value),
+            Err(ReadStringError::Parse(e)) => Err(e),
+            Err(ReadStringError::Declined(decline)) => {
+                Err(ParseError::Quicktype(QuickTypeError::internal(format!(
+                    "A sample without limits was declined: {decline:?}"
+                ))))
+            }
         }
-        Ok(result?)
     }
 
     /// `process(json)`, iteratively.
