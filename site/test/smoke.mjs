@@ -20,12 +20,19 @@
 // the option does nothing; that the general options are labelled as in the
 // CLI's --help, and that a section the user closed stays closed; that the
 // command is shown whole, wrapped, and copied as one line; that the footer
-// links the quicktype commit in tests/golden/REFERENCE; that compare mode reports identical output with each engine in its own
-// worker; that invalid JSON shows quicktype's error; that the input survives
-// a reload (localStorage); and that 360 px and 390 px widths do not scroll
-// sideways. And three things that once went wrong: the code shown after a
-// slow run during which compare mode was turned off; a measurement asked for
-// while a run is under way; and a worker failing after it loaded.
+// links the quicktype commit in tests/golden/REFERENCE; that the engine
+// switch (a radio group: quicktype, quickertype) is quickertype unless the
+// hash says `e=quicktype`, old links included, gives the CLI's output on
+// quicktype's TypeScript engine too, never downloads the .wasm when only
+// quicktype runs, runs an engine only for an input it has not run, works
+// with the arrow keys, and, once both engines have run the input, reports
+// identical output with both times, warm medians when measured (a link from
+// the old compare mode, `c=1`, runs both); that invalid JSON shows
+// quicktype's error; that the input survives a reload (localStorage); and
+// that 360 px and 390 px widths do not scroll sideways. And three things
+// that once went wrong: the code shown after a slow run during which the
+// engine was switched; a measurement asked for while a run is under way;
+// and a worker failing after it loaded.
 //
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
 // (`cargo build --release -p quicktype-cli`). The browser is $CHROME, else
@@ -262,8 +269,9 @@ const shown = () =>
     page.evaluate(`({
         files: playground.view.files.map((f) => ({ name: f.name, text: f.text })),
         code: document.getElementById("code").textContent,
-        ran: playground.view.wasm?.ran,
-        ok: playground.view.wasm?.ok,
+        engine: playground.view.shown.engine,
+        ran: playground.view.shown.result?.ran,
+        ok: playground.view.shown.result?.ok,
         cli: playground.cli(),
         status: document.body.dataset.status,
         notes: [...document.querySelectorAll("#notes p")].map((p) => p.textContent.replace(/^(Line \\d+) /, "$1: ")),
@@ -281,27 +289,72 @@ async function andRun(action, what, until = settled) {
     await page.waitFor(`playground.generation > ${before} && ${until}`, what);
 }
 
-/** Ticks or unticks compare mode; ticking it runs only the TypeScript side (no new run). */
-async function toggleCompare(what) {
-    const before = await page.evaluate(`({
-        generation: playground.generation,
-        comparisons: playground.view.comparisons,
-        on: document.getElementById("compare").checked,
+/** The engine picked, with what the switch shows. */
+const engineSwitch = () =>
+    page.evaluate(`({
+        engine: playground.engine,
+        checked: document.querySelector("input[name=engine]:checked").value,
+        focused: document.activeElement.name === "engine" ? document.activeElement.value : null,
     })`);
-    await page.evaluate("document.getElementById('compare').click()");
-    if (before.on) return;
-    await page.waitFor(
-        `playground.view.comparisons > ${before.comparisons} && document.body.dataset.compare !== "running"`,
-        what,
-    );
-    assert.equal(await page.evaluate("playground.generation"), before.generation, "ticking compare started a new run");
+
+/** How many requests there were, and how many runs each worker was sent. */
+const runCounts = () =>
+    page.evaluate("({ generation: playground.generation, wasm: playground.engines.wasm.nextId, ts: playground.engines.ts.nextId })");
+
+/**
+ * Picks `engine` (by clicking its radio button, or with `action`); waits for
+ * its result on the input shown. Returns how many runs each worker did for it.
+ */
+async function switchEngine(engine, what, action) {
+    const before = await runCounts();
+    if (action !== undefined) await action();
+    else await page.evaluate(`document.querySelector("input[name=engine][value=${engine}]").click()`);
+    await page.waitFor(`playground.engine === "${engine}" && ${settled} && document.body.dataset.status !== "running"`, what);
+    const after = await runCounts();
+    assert.equal(after.generation, before.generation, `${what}: switching engine made a new request`);
+    return { wasm: after.wasm - before.wasm, ts: after.ts - before.ts };
 }
 
-/** A warm measurement of what the page shows has finished (both engines' when comparing). */
+/** Presses a key in the page (as the keyboard does: trusted events, default actions). */
+async function press(key, keyCode) {
+    for (const type of ["keyDown", "keyUp"]) {
+        await page.send("Input.dispatchKeyEvent", { type, key, code: key, windowsVirtualKeyCode: keyCode });
+    }
+}
+
+/**
+ * Both engines' results for the input shown, as the page compares them:
+ * byte-identical, with both times (warm medians if `measured`).
+ */
+async function comparedIdentical(what, measured = false) {
+    await page.waitFor("['identical', 'different'].includes(document.body.dataset.compare)", `${what}: the comparison`);
+    const shownNow = await page.evaluate(`({
+        verdict: document.body.dataset.compare,
+        text: document.querySelector("#meter .summary")?.textContent,
+        fine: document.querySelector("#meter .fine p")?.textContent,
+        lanes: [...document.querySelectorAll("#meter .lane")].map((l) => [l.querySelector(".engine").textContent, l.querySelector(".time").textContent]),
+        wasm: playground.view.results.wasm?.result.files?.map((f) => f.text),
+        ts: playground.view.results.ts?.result.files?.map((f) => f.text),
+    })`);
+    assert.equal(shownNow.verdict, "identical", `${what}: ${shownNow.text}`);
+    assert.deepEqual(shownNow.wasm, shownNow.ts, `${what}: the results differ`);
+    const time = String.raw`\d[\d.]* m?s`;
+    const line = new RegExp(`^${measured ? "Warm medians: " : ""}quickertype: ${time} · quicktype: ${time} · .+ · identical output ✓$`);
+    assert.match(shownNow.text, line, what);
+    assert.match(shownNow.fine, /^The outputs are identical byte for byte: \d+ files?, [\d,]+ bytes\. /, what);
+    assert.deepEqual(
+        shownNow.lanes.map(([name, t]) => [name, new RegExp(`^${time}$`).test(t)]),
+        [["quickertype", true], ["quicktype", true]],
+        `${what}: both bars with their times`,
+    );
+    return shownNow.text;
+}
+
+/** A warm measurement of both engines on what the page shows has finished. */
 const measuredDone = `(() => {
     const bench = playground.view.bench;
-    return bench !== undefined && typeof bench.wasm === "object" &&
-        (!document.getElementById("compare").checked || typeof bench.ts === "object");
+    return bench !== undefined && typeof bench.wasm === "object" && typeof bench.ts === "object" &&
+        document.body.dataset.compare !== "running";
 })()`;
 
 function select(id, value) {
@@ -316,11 +369,16 @@ function select(id, value) {
     );
 }
 
-/** The page shows the CLI's output for the command it shows, which is `expectedCommand`; returns the output. */
-async function sameAsCli(label, expectedCommand) {
+/**
+ * The page shows the CLI's output for the command it shows, which is
+ * `expectedCommand`, from `engine` ("wasm": quickertype, "ts": quicktype);
+ * returns the output.
+ */
+async function sameAsCli(label, expectedCommand, engine = "wasm") {
     const result = await shown();
     assert.equal(result.status, "done", `${label}: ${result.status}`);
-    assert.equal(result.ran, "wasm", `${label} ran on ${result.ran}`);
+    assert.equal(result.engine, engine, `${label} is the output of ${result.engine}`);
+    assert.equal(result.ran, engine, `${label} ran on ${result.ran}`);
     assert.equal(result.cli, expectedCommand);
     assert.ok(result.files.length >= 1);
     const expected = expectedFor(result.cli);
@@ -419,6 +477,33 @@ try {
     });
     assert.match(defaultTs, /export class Convert/);
     console.log(`ok: the default view: quicktype's defaults, just-types off with its hint, General collapsed (${defaults.hash})`);
+    // The engine switch: a labelled radio group, quickertype picked, a note under it.
+    const group = await page.evaluate(`(() => {
+        const group = document.getElementById("engine");
+        return {
+            role: group.getAttribute("role"),
+            label: document.getElementById(group.getAttribute("aria-labelledby")).textContent,
+            radios: [...group.querySelectorAll("input")].map((i) => [i.type, i.name, i.closest("label").textContent, i.checked]),
+            note: document.getElementById(group.getAttribute("aria-describedby")).textContent,
+            compare: document.body.dataset.compare,
+            hint: document.querySelector("#meter .fine p").textContent,
+        };
+    })()`);
+    assert.deepEqual(
+        { role: group.role, label: group.label, radios: group.radios, compare: group.compare },
+        {
+            role: "radiogroup",
+            label: "Engine",
+            radios: [
+                ["radio", "engine", "quicktype", false],
+                ["radio", "engine", "quickertype", true],
+            ],
+            compare: "off",
+        },
+    );
+    assert.match(group.note, /^Both run in your browser: .*warm runs are /);
+    assert.match(group.hint, /^Switch to quicktype to compare the engines on this input, or measure warm runs of both\./);
+    console.log(`ok: the engine switch: quicktype, (quickertype), with the note "${group.note}"`);
     await page.screenshot("default.png");
 
     // just-types on: types only, as `quicktype --just-types`; the hash says
@@ -499,12 +584,14 @@ try {
         await page.waitFor(settled, `the run for the old link ${old}`);
         await sameAsCli(`old link ${old}`, command);
         assert.equal(await hashNow(), rewritten);
+        assert.deepEqual(await engineSwitch(), { engine: "wasm", checked: "wasm", focused: null }, `old link ${old}: the engine`);
     }
 
     await page.navigate(`${url}#v=2&l=swift&s=pokedex`);
     await page.waitFor(settled, "the run for a new Swift link");
     await sameAsCli("new link #v=2&l=swift&s=pokedex", "quicktype --lang swift --top-level Pokedex --no-initializers pokedex.json");
     console.log("ok: links without v= get quicktype's defaults (and are rewritten with v=2); links with it get the presets");
+    console.log("ok: links without e= (old ones too) run on quickertype");
 
     // The general options: labelled as in the CLI's --help, all off there
     // too; each one alone, and combined, gives the CLI's output with the
@@ -655,27 +742,29 @@ try {
     await sameAsCli("pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
     await page.screenshot("desktop-light.png");
 
-    // Compare mode: the same input on the TypeScript engine, in a second worker.
-    await toggleCompare("the comparison");
-    await page.waitFor("document.body.dataset.compare !== 'running'", "the verdict");
-    let compare = await page.evaluate(
-        "({ verdict: document.body.dataset.compare, wasm: playground.view.wasm.ran, ts: playground.view.ts.ran, text: document.querySelector('.verdict')?.textContent, hash: location.hash })",
-    );
-    assert.equal(compare.wasm, "wasm");
-    assert.equal(compare.ts, "ts");
-    assert.equal(compare.verdict, "identical", compare.text);
-    assert.match(compare.hash, /(^#|&)c=1(&|$)/);
-    console.log(`ok: compare mode: ${compare.text}`);
+    // Switching to quicktype: the same input and options on quicktype's
+    // TypeScript engine, in a worker of its own; only it runs, and the page
+    // then compares both engines' results. Back on quickertype, nothing runs.
+    let ran = await switchEngine("ts", "the switch to quicktype");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype ran");
+    await sameAsCli("pokedex.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&e=quicktype");
+    let compare = await comparedIdentical("quicktype after quickertype");
+    console.log(`ok: switched to quicktype: only quicktype ran; ${compare}`);
+    ran = await switchEngine("wasm", "the switch back to quickertype");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype ran");
+    await sameAsCli("pokedex.json → TypeScript on quickertype again", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
+    await comparedIdentical("quickertype after quicktype");
+    console.log("ok: back on quickertype: nothing ran, the comparison stays");
+
+    // Warm runs: both engines, medians.
     await page.evaluate("document.getElementById('measure').click()");
-    await page.waitFor(measuredDone, "the warm measurement", 180_000);
-    compare = await page.evaluate(
-        "({ verdict: document.body.dataset.compare, text: document.querySelector('.verdict')?.textContent, wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })",
-    );
-    assert.equal(compare.verdict, "identical", compare.text);
-    console.log(`ok: warm runs: ${compare.text}\n    WebAssembly ${medians(compare.wasm)}\n    TypeScript  ${medians(compare.ts)}`);
+    await page.waitFor(measuredDone, "the warm measurement", 300_000);
+    compare = await comparedIdentical("warm runs", true);
+    const bench = await page.evaluate("({ wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })");
+    console.log(`ok: warm runs: ${compare}\n    quickertype ${medians(bench.wasm)}\n    quicktype   ${medians(bench.ts)}`);
     await page.screenshot("compare.png");
-    // Turning it off only hides the comparison; nothing runs.
-    await page.evaluate("document.getElementById('compare').click()");
 
     // A JSON Schema sample.
     await select("sample", "description");
@@ -734,6 +823,54 @@ try {
     assert.equal(restored, invalid);
     console.log(`ok: reload restores the input (${hash})`);
 
+    // A link to quicktype: the switch comes back from the hash, and only
+    // quicktype's worker loads; nothing downloads the .wasm.
+    const firstRequest = requests.length;
+    await page.navigate(`${url}#v=2&l=typescript&s=pokedex&e=quicktype`);
+    await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run on quicktype alone");
+    await sameAsCli("a link to quicktype: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    const alone = await page.evaluate(`({
+        hash: location.hash,
+        wasmWorker: playground.engines.wasm.worker !== undefined,
+        compare: document.body.dataset.compare,
+        hint: document.querySelector("#meter .fine p").textContent,
+    })`);
+    assert.deepEqual(
+        { ...alone, hint: /^Switch to quickertype to compare the engines on this input, or measure warm runs of both\./.test(alone.hint) },
+        { hash: "#v=2&l=typescript&s=pokedex&e=quicktype", wasmWorker: false, compare: "off", hint: true },
+    );
+    assert.deepEqual(await engineSwitch(), { engine: "ts", checked: "ts", focused: null });
+    const loaded = requests.slice(firstRequest).map(([, p]) => p);
+    assert.ok(loaded.some((p) => /\/worker-[0-9a-f]+\.js$/.test(p)), `quicktype's worker was not loaded: ${loaded.join(" ")}`);
+    assert.deepEqual(loaded.filter((p) => p.endsWith(".wasm")), [], "the .wasm was downloaded with only quicktype running");
+    console.log(`ok: a link to quicktype: its output, and no .wasm downloaded (${loaded.length} requests: ${loaded.join(" ")})`);
+    await page.screenshot("quicktype.png");
+
+    // The arrow keys move between the engines (native radio buttons): to
+    // quickertype, which runs the input it has not run yet; and back to
+    // quicktype, which has, so nothing runs.
+    await page.evaluate("document.querySelector('input[name=engine]:checked').focus()");
+    ran = await switchEngine("wasm", "ArrowRight to quickertype", () => press("ArrowRight", 39));
+    assert.deepEqual(ran, { wasm: 1, ts: 0 }, "ArrowRight to quickertype ran");
+    assert.deepEqual(await engineSwitch(), { engine: "wasm", checked: "wasm", focused: "wasm" });
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
+    await sameAsCli("ArrowRight: pokedex.json → TypeScript on quickertype", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await comparedIdentical("quickertype after a link to quicktype");
+    ran = await switchEngine("ts", "ArrowLeft to quicktype", () => press("ArrowLeft", 37));
+    assert.deepEqual(ran, { wasm: 0, ts: 0 }, "ArrowLeft back to quicktype ran");
+    assert.deepEqual(await engineSwitch(), { engine: "ts", checked: "ts", focused: "ts" });
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&e=quicktype");
+    await sameAsCli("ArrowLeft: pokedex.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    console.log("ok: the arrow keys move between the engines; each runs the input only once");
+
+    // A link from the old compare mode (`c=1`): quickertype, and both engines run.
+    await page.navigate(`${url}#v=2&l=typescript&s=pokedex&c=1`);
+    await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run for a compare-mode link");
+    await sameAsCli("a compare-mode link: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    compare = await comparedIdentical("a compare-mode link");
+    assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
+    console.log(`ok: a link from compare mode (c=1) runs both engines: ${compare}`);
+
     // Renderer options from the hash: an enum, a string and both booleans,
     // one of them a secondary option ("More options").
     await page.navigate(
@@ -777,37 +914,48 @@ try {
         `uploaded big-senators.json (${(fs.statSync(big).size / 1e6).toFixed(1)} MB) → Rust`,
         "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
     );
-    await toggleCompare("the comparison on the large file");
+    ran = await switchEngine("ts", "quicktype on the large file");
+    assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the large file ran");
+    await sameAsCli(
+        "uploaded big-senators.json → Rust on quicktype",
+        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
+        "ts",
+    );
+    await comparedIdentical("the large file");
     await page.evaluate("document.getElementById('measure').click()");
-    await page.waitFor(measuredDone, "the warm measurement on the large file", 300_000);
-    const bigCompare = await page.evaluate(
-        "({ verdict: document.body.dataset.compare, text: document.querySelector('.verdict')?.textContent, wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })",
-    );
-    assert.equal(bigCompare.verdict, "identical", bigCompare.text);
-    console.log(
-        `ok: large file, warm runs: ${bigCompare.text}\n    WebAssembly ${medians(bigCompare.wasm)}\n    TypeScript  ${medians(bigCompare.ts)}`,
-    );
+    await page.waitFor(measuredDone, "the warm measurement on the large file", 600_000);
+    const bigCompare = await comparedIdentical("the large file, warm runs", true);
+    const bigBench = await page.evaluate("({ wasm: playground.view.bench.wasm, ts: playground.view.bench.ts })");
+    console.log(`ok: large file, warm runs: ${bigCompare}\n    quickertype ${medians(bigBench.wasm)}\n    quicktype   ${medians(bigBench.ts)}`);
+    ran = await switchEngine("wasm", "back to quickertype on the large file");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype on the large file ran");
 
-    // A run under way (another language) while compare mode is turned off:
-    // the page re-renders mid-run, and must still draw the new result.
+    // A run under way (another language) while the engine is switched: the
+    // page re-renders mid-run, and must draw the new request's result, from
+    // the engine picked.
     await andRun(
         `(() => {
             const lang = document.getElementById("lang");
             lang.value = "go";
             lang.dispatchEvent(new Event("change", { bubbles: true }));
-            document.getElementById("compare").click();
+            document.querySelector("input[name=engine][value=ts]").click();
         })()`,
-        "the run during which compare mode was turned off",
-        `${settled} && document.body.dataset.status === "done"`,
+        "the run during which the engine was switched",
+        `${settled} && playground.engine === "ts" && document.body.dataset.status === "done"`,
     );
     const drawn = await page.evaluate(`({
         lang: playground.view.shown.lang.names[0],
         same: document.getElementById("code").textContent === playground.view.files[playground.view.tab].text,
         go: playground.view.files[0].text.includes("package main"),
-        compare: document.getElementById("compare").checked,
+        engine: playground.view.shown.engine,
     })`);
-    assert.deepEqual(drawn, { lang: "go", same: true, go: true, compare: false });
-    console.log("ok: compare mode turned off during a run: the new result is drawn, and Copy/Download give what is shown");
+    assert.deepEqual(drawn, { lang: "go", same: true, go: true, engine: "ts" });
+    await sameAsCli("big-senators.json → Go on quicktype", "quicktype --lang go --top-level BigSenators big-senators.json", "ts");
+    ran = await switchEngine("wasm", "back to quickertype after a switch during a run");
+    assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype after a switch during a run ran");
+    await sameAsCli("big-senators.json → Go on quickertype", "quicktype --lang go --top-level BigSenators big-senators.json");
+    await comparedIdentical("Go after a switch during a run");
+    console.log("ok: the engine switched during a run: the new result is drawn, and Copy/Download give what is shown");
 
     // A measurement asked for while a run is under way waits for it, measures
     // what it shows, and the page does not stay "Running".
@@ -821,16 +969,17 @@ try {
         "the run during which a measurement was asked for",
         `${settled} && document.body.dataset.status === "done"`,
     );
-    await page.waitFor(measuredDone, "the measurement asked for during a run", 120_000);
+    await page.waitFor(measuredDone, "the measurement asked for during a run", 600_000);
     await new Promise((resolve) => setTimeout(resolve, 400));
     const measuredRun = await page.evaluate(`({
         status: document.body.dataset.status,
         running: document.getElementById("meter").textContent.includes("Running"),
         lang: playground.view.shown.lang.names[0],
         same: playground.view.bench.wasm.files[0].text === playground.view.files[0].text,
-        runs: playground.view.bench.wasm.times.length,
+        runs: [playground.view.bench.wasm.times.length, playground.view.bench.ts.times.length],
     })`);
-    assert.deepEqual(measuredRun, { status: "done", running: false, lang: "rust", same: true, runs: 5 });
+    assert.deepEqual(measuredRun, { status: "done", running: false, lang: "rust", same: true, runs: [5, 5] });
+    await comparedIdentical("a measurement asked for during a run", true);
     console.log("ok: a measurement asked for during a run measures the result shown; nothing stays running");
 
     // The worker fails after it loaded, during a run: that run shows a
@@ -863,12 +1012,15 @@ try {
         await page.viewport(width, 844, { mobile: true });
         await page.navigate(`${url}#v=2&l=rust&s=pokedex&all-properties-optional=true&no-enums=true`);
         await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run on a phone");
+        // Both engines' results: the meter at its widest.
+        await switchEngine("ts", `${width} px: the switch to quicktype`);
+        await comparedIdentical(`${width} px`);
         const scrollWidth = await page.evaluate("document.documentElement.scrollWidth");
         assert.ok(scrollWidth <= width, `${width} px: the page is ${scrollWidth} px wide`);
         if (width === 390) await page.screenshot("mobile-390.png", { full: true });
         const { lines } = await commandShown(`${width} px`);
         assert.ok(lines > 1, `${width} px: the command is on ${lines} line(s)`);
-        console.log(`ok: ${width} px wide, no horizontal scrolling; the command wraps onto ${lines} lines and copies whole`);
+        console.log(`ok: ${width} px wide, both engines compared, no horizontal scrolling; the command wraps onto ${lines} lines and copies whole`);
     }
 
     const missing = requests.filter(([status]) => status !== 200);

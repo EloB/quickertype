@@ -1,6 +1,7 @@
 // The page's Web Worker: runs quicktype-core off the main thread. One copy
-// runs on the WebAssembly engine (`worker.js?engine=wasm`), and in compare
-// mode a second copy on the TypeScript engine (`?engine=ts`).
+// runs on the WebAssembly engine (`worker.js?engine=wasm`, quickertype on
+// the page), another on the TypeScript engine (`?engine=ts`, quicktype);
+// each starts when the page first needs it.
 //
 // Request:  { id, kind: "json" | "schema", lang, name, text, rendererOptions,
 //             options, warmup?, repeat? }

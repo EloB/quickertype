@@ -30,10 +30,14 @@
       <span class="field-label">Top-level type</span>
       <input id="name" type="text" spellcheck="false" autocomplete="off" placeholder="TopLevel">
     </label>
-    <label class="toggle">
-      <input id="compare" type="checkbox">
-      <span>Compare with the TypeScript engine</span>
-    </label>
+    <div class="field engine-field">
+      <span class="field-label" id="engine-label">Engine</span>
+      <div id="engine" class="segmented engines" role="radiogroup" aria-labelledby="engine-label" aria-describedby="engine-note">
+        <label><input type="radio" name="engine" value="ts"><span>quicktype</span></label>
+        <label><input type="radio" name="engine" value="wasm" checked><span>quickertype</span></label>
+      </div>
+      <p id="engine-note" class="engine-note">Both run in your browser: <b>quicktype</b> is quicktype's original TypeScript engine, <b>quickertype</b> its Rust port, compiled to WebAssembly. Switch between them to compare; warm runs are the runs after the first, with the engine loaded and compiled.</p>
+    </div>
   </div>
   <div id="options" class="options"></div>
   <details id="general" class="more general">

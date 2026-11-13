@@ -1,11 +1,15 @@
 // A worker running quicktype-core on one engine, seen from the page.
 //
-// Runs are "latest wins": while one runs, only the newest request waits;
-// requests it replaces resolve to `undefined`. The worker is created on
-// first use and requests wait until it has loaded. If the worker fails
-// (it does not load, or reports an error it did not catch, or a message
-// from it cannot be read), the request in flight fails with a readable
-// error and the next request gets a new worker.
+// Requests are handled one at a time, in order. `drop()` withdraws the
+// requests still waiting (they resolve to `undefined`); the page calls it
+// when the input changes, so that what waits is only ever for the newest
+// input. A result is never withheld: the page knows which request it asked
+// for, and whether that is still the one it shows. The worker is created
+// on first use (`start()` creates it early) and requests wait until it has
+// loaded. If the worker fails (it does not load, or reports an error it
+// did not catch, or a message from it cannot be read), the request in
+// flight fails with a readable error and the next request gets a new
+// worker.
 
 /* global __WORKER_FILE__ */
 
@@ -19,7 +23,8 @@ export class EngineClient {
         this.boot = undefined;
         this.ready = undefined;
         this.busy = false;
-        this.pending = undefined;
+        /** Requests waiting for the worker: { request, resolve }. */
+        this.queue = [];
         this.inFlight = undefined;
         this.nextId = 1;
         this.onBoot = () => {};
@@ -59,17 +64,23 @@ export class EngineClient {
         return this.ready;
     }
 
-    /** Resolves to the worker's reply, or to `undefined` if a newer request replaced this one. */
+    /** Resolves to the worker's reply, or to `undefined` if the request was dropped before it ran. */
     run(request) {
         return new Promise((resolve) => {
-            if (this.pending !== undefined) this.pending.resolve(undefined);
-            this.pending = { request, resolve };
+            this.queue.push({ request, resolve });
             void this.pump();
         });
     }
 
+    /** Withdraws the requests that have not started; each resolves to `undefined`. */
+    drop() {
+        const dropped = this.queue;
+        this.queue = [];
+        for (const { resolve } of dropped) resolve(undefined);
+    }
+
     get isBusy() {
-        return this.busy || this.pending !== undefined;
+        return this.busy || this.queue.length > 0;
     }
 
     /** A result for a run the worker did not do. */
@@ -78,23 +89,28 @@ export class EngineClient {
     }
 
     async pump() {
-        if (this.busy || this.pending === undefined) return;
+        if (this.busy || this.queue.length === 0) return;
         this.busy = true;
         try {
             await this.start();
         } catch (e) {
-            const { resolve } = this.pending;
-            this.pending = undefined;
             this.busy = false;
-            resolve(this.failure(`The ${names[this.engine]} worker did not start: ${e.message}`));
+            // The first request waiting fails; the next one tries a new worker.
+            this.queue.shift()?.resolve(this.failure(`The ${names[this.engine]} worker did not start: ${e.message}`));
+            void this.pump();
             return;
         }
 
-        const { request, resolve } = this.pending;
-        this.pending = undefined;
+        const next = this.queue.shift();
+        if (next === undefined) {
+            // Dropped while the worker was loading.
+            this.busy = false;
+            return;
+        }
+
         const id = this.nextId++;
-        this.inFlight = { id, resolve };
-        this.worker.postMessage({ ...request, id });
+        this.inFlight = { id, resolve: next.resolve };
+        this.worker.postMessage({ ...next.request, id });
     }
 
     finish(message) {
@@ -102,8 +118,7 @@ export class EngineClient {
         if (inFlight === undefined || inFlight.id !== message.id) return;
         this.inFlight = undefined;
         this.busy = false;
-        // A newer request is waiting: this result is already stale.
-        inFlight.resolve(this.pending === undefined ? message : undefined);
+        inFlight.resolve(message);
         void this.pump();
     }
 
@@ -120,9 +135,7 @@ export class EngineClient {
         this.inFlight = undefined;
         this.busy = false;
         inFlight?.resolve(
-            this.pending === undefined
-                ? this.failure(`The ${names[this.engine]} worker stopped (${message}); the next run starts a new one.`)
-                : undefined,
+            this.failure(`The ${names[this.engine]} worker stopped (${message}); the next run starts a new one.`),
         );
         void this.pump();
     }
