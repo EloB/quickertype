@@ -30,6 +30,11 @@ and compares every file and, for cases without `--quiet`, the issue
 annotations the CLI prints to stderr. A few cases from quicktype's unit tests
 (API calls) carry their expected output inline.
 
+A `transformation` attribute (C# and Python make transformations) is dumped
+as `{ target, xfer }`: the index of the target type and the transformer tree.
+Both scripts use `dump-transformation.mjs`, which documents the JSON shape;
+`tests/render_support` rebuilds it with `quicktype_core::transformers`.
+
 Multi-file languages (Java) write every file next to `--out`, into the
 case's `dirs`, which the recorder creates first. When such a render goes to
 stdout, the CLI prints the files under `// <name>` headers; the fixture then

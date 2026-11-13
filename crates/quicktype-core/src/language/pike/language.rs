@@ -20,8 +20,6 @@ pub const PIKE_LANGUAGE_CONFIG: LanguageConfig = LanguageConfig {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PikeTargetLanguage;
 
-// TODO(renderer): port the hooks PikeTargetLanguage overrides:
-// - makeRenderer
 impl TargetLanguage for PikeTargetLanguage {
     fn config(&self) -> &'static LanguageConfig {
         &PIKE_LANGUAGE_CONFIG
@@ -42,4 +40,21 @@ impl TargetLanguage for PikeTargetLanguage {
     }
 
     // End of inference hooks.
+
+    // Renderer hooks.
+
+    fn render(
+        &self,
+        render_context: crate::renderer::RenderContext<'_>,
+        _renderer_options: &RendererOptions,
+        given_output_filename: &str,
+        alphabetize_properties: bool,
+    ) -> crate::messages::Result<crate::renderer::RenderResult> {
+        let renderer = super::pike_renderer::PikeRenderer::new(self, render_context);
+        crate::convenience_renderer::render_with(
+            renderer,
+            given_output_filename,
+            alphabetize_properties,
+        )
+    }
 }

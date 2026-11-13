@@ -1,0 +1,112 @@
+{
+ "graph": {
+  "types": [
+   {
+    "k": "class",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "TopLevel"
+      ],
+      "alts": [],
+      "d": 1
+     }
+    },
+    "fixed": true,
+    "props": [
+     [
+      "x",
+      1,
+      false
+     ]
+    ],
+    "add": null
+   },
+   {
+    "k": "union",
+    "a": {
+     "names": {
+      "t": "regular",
+      "names": [
+       "a"
+      ],
+      "alts": [],
+      "d": 0
+     }
+    },
+    "members": [
+     3,
+     2
+    ]
+   },
+   {
+    "k": "array",
+    "a": {},
+    "items": 1
+   },
+   {
+    "k": "null",
+    "a": {}
+   }
+  ],
+  "topLevels": [
+   [
+    "TopLevel",
+    0
+   ]
+  ]
+ },
+ "gather": {
+  "destructive": false,
+  "randomNames": 0
+ },
+ "renders": [
+  {
+   "lang": "csharp",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "csharp",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {
+    "framework": "NewtonSoft",
+    "csharp-version": "5"
+   },
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  },
+  {
+   "lang": "pike",
+   "filename": "out.txt",
+   "alphabetize": false,
+   "rendererOptions": {},
+   "indentation": null,
+   "leadingComments": null,
+   "probe": {},
+   "script": [
+    "default"
+   ],
+   "error": "Maximum call stack size exceeded",
+   "console": []
+  }
+ ],
+ "id": "recursion-overflow"
+}

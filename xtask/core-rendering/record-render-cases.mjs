@@ -29,6 +29,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { dumpTransformation } from "./dump-transformation.mjs";
+
 const quicktype = resolve(process.argv[2] ?? "../quicktype");
 const languages = process.argv.length > 3 ? process.argv.slice(3) : ["rust"];
 const require = createRequire(join(quicktype, "package.json"));
@@ -46,6 +48,7 @@ const GatherNames = load("GatherNames.js");
 const { Chance } = load("support/Chance.js");
 const { RegularTypeNames, TooManyTypeNames } = load("attributes/TypeNames.js");
 const { IssueAnnotationData } = load("Annotation.js");
+const { typeRefIndex } = load("Type/TypeRef.js");
 const core = load("index.js");
 const cli = require(join(quicktype, "dist/index.js"));
 
@@ -130,6 +133,9 @@ function dumpAttributes(attributes) {
                 break;
             case "uriAttributes":
                 result.uriAttributes = [Array.from(value[0]), Array.from(value[1])];
+                break;
+            case "transformation":
+                result.transformation = dumpTransformation(value, typeRefIndex);
                 break;
             default:
                 throw new Error(`cannot dump attribute ${kind.name}`);
@@ -364,42 +370,137 @@ const apiCases = [
     },
 ];
 
-async function recordApi(spec) {
-    const schemaInput = new core.JSONSchemaInput(undefined);
-    if (spec.schema !== undefined) {
-        await schemaInput.addSource({
-            name: spec.schema.name,
-            schema: JSON.stringify({
-                $schema: "http://json-schema.org/draft-07/schema#",
-                title: spec.schema.name,
-                type: "object",
-                properties: { value: { type: "string" }, next: spec.schema.next },
-                required: spec.schema.required,
-            }),
-        });
-    } else {
-        await schemaInput.addSource({
-            name: "",
-            schema: JSON.stringify({ definitions: spec.definitions }),
-            uris: ["#/definitions/"],
-            isConverted: true,
-        });
-    }
+// Records an API case: `addInputs(inputData)` adds the inputs, which
+// quicktypeMultiFile renders with `lang` (and `rendererOptions`, if given);
+// the expected output is stored inline.
+async function recordApiCase(id, lang, rendererOptions, addInputs) {
     const inputData = new core.InputData();
-    inputData.addInput(schemaInput);
+    await addInputs(inputData);
     captured = {};
     drawnNames = new Set();
-    await core.quicktypeMultiFile({ inputData, lang: "rust" });
+    const options = { inputData, lang };
+    if (rendererOptions !== undefined) options.rendererOptions = rendererOptions;
+    await core.quicktypeMultiFile(options);
     const rec = captured;
     captured = undefined;
     const fixture = {
-        id: spec.id,
+        id,
         graph: rec.graph,
         gather: rec.gather,
         render: rec.render,
         files: rec.files.map((f) => ({ name: f.name, text: f.text, annotations: f.annotations })),
     };
-    writeFileSync(join(outDir, caseFileName(spec.id)), `${JSON.stringify(fixture)}\n`);
+    writeFileSync(join(outDir, caseFileName(id)), `${JSON.stringify(fixture)}\n`);
+}
+
+function recordRustApi(spec) {
+    return recordApiCase(spec.id, "rust", undefined, async (inputData) => {
+        const schemaInput = new core.JSONSchemaInput(undefined);
+        if (spec.schema !== undefined) {
+            await schemaInput.addSource({
+                name: spec.schema.name,
+                schema: JSON.stringify({
+                    $schema: "http://json-schema.org/draft-07/schema#",
+                    title: spec.schema.name,
+                    type: "object",
+                    properties: { value: { type: "string" }, next: spec.schema.next },
+                    required: spec.schema.required,
+                }),
+            });
+        } else {
+            await schemaInput.addSource({
+                name: "",
+                schema: JSON.stringify({ definitions: spec.definitions }),
+                uris: ["#/definitions/"],
+                isConverted: true,
+            });
+        }
+        inputData.addInput(schemaInput);
+    });
+}
+
+// quicktype's C# unit tests (test/unit/csharp-*.test.ts): each renders one
+// JSON sample (`json`, through jsonInputForTargetLanguage) or JSON Schema
+// (`schema`) with the given renderer options. Their assertions are ported in
+// crates/quicktype-core/tests/csharp_vitest.rs.
+const csharpPersonSample = '{"name":"Alice","age":37}';
+const csharpApiCases = [
+    ...[
+        ["default", {}],
+        ["disabled", { "dateonly-timeonly-converters": "false" }],
+    ].map(([variant, options]) => ({
+        id: `unit/csharp-dateonly-timeonly-converters/${variant}`,
+        schema: {
+            name: "TopLevel",
+            schema: {
+                type: "object",
+                properties: { name: { type: "string" }, count: { type: "integer" } },
+                required: ["name", "count"],
+            },
+        },
+        rendererOptions: { framework: "SystemTextJson", ...options },
+    })),
+    ...["NewtonSoft", "SystemTextJson"].map((framework) => ({
+        id: `unit/csharp-partial-helpers/${framework}`,
+        json: { name: "Something", sample: '{"some_property":"hello"}' },
+        rendererOptions: { framework },
+    })),
+    ...["NewtonSoft", "SystemTextJson"].map((framework) => ({
+        id: `unit/csharp-records/${framework}`,
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { framework, "use-records": true },
+    })),
+    {
+        id: "unit/csharp-records/default",
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { framework: "SystemTextJson" },
+    },
+    {
+        id: "unit/csharp-records/record-member-names",
+        json: { name: "Person", sample: '{"clone":"copy","equalityContract":"contract","printMembers":"members"}' },
+        rendererOptions: { "use-records": true },
+    },
+    {
+        id: "unit/csharp-records/just-types",
+        json: { name: "Person", sample: csharpPersonSample },
+        rendererOptions: { "use-records": true, "just-types": true },
+    },
+    ...[
+        ["NewtonSoft-attributes-only", { framework: "NewtonSoft", features: "attributes-only" }],
+        ["SystemTextJson-attributes-only", { framework: "SystemTextJson", features: "attributes-only" }],
+        ["NewtonSoft-complete", { framework: "NewtonSoft" }],
+        ["SystemTextJson-complete", { framework: "SystemTextJson" }],
+    ].map(([variant, rendererOptions]) => ({
+        id: `unit/csharp-superfluous-usings/${variant}`,
+        json: { name: "Sample", sample: '{"name":"Alice","age":30,"active":true}' },
+        rendererOptions,
+    })),
+    {
+        id: "unit/csharp-system-text-json-exceptions/union",
+        schema: {
+            name: "TopLevel",
+            schema: {
+                type: "object",
+                properties: { mixed: { oneOf: [{ type: "integer" }, { type: "string" }] } },
+                required: ["mixed"],
+            },
+        },
+        rendererOptions: { framework: "SystemTextJson" },
+    },
+];
+
+function recordCSharpApi(spec) {
+    return recordApiCase(spec.id, "csharp", spec.rendererOptions, async (inputData) => {
+        if (spec.json !== undefined) {
+            const jsonInput = core.jsonInputForTargetLanguage("csharp");
+            await jsonInput.addSource({ name: spec.json.name, samples: [spec.json.sample] });
+            inputData.addInput(jsonInput);
+        } else {
+            const schemaInput = new core.JSONSchemaInput(undefined);
+            await schemaInput.addSource({ name: spec.schema.name, schema: JSON.stringify(spec.schema.schema) });
+            inputData.addInput(schemaInput);
+        }
+    });
 }
 
 // CLI runs the golden corpus lacks, recorded through the real CLI with their
@@ -477,10 +578,14 @@ for (const spec of cliCases) {
     if (!languages.includes(spec.lang)) continue;
     count(spec.id, await attempt(spec.id, () => recordCli(spec)));
 }
-if (languages.includes("rust")) {
-    for (const spec of apiCases) {
+for (const [lang, cases, record] of [
+    ["rust", apiCases, recordRustApi],
+    ["csharp", csharpApiCases, recordCSharpApi],
+]) {
+    if (!languages.includes(lang)) continue;
+    for (const spec of cases) {
         count(spec.id, await attempt(spec.id, async () => {
-            await recordApi(spec);
+            await record(spec);
             return "recorded (api)";
         }));
     }

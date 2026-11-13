@@ -171,6 +171,30 @@ fn propose_union_member_name(&mut self, u: TypeRef, union_name: Name, t: TypeRef
 }
 ```
 
+### Recursive type functions (`support::recursion::guard`)
+
+A function that recurses into a type's children (`csType`, `sourceFor`,
+`rustType`, a `needTransformerForType`, ...) runs forever on a graph that
+cycles without passing a named type, e.g. a nullable union whose member is
+an array of the union itself (`{"type": ["array", "null"], "items":
+{"$ref": "#"}}`). TypeScript then throws V8's `RangeError: Maximum call
+stack size exceeded`; the same Rust recursion would overflow the native
+stack and abort. So wrap the body of every such function in
+`support::recursion::guard`, which fails with that `RangeError` past a fixed
+depth and grows the native stack until then:
+
+```rust
+fn cs_type(&self, t: TypeRef, follow: Follow, with_issues: bool) -> Result<Source> {
+    // Endless on a cycle through a nullable union (V8 overflows its stack).
+    guard(|| {
+        // ... the body, recursing into cs_type
+    })
+}
+```
+
+The `recursion-overflow` render scenario records the reference's error for
+C# and Pike; add your language's renders to it.
+
 ### Mid-level base classes
 
 Families (JavaScript → TypeScriptFlowBase → TypeScript/Flow, CSharp →
@@ -247,8 +271,8 @@ needed only to record fixtures.
    `render_cases.rs` rebuilds each graph, runs `gather_names` and your
    renderer, and compares every file and (without `--quiet`) the issue
    annotations. This tests the renderer in isolation, before the JSON input
-   and pipeline are wired end to end. (Graphs with `transformation`
-   attributes, i.e. C# and Python, need the dump extended first.)
+   and pipeline are wired end to end. Graphs with `transformation`
+   attributes (C#, Python) are dumped too.
 2. **Scenarios** for options and paths the corpus doesn't cover: add a
    `.txt` to `crates/quicktype-core/tests/fixtures/core-rendering/scenarios/`
    with `input json|schema NAME <json>` lines and `render <lang> {"rendererOptions": {...}}`
