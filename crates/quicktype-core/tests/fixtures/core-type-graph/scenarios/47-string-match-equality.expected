@@ -1,0 +1,96 @@
+(forwarding intersections: false)
+
+# make-transformations
+0: class Top | children 1,7,8,12,13,17 | given Top ()
+1: any | children 6,2,4,3,5 | transformation
+2: integer
+3: string | unrestricted
+4: bool
+5: union plain | children 4,2,3 | given Plain1,Plain2 ()
+6: any
+7: intersection | children 1
+8: any | children 6,2,3,9,11 | transformation
+9: string | children 3,10 | transformation | unrestricted
+10: enum E | given E ()
+11: union enum | children 2,9 | given Enum1,Enum2 ()
+12: any | children 6,2,3,9,11 | transformation
+13: any | children 6,4,3,14,16 | transformation
+14: string | children 3,15 | transformation | unrestricted
+15: enum E2 | given E2 ()
+16: union two_cases | children 4,14 | given TwoCases1,TwoCases2 ()
+17: any | children 6,4,3,14,16 | transformation
+
+# remove indirection intersections
+0: class Top | children 1,7,11,12,16 | given Top ()
+1: any | children 6,4,3,5,2 | transformation
+2: union plain | children 3,4,5 | given Plain1,Plain2 ()
+3: bool
+4: integer
+5: string | unrestricted
+6: any
+7: any | children 6,4,5,9,8 | transformation
+8: union enum | children 4,9 | given Enum1,Enum2 ()
+9: string | children 5,10 | transformation | unrestricted
+10: enum E | given E ()
+11: any | children 6,4,5,9,8 | transformation
+12: any | children 6,3,5,14,13 | transformation
+13: union two_cases | children 3,14 | given TwoCases1,TwoCases2 ()
+14: string | children 5,15 | transformation | unrestricted
+15: enum E2 | given E2 ()
+16: any | children 6,3,5,14,13 | transformation
+
+# fixed-point
+0: class Top | children 6,10,11,15,16 | given Top ()
+1: union plain | children 2,3,4 | given Plain1,Plain2 ()
+2: bool
+3: integer
+4: string | unrestricted
+5: any
+6: any | children 5,3,2,4,1 | transformation
+7: union enum | children 3,9 | given Enum1,Enum2 ()
+8: enum E | given E ()
+9: string | children 4,8 | transformation | unrestricted
+10: any | children 5,3,4,9,7 | transformation
+11: any | children 5,3,4,9,7 | transformation
+12: union two_cases | children 2,14 | given TwoCases1,TwoCases2 ()
+13: enum E2 | given E2 ()
+14: string | children 4,13 | transformation | unrestricted
+15: any | children 5,2,4,14,12 | transformation
+16: any | children 5,2,4,14,12 | transformation
+(fixedpoint: unchanged)
+
+# GC
+0: class Top | children 1,7,11,12,16 | given Top ()
+1: any | children 6,4,3,5,2 | transformation
+2: union plain | children 3,4,5 | given Plain1,Plain2 ()
+3: bool
+4: integer
+5: string | unrestricted
+6: any
+7: any | children 6,4,5,9,8 | transformation
+8: union enum | children 4,9 | given Enum1,Enum2 ()
+9: string | children 5,10 | transformation | unrestricted
+10: enum E | given E ()
+11: any | children 6,4,5,9,8 | transformation
+12: any | children 6,3,5,14,13 | transformation
+13: union two_cases | children 3,14 | given TwoCases1,TwoCases2 ()
+14: string | children 5,15 | transformation | unrestricted
+15: enum E2 | given E2 ()
+16: any | children 6,3,5,14,13 | transformation
+0: class Top | children 1,7,11,12,16 | given Top ()
+1: any | children 6,4,3,5,2 | transformation
+2: union plain | children 3,4,5 | given Plain1,Plain2 ()
+3: bool
+4: integer
+5: string | unrestricted
+6: any
+7: any | children 6,4,5,9,8 | transformation
+8: union enum | children 4,9 | given Enum1,Enum2 ()
+9: string | children 5,10 | transformation | unrestricted
+10: enum E | given E ()
+11: any | children 6,4,5,9,8 | transformation
+12: any | children 6,3,5,14,13 | transformation
+13: union two_cases | children 3,14 | given TwoCases1,TwoCases2 ()
+14: string | children 5,15 | transformation | unrestricted
+15: enum E2 | given E2 ()
+16: any | children 6,3,5,14,13 | transformation
