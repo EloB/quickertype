@@ -23,17 +23,18 @@ authors = ["quicktype contributors"]
 # JavaScript semantics byte-for-byte; see docs/PARITY.md before adding one.
 [workspace.dependencies]
 # The workspace's own crates, published to crates.io as quickertype-*
-# (docs/RELEASING.md). Their library names stay quicktype_*. `version`
-# must equal the workspace version above.
+# (docs/RELEASING.md). Their library names stay quicktype_*. They are
+# released in lockstep, so each `version` is `=` the workspace version
+# above (publish-crates.yml fails otherwise).
 #
 # quickertype-core's default features are off here, so that quicktype-wasm
 # can build without `fs`: Cargo before 1.99 rejects `default-features =
 # false` on an inherited dependency whose workspace entry does not set it.
 # Members that need `fs` or `http` ask for them.
-quickertype-core = { path = "crates/quicktype-core", version = "0.1.0", default-features = false }
-quickertype-graphql-input = { path = "crates/quicktype-graphql-input", version = "0.1.0" }
-quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "0.1.0" }
-quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "0.1.0" }
+quickertype-core = { path = "crates/quicktype-core", version = "=0.1.0", default-features = false }
+quickertype-graphql-input = { path = "crates/quicktype-graphql-input", version = "=0.1.0" }
+quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.1.0" }
+quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.1.0" }
 foldhash = "0.2"
 hashbrown = { version = "0.17", default-features = false }
 indexmap = "2"

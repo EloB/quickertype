@@ -30,12 +30,18 @@ with quicktype's own packages:
 
 - **The project's version** is `version` in `[workspace.package]` of
   [`Cargo.toml`](../Cargo.toml), shared by every crate. It follows semver on
-  its own, starting at 0.1.0, and the release tag is `v` plus it. Two other
-  places must match it, and the publish jobs fail (also on pull requests)
-  when they do not: the `version` of the four path dependencies in
-  `[workspace.dependencies]`, and `version` in
-  [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json)
-  (and its `package-lock.json`).
+  its own, starting at 0.1.0, and the release tag is `v` plus it. The
+  crates are released in lockstep, so two other places must match it, and
+  the publish jobs fail (also on pull requests that change them) when they
+  do not:
+  - the four path dependencies in `[workspace.dependencies]` require
+    exactly that version (`version = "=0.1.0"`). `publish-crates.yml`
+    checks every member's requirement on a quickertype-\* crate, of every
+    kind, and that each published crate is at the workspace version;
+  - `version` in
+    [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json)
+    and in its `package-lock.json` (the top-level one and the root
+    package's), which `publish-npm-core.yml` checks.
 - **quicktype's version** is what `quicktype --version` prints
   (`quicktype version 24.0.0`): `QUICKTYPE_VERSION` in
   [`crates/quicktype-cli/src/main.rs`](../crates/quicktype-cli/src/main.rs).
@@ -195,11 +201,12 @@ repository that change it.
 1. Start from a green `main`: CI, the Release workflow's pull-request
    builds and the publish dry runs (below) pass.
 2. On a branch, set the new version in `[workspace.package]` **and** in the
-   four path dependencies of `[workspace.dependencies]` in `Cargo.toml`,
-   run `cargo build` to update `Cargo.lock`, and set it in
-   `npm/quicktype-core` with
+   four path dependencies of `[workspace.dependencies]` in `Cargo.toml`
+   (`version = "=X.Y.Z"`), run `cargo build` to update `Cargo.lock`, and
+   set it in `npm/quicktype-core` with
    `npm version X.Y.Z --no-git-tag-version` (package.json and
-   package-lock.json).
+   package-lock.json). The branch's pull request runs the publish dry
+   runs, which fail if one of them was missed.
 3. In `CHANGELOG.md`, move what is under `## [Unreleased]` into a new
    `## [X.Y.Z] - YYYY-MM-DD` section (the release date) and update the link
    definitions at the bottom. The version in the heading must equal the
@@ -294,9 +301,9 @@ published: delete the tag (`git push origin :refs/tags/vX.Y.Z` and
   binary is the one `cargo build --release -p quickertype` makes.
 - A new crate in the workspace: give it `dist = false`, the crates.io
   metadata the others have (description, keywords, categories, `include`,
-  `LICENSE` and `NOTICE`), a `version` on its path dependency, and add it
-  to `CRATES` in `publish-crates.yml` and the preflight, after its
-  dependencies.
+  `LICENSE` and `NOTICE`), `version = "=X.Y.Z"` (the workspace version)
+  on its path dependency, and add it to `CRATES` in `publish-crates.yml`
+  and the preflight, after its dependencies.
 - `[package.metadata.wix]`'s GUIDs identify the MSI product across
   versions: never change them.
 - To upgrade dist: install the new version, run `dist init --yes` (it

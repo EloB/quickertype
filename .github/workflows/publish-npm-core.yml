@@ -67,6 +67,12 @@ jobs:
             echo "::error::npm/quicktype-core/package.json is at $version, not the workspace version $workspace."
             exit 1
           fi
+          # `npm version X.Y.Z --no-git-tag-version` sets both of these too.
+          lock=$(jq -r '[.name, .version, .packages[""].name, .packages[""].version] | join(" ")' package-lock.json)
+          if [ "$lock" != "$PACKAGE $version $PACKAGE $version" ]; then
+            echo "::error::npm/quicktype-core/package-lock.json has (name version, root package's name version) $lock, not $PACKAGE $version: run npm install."
+            exit 1
+          fi
           if [ -n "$PLAN" ]; then
             tag=$(jq -r .announcement_tag <<<"$PLAN")
             if [ "$tag" != "v$version" ]; then

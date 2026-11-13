@@ -53,26 +53,49 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.99"
+      # The crates are released in lockstep: each is at the workspace
+      # version, and every dependency on one of them requires exactly that
+      # version (`=X.Y.Z` in [workspace.dependencies]).
       - name: The crates' version is the workspace version (and the tag's)
         env:
           PLAN: ${{ inputs.plan }}
         run: |
-          workspace=$(cargo metadata --format-version 1 --no-deps | jq -r '[.packages[] | select(.name == "quickertype")][0].version')
+          metadata=$(cargo metadata --format-version 1 --no-deps)
+          workspace=$(jq -r '.packages[] | select(.name == "quickertype") | .version' <<<"$metadata")
           echo "workspace version: $workspace"
+          failed=0
           for crate in $CRATES; do
-            version=$(cargo metadata --format-version 1 --no-deps | jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version')
+            version=$(jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version' <<<"$metadata")
             if [ "$version" != "$workspace" ]; then
-              echo "::error::$crate is at $version, not the workspace version $workspace."
-              exit 1
+              echo "::error::$crate is at ${version:-nothing (not a workspace member)}, not the workspace version $workspace."
+              failed=1
             fi
           done
+          # Every member's dependencies on the crates, of every kind.
+          deps=$(jq -r '.packages[] | .name as $member | .dependencies[]
+            | select(.name | startswith("quickertype"))
+            | [$member, .kind // "normal", .name, .req] | @tsv' <<<"$metadata")
+          if [ -z "$deps" ]; then
+            echo "::error::No dependencies on the quickertype-* crates found: has cargo metadata's format changed?"
+            failed=1
+          fi
+          while IFS=$'\t' read -r member kind dep req; do
+            [ -n "$member" ] || continue
+            if [ "$req" = "=$workspace" ]; then
+              echo "$member -> $dep $req ($kind)"
+            else
+              echo "::error::$member requires $dep \"$req\" ($kind), not \"=$workspace\": set version = \"=$workspace\" in [workspace.dependencies]."
+              failed=1
+            fi
+          done <<<"$deps"
           if [ -n "$PLAN" ]; then
             tag=$(jq -r .announcement_tag <<<"$PLAN")
             if [ "$tag" != "v$workspace" ]; then
               echo "::error::The release tag is $tag but the crates are at $workspace."
-              exit 1
+              failed=1
             fi
           fi
+          [ "$failed" = 0 ] || exit 1
           echo "VERSION=$workspace" >> "$GITHUB_ENV"
       - name: Dry run (cargo publish --dry-run)
         if: github.event_name == 'pull_request'
