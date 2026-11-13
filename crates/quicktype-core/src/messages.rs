@@ -27,7 +27,11 @@ macro_rules! error_kinds {
         #[allow(clippy::upper_case_acronyms)]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         pub enum ErrorKind {
-            $($(#[$doc])* $kind,)*
+            $(
+                $(#[$doc])*
+                #[doc = concat!("Template: ", stringify!($template))]
+                $kind,
+            )*
         }
 
         impl ErrorKind {
