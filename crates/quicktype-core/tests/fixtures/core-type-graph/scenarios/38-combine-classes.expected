@@ -1,0 +1,111 @@
+(forwarding intersections: false)
+named: objects 16,5,6,7,8,9,10,12,13,14 enums  unions 11
+
+# combine classes
+reconstituting 16
+reconstituted 16 as 0
+replacing set 5,6,8 as 1
+  reconstituting 2
+  reconstituted 2 as 3
+  reconstituting 4
+  reconstituted 4 as 4
+  reconstituting 0
+  reconstituted 0 as 5
+replaced set 5,6,8 as 1
+reconstituting 7
+reconstituted 7 as 6
+reconstituting 15
+reconstituted 15 as 7
+reconstituting 9
+reconstituted 9 as 8
+reconstituting 3
+reconstituted 3 as 9
+reconstituting 10
+reconstituted 10 as 10
+reconstituting 12
+reconstituted 12 as 11
+reconstituting 11
+reconstituted 11 as 12
+reconstituting 13
+reconstituted 13 as 13
+reconstituting 14
+reconstituted 14 as 14
+0: class Top | children 1,6,7,8,10,11,13,14 | given Top ()
+1: class c1 | children 2,3,4,5 | given C1,C2,C4 ()
+2: double
+3: string | unrestricted
+4: bool
+5: integer
+6: class C3 | children 3 | given C3 ()
+7: array | children 1
+8: class C5 | children 3,9 | given C5 ()
+9: null
+10: class C6 | children 3,4 | given C6 ()
+11: class C7 | children 12,3 | given C7 ()
+12: union Nullable | children 8,9 | given Nullable ()
+13: class c8 | children 5 | given C8,C9 ()
+14: class Fixed | children 5 | given Fixed ()
+
+# combine classes
+(combine: unchanged)
+
+# GC
+0: class Top | children 1,6,7,8,10,11,13,14 | given Top ()
+1: class c1 | children 2,3,4,5 | given C1,C2,C4 ()
+2: double
+3: string | unrestricted
+4: bool
+5: integer
+6: class C3 | children 3 | given C3 ()
+7: array | children 1
+8: class C5 | children 3,9 | given C5 ()
+9: null
+10: class C6 | children 3,4 | given C6 ()
+11: class C7 | children 12,3 | given C7 ()
+12: union Nullable | children 8,9 | given Nullable ()
+13: class c8 | children 5 | given C8,C9 ()
+14: class Fixed | children 5 | given Fixed ()
+0: class Top | children 1,6,7,8,10,11,13,14 | given Top ()
+1: class c1 | children 2,3,4,5 | given C1,C2,C4 ()
+2: double
+3: string | unrestricted
+4: bool
+5: integer
+6: class C3 | children 3 | given C3 ()
+7: array | children 1
+8: class C5 | children 3,9 | given C5 ()
+9: null
+10: class C6 | children 3,4 | given C6 ()
+11: class C7 | children 12,3 | given C7 ()
+12: union Nullable | children 8,9 | given Nullable ()
+13: class c8 | children 5 | given C8,C9 ()
+14: class Fixed | children 5 | given Fixed ()
+(forwarding intersections: false)
+(combine: unchanged)
+0: integer
+1: string | unrestricted
+2: class C1 | children 1,0 | given C1 ()
+3: class C2 | children 1,0 | given C2 ()
+4: class C3 | children 0,1 | given C3 ()
+5: class Top | children 2,3,4 | given Top ()
+(combine: unchanged)
+0: class Top | children 1,4,5 | given Top ()
+1: class C1 | children 2,3 | given C1 ()
+2: string | unrestricted
+3: integer
+4: class C2 | children 2,3 | given C2 ()
+5: class C3 | children 3,2 | given C3 ()
+(forwarding intersections: false)
+0: class Top | children 1 | given Top ()
+1: class c1 | children 2,5 | given C1,C2 ()
+2: union | children 4,3
+3: integer
+4: double
+5: string | unrestricted
+(combine: unchanged)
+0: class Top | children 1 | given Top ()
+1: class c1 | children 2,5 | given C1,C2 ()
+2: union | children 4,3
+3: integer
+4: double
+5: string | unrestricted
