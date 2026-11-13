@@ -1,0 +1,6 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema
+couldn't fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema
+error: Could not fetch schema #, referred to from crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema#

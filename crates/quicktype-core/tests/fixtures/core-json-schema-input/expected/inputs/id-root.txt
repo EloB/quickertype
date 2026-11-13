@@ -1,0 +1,28 @@
+resolving # relative to tests/inputs/schema/id-root.schema# (tests/inputs/schema/id-root.schema#)
+trying to fetch tests/inputs/schema/id-root.schema
+successully fetched tests/inputs/schema/id-root.schema
+adding mapping http://foo/root.json# (tests/inputs/schema/id-root.schema#)
+adding mapping http://foo/root.json#/definitions (tests/inputs/schema/id-root.schema#definitions)
+adding mapping http://foo/root.json#/definitions/foo (tests/inputs/schema/id-root.schema#definitions/foo)
+adding mapping http://foo/root.json#/definitions/foo/properties (tests/inputs/schema/id-root.schema#definitions/foo/properties)
+adding mapping http://foo/root.json#/definitions/foo/properties/bar (tests/inputs/schema/id-root.schema#definitions/foo/properties/bar)
+adding mapping http://foo/root.json#/definitions/bar (tests/inputs/schema/id-root.schema#definitions/bar)
+resolved to # (tests/inputs/schema/id-root.schema#)
+resolving # relative to tests/inputs/schema/id-root.schema# (tests/inputs/schema/id-root.schema#)
+resolved to # (tests/inputs/schema/id-root.schema#)
+resolving #/definitions/foo relative to http://foo/root.json# (tests/inputs/schema/id-root.schema#)
+resolved to http://foo/root.json#/definitions/foo (tests/inputs/schema/id-root.schema#definitions/foo)
+resolving http://foo/root.json#/definitions/bar relative to http://foo/root.json#/definitions/foo/properties/bar (tests/inputs/schema/id-root.schema#definitions/foo/properties/bar)
+resolved to http://foo/root.json#/definitions/bar (tests/inputs/schema/id-root.schema#definitions/bar)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 8 | 1 | given TopLevel ()
+2: intersection bar | children 3 | 2 | distance 2 bar ()
+3: intersection bar | children 5 | 3 | given bar ()
+4: integer | 4
+5: union bar | children 4 | 5 | distance 1 bar ()
+6: any | 6
+7: object TopLevel | children 2,6 | 7 | distance 1 TopLevel ()
+8: union TopLevel | children 7 | 8 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,7 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema#)
+error: `required` must be string or array of strings, but is a at crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema#

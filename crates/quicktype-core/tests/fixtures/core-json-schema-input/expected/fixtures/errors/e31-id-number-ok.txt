@@ -1,0 +1,12 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 2 | 0 | given TopLevel ()
+1: string TopLevel | 1 | distance 1 TopLevel () | unrestricted
+2: union TopLevel | children 1 | 2 | distance 1 TopLevel ()
+# attributes

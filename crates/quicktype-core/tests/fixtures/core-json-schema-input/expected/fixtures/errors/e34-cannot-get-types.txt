@@ -1,0 +1,10 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | 0 | given TopLevel ()
+# attributes

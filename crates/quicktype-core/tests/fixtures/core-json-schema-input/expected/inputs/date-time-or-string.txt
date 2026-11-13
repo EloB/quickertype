@@ -1,0 +1,28 @@
+resolving # relative to tests/inputs/schema/date-time-or-string.schema# (tests/inputs/schema/date-time-or-string.schema#)
+trying to fetch tests/inputs/schema/date-time-or-string.schema
+successully fetched tests/inputs/schema/date-time-or-string.schema
+resolved to # (tests/inputs/schema/date-time-or-string.schema#)
+resolving # relative to tests/inputs/schema/date-time-or-string.schema# (tests/inputs/schema/date-time-or-string.schema#)
+resolved to # (tests/inputs/schema/date-time-or-string.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 18 | 0 | given TopLevel ()
+1: intersection bar | children 8 | 1 | distance 2 bar ()
+2: intersection bar | children 4 | 2 | distance 4 bar ()
+3: date-time bar | 3 | distance 5 bar,foo ()
+4: union bar | children 3 | 4 | distance 5 bar ()
+5: intersection bar | children 7 | 5 | distance 4 bar ()
+6: string bar | 6 | distance 5 bar () | 1 enums: quux (1), ...
+7: union bar | children 6 | 7 | distance 5 bar ()
+8: union bar | children 2,5 | 8 | distance 3 bar ()
+9: intersection foo | children 15 | 9 | distance 2 foo ()
+10: intersection foo | children 12 | 10 | distance 4 foo ()
+11: string foo | 11 | distance 5 foo () | unrestricted
+12: union foo | children 11 | 12 | distance 5 foo ()
+13: intersection foo | children 14 | 13 | distance 4 foo ()
+14: union foo | children 3 | 14 | distance 5 foo ()
+15: union foo | children 10,13 | 15 | distance 3 foo ()
+16: any | 16
+17: object TopLevel | children 1,9,16 | 17 | distance 1 TopLevel ()
+18: union TopLevel | children 17 | 18 | distance 1 TopLevel ()
+# attributes

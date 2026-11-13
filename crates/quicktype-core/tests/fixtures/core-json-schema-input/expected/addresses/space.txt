@@ -1,0 +1,6 @@
+resolving # relative to dir with space/x.schema# (dir with space/x.schema#)
+trying to fetch dir with space/x.schema
+couldn't fetch dir with space/x.schema
+trying to fetch dir with space/x.schema
+couldn't fetch dir with space/x.schema
+error: Could not fetch schema #, referred to from dir with space/x.schema#

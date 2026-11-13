@@ -1,0 +1,87 @@
+{
+  "definitions": {
+    "S": {
+      "type": "string"
+    },
+    "N": {
+      "type": "number"
+    },
+    "O": {
+      "type": "object",
+      "properties": {
+        "o": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "all": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/O"
+        },
+        {
+          "properties": {
+            "extra": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "one": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/S"
+        },
+        {
+          "$ref": "#/definitions/N"
+        }
+      ],
+      "qt-accessors": [
+        "Str",
+        {
+          "go": "Num"
+        }
+      ],
+      "description": "one of them"
+    },
+    "any": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "refWithType": {
+      "type": "object",
+      "$ref": "#/definitions/O"
+    },
+    "nested": {
+      "oneOf": [
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

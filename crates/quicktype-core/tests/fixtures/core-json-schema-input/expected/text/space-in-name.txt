@@ -1,0 +1,10 @@
+resolving # relative to My Type# (My Type#)
+trying to fetch My Type
+successully fetched My Type
+resolved to # (My Type#)
+resolving # relative to My Type-1# (My Type-1#)
+trying to fetch My Type-1
+couldn't fetch My Type-1
+trying to fetch My Type-1
+couldn't fetch My Type-1
+error: Could not fetch schema #, referred to from My Type-1#

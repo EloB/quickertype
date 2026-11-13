@@ -1,0 +1,41 @@
+resolving # relative to tests/inputs/schema/mutually-recursive.schema# (tests/inputs/schema/mutually-recursive.schema#)
+trying to fetch tests/inputs/schema/mutually-recursive.schema
+successully fetched tests/inputs/schema/mutually-recursive.schema
+resolved to # (tests/inputs/schema/mutually-recursive.schema#)
+resolving # relative to tests/inputs/schema/mutually-recursive.schema# (tests/inputs/schema/mutually-recursive.schema#)
+resolved to # (tests/inputs/schema/mutually-recursive.schema#)
+resolving #/definitions/Foo relative to # (tests/inputs/schema/mutually-recursive.schema#)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Foo (tests/inputs/schema/mutually-recursive.schema#/definitions/Foo)
+resolving #/definitions/Bar relative to #/definitions/Foo/properties/bar (tests/inputs/schema/mutually-recursive.schema#/definitions/Foo/properties/bar)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Bar (tests/inputs/schema/mutually-recursive.schema#/definitions/Bar)
+resolving #/definitions/Foo relative to #/definitions/Bar/properties/foo/oneOf/0 (tests/inputs/schema/mutually-recursive.schema#/definitions/Bar/properties/foo/oneOf/0)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Foo (tests/inputs/schema/mutually-recursive.schema#/definitions/Foo)
+resolving #/definitions/Foo relative to #/definitions/Bar/properties/foo/oneOf/1/items (tests/inputs/schema/mutually-recursive.schema#/definitions/Bar/properties/foo/oneOf/1/items)
+trying to fetch 
+couldn't fetch 
+resolved to #/definitions/Foo (tests/inputs/schema/mutually-recursive.schema#/definitions/Foo)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 1 | 0 | given TopLevel ()
+1: intersection TopLevel | children 15 | 1 | given TopLevel ()
+2: intersection bar | children 3 | 2 | distance 2 bar ()
+3: intersection Bar | children 13 | 3 | given Bar ()
+4: intersection foo | children 10 | 4 | distance 2 foo ()
+5: intersection foo | children 1 | 5 | distance 4 foo ()
+6: intersection foo | children 9 | 6 | distance 4 foo ()
+7: intersection foo | children 1 | 7 | distance 6 foo ()
+8: array | children 7 | 8
+9: union foo | children 8 | 9 | distance 5 foo ()
+10: union foo | children 5,6 | 10 | distance 3 foo ()
+11: any | 11
+12: object Bar | children 4,11 | 12 | distance 1 Bar ()
+13: union Bar | children 12 | 13 | distance 1 Bar ()
+14: object TopLevel | children 2,11 | 14 | distance 1 TopLevel ()
+15: union TopLevel | children 14 | 15 | distance 1 TopLevel ()
+# attributes

@@ -1,0 +1,47 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema
+adding mapping http://example.com/schemas/root.json# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#)
+adding mapping http://example.com/schemas/root.json#/properties (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#properties)
+adding mapping http://example.com/schemas/root.json#/properties/item (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#properties/item)
+adding mapping http://example.com/schemas/root.json#/properties/anchored (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#properties/anchored)
+adding mapping http://example.com/schemas/root.json#/properties/nested (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#properties/nested)
+adding mapping http://example.com/schemas/root.json#/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions)
+adding mapping http://example.com/schemas/item.json# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Item)
+adding mapping http://example.com/schemas/item.json#/properties (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Item/properties)
+adding mapping http://example.com/schemas/item.json#/properties/id (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Item/properties/id)
+adding mapping http://example.com/schemas/root.json#anchor (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Anchored)
+adding mapping http://example.com/schemas/nested/thing.json# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Nested)
+adding mapping http://example.com/schemas/nested/thing.json#/definitions (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Nested/definitions)
+adding mapping http://example.com/schemas/nested/thing.json#/definitions/T (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Nested/definitions/T)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#)
+resolving #anchor relative to http://example.com/schemas/root.json#/properties/anchored (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#/properties/anchored)
+resolved to http://example.com/schemas/root.json#/definitions/Anchored (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Anchored)
+resolving item.json# relative to http://example.com/schemas/root.json#/properties/item (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#/properties/item)
+resolved to http://example.com/schemas/root.json#/definitions/Item (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Item)
+resolving nested/thing.json#/definitions/T relative to http://example.com/schemas/root.json#/properties/nested (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#/properties/nested)
+resolved to http://example.com/schemas/nested/thing.json#/definitions/T (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema#definitions/Nested/definitions/T)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 18 | 0 | given TopLevel ()
+1: intersection anchored | children 2 | 1 | distance 2 anchored ()
+2: intersection Anchored | children 4 | 2 | given Anchored ()
+3: string Anchored | 3 | distance 1 Anchored () | unrestricted
+4: union Anchored | children 3 | 4 | distance 1 Anchored ()
+5: intersection item | children 6 | 5 | distance 2 item ()
+6: intersection Item | children 12 | 6 | given Item ()
+7: intersection id | children 9 | 7 | distance 2 id ()
+8: integer | 8
+9: union id | children 8 | 9 | distance 3 id ()
+10: any | 10
+11: object Item | children 7,10 | 11 | distance 1 Item ()
+12: union Item | children 11 | 12 | distance 1 Item ()
+13: intersection nested | children 14 | 13 | distance 2 nested ()
+14: intersection Tee | children 16 | 14 | given Tee ()
+15: bool | 15
+16: union Tee | children 15 | 16 | distance 1 Tee ()
+17: object TopLevel | children 1,5,13,10 | 17 | distance 1 TopLevel ()
+18: union TopLevel | children 17 | 18 | distance 1 TopLevel ()
+# attributes

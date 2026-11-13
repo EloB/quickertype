@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "qt-accessors": 5,
+  "properties": {
+    "a": {
+      "type": "string"
+    }
+  }
+}

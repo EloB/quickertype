@@ -1,0 +1,24 @@
+resolving # relative to tests/inputs/schema/ie-suffix-singularization.schema# (tests/inputs/schema/ie-suffix-singularization.schema#)
+trying to fetch tests/inputs/schema/ie-suffix-singularization.schema
+successully fetched tests/inputs/schema/ie-suffix-singularization.schema
+resolved to # (tests/inputs/schema/ie-suffix-singularization.schema#)
+resolving # relative to tests/inputs/schema/ie-suffix-singularization.schema# (tests/inputs/schema/ie-suffix-singularization.schema#)
+resolved to # (tests/inputs/schema/ie-suffix-singularization.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 14 | 0 | given TopLevel ()
+1: intersection cookies | children 12 | 1 | distance 2 cookies ()
+2: intersection cookie | children 10 | 2 | distance 4 cookie ()
+3: intersection name | children 5 | 3 | distance 2 name ()
+4: string name | 4 | distance 3 name,value () | unrestricted
+5: union name | children 4 | 5 | distance 3 name ()
+6: intersection value | children 7 | 6 | distance 2 value ()
+7: union value | children 4 | 7 | distance 3 value ()
+8: any | 8
+9: object cookie | children 3,6,8 | 9 | distance 6 cookie ()
+10: union cookie | children 9 | 10 | distance 6 cookie ()
+11: array | children 2 | 11
+12: union cookies | children 11 | 12 | distance 3 cookies ()
+13: object TopLevel | children 1,8 | 13 | distance 1 TopLevel ()
+14: union TopLevel | children 13 | 14 | distance 1 TopLevel ()
+# attributes

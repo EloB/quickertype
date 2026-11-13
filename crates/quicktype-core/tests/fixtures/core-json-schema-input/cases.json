@@ -1,0 +1,2233 @@
+[
+ {
+  "id": "inputs/accessors",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/accessors.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/all-of-additional-properties-false",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/all-of-additional-properties-false.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/any",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/any.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/bool-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/bool-string.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/bool-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/bool-string.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/boolean-subschema",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/boolean-subschema.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/camelCase",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/camelCase.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/class-map-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/class-map-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/class-with-additional",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/class-with-additional.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/comment-injection-enum-nested-comment",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/comment-injection-enum-nested-comment.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/comment-injection-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/comment-injection-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/comment-injection-nested-comment",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/comment-injection-nested-comment.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/comment-injection",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/comment-injection.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/const-non-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/const-non-string.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/constructor",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/constructor.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/cut-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/cut-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/date-time-or-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/date-time-or-string.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/date-time-or-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/date-time-or-string.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/date-time",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/date-time.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/date-time",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/date-time.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/default-value",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/default-value.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/description-with-double-quotes",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/description-with-double-quotes.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/description",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/description.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/direct-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/direct-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/empty-object",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/empty-object.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/enum-large",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/enum-large.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/enum-with-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/enum-with-null.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/enum-with-values",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/enum-with-values.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/fractional-bounds",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/fractional-bounds.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/go-schema-pattern-properties",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/go-schema-pattern-properties.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/haskell-enum-forbidden",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/haskell-enum-forbidden.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/id-no-address",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/id-no-address.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/id-root",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/id-root.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/ie-suffix-singularization",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/ie-suffix-singularization.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/implicit-all-of",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/implicit-all-of.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/implicit-class-array-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/implicit-class-array-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/implicit-one-of",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/implicit-one-of.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/integer-before-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/integer-before-number.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/integer-float-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/integer-float-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/integer-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/integer-string.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/integer-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/integer-string.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/integer-type",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/integer-type.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/intersection-nested",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/intersection-nested.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/intersection",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/intersection.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/issue2680-top-level-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/issue2680-top-level-array.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/keyword-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/keyword-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/keyword-unions",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/keyword-unions.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/light",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/light.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/list",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/list.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/min-max-items",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/min-max-items.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/minmax-integer",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/minmax-integer.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/minmax",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/minmax.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/minmaxlength",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/minmaxlength.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/multi-type-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/multi-type-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/mutually-recursive",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/mutually-recursive.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/nested-intersection-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/nested-intersection-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/non-standard-ref",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/non-standard-ref.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/nullable-optional-one-of",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/nullable-optional-one-of.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/object-type-required",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/object-type-required.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/optional-any",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-any.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/optional-const-ref",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-const-ref.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/optional-constraints",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-constraints.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/optional-date-time",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-date-time.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/optional-date-time",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-date-time.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/optional-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/optional-property",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/optional-property.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/pattern",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/pattern.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/postman-collection",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/postman-collection.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/prefix-items",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/prefix-items.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/recursive-union-flattening",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/recursive-union-flattening.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/ref-id-files",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/ref-id-files.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/ref-remote",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/ref-remote.schema"
+    ]
+   }
+  ],
+  "network": true
+ },
+ {
+  "id": "inputs/renaming-bug",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/renaming-bug.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/required-draft3",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/required-draft3.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/required-non-properties",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/required-non-properties.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/required",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/required.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/rust-cycle-breaker-union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/rust-cycle-breaker-union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/schema-constraints",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/schema-constraints.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/simple-ref",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/simple-ref.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/strict-optional",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/strict-optional.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/top-level-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/top-level-array.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/top-level-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/top-level-enum.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/top-level-primitive-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/top-level-primitive-array.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/top-level-primitive",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/top-level-primitive.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/tuple",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/tuple.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/unevaluated-properties",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/unevaluated-properties.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/unicode-codepoint-length",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/unicode-codepoint-length.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/union-int-double",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/union-int-double.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/union-list",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/union-list.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/union",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/union.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs/uuid",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/uuid.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/uuid",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/uuid.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs/vega-lite",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/vega-lite.schema"
+    ]
+   }
+  ],
+  "network": false
+ },
+ {
+  "id": "inputs-stm-string/vega-lite",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/vega-lite.schema"
+    ]
+   }
+  ],
+  "stm": "string",
+  "network": false
+ },
+ {
+  "id": "inputs-alpha/accessors",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/schema/accessors.schema"
+    ]
+   }
+  ],
+  "alphabetize": true
+ },
+ {
+  "id": "inputs-alpha/property-sort",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema"
+    ]
+   }
+  ],
+  "alphabetize": true
+ },
+ {
+  "id": "cli/nonexistent",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "nonexistent.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "cli/graphql-file",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/graphql/github1.graphql"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "cli/json-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "tests/inputs/json/misc/00c36.json"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e01-key-missing",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e01-key-missing.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e02-missing-file",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e02-missing-file.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e03-invalid-type",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e03-invalid-type.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e04-type-element",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e04-type-element.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e05-type-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e05-type-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e06-required-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e06-required-string.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e07-items-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e07-items-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e08-ref-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e08-ref-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e09-oneof-object",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e09-oneof-object.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e10-type-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e10-type-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e11-index-non-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e11-index-non-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e12-index-out-of-range",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e12-index-out-of-range.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e13-forbidden-required",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e13-forbidden-required.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e14-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e14-array.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e15-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e15-string.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e16-empty-type",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e16-empty-type.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e17-null-property",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e17-null-property.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e18-required-element",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e18-required-element.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e19-null-properties",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e19-null-properties.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e20-accessors-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e20-accessors-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e21-accessors-length",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e21-accessors-length.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e22-malformed-ref",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e22-malformed-ref.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e23-bad-port",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e23-bad-port.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e24-order-number",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e24-order-number.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e25-ref-to-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e25-ref-to-string.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e26-ref-string-length",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e26-ref-string-length.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e27-ref-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e27-ref-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e28-ref-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e28-ref-array.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e29-uri-protocols",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e29-uri-protocols.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e30-allof-items",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e30-allof-items.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e31-id-number-ok",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e31-id-number-ok.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e32-anyof-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e32-anyof-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e33-ref-type-path",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e33-ref-type-path.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e34-cannot-get-types",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e35-accessor-entry-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e35-accessor-entry-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e36-additional-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e36-additional-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e37-prefix-rest-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e37-prefix-rest-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e38-empty",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e38-empty.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e39-invalid",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e39-invalid.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e40-duplicate-yaml",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e40-duplicate-yaml.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e41-empty-enum",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e41-empty-enum.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e42-const-typed-array",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e42-const-typed-array.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/errors/e43-const-null",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e43-const-null.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/fragments/defs",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/ids/additional",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/ids/relative-id",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/ids/root",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/root.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/ids/uses-additional",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/arrays",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/enums-and-consts",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/enums-and-consts.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/names",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/names.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/objects",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/objects.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/property-order-string",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order-string.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/property-order",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-order.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/property-sort",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/set-operations",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/set-operations.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/keywords/strings-and-numbers",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/strings-and-numbers.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/refs/main",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/yaml/anchors",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/anchors.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/yaml/person",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "fixtures/yaml/trailing-comma",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/trailing-comma.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/several",
+  "sources": [
+   {
+    "name": "First",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/names.schema"
+    ]
+   },
+   {
+    "name": "Second",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema"
+    ]
+   },
+   {
+    "name": "Third",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/main.schema#/definitions/Local"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/two-uris",
+  "sources": [
+   {
+    "name": "Both",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema",
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Foo"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/fragment-types",
+  "sources": [
+   {
+    "name": "Ignored",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/fragment-root",
+  "sources": [
+   {
+    "name": "Root",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/fragment-boolean",
+  "sources": [
+   {
+    "name": "X",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/errors/e34-cannot-get-types.schema#/definitions/"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/fragment-name",
+  "sources": [
+   {
+    "name": "A",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Bar"
+    ]
+   },
+   {
+    "name": "B",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/fragments/defs.schema#/definitions/Foo"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/same-name-twice",
+  "sources": [
+   {
+    "name": "Same",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema"
+    ]
+   },
+   {
+    "name": "Same",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sources/no-name-inferable",
+  "store": false,
+  "sources": [
+   {
+    "name": "X",
+    "uris": [
+     "http://localhost/"
+    ],
+    "schema": "{\"type\":\"string\"}"
+   }
+  ]
+ },
+ {
+  "id": "text/plain",
+  "store": false,
+  "sources": [
+   {
+    "name": "Text",
+    "schema": "{\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\"}}}"
+   }
+  ]
+ },
+ {
+  "id": "text/space-in-name",
+  "store": false,
+  "sources": [
+   {
+    "name": "My Type",
+    "schema": "{\"type\":\"string\"}"
+   },
+   {
+    "name": "My Type",
+    "schema": "{\"type\":\"integer\"}"
+   }
+  ]
+ },
+ {
+  "id": "text/duplicate-names",
+  "store": false,
+  "sources": [
+   {
+    "name": "Dup",
+    "schema": "{\"type\":\"string\"}"
+   },
+   {
+    "name": "Dup",
+    "schema": "{\"type\":\"integer\"}"
+   },
+   {
+    "name": "Dup",
+    "schema": "{\"type\":\"boolean\"}"
+   }
+  ]
+ },
+ {
+  "id": "text/with-uris",
+  "store": false,
+  "sources": [
+   {
+    "name": "WithUri",
+    "uris": [
+     "#/definitions/A"
+    ],
+    "schema": "{\"definitions\":{\"A\":{\"type\":\"number\"}}}"
+   }
+  ]
+ },
+ {
+  "id": "text/ref-to-file-with-store",
+  "sources": [
+   {
+    "name": "Text",
+    "schema": "{\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B\"}}}"
+   }
+  ]
+ },
+ {
+  "id": "text/ref-to-file-no-store",
+  "store": false,
+  "sources": [
+   {
+    "name": "Text",
+    "schema": "{\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/sub/b.schema#/definitions/B\"}}}"
+   }
+  ]
+ },
+ {
+  "id": "text/invalid",
+  "sources": [
+   {
+    "name": "Bad",
+    "schema": "{ not json: ["
+   }
+  ]
+ },
+ {
+  "id": "text/yaml",
+  "store": false,
+  "sources": [
+   {
+    "name": "Yaml",
+    "schema": "type: object\nproperties:\n  x: {type: integer}\n"
+   }
+  ]
+ },
+ {
+  "id": "text/array",
+  "store": false,
+  "sources": [
+   {
+    "name": "Arr",
+    "schema": "[1, 2]"
+   }
+  ]
+ },
+ {
+  "id": "text/converted",
+  "store": false,
+  "sources": [
+   {
+    "name": "Conv",
+    "schema": "{\"type\":\"string\"}",
+    "isConverted": true
+   }
+  ]
+ },
+ {
+  "id": "additional/with-id",
+  "additional": [
+   "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/additional.schema"
+  ],
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "additional/without",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "additional/missing",
+  "additional": [
+   "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/missing.schema"
+  ],
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/uses-additional.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/windows-drive",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "C:\\Users\\quicktype\\top.schema.json"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/windows-unc",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "\\\\server\\share\\top.schema.json"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/malformed",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "100%.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/escaped",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "100%25.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/bad-port",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "http://h:99999/x.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/space",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "dir with space/x.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/dot-segments",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "./crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/refs/../refs/sub/../main.schema"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "addresses/query",
+  "sources": [
+   {
+    "name": "TopLevel",
+    "uris": [
+     "crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/arrays.schema?b=2&a=1"
+    ]
+   }
+  ]
+ }
+]

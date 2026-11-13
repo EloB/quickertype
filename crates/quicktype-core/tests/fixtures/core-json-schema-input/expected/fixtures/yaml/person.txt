@@ -1,0 +1,30 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/yaml/person.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 20 | 0 | given TopLevel ()
+1: intersection 1 | children 3 | 1 | distance 2 1 ()
+2: double | 2
+3: union 1 | children 2 | 3 | distance 3 1 ()
+4: intersection 2 | children 6 | 4 | distance 2 2 ()
+5: bool | 5
+6: union 2 | children 5 | 6 | distance 3 2 ()
+7: intersection age | children 9 | 7 | distance 2 age ()
+8: integer | 8 | 0-undefined
+9: union age | children 8 | 9 | distance 3 age ()
+10: intersection name | children 12 | 10 | distance 2 name ()
+11: string name | 11 | distance 3 name () | unrestricted
+12: union name | children 11 | 12 | distance 3 name ()
+13: intersection tags | children 17 | 13 | distance 2 tags ()
+14: intersection tag | children 15 | 14 | distance 4 tag ()
+15: union tag | children 11 | 15 | distance 6 tag ()
+16: array | children 14 | 16
+17: union tags | children 16 | 17 | distance 3 tags ()
+18: any | 18
+19: object TopLevel | children 1,4,7,10,13,18 | 19 | distance 1 TopLevel ()
+20: union TopLevel | children 19 | 20 | distance 1 TopLevel ()
+# attributes

@@ -1009,7 +1009,7 @@ mod tests {
         assert!(Type::object(r(0), TypeKind::Object, false, None, None).is_err());
         assert!(Type::object(r(0), TypeKind::Class, false, None, Some(r(1))).is_err());
         let e = Type::union(r(0), Some(IndexSet::new())).unwrap_err();
-        assert_eq!(e.kind(), ErrorKind::IRNoEmptyUnions);
+        assert_eq!(e.kind(), Some(ErrorKind::IRNoEmptyUnions));
         let mut a = Type::array(r(0), None);
         assert!(a.items().is_err());
         a.set_items(r(1)).unwrap();
@@ -1018,7 +1018,7 @@ mod tests {
         let mut u = Type::union(r(0), None).unwrap();
         assert_eq!(
             u.set_members(IndexSet::new()).unwrap_err().kind(),
-            ErrorKind::IRNoEmptyUnions
+            Some(ErrorKind::IRNoEmptyUnions)
         );
         let mut c = Type::class(r(0), false, None).unwrap();
         assert!(c.properties().is_err());

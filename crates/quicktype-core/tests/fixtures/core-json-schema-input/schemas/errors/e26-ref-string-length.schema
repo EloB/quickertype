@@ -1,0 +1,11 @@
+{
+  "s": "abc",
+  "properties": {
+    "x": {
+      "$ref": "#/s/length"
+    },
+    "y": {
+      "$ref": "#/s/7"
+    }
+  }
+}

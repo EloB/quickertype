@@ -33,3 +33,27 @@ pub fn enum_case_values(
         })
         .collect())
 }
+
+// ---------------------------------------------------------------------------
+// JSON Schema input: `enumValuesAttributeProducer`
+
+/// `enumValuesAttributeProducer(schema)`: the `qt-enum-values` of the type.
+pub fn enum_values_attribute_producer(
+    schema: &crate::input::json_schema_store::JsonSchema,
+    _canonical_ref: &crate::input::json_schema_input::Ref,
+    _types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
+) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
+    use crate::attributes::accessor_names::make_accessor_names;
+    use crate::input::json_schema_input::JsonSchemaAttributes;
+
+    let Some(maybe_enum_values) = schema.get("qt-enum-values") else {
+        return Ok(None);
+    };
+    Ok(Some(JsonSchemaAttributes {
+        for_type: Some(
+            EnumValuesTypeAttributeKind.make_attributes(make_accessor_names(maybe_enum_values)?),
+        ),
+        ..JsonSchemaAttributes::default()
+    }))
+}

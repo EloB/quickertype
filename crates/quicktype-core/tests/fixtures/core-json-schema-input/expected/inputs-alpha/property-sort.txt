@@ -1,0 +1,38 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/keywords/property-sort.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 28 | 0 | given TopLevel ()
+1: intersection 10 | children 3 | 1 | distance 2 10 ()
+2: string 10 | 2 | distance 3 10,2,Alpha,alpha,b,B,ß,Ä,é,ǅ,😀a, () | unrestricted
+3: union 10 | children 2 | 3 | distance 3 10 ()
+4: intersection 2 | children 5 | 4 | distance 2 2 ()
+5: union 2 | children 2 | 5 | distance 3 2 ()
+6: intersection Alpha | children 7 | 6 | distance 2 Alpha ()
+7: union Alpha | children 2 | 7 | distance 3 Alpha ()
+8: intersection alpha | children 9 | 8 | distance 2 alpha ()
+9: union alpha | children 2 | 9 | distance 3 alpha ()
+10: intersection b | children 11 | 10 | distance 2 b ()
+11: union b | children 2 | 11 | distance 3 b ()
+12: intersection B | children 13 | 12 | distance 2 B ()
+13: union B | children 2 | 13 | distance 3 B ()
+14: intersection ß | children 15 | 14 | distance 2 ß ()
+15: union ß | children 2 | 15 | distance 3 ß ()
+16: intersection Ä | children 17 | 16 | distance 2 Ä ()
+17: union Ä | children 2 | 17 | distance 3 Ä ()
+18: intersection é | children 19 | 18 | distance 2 é ()
+19: union é | children 2 | 19 | distance 3 é ()
+20: intersection ǅ | children 21 | 20 | distance 2 ǅ ()
+21: union ǅ | children 2 | 21 | distance 3 ǅ ()
+22: intersection 😀a | children 23 | 22 | distance 2 😀a ()
+23: union 😀a | children 2 | 23 | distance 3 😀a ()
+24: intersection  | children 25 | 24 | distance 2  ()
+25: union  | children 2 | 25 | distance 3  ()
+26: any | 26
+27: object TopLevel | children 1,4,6,12,8,10,16,14,18,20,22,24,26 | 27 | distance 1 TopLevel ()
+28: union TopLevel | children 27 | 28 | distance 1 TopLevel ()
+# attributes

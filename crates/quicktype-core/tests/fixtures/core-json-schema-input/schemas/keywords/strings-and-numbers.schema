@@ -1,0 +1,88 @@
+{
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string",
+      "format": "time"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "uri": {
+      "type": "string",
+      "format": "uri",
+      "qt-uri-protocols": [
+        "https",
+        "http"
+      ],
+      "qt-uri-extensions": [
+        ".png"
+      ]
+    },
+    "intString": {
+      "type": "string",
+      "format": "integer"
+    },
+    "boolString": {
+      "type": "string",
+      "format": "boolean"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "numericFormat": {
+      "type": "string",
+      "format": 5
+    },
+    "bounded": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 10,
+      "pattern": "^[a-z]+$"
+    },
+    "number": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 1e+21,
+      "default": 1.5
+    },
+    "integer": {
+      "type": "integer",
+      "minimum": -3,
+      "default": 2
+    },
+    "stringDefault": {
+      "type": "string",
+      "default": "x"
+    },
+    "boolDefault": {
+      "type": "boolean",
+      "default": false
+    },
+    "nullDefault": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    },
+    "wrongDefault": {
+      "type": "string",
+      "default": 3
+    },
+    "objectDefault": {
+      "type": "object",
+      "default": {}
+    }
+  }
+}

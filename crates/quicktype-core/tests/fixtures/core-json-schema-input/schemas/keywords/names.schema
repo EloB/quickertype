@@ -1,0 +1,65 @@
+{
+  "$defs": {
+    "FromDefs": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "FromDefinitions": {
+      "type": "object",
+      "properties": {
+        "y": {
+          "type": "string"
+        }
+      }
+    },
+    "Titled": {
+      "title": "RealTitle",
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "fromDefs": {
+      "$ref": "#/$defs/FromDefs"
+    },
+    "fromDefinitions": {
+      "$ref": "#/definitions/FromDefinitions"
+    },
+    "titled": {
+      "$ref": "#/definitions/Titled"
+    },
+    "listOfThings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "z": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mapOfThings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "w": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

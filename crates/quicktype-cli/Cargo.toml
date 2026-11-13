@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 indexmap.workspace = true
-quicktype-core.workspace = true
+quicktype-core = { workspace = true, features = ["http"] }
 quicktype-graphql-input.workspace = true
 quicktype-js-compat.workspace = true
 quicktype-typescript-input.workspace = true

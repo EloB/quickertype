@@ -1,0 +1,41 @@
+resolving # relative to tests/inputs/schema/min-max-items.schema# (tests/inputs/schema/min-max-items.schema#)
+trying to fetch tests/inputs/schema/min-max-items.schema
+successully fetched tests/inputs/schema/min-max-items.schema
+resolved to # (tests/inputs/schema/min-max-items.schema#)
+resolving # relative to tests/inputs/schema/min-max-items.schema# (tests/inputs/schema/min-max-items.schema#)
+resolved to # (tests/inputs/schema/min-max-items.schema#)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 31 | 0 | given TopLevel ()
+1: intersection maxOnly | children 6 | 1 | distance 2 maxOnly ()
+2: intersection maxOnly | children 4 | 2 | distance 4 maxOnly ()
+3: integer | 3
+4: union maxOnly | children 3 | 4 | distance 6 maxOnly ()
+5: array | children 2 | 5 | undefined-3
+6: union maxOnly | children 5 | 6 | distance 3 maxOnly ()
+7: intersection minAndMax | children 12 | 7 | distance 2 minAndMax ()
+8: intersection minAndMax | children 10 | 8 | distance 4 minAndMax ()
+9: double | 9
+10: union minAndMax | children 9 | 10 | distance 6 minAndMax ()
+11: array | children 8 | 11 | 1-4
+12: union minAndMax | children 11 | 12 | distance 3 minAndMax ()
+13: intersection minOnly | children 18 | 13 | distance 2 minOnly ()
+14: intersection minOnly | children 16 | 14 | distance 4 minOnly ()
+15: string min_only | 15 | distance 6 minOnly,plain,unionItem () | unrestricted
+16: union minOnly | children 15 | 16 | distance 6 minOnly ()
+17: array | children 14 | 17 | 2-undefined
+18: union minOnly | children 17 | 18 | distance 3 minOnly ()
+19: intersection plain | children 23 | 19 | distance 2 plain ()
+20: intersection plain | children 21 | 20 | distance 4 plain ()
+21: union plain | children 15 | 21 | distance 6 plain ()
+22: array | children 20 | 22
+23: union plain | children 22 | 23 | distance 3 plain ()
+24: intersection unionItems | children 28 | 24 | distance 2 unionItems ()
+25: intersection unionItem | children 26 | 25 | distance 4 unionItem ()
+26: union unionItem | children 3,15 | 26 | distance 6 unionItem ()
+27: array | children 25 | 27 | 2-undefined
+28: union unionItems | children 27 | 28 | distance 3 unionItems ()
+29: any | 29
+30: object TopLevel | children 1,7,13,19,24,29 | 30 | distance 1 TopLevel ()
+31: union TopLevel | children 30 | 31 | distance 1 TopLevel ()
+# attributes

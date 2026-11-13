@@ -1,0 +1,6 @@
+resolving # relative to file://server/share/top.schema.json# (file://server/share/top.schema.json#)
+trying to fetch file://server/share/top.schema.json
+couldn't fetch file://server/share/top.schema.json
+trying to fetch file://server/share/top.schema.json
+couldn't fetch file://server/share/top.schema.json
+error: Could not fetch schema #, referred to from file://server/share/top.schema.json#

@@ -1,0 +1,29 @@
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#)
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema
+adding mapping relative-id.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#)
+adding mapping relative-id.schema#/properties (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#properties)
+adding mapping relative-id.schema#/properties/p (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#properties/p)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#)
+resolving # relative to crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema# (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#)
+resolved to # (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#)
+resolving other.schema#/definitions/P relative to relative-id.schema#/properties/p (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/relative-id.schema#/properties/p)
+trying to fetch other.schema
+couldn't fetch other.schema
+trying to fetch crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/other.schema
+successully fetched crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/other.schema
+resolved to #/definitions/P (crates/quicktype-core/tests/fixtures/core-json-schema-input/schemas/ids/other.schema#/definitions/P)
+# needIR true; single string source null
+# graph
+0: intersection TopLevel | children 10 | 0 | given TopLevel ()
+1: intersection p | children 2 | 1 | distance 2 p ()
+2: intersection P | children 8 | 2 | given P ()
+3: intersection q | children 5 | 3 | distance 2 q ()
+4: string q | 4 | distance 3 q () | unrestricted
+5: union q | children 4 | 5 | distance 3 q ()
+6: any | 6
+7: object P | children 3,6 | 7 | distance 1 P ()
+8: union P | children 7 | 8 | distance 1 P ()
+9: object TopLevel | children 1,6 | 9 | distance 1 TopLevel ()
+10: union TopLevel | children 9 | 10 | distance 1 TopLevel ()
+# attributes
