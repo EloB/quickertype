@@ -373,3 +373,82 @@ fn deep_inputs_do_not_overflow_the_stack() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert!(stdout(&output).contains("pub type Deep = Vec<Vec<"));
 }
+
+/// Runs `args` on TypeScript sources written to a fresh directory (the
+/// TypeScript input only accepts files below the working directory).
+/// `None` (with a note) without the TypeScript 7 compiler, or while the
+/// target language's renderer is not ported yet.
+fn typescript_input(name: &str, source: &str, args: &[&str]) -> Option<Output> {
+    let dir = work_dir(name);
+    fs::write(dir.join("input.ts"), source).unwrap();
+    let mut all_args = args.to_vec();
+    all_args.push("input.ts");
+    let output = quicktype_in(&dir, &all_args, None);
+    let error = stderr(&output);
+    if error.contains("requires the TypeScript 7.0.2 compiler")
+        || error.contains("renderer is not ported yet")
+    {
+        eprintln!("skipped: {error}");
+        return None;
+    }
+    Some(output)
+}
+
+#[test]
+fn typescript_sources_become_a_json_schema_input() {
+    let source = "/** A person. */\nexport interface Person { name: string; age?: number }\n";
+    let Some(output) = typescript_input("typescript-rust", source, &["--lang", "rust"]) else {
+        return;
+    };
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let code = stdout(&output);
+    assert!(code.contains("/// A person.\n"), "{code}");
+    assert!(code.contains("pub struct Person {"), "{code}");
+    assert!(code.contains("pub age: Option<f64>,"), "{code}");
+
+    // To JSON Schema, the converted schema passes through unchanged.
+    let Some(output) = typescript_input("typescript-schema", source, &["--lang", "schema"]) else {
+        return;
+    };
+    assert!(
+        stdout(&output).starts_with("{\n    \"$schema\": "),
+        "{}",
+        stdout(&output)
+    );
+}
+
+/// Port of `just-types-option.test.ts`: "Kotlin: enum cases retain their
+/// TypeScript string values".
+#[test]
+fn kotlin_enum_cases_retain_their_typescript_string_values() {
+    let source = r#"
+            export enum CanvasAction {
+                ADD = "add",
+                BRING_TO_FRONT = "bringtofront",
+                DELETE = "delete",
+                FLIP = "flip",
+                INVERT = "invert",
+                UNDO = "undo",
+                REDO = "redo",
+            }
+
+            export interface Canvas {
+                action: CanvasAction;
+            }
+        "#;
+    let Some(output) = typescript_input(
+        "typescript-kotlin",
+        source,
+        &["--lang", "kotlin", "--just-types"],
+    ) else {
+        return;
+    };
+    let code = stdout(&output);
+    assert!(
+        code.contains("enum class CanvasAction(val value: String)"),
+        "{code}"
+    );
+    assert!(code.contains(r#"Add("add")"#), "{code}");
+    assert!(code.contains(r#"BringToFront("bringtofront")"#), "{code}");
+    assert!(code.contains("fun fromValue(value: String): CanvasAction = when (value)"));
+}
