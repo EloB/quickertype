@@ -774,10 +774,14 @@ impl Uri {
             } else {
                 uri.protocol = non_empty(protocol);
                 let after = &s[pos + 1..];
-                let two: String = after.chars().take(2).collect();
-                if two.replace('\\', "/") == "//" {
-                    let authority: String = after.chars().skip(2).collect();
-                    rest = parse_authority(&authority, &mut uri)?;
+                // The first two characters are `/` or `\\` (both ASCII, so
+                // the authority starts at byte 2).
+                if after
+                    .as_bytes()
+                    .get(..2)
+                    .is_some_and(|two| two.iter().all(|&b| b == b'/' || b == b'\\'))
+                {
+                    rest = parse_authority(&after[2..], &mut uri)?;
                 } else {
                     rest = after.to_owned();
                     uri.urn = true;
