@@ -1,0 +1,51 @@
+# FlattenUnions: nested unions, several classes in one union, number
+# conflation, `any` members, and the done flag.
+builder prov
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+prim b bool
+cls a x:i,y:s n=A
+cls c x:d,z?:b n=C
+union inner a,nul n=Inner
+union outer inner,c,i n=Outer
+union nums i,d n=Nums
+arr arr outer
+cls top o:outer,n:nums,arr:arr n=Top
+top Top top
+finish printonrewrite
+print
+query canonical 9
+query canonical 8
+flatten debug
+print
+flatten
+gc
+print
+
+# Conflating numbers merges integer into double.
+builder
+prim i integer
+prim d double
+prim nul null
+union nums i,d,nul n=Nums
+uunion u2 n=Twice
+members u2 nums,i
+cls top n:nums,t:u2 n=Top
+top Top top
+finish
+flatten conflate
+print
+
+# An `any` member absorbs the union.
+builder prov
+prim any any
+prim i integer
+str s unrestricted
+union u any,i,s n=WithAny
+cls top u:u n=Top
+top Top top
+finish
+flatten
+print

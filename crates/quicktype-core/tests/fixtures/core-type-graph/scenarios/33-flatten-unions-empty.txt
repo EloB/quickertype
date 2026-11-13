@@ -1,0 +1,8 @@
+# A union without members after flattening nested unions is an error.
+builder
+uunion u
+members u u
+cls top u:u n=Top
+top Top top
+finish
+flatten
