@@ -376,16 +376,16 @@ mod tests {
 
     #[test]
     fn values_decode_in_order() {
-        let decoded = decode_value(&encode(
-            r#"{"b": [1, "x", null, {}], "a": {"c": true, "u": "<undefined>"}, "d": []}"#,
-        ))
-        .unwrap()
-        .unwrap();
+        let text = r#"{"b": [1, "x", null, {}], "a": {"c": true, "u": "<undefined>"}, "d": []}"#;
+        let decoded = decode_value(&encode(text)).unwrap().unwrap();
         let JsonSchema::Object(map) = &decoded else {
             panic!("not an object")
         };
-        // (The test encoder emits serde_json's sorted keys.)
-        assert_eq!(map.keys().collect::<Vec<_>>(), ["a", "b", "d"]);
+        // The order the test encoder emitted them in (serde_json's map
+        // order, which depends on its features).
+        let source: serde_json::Value = serde_json::from_str(text).unwrap();
+        let expected: Vec<&String> = source.as_object().unwrap().keys().collect();
+        assert_eq!(map.keys().collect::<Vec<_>>(), expected);
         let unsorted = EncodedValue {
             tags: vec![tag::OBJECT, tag::NUMBER, tag::NUMBER],
             numbers: vec![1.0, 2.0],
