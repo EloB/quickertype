@@ -3,6 +3,8 @@
 // expression per comment style, no grammars; good enough for code that
 // quicktype wrote, and small. Output above `limit` characters stays plain.
 
+import { escapeHtml } from "./html.js";
+
 const keywords = new Set(
     `abstract and as async await break case catch class const continue data def default defmodule defstruct
     deriving do else end enum export extends extension extern false final fn for from func function get guard
@@ -38,8 +40,6 @@ function tokenizer(lang) {
     cache.set(lang, re);
     return re;
 }
-
-const escapeHtml = (s) => s.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
 
 /** `text` as HTML with highlighting spans, or `undefined` if it is too long to bother. */
 export function highlight(text, lang, limit = 300_000) {

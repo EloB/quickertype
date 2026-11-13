@@ -12,6 +12,7 @@
 
 import { EngineClient } from "./engine-client.js";
 import { highlight } from "./highlight.js";
+import { escapeHtml } from "./html.js";
 
 const languages = __LANGUAGES__;
 const samples = __SAMPLES__;
@@ -49,9 +50,6 @@ const els = {
     cli: $("cli"),
     copyCli: $("copy-cli"),
 };
-
-const escapeHtml = (s) =>
-    String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 function languageNamed(name) {
     const wanted = String(name ?? "").toLowerCase();
