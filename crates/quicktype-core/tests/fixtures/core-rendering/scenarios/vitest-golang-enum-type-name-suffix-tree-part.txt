@@ -1,0 +1,6 @@
+# Port of quicktype's test/unit/golang-enum-type-name-suffix.test.ts (first
+# test): another enum's BARK is qualified with its own name.
+input schema TreePart {"type": "string", "enum": ["BARK", "LEAF", "ROOT"]}
+pipeline {"lang": "go"}
+
+render golang {"rendererOptions": {"enum-type-name-suffix": true}}
