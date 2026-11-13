@@ -54,6 +54,11 @@ export const engineStats = {
     /** JSON samples the engine read as they were added (samples.ts). */
     samplesRead: 0,
     /**
+     * Compressed forms the engine let go of to stay within its limit
+     * (samples.ts, `evict`), their tables exported to JavaScript.
+     */
+    evicted: 0,
+    /**
      * `CompressedJSON`s whose samples the engine read and whose TypeScript
      * tables were then filled after all (something read them, or a sample
      * or run the engine does not take came along).

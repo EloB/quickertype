@@ -38,6 +38,8 @@ export interface WasmGlue {
     jsonCreate(dateTime: string, handleRefs: boolean, min: string | undefined, max: string | undefined): number | undefined;
     jsonRead(id: number, text: string): number;
     jsonDrop(id: number): void;
+    /** The bytes the compressed forms hold together. */
+    jsonHeld(): number;
     jsonExport(id: number): ExportedTables | undefined;
     jsonAcquire(id: number): number | undefined;
     jsonRelease(lease: number): void;

@@ -331,6 +331,11 @@ impl<T: Copy> Runs<T> {
     fn total_len(&self, count: usize) -> usize {
         self.spans.iter().take(count).map(|s| s.len as usize).sum()
     }
+
+    /// The bytes of its buffers.
+    fn heap_size(&self) -> usize {
+        buffers_size(&self.blocks) + vec_size(&self.spans)
+    }
 }
 
 /// The interned strings (TS `_strings` and `_stringIndexes`): the text
@@ -369,6 +374,14 @@ impl Strings {
 
     fn iter(&self) -> impl Iterator<Item = &str> {
         (0..self.len()).filter_map(|i| self.get(i))
+    }
+
+    /// The bytes of its buffers.
+    fn heap_size(&self) -> usize {
+        vec_size(&self.blocks)
+            + self.blocks.iter().map(String::capacity).sum::<usize>()
+            + vec_size(&self.spans)
+            + self.indexes.allocation_size()
     }
 
     /// The index `internString(s)` would return, if `s` is there.
@@ -1144,6 +1157,33 @@ impl CompressedJson {
     pub fn counts(&self) -> (usize, usize) {
         (self.objects.len(), self.arrays.len())
     }
+
+    /// About how many bytes of memory this compressed form holds: itself
+    /// and the capacity of every buffer it owns (not what the allocator
+    /// adds to them), for whoever bounds the memory compressed forms take
+    /// (the WebAssembly engine keeps the forms of many inputs).
+    pub fn heap_size(&self) -> usize {
+        std::mem::size_of::<Self>()
+            + self.strings.heap_size()
+            + self.objects.heap_size()
+            + self.arrays.heap_size()
+            + buffers_size(&self.spare_objects)
+            + buffers_size(&self.spare_arrays)
+            + vec_size(&self.context_stack)
+            + self.key_stack.capacity()
+            + vec_size(&self.kind_names)
+            + self.string_reader.heap_size()
+    }
+}
+
+/// The bytes of `v`'s buffer.
+pub(crate) fn vec_size<T>(v: &Vec<T>) -> usize {
+    v.capacity() * std::mem::size_of::<T>()
+}
+
+/// The bytes of `buffers` and of their buffers.
+fn buffers_size<T>(buffers: &Vec<Vec<T>>) -> usize {
+    vec_size(buffers) + buffers.iter().map(vec_size).sum::<usize>()
 }
 
 /// What a JSON reader emits while it reads a sample (TS: the protected
@@ -1719,6 +1759,30 @@ mod tests {
         assert!(
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &bad).is_err()
         );
+    }
+
+    /// What a compressed form holds grows with its tables, and not with
+    /// what reading a sample needed only while it read it.
+    #[test]
+    fn heap_size_counts_the_tables() {
+        let mut r = cjson(None);
+        assert!(r.heap_size() < 1024, "{}", r.heap_size());
+        let records: Vec<String> = (0..20_000)
+            .map(|i| {
+                format!(
+                    r#"{{"id": {i}, "name{}": "n{i}", "tags": ["a", "b"]}}"#,
+                    i % 9
+                )
+            })
+            .collect();
+        r.parse_string(&format!("[{}]", records.join(","))).unwrap();
+        let tables = 20_000 * 3 * std::mem::size_of::<(Value, Value)>()
+            + 60_000 * std::mem::size_of::<Value>();
+        let size = r.heap_size();
+        assert!(size >= tables && size < 4 * tables, "{size} for {tables}");
+        // The reader keeps no tape this large for the next sample.
+        r.parse_string("[1]").unwrap();
+        assert!(r.heap_size() < size + 4096);
     }
 
     /// The joined tables are the tables, with the strings back to back

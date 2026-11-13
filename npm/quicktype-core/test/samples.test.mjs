@@ -12,6 +12,8 @@ import * as path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { generateJson } from "./bench/generate.mjs";
+
 const require = createRequire(import.meta.url);
 const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const qt = require(packageRoot);
@@ -567,6 +569,95 @@ test("the engine drops the samples of inputs that are gone", () => {
 
 // ---- Memory and limits (the second code review) ------------------------------
 
+// The garbage collector does not see the engine's memory, which never
+// shrinks: a long-running process that keeps its inputs, or whose inputs
+// are not collected yet, must not make the engine grow without bound. Past
+// the limit, the least recently used compressed forms are evicted: their
+// tables are exported to JavaScript, and the inputs are TypeScript's from
+// then on.
+test("the engine holds at most its limit of compressed forms, however many inputs are kept", { timeout: 300_000 }, async () => {
+    const limit = 16 << 20;
+    const old = nativeSamples.setHeldLimit(limit);
+    try {
+        const glue = engine.engineSync();
+        // About 1 MB each; their forms take some 2 MiB.
+        const texts = [0, 1, 2].map((k) => generateJson(1_400, 7_000 + k));
+        const expected = [];
+        for (const text of texts) {
+            expected.push(await inMode("ts", async () => [...(await run(await addAll("go", [["Big", [text]]]), "go"))]));
+        }
+
+        const before = { ...engineStats };
+        const kept = [];
+        let heapAfterWarmUp;
+        let pagesAfterWarmUp;
+        for (let i = 0; i < 48; i++) {
+            const input = await addAll("go", [["Big", [texts[i % 3]]]]);
+            kept.push(input);
+            assert.ok(glue.jsonHeld() <= limit, `${glue.jsonHeld()} bytes held after ${i + 1} inputs`);
+            assert.deepEqual([...(await run(input, "go"))], expected[i % 3]);
+            if (i === 15) {
+                heapAfterWarmUp = glue.__heapBytes();
+                pagesAfterWarmUp = glue.__memoryPages();
+            }
+        }
+
+        // Neither what the engine holds nor its memory grew with the inputs.
+        assert.ok(glue.__heapBytes() <= heapAfterWarmUp * 1.25, `${glue.__heapBytes()} against ${heapAfterWarmUp} bytes`);
+        assert.ok(glue.__memoryPages() <= pagesAfterWarmUp * 1.25, `${glue.__memoryPages()} against ${pagesAfterWarmUp} pages`);
+        assert.equal(engineStats.samplesRead, before.samplesRead + 48);
+        assert.equal(engineStats.wasm, before.wasm + 48);
+        const evicted = engineStats.evicted - before.evicted;
+        assert.ok(evicted >= 30, `${evicted} evicted`);
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+        // Every input still gives what TypeScript gives: the evicted ones
+        // from their tables, filled now, the others from the engine.
+        for (const [i, input] of kept.entries()) {
+            assert.deepEqual([...(await run(input, "go"))], expected[i % 3], `input ${i}`);
+        }
+
+        assert.equal(engineStats.tablesFilled, before.tablesFilled + evicted);
+        assert.equal(engineStats.wasm, before.wasm + 96);
+        noLeases();
+    } finally {
+        nativeSamples.setHeldLimit(old);
+    }
+});
+
+test("inputs that are gone but not finalized are evicted too, and nothing is filled for them", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const nativeSamples = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "samples.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        nativeSamples.setHeldLimit(4 << 20);
+        const glue = engine.engineSync();
+        const text = JSON.stringify(Array.from({ length: 20000 }, (_, i) => ({ id: i, name: "n" + (i % 50), tags: ["a", "b"] })));
+        const read = () => {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: [text] });
+        };
+        (async () => {
+            const held = [];
+            for (let i = 0; i < 40; i++) {
+                read();
+                held.push(glue.jsonHeld());
+                // Collected (its weak reference cleared) after this job.
+                await new Promise((resolve) => setImmediate(resolve));
+                global.gc();
+            }
+            console.log(JSON.stringify({ max: Math.max(...held), count: glue.__jsonCount(), evicted: engineStats.evicted, filled: engineStats.tablesFilled }));
+        })();
+    `;
+    const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
+    assert.ok(out.max <= 4 << 20, JSON.stringify(out));
+    // Each read came before the finalizers of the inputs collected just
+    // before it had run: those were evicted (their tables exported, and
+    // collected), the others freed by their finalizers. None was filled.
+    assert.ok(out.evicted > 0, JSON.stringify(out));
+    assert.equal(out.filled, 0, JSON.stringify(out));
+});
+
 // Running out of memory in the middle of a read traps the instance. The
 // other inputs' tables are then taken from its memory, which only works
 // if the read held no borrow of the engine's table of inputs (a borrow
@@ -632,3 +723,4 @@ test("an engine that takes no more inputs or runs declines them and stays", asyn
     assert.deepEqual([...(await run(shared, "rust"))], expected);
     assert.equal(engineStats.wasm, before.wasm + 1);
 });
+

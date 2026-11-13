@@ -66,7 +66,7 @@ use quicktype_js_compat::json::is_array_index;
 
 use super::{
     CompressedJson, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
-    parse_string_value_into, syntax_error,
+    parse_string_value_into, syntax_error, vec_size,
 };
 use crate::messages::{QuickTypeError, Result};
 use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
@@ -291,6 +291,18 @@ impl StringReaderState {
             *index = strings.intern(&text[start as usize..(start + len) as usize]);
         }
         *index
+    }
+
+    /// The bytes of its buffers ([`CompressedJson::heap_size`]).
+    pub(super) fn heap_size(&self) -> usize {
+        let keys = &self.keys;
+        keys.text.capacity()
+            + vec_size(&keys.spans)
+            + keys.index.allocation_size()
+            + vec_size(&keys.interned)
+            + vec_size(&keys.stamps)
+            + vec_size(&keys.cache)
+            + vec_size(&self.spare_nodes)
     }
 
     /// After a sample: keeps its tape and the key table for the next one

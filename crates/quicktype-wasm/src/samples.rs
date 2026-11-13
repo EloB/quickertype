@@ -22,6 +22,10 @@
 //! (see [`crate::slots`]). While a run holds a compressed form, no sample
 //! is added to it.
 //!
+//! The facade bounds what the compressed forms hold together
+//! ([`json_held`]): past its limit, it fills the tables of the least
+//! recently used and drops them here.
+//!
 //! No borrow of the tables here spans a read: [`json_read`] takes the
 //! compressed form out for it. Should the instance trap during a read (run
 //! out of memory), the other inputs' tables can still be exported from its
@@ -31,7 +35,7 @@
 //! When a table is full (2^21 inputs at once), [`json_create`] returns
 //! `undefined`, and the facade reads that input with TypeScript.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use js_sys::{Int32Array, Object, Reflect, Uint32Array};
@@ -78,6 +82,9 @@ struct Samples {
     /// Set once the compressed form went past `committed`: it takes no
     /// more samples.
     closed: bool,
+    /// Its [`heap_size`](CompressedJson::heap_size) after the last read,
+    /// counted in [`HELD`].
+    bytes: usize,
 }
 
 thread_local! {
@@ -86,6 +93,8 @@ thread_local! {
     /// The runs' holds on compressed forms, by lease id, until the run
     /// starts ([`take_lease`]) or the facade lets go of it.
     static LEASES: RefCell<Slots<Rc<CompressedJson>>> = const { RefCell::new(Slots::new()) };
+    /// The bytes of every compressed form in [`SAMPLES`] ([`json_held`]).
+    static HELD: Cell<usize> = const { Cell::new(0) };
 }
 
 /// `new CompressedJSONFromString(dateTimeRecognizer, handleRefs,
@@ -109,12 +118,19 @@ pub fn json_create(
         (Some(min), Some(max)) => Some(IntegerRange::new(min, max)),
         _ => None,
     };
+    let cjson = CompressedJson::new(recognizer, handle_refs, range);
+    let bytes = cjson.heap_size();
     let samples = Samples {
-        cjson: Some(Rc::new(CompressedJson::new(recognizer, handle_refs, range))),
+        cjson: Some(Rc::new(cjson)),
         committed: TableCounts::default(),
         closed: false,
+        bytes,
     };
-    Ok(SAMPLES.with(|all| all.borrow_mut().insert(samples)).ok())
+    let id = SAMPLES.with(|all| all.borrow_mut().insert(samples)).ok();
+    if id.is_some() {
+        HELD.with(|held| held.set(held.get() + bytes));
+    }
+    Ok(id)
 }
 
 /// `parseSync(text)` on compressed form `id`: the sample's root value as
@@ -161,6 +177,7 @@ fn read_with(
         Err(ReadStringError::Parse(_)) => (DECLINED, true),
     };
     let counts = cjson.table_counts();
+    let bytes = cjson.heap_size();
     SAMPLES.with(|all| {
         // Still there: no JavaScript ran during the read.
         let mut all = all.borrow_mut();
@@ -171,6 +188,8 @@ fn read_with(
             samples.committed = counts;
         }
         samples.closed = closed;
+        HELD.with(|all| all.set(all.get() + bytes - samples.bytes));
+        samples.bytes = bytes;
         samples.cjson = Some(held);
     });
     result
@@ -194,7 +213,20 @@ pub fn json_read_trap_for_tests(id: f64, text: &str) -> i32 {
 #[wasm_bindgen(js_name = jsonDrop)]
 pub fn json_drop(id: f64) {
     let dropped = SAMPLES.with(|all| all.borrow_mut().remove(id));
+    if let Some(samples) = &dropped {
+        HELD.with(|held| held.set(held.get() - samples.bytes));
+    }
     drop(dropped);
+}
+
+/// About how many bytes the compressed forms hold together (their
+/// [`heap_size`](CompressedJson::heap_size) after their last read), which
+/// the facade keeps within its limit by filling the tables of the least
+/// recently used and dropping them. A form dropped while a run holds it is
+/// no longer counted; it is freed when the run ends.
+#[wasm_bindgen(js_name = jsonHeld)]
+pub fn json_held() -> f64 {
+    HELD.with(Cell::get) as f64
 }
 
 /// The tables of compressed form `id` as the JavaScript `CompressedJSON`
@@ -411,5 +443,28 @@ mod tests {
         assert!(json_read(a, "[4]") > 0);
         json_drop(a);
         json_drop(b);
+    }
+
+    /// What the forms hold is counted as they grow and as they go.
+    #[test]
+    fn held_bytes() {
+        let before = json_held();
+        let id = create("default", None, None);
+        let empty = json_held() - before;
+        assert_eq!(empty, form(id).heap_size() as f64);
+        let records: Vec<String> = (0..5_000)
+            .map(|i| format!(r#"{{"id": {i}, "name": "n{i}"}}"#))
+            .collect();
+        assert!(json_read(id, &format!("[{}]", records.join(","))) > 0);
+        let read = json_held() - before;
+        assert_eq!(read, form(id).heap_size() as f64);
+        assert!(read > empty + 100_000.0, "{read}");
+        // Not JSON, declined: nothing committed, and the count follows
+        // the reader's spare buffers.
+        assert_eq!(json_read(id, "[1,"), INVALID);
+        assert_eq!(json_read(id, r#"["\ud800"]"#), DECLINED);
+        assert_eq!(json_held() - before, form(id).heap_size() as f64);
+        json_drop(id);
+        assert_eq!(json_held(), before);
     }
 }

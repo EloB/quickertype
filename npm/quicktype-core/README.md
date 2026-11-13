@@ -91,8 +91,10 @@ load the engine an error instead of a fallback. `engineStats` in
 `dist/native/bridge.js` counts the runs on each engine (`wasm`, `ts`) and
 the runs the engine declined (`unsupported`, by feature in
 `unsupportedBy`) or that were redone after it failed (`rerun`), the JSON
-samples the engine read (`samplesRead`) and the `CompressedJSON`s whose
-TypeScript tables were filled after all (`tablesFilled`).
+samples the engine read (`samplesRead`), the `CompressedJSON`s whose
+TypeScript tables were filled after all (`tablesFilled`), and the
+compressed forms the engine exported and let go of to stay within its
+memory limit (`evicted`; see [JSON samples](#json-samples)).
 
 ### JSON samples
 
@@ -159,11 +161,12 @@ at once. A run takes its own reference (an `Rc`, the *lease*,
 `jsonAcquire`) when it is encoded, synchronously, before it waits for the
 engine, and keeps it until it ends: it keeps the samples it was encoded
 with even if the `CompressedJSON` is collected or its tables filled
-before it starts (a run on the TypeScript engine in between, say). A run
-that does not start on that instance lets go of its leases. Ids of runs,
-compressed forms and leases are never reused: each carries its slot's
-generation, so an id that outlived its value finds nothing, never another
-input's samples (`crates/quicktype-wasm/src/slots.rs`). Runs at once on
+before it starts (a run on the TypeScript engine in between, say), or
+evicted (see below). A run that does not start on that instance lets go
+of its leases. Ids of runs, compressed forms and leases are never reused:
+each carries its slot's generation, so an id that outlived its value
+finds nothing, never another input's samples
+(`crates/quicktype-wasm/src/slots.rs`). Runs at once on
 the same input share the compressed form. A sample added while a run
 holds it is left to TypeScript (the engine never changes a compressed
 form a run is reading). The texts of the samples are not kept, except
@@ -178,6 +181,36 @@ input's tables; the input it was reading has only its kept samples. A run
 whose samples were read by another instance than the one it would run on
 goes to the TypeScript engine. Hosts without `FinalizationRegistry` read
 every sample with TypeScript.
+
+**Memory.** The garbage collector does not see the engine's memory, and
+WebAssembly memory never shrinks, so a long-running process cannot count
+on its inputs being collected before the engine runs out of its 4 GiB. The
+compressed forms in an instance are therefore kept within **256 MiB**
+together, as the engine counts them (the capacities of their tables,
+`jsonHeld`). After a sample is read past that limit, the forms least
+recently used (read into, or leased by a run) are evicted, until the rest
+fit; the one just read stays, however large. An evicted form's tables are
+exported to JavaScript, where the garbage collector sees them, and the
+form is freed in the engine: the input's `CompressedJSON` gets those
+tables when anything first uses it, and from then on it is an ordinary
+`CompressedJSON`, whose further samples TypeScript reads and whose runs
+send its tables. Whether that `CompressedJSON` is still in use cannot be
+told (a `WeakRef` would keep it alive until the current job ends, which in
+a loop of `await`s is the whole loop), so the tables of one that is gone
+but not finalized yet are exported too, and collected with it. A run that
+holds an evicted form keeps it until it ends. The limit is the form of
+about 190 MB of JSON (a 104 MB sample takes 138 MiB), more than nearly any
+program has in its inputs at once, so that eviction is a backstop for
+inputs the garbage collector has not got to, not something runs normally
+pay for (an evicted input's runs send its tables, which costs what reading
+its samples on the engine saved). It leaves most of the 4 GiB to reading
+samples and to runs, which need more than the forms they make or use while
+they last (reading that sample peaks at 461 MiB with its form; a run on it
+needs 114 MiB besides); since the memory never shrinks, the engine of a
+long-running process stays at about the limit plus the largest of those.
+(With every input kept and a 16 MiB limit, 200 inputs of a 1 MB sample
+leave the engine at 54.6 MiB of memory, as after the first 50; without a
+limit it grew by 2.2 MiB per input, to 539 MiB.)
 
 **Why this cannot be told apart from TypeScript reading the samples:**
 
