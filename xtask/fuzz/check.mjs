@@ -73,7 +73,25 @@ export async function makeChecker({ reference, bin }) {
         };
     }
 
-    return { check, sides };
+    /**
+     * The JSON Schema the reference makes of a JSON or Postman case (target
+     * language "schema"), as a schema case with the same language and
+     * options: realistic schemas with quicktype's own keywords. Undefined if
+     * the reference fails.
+     */
+    async function chain(kase) {
+        if (kase.src !== "json" && kase.src !== "postman") return undefined;
+        const toSchema = { ...kase, lang: "schema", rendererOptions: {}, api: {}, debug: [] };
+        const out = await withTimeout(capture(() => runInProcess(sides.ref, toSchema, "api")));
+        if (out.ok === undefined || out.ok.$map.length !== 1) return undefined;
+        const text = out.ok.$map[0][1].lines.join("\n");
+        const derived = { ...kase, src: "schema", schemas: [{ name: "TopLevel", text }], chainedFrom: kase.src };
+        delete derived.topLevels;
+        delete derived.postman;
+        return derived;
+    }
+
+    return { check, chain, sides };
 }
 
 /** A short signature of an outcome, to keep minimization on the same divergence. */

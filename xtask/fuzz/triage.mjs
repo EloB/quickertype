@@ -13,7 +13,7 @@ import { outcomeKind } from "./check.mjs";
 const groups = new Map();
 for (const dir of process.argv.slice(2)) {
     for (const name of fs.readdirSync(dir)) {
-        if (!/^\d+-(api|stream|cli)\.json$/.test(name)) continue;
+        if (!/^\d+-(api|stream|cli|chain)\.json$/.test(name)) continue;
         const file = path.join(dir, name);
         const d = JSON.parse(fs.readFileSync(file, "utf8"));
         // The difference's location without indexes and its expected side, roughly.

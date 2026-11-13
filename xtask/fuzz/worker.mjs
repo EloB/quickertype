@@ -22,6 +22,8 @@ export function modesFor(seed, kase, config) {
     if (config.modes.includes("api")) modes.push("api");
     if (config.modes.includes("stream") && (kase.src === "json" || kase.src === "postman") && rng.chance(config.streamRate)) modes.push("stream");
     if (config.modes.includes("cli") && rng.chance(config.cliRate)) modes.push("cli");
+    // The reference's JSON Schema of the case, as input in its own right.
+    if (config.modes.includes("chain") && (kase.src === "json" || kase.src === "postman") && rng.chance(config.chainRate)) modes.push("chain");
     return modes;
 }
 
@@ -35,18 +37,27 @@ async function runSeed(seed) {
     const results = [];
     for (const mode of modesFor(seed, kase, config)) {
         let r;
+        let checked = kase;
+        let checkedMode = mode;
         try {
-            r = await checker.check(kase, mode);
+            if (mode === "chain") {
+                checked = await checker.chain(kase);
+                checkedMode = "api";
+                r = checked === undefined ? { status: "skip" } : await checker.check(checked, "api");
+            } else {
+                r = await checker.check(kase, mode);
+            }
         } catch (e) {
             r = { status: "diff", detail: `harness error: ${e?.stack ?? e}` };
         }
 
         results.push({ mode, status: r.status, engine: r.engine, detail: r.detail });
         if (r.status === "diff") {
+            // A chained case is saved as the schema case it became (mode api).
             const file = path.join(config.outDir, `${seed}-${mode}.json`);
             fs.writeFileSync(
                 file,
-                `${JSON.stringify({ seed, mode, detail: r.detail, engine: r.engine, case: kase, expected: truncate(r.expected), actual: truncate(r.actual) }, undefined, 1)}\n`,
+                `${JSON.stringify({ seed, mode: checkedMode, detail: r.detail, engine: r.engine, case: checked, expected: truncate(r.expected), actual: truncate(r.actual) }, undefined, 1)}\n`,
             );
         }
     }

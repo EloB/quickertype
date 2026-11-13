@@ -5,7 +5,7 @@
 // our npm package on WebAssembly) and through both CLIs. See README.md.
 //
 //   node xtask/fuzz/fuzz.mjs [--seed N] [--count N | --minutes M] [-j N]
-//                            [--modes api,stream,cli] [--stream-rate R] [--cli-rate R]
+//                            [--modes api,stream,cli,chain] [--stream-rate R] [--cli-rate R] [--chain-rate R]
 //                            [--lang a,b] [--src json|schema] [--out DIR]
 //                            [--reference DIR] [--bin PATH] [--hang-minutes M]
 //   node xtask/fuzz/fuzz.mjs --print SEED      print the case a seed generates
@@ -71,7 +71,8 @@ const hangMinutes = Number(option("--hang-minutes", "10"));
 const config = {
     reference,
     bin,
-    modes: option("--modes", "api,stream,cli").split(","),
+    modes: option("--modes", "api,stream,cli,chain").split(","),
+    chainRate: Number(option("--chain-rate", "0.15")),
     streamRate: Number(option("--stream-rate", "0.35")),
     cliRate: Number(option("--cli-rate", "0.08")),
     languages: option("--lang")?.split(",") ?? LANGUAGES,

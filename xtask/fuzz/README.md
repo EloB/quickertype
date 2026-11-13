@@ -88,6 +88,12 @@ Each case runs in up to three modes (`--modes`, chosen per seed):
   and written files are compared. This covers the native-only code: argument
   parsing, the Rust stream-json reader, file output.
 
+- **chain** (JSON and Postman cases, `--chain-rate`, default 15%): the
+  reference turns the case into a JSON Schema (target language `schema`),
+  and that schema, with the case's language and options, is compared in
+  the api mode: realistic schemas with quicktype's own keywords. A
+  divergence is saved as that schema case.
+
 A run that our package does not run on WebAssembly is counted ("not on
 wasm"); one where the WebAssembly engine failed (trapped or overflowed the
 stack) and the facade redid it on TypeScript is a divergence even if the
