@@ -1,0 +1,184 @@
+# quicktype's own end-to-end fixtures (generate code, compile it, round-trip
+# the samples) run against our binary and against the TypeScript CLI with the
+# same arguments. A job fails when a test passes with TypeScript and fails
+# with ours. See xtask/roundtrip/README.md. Off the per-push path: weekly and
+# on demand.
+name: Round-trip fixtures
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "All JSON inputs (without QUICKTEST, adds test/inputs/json/misc)"
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+  QUICKTYPE_DIR: ${{ github.workspace }}/../quicktype-roundtrip
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release -p quicktype-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quicktype-${{ matrix.os }}
+          path: target/release/quicktype
+
+  fixtures:
+    needs: build
+    runs-on: ${{ matrix.runs-on || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture:
+          - typescript,schema-typescript,graphql-typescript
+          - typescript-zod,schema-typescript-zod,typescript-effect-schema,schema-typescript-effect-schema
+          - javascript,schema-javascript,graphql-javascript,schema-schema
+          - javascript-prop-types,schema-javascript-prop-types
+          - flow,schema-flow,graphql-flow
+          - comment-injection-treesitter,comment-injection-typescript,comment-injection-typescript-zod,comment-injection-typescript-effect-schema
+          - golang,schema-golang,graphql-golang
+          - python,schema-python,graphql-python
+          - java,schema-java,graphql-java
+          - java-datetime-legacy,schema-java-datetime-legacy,java-lombok,schema-java-lombok
+          - kotlin,schema-kotlin,kotlin-jackson,schema-kotlin-jackson
+          - kotlinx,schema-kotlinx
+          - rust,schema-rust
+          - ruby,schema-ruby,schema-ruby-syntax
+          - dart,schema-dart,graphql-dart
+          - csharp,schema-csharp,csharp-records,schema-csharp-records,graphql-csharp
+          - csharp-SystemTextJson,schema-csharp-SystemTextJson,schema-json-csharp,json-ts-csharp
+          - cjson,schema-cjson,graphql-cjson
+          - cjson-default,cjson-multi-header,cjson-multi-split
+          - cplusplus,schema-cplusplus,cplusplus-multi-source,graphql-cplusplus
+          - php,schema-php,graphql-php
+          - elixir,schema-elixir,graphql-elixir
+          - crystal,schema-crystal
+          - scala3,schema-scala3
+          - scala3-upickle,schema-scala3-upickle
+          - elm,schema-elm
+          - haskell,schema-haskell,graphql-haskell
+          - pike,schema-pike,graphql-pike
+        include:
+          - fixture: swift,schema-swift,swift-sendable-objective-c,graphql-swift
+            runs-on: macos-latest
+          - fixture: objective-c,schema-objective-c,graphql-objective-c,comment-injection-objective-c
+            runs-on: macos-latest
+    name: ${{ matrix.fixture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: quicktype-${{ runner.os == 'macOS' && 'macos-latest' || 'ubuntu-latest' }}
+          path: ${{ runner.temp }}/bin
+      - run: chmod +x "$RUNNER_TEMP/bin/quicktype"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Prepare quicktype
+        run: xtask/roundtrip/roundtrip.sh prepare "$QUICKTYPE_DIR"
+
+      # The toolchains, as in quicktype's .github/workflows/test-pr.yaml.
+      - if: contains(matrix.fixture, 'golang')
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - if: contains(matrix.fixture, 'python')
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: contains(matrix.fixture, 'python')
+        run: pip3.12 install mypy python-dateutil types-python-dateutil
+      - if: contains(matrix.fixture, 'flow')
+        run: npm install -g flow-bin@0.66.0 flow-remove-types@1.2.3
+      - if: contains(matrix.fixture, 'java') || contains(matrix.fixture, 'kotlin')
+        uses: actions/setup-java@v4
+        with:
+          java-version: "11"
+          distribution: temurin
+      - if: contains(matrix.fixture, 'java')
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.8.2
+      - if: contains(matrix.fixture, 'kotlin')
+        uses: fwilhe2/setup-kotlin@main
+      - if: contains(matrix.fixture, 'rust')
+        uses: dtolnay/rust-toolchain@stable
+      - if: contains(matrix.fixture, 'ruby')
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+      - if: contains(matrix.fixture, 'dart')
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 2.14.4
+      - if: contains(matrix.fixture, 'csharp')
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8
+      - if: contains(matrix.fixture, 'cjson')
+        run: sudo apt-get update && sudo apt-get -y install build-essential valgrind
+      - if: contains(matrix.fixture, 'cplusplus')
+        run: sudo apt-get update && sudo apt-get -y install libboost-all-dev g++
+      - if: contains(matrix.fixture, 'php')
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+      - if: contains(matrix.fixture, 'elixir')
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.15.7"
+          otp-version: "26.0"
+      - if: contains(matrix.fixture, 'crystal')
+        uses: crystal-lang/install-crystal@v1
+      - if: contains(matrix.fixture, 'scala3')
+        uses: VirtusLab/scala-cli-setup@v1
+      - if: contains(matrix.fixture, 'scala3')
+        run: echo '@main def hello() = println("warm up")' | SCALA_CLI_EXTRA_TIMEOUT=2min scala-cli _
+      - if: contains(matrix.fixture, 'elm')
+        run: |
+          curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.2/elm-0.19.2-linux-x64.gz
+          gunzip elm.gz && chmod +x elm && sudo mv elm /usr/local/bin/
+      - if: contains(matrix.fixture, 'haskell')
+        run: command -v stack > /dev/null || curl -sSL https://get.haskellstack.org/ | sh
+      - if: contains(matrix.fixture, 'pike')
+        run: sudo apt-get update && sudo apt-get install -y pike8.0-core
+
+      # Both passes share the copy, so they run one after the other.
+      - name: TypeScript CLI
+        run: >
+          xtask/roundtrip/roundtrip.sh run "$QUICKTYPE_DIR" --ts
+          ${{ inputs.full && ' ' || '--quick' }}
+          --results results/ts.jsonl '${{ matrix.fixture }}'
+        env:
+          CPUs: ${{ contains(matrix.fixture, 'scala3') && '2' || '' }}
+      - name: Ours
+        run: >
+          xtask/roundtrip/roundtrip.sh run "$QUICKTYPE_DIR" --bin "$RUNNER_TEMP/bin/quicktype"
+          ${{ inputs.full && ' ' || '--quick' }}
+          --results results/ours.jsonl '${{ matrix.fixture }}'
+        env:
+          CPUs: ${{ contains(matrix.fixture, 'scala3') && '2' || '' }}
+      - name: Compare
+        shell: bash
+        run: |
+          set -o pipefail
+          xtask/roundtrip/roundtrip.sh compare results/ts.jsonl results/ours.jsonl | tee results/compare.txt
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roundtrip-${{ strategy.job-index }}
+          path: results/
