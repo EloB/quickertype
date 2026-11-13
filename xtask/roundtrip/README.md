@@ -22,8 +22,9 @@ in the port.
 
 ## Files
 
-- `harness.patch`: the patch to quicktype's `test/utils.ts` and
-  `test/test.ts`. It adds
+- `harness.patch`: the patch to quicktype's `test/utils.ts`,
+  `test/test.ts` and `test/lib/multicore.ts`; it also exports the JSON
+  fixture classes from `test/fixtures.ts` for `later-steps.mts`. It adds
   - `QUICKTYPE_BIN=<command>`: run `<command> [args]` instead of `main`.
     The command is split on whitespace (`node /x/dist/index.js` works).
     Boolean renderer options become `--name`/`--no-name`, others
@@ -31,8 +32,14 @@ in the port.
     as `main` ignores them.
   - `QUICKTYPE_RESULTS=<file>`: keep going after a failing test and append
     one JSON line per test (`fixture`, `sample`, `options`, `status` of
-    `pass`/`fail`/`skip`, `ms`, `error`). Without it the harness stops at
-    the first failure, as upstream does.
+    `pass`/`fail`/`timeout`/`skip`, `ms`, `error`). A failed command's
+    `error` carries its stdout and stderr (shortened), so a compile failure
+    shows the compiler's errors. A test that hits the fixtures' 30-minute
+    limit is recorded as `timeout`, and its worker kills the processes it
+    started and exits; the harness forks a fresh one, so nothing of the
+    test runs on beside the next. A `FIXTURE` name that selects no fixture
+    is an error. Without `QUICKTYPE_RESULTS` the harness stops at the first
+    failure, as upstream does.
 - `roundtrip.sh`: prepares a patched copy of quicktype and runs fixtures.
 - `compare.mjs`: summarizes results files and compares two of them.
 - `later-steps.mts`: the fixtures' later quicktype steps as a

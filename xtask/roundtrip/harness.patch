@@ -1,28 +1,137 @@
+diff --git a/test/fixtures.ts b/test/fixtures.ts
+index 161d183f..dd62e5c2 100644
+--- a/test/fixtures.ts
++++ b/test/fixtures.ts
+@@ -361,7 +361,8 @@ abstract class LanguageFixture extends Fixture {
+     }
+ }
+ 
+-class JSONFixture extends LanguageFixture {
++// Exported for xtask/roundtrip/later-steps.mts in quickertype.
++export class JSONFixture extends LanguageFixture {
+     constructor(
+         language: languages.Language,
+         public name: string = language.name,
+@@ -587,7 +588,7 @@ class JSONFixture extends LanguageFixture {
+ // then generating code for Y from the code for X, making sure
+ // that the resulting code for Y accepts the JSON by running it
+ // on the original JSON.
+-class JSONToXToYFixture extends JSONFixture {
++export class JSONToXToYFixture extends JSONFixture {
+     private readonly runLanguage: languages.Language;
+ 
+     constructor(
+@@ -666,7 +667,7 @@ const dateTimeRecognizer = new DefaultDateTimeRecognizer();
+ // target code from that Schema.  The target code is then run on
+ // the original JSON.  Also generating a Schema from the Schema
+ // and testing that it's the same as the original Schema.
+-class JSONSchemaJSONFixture extends JSONToXToYFixture {
++export class JSONSchemaJSONFixture extends JSONToXToYFixture {
+     constructor(language: languages.Language) {
+         const skipJSON = [
+             "blns-object.json", // AJV refuses to even "compile" the schema we generate
+diff --git a/test/lib/multicore.ts b/test/lib/multicore.ts
+index 9bf60767..98ba322d 100644
+--- a/test/lib/multicore.ts
++++ b/test/lib/multicore.ts
+@@ -9,8 +9,14 @@ export interface ParallelArgs<Item, Result, Acc> {
+     workers: number;
+     setup: () => Promise<Acc>;
+     map: (item: Item, index: number) => Promise<Result>;
++    // Run the items in workers even if there is only one, and replace a
++    // worker that exits with REPLACE_WORKER_EXIT_CODE with a fresh one.
++    replaceWorkers?: boolean;
+ }
+ 
++// A worker exits with this code to be replaced (see `replaceWorkers`).
++export const REPLACE_WORKER_EXIT_CODE = 75;
++
+ function randomPick<T>(arr: T[]): T {
+     return arr[Math.floor(Math.random() * arr.length)];
+ }
+@@ -43,6 +49,10 @@ export async function inParallel<Item, Result, Acc>(
+         });
+ 
+         cluster.on("exit", (_worker, code, _signal) => {
++            if (args.replaceWorkers && code === REPLACE_WORKER_EXIT_CODE) {
++                cluster.fork({ worker: "replacement" });
++                return;
++            }
+             if (code && code !== 0) {
+                 // Kill workers and exit if any worker dies
+                 for (const w of Object.values(cluster.workers ?? {})) {
+@@ -55,7 +65,7 @@ export async function inParallel<Item, Result, Acc>(
+         });
+ 
+         console.error(`* Forking ${workers} workers ${guys(workers)}`);
+-        if (workers < 2) {
++        if (workers < 2 && !args.replaceWorkers) {
+             // We run everything on the master process if only one worker
+             for (const { item, i } of items) {
+                 await map(item, i);
 diff --git a/test/test.ts b/test/test.ts
-index f47f0836..266a8b4b 100755
+index f47f0836..5787c5d5 100755
 --- a/test/test.ts
 +++ b/test/test.ts
-@@ -1,3 +1,4 @@
+@@ -1,10 +1,13 @@
++import { spawnSync } from "node:child_process";
 +import * as fs from "node:fs";
  import * as os from "node:os";
  import * as _ from "lodash";
  
-@@ -5,6 +6,7 @@ import { affectedFixtures, divideParallelJobs } from "./buildkite";
+ import { affectedFixtures, divideParallelJobs } from "./buildkite";
  import { type Fixture, allFixtures } from "./fixtures";
- import { inParallel } from "./lib/multicore";
+-import { inParallel } from "./lib/multicore";
++import { REPLACE_WORKER_EXIT_CODE, inParallel } from "./lib/multicore";
  import { type Sample, execAsync } from "./utils";
 +import { defined } from "quicktype-core";
  
  // biome-ignore lint/style/useExplicitLengthCheck: length is used as a value here, not a boolean
  const CPUs = Number.parseInt(process.env.CPUs || "0", 10) || os.cpus().length;
-@@ -15,6 +17,62 @@ const CPUs = Number.parseInt(process.env.CPUs || "0", 10) || os.cpus().length;
+@@ -15,6 +18,111 @@ const CPUs = Number.parseInt(process.env.CPUs || "0", 10) || os.cpus().length;
  
  export type WorkItem = { sample: Sample; fixtureName: string };
  
 +// `QUICKTYPE_RESULTS=<file>` keeps going past failing tests and appends one
 +// JSON line per test to <file>: fixture, sample, renderer options, status
-+// (pass, fail or skip), duration and the failure.
++// (pass, fail, timeout or skip), duration and the failure.
 +const RESULTS_FILE = process.env.QUICKTYPE_RESULTS;
++
++const { TimeoutError } = require("promise-timeout");
++
++// The fixtures' `timeout()` (MAX_TEST_RUNTIME_MS) rejects, as the
++// `error` of what `failWith` throws, but does not stop the test.
++function timedOut(e: unknown): boolean {
++    return (
++        e instanceof TimeoutError ||
++        (e !== null &&
++            typeof e === "object" &&
++            (e as { error?: unknown }).error instanceof TimeoutError)
++    );
++}
++
++// The processes this one started, and theirs.
++function descendants(): number[] {
++    const ps = spawnSync("ps", ["-A", "-o", "pid=,ppid="], {
++        encoding: "utf8",
++    });
++    const children = new Map<number, number[]>();
++    for (const line of (ps.stdout ?? "").split("\n")) {
++        const [pid, ppid] = line.trim().split(/\s+/).map(Number);
++        if (Number.isInteger(pid) && Number.isInteger(ppid)) {
++            children.set(ppid, [...(children.get(ppid) ?? []), pid]);
++        }
++    }
++    const result: number[] = [];
++    const queue = [process.pid];
++    for (let p = queue.pop(); p !== undefined; p = queue.pop()) {
++        for (const child of children.get(p) ?? []) {
++            result.push(child);
++            queue.push(child);
++        }
++    }
++    return result;
++}
 +
 +function describeError(e: unknown): unknown {
 +    if (e instanceof Error) {
@@ -53,10 +162,10 @@ index f47f0836..266a8b4b 100755
 +    try {
 +        await fixture.runWithSample(sample, index, total);
 +    } catch (e) {
-+        status = "fail";
++        status = timedOut(e) ? "timeout" : "fail";
 +        error = JSON.stringify(describeError(e));
-+        if (error !== undefined && error.length > 8000) {
-+            error = `${error.slice(0, 8000)}...`;
++        if (error !== undefined && error.length > 12000) {
++            error = `${error.slice(0, 12000)}...`;
 +        }
 +    } finally {
 +        // A failure inside `inDir` leaves the run directory as the cwd.
@@ -73,12 +182,49 @@ index f47f0836..266a8b4b 100755
 +            error,
 +        })}\n`,
 +    );
++    if (status === "timeout") {
++        // The test is still running, and would go on beside the next test
++        // in this worker (cwd, files, child processes).  End it: kill what
++        // it started and exit, and `inParallel` forks a fresh worker.
++        for (const pid of descendants()) {
++            try {
++                process.kill(pid, "SIGKILL");
++            } catch {
++                // Already gone.
++            }
++        }
++        process.exit(REPLACE_WORKER_EXIT_CODE);
++    }
 +}
 +
  async function main(sources: string[]) {
      let fixtures =
          process.env.ALL_FIXTURES === undefined
-@@ -75,6 +133,10 @@ async function main(sources: string[]) {
+@@ -23,6 +131,14 @@ async function main(sources: string[]) {
+     const fixturesFromCmdline = process.env.FIXTURE;
+     if (fixturesFromCmdline) {
+         const fixtureNames = fixturesFromCmdline.split(",");
++        // With QUICKTYPE_RESULTS a name that selects nothing is an error,
++        // not a run that tests nothing.
++        const unknown = fixtureNames.filter(
++            (name) => !allFixtures.some((f) => f.runForName(name)),
++        );
++        if (RESULTS_FILE !== undefined && unknown.length > 0) {
++            throw new Error(`FIXTURE: no fixture is named ${unknown.join(", ")}`);
++        }
+         fixtures = _.filter(fixtures, (fixture) =>
+             _.some(fixtureNames, (name) => fixture.runForName(name)),
+         );
+@@ -59,6 +175,8 @@ async function main(sources: string[]) {
+     await inParallel({
+         queue: tests,
+         workers: CPUs,
++        // A test that times out ends its worker (runAndRecord).
++        replaceWorkers: RESULTS_FILE !== undefined,
+ 
+         setup: async () => {
+             console.error(
+@@ -75,6 +193,10 @@ async function main(sources: string[]) {
  
          map: async ({ sample, fixtureName }: WorkItem, index) => {
              const fixture = _.find(fixtures, { name: fixtureName }) as Fixture;
@@ -90,7 +236,7 @@ index f47f0836..266a8b4b 100755
                  await fixture.runWithSample(sample, index, tests.length);
              } catch (e) {
 diff --git a/test/utils.ts b/test/utils.ts
-index 3a6d1f4b..6f48db52 100644
+index 3a6d1f4b..3c9272ab 100644
 --- a/test/utils.ts
 +++ b/test/utils.ts
 @@ -1,3 +1,4 @@
@@ -112,27 +258,56 @@ index 3a6d1f4b..6f48db52 100644
  import type * as languages from "./languages";
  import deepEquals from "./lib/deepEquals";
  
-@@ -63,10 +69,18 @@ export function exec(
+@@ -51,6 +57,23 @@ export function callAndExpectFailure<T>(message: string, f: () => T): void {
+     failWith(message, { result });
+ }
+ 
++// With QUICKTYPE_RESULTS, a failed command's output goes into the results
++// file with the failure: the compiler's errors, the program's exception.
++function withOutput(
++    failure: { command: string; code: number },
++    stdout: string,
++    stderr: string,
++): Record<string, unknown> {
++    if (process.env.QUICKTYPE_RESULTS === undefined) {
++        return failure;
++    }
++    const shorten = (output: string) =>
++        output.length <= 2500
++            ? output
++            : `${output.slice(0, 1000)}\n...\n${output.slice(-1500)}`;
++    return { ...failure, stdout: shorten(stdout), stderr: shorten(stderr) };
++}
++
+ export function exec(
+     s: string,
+     env: NodeJS.ProcessEnv | undefined,
+@@ -63,10 +86,11 @@ export function exec(
      const result = shell.exec(s, { silent: !DEBUG, env });
  
      if (result.code !== 0) {
 -        const failureObj = {
-+        const failureObj: Record<string, unknown> = {
-             command: s,
-             code: result.code,
-         };
-+        if (process.env.QUICKTYPE_RESULTS !== undefined) {
-+            // For the results file: the command's error output, shortened.
-+            const stderr = result.stderr;
-+            failureObj.stderr =
-+                stderr.length <= 3000
-+                    ? stderr
-+                    : `${stderr.slice(0, 1500)}\n...\n${stderr.slice(-1500)}`;
-+        }
+-            command: s,
+-            code: result.code,
+-        };
++        const failureObj = withOutput(
++            { command: s, code: result.code },
++            result.stdout,
++            result.stderr,
++        );
          if (!printFailure) {
              throw failureObj;
          }
-@@ -129,7 +143,96 @@ export function mkdirs(dir: string): void {
+@@ -88,7 +112,7 @@ export function execAsync(
+             if (code !== 0) {
+                 console.error(stdout);
+                 console.error(stderr);
+-                reject({ command: s, code });
++                reject(withOutput({ command: s, code }, stdout, stderr));
+             }
+             resolve({ stdout, code });
+         });
+@@ -129,7 +153,96 @@ export function mkdirs(dir: string): void {
      }
  }
  
