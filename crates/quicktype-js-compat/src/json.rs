@@ -19,6 +19,8 @@
 //! them; to model a JavaScript object, insert keys with
 //! [`insert_js_property`], which reproduces JavaScript's own-property order.
 
+use std::fmt;
+
 /// The map type of [`JsonValue::Object`], re-exported for building values.
 pub use indexmap::IndexMap;
 
@@ -221,6 +223,76 @@ fn write_container<'a>(
     out.push(close);
 }
 
+/// `!!x` for a number: everything but `0`, `-0` and `NaN` is truthy.
+pub fn is_truthy_number(x: f64) -> bool {
+    x != 0.0 && !x.is_nan()
+}
+
+/// `!!value`: JavaScript truthiness. `null`, `false`, `0`, `-0`, `NaN` and
+/// `""` are falsy; arrays and objects (even empty ones) are truthy.
+pub fn is_truthy(value: &JsonValue) -> bool {
+    match value {
+        JsonValue::Null => false,
+        JsonValue::Bool(b) => *b,
+        JsonValue::Number(x) => is_truthy_number(*x),
+        JsonValue::String(s) => !s.is_empty(),
+        JsonValue::Array(_) | JsonValue::Object(_) => true,
+    }
+}
+
+/// The `TypeError` JavaScript throws for reading a property of
+/// `undefined` or `null`, e.g. `Cannot read properties of null (reading
+/// 'name')`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PropertyReadError {
+    message: String,
+}
+
+impl PropertyReadError {
+    /// Reading `key` of `undefined`.
+    pub fn of_undefined(key: &str) -> Self {
+        PropertyReadError {
+            message: format!("Cannot read properties of undefined (reading '{key}')"),
+        }
+    }
+
+    /// Reading `key` of `null`.
+    pub fn of_null(key: &str) -> Self {
+        PropertyReadError {
+            message: format!("Cannot read properties of null (reading '{key}')"),
+        }
+    }
+
+    /// The error's `message`.
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl fmt::Display for PropertyReadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for PropertyReadError {}
+
+/// `value[key]`, `value` being `undefined` (`None`) or a JSON value, for a
+/// key that no prototype in the way has (not `length`, `map`, `toString`
+/// or the like): the object's own property, `None` (`undefined`) for
+/// anything else, the `TypeError` for `undefined` and `null`.
+pub fn get_property<'a>(
+    value: Option<&'a JsonValue>,
+    key: &str,
+) -> Result<Option<&'a JsonValue>, PropertyReadError> {
+    match value {
+        None => Err(PropertyReadError::of_undefined(key)),
+        Some(JsonValue::Null) => Err(PropertyReadError::of_null(key)),
+        Some(JsonValue::Object(map)) => Ok(map.get(key)),
+        Some(_) => Ok(None),
+    }
+}
+
 /// Whether `key` is an array index: the canonical decimal form of an integer
 /// in `0..=4294967294` (`"0"`, `"42"`, but not `"01"`, `"-1"`, `"1.5"` or
 /// `"4294967295"`). JavaScript objects list these keys first, in ascending
@@ -286,6 +358,42 @@ pub(crate) fn array_index(key: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn truthiness_and_property_reads_are_javascript_s() {
+        let v = parse(r#"[null, false, 0, -0, "", true, 1, "0", [], {}]"#).unwrap();
+        let JsonValue::Array(items) = &v else {
+            panic!("an array");
+        };
+        let truthy: Vec<bool> = items.iter().map(is_truthy).collect();
+        assert_eq!(
+            truthy,
+            [
+                false, false, false, false, false, true, true, true, true, true
+            ]
+        );
+        assert!(!is_truthy_number(f64::NAN));
+
+        let o = parse(r#"{"a": {"b": 1}, "n": null, "s": "x"}"#).unwrap();
+        assert_eq!(get_property(Some(&o), "a").unwrap(), o_get(&o, "a"));
+        assert_eq!(get_property(Some(&o), "zz").unwrap(), None);
+        assert_eq!(get_property(o_get(&o, "s"), "length").unwrap(), None);
+        assert_eq!(
+            get_property(o_get(&o, "n"), "b").unwrap_err().message(),
+            "Cannot read properties of null (reading 'b')"
+        );
+        assert_eq!(
+            get_property(None, "b").unwrap_err().to_string(),
+            "Cannot read properties of undefined (reading 'b')"
+        );
+    }
+
+    fn o_get<'a>(o: &'a JsonValue, key: &str) -> Option<&'a JsonValue> {
+        match o {
+            JsonValue::Object(map) => map.get(key),
+            _ => None,
+        }
+    }
 
     #[test]
     fn quoting() {

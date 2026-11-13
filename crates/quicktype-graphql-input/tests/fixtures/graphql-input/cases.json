@@ -1,0 +1,2457 @@
+{
+ "introspectionQuery": "\n    query IntrospectionQuery {\n      __schema {\n        \n        queryType { name kind }\n        mutationType { name kind }\n        subscriptionType { name kind }\n        types {\n          ...FullType\n        }\n        directives {\n          name\n          description\n          \n          \n          \n          locations\n          args {\n            ...InputValue\n          }\n        }\n      }\n    }\n\n    fragment FullType on __Type {\n      kind\n      name\n      description\n      \n      \n      fields(includeDeprecated: true) {\n        name\n        description\n        args {\n          ...InputValue\n        }\n        type {\n          ...TypeRef\n        }\n        isDeprecated\n        deprecationReason\n      }\n      inputFields {\n        ...InputValue\n      }\n      interfaces {\n        ...TypeRef\n      }\n      enumValues(includeDeprecated: true) {\n        name\n        description\n        isDeprecated\n        deprecationReason\n      }\n      possibleTypes {\n        ...TypeRef\n      }\n    }\n\n    fragment InputValue on __InputValue {\n      name\n      description\n      type { ...TypeRef }\n      defaultValue\n      \n      \n    }\n\n    fragment TypeRef on __Type {\n      kind\n      name\n      ofType {\n        name\n        kind\n        ofType {\n          name\n          kind\n          ofType {\n            name\n            kind\n            ofType {\n              name\n              kind\n              ofType {\n                name\n                kind\n                ofType {\n                  name\n                  kind\n                  ofType {\n                    name\n                    kind\n                    ofType {\n                      name\n                      kind\n                      ofType {\n                        name\n                        kind\n                      }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  ",
+ "cases": [
+  {
+   "id": "inputs/github1",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    realName: name\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github2",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    repositories(first: 10) {\n      totalCount\n      nodes {\n        name\n      }\n    }\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github3",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    repository(name: \"metapixel\") {\n      pullRequests(first:10) {\n        nodes {\n          state\n        }\n      }\n    }\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github4",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    ... UserFragment\n    repository(name: \"metapixel\") {\n      pullRequests(first:10) {\n        nodes {\n          state\n        }\n      }\n    }\n  }\n}\n\nfragment UserFragment on User {\n  login\n  name\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github5",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query test($more: Boolean!) {\n  viewer {\n    login\n    name @include(if: $more)\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github6",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  resource(url: \"https://github.com/quicktype/quicktype\") {\n    url\n    ... on User {\n      login\n    }\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github7",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "{\n  viewer {\n    login\n    starredRepositories {\n      totalCount\n    }\n    repositories(first: 3) {\n      edges {\n        node {\n          name\n          stargazers {\n            totalCount\n          }\n          forks {\n            totalCount\n          }\n          watchers {\n            totalCount\n          }\n          issues(states:[OPEN]) {\n            totalCount\n          }\n        }\n      }\n    }\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github8",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "{\n  repository(owner: \"quicktype\", name: \"quicktype\") {\n    nameWithOwner,\n    n303: issueOrPullRequest(number: 303) {\n      ... IOPR\n    },\n    n307: issueOrPullRequest(number: 307) {\n      ... IOPR\n    }\n  }\n}\n\nfragment IOPR on IssueOrPullRequest {\n  ... on Issue {\n    title\n    state\n  }\n  ... on PullRequest {\n    title\n    merged\n  }  \n}\n"
+    }
+   ]
+  },
+  {
+   "id": "inputs/github9",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "mutation AddReaction($input: AddReactionInput!){\n  addReaction(input: $input){\n    clientMutationId\n    reaction {\n      content\n    }\n    subject {\n      viewerCanReact\n      reactionGroups {\n          content\n      }\n    }\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "inputs/all-as-sources",
+   "sources": [
+    {
+     "name": "github1",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    realName: name\n  }\n}\n"
+    },
+    {
+     "name": "github2",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    repositories(first: 10) {\n      totalCount\n      nodes {\n        name\n      }\n    }\n  }\n}\n"
+    },
+    {
+     "name": "github3",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    repository(name: \"metapixel\") {\n      pullRequests(first:10) {\n        nodes {\n          state\n        }\n      }\n    }\n  }\n}\n"
+    },
+    {
+     "name": "github4",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    ... UserFragment\n    repository(name: \"metapixel\") {\n      pullRequests(first:10) {\n        nodes {\n          state\n        }\n      }\n    }\n  }\n}\n\nfragment UserFragment on User {\n  login\n  name\n}\n"
+    },
+    {
+     "name": "github5",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query test($more: Boolean!) {\n  viewer {\n    login\n    name @include(if: $more)\n  }\n}\n"
+    },
+    {
+     "name": "github6",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  resource(url: \"https://github.com/quicktype/quicktype\") {\n    url\n    ... on User {\n      login\n    }\n  }\n}\n"
+    },
+    {
+     "name": "github7",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "{\n  viewer {\n    login\n    starredRepositories {\n      totalCount\n    }\n    repositories(first: 3) {\n      edges {\n        node {\n          name\n          stargazers {\n            totalCount\n          }\n          forks {\n            totalCount\n          }\n          watchers {\n            totalCount\n          }\n          issues(states:[OPEN]) {\n            totalCount\n          }\n        }\n      }\n    }\n  }\n}\n"
+    },
+    {
+     "name": "github8",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "{\n  repository(owner: \"quicktype\", name: \"quicktype\") {\n    nameWithOwner,\n    n303: issueOrPullRequest(number: 303) {\n      ... IOPR\n    },\n    n307: issueOrPullRequest(number: 307) {\n      ... IOPR\n    }\n  }\n}\n\nfragment IOPR on IssueOrPullRequest {\n  ... on Issue {\n    title\n    state\n  }\n  ... on PullRequest {\n    title\n    merged\n  }  \n}\n"
+    },
+    {
+     "name": "github9",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "mutation AddReaction($input: AddReactionInput!){\n  addReaction(input: $input){\n    clientMutationId\n    reaction {\n      content\n    }\n    subject {\n      viewerCanReact\n      reactionGroups {\n          content\n      }\n    }\n  }\n}"
+    }
+   ]
+  },
+  {
+   "id": "inputs/two-sources",
+   "sources": [
+    {
+     "name": "github1",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    realName: name\n  }\n}\n"
+    },
+    {
+     "name": "github2",
+     "schemaFile": "tests/inputs/graphql/github.gqlschema",
+     "query": "query {\n  viewer {\n    login\n    repositories(first: 10) {\n      totalCount\n      nodes {\n        name\n      }\n    }\n  }\n}\n"
+    }
+   ]
+  },
+  {
+   "id": "queries/scalars",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { id name age score active born tags size } count hello }"
+    }
+   ]
+  },
+  {
+   "id": "queries/aliases",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ me: viewer { login: name n2: name name } you: user(id: 1) { name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/alias-replaces",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { a: name b: age a: id } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/same-field-twice",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { name age name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/enums",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { color colors size } color }"
+    }
+   ]
+  },
+  {
+   "id": "queries/lists",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { matrix friends { name friends { age } } pets { ... on Dog { barks } } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/nested-objects",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { best { best { best { name } } } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/non-null-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { name } user(id: 2) { name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-same-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...U } } fragment U on User { name age }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-interface",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...N } } fragment N on Named { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-nested",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A } } fragment A on User { name ...B } fragment B on User { age best { ...A2 } } fragment A2 on User { id }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-order",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { age ...U id } } fragment U on User { name size }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-later-wins",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...U } } fragment U on User { name } fragment U on User { age }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-twice",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...U ...U } } fragment U on User { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/inline-fragment-no-condition",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... { name } ... @include(if: true) { age } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/inline-fragments-union",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ pet { ... on Dog { name barks } ... on Cat { name lives } } pets { ... on Cat { meows } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/inline-fragments-interface",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ node(id: 1) { id ... on User { name } ... on Dog { barks } } named { name ... on Cat { lives } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/directives",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query($b: Boolean!) { viewer { name @include(if: $b) age @skip(if: $b) id @deprecated active @include(if: $b) @skip(if: true) best @skip(if: $b) { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/directive-on-spread",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...U @include(if: false) id } } fragment U on User { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/directive-on-fragment-definition",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...U } } fragment U on User @include(if: false) { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/directive-on-inline-fragment",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... on User @skip(if: true) { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/directive-on-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { best @include(if: true) { name } colors @skip(if: false) } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/named-query",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Mine { viewer { name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/two-queries-one-source",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query A { viewer { name } } query B { count }"
+    }
+   ]
+  },
+  {
+   "id": "queries/anonymous-and-named",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ count } query B { hello }"
+    }
+   ]
+  },
+  {
+   "id": "queries/mutation",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "mutation M { rename(name: \"x\") { name } like(id: 1) { ... on Dog { barks } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/subscription-only",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "subscription { tick }"
+    }
+   ]
+  },
+  {
+   "id": "queries/subscription-and-query",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "subscription S { tick } query { count }"
+    }
+   ]
+  },
+  {
+   "id": "queries/type-system-definitions",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "type Ignored { a: Int } { count } extend type Ignored @x scalar S"
+    }
+   ]
+  },
+  {
+   "id": "queries/variables",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($id: ID! = 3, $f: UserFilter = {name: \"n\"}, $l: [[Int!]!]) { user(id: $id) { name } users(filter: $f) { age } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/typename",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { __typename name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/schema-introspection",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ __schema { types { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/unknown-field",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { nosuchfield } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/unknown-field-nested",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { best { nope } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/unknown-fragment",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...Nope } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-on-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...F } } fragment F on Nope { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/inline-on-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... on Nope { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/field-on-union",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ pet { name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-spread-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { hello }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-inline-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ... on Nope @include(if: true) { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-nested-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { ... { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-known-spread",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { ...G } fragment G on Query { count }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-known-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @include(if: true) } fragment F on Nope { ... on Query { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-field-unknown-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer @include(if: true) { ... on Nope { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-again-after-expansion",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A best { ...A } friends { ...B } } } fragment A on User { name } fragment B on User { ...A age }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-chain",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...F0 } } fragment F0 on User { age ...F1 } fragment F1 on User { name ...F2 } fragment F2 on User { age ...F3 } fragment F3 on User { name ...F4 } fragment F4 on User { age ...F5 } fragment F5 on User { name ...F6 } fragment F6 on User { age ...F7 } fragment F7 on User { name ...F8 } fragment F8 on User { age ...F9 } fragment F9 on User { name ...F10 } fragment F10 on User { age ...F11 } fragment F11 on User { name ...F12 } fragment F12 on User { age ...F13 } fragment F13 on User { name ...F14 } fragment F14 on User { age ...F15 } fragment F15 on User { name ...F16 } fragment F16 on User { age ...F17 } fragment F17 on User { name ...F18 } fragment F18 on User { age ...F19 } fragment F19 on User { name ...F20 } fragment F20 on User { age ...F21 } fragment F21 on User { name ...F22 } fragment F22 on User { age ...F23 } fragment F23 on User { name ...F24 } fragment F24 on User { age ...F25 } fragment F25 on User { name ...F26 } fragment F26 on User { age ...F27 } fragment F27 on User { name ...F28 } fragment F28 on User { age ...F29 } fragment F29 on User { name ...F30 } fragment F30 on User { age ...F31 } fragment F31 on User { name ...F32 } fragment F32 on User { age ...F33 } fragment F33 on User { name ...F34 } fragment F34 on User { age ...F35 } fragment F35 on User { name ...F36 } fragment F36 on User { age ...F37 } fragment F37 on User { name ...F38 } fragment F38 on User { age ...F39 } fragment F39 on User { name ...F40 } fragment F40 on User { age ...F41 } fragment F41 on User { name ...F42 } fragment F42 on User { age ...F43 } fragment F43 on User { name ...F44 } fragment F44 on User { age ...F45 } fragment F45 on User { name ...F46 } fragment F46 on User { age ...F47 } fragment F47 on User { name ...F48 } fragment F48 on User { age ...F49 } fragment F49 on User { name ...F50 } fragment F50 on User { age ...F51 } fragment F51 on User { name ...F52 } fragment F52 on User { age ...F53 } fragment F53 on User { name ...F54 } fragment F54 on User { age ...F55 } fragment F55 on User { name ...F56 } fragment F56 on User { age ...F57 } fragment F57 on User { name ...F58 } fragment F58 on User { age ...F59 } fragment F59 on User { name id }"
+    }
+   ]
+  },
+  {
+   "id": "queries/object-without-selection",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer }"
+    }
+   ]
+  },
+  {
+   "id": "queries/scalar-with-selection",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ count { x } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/input-object-field",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ users { name } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/enum-with-selection",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ color { x } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/duplicate-query-names",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query A { count } query A { hello }"
+    }
+   ]
+  },
+  {
+   "id": "queries/prototype-fragment-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...toString } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/prototype-type-condition",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... on toString { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/prototype-constructor",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... on constructor { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/proto-fragment",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...__proto__ } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/proto-fragment-defined",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...__proto__ ...kind } } fragment __proto__ on User { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/proto-fragment-description",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...description } } fragment __proto__ on User { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/proto-fragment-builtin",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...hasOwnProperty } } fragment __proto__ on User { name }"
+    }
+   ]
+  },
+  {
+   "id": "queries/proto-type-condition",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ... on __proto__ { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/recursive-fragment-through-field",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...R } } fragment R on User { name friends { ...R } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/recursive-fragments-through-field",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A } } fragment A on User { best { ...B } } fragment B on User { name ...A }"
+    }
+   ]
+  },
+  {
+   "id": "queries/deep-nesting",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { best { name } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/deep-lists",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { matrix } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/mutation-without-mutation-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/query-only.gqlschema",
+     "query": "mutation { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/query-only",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/query-only.gqlschema",
+     "query": "{ a b { x y { y { x } } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/naming-empty-top-level",
+   "sources": [
+    {
+     "name": "",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/query-only.gqlschema",
+     "query": "{ b { x } }"
+    }
+   ]
+  },
+  {
+   "id": "sources/named-queries",
+   "sources": [
+    {
+     "name": "First",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query A { count } query B { hello }"
+    },
+    {
+     "name": "Second",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { name } }"
+    }
+   ]
+  },
+  {
+   "id": "sources/same-query-name",
+   "sources": [
+    {
+     "name": "First",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query A { count }"
+    },
+    {
+     "name": "Second",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query A { hello }"
+    }
+   ]
+  },
+  {
+   "id": "sources/same-source-name",
+   "sources": [
+    {
+     "name": "Same",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ count }"
+    },
+    {
+     "name": "Same",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/query-only.gqlschema",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "sources/different-schemas",
+   "sources": [
+    {
+     "name": "One",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { name } }"
+    },
+    {
+     "name": "Two",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/query-only.gqlschema",
+     "query": "{ b { x } }"
+    }
+   ]
+  },
+  {
+   "id": "sources/error-in-second",
+   "sources": [
+    {
+     "name": "One",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ count }"
+    },
+    {
+     "name": "Two",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ nope }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/000",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": ""
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/001",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": " "
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/002",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/003",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/004",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a("
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/005",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(b: ) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/006",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(b: $) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/007",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/008",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ ...on }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/009",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ ... on }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/010",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "fragment on on User { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/011",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "fragment F User { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/012",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a: Int = $b) { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/013",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a: Int = [$b]) { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/014",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a: [Int) { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/015",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a) { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/016",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a: Int @dir(x: $y)) { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/017",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "\"desc\" { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/018",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "\"desc\" extend type T @a"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/019",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "\"\"\"\n  block\n    desc\n  \"\"\" query { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/020",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query \"\"\"  x  \"\"\""
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/021",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query \"x\\ny\""
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/022",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "enum E { true }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/023",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "enum E { \"null\" }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/024",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "directive @d on FOO"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/025",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "directive @d repeatable on FIELD | QUERY"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/026",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "directive @d on | FIELD"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/027",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend directive @d @x"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/028",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend type T"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/029",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend schema"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/030",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend scalar S"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/031",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend union U"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/032",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend enum E"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/033",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend input I"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/034",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend interface I"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/035",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "extend foo"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/036",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "schema { query: Q, mutation: M }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/037",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "schema { }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/038",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "type T implements & A & B { a: Int }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/039",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "union U = | A | B"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/040",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "input I { a: Int = 1 @d }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/041",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "subscribe { a }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/042",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q { a } fragment"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/043",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a: }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/044",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a: b: c }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/045",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a @ }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/046",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: {b: 1, c: [1, 2.5, \"s\", true, null, ENUM, {d: $v}]}) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/047",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 01) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/048",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 1.) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/049",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 1.5e) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/050",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 1a) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/051",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: -x) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/052",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 0x1) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/053",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 1.2.3) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/054",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"unterminated) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/055",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"line\nbreak\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/056",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\q\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/057",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\u12\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/058",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\u{}\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/059",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\u{110000}\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/060",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\u{7FFFFFFF}\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/061",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\u{FFFFFFFFF}\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/062",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\uD83D\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/063",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\uD83D\\u0041\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/064",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\uDE00\") }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/065",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\\uD83D\\uDE00\\u{1F600}\") } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/066",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\"\"unterminated) }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/067",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"\"\" a \\\"\"\" b \"\"\") } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/068",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: 'single') }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/069",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a ? }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/070",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a . }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/071",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a .. }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/072",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a \u0007 }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/073",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a é }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/074",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a 😀 }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/075",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a   }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/076",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "﻿{ a } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/077",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a } # comment\n }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/078",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a } # comment 😀\r\n }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/079",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a(x: \"😀\") } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/080",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q @a(b: 1) @c { a } query"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/081",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ a } mutation"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/082",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "mutation"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/083",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "fragment F on T @d(x: $v) { a } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/syntax/084",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query Q($a: Int = 1 $b: [Int!]! = [1]) { a } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "null",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "5",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "\"x\"",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/array",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "[]",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/empty-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/data-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":null}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/data-empty",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/schema-empty",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-name-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":null},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-no-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-missing",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Nope\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":5},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":5,\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-missing",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":null}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":{}}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":3}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":\"ab\"}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/types-empty-string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":\"\"}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/type-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},null]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/type-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},1]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/type-no-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},{\"kind\":\"OBJECT\"}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/type-empty-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},{\"kind\":\"OBJECT\",\"name\":\"\"}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/fields-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":{}},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/fields-string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":\"x\"},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/fields-empty-string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":\"\"},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/fields-element-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}},null]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-no-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[]},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-no-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-unknown",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Missing\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-number-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":7}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-kind-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":{\"a\":1},\"ofType\":null}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-no-args",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-args-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":null,\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-args-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":3,\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-arg-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[null],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-arg-no-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[{\"name\":\"x\"}],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-arg-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[{\"name\":\"x\",\"type\":{\"name\":\"Nope\"}}],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/interfaces-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"interfaces\":{}}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/interfaces-element-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"interfaces\":[null]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/interfaces-unknown",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"interfaces\":[{\"kind\":\"INTERFACE\",\"name\":\"Nope\"}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/possible-types-unknown",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"possibleTypes\":[{\"kind\":\"OBJECT\",\"name\":\"Nope\"}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/input-fields-element-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"inputFields\":[null]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/enum-values-element-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"enumValues\":[null]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/enum-values-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}],\"enumValues\":1}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/mutation-type-missing",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/mutation-type-name-null",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":{\"name\":null},\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/mutation-type-unknown",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":{\"name\":\"Nope\"},\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/mutation-type-string",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":\"Query\",\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/mutation-type-ok",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":{\"name\":\"O\"},\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "mutation { x }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/kind-unknown",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"WEIRD\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"WEIRD\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/kind-missing",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/kind-number",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":3,\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/kind-array",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":[\"A\",null,[\"B\"]],\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/list-without-of-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"LIST\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/non-null-without-of-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"NON_NULL\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/enum-without-values",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"ENUM\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/enum-values",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"ENUM\",\"name\":\"Int\",\"enumValues\":[{\"name\":\"A\"},{\"name\":\"B\"},{\"name\":\"A\"}]},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/enum-wrapper-without-name",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"ENUM\",\"ofType\":{\"kind\":\"SCALAR\",\"name\":\"Int\"},\"enumValues\":[{\"name\":\"X\"}]}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/input-object",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"INPUT_OBJECT\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-scalar",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"SCALAR\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-builtin",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"toString\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/query-type-proto",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"__proto__\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-builtin",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"valueOf\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ a }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/field-type-constructor",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"constructor\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ o { x } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/duplicate-types",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"y\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ o { y } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/duplicate-types-fields-kept",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"O\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},{\"kind\":\"OBJECT\",\"name\":\"O\"}]}}}",
+     "query": "{ o { x } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/type-named-constructor",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":\"constructor\"}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":\"O\",\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]},{\"kind\":\"OBJECT\",\"name\":\"constructor\",\"fields\":[{\"name\":\"z\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ o { z } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/names-are-numbers",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "{\"data\":{\"__schema\":{\"queryType\":{\"name\":\"Query\"},\"mutationType\":null,\"types\":[{\"kind\":\"OBJECT\",\"name\":\"Query\",\"fields\":[{\"name\":\"a\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}},{\"name\":\"o\",\"args\":[],\"type\":{\"kind\":\"OBJECT\",\"name\":12}}]},{\"kind\":\"SCALAR\",\"name\":\"Int\"},{\"kind\":\"OBJECT\",\"name\":12,\"fields\":[{\"name\":\"x\",\"args\":[],\"type\":{\"kind\":\"SCALAR\",\"name\":\"Int\"}}]}]}}}",
+     "query": "{ o { x } }"
+    }
+   ]
+  },
+  {
+   "id": "malformed/yaml",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaText": "data:\n  __schema:\n    queryType: {name: Query}\n    mutationType: null\n    types:\n      - {kind: OBJECT, name: Query, fields: [{name: a, args: [], type: {kind: SCALAR, name: Boolean}}]}\n      - {kind: SCALAR, name: Boolean}\n",
+     "query": "{ a }"
+    }
+   ]
+  }
+ ],
+ "nonTerminating": [
+  {
+   "id": "nonterminating/self-spread",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A } } fragment A on User { name ...A }"
+    }
+   ]
+  },
+  {
+   "id": "nonterminating/mutual-spread",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A } } fragment A on User { ...B } fragment B on User { age ...A }"
+    }
+   ]
+  }
+ ]
+}

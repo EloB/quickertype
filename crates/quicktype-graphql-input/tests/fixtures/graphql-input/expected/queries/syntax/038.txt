@@ -1,0 +1,1 @@
+error: QuickTypeError GraphQL file doesn't have any queries defined.

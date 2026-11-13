@@ -2,7 +2,7 @@
 //! before it builds the engine's input.
 
 use quicktype_core::{JsonSchemaSourceData, Readable};
-use quicktype_js_compat::json::JsonValue;
+use quicktype_graphql_input::GraphQlSourceData;
 
 /// TS `JSONTypeSource`: JSON samples for one top-level. The samples are
 /// opened but not read yet, as in TypeScript, where they are Node streams
@@ -17,19 +17,6 @@ pub struct JsonTypeSource {
     pub description: Option<String>,
 }
 
-/// TS `GraphQLTypeSource`: a GraphQL query and the schema it runs against.
-// TODO(graphql): read by the GraphQL input (Phase 5).
-#[allow(dead_code)]
-#[derive(Debug)]
-pub struct GraphQlTypeSource {
-    /// The top-level's name.
-    pub name: String,
-    /// The introspection schema.
-    pub schema: JsonValue,
-    /// The query.
-    pub query: String,
-}
-
 /// TS `TypeSource`.
 #[derive(Debug)]
 pub enum TypeSource {
@@ -37,6 +24,7 @@ pub enum TypeSource {
     Json(JsonTypeSource),
     /// `kind: "schema"` (TS `SchemaTypeSource`).
     Schema(JsonSchemaSourceData),
-    /// `kind: "graphql"`.
-    GraphQl(GraphQlTypeSource),
+    /// `kind: "graphql"` (TS `GraphQLTypeSource`): a query and the
+    /// introspection schema it runs against.
+    GraphQl(GraphQlSourceData),
 }

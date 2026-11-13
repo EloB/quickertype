@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Query type not found.

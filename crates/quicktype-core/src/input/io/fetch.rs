@@ -1,5 +1,6 @@
-//! Node's `fetch` (undici, as bundled with Node 24) for a `GET` request, as
-//! far as `NodeIO` observes it, on `ureq`.
+//! Node's `fetch` (undici, as bundled with Node 24), as far as `NodeIO`
+//! (`GET`) and `--graphql-introspect` (`POST` with a body) observe it, on
+//! `ureq`.
 //!
 //! - **Request construction.** Header names and values above U+00FF fail
 //!   the `ByteString` conversion first, then the URL must parse (WHATWG,
@@ -7,14 +8,20 @@
 //!   header is appended like `Headers.append` (names must be tokens; values
 //!   are trimmed of HTTP whitespace and must not contain NUL, CR or LF).
 //!   Names that differ only in case are combined (`3, 2`; cookies with
-//!   `; `). The texts of the `TypeError`s are undici's.
+//!   `; `). The method must be a token other than `CONNECT`, `TRACE` and
+//!   `TRACK`; `delete`, `get`, `head`, `options`, `post` and `put` are
+//!   upper-cased in any case. A `GET` or `HEAD` cannot have a body; a body
+//!   without a `content-type` header gets `text/plain;charset=UTF-8`. The
+//!   texts of the `TypeError`s are undici's.
 //! - **Defaults.** `accept: */*`, `accept-language: *`,
 //!   `sec-fetch-mode: cors`, `user-agent: node`, and
 //!   `accept-encoding: br, gzip, deflate` (`gzip, deflate` over plain HTTP)
 //!   unless given; a `host` header is never sent.
 //! - **Redirects** are followed by hand, like undici: at most 20 (the 21st is
 //!   a network error), only to HTTP(S) URLs, and a cross-origin hop drops
-//!   `authorization`, `proxy-authorization`, `cookie` and `host`.
+//!   `authorization`, `proxy-authorization`, `cookie` and `host`. A 301 or
+//!   302 after a `POST`, and a 303 after anything but `GET` or `HEAD`,
+//!   continue as a `GET` without the body and its `content-*` headers.
 //! - **Bodies** are decoded per `Content-Encoding` (`gzip`/`x-gzip`,
 //!   `deflate` with zlib or raw data, `br`, in reverse order; any other
 //!   coding means no decoding, more than five fail); a corrupt or truncated
@@ -30,11 +37,12 @@ use std::io::Read;
 use std::sync::OnceLock;
 use std::time::Duration;
 
-use indexmap::IndexMap;
 use url::Url;
 
-use crate::input::io::node_io::{HttpResponse, IoError, IoErrorKind};
-use crate::messages::JsErrorName;
+use crate::input::io::node_io::{HttpResponse, IoError, RequestInit};
+use crate::input::io::request::{
+    HeaderList, check_body, check_byte_strings, header_list, request_method, type_error,
+};
 
 /// The ports fetch refuses to connect to (`badPorts` of the Fetch
 /// standard).
@@ -60,11 +68,6 @@ fn fetch_failed() -> IoError {
     type_error("fetch failed")
 }
 
-/// A `TypeError` from building or sending the request.
-fn type_error(message: impl Into<String>) -> IoError {
-    IoError::new(IoErrorKind::Network, JsErrorName::TypeError, message)
-}
-
 fn agent() -> &'static ureq::Agent {
     static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
     AGENT.get_or_init(|| {
@@ -76,64 +79,6 @@ fn agent() -> &'static ureq::Agent {
             .timeout_write(Duration::from_secs(300))
             .build()
     })
-}
-
-/// A request header list: lower-case name → (name as first given, value).
-type HeaderList = IndexMap<String, (String, String)>;
-
-/// webidl's `ByteString` conversion: every UTF-16 code unit must be at most
-/// 255.
-fn check_byte_string(s: &str) -> Result<(), IoError> {
-    for (index, unit) in s.encode_utf16().enumerate() {
-        if unit > 255 {
-            return Err(type_error(format!(
-                "Cannot convert argument to a ByteString because the character at index {index} has a value of {unit} which is greater than 255."
-            )));
-        }
-    }
-    Ok(())
-}
-
-/// An HTTP token character (RFC 9110), as `isValidHTTPToken` checks.
-fn is_token_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || "!#$%&'*+-.^_`|~".contains(c)
-}
-
-fn is_http_whitespace(c: char) -> bool {
-    matches!(c, '\t' | '\n' | '\r' | ' ')
-}
-
-/// `new Headers(init)` for the record `NodeIO` passes, then the defaults.
-fn header_list(headers: &[(String, String)]) -> Result<HeaderList, IoError> {
-    let mut list = HeaderList::new();
-    for (name, value) in headers {
-        let value = value.trim_matches(is_http_whitespace);
-        if name.is_empty() || !name.chars().all(is_token_char) {
-            return Err(type_error(format!(
-                "Headers.append: \"{name}\" is an invalid header name."
-            )));
-        }
-        if value.starts_with(['\t', ' '])
-            || value.ends_with(['\t', ' '])
-            || value.contains(['\0', '\n', '\r'])
-        {
-            return Err(type_error(format!(
-                "Headers.append: \"{value}\" is an invalid header value."
-            )));
-        }
-        let key = name.to_ascii_lowercase();
-        match list.get_mut(&key) {
-            Some((_, existing)) => {
-                let delimiter = if key == "cookie" { "; " } else { ", " };
-                existing.push_str(delimiter);
-                existing.push_str(value);
-            }
-            None => {
-                list.insert(key, (name.clone(), value.to_owned()));
-            }
-        }
-    }
-    Ok(list)
 }
 
 /// Adds undici's default request headers for `url`.
@@ -162,12 +107,36 @@ fn add_default_headers(list: &mut HeaderList, url: &Url) {
 
 /// `fetch(input, { headers })` for a `GET`.
 pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpResponse, IoError> {
-    // `new Request(input, init)`: the init dictionary (with the headers'
-    // ByteString conversion) is converted before the URL is parsed.
-    for (name, value) in headers {
-        check_byte_string(name)?;
-        check_byte_string(value)?;
-    }
+    fetch_with_init(
+        input,
+        &RequestInit {
+            method: "GET",
+            headers,
+            body: None,
+        },
+    )
+}
+
+/// The headers that describe a request body, dropped when a redirect turns
+/// the request into a `GET`.
+const REQUEST_BODY_HEADERS: [&str; 5] = [
+    "content-encoding",
+    "content-language",
+    "content-location",
+    "content-type",
+    "content-length",
+];
+
+/// `fetch(input, { method, headers, body })`.
+pub(crate) fn fetch_with_init(
+    input: &str,
+    init: &RequestInit<'_>,
+) -> Result<HttpResponse, IoError> {
+    // `new Request(input, init)`: the init dictionary is converted first
+    // (the headers' and the method's ByteString conversions, in member
+    // order), then the URL is parsed, then the method, the headers and the
+    // body are checked.
+    check_byte_strings(init)?;
     let mut url =
         Url::parse(input).map_err(|_| type_error(format!("Failed to parse URL from {input}")))?;
     if !url.username().is_empty() || url.password().is_some() {
@@ -175,7 +144,18 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
             "Request cannot be constructed from a URL that includes credentials: {input}"
         )));
     }
-    let mut list = header_list(headers)?;
+    let mut method = request_method(init.method)?;
+    let mut list = header_list(init.headers)?;
+    check_body(&method, init.body)?;
+    let mut body = init.body;
+    if body.is_some() {
+        list.entry("content-type".to_owned()).or_insert_with(|| {
+            (
+                "content-type".to_owned(),
+                "text/plain;charset=UTF-8".to_owned(),
+            )
+        });
+    }
 
     let mut redirects = 0;
     loop {
@@ -187,11 +167,15 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
         }
         let mut sent = list.clone();
         add_default_headers(&mut sent, &url);
-        let mut request = agent().request_url("GET", &url);
+        let mut request = agent().request_url(&method, &url);
         for (name, value) in sent.values() {
             request = request.set(name, value);
         }
-        let response = match request.call() {
+        let sent = match body {
+            Some(body) => request.send_bytes(body.as_bytes()),
+            None => request.call(),
+        };
+        let response = match sent {
             Ok(response) | Err(ureq::Error::Status(_, response)) => response,
             Err(ureq::Error::Transport(_)) => return Err(fetch_failed()),
         };
@@ -207,6 +191,17 @@ pub(crate) fn fetch(input: &str, headers: &[(String, String)]) -> Result<HttpRes
             redirects += 1;
             if next.origin() != url.origin() {
                 for name in ["authorization", "proxy-authorization", "cookie", "host"] {
+                    list.shift_remove(name);
+                }
+            }
+            // A 301 or 302 after a POST, and a 303 after anything but GET
+            // or HEAD, continue as a GET without the body.
+            if ((status == 301 || status == 302) && method == "POST")
+                || (status == 303 && method != "GET" && method != "HEAD")
+            {
+                method = "GET".to_owned();
+                body = None;
+                for name in REQUEST_BODY_HEADERS {
                     list.shift_remove(name);
                 }
             }

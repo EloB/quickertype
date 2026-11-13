@@ -1,0 +1,33 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union login | children 1,0 | 2 | given login (User_login)
+3: enum PullRequestState | 3 | given PullRequestState (state,PullRequest_PullRequestState,PullRequest_state)
+4: union state | children 3,1 | 4 | given state (PullRequest_state)
+5: class PullRequest | children 3 | 5 | given PullRequest (nodes,PullRequestConnection_PullRequest,PullRequestConnection_nodes)
+6: union nodes | children 5,1 | 6 | given nodes (PullRequestConnection_nodes)
+7: array | children 6 | 7
+8: union nodes | children 7,1 | 8 | given nodes (PullRequestConnection_nodes)
+9: class PullRequestConnection | children 8 | 9 | given PullRequestConnection (pullRequests,Repository_PullRequestConnection,Repository_pullRequests)
+10: union pullRequests | children 9,1 | 10 | given pullRequests (Repository_pullRequests)
+11: class Repository | children 9 | 11 | given Repository (repository,User_Repository,User_repository)
+12: union repository | children 11,1 | 12 | given repository (User_repository)
+13: class User | children 0,12 | 13 | given User (viewer,data_User,data_viewer)
+14: union viewer | children 13,1 | 14 | given viewer (data_viewer)
+15: class data | children 13 | 15 | given data (TopLevel_data)
+16: union | children 15,1 | 16
+17: class error | children 0 | 17 | given error (graphQLError)
+18: array errors | children 17 | 18 | given errors (graphQLErrors)
+19: class TopLevel | children 16,18 | 19 | given TopLevel ()
+# properties
+3 cases ["OPEN","CLOSED","MERGED"]
+5 properties [["state",3,false]]
+9 properties [["nodes",8,false]]
+11 properties [["pullRequests",9,false]]
+13 properties [["login",0,false],["repository",12,false]]
+15 properties [["viewer",13,false]]
+17 properties [["message",0,false]]
+19 properties [["data",16,false],["errors",18,true]]
+# top-levels
+"TopLevel": 19

@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Required field __typename not defined on type User.

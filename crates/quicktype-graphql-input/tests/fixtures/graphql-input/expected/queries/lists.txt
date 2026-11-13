@@ -1,0 +1,42 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: integer | 0
+1: null | 1
+2: union matrix | children 0,1 | 2 | given matrix,age (User_matrix,User_age)
+3: array | children 0 | 3
+4: union matrix | children 3,1 | 4 | given matrix (User_matrix)
+5: array | children 4 | 5
+6: union matrix | children 5,1 | 6 | given matrix (User_matrix)
+7: string | 7 | unrestricted
+8: union name | children 1,7 | 8 | given name (User_name)
+9: class User | children 2 | 9 | given User (friends,User_User,User_friends)
+10: union friends | children 9,1 | 10 | given friends (User_friends)
+11: array | children 10 | 11
+12: union friends | children 11,1 | 12 | given friends (User_friends)
+13: class User | children 12,8 | 13 | given User (friends,User_User,User_friends)
+14: union friends | children 13,1 | 14 | given friends (User_friends)
+15: array | children 14 | 15
+16: union friends | children 15,1 | 16 | given friends (User_friends)
+17: bool | 17
+18: union barks | children 17,1 | 18 | given barks (Pet_barks)
+19: class Pet | children 17 | 19 | given Pet (pets,User_Pet,User_pets)
+20: union pets | children 19,1 | 20 | given pets (User_pets)
+21: array | children 19 | 21
+22: union pets | children 21,1 | 22 | given pets (User_pets)
+23: class User | children 16,5,22 | 23 | given User (viewer,data_User,data_viewer)
+24: union viewer | children 23,1 | 24 | given viewer (data_viewer)
+25: class data | children 23 | 25 | given data (TopLevel_data)
+26: union | children 25,1 | 26
+27: class error | children 7 | 27 | given error (graphQLError)
+28: array errors | children 27 | 28 | given errors (graphQLErrors)
+29: class TopLevel | children 26,28 | 29 | given TopLevel ()
+# properties
+9 properties [["age",2,false]]
+13 properties [["name",8,false],["friends",12,false]]
+19 properties [["barks",17,true]]
+23 properties [["matrix",5,false],["friends",16,false],["pets",22,false]]
+25 properties [["viewer",23,false]]
+27 properties [["message",7,false]]
+29 properties [["data",26,false],["errors",28,true]]
+# top-levels
+"TopLevel": 29

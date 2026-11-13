@@ -1,0 +1,30 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union id | children 1,0 | 2 | given id,name,born,tags,hello (User_id,User_name,User_born,User_tags,data_hello)
+3: integer | 3
+4: union age | children 3,1 | 4 | given age,count (User_age,data_count)
+5: double | 5
+6: union score | children 5,1 | 6 | given score (User_score)
+7: bool | 7
+8: union active | children 7,1 | 8 | given active (User_active)
+9: array | children 2 | 9
+10: union tags | children 9,1 | 10 | given tags (User_tags)
+11: enum Size | 11 | given Size (size,User_Size,User_size)
+12: union size | children 11,1 | 12 | given size (User_size)
+13: class User | children 7,4,2,0,6,11,10 | 13 | given User (viewer,data_User,data_viewer)
+14: union viewer | children 13,1 | 14 | given viewer (data_viewer)
+15: class data | children 3,2,13 | 15 | given data (TopLevel_data)
+16: union | children 15,1 | 16
+17: class error | children 0 | 17 | given error (graphQLError)
+18: array errors | children 17 | 18 | given errors (graphQLErrors)
+19: class TopLevel | children 16,18 | 19 | given TopLevel ()
+# properties
+11 cases ["SMALL","LARGE"]
+13 properties [["id",0,false],["name",2,false],["age",4,false],["score",6,false],["active",7,false],["born",2,false],["tags",10,false],["size",11,false]]
+15 properties [["viewer",13,false],["count",3,false],["hello",2,false]]
+17 properties [["message",0,false]]
+19 properties [["data",16,false],["errors",18,true]]
+# top-levels
+"TopLevel": 19

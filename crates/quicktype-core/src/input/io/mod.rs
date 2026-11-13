@@ -19,18 +19,13 @@ use std::thread::{self, Thread};
 #[cfg(feature = "http")]
 mod fetch;
 pub mod node_io;
+mod request;
 
 /// A boxed future that need not be `Send` (JavaScript values are not).
 pub type LocalBoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
 
-/// The stack left free before [`grow_stack`] switches to a new segment.
-const RED_ZONE: usize = 256 * 1024;
-
-/// The size of each new stack segment.
-const STACK_SEGMENT: usize = 4 * 1024 * 1024;
-
 /// Runs `f`, on a freshly allocated stack segment if the current stack is
-/// nearly exhausted.
+/// nearly exhausted ([`recursion::grow_stack`](crate::support::recursion::grow_stack)).
 ///
 /// quicktype's schema walks recurse once per nesting level. JavaScript
 /// bounds that with its own stack (which the port models explicitly, see
@@ -38,9 +33,7 @@ const STACK_SEGMENT: usize = 4 * 1024 * 1024;
 /// stack after every `await` nest Rust calls without limit. Growing the
 /// stack on demand keeps every such walk from overflowing the native stack,
 /// whatever the thread's stack size.
-pub(crate) fn grow_stack<R>(f: impl FnOnce() -> R) -> R {
-    stacker::maybe_grow(RED_ZONE, STACK_SEGMENT, f)
-}
+pub(crate) use crate::support::recursion::grow_stack;
 
 /// A future whose every poll runs under [`grow_stack`]: nested futures that
 /// complete synchronously poll each other recursively.

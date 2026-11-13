@@ -1,0 +1,1 @@
+error: QuickTypeError Internal error: Type for selection set is not object, interface, or union.

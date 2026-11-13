@@ -1,0 +1,1 @@
+error: GraphQLError Syntax Error: Invalid number, expected digit but got: ".".

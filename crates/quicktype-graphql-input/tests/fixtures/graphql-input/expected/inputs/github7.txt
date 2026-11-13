@@ -1,0 +1,35 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union login | children 1,0 | 2 | given login,name (User_login,Repository_name)
+3: integer | 3
+4: union totalCount | children 3,1 | 4 | given totalCount (StarredRepositoryConnection_totalCount,StargazerConnection_totalCount,RepositoryConnection_totalCount,UserConnection_totalCount,IssueConnection_totalCount)
+5: class _connection | children 3 | 5 | given StarredRepositoryConnection,StargazerConnection,RepositoryConnection,UserConnection,IssueConnection (starredRepositories,User_StarredRepositoryConnection,User_starredRepositories,stargazers,Repository_StargazerConnection,Repository_stargazers,forks,Repository_RepositoryConnection,Repository_forks,watchers,Repository_UserConnection,Repository_watchers,issues,Repository_IssueConnection,Repository_issues)
+6: union starred_repositories | children 5,1 | 6 | given starredRepositories,stargazers,forks,watchers,issues (User_starredRepositories,Repository_stargazers,Repository_forks,Repository_watchers,Repository_issues)
+7: class Repository | children 5,0 | 7 | given Repository (node,RepositoryEdge_Repository,RepositoryEdge_node)
+8: union node | children 7,1 | 8 | given node (RepositoryEdge_node)
+9: class RepositoryEdge | children 8 | 9 | given RepositoryEdge (edges,RepositoryConnection_RepositoryEdge,RepositoryConnection_edges)
+10: union edges | children 9,1 | 10 | given edges (RepositoryConnection_edges)
+11: array | children 10 | 11
+12: union edges | children 11,1 | 12 | given edges (RepositoryConnection_edges)
+13: class RepositoryConnection | children 12 | 13 | given RepositoryConnection (repositories,User_RepositoryConnection,User_repositories)
+14: union repositories | children 13,1 | 14 | given repositories (User_repositories)
+15: class User | children 0,13,5 | 15 | given User (viewer,data_User,data_viewer)
+16: union viewer | children 15,1 | 16 | given viewer (data_viewer)
+17: class data | children 15 | 17 | given data (TopLevel_data)
+18: union | children 17,1 | 18
+19: class error | children 0 | 19 | given error (graphQLError)
+20: array errors | children 19 | 20 | given errors (graphQLErrors)
+21: class TopLevel | children 18,20 | 21 | given TopLevel ()
+# properties
+5 properties [["totalCount",3,false]]
+7 properties [["name",0,false],["stargazers",5,false],["forks",5,false],["watchers",5,false],["issues",5,false]]
+9 properties [["node",8,false]]
+13 properties [["edges",12,false]]
+15 properties [["login",0,false],["starredRepositories",5,false],["repositories",13,false]]
+17 properties [["viewer",15,false]]
+19 properties [["message",0,false]]
+21 properties [["data",18,false],["errors",20,true]]
+# top-levels
+"TopLevel": 21

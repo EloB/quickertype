@@ -30,6 +30,14 @@ findings per area, with file and line references.
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
   over many inputs. Use it for anything outside the corpus.
+- **GraphQL input:** `xtask/graphql-input/run-graphql-inputs.mjs` records
+  the reference `GraphQLInput`'s type graph right after input (or its
+  error) for every query in `tests/inputs/graphql`, hand-written queries,
+  syntax errors and malformed introspection results, plus graphql-js's
+  `parse` on seeded mutations; `record-introspection.mjs` records the
+  reference CLI's `--graphql-introspect` runs against a scripted local
+  server. `quicktype-graphql-input/tests/graphql_input.rs` and
+  `quicktype-cli/tests/graphql_introspect.rs` replay them.
 - **Renderers in isolation:** `xtask/core-rendering/record-render-cases.mjs`
   runs the reference CLI on every golden case of a language, dumps the type
   graph that reaches `gatherNames` and checks the intercepted
@@ -148,10 +156,11 @@ semantics were verified.
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
 | `urijs` 1.19.11 (with its bundled punycode.js `toASCII` and `IPv6.best`), `encodeURIComponent`/`decodeURIComponent` | hand port of the used subset (`quicktype_js_compat::uri`) | `xtask/core-json-schema-input/gen-uri-vectors.mjs`: 1,411 URIs (curated edge cases, every `$ref`/`$id` and a sample of the URL strings in `tests/inputs`, seeded fuzz) through parse, every accessor, `clone`, `normalize`, `URI.decode`, `absoluteTo` against 8 bases and the setters (33,703 checks), 381 `equals` pairs and 321 strings through the component coders, all identical to Node 24 |
 | `yaml` 2.9.0 `YAML.parse` (default options) | `saphyr-parser` 0.3 (YAML 1.2 events) plus a port of `yaml`'s composer and `toJS` (`quicktype_js_compat::yaml`): core-schema tag resolution in `yaml`'s order, unique keys by `===`, key stringification, JS object key order, alias expansion with `maxAliasCount` 100, multiple documents rejected | `xtask/core-json-schema-input/gen-yaml-vectors.mjs`: 764 committed cases (218 curated, every `tests/inputs` file that `JSON.parse` rejects, seeded mutations of JSON inputs) identical to Node, including key order, `-0`, `NaN` and `Infinity`; a 6,182-case run differs only on 12 malformed inputs (see Known gaps) |
-| Node's `fetch` (undici, Node 24), as `NodeIO` uses it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`), undici's default headers and case-insensitive header combining (`3, 2`), `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, header names/values and `ByteString`s, the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case |
+| Node's `fetch` (undici, Node 24), as `NodeIO` (`GET`) and `--graphql-introspect` (`POST` with a body) use it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` and `tests/fetch_post.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`; a 301/302 after `POST` and a 303 after anything but `GET`/`HEAD` continue as a `GET` without the body and its `content-*` headers), undici's default headers and case-insensitive header combining (`3, 2`), the method's validation and normalization (`post` → `POST`, `Patch` as is; `CONNECT`/`TRACE`/`TRACK` refused), no body on `GET`/`HEAD`, `text/plain;charset=UTF-8` as the default body type, `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, methods, header names/values and `ByteString`s (headers before the method), the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case; the 38 recorded `--graphql-introspect` runs (`xtask/graphql-input/record-introspection.mjs`) |
 | Node's stack depth (`RangeError: Maximum call stack size exceeded`) | a model of the JavaScript stack in `JSONSchemaInput` (per-keyword costs, reset after every `await`) and a depth limit for `addIDs`, with `stacker` 0.1 growing the native stack on demand | `xtask/core-json-schema-input/measure-stack-depth.mjs` measures Node 24 per recursion path in fresh processes; `tests/deep_schemas.rs` pins the same last-good and first-failing depths (items 322, tuples 198, properties 161, `allOf` 200, `oneOf`/`anyOf` 170, properties plus items 107, `addIDs` 4,150) and runs on 2 MB test-thread stacks |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 | V8 `JSON.parse` | port of `json-parser.cc` (`quicktype_js_compat::json::parse`) | 5,017 inputs compared to Node 24 (`xtask/core-json-input/gen-json-parse-vectors.mjs`): curated edge cases, seeded random JSON and seeded mutations of it and of `tests/inputs/json`; parsed values in own-property order and every `SyntaxError` message, position, `(line column)` and excerpt |
+| `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()` |
 
 ## Known gaps
 
@@ -271,6 +280,35 @@ the others name the fix they need.
   asks for them); header values with characters U+0080..U+00FF are sent as
   UTF-8 rather than Latin-1; corrupt `gzip`/`deflate`/`br` data may decode
   to a different prefix than Node's zlib.
+- **GraphQL input.**
+  - A fragment that spreads itself, directly or through other fragments,
+    without a field in between makes the TypeScript expand it forever (an
+    endless loop, or one that runs out of memory); the port fails with
+    `Internal error: Fragment F spreads itself, which never terminates.`.
+    Through a field, both fail with V8's `RangeError: Maximum call stack
+    size exceeded`.
+  - Depth: graphql-js's recursive-descent parser overflows Node's stack
+    somewhere around 1,500 to 7,000 nested levels, depending on the
+    construct (Node 24, in process: 1,562 nested object values, 1,757
+    nested selection sets, 1,952 nested list values, 3,125 nested inline
+    fragments, 7,031 nested list types),
+    and the input's recursions over nested selection sets and `ofType`
+    chains have limits of their own. The port grows its stack on demand and
+    handles any depth.
+  - Names in the introspection JSON that are not strings (a number or
+    object as a type, field or enum value name) reach type names and enum
+    cases as raw JavaScript values in TypeScript; the port converts them
+    with `String(value)`, so `1` and `"1"` coincide. Introspection results
+    only ever have strings there.
+  - A type named `__proto__` (not a valid GraphQL name) becomes the
+    prototype of TypeScript's `types` object. The port finds it under
+    `__proto__`, but not, as TypeScript does, its own properties (`kind`,
+    `name`, `fields`, ...) when a missing type has one of those names.
+    Names of `Object.prototype` members (`toString`, `constructor`, ...)
+    are reproduced.
+  - `--http-method patch` (lower case) makes Node print an
+    `[UNDICI-FETCH-patch]` warning, with its process id, to stderr; the
+    port sends `patch` without one.
 - **Accessor entries.** `qt-accessors`/`qt-enum-values` entries whose values
   are not strings are converted with `String(value)` (TypeScript passes
   the raw value on to naming).
