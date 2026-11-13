@@ -48,10 +48,10 @@ use crate::attributes::uri_attributes::{self, UriAttributes, UriTypeAttributeKin
 use crate::messages::Result;
 use crate::support::collection_utils::{HASH_CODE_INIT, JsEquals, JsHash, add_hash_code};
 use crate::support::support::panic;
-use crate::transformers::TypeLookup;
 use crate::ty::provenance_type_attribute_kind::{self, ProvenanceTypeAttributeKind};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
+use crate::ty::type_graph::TypeLookup;
 use crate::ty::type_ref::TypeRef;
 
 /// The kinds of type attributes (`TypeAttributeKind` instances in

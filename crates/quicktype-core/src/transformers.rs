@@ -12,9 +12,10 @@
 //! [`TransformerData`] holds the kind-specific fields. Transformers refer to
 //! types by [`TypeRef`] only; whatever needs to look at a type (debug output,
 //! [`Transformer::reverse`]) takes a [`TypeLookup`], which both a frozen
-//! [`TypeGraph`] and a [`TypeBuilder`] (the graph under construction)
-//! implement. Child transformers are shared [`Rc`]s, so `areEqual`'s
-//! identity check (`a === b`) is a pointer comparison.
+//! [`TypeGraph`](crate::ty::type_graph::TypeGraph) and a [`TypeBuilder`]
+//! (the graph under construction) implement. Child transformers are shared
+//! [`Rc`]s, so `areEqual`'s identity check (`a === b`) is a pointer
+//! comparison.
 //!
 //! Hashing and equality are exact ports, quirks included: a
 //! [`StringMatch`](TransformerData::StringMatch) equals another one only if
@@ -37,40 +38,8 @@ use crate::support::collection_utils::{JsHash, add_hash_code, hash_string};
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
-use crate::ty::type_graph::TypeGraph;
-use crate::ty::type_ref::{TypeRef, assert_type_ref_graph};
-
-/// Read access to the types of a graph, frozen or under construction
-/// (`derefTypeRef` / `attributesForTypeRef` with a `TypeGraph` whose builder
-/// may still be running).
-pub trait TypeLookup {
-    /// The kind of the type `t`.
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind>;
-    /// The attributes of the type `t`.
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes>;
-}
-
-impl TypeLookup for TypeGraph {
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
-        self.kind(t)
-    }
-
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
-        self.attributes(t)
-    }
-}
-
-impl TypeLookup for TypeBuilder<'_> {
-    fn lookup_kind(&self, t: TypeRef) -> Result<TypeKind> {
-        assert_type_ref_graph(t, self.serial())?;
-        Ok(self.type_at_index(t.index())?.kind())
-    }
-
-    fn lookup_attributes(&self, t: TypeRef) -> Result<&TypeAttributes> {
-        assert_type_ref_graph(t, self.serial())?;
-        Ok(self.at_index(t.index())?.1)
-    }
-}
+pub use crate::ty::type_graph::TypeLookup;
+use crate::ty::type_ref::TypeRef;
 
 /// The seven optional cases of a
 /// [`DecodingChoice`](TransformerData::DecodingChoice), one per JSON value

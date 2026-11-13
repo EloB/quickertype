@@ -93,7 +93,8 @@ and made GraphQL input's linear-time test independent of machine load.
 
 - [x] Dedupe `transformers.rs`'s `lookup_*` helpers with
       `attributes::type_attributes::{transformation_for_type, follow_target_type}`
-      (generic over `TypeLookup`).
+      (generic over `TypeLookup`, which lives next to `TypeGraph` and
+      `TypeBuilder` in `ty::type_graph`).
 - [x] Move the remaining per-language `intercalate` and JS number-formatting
       copies to `support::collection_utils::array_intercalate` and
       `quicktype_js_compat::number::to_string`; switch the Rust renderer to
