@@ -35,6 +35,9 @@ jobs:
             echo "::error::The HOMEBREW_TAP_TOKEN repository secret is not set (Settings > Secrets and variables > Actions)."
             exit 1
           fi
+      # `permissions` is the token owner's role on the tap; for a
+      # fine-grained token, what the token itself may do is checked by the
+      # push dry-run below.
       - name: The token can read the tap and has push permission
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -132,29 +135,36 @@ jobs:
           EOF
           echo "#!/usr/bin/env node" > "$dir/run.js"
           (cd "$dir" && npm publish --dry-run --access public)
-      # `npm publish --dry-run` does not send the token. Where the registry
-      # lists tokens for this kind of token, check that this one may write.
+      # `npm publish --dry-run` does not send the token. npm lists the
+      # account's tokens with an abbreviated form and a key (a hash of the
+      # token); find this one by either and check that it may write. Only
+      # non-secret fields are printed.
       - name: The token is not read-only (npm token list)
         run: |
           if ! npm token list --json > tokens.json 2> tokens.err; then
-            echo "::warning::npm token list is not available with this token ($(grep -m1 -oE 'code E[0-9A-Z]+' tokens.err || echo 'no error code')), so its write permission cannot be checked without publishing. Check on npmjs.com that it has Read and write for packages and bypasses 2FA."
+            echo "::warning::npm token list is not available with this token ($(grep -m1 -oE 'code E[0-9A-Z]+' tokens.err || echo 'no error code')), so its write permission cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
             exit 0
           fi
-          # Find this token by its abbreviated form; print only non-secret fields.
+          sha512=$(printf %s "$NODE_AUTH_TOKEN" | sha512sum | cut -d' ' -f1)
+          sha256=$(printf %s "$NODE_AUTH_TOKEN" | sha256sum | cut -d' ' -f1)
           match=""
           for i in $(seq 0 $(( $(jq length tokens.json) - 1 ))); do
+            key=$(jq -r ".[$i].key // \"\"" tokens.json)
             abbreviated=$(jq -r ".[$i].token // \"\"" tokens.json | sed 's/[.…]*$//')
-            if [ -n "$abbreviated" ] && [ "${NODE_AUTH_TOKEN#"$abbreviated"}" != "$NODE_AUTH_TOKEN" ]; then
+            if [ "$key" = "$sha512" ] || [ "$key" = "$sha256" ] ||
+              { [ ${#abbreviated} -ge 6 ] && [ "${NODE_AUTH_TOKEN#"$abbreviated"}" != "$NODE_AUTH_TOKEN" ]; }; then
               match=$i
             fi
           done
           if [ -z "$match" ]; then
-            echo "::warning::This token is not among the $(jq length tokens.json) tokens npm lists for $NPM_USER, so its write permission cannot be checked without publishing."
+            echo "Tokens npm lists (field names; the abbreviated token's shape only):"
+            jq -c 'map({fields: keys, token: ((.token // "") | gsub("[A-Za-z0-9]"; "x")), key_length: ((.key // "") | length)})' tokens.json
+            echo "::warning::NPM_TOKEN is not among the $(jq length tokens.json) tokens npm lists for $NPM_USER, so its write permission cannot be checked without publishing. Check on npmjs.com that it has Read and write (not stage only) for packages and bypasses 2FA."
             exit 0
           fi
           jq "(.[$match] | del(.token, .key))" tokens.json
           if [ "$(jq -r ".[$match].readonly" tokens.json)" = true ]; then
-            echo "::error::NPM_TOKEN is read-only: create a token with Read and write for packages."
+            echo "::error::NPM_TOKEN is read-only: create a granular token with Read and write for packages and Bypass 2FA."
             exit 1
           fi
           echo "NPM_TOKEN is not read-only."
