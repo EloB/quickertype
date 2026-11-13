@@ -19,11 +19,13 @@
 use std::convert::Infallible;
 use std::fmt;
 use std::future::Future;
+use std::pin::Pin;
 use std::rc::Rc;
+use std::task::{Context, Poll};
 
 use quicktype_js_compat::json;
 
-use crate::attributes::type_names::init_type_names;
+use crate::attributes::type_names::{TypeNameGenerator, with_type_name_generator};
 use crate::gather_names::gather_names;
 use crate::inference::{INFERENCE_FLAGS, InferenceFlags};
 use crate::input::inputs::InputData;
@@ -750,15 +752,14 @@ impl<'a> Run<'a> {
         result
     }
 
-    /// `preRun()`: resets the random type names and, when the target is
-    /// JSON Schema and no input needs the IR, passes a single JSON Schema
-    /// source through, reformatted like
+    /// `preRun()`: when the target is JSON Schema and no input needs the
+    /// IR, passes a single JSON Schema source through, reformatted like
     /// `JSON.stringify(JSON.parse(schema), undefined, 4)`.
+    ///
+    /// TypeScript also calls `initTypeNames()` here, resetting the global
+    /// random-name generator (which makes it "not quite reentrant"); a Rust
+    /// run starts with a fresh [`TypeNameGenerator`] of its own instead.
     fn pre_run(&self) -> Result<Option<MultiFileRenderResult>> {
-        // TypeScript resets a global here, which makes it not quite
-        // reentrant; the names are per thread in the port.
-        init_type_names();
-
         let need_ir = self.input_data.need_ir() || !self.lang.names().contains(&"schema");
         if need_ir {
             return Ok(None);
@@ -776,22 +777,31 @@ impl<'a> Run<'a> {
         Ok(Some(self.make_simple_text_result(lines)))
     }
 
-    /// `run()`.
-    async fn run(mut self) -> Result<MultiFileRenderResult> {
-        if let Some(result) = self.pre_run()? {
-            return Ok(result);
+    /// `run()`, with the run's own random type names installed whenever
+    /// its future is polled.
+    fn run(mut self) -> impl Future<Output = Result<MultiFileRenderResult>> + 'a {
+        let type_names = Rc::new(TypeNameGenerator::new());
+        WithTypeNames {
+            type_names,
+            future: Box::pin(async move {
+                if let Some(result) = self.pre_run()? {
+                    return Ok(result);
+                }
+                let graph = self.make_graph().await?;
+                self.render_graph(&graph)
+            }),
         }
-        let graph = self.make_graph().await?;
-        self.render_graph(&graph)
     }
 
-    /// `runSync()`.
+    /// `runSync()`, with the run's own random type names.
     fn run_sync(mut self) -> Result<MultiFileRenderResult> {
-        if let Some(result) = self.pre_run()? {
-            return Ok(result);
-        }
-        let graph = self.make_graph_sync()?;
-        self.render_graph(&graph)
+        with_type_name_generator(&Rc::new(TypeNameGenerator::new()), || {
+            if let Some(result) = self.pre_run()? {
+                return Ok(result);
+            }
+            let graph = self.make_graph_sync()?;
+            self.render_graph(&graph)
+        })
     }
 
     /// `renderGraph(targetLanguage, graph)`.
@@ -809,6 +819,23 @@ impl<'a> Run<'a> {
                 self.indentation.as_deref(),
             )
         })
+    }
+}
+
+/// A run's future: every poll executes with the run's random type names,
+/// so runs that interleave on one thread (awaiting `$ref` fetches) each
+/// draw from their own generator.
+struct WithTypeNames<'a, T> {
+    type_names: Rc<TypeNameGenerator>,
+    future: Pin<Box<dyn Future<Output = T> + 'a>>,
+}
+
+impl<T> Future for WithTypeNames<'_, T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
+        let this = self.get_mut();
+        with_type_name_generator(&this.type_names, || this.future.as_mut().poll(cx))
     }
 }
 

@@ -9,14 +9,22 @@
 //! were checked against quicktype-core's JavaScript API.
 
 use std::cell::RefCell;
+use std::collections::HashSet;
+use std::future::Future;
+use std::pin::Pin;
 use std::rc::Rc;
+use std::task::{Context, Poll, Waker};
+
+use quicktype_core::attributes::type_names::TypeNames;
+use quicktype_core::ty::type_builder::TypeBuilder;
 
 use quicktype_core::{
-    Annotation, AnnotationData, Comment, DebugOptions, InputData, JsErrorName, JsonSchemaInput,
-    JsonSchemaSourceData, JsonSourceData, Location, MultiFileRenderResult, OptionValue, Options,
-    QuickTypeError, RendererOptions, Result, SerializedRenderResult, Span, block_on,
-    capture_console, combine_render_results, get_target_language, json_input_for_target_language,
-    quicktype, quicktype_multi_file, quicktype_multi_file_sync,
+    Annotation, AnnotationData, Comment, DebugOptions, Input, InputData, JsErrorName,
+    JsonSchemaInput, JsonSchemaSourceData, JsonSourceData, Location, MultiFileRenderResult,
+    OptionValue, Options, QuickTypeError, RendererOptions, Result, RunContext,
+    SerializedRenderResult, Span, block_on, capture_console, combine_render_results,
+    get_target_language, json_input_for_target_language, quicktype, quicktype_multi_file,
+    quicktype_multi_file_sync,
 };
 
 /// A JSON input for `lang` with one top-level, `name`, and its samples.
@@ -544,4 +552,150 @@ fn framework_defaults() {
     if let Some(output) = ok("kotlin", &[]) {
         assert!(output.contains("com.fasterxml.jackson"));
     }
+}
+
+// ---- Random type names are per run ---------------------------------------
+
+/// An input that draws random type names (a type with 1,000 names gets
+/// one) `before` times, waits once, and draws `after` times, recording the
+/// names it got.
+struct DrawingInput {
+    before: usize,
+    after: usize,
+    drawn: Rc<RefCell<Vec<String>>>,
+}
+
+impl DrawingInput {
+    fn draw(&self, count: usize) {
+        for _ in 0..count {
+            let names = (0..1000).map(|i| format!("n{i}")).collect();
+            let name = TypeNames::make_with_distance(names, None, 1)
+                .combined_name()
+                .unwrap();
+            self.drawn.borrow_mut().push(name);
+        }
+    }
+}
+
+/// A future that is pending once.
+struct YieldOnce(bool);
+
+impl Future for YieldOnce {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        if self.0 {
+            return Poll::Ready(());
+        }
+        self.0 = true;
+        cx.waker().wake_by_ref();
+        Poll::Pending
+    }
+}
+
+impl Input for DrawingInput {
+    type Source = ();
+
+    fn kind(&self) -> &str {
+        "drawing"
+    }
+
+    fn need_ir(&self) -> bool {
+        true
+    }
+
+    fn need_schema_processing(&self) -> bool {
+        false
+    }
+
+    fn add_source_sync(&mut self, _source: ()) -> Result<()> {
+        Ok(())
+    }
+
+    async fn add_types(
+        &mut self,
+        _ctx: &RunContext,
+        _type_builder: &mut TypeBuilder<'_>,
+        _infer_maps: bool,
+        _infer_enums: bool,
+        _fixed_top_levels: bool,
+    ) -> Result<()> {
+        self.draw(self.before);
+        YieldOnce(false).await;
+        self.draw(self.after);
+        Ok(())
+    }
+
+    fn add_types_sync(
+        &mut self,
+        _ctx: &RunContext,
+        _type_builder: &mut TypeBuilder<'_>,
+        _infer_maps: bool,
+        _infer_enums: bool,
+        _fixed_top_levels: bool,
+    ) -> Result<()> {
+        self.draw(self.before + self.after);
+        Ok(())
+    }
+
+    fn single_string_schema_source(&self) -> Option<String> {
+        None
+    }
+}
+
+/// A run whose input draws `before` names, waits, and draws `after`.
+fn drawing_run(
+    before: usize,
+    after: usize,
+) -> (
+    impl Future<Output = Result<MultiFileRenderResult>>,
+    Rc<RefCell<Vec<String>>>,
+) {
+    let drawn = Rc::new(RefCell::new(Vec::new()));
+    let mut input_data = InputData::new();
+    input_data.add_input(DrawingInput {
+        before,
+        after,
+        drawn: Rc::clone(&drawn),
+    });
+    let rust = get_target_language("rust").unwrap();
+    let mut options = Options::new(rust, input_data);
+    options.no_render = true;
+    (quicktype_multi_file(options), drawn)
+}
+
+#[test]
+fn interleaved_runs_draw_their_own_random_names() {
+    // Each alone: three draws from a fresh generator.
+    let (solo, solo_names) = drawing_run(1, 2);
+    block_on(solo).unwrap();
+    let expected = solo_names.take();
+    assert_eq!(expected.len(), 3);
+    assert_eq!(expected.iter().collect::<HashSet<_>>().len(), 3);
+
+    // Two runs on one thread, each pending in the middle of its input:
+    // a draws once, b draws twice, then a draws twice more.
+    let (a, a_names) = drawing_run(1, 2);
+    let (b, b_names) = drawing_run(2, 1);
+    let (mut a, mut b) = (Box::pin(a), Box::pin(b));
+    let mut cx = Context::from_waker(Waker::noop());
+    assert!(a.as_mut().poll(&mut cx).is_pending());
+    assert!(b.as_mut().poll(&mut cx).is_pending());
+    assert!(matches!(a.as_mut().poll(&mut cx), Poll::Ready(Ok(_))));
+    assert!(matches!(b.as_mut().poll(&mut cx), Poll::Ready(Ok(_))));
+    assert_eq!(a_names.take(), expected);
+    assert_eq!(b_names.take(), expected);
+
+    // The synchronous run, too, starts from a fresh generator.
+    let drawn = Rc::new(RefCell::new(Vec::new()));
+    let mut input_data = InputData::new();
+    input_data.add_input(DrawingInput {
+        before: 3,
+        after: 0,
+        drawn: Rc::clone(&drawn),
+    });
+    let mut options = Options::new(get_target_language("rust").unwrap(), input_data);
+    options.no_render = true;
+    quicktype_multi_file_sync(options).unwrap();
+    assert_eq!(drawn.take(), expected);
 }
