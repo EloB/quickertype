@@ -738,7 +738,7 @@ ${bench.note ? `<p class="fineprint">${e(bench.note)}</p>` : ""}
 
     sections.push(`<section id="get-the-cli" aria-labelledby="get-title">
 <h2 id="get-title">Get the CLI</h2>
-<p>There are no releases yet. Build it from a clone of the repository with <code>cargo build --release -p quicktype-cli</code>; the binary is <code>target/release/quicktype</code>, with quicktype's flags and quicktype's output. See the <a href="${links.readme}">README</a>.</p>
+<p>There are no releases yet. Build it from a clone of the repository with <code>cargo build --release -p quickertype</code>; the binary is <code>target/release/quicktype</code>, with quicktype's flags and quicktype's output. See the <a href="${links.readme}">README</a>.</p>
 </section>`);
 
     return sections.join("\n");

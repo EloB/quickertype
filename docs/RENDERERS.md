@@ -297,7 +297,7 @@ needed only to record fixtures.
 
    ```sh
    node xtask/core-rendering/record-render-cases.mjs ../quicktype go
-   RENDER_CASES_FILTER=golang cargo test -p quicktype-core --test render_cases
+   RENDER_CASES_FILTER=golang cargo test -p quickertype-core --test render_cases
    ```
 
    `render_cases.rs` rebuilds each graph, runs `gather_names` and your
@@ -309,7 +309,7 @@ needed only to record fixtures.
    `.txt` to `crates/quicktype-core/tests/fixtures/core-rendering/scenarios/`
    with `input json|schema NAME <json>` lines and `render <lang> {"rendererOptions": {...}}`
    lines, then `node xtask/core-rendering/run-render-scenarios.mjs ../quicktype`
-   and `cargo test -p quicktype-core --test render_scenarios`.
+   and `cargo test -p quickertype-core --test render_scenarios`.
 3. `cargo xtask parity` once the CLI generates code (Phase 3).
 
 ## Worked example: `RustRenderer`

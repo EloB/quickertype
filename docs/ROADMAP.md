@@ -85,7 +85,7 @@ Cross-cutting items each language package must pick up:
   TypeScript, Flow, JavaScript (L5) and JSON Schema; the trait default is
   `false`.
 
-## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`, one follow-up left
+## Cleanup backlog (cross-branch follow-ups) — ✅ done on `chore/cleanup-backlog`, two follow-ups left
 
 The branch also moved `acronymOption`/`convertersOption` into `support/`
 as in TypeScript, corrected module headers that named missing TS files,
@@ -117,6 +117,11 @@ and made GraphQL input's linear-time test independent of machine load.
 - [ ] `tests/json_input.rs` and `tests/json_input_vitest.rs` (quicktype-core)
       keep their own `block_on`; `quicktype_core::internal::block_on` does
       the same. Left to the branch that is changing JSON input.
+- [ ] The clippy lints that `rust-version = "1.88"` turns on
+      (`collapsible_if` with let chains, `manual_is_multiple_of`; about 50
+      places in 30 files) are allowed in `[workspace.lints.clippy]` until
+      the open branches have merged. Then fix them (`cargo clippy --fix`)
+      and remove the two `allow`s. From `feat/release-pipeline`.
 
 ## Phase 5 — Remaining inputs — ✅ done (GraphQL, Postman, URL sources, --graphql-introspect)
 
