@@ -33,10 +33,11 @@ pub fn parse_json(text: &str, description: &str, address: Option<&str>) -> Resul
     })
 }
 
-/// The deepest nesting [`json_parse`] accepts, like [`yaml::MAX_DEPTH`]
-/// (quicktype's recursive schema walks would exhaust the JavaScript stack
-/// somewhere beyond it).
-const MAX_DEPTH: usize = yaml::MAX_DEPTH;
+/// The deepest nesting [`json_parse`] accepts. V8's `JSON.parse` has no
+/// limit; quicktype's recursive walks then overflow Node's stack, which the
+/// JSON Schema input reproduces (`Maximum call stack size exceeded`) well
+/// below this.
+pub const MAX_JSON_DEPTH: usize = 100_000;
 
 /// A minimal `JSON.parse`: the value, or `None` if the text is not JSON.
 ///
@@ -45,16 +46,43 @@ const MAX_DEPTH: usize = yaml::MAX_DEPTH;
 /// correctly rounded doubles (overflowing to infinity). The error message is
 /// not needed: `parseJSON` falls back to YAML on any error. A lone surrogate
 /// escape becomes U+FFFD (see "Known gaps" in `docs/PARITY.md`).
+///
+/// The parser keeps its own stack of open collections, and a value it gives
+/// up on is taken apart iteratively, so deep nesting never recurses.
 fn json_parse(text: &str) -> Option<JsonValue> {
     let mut parser = JsonParser {
         bytes: text.as_bytes(),
         text,
         pos: 0,
     };
-    parser.skip_whitespace();
-    let value = parser.value(0)?;
-    parser.skip_whitespace();
-    (parser.pos == parser.bytes.len()).then_some(value)
+    let mut open: Vec<Open> = Vec::new();
+    let result = parser.document(&mut open);
+    for frame in open {
+        match frame {
+            Open::Array(items) => items.into_iter().for_each(drop_deep),
+            Open::Object(map, _) => map.into_values().for_each(drop_deep),
+        }
+    }
+    result
+}
+
+/// Drops a value without recursing once per nesting level.
+pub(crate) fn drop_deep(value: JsonValue) {
+    let mut pending = vec![value];
+    while let Some(value) = pending.pop() {
+        match value {
+            JsonValue::Array(items) => pending.extend(items),
+            JsonValue::Object(map) => pending.extend(map.into_values()),
+            _ => {}
+        }
+    }
+}
+
+/// A collection [`JsonParser`] is in the middle of.
+enum Open {
+    Array(Vec<JsonValue>),
+    /// The object so far, and the key whose value comes next.
+    Object(IndexMap<String, JsonValue>, String),
 }
 
 struct JsonParser<'t> {
@@ -87,72 +115,115 @@ impl JsonParser<'_> {
         }
     }
 
-    fn value(&mut self, depth: usize) -> Option<JsonValue> {
-        if depth > MAX_DEPTH {
+    /// The whole text as one value; `open` holds the collections being
+    /// parsed (for the caller to dispose of on failure).
+    fn document(&mut self, open: &mut Vec<Open>) -> Option<JsonValue> {
+        self.skip_whitespace();
+        let value = self.value(open)?;
+        self.skip_whitespace();
+        (self.pos == self.bytes.len()).then_some(value)
+    }
+
+    /// A value, iteratively: opening brackets push onto `open`, and each
+    /// completed value is added to the innermost open collection.
+    fn value(&mut self, open: &mut Vec<Open>) -> Option<JsonValue> {
+        let base = open.len();
+        loop {
+            // A value starts here.
+            self.skip_whitespace();
+            let mut value = match self.peek()? {
+                b'[' => {
+                    self.pos += 1;
+                    self.skip_whitespace();
+                    if self.eat(b']').is_some() {
+                        JsonValue::Array(Vec::new())
+                    } else {
+                        if open.len() >= MAX_JSON_DEPTH {
+                            return None;
+                        }
+                        open.push(Open::Array(Vec::new()));
+                        continue;
+                    }
+                }
+                b'{' => {
+                    self.pos += 1;
+                    self.skip_whitespace();
+                    if self.eat(b'}').is_some() {
+                        JsonValue::Object(IndexMap::new())
+                    } else {
+                        if open.len() >= MAX_JSON_DEPTH {
+                            return None;
+                        }
+                        let key = self.key()?;
+                        open.push(Open::Object(IndexMap::new(), key));
+                        continue;
+                    }
+                }
+                b'"' => JsonValue::String(self.string()?),
+                b't' => self.literal("true", JsonValue::Bool(true))?,
+                b'f' => self.literal("false", JsonValue::Bool(false))?,
+                b'n' => self.literal("null", JsonValue::Null)?,
+                b'-' | b'0'..=b'9' => self.number()?,
+                _ => return None,
+            };
+            // Add completed values to their collections, closing those that
+            // end here.
+            loop {
+                if open.len() == base {
+                    return Some(value);
+                }
+                self.skip_whitespace();
+                match open.last_mut()? {
+                    Open::Array(items) => {
+                        items.push(value);
+                        match self.peek()? {
+                            b',' => {
+                                self.pos += 1;
+                                break;
+                            }
+                            b']' => {
+                                self.pos += 1;
+                                let Some(Open::Array(items)) = open.pop() else {
+                                    return None;
+                                };
+                                value = JsonValue::Array(items);
+                            }
+                            _ => return None,
+                        }
+                    }
+                    Open::Object(map, key) => {
+                        insert_js_property(map, std::mem::take(key), value);
+                        match self.peek()? {
+                            b',' => {
+                                self.pos += 1;
+                                *key = self.key()?;
+                                break;
+                            }
+                            b'}' => {
+                                self.pos += 1;
+                                let Some(Open::Object(map, _)) = open.pop() else {
+                                    return None;
+                                };
+                                value = JsonValue::Object(map);
+                            }
+                            _ => return None,
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// An object key and its colon.
+    fn key(&mut self) -> Option<String> {
+        self.skip_whitespace();
+        if self.peek()? != b'"' {
             return None;
         }
-        match self.peek()? {
-            b'{' => self.object(depth),
-            b'[' => self.array(depth),
-            b'"' => self.string().map(JsonValue::String),
-            b't' => self.literal("true", JsonValue::Bool(true)),
-            b'f' => self.literal("false", JsonValue::Bool(false)),
-            b'n' => self.literal("null", JsonValue::Null),
-            b'-' | b'0'..=b'9' => self.number(),
-            _ => None,
-        }
-    }
-
-    fn object(&mut self, depth: usize) -> Option<JsonValue> {
-        self.eat(b'{')?;
-        let mut map = IndexMap::new();
+        let key = self.string()?;
         self.skip_whitespace();
-        if self.eat(b'}').is_some() {
-            return Some(JsonValue::Object(map));
-        }
-        loop {
-            self.skip_whitespace();
-            if self.peek()? != b'"' {
-                return None;
-            }
-            let key = self.string()?;
-            self.skip_whitespace();
-            self.eat(b':')?;
-            self.skip_whitespace();
-            let value = self.value(depth + 1)?;
-            insert_js_property(&mut map, key, value);
-            self.skip_whitespace();
-            match self.peek()? {
-                b',' => self.pos += 1,
-                b'}' => {
-                    self.pos += 1;
-                    return Some(JsonValue::Object(map));
-                }
-                _ => return None,
-            }
-        }
-    }
-
-    fn array(&mut self, depth: usize) -> Option<JsonValue> {
-        self.eat(b'[')?;
-        let mut items = Vec::new();
-        self.skip_whitespace();
-        if self.eat(b']').is_some() {
-            return Some(JsonValue::Array(items));
-        }
-        loop {
-            self.skip_whitespace();
-            items.push(self.value(depth + 1)?);
-            self.skip_whitespace();
-            match self.peek()? {
-                b',' => self.pos += 1,
-                b']' => {
-                    self.pos += 1;
-                    return Some(JsonValue::Array(items));
-                }
-                _ => return None,
-            }
-        }
+        self.eat(b':')?;
+        Some(key)
     }
 
     /// `-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?`

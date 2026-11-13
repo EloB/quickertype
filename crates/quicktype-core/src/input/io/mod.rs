@@ -16,10 +16,44 @@ use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread::{self, Thread};
 
+#[cfg(feature = "http")]
+mod fetch;
 pub mod node_io;
 
 /// A boxed future that need not be `Send` (JavaScript values are not).
 pub type LocalBoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
+
+/// The stack left free before [`grow_stack`] switches to a new segment.
+const RED_ZONE: usize = 256 * 1024;
+
+/// The size of each new stack segment.
+const STACK_SEGMENT: usize = 4 * 1024 * 1024;
+
+/// Runs `f`, on a freshly allocated stack segment if the current stack is
+/// nearly exhausted.
+///
+/// quicktype's schema walks recurse once per nesting level. JavaScript
+/// bounds that with its own stack (which the port models explicitly, see
+/// `json_schema_input`), but some walks that TypeScript runs on a fresh
+/// stack after every `await` nest Rust calls without limit. Growing the
+/// stack on demand keeps every such walk from overflowing the native stack,
+/// whatever the thread's stack size.
+pub(crate) fn grow_stack<R>(f: impl FnOnce() -> R) -> R {
+    stacker::maybe_grow(RED_ZONE, STACK_SEGMENT, f)
+}
+
+/// A future whose every poll runs under [`grow_stack`]: nested futures that
+/// complete synchronously poll each other recursively.
+pub(crate) struct GrowStack<'a, T>(pub(crate) LocalBoxFuture<'a, T>);
+
+impl<T> Future for GrowStack<'_, T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
+        let inner = &mut self.get_mut().0;
+        grow_stack(|| inner.as_mut().poll(cx))
+    }
+}
 
 /// Wakes a parked thread.
 struct ThreadWaker(Thread);

@@ -13,7 +13,7 @@ use std::rc::Rc;
 use indexmap::IndexMap;
 use quicktype_js_compat::json::JsonValue;
 
-use crate::input::io::LocalBoxFuture;
+use crate::input::io::{LocalBoxFuture, grow_stack};
 use crate::messages::{MessageValue, Result};
 use crate::support::support::console_log;
 
@@ -40,7 +40,9 @@ pub enum JsonSchema {
 
 impl From<JsonValue> for JsonSchema {
     fn from(value: JsonValue) -> Self {
-        match value {
+        // One level per call, on a stack that grows as needed: documents can
+        // nest far deeper than a thread's stack allows.
+        grow_stack(|| match value {
             JsonValue::Null => JsonSchema::Null,
             JsonValue::Bool(b) => JsonSchema::Bool(b),
             JsonValue::Number(n) => JsonSchema::Number(n),
@@ -53,9 +55,40 @@ impl From<JsonValue> for JsonSchema {
                     .map(|(k, v)| (k, JsonSchema::from(v)))
                     .collect(),
             )),
+        })
+    }
+}
+
+/// Dropping a deeply nested schema would recurse once per level; this
+/// takes the children apart iteratively instead.
+impl Drop for JsonSchema {
+    fn drop(&mut self) {
+        fn take_children(value: &mut JsonSchema, out: &mut Vec<JsonSchema>) {
+            match value {
+                JsonSchema::Array(items) => {
+                    if let Some(items) = Rc::get_mut(items) {
+                        out.append(items);
+                    }
+                }
+                JsonSchema::Object(map) => {
+                    if let Some(map) = Rc::get_mut(map) {
+                        out.extend(map.drain(..).map(|(_, v)| v));
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut pending = Vec::new();
+        take_children(self, &mut pending);
+        while let Some(mut value) = pending.pop() {
+            take_children(&mut value, &mut pending);
         }
     }
 }
+
+/// Values nested deeper than this become their `String(value)` in error
+/// properties, which keeps every `MessageValue` shallow.
+const MESSAGE_VALUE_DEPTH: usize = 64;
 
 impl JsonSchema {
     /// `schema[key]` for an object; `None` (JavaScript `undefined`) for a
@@ -116,17 +149,27 @@ impl JsonSchema {
     /// The value as a property of a quicktype error message (`messageError`
     /// stringifies it by its JavaScript type).
     pub fn to_message_value(&self) -> MessageValue {
+        self.message_value_at(0)
+    }
+
+    fn message_value_at(&self, depth: usize) -> MessageValue {
+        if depth > MESSAGE_VALUE_DEPTH {
+            return MessageValue::Display(self.to_js_string());
+        }
         match self {
             JsonSchema::Null => MessageValue::Null,
             JsonSchema::Bool(b) => MessageValue::Bool(*b),
             JsonSchema::Number(n) => MessageValue::Number(*n),
             JsonSchema::String(s) => MessageValue::String(s.clone()),
-            JsonSchema::Array(items) => {
-                MessageValue::Array(items.iter().map(JsonSchema::to_message_value).collect())
-            }
+            JsonSchema::Array(items) => MessageValue::Array(
+                items
+                    .iter()
+                    .map(|item| item.message_value_at(depth + 1))
+                    .collect(),
+            ),
             JsonSchema::Object(map) => MessageValue::Object(
                 map.iter()
-                    .map(|(k, v)| (k.clone(), v.to_message_value()))
+                    .map(|(k, v)| (k.clone(), v.message_value_at(depth + 1)))
                     .collect(),
             ),
         }
@@ -135,7 +178,7 @@ impl JsonSchema {
     /// JavaScript `String(value)` (`` `${value}` ``): objects are
     /// `[object Object]`, arrays join their items with `,`.
     pub fn to_js_string(&self) -> String {
-        match self {
+        grow_stack(|| match self {
             JsonSchema::Null => "null".to_owned(),
             JsonSchema::Bool(b) => b.to_string(),
             JsonSchema::Number(n) => quicktype_js_compat::number::to_string(*n),
@@ -149,7 +192,7 @@ impl JsonSchema {
                 })
                 .collect::<Vec<_>>()
                 .join(","),
-        }
+        })
     }
 }
 

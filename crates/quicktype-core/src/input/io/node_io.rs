@@ -7,8 +7,9 @@
 //! its own:
 //!
 //! - [`StdIo`] (cargo feature `fs`, on by default) uses `std::fs` and stdin,
-//!   and with the `http` feature fetches URLs with `ureq` (rustls). The
-//!   native CLI and Rust programs use it.
+//!   and with the `http` feature fetches URLs like Node's `fetch` (see
+//!   `input/io/fetch.rs`, on `ureq` with rustls). The native CLI and Rust
+//!   programs use it.
 //! - The WebAssembly build implements [`Io`] with the JavaScript host's
 //!   `fs` and `fetch`.
 //!
@@ -32,8 +33,9 @@ pub struct HttpResponse {
     pub status: u16,
     /// `response.statusText`: the reason phrase the server sent.
     pub status_text: String,
-    /// The body bytes.
-    pub body: Vec<u8>,
+    /// The body bytes, decoded per `Content-Encoding`; `None` for a `null`
+    /// body (statuses 101, 204, 205 and 304).
+    pub body: Option<Vec<u8>>,
 }
 
 /// A JavaScript exception from a platform service, carried as its
@@ -253,8 +255,15 @@ async fn readable_from_file_or_url(
                     response.status, response.status_text
                 ));
             }
+            // `readableFromResponseBody(defined(response.body))`: a `null`
+            // body passes `defined` and fails reading `getReader`.
+            let Some(body) = response.body else {
+                return Err(
+                    "TypeError: Cannot read properties of null (reading 'getReader')".to_owned(),
+                );
+            };
             return Ok(Some(Source::Text(
-                String::from_utf8_lossy(&response.body).into_owned(),
+                String::from_utf8_lossy(&body).into_owned(),
             )));
         }
         if io.is_node() {
@@ -402,30 +411,7 @@ mod std_io {
 
     #[cfg(feature = "http")]
     fn http_get(url: &str, headers: &[(String, String)]) -> Result<HttpResponse, IoError> {
-        // Node's fetch follows up to 20 redirects.
-        let agent = ureq::AgentBuilder::new().redirects(20).build();
-        let mut request = agent.get(url);
-        for (name, value) in headers {
-            request = request.set(name, value);
-        }
-        let response = match request.call() {
-            Ok(response) => response,
-            Err(ureq::Error::Status(_, response)) => response,
-            // Node's fetch reports every network failure the same way.
-            Err(ureq::Error::Transport(_)) => return Err("TypeError: fetch failed".to_owned()),
-        };
-        let status = response.status();
-        let status_text = response.status_text().to_owned();
-        let mut body = Vec::new();
-        response
-            .into_reader()
-            .read_to_end(&mut body)
-            .map_err(|_| "TypeError: terminated".to_owned())?;
-        Ok(HttpResponse {
-            status,
-            status_text,
-            body,
-        })
+        crate::input::io::fetch::fetch(url, headers)
     }
 
     #[cfg(not(feature = "http"))]

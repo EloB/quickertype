@@ -31,7 +31,12 @@
 //! `yaml` knows by name (`!!binary`, `!!timestamp`, `!!set`, `!!omap`,
 //! `!!pairs`) are treated like unknown tags; collection-valued keys are
 //! stringified approximately; recursive aliases (which `yaml` turns into
-//! cyclic objects) and nesting deeper than [`MAX_DEPTH`] are errors. On
+//! cyclic objects) and values nesting deeper than [`MAX_DEPTH`] (also
+//! through aliases) are errors. `saphyr-parser` counts flow nesting in a
+//! `u8`: more than 255 nested flow collections fail with `YAMLParseError:
+//! recursion limit exceeded at line 1, column 256` (for `[[[…`), where
+//! `yaml` overflows the JavaScript stack somewhere between about 750 and
+//! 1,200 levels (`Maximum call stack size exceeded`). On
 //! malformed input the two lexers disagree in a few corner cases: a tag or
 //! anchor directly followed by a quoted scalar or collection (`!"x"`, `![`),
 //! `?` or `:` directly before a flow collection inside a flow sequence, and
@@ -291,6 +296,17 @@ impl Document {
         if depth > MAX_DEPTH {
             return 0;
         }
+        stacker::maybe_grow(256 * 1024, 4 * 1024 * 1024, || {
+            self.alias_count_unchecked(node, anchors, depth)
+        })
+    }
+
+    fn alias_count_unchecked(
+        &self,
+        node: usize,
+        anchors: &IndexMap<usize, AnchorData>,
+        depth: usize,
+    ) -> u64 {
         match &self.nodes[node] {
             Node::Alias(target) => anchors
                 .get(target)
@@ -317,7 +333,8 @@ impl Document {
 struct AnchorData {
     count: u64,
     alias_count: u64,
-    res: Option<JsonValue>,
+    /// The anchored node's value and its nesting height.
+    res: Option<(JsonValue, usize)>,
 }
 
 struct ToJs<'d> {
@@ -328,9 +345,29 @@ struct ToJs<'d> {
 impl ToJs<'_> {
     /// `toJS(node)`.
     fn value(&mut self, node: usize, depth: usize) -> Result<JsonValue, YamlError> {
+        self.value_and_height(node, depth).map(|(value, _)| value)
+    }
+
+    /// `toJS(node)` and how deeply the value nests. Aliases can make a value
+    /// nest deeper than the document; past [`MAX_DEPTH`] that is an error.
+    fn value_and_height(
+        &mut self,
+        node: usize,
+        depth: usize,
+    ) -> Result<(JsonValue, usize), YamlError> {
         if depth > MAX_DEPTH {
             return Err(YamlError::parse("Nesting too deep"));
         }
+        stacker::maybe_grow(256 * 1024, 4 * 1024 * 1024, || {
+            self.value_unchecked(node, depth)
+        })
+    }
+
+    fn value_unchecked(
+        &mut self,
+        node: usize,
+        depth: usize,
+    ) -> Result<(JsonValue, usize), YamlError> {
         if self.doc.anchored[node] {
             self.anchors.insert(
                 node,
@@ -341,35 +378,43 @@ impl ToJs<'_> {
                 },
             );
         }
-        let res = match &self.doc.nodes[node] {
-            Node::Scalar { value, .. } => value.to_js(),
+        let (res, height) = match &self.doc.nodes[node] {
+            Node::Scalar { value, .. } => (value.to_js(), 0),
             Node::Seq(items) => {
                 let mut values = Vec::with_capacity(items.len());
+                let mut height = 0;
                 for &item in items {
-                    values.push(self.value(item, depth + 1)?);
+                    let (value, h) = self.value_and_height(item, depth + 1)?;
+                    values.push(value);
+                    height = height.max(h + 1);
                 }
-                JsonValue::Array(values)
+                (JsonValue::Array(values), height.max(1))
             }
             Node::Map(pairs) => {
                 let mut map = IndexMap::new();
+                let mut height = 0;
                 for &(key, value) in pairs {
                     let js_key = self.value(key, depth + 1)?;
                     let string_key = self.stringify_key(key, &js_key);
-                    let js_value = self.value(value, depth + 1)?;
+                    let (js_value, h) = self.value_and_height(value, depth + 1)?;
                     insert_js_property(&mut map, string_key, js_value);
+                    height = height.max(h + 1);
                 }
-                JsonValue::Object(map)
+                (JsonValue::Object(map), height.max(1))
             }
             Node::Alias(target) => return self.alias(*target, depth),
         };
-        if let Some(data) = self.anchors.get_mut(&node) {
-            data.res = Some(res.clone());
+        if height > MAX_DEPTH {
+            return Err(YamlError::parse("Nesting too deep"));
         }
-        Ok(res)
+        if let Some(data) = self.anchors.get_mut(&node) {
+            data.res = Some((deep_clone(&res), height));
+        }
+        Ok((res, height))
     }
 
     /// `Alias.toJSON`.
-    fn alias(&mut self, target: usize, depth: usize) -> Result<JsonValue, YamlError> {
+    fn alias(&mut self, target: usize, depth: usize) -> Result<(JsonValue, usize), YamlError> {
         if !self.anchors.contains_key(&target) {
             self.value(target, depth + 1)?;
         }
@@ -394,9 +439,10 @@ impl ToJs<'_> {
                 "Excessive alias count indicates a resource exhaustion attack",
             ));
         }
-        data.res
-            .clone()
-            .ok_or_else(|| YamlError::reference("Alias anchor was not resolved"))
+        match &data.res {
+            Some((value, height)) => Ok((deep_clone(value), *height)),
+            None => Err(YamlError::reference("Alias anchor was not resolved")),
+        }
     }
 
     /// `stringifyKey(key, jsKey)`.
@@ -486,6 +532,12 @@ fn check_comment_separation(text: &str, spans: &[(usize, usize)]) -> Result<(), 
         previous = Some(c);
     }
     Ok(())
+}
+
+/// Clones a value of at most [`MAX_DEPTH`] levels; `Clone` recurses once per
+/// level, so it runs where at least 2 MB of stack are free.
+fn deep_clone(value: &JsonValue) -> JsonValue {
+    stacker::maybe_grow(2 * 1024 * 1024, 8 * 1024 * 1024, || value.clone())
 }
 
 /// `YAML.parse(text)`: the single document's value as JavaScript sees it.

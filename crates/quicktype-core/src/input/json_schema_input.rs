@@ -57,7 +57,7 @@ use crate::attributes::type_names::{
     singularize_type_names,
 };
 use crate::attributes::uri_attributes::uri_schema_attributes_producer;
-use crate::input::io::LocalBoxFuture;
+use crate::input::io::{GrowStack, LocalBoxFuture, grow_stack};
 use crate::input::json_schema_store::{JsonSchema, JsonSchemaStore, SchemaCache};
 use crate::input::path_element::PathElement;
 use crate::messages::{
@@ -358,6 +358,16 @@ impl Ref {
         path: &[PathElement],
         root: &JsonSchema,
     ) -> Result<JsonSchema> {
+        grow_stack(|| self.lookup_step(local, path, root))
+    }
+
+    /// One step of [`lookup`](Self::lookup).
+    fn lookup_step(
+        &self,
+        local: &JsonSchema,
+        path: &[PathElement],
+        root: &JsonSchema,
+    ) -> Result<JsonSchema> {
         let ref_maker = || Ref::new(self.address_uri.clone(), path.to_vec());
         let Some((first, rest)) = path.split_first() else {
             check_json_schema(local, ref_maker)?;
@@ -550,11 +560,16 @@ impl Canonizer {
     }
 
     /// `addIDs(schema, loc)`: walks objects and arrays in property order.
-    fn add_ids(&mut self, schema: &JsonSchema, loc: &Location) -> Result<()> {
-        match schema {
+    /// `depth` is the number of enclosing `addIDs` calls; like Node, it
+    /// overflows the stack past [`ADD_IDS_DEPTH_LIMIT`].
+    fn add_ids(&mut self, schema: &JsonSchema, loc: &Location, depth: usize) -> Result<()> {
+        if depth > ADD_IDS_DEPTH_LIMIT {
+            return Err(stack_overflow());
+        }
+        grow_stack(|| match schema {
             JsonSchema::Array(items) => {
                 for (i, item) in items.iter().enumerate() {
-                    self.add_ids(item, &loc.push(&[&i.to_string()])?)?;
+                    self.add_ids(item, &loc.push(&[&i.to_string()])?, depth + 1)?;
                 }
                 Ok(())
             }
@@ -572,12 +587,12 @@ impl Canonizer {
                         .set(loc.virtual_ref.clone(), loc_without_id.clone());
                 }
                 for (property, value) in map.iter() {
-                    self.add_ids(value, &loc.push(&[property])?)?;
+                    self.add_ids(value, &loc.push(&[property])?, depth + 1)?;
                 }
                 Ok(())
             }
             _ => Ok(()),
-        }
+        })
     }
 
     /// `addSchema(schema, address)`: registers a document's `$id`s the
@@ -589,6 +604,7 @@ impl Canonizer {
         self.add_ids(
             schema,
             &Location::new(Ref::root(Some(address))?, Some(Ref::root(None)?), false),
+            0,
         )?;
         self.schema_addresses_added.insert(address.to_owned());
         Ok(true)
@@ -989,12 +1005,83 @@ impl Conversion {
     }
 }
 
+/// How much of Node's default stack (`JS_STACK_BUDGET`) one nesting level
+/// of TypeScript's `toType` recursion uses, by the keyword it recurses
+/// through. Measured with `xtask/core-json-schema-input/measure-stack-depth.mjs`
+/// (a fresh Node 24 process per schema, the input stage only): a chain of
+/// `items` overflows at 323 levels, a tuple chain at 199, `properties` at
+/// 162, `allOf` at 201, `oneOf`/`anyOf` at 171, and `properties` plus
+/// `items` per level at 108, which the costs add up to.
+#[derive(Clone, Copy, Debug)]
+enum Edge {
+    /// A top-level, or a schema reached after an `await` (a `$ref` target).
+    Fresh,
+    /// `items` (an object or boolean), `additionalProperties`, the rest
+    /// `items` of a tuple.
+    Items,
+    /// An element of a tuple (`prefixItems`, array `items`).
+    Tuple,
+    /// A property.
+    Property,
+    /// An `allOf` case.
+    AllOf,
+    /// A `oneOf` or `anyOf` case.
+    OneOrAnyOf,
+}
+
+/// The modelled JavaScript stack, in the units of [`Edge::cost`].
+const JS_STACK_BUDGET: u64 = 1_000_000;
+
+/// How deeply `toType` may nest in Rust in all, including across the
+/// `await`s after which TypeScript starts on a fresh stack (`$ref` chains,
+/// `additionalProperties` chains). TypeScript has no such limit; see
+/// "Known gaps" in `docs/PARITY.md`.
+const NATIVE_DEPTH_LIMIT: usize = 10_000;
+
+/// How deeply `Canonizer.addIDs` may recurse: Node overflows at 4,152
+/// nested calls (a document nested 4,151 levels deep).
+const ADD_IDS_DEPTH_LIMIT: usize = 4_151;
+
+impl Edge {
+    fn cost(self) -> u64 {
+        match self {
+            Edge::Fresh => 0,
+            Edge::Items => 3_100,
+            Edge::Tuple => 5_040,
+            Edge::Property => 6_190,
+            Edge::AllOf => 4_990,
+            Edge::OneOrAnyOf => 5_860,
+        }
+    }
+}
+
+/// V8's `RangeError: Maximum call stack size exceeded`.
+pub(crate) fn stack_overflow() -> QuickTypeError {
+    QuickTypeError::js_exception(JsErrorName::RangeError, "Maximum call stack size exceeded")
+}
+
+/// Awaits a step of the TypeScript `async` recursion. In JavaScript every
+/// `await` resumes on a fresh stack (from the microtask queue), so the
+/// modelled JavaScript stack starts over afterwards.
+macro_rules! resumed {
+    ($self:ident, $future:expr) => {{
+        let result = $future.await;
+        $self.js_stack = 0;
+        result
+    }};
+}
+
 /// `addTypesInSchema`: builds the types of the top-levels.
 struct TypeAdder<'a, 'g> {
     resolver: Resolver<'a>,
     type_builder: &'a mut TypeBuilder<'g>,
     producers: &'a [JsonSchemaAttributeProducer],
     type_for_canonical_ref: EqualityMap<Ref, TypeRef>,
+    /// The JavaScript stack the synchronous part of the recursion would use
+    /// since the last `await` (see [`Edge`]).
+    js_stack: u64,
+    /// How deeply `to_type` is nested in Rust.
+    native_depth: usize,
 }
 
 impl<'g> TypeAdder<'_, 'g> {
@@ -1052,37 +1139,61 @@ impl<'g> TypeAdder<'_, 'g> {
         Ok(result)
     }
 
-    /// `toType(schema, loc, typeAttributes)`.
+    /// `toType(schema, loc, typeAttributes)`, reached through `edge`.
+    ///
+    /// Fails with V8's `RangeError: Maximum call stack size exceeded` where
+    /// Node's stack would overflow. The Rust recursion itself runs on a
+    /// stack that grows as needed.
     #[allow(clippy::wrong_self_convention)] // named after TypeScript's `toType`
     fn to_type<'s>(
         &'s mut self,
         schema: JsonSchema,
         loc: Location,
         type_attributes: TypeAttributes,
+        edge: Edge,
     ) -> LocalBoxFuture<'s, Result<TypeRef>> {
-        Box::pin(async move {
-            if let Some(t) = self.type_for_canonical_ref.get(&loc.canonical_ref) {
-                return Ok(*t);
+        Box::pin(GrowStack(Box::pin(async move {
+            self.js_stack += edge.cost();
+            if self.js_stack > JS_STACK_BUDGET || self.native_depth >= NATIVE_DEPTH_LIMIT {
+                return Err(stack_overflow());
             }
-            let (result, loc) = match &schema {
-                JsonSchema::Bool(b) => {
-                    let kind = if *b { TypeKind::Any } else { TypeKind::None };
-                    let t =
-                        self.type_builder
-                            .get_primitive_type(kind, TypeAttributes::new(), None)?;
-                    (t, loc)
-                }
-                _ => {
-                    let loc = loc.update_with_id(schema.get("$id"))?;
-                    let t = self
-                        .convert_to_type(schema.clone(), loc.clone(), type_attributes)
-                        .await?;
-                    (t, loc)
-                }
-            };
-            self.set_type_for_location(&loc, result)?;
-            Ok(result)
-        })
+            self.native_depth += 1;
+            let result = self.to_type_unchecked(schema, loc, type_attributes).await;
+            self.native_depth -= 1;
+            result
+        })))
+    }
+
+    /// The body of `toType`.
+    #[allow(clippy::wrong_self_convention)] // named after TypeScript's `toType`
+    async fn to_type_unchecked(
+        &mut self,
+        schema: JsonSchema,
+        loc: Location,
+        type_attributes: TypeAttributes,
+    ) -> Result<TypeRef> {
+        if let Some(t) = self.type_for_canonical_ref.get(&loc.canonical_ref) {
+            return Ok(*t);
+        }
+        let (result, loc) = match &schema {
+            JsonSchema::Bool(b) => {
+                let kind = if *b { TypeKind::Any } else { TypeKind::None };
+                let t = self
+                    .type_builder
+                    .get_primitive_type(kind, TypeAttributes::new(), None)?;
+                (t, loc)
+            }
+            _ => {
+                let loc = loc.update_with_id(schema.get("$id"))?;
+                let t = resumed!(
+                    self,
+                    self.convert_to_type(schema.clone(), loc.clone(), type_attributes)
+                )?;
+                (t, loc)
+            }
+        };
+        self.set_type_for_location(&loc, result)?;
+        Ok(result)
     }
 
     /// `makeAttributes(attributes)` inside `convertToType`.
@@ -1292,11 +1403,14 @@ impl<'g> TypeAdder<'_, 'g> {
             if include_array {
                 let array_attributes =
                     self.combine_produced_attributes(&mut conv, |a| Ok(a.for_array.clone()))?;
-                union_types.push(self.make_array_type(&conv, array_attributes).await?);
+                union_types.push(resumed!(
+                    self,
+                    self.make_array_type(&conv, array_attributes)
+                )?);
             }
 
             if include_object {
-                union_types.push(self.make_object_type(&mut conv).await?);
+                union_types.push(resumed!(self, self.make_object_type(&mut conv))?);
             }
 
             types.push(self.type_builder.get_unique_union_type(
@@ -1314,10 +1428,8 @@ impl<'g> TypeAdder<'_, 'g> {
                 );
             };
             let virtual_ref = Ref::parse(r)?;
-            let (target, new_loc) = self
-                .resolver
-                .resolve_virtual_ref(&loc, &virtual_ref)
-                .await?;
+            let (target, new_loc) =
+                resumed!(self, self.resolver.resolve_virtual_ref(&loc, &virtual_ref))?;
             let names =
                 defined(NamesTypeAttributeKind.try_get_in_attributes(&conv.type_attributes))?;
             let attributes = if names.are_inferred() {
@@ -1332,25 +1444,31 @@ impl<'g> TypeAdder<'_, 'g> {
             } else {
                 conv.type_attributes.clone()
             };
-            types.push(self.to_type(target, new_loc, attributes).await?);
+            types.push(resumed!(
+                self,
+                self.to_type(target, new_loc, attributes, Edge::Fresh)
+            )?);
         }
 
         if let Some(cases) = object.get("allOf") {
-            types.extend(self.make_types_from_cases(&conv, cases, "allOf").await?);
+            types.extend(resumed!(
+                self,
+                self.make_types_from_cases(&conv, cases, "allOf")
+            )?);
         }
 
         if let Some(cases) = object.get("oneOf") {
-            types.push(
+            types.push(resumed!(
+                self,
                 self.convert_one_or_any_of(&mut conv, intersection_type, cases, "oneOf")
-                    .await?,
-            );
+            )?);
         }
 
         if let Some(cases) = object.get("anyOf") {
-            types.push(
+            types.push(resumed!(
+                self,
                 self.convert_one_or_any_of(&mut conv, intersection_type, cases, "anyOf")
-                    .await?,
-            );
+            )?);
         }
 
         self.type_builder
@@ -1403,11 +1521,19 @@ impl<'g> TypeAdder<'_, 'g> {
             for (i, item) in tuple_items.iter().enumerate() {
                 let item_loc = items_loc.push(&[&i.to_string()])?;
                 check_json_schema(item, || Ok(item_loc.canonical_ref.clone()))?;
-                item_types.push(
-                    self.to_type(item.clone(), item_loc, singular_attributes.clone())
-                        .await?,
-                );
+                item_types.push(resumed!(
+                    self,
+                    self.to_type(
+                        item.clone(),
+                        item_loc,
+                        singular_attributes.clone(),
+                        Edge::Tuple
+                    )
+                )?);
             }
+            // `await arrayMapSync(...)`/`await mapMapSync(...)` resume on a fresh
+            // stack even when there is nothing to map.
+            self.js_stack = 0;
             // An object `items` next to `prefixItems` is the rest of an open
             // tuple; it joins the union. A boolean `items` is ignored.
             if tuple_key == "prefixItems"
@@ -1415,10 +1541,15 @@ impl<'g> TypeAdder<'_, 'g> {
             {
                 let rest_loc = conv.loc.push(&["items"])?;
                 check_json_schema(rest, || Ok(rest_loc.canonical_ref.clone()))?;
-                item_types.push(
-                    self.to_type(rest.clone(), rest_loc, singular_attributes.clone())
-                        .await?,
-                );
+                item_types.push(resumed!(
+                    self,
+                    self.to_type(
+                        rest.clone(),
+                        rest_loc,
+                        singular_attributes.clone(),
+                        Edge::Items
+                    )
+                )?);
             }
             self.type_builder.get_union_type(
                 TypeAttributes::new(),
@@ -1435,8 +1566,15 @@ impl<'g> TypeAdder<'_, 'g> {
             // `typeof items === "object" || typeof items === "boolean"`.
             let items_loc = conv.loc.push(&["items"])?;
             check_json_schema(items, || Ok(items_loc.canonical_ref.clone()))?;
-            self.to_type(items.clone(), items_loc, singular_attributes.clone())
-                .await?
+            resumed!(
+                self,
+                self.to_type(
+                    items.clone(),
+                    items_loc,
+                    singular_attributes.clone(),
+                    Edge::Items
+                )
+            )?
         } else if let Some(items) = &items {
             return message_error(
                 ErrorKind::SchemaArrayItemsMustBeStringOrArray,
@@ -1511,15 +1649,17 @@ impl<'g> TypeAdder<'_, 'g> {
             .filter(|o| o.is_truthy())
             .cloned();
 
-        self.make_object(
-            &conv.loc,
-            object_attributes,
-            &properties,
-            required,
-            additional_properties,
-            order.as_ref(),
+        resumed!(
+            self,
+            self.make_object(
+                &conv.loc,
+                object_attributes,
+                &properties,
+                required,
+                additional_properties,
+                order.as_ref(),
+            )
         )
-        .await
     }
 
     /// `makeObject(loc, attributes, properties, requiredArray,
@@ -1561,19 +1701,24 @@ impl<'g> TypeAdder<'_, 'g> {
         for (_, prop_name, prop_schema) in entries {
             let prop_loc = loc.push(&["properties", prop_name])?;
             check_json_schema(prop_schema, || Ok(prop_loc.canonical_ref.clone()))?;
-            let t = self
-                .to_type(
+            let t = resumed!(
+                self,
+                self.to_type(
                     prop_schema.clone(),
                     prop_loc,
                     make_names_type_attributes(prop_name, true),
+                    Edge::Property,
                 )
-                .await?;
+            )?;
             let is_optional = !required.contains(prop_name);
             props.insert(
                 prop_name.clone(),
                 self.type_builder.make_class_property(t, is_optional),
             );
         }
+        // `await arrayMapSync(...)`/`await mapMapSync(...)` resume on a fresh
+        // stack even when there is nothing to map.
+        self.js_stack = 0;
 
         let additional_properties_type = match additional_properties {
             None | Some(JsonSchema::Bool(true)) => Some(self.type_builder.get_primitive_type(
@@ -1585,14 +1730,15 @@ impl<'g> TypeAdder<'_, 'g> {
             Some(additional) => {
                 let additional_loc = loc.push(&["additionalProperties"])?;
                 check_json_schema(&additional, || Ok(additional_loc.canonical_ref.clone()))?;
-                Some(
+                Some(resumed!(
+                    self,
                     self.to_type(
                         additional,
                         additional_loc,
                         singularize_type_names(&attributes),
+                        Edge::Items,
                     )
-                    .await?,
-                )
+                )?)
             }
         };
 
@@ -1643,13 +1789,24 @@ impl<'g> TypeAdder<'_, 'g> {
                 ),
             );
         };
+        let edge = if kind == "allOf" {
+            Edge::AllOf
+        } else {
+            Edge::OneOrAnyOf
+        };
         let mut result = Vec::with_capacity(cases.len());
         for (index, t) in cases.iter().enumerate() {
             let case_loc = kind_loc.push(&[&index.to_string()])?;
             check_json_schema(t, || Ok(case_loc.canonical_ref.clone()))?;
             let attributes = make_type_attributes_inferred(&conv.type_attributes)?;
-            result.push(self.to_type(t.clone(), case_loc, attributes).await?);
+            result.push(resumed!(
+                self,
+                self.to_type(t.clone(), case_loc, attributes, edge)
+            )?);
         }
+        // `await arrayMapSync(...)`/`await mapMapSync(...)` resume on a fresh
+        // stack even when there is nothing to map.
+        self.js_stack = 0;
         Ok(result)
     }
 
@@ -1661,7 +1818,7 @@ impl<'g> TypeAdder<'_, 'g> {
         cases: &JsonSchema,
         kind: &str,
     ) -> Result<TypeRef> {
-        let type_refs = self.make_types_from_cases(conv, cases, kind).await?;
+        let type_refs = resumed!(self, self.make_types_from_cases(conv, cases, kind))?;
         let mut union_attributes = make_type_attributes_inferred(&conv.type_attributes)?;
         if kind == "oneOf" {
             let case_schemas: Vec<JsonSchema> =
@@ -1700,14 +1857,16 @@ impl<'g> TypeAdder<'_, 'g> {
     /// The main loop of `addTypesInSchema`.
     async fn add_top_levels(&mut self, references: &IndexMap<String, Ref>) -> Result<()> {
         for (top_level_name, top_level_ref) in references {
-            let (target, loc) = self.resolver.resolve_top_level_ref(top_level_ref).await?;
-            let t = self
-                .to_type(
+            let (target, loc) = resumed!(self, self.resolver.resolve_top_level_ref(top_level_ref))?;
+            let t = resumed!(
+                self,
+                self.to_type(
                     target,
                     loc,
                     make_names_type_attributes(top_level_name, false),
+                    Edge::Fresh,
                 )
-                .await?;
+            )?;
             self.type_builder.add_top_level(top_level_name, t)?;
         }
         Ok(())
@@ -2006,6 +2165,8 @@ impl JsonSchemaInput {
             type_builder,
             producers: &self.attribute_producers,
             type_for_canonical_ref: EqualityMap::new(),
+            js_stack: 0,
+            native_depth: 0,
         };
         adder.add_top_levels(&self.top_levels).await
     }

@@ -11,6 +11,7 @@ Node.
 |---|---|---|
 | `gen-uri-vectors.mjs <quicktype>` | `crates/quicktype-js-compat/tests/vectors/uri.json`: urijs 1.19.11 parse/accessors/normalize/absoluteTo/equals, the URI component coders, `Number(string)` | `quicktype-js-compat/tests/uri_vectors.rs` |
 | `gen-yaml-vectors.mjs <quicktype>` | `crates/quicktype-js-compat/tests/vectors/yaml.json`: `YAML.parse` (yaml 2.9.0) values or errors | `quicktype-js-compat/tests/yaml_vectors.rs` |
+| `measure-stack-depth.mjs <quicktype>` | nothing: prints the nesting depth at which Node's stack overflows per recursion path (fresh process per probe) | the constants in `input/json_schema_input.rs`, pinned by `quicktype-core/tests/deep_schemas.rs` |
 | `run-schema-inputs.mjs <quicktype>` | `crates/quicktype-core/tests/fixtures/core-json-schema-input/{cases.json,expected/}`: per case, the `--debug print-schema-resolving` trace, the type graph after input (`printGraph`) and the attributes the printer does not show, or the error | `quicktype-core/tests/json_schema_input.rs` |
 
 ```sh

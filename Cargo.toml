@@ -22,9 +22,13 @@ indexmap = "2"
 regex = "1"
 ryu = "1"
 saphyr-parser = "0.3.4"
+stacker = "0.1.25"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 ureq = { version = "2.12", default-features = false, features = ["tls"] }
+url = "2.5"
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+brotli-decompressor = "5.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

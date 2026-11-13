@@ -132,7 +132,8 @@ semantics were verified.
 | `JSON.stringify` | `quicktype_js_compat::json` | 400 strings and 250 nested values with numeric and string `space` compared to Node 24 (including V8's line breaks for `0 < space < 1`) |
 | `urijs` 1.19.11 (with its bundled punycode.js `toASCII` and `IPv6.best`), `encodeURIComponent`/`decodeURIComponent` | hand port of the used subset (`quicktype_js_compat::uri`) | `xtask/core-json-schema-input/gen-uri-vectors.mjs`: 1,411 URIs (curated edge cases, every `$ref`/`$id` and a sample of the URL strings in `tests/inputs`, seeded fuzz) through parse, every accessor, `clone`, `normalize`, `URI.decode`, `absoluteTo` against 8 bases and the setters (33,703 checks), 381 `equals` pairs and 321 strings through the component coders, all identical to Node 24 |
 | `yaml` 2.9.0 `YAML.parse` (default options) | `saphyr-parser` 0.3 (YAML 1.2 events) plus a port of `yaml`'s composer and `toJS` (`quicktype_js_compat::yaml`): core-schema tag resolution in `yaml`'s order, unique keys by `===`, key stringification, JS object key order, alias expansion with `maxAliasCount` 100, multiple documents rejected | `xtask/core-json-schema-input/gen-yaml-vectors.mjs`: 764 committed cases (218 curated, every `tests/inputs` file that `JSON.parse` rejects, seeded mutations of JSON inputs) identical to Node, including key order, `-0`, `NaN` and `Infinity`; a 6,182-case run differs only on 12 malformed inputs (see Known gaps) |
-| Node's `fetch` (undici), as `NodeIO` uses it | `ureq` 2.12 with rustls, behind the `http` feature of `quicktype-core` (`StdIo`) | status line and reason phrase as the server sends them (`HTTP 401 Unauthorized`), redirects followed, every transport failure reported as Node's `TypeError: fetch failed`; the golden `schema/ref-remote.schema` case and a local-server port of `url-input.test.ts` |
+| Node's `fetch` (undici, Node 24), as `NodeIO` uses it | `input/io/fetch.rs` on `ureq` 2.12 (rustls, one shared agent), `url` 2.5 (WHATWG URL parsing, as `new Request` does), `flate2` 1.1 (rust backend) and `brotli-decompressor` 5, behind the `http` feature of `quicktype-core` | `tests/fetch_http.rs` against a local server, every expectation checked with Node 24: redirects followed by hand (20 at most, cross-origin hops drop `authorization`/`proxy-authorization`/`cookie`/`host`), undici's default headers and case-insensitive header combining (`3, 2`), `gzip`/`x-gzip`/`deflate` (zlib or raw)/`br` decoding in reverse coding order (unknown codings: none; corrupt or truncated data: what decoded), `null` bodies for 101/204/205/304, the `TypeError` texts for bad URLs, credentials, header names/values and `ByteString`s, the fetch bad-port list, and undici's timeouts (10 s connect, 300 s headers and body); the golden `schema/ref-remote.schema` case |
+| Node's stack depth (`RangeError: Maximum call stack size exceeded`) | a model of the JavaScript stack in `JSONSchemaInput` (per-keyword costs, reset after every `await`) and a depth limit for `addIDs`, with `stacker` 0.1 growing the native stack on demand | `xtask/core-json-schema-input/measure-stack-depth.mjs` measures Node 24 per recursion path in fresh processes; `tests/deep_schemas.rs` pins the same last-good and first-failing depths (items 322, tuples 198, properties 161, `allOf` 200, `oneOf`/`anyOf` 170, properties plus items 107, `addIDs` 4,150) and runs on 2 MB test-thread stacks |
 | `Number(string)` | `quicktype_js_compat::number::string_to_number` | 39 edge cases (whitespace, signs, `0x`/`0o`/`0b`, `Infinity`, exponents, >64-bit hex) compared to Node 24 |
 
 ## Known gaps
@@ -194,11 +195,36 @@ the others name the fix they need.
   `EISDIR`), reports unreadable files (`EACCES`) as a `MiscReadError`
   where Node crashes with an unhandled stream error, and resolves symbolic
   links with POSIX path rules on every platform.
-- **Pathological schemas.** JSON and YAML nesting deeper than 1,000 is a
-  parse error (so a fetched document is "Could not fetch"); TypeScript
-  would instead overflow its stack later. `qt-accessors`/`qt-enum-values`
-  entries whose values are not strings are converted with `String(value)`
-  (TypeScript passes the raw value on to naming).
+- **Stack depth.** Where Node's stack overflows, the JSON Schema input
+  fails with the same `RangeError: Maximum call stack size exceeded` (the
+  CLI prints `Error: Maximum call stack size exceeded.`). The thresholds are
+  exact for the measured recursion paths (see the dependency table) and
+  approximate where paths mix in other ways (the costs add up per level,
+  as measured for properties plus items). Node's own threshold can differ by
+  one between runs (V8 compiles the recursion concurrently): the `addIDs`
+  walk over a 4,150-level document succeeds in most Node runs and in the
+  port, fails in some Node runs. TypeScript recurses into `$ref` targets,
+  `additionalProperties` and later array or property siblings after an
+  `await`, on a fresh stack, so such chains never overflow there; the port
+  stops them at 10,000 nested levels. JSON nested deeper than 100,000
+  levels, which V8 parses, is not parsed (the schema "could not be
+  fetched" instead of overflowing in `addIDs`). YAML values nested deeper
+  than 1,000 levels, also through aliases, cannot be read, where `yaml`
+  itself overflows somewhere between about 750 and 1,200 levels. The
+  generation stages (rewrites, rendering) will need the same care once
+  ported; the native stack grows as needed, so the CLI needs no
+  big-stack thread.
+- **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
+  more than 255 nested flow collections fail with `YAMLParseError:
+  recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
+  accepts them up to its stack limit (above).
+- **HTTP.** `zstd` bodies are not decoded (Node 24 can, but fetch never
+  asks for them); header values with characters U+0080..U+00FF are sent as
+  UTF-8 rather than Latin-1; corrupt `gzip`/`deflate`/`br` data may decode
+  to a different prefix than Node's zlib.
+- **Accessor entries.** `qt-accessors`/`qt-enum-values` entries whose values
+  are not strings are converted with `String(value)` (TypeScript passes
+  the raw value on to naming).
 - **chalk-template features quicktype never uses.** Style arguments and hex
   colours (`{rgb(1,2,3) …}`, `{#ff0000 …}`) and the colour-model styles
   exit 2 as not implemented. Style names that are other properties of the
