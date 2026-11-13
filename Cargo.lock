@@ -408,6 +408,7 @@ dependencies = [
  "brotli-decompressor",
  "flate2",
  "foldhash",
+ "hashbrown",
  "indexmap",
  "quicktype-js-compat",
  "regex",

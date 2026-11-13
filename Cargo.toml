@@ -19,6 +19,7 @@ quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
 quicktype-js-compat = { path = "crates/quicktype-js-compat" }
 quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
 foldhash = "0.2"
+hashbrown = { version = "0.17", default-features = false }
 indexmap = "2"
 mimalloc = { version = "0.1", default-features = false }
 regex = "1"

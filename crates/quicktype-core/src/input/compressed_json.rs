@@ -34,9 +34,11 @@
 
 use std::cell::RefCell;
 use std::fmt;
+use std::hash::BuildHasher as _;
 use std::io::Read;
 use std::rc::Rc;
 
+use hashbrown::HashTable;
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::utf16;
 
@@ -44,7 +46,7 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
-use crate::support::fast_hash::HashMap;
+use crate::support::fast_hash::{BuildHasher, HashMap};
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::support::{assert, defined, panic};
 use crate::target_language::TargetLanguage;
@@ -160,11 +162,180 @@ pub struct CompressedJson {
     root_value: Option<Value>,
     ctx: Option<Context>,
     context_stack: Vec<Context>,
-    strings: Vec<Rc<str>>,
-    /// Only looked up, never iterated; shares its keys with `strings`.
-    string_indexes: HashMap<Rc<str>, u32>,
-    objects: Vec<Vec<(Value, Value)>>,
-    arrays: Vec<Vec<Value>>,
+    strings: Strings,
+    /// Every object's key/value pairs.
+    objects: Runs<(Value, Value)>,
+    /// Every array's elements.
+    arrays: Runs<Value>,
+    /// Emptied buffers of finished objects and arrays, for the next ones.
+    spare_objects: Vec<Vec<(Value, Value)>>,
+    spare_arrays: Vec<Vec<Value>>,
+}
+
+/// The number of items a block of [`Runs`] or [`Strings`] holds at least.
+const BLOCK: usize = 1 << 16;
+
+/// How many emptied buffers [`CompressedJson`] keeps for reuse.
+const SPARE_BUFFERS: usize = 64;
+
+/// Where a run is: its block, and its start and length in it.
+#[derive(Clone, Copy, Debug)]
+struct Span {
+    block: u32,
+    start: u32,
+    len: u32,
+}
+
+/// A table of runs (every object's entries, or every array's elements):
+/// each run is contiguous, in blocks of at least [`BLOCK`] items that are
+/// never reallocated. So a large input's tables grow without copying what
+/// they hold, and take one allocation per block instead of one per object
+/// or array.
+#[derive(Debug)]
+struct Runs<T> {
+    blocks: Vec<Vec<T>>,
+    spans: Vec<Span>,
+}
+
+impl<T: Copy> Runs<T> {
+    fn new() -> Self {
+        Runs {
+            blocks: Vec::new(),
+            spans: Vec::new(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.spans.len()
+    }
+
+    /// Appends a run, taking `items` over as its own block if it is too
+    /// large to share one (no copy); returns the run's index.
+    fn push(&mut self, items: Vec<T>) -> Result<(u32, Option<Vec<T>>)> {
+        let index = u32::try_from(self.spans.len())
+            .map_err(|_| QuickTypeError::internal("Too many objects or arrays"))?;
+        let len = u32::try_from(items.len())
+            .map_err(|_| QuickTypeError::internal("Too many values in one object or array"))?;
+        let fits = self
+            .blocks
+            .last()
+            .is_some_and(|b| b.capacity() - b.len() >= items.len());
+        let (block, start, spare) = if fits {
+            let block = self.blocks.len() - 1;
+            let start = self.blocks[block].len();
+            self.blocks[block].extend_from_slice(&items);
+            (block, start, Some(items))
+        } else if items.len() >= BLOCK {
+            self.blocks.push(items);
+            (self.blocks.len() - 1, 0, None)
+        } else {
+            let mut block = Vec::with_capacity(BLOCK);
+            block.extend_from_slice(&items);
+            self.blocks.push(block);
+            (self.blocks.len() - 1, 0, Some(items))
+        };
+        self.spans.push(Span {
+            block: block as u32,
+            start: start as u32,
+            len,
+        });
+        Ok((index, spare))
+    }
+
+    fn get(&self, index: usize) -> Option<&[T]> {
+        let span = self.spans.get(index)?;
+        let start = span.start as usize;
+        self.blocks
+            .get(span.block as usize)?
+            .get(start..start + span.len as usize)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &[T]> {
+        (0..self.len()).filter_map(|i| self.get(i))
+    }
+}
+
+/// The interned strings (TS `_strings` and `_stringIndexes`): the text
+/// once, in blocks that are never reallocated, and a hash table of string
+/// indexes for looking a text up.
+struct Strings {
+    blocks: Vec<String>,
+    spans: Vec<Span>,
+    /// Indexes into `spans`, hashed by text; only looked up.
+    indexes: HashTable<u32>,
+    hasher: BuildHasher,
+}
+
+impl Strings {
+    fn new() -> Self {
+        Strings {
+            blocks: Vec::new(),
+            spans: Vec::new(),
+            indexes: HashTable::new(),
+            hasher: BuildHasher::default(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.spans.len()
+    }
+
+    fn get(&self, index: usize) -> Option<&str> {
+        let span = self.spans.get(index)?;
+        let start = span.start as usize;
+        self.blocks
+            .get(span.block as usize)?
+            .get(start..start + span.len as usize)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &str> {
+        (0..self.len()).filter_map(|i| self.get(i))
+    }
+
+    /// The index of `s` if it was registered for lookups.
+    fn find(&self, s: &str) -> Option<u32> {
+        let hash = self.hasher.hash_one(s);
+        self.indexes
+            .find(hash, |&i| self.get(i as usize) == Some(s))
+            .copied()
+    }
+
+    /// Appends `s`, registering it for lookups if `findable`; returns its
+    /// index.
+    fn push(&mut self, s: &str, findable: bool) -> u32 {
+        let index = self.spans.len() as u32;
+        let fits = self
+            .blocks
+            .last()
+            .is_some_and(|b| b.capacity() - b.len() >= s.len());
+        if !fits {
+            self.blocks.push(String::with_capacity(s.len().max(BLOCK)));
+        }
+        let block = self.blocks.len() - 1;
+        let start = self.blocks[block].len();
+        self.blocks[block].push_str(s);
+        self.spans.push(Span {
+            block: block as u32,
+            start: start as u32,
+            len: s.len() as u32,
+        });
+        if findable {
+            let hash = self.hasher.hash_one(s);
+            let Strings {
+                blocks,
+                spans,
+                indexes,
+                hasher,
+            } = self;
+            let text = |i: u32| {
+                let span = spans[i as usize];
+                let start = span.start as usize;
+                &blocks[span.block as usize][start..start + span.len as usize]
+            };
+            indexes.insert_unique(hash, index, |&i| hasher.hash_one(text(i)));
+        }
+        index
+    }
 }
 
 impl fmt::Debug for CompressedJson {
@@ -201,10 +372,11 @@ impl CompressedJson {
             root_value: None,
             ctx: None,
             context_stack: Vec::new(),
-            strings: Vec::new(),
-            string_indexes: HashMap::default(),
-            objects: Vec::new(),
-            arrays: Vec::new(),
+            strings: Strings::new(),
+            objects: Runs::new(),
+            arrays: Runs::new(),
+            spare_objects: Vec::new(),
+            spare_arrays: Vec::new(),
         }
     }
 
@@ -283,14 +455,14 @@ impl CompressedJson {
     }
 
     fn string_at(&self, index: u32) -> Result<&str> {
-        Ok(defined(self.strings.get(index as usize))?)
+        defined(self.strings.get(index as usize))
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
     /// the reader produced them; keys are [`Value::InternedString`]s.
     pub fn get_object_for_value(&self, v: Value) -> Result<&[(Value, Value)]> {
         match v {
-            Value::Object(i) => Ok(defined(self.objects.get(i as usize))?),
+            Value::Object(i) => defined(self.objects.get(i as usize)),
             _ => panic("Trying to get index for value with invalid tag"),
         }
     }
@@ -298,7 +470,7 @@ impl CompressedJson {
     /// `getArrayForValue(v)`: the array's elements.
     pub fn get_array_for_value(&self, v: Value) -> Result<&[Value]> {
         match v {
-            Value::Array(i) => Ok(defined(self.arrays.get(i as usize))?),
+            Value::Array(i) => defined(self.arrays.get(i as usize)),
             _ => panic("Trying to get index for value with invalid tag"),
         }
     }
@@ -320,16 +492,10 @@ impl CompressedJson {
     /// never found again and gets a new index each time (harmless: strings
     /// are compared by content).
     fn intern_string(&mut self, s: &str) -> u32 {
-        if let Some(&index) = self.string_indexes.get(s) {
+        if let Some(index) = self.strings.find(s) {
             return index;
         }
-        let index = self.strings.len() as u32;
-        let s: Rc<str> = Rc::from(s);
-        if &*s != "__proto__" {
-            self.string_indexes.insert(Rc::clone(&s), index);
-        }
-        self.strings.push(s);
-        index
+        self.strings.push(s, s != "__proto__")
     }
 
     /// `makeString(s)`.
@@ -342,11 +508,7 @@ impl CompressedJson {
         self.ctx
             .as_ref()
             .and_then(|ctx| ctx.current_key)
-            .is_some_and(|key| {
-                self.strings
-                    .get(key as usize)
-                    .is_some_and(|k| &**k == "$ref")
-            })
+            .is_some_and(|key| self.strings.get(key as usize).is_some_and(|k| k == "$ref"))
     }
 
     /// `commitValue(value)`.
@@ -439,8 +601,9 @@ impl CompressedJson {
     /// `pushObjectContext()`: an object starts.
     pub fn push_object_context(&mut self) {
         self.push_context();
+        let buffer = self.spare_objects.pop().unwrap_or_default();
         if let Some(ctx) = &mut self.ctx {
-            ctx.current_object = Some(Vec::new());
+            ctx.current_object = Some(buffer);
         }
     }
 
@@ -457,16 +620,20 @@ impl CompressedJson {
             return panic("Object ended but not started");
         };
         self.pop_context()?;
-        let index = self.objects.len() as u32;
-        self.objects.push(object);
+        let (index, spare) = self.objects.push(object)?;
+        if let Some(mut spare) = spare.filter(|_| self.spare_objects.len() < SPARE_BUFFERS) {
+            spare.clear();
+            self.spare_objects.push(spare);
+        }
         self.commit_value(Value::Object(index))
     }
 
     /// `pushArrayContext()`: an array starts.
     pub fn push_array_context(&mut self) {
         self.push_context();
+        let buffer = self.spare_arrays.pop().unwrap_or_default();
         if let Some(ctx) = &mut self.ctx {
-            ctx.current_array = Some(Vec::new());
+            ctx.current_array = Some(buffer);
         }
     }
 
@@ -476,8 +643,11 @@ impl CompressedJson {
             return panic("Array ended but not started");
         };
         self.pop_context()?;
-        let index = self.arrays.len() as u32;
-        self.arrays.push(array);
+        let (index, spare) = self.arrays.push(array)?;
+        if let Some(mut spare) = spare.filter(|_| self.spare_arrays.len() < SPARE_BUFFERS) {
+            spare.clear();
+            self.spare_arrays.push(spare);
+        }
         self.commit_value(Value::Array(index))
     }
 
@@ -574,7 +744,7 @@ impl CompressedJson {
     /// with `roots` (sample values) encoded against it; the inverse of
     /// [`CompressedJson::from_tables`].
     pub fn to_tables(&self, roots: &[Value]) -> (CompressedJsonTables, Vec<i32>) {
-        let mut strings: Vec<String> = self.strings.iter().map(|s| s.to_string()).collect();
+        let mut strings: Vec<String> = self.strings.iter().map(str::to_owned).collect();
         let mut kind_indexes: HashMap<TypeKind, u32> = HashMap::default();
         let mut encode = |v: Value| {
             encode_value(v, |kind| {
@@ -586,7 +756,7 @@ impl CompressedJson {
         };
         let mut objects = Vec::new();
         let mut object_offsets = Vec::with_capacity(self.objects.len());
-        for object in &self.objects {
+        for object in self.objects.iter() {
             object_offsets.push(objects.len() as u32);
             for &(key, value) in object {
                 objects.push(encode(key));
@@ -595,7 +765,7 @@ impl CompressedJson {
         }
         let mut arrays = Vec::new();
         let mut array_offsets = Vec::with_capacity(self.arrays.len());
-        for array in &self.arrays {
+        for array in self.arrays.iter() {
             array_offsets.push(arrays.len() as u32);
             arrays.extend(array.iter().map(|&v| encode(v)));
         }
@@ -620,12 +790,9 @@ impl CompressedJson {
     ) -> Result<Self> {
         let mut cjson = CompressedJson::new(date_time_recognizer, handle_refs, None);
         for s in &tables.strings {
-            let s: Rc<str> = Rc::from(s.as_str());
-            if &*s != "__proto__" {
-                let index = cjson.strings.len() as u32;
-                cjson.string_indexes.entry(Rc::clone(&s)).or_insert(index);
-            }
-            cjson.strings.push(s);
+            // The first of equal strings is the one found.
+            let findable = s != "__proto__" && cjson.strings.find(s).is_none();
+            cjson.strings.push(s, findable);
         }
         let ranges = |offsets: &[u32], len: usize| -> Result<Vec<(usize, usize)>> {
             let mut ranges = Vec::with_capacity(offsets.len());
@@ -656,14 +823,14 @@ impl CompressedJson {
                 }
                 object.push((key, cjson.decode_value(pair[1], object_count, array_count)?));
             }
-            cjson.objects.push(object);
+            cjson.objects.push(object)?;
         }
         for (start, end) in array_ranges {
             let array = tables.arrays[start..end]
                 .iter()
                 .map(|&v| cjson.decode_value(v, object_count, array_count))
                 .collect::<Result<Vec<_>>>()?;
-            cjson.arrays.push(array);
+            cjson.arrays.push(array)?;
         }
         Ok(cjson)
     }
@@ -896,7 +1063,7 @@ mod tests {
         r.parse_string(r#"[{"a":"a","__proto__":1},{"a":2,"__proto__":3}]"#)
             .unwrap();
         // "a" once; "__proto__" every time, like the TypeScript.
-        let texts: Vec<&str> = r.strings.iter().map(|s| &**s).collect();
+        let texts: Vec<&str> = r.strings.iter().collect();
         assert_eq!(texts, ["a", "__proto__", "__proto__"]);
     }
 
@@ -919,6 +1086,37 @@ mod tests {
         assert_eq!(r.parse_string("1"), Ok(Value::Integer));
     }
 
+    /// Runs and strings spread over many blocks, including runs larger
+    /// than a block, read back as they were added.
+    #[test]
+    fn runs_and_strings_across_blocks() {
+        let mut runs: Runs<u32> = Runs::new();
+        let mut expected: Vec<Vec<u32>> = Vec::new();
+        for i in 0..20_000u32 {
+            let len = match i % 7 {
+                0 => 0,
+                3 => 97,
+                _ => (i % 13) as usize,
+            };
+            let len = if i == 10_000 { BLOCK + 3 } else { len };
+            let run: Vec<u32> = (0..len as u32).map(|j| i * 1000 + j).collect();
+            let (index, _) = runs.push(run.clone()).unwrap();
+            assert_eq!(index, i);
+            expected.push(run);
+        }
+        assert!(runs.blocks.len() > 3);
+        assert!(runs.iter().eq(expected.iter().map(Vec::as_slice)));
+
+        let mut r = cjson(None);
+        let texts: Vec<String> = (0..20_000).map(|i| format!("string number {i}")).collect();
+        let indexes: Vec<u32> = texts.iter().map(|t| r.intern_string(t)).collect();
+        assert!(r.strings.blocks.len() > 3);
+        for (text, &index) in texts.iter().zip(&indexes) {
+            assert_eq!(r.intern_string(text), index);
+            assert_eq!(r.string_at(index).unwrap(), text);
+        }
+    }
+
     #[test]
     fn tables_round_trip() {
         let mut r = cjson(Some(INT64_RANGE.clone()));
@@ -932,8 +1130,8 @@ mod tests {
         let imported =
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
                 .unwrap();
-        assert_eq!(imported.objects, r.objects);
-        assert_eq!(imported.arrays, r.arrays);
+        assert!(imported.objects.iter().eq(r.objects.iter()));
+        assert!(imported.arrays.iter().eq(r.arrays.iter()));
         let (objects, arrays) = imported.counts();
         let decoded: Vec<Value> = roots
             .iter()
