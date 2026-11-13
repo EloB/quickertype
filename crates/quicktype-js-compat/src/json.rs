@@ -486,6 +486,51 @@ pub fn depth(value: &JsonValue) -> usize {
     deepest
 }
 
+/// Whether `value` nests deeper than `limit`, as [`depth`] counts (1 for a
+/// scalar or an empty array or object, one more for each level of
+/// non-empty arrays and objects around it). Iterative; stops at the first
+/// value deeper than `limit`, and keeps no more than `limit` levels.
+pub fn depth_exceeds(value: &JsonValue, limit: usize) -> bool {
+    /// The values in a non-empty array or object still to be visited.
+    enum Children<'a> {
+        Array(std::slice::Iter<'a, JsonValue>),
+        Object(indexmap::map::Values<'a, String, JsonValue>),
+    }
+
+    // The non-empty arrays and objects from `value` down to the one being
+    // visited.
+    let mut path: Vec<Children<'_>> = Vec::new();
+    let mut next = Some(value);
+    loop {
+        if let Some(value) = next.take() {
+            // `value` is `path.len() + 1` deep.
+            if path.len() >= limit {
+                return true;
+            }
+            match value {
+                JsonValue::Array(items) if !items.is_empty() => {
+                    path.push(Children::Array(items.iter()));
+                }
+                JsonValue::Object(map) if !map.is_empty() => {
+                    path.push(Children::Object(map.values()));
+                }
+                _ => {}
+            }
+        }
+        let child = match path.last_mut() {
+            None => return false,
+            Some(Children::Array(items)) => items.next(),
+            Some(Children::Object(values)) => values.next(),
+        };
+        match child {
+            Some(child) => next = Some(child),
+            None => {
+                path.pop();
+            }
+        }
+    }
+}
+
 /// V8's `RangeError: Maximum call stack size exceeded`, where a JavaScript
 /// recursion this crate models iteratively would overflow Node's stack.
 /// (`quicktype_core` turns it into its `RangeError`.)
@@ -700,6 +745,36 @@ mod tests {
         assert_eq!(depth_of(r#"[1, {"a": [[]], "b": 2}, []]"#), 4);
         let n = 1_000_000;
         assert_eq!(depth_of(&format!("{}{}", "[".repeat(n), "]".repeat(n))), n);
+    }
+
+    #[test]
+    fn depth_exceeds_agrees_with_depth() {
+        for text in [
+            "1",
+            "[]",
+            "{}",
+            "[1]",
+            "[[]]",
+            r#"{"a": {}}"#,
+            r#"[1, {"a": [[]], "b": 2}, []]"#,
+            r#"[[[[1]]], [2], {"a": [{"b": [[[{}]]]}]}, 3]"#,
+            r#"[{}, [], [[], {"x": [null]}], "s"]"#,
+        ] {
+            let value = parse(text).unwrap();
+            let depth = depth(&value);
+            for limit in 0..depth + 2 {
+                assert_eq!(
+                    depth_exceeds(&value, limit),
+                    depth > limit,
+                    "{text} {limit}"
+                );
+            }
+        }
+        // A million levels, checked down to the limit only.
+        let n = 1_000_000;
+        let deep = parse(&format!("{}{}", r#"{"a":["#.repeat(n), "]}".repeat(n))).unwrap();
+        assert!(depth_exceeds(&deep, 5_987));
+        assert!(!depth_exceeds(&deep, 2 * n));
     }
 
     #[test]

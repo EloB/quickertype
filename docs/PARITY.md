@@ -403,7 +403,12 @@ the others name the fix they need.
   rewriting, whose depth the input decides, are limited like Node's. The
   GraphQL parser and schema model Node's stack as well (see "GraphQL
   input"). See "Very deeply nested JSON" and "Endless recursion over the
-  type graph".
+  type graph". Node's limits also move with the size of the process's
+  environment and command line, which share the main thread's stack with
+  V8's: `JSON.stringify` in `--graphql-introspect` writes one level less
+  for about every 170 bytes more environment. The GraphQL input's
+  `makeType` and `--graphql-introspect` limits were measured with a 3 KB
+  environment and short command lines.
 - **YAML flow nesting.** `saphyr-parser` counts flow nesting in a `u8`:
   more than 255 nested flow collections fail with `YAMLParseError:
   recursion limit exceeded at line 1, column 256` (for `[[[…`); `yaml`
@@ -439,9 +444,12 @@ the others name the fix they need.
     queries later, in graph rewriting (see "Endless recursion over the
     type graph"). `--graphql-introspect` writes the server's result with
     `JSON.stringify`, which overflows past 5,987 nested values (the result
-    or its `errors` counted from the top, Node 24); the port fails at the
-    same depth with the `RangeError` (a response nested a million levels
-    deep used to run the port out of memory).
+    or its `errors` counted from the top, Node 24). V8 checks its stack
+    on entering each non-empty array or object, so an innermost number,
+    `[]` or `{}` counts the same (measured with each, nested in arrays and
+    in objects); the port fails at the same depth with the `RangeError`
+    (a response nested a million levels deep used to run the port out of
+    memory).
   - Names in the introspection JSON that are not strings (a number or
     object as a type, field or enum value name) reach type names and enum
     cases as raw JavaScript values in TypeScript; the port converts them

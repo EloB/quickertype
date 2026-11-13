@@ -6,6 +6,7 @@
 //! `--graphql-schema` file.
 
 use indexmap::IndexMap;
+use quicktype_core::support::recursion::stack_overflow;
 use quicktype_core::{Io, JsErrorName, QuickTypeError, RequestInit};
 use quicktype_graphql_input::graphql::get_introspection_query;
 use quicktype_js_compat::json::{self, JsonValue, insert_js_property};
@@ -17,9 +18,16 @@ fn panic(message: String) -> QuickTypeError {
 }
 
 /// The deepest value `JSON.stringify` writes here before Node's stack
-/// overflows: the reference CLI (Node 24) writes a result nested 5,987
-/// values deep (counting the result itself) and throws `RangeError:
-/// Maximum call stack size exceeded` at 5,988.
+/// overflows, as [`json::depth`] counts. V8 checks its stack on entering
+/// each non-empty array or object, not for scalars and empty ones (which
+/// `json::depth` counts alike): the reference CLI (Node 24) writes the
+/// result, or its `errors`, with 5,986 of them nested (a depth of 5,987),
+/// and throws `RangeError: Maximum call stack size exceeded` at 5,987.
+/// Measured with arrays and with objects, around a number, `[]` and `{}`,
+/// in fresh processes, the same however the response arrives. Node's limit
+/// moves with the size of its environment and command line, which share
+/// the main thread's stack: about one level less for every 170 bytes more
+/// (measured with a 3 KB environment).
 const STRINGIFY_MAX_DEPTH: usize = 5_987;
 
 /// `JSON.stringify(value, null, gap)`, or V8's `RangeError` where it
@@ -27,11 +35,8 @@ const STRINGIFY_MAX_DEPTH: usize = 5_987;
 /// million levels deep took the indented text, quadratic in the depth,
 /// all the memory there was.)
 fn stringify(value: &JsonValue, gap: Option<&str>) -> Result<String, QuickTypeError> {
-    if json::depth(value) > STRINGIFY_MAX_DEPTH {
-        return Err(QuickTypeError::js_exception(
-            JsErrorName::RangeError,
-            "Maximum call stack size exceeded",
-        ));
+    if json::depth_exceeds(value, STRINGIFY_MAX_DEPTH) {
+        return Err(stack_overflow());
     }
     Ok(json::stringify(value, gap))
 }
@@ -235,8 +240,10 @@ mod tests {
     }
 
     /// Where Node's `JSON.stringify` overflows its stack, with the result
-    /// or its errors (a million levels used to run out of memory). On a
-    /// thread with the CLI's stack: writing 5,987 levels recurses.
+    /// or its errors (a million levels used to run out of memory), whatever
+    /// the innermost value: V8 checks its stack in non-empty arrays and
+    /// objects only. On a thread with the CLI's stack: writing 5,987 levels
+    /// recurses.
     #[test]
     fn deep_results_overflow_like_node() {
         std::thread::Builder::new()
@@ -259,26 +266,41 @@ mod tests {
             .map(|text| text.len())
             .map_err(|e| e.to_string())
         };
-        let nested =
-            |key: &str, n: usize| format!(r#"{{"{key}":{}1{}}}"#, "[".repeat(n), "]".repeat(n));
-        // 5,987 levels: the result, 5,985 arrays and the number in them.
-        assert!(introspect(nested("data", 5_985)).is_ok());
-        // Only the errors are written: 5,986 arrays and the number.
-        assert!(
-            introspect(nested("errors", 5_986))
-                .unwrap_err()
-                .starts_with("Internal error: Errors in introspection query result: [[")
-        );
-        for response in [
-            nested("data", 5_986),
-            nested("errors", 5_987),
-            nested("data", 1_000_000),
-        ] {
-            assert_eq!(
-                introspect(response),
-                Err("Maximum call stack size exceeded".to_owned())
-            );
+        let overflow = Err("Maximum call stack size exceeded".to_owned());
+        // `{"key": [[…leaf…]]}` with `n` arrays, or with `n` objects
+        // `{"k": …}`.
+        let nested = |key: &str, n: usize, leaf: &str, objects: bool| {
+            let (open, close) = if objects {
+                (r#"{"k":"#, "}")
+            } else {
+                ("[", "]")
+            };
+            format!(r#"{{"{key}":{}{leaf}{}}}"#, open.repeat(n), close.repeat(n))
+        };
+        for leaf in ["1", "[]", "{}"] {
+            for objects in [false, true] {
+                // The result and 5,985 arrays: 5,986 checked.
+                assert!(introspect(nested("data", 5_985, leaf, objects)).is_ok());
+                assert_eq!(introspect(nested("data", 5_986, leaf, objects)), overflow);
+                // Only the errors are written.
+                assert!(
+                    introspect(nested("errors", 5_986, leaf, objects))
+                        .unwrap_err()
+                        .starts_with("Internal error: Errors in introspection query result: ")
+                );
+                assert_eq!(introspect(nested("errors", 5_987, leaf, objects)), overflow);
+            }
         }
+        // Without data, the whole result is written into the error.
+        let no_data =
+            |n: usize| format!(r#"{{"data":null,"x":{}1{}}}"#, "[".repeat(n), "]".repeat(n));
+        assert!(
+            introspect(no_data(5_985))
+                .unwrap_err()
+                .starts_with("Internal error: No introspection query result data found")
+        );
+        assert_eq!(introspect(no_data(5_986)), overflow);
+        assert_eq!(introspect(nested("data", 1_000_000, "1", false)), overflow);
     }
 
     #[test]
