@@ -150,20 +150,44 @@ impl StringTypes {
     /// `applyStringTypeMapping(mapping)`: unrestricted if any transformation
     /// maps to `string`.
     pub fn apply_string_type_mapping(&self, mapping: &StringTypeMapping) -> StringTypes {
-        if !self.is_restricted() {
-            return self.clone();
-        }
-        let mut kinds = IndexSet::new();
-        for &kind in &self.transformations {
-            let mapped = mapping.get(kind);
-            if mapped == TypeKind::String {
-                return StringTypes::unrestricted();
-            }
-            kinds.insert(mapped);
-        }
         StringTypes {
-            cases: self.cases.clone(),
-            transformations: kinds,
+            cases: self.mapped_cases(mapping).cloned(),
+            transformations: self.mapped_transformations(mapping),
+        }
+    }
+
+    /// Whether the mapping makes restricted string types unrestricted (a
+    /// transformation maps to `string`).
+    fn mapping_unrestricts(&self, mapping: &StringTypeMapping) -> bool {
+        self.is_restricted()
+            && self
+                .transformations
+                .iter()
+                .any(|&kind| mapping.get(kind) == TypeKind::String)
+    }
+
+    /// The `cases` of [`apply_string_type_mapping`](Self::apply_string_type_mapping),
+    /// without copying them.
+    pub fn mapped_cases(&self, mapping: &StringTypeMapping) -> Option<&IndexMap<String, u64>> {
+        if self.mapping_unrestricts(mapping) {
+            None
+        } else {
+            self.cases.as_ref()
+        }
+    }
+
+    /// The `transformations` of
+    /// [`apply_string_type_mapping`](Self::apply_string_type_mapping).
+    pub fn mapped_transformations(&self, mapping: &StringTypeMapping) -> IndexSet<TypeKind> {
+        if !self.is_restricted() {
+            self.transformations.clone()
+        } else if self.mapping_unrestricts(mapping) {
+            IndexSet::new()
+        } else {
+            self.transformations
+                .iter()
+                .map(|&kind| mapping.get(kind))
+                .collect()
         }
     }
 }

@@ -16,7 +16,6 @@ use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeKind, TypeAttributes};
 use crate::graph_rewriting::make_replacer;
 use crate::messages::Result;
-use crate::support::collection_utils::{JsEquals, set_intersect};
 use crate::support::support::{assert, assert_default, defined};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -65,7 +64,11 @@ fn enum_cases_overlap(
     } else {
         new_cases.len().min(existing_cases.len())
     };
-    let overlap = set_intersect(new_cases, existing_cases).len();
+    // `setIntersect(newCases, existingCases).size`, without building it.
+    let overlap = new_cases
+        .iter()
+        .filter(|case| existing_cases.contains(*case))
+        .count();
     overlap as f64 >= smaller as f64 * REQUIRED_OVERLAP
 }
 
@@ -94,8 +97,7 @@ fn make_enum_info(
     t: TypeRef,
 ) -> Result<Option<EnumInfo>> {
     let string_types = string_types_for_type(graph, t)?;
-    let mapped_string_types = string_types.apply_string_type_mapping(string_type_mapping);
-    let Some(cases) = &mapped_string_types.cases else {
+    let Some(cases) = string_types.mapped_cases(string_type_mapping) else {
         return Ok(None);
     };
     if cases.is_empty() {
@@ -206,9 +208,8 @@ fn replace_string(
     let attributes = graph
         .attributes(t)?
         .filter(|a| a.kind() != TypeAttributeKind::StringTypes);
-    let mapped_string_types = string_types.apply_string_type_mapping(string_type_mapping);
-
-    let Some(cases) = &mapped_string_types.cases else {
+    // `applyStringTypeMapping`, without copying the cases.
+    let Some(cases) = string_types.mapped_cases(string_type_mapping) else {
         return builder.get_string_type(
             attributes,
             Some(StringTypes::unrestricted()),
@@ -216,21 +217,23 @@ fn replace_string(
         );
     };
 
-    let set_matches = |s: &IndexSet<String>, keys: &IndexSet<String>| -> bool {
+    // The case set (`new Set(cases.keys())`) is `cases`' keys; it is used
+    // through them instead of being copied.
+    let set_matches = |s: &IndexSet<String>| -> bool {
         if inference == EnumInference::All {
-            s.js_equals(keys)
+            // `setEquals`.
+            s.len() == cases.len() && s.iter().all(|x| cases.contains_key(x))
         } else {
-            keys.iter().all(|k| s.contains(k))
+            cases.keys().all(|k| s.contains(k))
         }
     };
 
     let mut types: Vec<TypeRef> = Vec::new();
     if !cases.is_empty() {
-        let keys: IndexSet<String> = cases.keys().cloned().collect();
-        let full_cases = enum_sets.iter().find(|s| set_matches(s, &keys));
+        let full_cases = enum_sets.iter().find(|s| set_matches(s));
         match full_cases {
             Some(full_cases)
-                if inference != EnumInference::None && !is_always_empty_string(keys.iter()) =>
+                if inference != EnumInference::None && !is_always_empty_string(cases.keys()) =>
             {
                 types.push(builder.get_enum_type(
                     TypeAttributes::new(),
@@ -248,7 +251,7 @@ fn replace_string(
         }
     }
 
-    let transformations = &mapped_string_types.transformations;
+    let transformations = &string_types.mapped_transformations(string_type_mapping);
     // FIXME (TypeScript): probably wrong, or at least overly conservative;
     // this is for identity attributes (like URI attributes) that would keep
     // two string types apart.
