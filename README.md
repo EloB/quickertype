@@ -15,8 +15,12 @@ Exactness isn't a slogan here; it's tested. Every one of the 11,177 cases in
 every generated file (and, for the `cli-*` cases, stdout, stderr and the exit
 code) byte for byte.
 
-> Status: scaffolding. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan and
-> `tests/parity-baseline.txt` for the cases that pass today.
+> Status: all 11,177 recorded cases match the TypeScript quicktype byte for
+> byte: every output language, JSON, JSON Schema, GraphQL, Postman and
+> TypeScript input, and the CLI's help, errors and exit codes. Known
+> divergences that no case exercises are listed in
+> [docs/PARITY.md](docs/PARITY.md#known-gaps); what is left to do is in
+> [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 
@@ -27,9 +31,11 @@ crates/
   quicktype-graphql-input/     GraphQL input (port of packages/quicktype-graphql-input)
   quicktype-typescript-input/  TypeScript input via the TypeScript 7 native checker
                                (port of packages/quicktype-typescript-input + typescript-json-schema)
+  quicktype-js-compat/         JavaScript runtime semantics the output depends on (number
+                               formatting, UTF-16 strings, sorting, JSON, pluralize, ...)
   quicktype-wasm/              WebAssembly bindings for the JS API
 npm/                           JS packages wrapping quicktype-wasm (same API as npm quicktype-core)
-xtask/                         dev tasks: parity runner, golden recorder
+xtask/                         dev tasks: parity runner, side-by-side diff, golden recorder
 tests/
   inputs/                      quicktype's test inputs, copied verbatim
   golden/                      recorded reference runs (args + expected files)
