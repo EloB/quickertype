@@ -69,9 +69,8 @@ impl GlobalOption {
     ///
     /// The `--no-*` inference switches are `no` + the inference flag name
     /// without `infer`, dashed; their description is the flag's
-    /// `negationDescription` plus a period.
-    // TODO(core): take the inference flags from quicktype_core::inference
-    // once Inference.ts is ported.
+    /// `negationDescription` plus a period (checked against
+    /// `quicktype_core::INFERENCE_FLAGS` in the tests).
     fn definition(self) -> OptionDefinition {
         use OptionType::{Boolean, String};
         let cli = |name, option_type, description| {
@@ -631,6 +630,53 @@ mod tests {
             parse(&["--graphql-schema", "s", "q"]).unwrap().src_lang,
             "graphql"
         );
+    }
+
+    /// Port of `test/unit/cli-options.test.ts`: "reports a duplicate
+    /// output option as a user input error".
+    #[test]
+    fn reports_a_duplicate_output_option_as_a_user_input_error() {
+        let message = parse(&["-o", "list.go", "-o", "list.ts"]).unwrap_err();
+        assert!(
+            message.starts_with("Option parsing failed: ")
+                && message.contains("Singular option already set"),
+            "{message}"
+        );
+        assert!(!message.contains("Internal error"));
+    }
+
+    /// Port of `test/unit/cli-options.test.ts`: "%s accepts --just-schema".
+    #[test]
+    fn zod_and_effect_schema_accept_just_schema() {
+        for lang in ["typescript-zod", "typescript-effect-schema"] {
+            let options = parse(&["--lang", lang, "--just-schema"]).unwrap();
+            assert_eq!(
+                options.renderer_options.get("just-schema"),
+                Some(&OptionValue::Bool(true)),
+                "{lang}"
+            );
+        }
+    }
+
+    /// The `--no-*` switches are the inference flags, negated.
+    #[test]
+    fn inference_switches_match_the_inference_flags() {
+        let switches = [
+            GlobalOption::NoMaps,
+            GlobalOption::NoEnums,
+            GlobalOption::NoUuids,
+            GlobalOption::NoDateTimes,
+            GlobalOption::NoIntegerStrings,
+            GlobalOption::NoBooleanStrings,
+            GlobalOption::NoCombineClasses,
+            GlobalOption::NoIgnoreJsonRefs,
+        ];
+        for (switch, flag) in switches.iter().zip(&quicktype_core::INFERENCE_FLAGS) {
+            assert_eq!(
+                switch.definition().description,
+                format!("{}.", flag.negation_description)
+            );
+        }
     }
 
     #[test]
