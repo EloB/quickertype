@@ -20,7 +20,7 @@
 
 use std::fmt;
 
-use quicktype_core::renderer_options::{OptionDefinition, OptionType, OptionValue};
+use quicktype_core::{OptionDefinition, OptionType, OptionValue};
 
 use crate::js;
 
@@ -460,7 +460,7 @@ pub fn parse(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quicktype_core::renderer_options::OptionKind;
+    use quicktype_core::OptionKind;
 
     fn defs() -> Vec<OptionDefinition> {
         vec![

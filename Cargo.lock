@@ -58,8 +58,11 @@ dependencies = [
 name = "quicktype-cli"
 version = "24.0.0"
 dependencies = [
+ "indexmap",
  "quicktype-core",
  "quicktype-graphql-input",
+ "quicktype-js-compat",
+ "quicktype-typescript-input",
 ]
 
 [[package]]

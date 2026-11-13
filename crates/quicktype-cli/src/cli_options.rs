@@ -4,15 +4,14 @@
 //! `parseCLIOptions`, `parseOptions`, `inferCLIOptions`, `inferLang`,
 //! `inferTopLevel`).
 
-use quicktype_core::language::all::{default_target_languages, language_named};
-use quicktype_core::renderer_options::{
-    OptionDefinition, OptionKind, OptionType, OptionValue, RendererOptions,
+use quicktype_core::{
+    ErrorKind, OptionDefinition, OptionKind, OptionType, OptionValue, RendererOptions,
+    TargetLanguage, default_target_languages, language_named,
 };
-use quicktype_core::target_language::TargetLanguage;
 
 use crate::command_line_args::{self, ArgValue};
 use crate::js;
-use crate::messages::DriverError;
+use crate::messages::{CliError, message_error};
 
 /// `defaultDefaultTargetLanguageName`.
 const DEFAULT_TARGET_LANGUAGE_NAME: &str = "go";
@@ -355,19 +354,22 @@ fn parse_options(
     renderer: &[OptionDefinition],
     argv: &[String],
     partial: bool,
-) -> Result<PartialCliOptions, DriverError> {
+) -> Result<PartialCliOptions, CliError> {
     let mut definitions: Vec<OptionDefinition> = globals.iter().map(|o| o.definition()).collect();
     definitions.extend_from_slice(renderer);
-    let parsed = command_line_args::parse(&definitions, argv, partial).map_err(|e| {
-        DriverError::CliOptionParsingFailed {
-            message: e.to_string(),
-        }
-    })?;
+    let parsing_failed = |message: String| {
+        message_error(
+            ErrorKind::DriverCLIOptionParsingFailed,
+            vec![("message", message.into())],
+        )
+    };
+    let parsed = command_line_args::parse(&definitions, argv, partial)
+        .map_err(|e| parsing_failed(e.to_string()))?;
 
     if let Some((name, _)) = parsed.values.iter().find(|(_, v)| *v == ArgValue::Null) {
-        return Err(DriverError::CliOptionParsingFailed {
-            message: format!("Missing value for command line option \"{name}\""),
-        });
+        return Err(parsing_failed(format!(
+            "Missing value for command line option \"{name}\""
+        )));
     }
 
     let mut options = PartialCliOptions::default();
@@ -391,12 +393,15 @@ fn parse_options(
 }
 
 /// TS `inferLang`: the `--out` extension without the dot, or the default.
-fn infer_lang(options: &PartialCliOptions, default_language: &str) -> Result<String, DriverError> {
+fn infer_lang(options: &PartialCliOptions, default_language: &str) -> Result<String, CliError> {
     match &options.out {
         Some(out) => {
             let extension = js::extname(out);
             if extension.is_empty() {
-                return Err(DriverError::NoLanguageOrExtension);
+                return Err(message_error(
+                    ErrorKind::DriverNoLanguageOrExtension,
+                    vec![],
+                ));
             }
             Ok(extension[1..].to_owned())
         }
@@ -427,10 +432,13 @@ fn infer_top_level(options: &PartialCliOptions) -> String {
 fn infer_cli_options(
     options: PartialCliOptions,
     target_language: Option<&'static dyn TargetLanguage>,
-) -> Result<CliOptions, DriverError> {
+) -> Result<CliOptions, CliError> {
     let src_lang = if options.graphql_schema.is_some() || options.graphql_introspect.is_some() {
         if options.src_lang.as_deref().is_some_and(|l| l != "graphql") {
-            return Err(DriverError::SourceLangMustBeGraphQL);
+            return Err(message_error(
+                ErrorKind::DriverSourceLangMustBeGraphQL,
+                vec![],
+            ));
         }
         "graphql".to_owned()
     } else if options
@@ -441,7 +449,7 @@ fn infer_cli_options(
         "typescript".to_owned()
     } else {
         if options.src_lang.as_deref() == Some("graphql") {
-            return Err(DriverError::GraphQLSchemaNeeded);
+            return Err(message_error(ErrorKind::DriverGraphQLSchemaNeeded, vec![]));
         }
         options
             .src_lang
@@ -456,8 +464,15 @@ fn infer_cli_options(
                 Some(lang) => lang.clone(),
                 None => infer_lang(&options, DEFAULT_TARGET_LANGUAGE_NAME)?,
             };
-            language_named(&name, default_target_languages())
-                .ok_or(DriverError::UnknownOutputLanguage { lang: name })?
+            match language_named(&name, default_target_languages()) {
+                Some(language) => language,
+                None => {
+                    return Err(message_error(
+                        ErrorKind::DriverUnknownOutputLanguage,
+                        vec![("lang", name.into())],
+                    ));
+                }
+            }
         }
     };
 
@@ -495,7 +510,7 @@ fn infer_cli_options(
 /// parsed twice: leniently with the global options to find the target
 /// language, then strictly with the global options plus that language's
 /// renderer options.
-pub fn parse_cli_options(argv: &[String]) -> Result<CliOptions, DriverError> {
+pub fn parse_cli_options(argv: &[String]) -> Result<CliOptions, CliError> {
     if argv.is_empty() {
         let options = PartialCliOptions {
             help: Some(true),
