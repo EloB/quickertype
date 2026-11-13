@@ -14,6 +14,11 @@ closes most of the rest: it matches TS 5 on 610 of 616 order-sensitive unions an
 for every input cannot be guaranteed: that would require replaying TS 5's checker. Parity on realistic inputs is very
 likely.
 
+**Implemented** in `crates/quicktype-typescript-input` (§10), following §7. The refined creation-order replay
+closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on all 452 cases
+of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation).
+§10 lists what is still known to diverge.
+
 ## 1. The reference pipeline
 
 * **CLI** (`src/index.ts`): if every `--src` ends in `.ts`, `srcLang` becomes `typescript`. This overrides
@@ -347,6 +352,56 @@ crates/quicktype-typescript-input/
 | recording (`json-ts` in record.sh; `record-ts` + `copy` support in xtask parity) | 2 |
 | packaging (npm optional dep, CI with pinned tsc) | 1-2 |
 | **total** | **19-22** |
+
+## 10. Implementation (`crates/quicktype-typescript-input`)
+
+| module | port of |
+|---|---|
+| `tsc/locate` | `lib/getExePath.js`, plus `$QUICKTYPE_TSC` and `PATH` (§8); exact `Version 7.0.2` check |
+| `tsc/channel` | `api/syncChannel.js`: framing, `readFile`/`fileExists` callbacks (in-memory tsconfig), stderr drain, kill on drop |
+| `tsc/api` | `api/sync/api.js`: typed requests, symbol/type caches by handle, lazy `{objectId}` getters, batch endpoints |
+| `tsc/ast` | `api/node/*.js`: binary AST v5, WTF-8 strings, UTF-16 positions, `getText`, `operator`, modifiers |
+| `tsc/generated` | enums and `childProperties` of typescript@7.0.2 (`xtask/typescript-input/gen-tables.mjs`) |
+| `tjs` | `JsonSchemaGenerator` of typescript-json-schema 0.67.4, quicktype's `getTypeDefinition` patch |
+| `tjs/comments` | `parseCommentsIntoDefinition`; TS 5.9 `getDocumentationComment` display parts (`buildLinkParts`) |
+| `tjs/order` | TS 5.9 union member order (creation replay) and inherited property order |
+| `tjs/initializer` | the `vm2` evaluation of class initializers, as a constant-expression evaluator |
+| `js` | JavaScript objects (shared references, own-property order, `__proto__`), `JSON.parse`, `parseFloat` |
+| `lib` | `schemaForTypeScriptSources`: options, TS6053/TS6059 texts, diagnostics order and flattening, post-processing |
+
+**Union order, refined.** The replay follows TS 5.9's eager pre-emit check (`checkSourceFileWithEagerDiagnostics`
+runs lazy diagnostics immediately): an interface's declared type is created at its declaration, then its base types,
+then, when it has an index signature, `checkIndexConstraints` resolves the index signature types and every property
+type before the members are checked. `checkSourceElement` on a type reference checks its type arguments before
+resolving it; on an array type it only checks the element; unions, tuples and type literals resolve after their
+children. `getTypeFromTypeNode` resolves aliases on first use and defers the arguments of array, tuple and generic
+references inside type aliases (`isDeferredTypeReferenceNode`). Types the library check creates first (non-generic
+library types such as `Date`, and measured instantiations such as `string[]`) rank before user types.
+
+**Testing.** `tests/differential.rs` runs every case of `tests/corpus` through the port and compares schema string,
+name, uris and stderr lines with `expected.json`, recorded from the reference by `xtask/typescript-input/record.mjs`
+(one Node process per case). It finds tsc like the CLI, or in a sibling `quicktype` checkout's `node_modules`, and is
+skipped with a message otherwise. A whole case takes 0.2–0.4 s in a release build, including the compiler start and
+the full semantic check, against about 3 s for the reference CLI.
+
+**Known divergences** (none occurs in the corpus):
+
+* Union order is a replay, not the checker: classes' eager checks (property initializers, implements clauses),
+  property types resolved by base-type assignability checks for `extends`, types first created inside function or
+  variable declarations, and library instantiations missing from the measured list can still order differently.
+  Order-insensitive languages are unaffected.
+* Names of generic instantiations with union arguments use TS 7's member order (`Box<A | B>`).
+* A file outside the working directory that is *imported* (not a root file) gets TS 7's TS6059 text, with absolute
+  paths.
+* JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt), and tags may be
+  inherited from base declarations where TS 5.9's checker-less `symbol.getJsDocTags()` did not inherit them.
+* JSDoc values that `require()` a module, and the `T[K]` index-signature branch that reads checker internals, are not
+  supported. Initializers outside the constant subset are reported as `exception evaluating initializer`.
+* The libraries are TS 7's `lib.*.d.ts`: a script (non-module) input that merges with a DOM global can see
+  different members or diagnostics.
+* Lone surrogates in TypeScript source text become U+FFFD.
+* No TypeScript 7.0.2 compiler: `Error::TscNotFound` (the deliberate divergence of §8).
+* Windows (`--pipe`) is untested; the client uses stdio on every platform.
 
 ## Appendix A — Rust prototype (`ts7-spike/rust/src/main.rs`)
 
