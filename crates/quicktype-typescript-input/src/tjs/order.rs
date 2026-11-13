@@ -86,6 +86,7 @@ struct Replay<'a> {
     types: HashMap<(usize, usize), u64>,
     alias_decls: HashMap<(usize, usize), Option<Node>>,
     may_alias: HashMap<(usize, usize), bool>,
+    lib_refs: HashSet<(usize, usize)>,
     resolved: HashSet<(usize, usize)>,
     resolved_aliases: HashSet<(usize, usize)>,
     order: &'a mut CreationOrder,
@@ -253,7 +254,11 @@ impl Replay<'_> {
                         self.resolve(&a);
                     }
                 }
-                self.create(n);
+                // A non-generic library type (`Date`) exists since the
+                // library check.
+                if !self.lib_refs.contains(&key(n)) {
+                    self.create(n);
+                }
             }
             sk::ArrayType => {
                 if !self.deferred(n) {
@@ -419,6 +424,7 @@ impl CreationOrder {
             .collect();
         let mut alias_decls = HashMap::new();
         let mut may_alias = HashMap::new();
+        let mut lib_refs = HashSet::new();
         for (r, sym) in refs.iter().zip(s.symbols_at(&names)?) {
             let mut sym = sym;
             if let Some(a) = sym.as_ref().filter(|a| a.flags & sf::Alias != 0) {
@@ -428,7 +434,11 @@ impl CreationOrder {
             may_alias.insert(key(r), sym.flags & sf::TypeAlias != 0);
             let mut decl = None;
             if let Some(h) = sym.declarations.first() {
-                if !s.is_default_library(&h.path)? {
+                if s.is_default_library(&h.path)? {
+                    if r.named_list("typeArguments").is_empty() {
+                        lib_refs.insert(key(r));
+                    }
+                } else {
                     let d = s.resolve(h)?;
                     if d.kind() == sk::TypeAliasDeclaration {
                         decl = Some(d);
@@ -441,6 +451,7 @@ impl CreationOrder {
             types,
             alias_decls,
             may_alias,
+            lib_refs,
             resolved: HashSet::new(),
             resolved_aliases: HashSet::new(),
             order: &mut order,

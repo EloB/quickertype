@@ -11,7 +11,8 @@
 //! quicktype's `json-ts-csharp` fixture feeds back in; `unit-*` come from
 //! quicktype's `test/unit/typescript-input.test.ts`; `feature-*` and
 //! `error-*` are hand-written cases for typescript-json-schema features and
-//! compiler errors.
+//! compiler errors; `order-*` exercise the TypeScript 5.9 union-order
+//! emulation (`tjs::order`).
 //!
 //! Needs the TypeScript 7.0.2 compiler: `$QUICKTYPE_TSC`, the usual lookup
 //! from this crate's directory, or `node_modules` of a sibling `quicktype`
