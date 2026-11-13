@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"W\":{\"$ref\":\"#/definitions/W%3CT%3E\"},\"H\":{\"title\":\"H\",\"type\":\"object\",\"properties\":{\"w\":{\"$ref\":\"#/definitions/W%3Cstring%7Cundefined%3E\",\"title\":\"w\"}},\"additionalProperties\":false,\"propertyOrder\":[\"w\"],\"required\":[\"w\"],\"quicktypePropertyOrder\":[\"w\"]},\"W<T>\":{\"title\":\"W<T>\",\"type\":\"object\",\"properties\":{\"x\":{\"$ref\":\"#/definitions/T\",\"title\":\"x\"},\"y\":{\"type\":\"string\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]},\"W<string|undefined>\":{\"title\":\"W<string|undefined>\",\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"string\",\"title\":\"x\"},\"y\":{\"type\":\"string\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

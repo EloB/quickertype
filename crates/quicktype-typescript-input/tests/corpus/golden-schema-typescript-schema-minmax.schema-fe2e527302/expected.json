@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"free\":{\"type\":\"number\",\"title\":\"free\"},\"intersection\":{\"type\":\"number\",\"title\":\"intersection\"},\"max\":{\"type\":\"number\",\"title\":\"max\"},\"min\":{\"type\":\"number\",\"title\":\"min\"},\"minmax\":{\"type\":\"number\",\"title\":\"minmax\"},\"minMaxIntersection\":{\"type\":\"number\",\"title\":\"minMaxIntersection\"},\"minMaxUnion\":{\"type\":\"number\",\"title\":\"minMaxUnion\"},\"union\":{\"type\":\"number\",\"title\":\"union\"}},\"propertyOrder\":[\"free\",\"intersection\",\"max\",\"min\",\"minmax\",\"minMaxIntersection\",\"minMaxUnion\",\"union\"],\"required\":[\"free\",\"intersection\",\"max\",\"min\",\"minMaxIntersection\",\"minMaxUnion\",\"minmax\",\"union\"],\"quicktypePropertyOrder\":[\"free\",\"intersection\",\"max\",\"min\",\"minmax\",\"minMaxIntersection\",\"minMaxUnion\",\"union\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

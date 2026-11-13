@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"string\",\"title\":\"a\"},\"shared\":{\"type\":\"number\",\"title\":\"shared\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"shared\"],\"required\":[\"a\",\"shared\"],\"quicktypePropertyOrder\":[\"a\",\"shared\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"b\":{\"type\":\"boolean\",\"title\":\"b\"},\"shared\":{\"type\":\"number\",\"const\":1,\"title\":\"shared\"},\"a\":{\"type\":\"string\",\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\",\"shared\",\"a\"],\"required\":[\"a\",\"b\",\"shared\"],\"quicktypePropertyOrder\":[\"b\",\"shared\",\"a\"]},\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"c\":{\"type\":\"string\",\"title\":\"c\"},\"b\":{\"type\":\"boolean\",\"title\":\"b\"},\"shared\":{\"type\":\"number\",\"const\":1,\"title\":\"shared\"},\"a\":{\"type\":\"string\",\"title\":\"a\"},\"d\":{\"type\":\"number\",\"title\":\"d\"}},\"additionalProperties\":false,\"propertyOrder\":[\"c\",\"b\",\"shared\",\"a\",\"d\"],\"required\":[\"a\",\"b\",\"c\",\"d\",\"shared\"],\"quicktypePropertyOrder\":[\"c\",\"b\",\"shared\",\"a\",\"d\"]},\"D\":{\"title\":\"D\",\"type\":\"object\",\"properties\":{\"d\":{\"type\":\"number\",\"title\":\"d\"}},\"additionalProperties\":false,\"propertyOrder\":[\"d\"],\"required\":[\"d\"],\"quicktypePropertyOrder\":[\"d\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

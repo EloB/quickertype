@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Person\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"name\"],\"required\":[\"name\"],\"quicktypePropertyOrder\":[\"name\"]},\"MemberInfo\":{\"$ref\":\"#/definitions/Required%3CPerson%3E\"},\"Required<Person>\":{\"title\":\"Required<Person>\",\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"name\"],\"required\":[\"name\"],\"quicktypePropertyOrder\":[\"name\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,19 @@
+# rewriteFixedPoint rewrites the original graph twice when the size
+# changes. Here each rewrite deduplicates two classes with 600 names each,
+# so both draw a random name (TooManyTypeNames) from the global generator;
+# the second draw is wasted but shifts the name CombineClasses draws next.
+builder
+prim i integer
+str s unrestricted
+ucls a open x:i many=a:600
+ucls b open x:i many=b:600
+ucls c open p:i,q:i,r:i,s1:s many=c:600
+ucls d open p:i,q:i,r:i,s2:s many=d:600
+cls top a:a,b:b,c:c,d:d n=Top
+top Top top
+finish
+fixedpoint
+print
+combine conflate
+gc
+print

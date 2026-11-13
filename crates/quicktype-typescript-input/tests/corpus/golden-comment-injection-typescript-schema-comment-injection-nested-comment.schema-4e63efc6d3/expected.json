@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"description\":\"Nested block comment openers:\\n{-\\n/ *\\nThis text must remain inside the generated documentation comment.\",\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"value\":{\"description\":\"Nested property block comment openers:\\n{-\\n/ *\\nThis text must remain inside the generated property documentation comment.\",\"type\":\"string\",\"title\":\"value\"}},\"additionalProperties\":false,\"propertyOrder\":[\"value\"],\"required\":[\"value\"],\"quicktypePropertyOrder\":[\"value\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

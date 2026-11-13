@@ -1,0 +1,7 @@
+# A restricted string without cases or transformed kinds is an error.
+builder
+str nocases cases= n=NoCases
+cls top x:nocases n=Top
+top Top top
+finish
+expand all

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"cookies\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Cookie\"},\"title\":\"cookies\"}},\"propertyOrder\":[\"cookies\"],\"required\":[\"cookies\"],\"quicktypePropertyOrder\":[\"cookies\"]},\"Cookie\":{\"title\":\"Cookie\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"name\":{\"type\":\"string\",\"title\":\"name\"},\"value\":{\"type\":\"string\",\"title\":\"value\"}},\"propertyOrder\":[\"name\",\"value\"],\"required\":[\"name\",\"value\"],\"quicktypePropertyOrder\":[\"name\",\"value\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

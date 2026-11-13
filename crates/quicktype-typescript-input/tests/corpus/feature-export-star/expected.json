@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Hidden\":{\"title\":\"Hidden\",\"type\":\"object\",\"properties\":{\"h\":{\"type\":\"string\",\"title\":\"h\"}},\"additionalProperties\":false,\"propertyOrder\":[\"h\"],\"required\":[\"h\"],\"quicktypePropertyOrder\":[\"h\"]},\"Visible\":{\"title\":\"Visible\",\"type\":\"object\",\"properties\":{\"v\":{\"$ref\":\"#/definitions/Hidden\",\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"v\"],\"required\":[\"v\"],\"quicktypePropertyOrder\":[\"v\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

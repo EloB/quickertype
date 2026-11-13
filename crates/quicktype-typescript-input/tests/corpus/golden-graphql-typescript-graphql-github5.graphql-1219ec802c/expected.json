@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"data\":{\"anyOf\":[{\"$ref\":\"#/definitions/Data\"},{\"type\":\"null\"}],\"title\":\"data\"},\"errors\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Error\"},\"title\":\"errors\"}},\"additionalProperties\":false,\"propertyOrder\":[\"data\",\"errors\"],\"required\":[\"data\"],\"quicktypePropertyOrder\":[\"data\",\"errors\"]},\"Data\":{\"title\":\"Data\",\"type\":\"object\",\"properties\":{\"viewer\":{\"$ref\":\"#/definitions/User\",\"title\":\"viewer\"}},\"additionalProperties\":false,\"propertyOrder\":[\"viewer\"],\"required\":[\"viewer\"],\"quicktypePropertyOrder\":[\"viewer\"]},\"User\":{\"title\":\"User\",\"type\":\"object\",\"properties\":{\"login\":{\"type\":\"string\",\"title\":\"login\"},\"name\":{\"type\":[\"null\",\"string\"],\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"login\",\"name\"],\"required\":[\"login\"],\"quicktypePropertyOrder\":[\"login\",\"name\"]},\"Error\":{\"title\":\"Error\",\"type\":\"object\",\"properties\":{\"message\":{\"type\":\"string\",\"title\":\"message\"}},\"additionalProperties\":false,\"propertyOrder\":[\"message\"],\"required\":[\"message\"],\"quicktypePropertyOrder\":[\"message\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"greeting\":{\"type\":\"string\",\"title\":\"greeting\"},\"instructions\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"instructions\"}},\"additionalProperties\":false,\"propertyOrder\":[\"greeting\",\"instructions\"],\"required\":[\"greeting\",\"instructions\"],\"quicktypePropertyOrder\":[\"greeting\",\"instructions\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

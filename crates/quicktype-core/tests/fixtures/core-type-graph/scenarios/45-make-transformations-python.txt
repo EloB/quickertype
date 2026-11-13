@@ -1,0 +1,37 @@
+# MakeTransformations with Python's needsTransformerForType: integer- and
+# bool-strings, and unions containing them. An enum in such a union is
+# parsed, not matched (it is not transformed itself).
+builder prov stm=date,time,date-time,uuid,integer-string,bool-string
+prim i integer
+str s unrestricted
+prim nul null
+prim is integer-string n=IntString
+prim bs bool-string n=BoolString
+enum e red,green n=Color
+union u1 is,nul n=MaybeIntString
+union u2 is,i n=IntOrIntString
+union u3 bs,e,i n=WithEnum
+union u4 is,bs,nul n=Both
+cls top a:is,b:bs,c:u1,d:u2,e:u3,f:u4 n=Top
+top Top top
+finish printonrewrite
+maketx python debugtx
+gc
+print
+xf 3
+xf 6
+
+# Python supports both number kinds: an integer|double union is not
+# conflated by flattening (port of test/unit/python-union-order.test.ts,
+# type graph part).
+builder
+prim i integer
+prim d double
+uunion u n=TopLevel
+members u i,d
+cls top v:u n=Top
+top Top top
+finish
+flatten
+print
+maketx python

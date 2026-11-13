@@ -1,0 +1,3 @@
+{
+  "error": "TypeScript error: Property 'a' is missing in type '{}' but required in type 'A'."
+}

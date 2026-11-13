@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"optDouble\":{\"type\":\"number\",\"title\":\"optDouble\"},\"optInt\":{\"type\":\"number\",\"title\":\"optInt\"},\"optPattern\":{\"type\":\"string\",\"title\":\"optPattern\"},\"optString\":{\"type\":\"string\",\"title\":\"optString\"},\"reqZeroMin\":{\"type\":\"number\",\"title\":\"reqZeroMin\"}},\"propertyOrder\":[\"optDouble\",\"optInt\",\"optPattern\",\"optString\",\"reqZeroMin\"],\"required\":[\"reqZeroMin\"],\"quicktypePropertyOrder\":[\"optDouble\",\"optInt\",\"optPattern\",\"optString\",\"reqZeroMin\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

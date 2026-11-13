@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"group\":{\"type\":\"string\",\"title\":\"group\"},\"movie\":{\"type\":\"string\",\"title\":\"movie\"},\"movie-image\":{\"type\":\"string\",\"title\":\"movie-image\"},\"theater\":{\"type\":\"string\",\"title\":\"theater\"}},\"additionalProperties\":false,\"propertyOrder\":[\"group\",\"movie\",\"movie-image\",\"theater\"],\"required\":[\"group\",\"movie\",\"movie-image\",\"theater\"],\"quicktypePropertyOrder\":[\"group\",\"movie\",\"movie-image\",\"theater\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

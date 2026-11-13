@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"N\":{\"title\":\"N\",\"type\":\"number\",\"enum\":[0,1,10,11]},\"S\":{\"title\":\"S\",\"type\":\"string\",\"enum\":[\"x\",\"y\"],\"qt-accessors\":{\"x\":\"X\",\"y\":\"Y\"}},\"M\":{\"title\":\"M\",\"type\":[\"number\",\"string\"],\"enum\":[1,\"q\"]},\"CE\":{\"title\":\"CE\",\"type\":\"string\",\"enum\":[\"u\",\"v\"],\"qt-accessors\":{\"u\":\"U\",\"v\":\"V\"}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"n\":{\"$ref\":\"#/definitions/N\",\"title\":\"n\"},\"s\":{\"$ref\":\"#/definitions/S\",\"title\":\"s\"},\"m\":{\"$ref\":\"#/definitions/M\",\"title\":\"m\"},\"c\":{\"$ref\":\"#/definitions/CE\",\"title\":\"c\"},\"lit\":{\"type\":\"string\",\"const\":\"x\",\"title\":\"lit\"}},\"additionalProperties\":false,\"propertyOrder\":[\"n\",\"s\",\"m\",\"c\",\"lit\"],\"required\":[\"c\",\"lit\",\"m\",\"n\",\"s\"],\"quicktypePropertyOrder\":[\"n\",\"s\",\"m\",\"c\",\"lit\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -17,6 +17,7 @@ authors = ["quicktype contributors"]
 quicktype-core = { path = "crates/quicktype-core" }
 quicktype-graphql-input = { path = "crates/quicktype-graphql-input" }
 quicktype-js-compat = { path = "crates/quicktype-js-compat" }
+quicktype-typescript-input = { path = "crates/quicktype-typescript-input" }
 indexmap = "2"
 regex = "1"
 ryu = "1"

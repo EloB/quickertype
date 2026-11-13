@@ -1,0 +1,10 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"title\":\"a\",\"default\":1},\"b\":{\"type\":\"string\",\"title\":\"b\",\"default\":\"s\"},\"c\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"title\":\"c\",\"default\":[1,2]},\"d\":{\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"number\",\"title\":\"x\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"x\"],\"required\":[\"x\"],\"title\":\"d\"},\"e\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"e\",\"default\":[]},\"f\":{\"type\":\"null\",\"title\":\"f\",\"default\":null},\"g\":{\"type\":\"string\",\"title\":\"g\",\"default\":\"`tmpl`\"},\"h\":{\"type\":\"boolean\",\"title\":\"h\",\"default\":true}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\"],\"required\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ],
+  "warnings": [
+    "unknown initializer for property d: [object Object]"
+  ]
+}

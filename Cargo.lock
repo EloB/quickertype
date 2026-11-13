@@ -297,6 +297,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "quicktype-typescript-input"
+version = "24.0.0"
+dependencies = [
+ "quicktype-js-compat",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "quicktype-wasm"
 version = "24.0.0"
 dependencies = [

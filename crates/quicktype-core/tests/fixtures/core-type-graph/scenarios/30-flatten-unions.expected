@@ -1,0 +1,96 @@
+(forwarding intersections: false)
+0: integer | 0
+1: double | 1
+2: string | 2 | unrestricted
+3: null | 3
+4: bool | 4
+5: class A | children 0,2 | 5 | given A ()
+6: class C | children 1,4 | 6 | given C ()
+7: union Inner | children 5,3 | 7 | given Inner ()
+8: union Outer | children 6,0,7 | 8 | given Outer ()
+9: union Nums | children 1,0 | 9 | given Nums ()
+10: array | children 8 | 10
+11: class Top | children 10,9,8 | 11 | given Top ()
+canonical 9: true
+canonical 8: false
+
+# flatten unions
+reconstituting 11
+reconstituted 11 as 0
+reconstituting 10
+reconstituted 10 as 1
+replacing set 8 as 2
+  reconstituting 2
+  reconstituted 2 as 6
+  reconstituting 4
+  reconstituted 4 as 7
+replaced set 8 as 2
+reconstituting 9
+reconstituted 9 as 10
+reconstituting 1
+reconstituted 1 as 5
+reconstituting 0
+reconstituted 0 as 4
+0: class Top | children 1,10,2 | 11 | given Top ()
+1: array | children 2 | 10
+2: union Outer | children 8,4,9 | 7,8 | given Outer ()
+3: union | children 5,4
+4: integer | 0
+5: double | 1
+6: string | 2 | unrestricted
+7: bool | 4
+8: class a | children 3,6,7 | 5,6 | given A,C ()
+9: null | 3
+10: union Nums | children 5,4 | 9 | given Nums ()
+(flatten done: true)
+0: class Top | children 1,10,2 | 11 | given Top ()
+1: array | children 2 | 10
+2: union Outer | children 8,4,9 | 7,8 | given Outer ()
+3: union | children 5,4
+4: integer | 0
+5: double | 1
+6: string | 2 | unrestricted
+7: bool | 4
+8: class a | children 3,6,7 | 5,6 | given A,C ()
+9: null | 3
+10: union Nums | children 5,4 | 9 | given Nums ()
+
+# flatten unions
+(flatten: unchanged)
+(flatten done: true)
+
+# GC
+0: class Top | children 1,10,2 | 11 | given Top ()
+1: array | children 2 | 10
+2: union Outer | children 3,6,9 | 7,8 | given Outer ()
+3: class a | children 4,7,8 | 5,6 | given A,C ()
+4: union | children 5,6
+5: double | 1
+6: integer | 0
+7: string | 2 | unrestricted
+8: bool | 4
+9: null | 3
+10: union Nums | children 5,6 | 9 | given Nums ()
+0: class Top | children 1,10,2 | 11 | given Top ()
+1: array | children 2 | 10
+2: union Outer | children 3,6,9 | 7,8 | given Outer ()
+3: class a | children 4,7,8 | 5,6 | given A,C ()
+4: union | children 5,6
+5: double | 1
+6: integer | 0
+7: string | 2 | unrestricted
+8: bool | 4
+9: null | 3
+10: union Nums | children 5,6 | 9 | given Nums ()
+(forwarding intersections: false)
+(flatten done: true)
+0: class Top | children 1,5 | given Top ()
+1: union Nums | children 2,3,4 | given Nums ()
+2: double
+3: integer
+4: null
+5: union Twice | children 2,4 | given Twice ()
+(forwarding intersections: false)
+(flatten done: true)
+0: class Top | children 1 | 4 | given Top ()
+1: any | 0,1,2,3

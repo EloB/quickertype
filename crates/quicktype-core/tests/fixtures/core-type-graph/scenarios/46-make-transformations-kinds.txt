@@ -1,0 +1,27 @@
+# MakeTransformations for chosen kinds: transformed strings are parsed into
+# their kind (or target kind), and the transformations survive later
+# rewrites (fixed point, GC), which reconstitute them.
+builder prov
+prim dt date-time n=When
+prim u uuid
+prim is integer-string
+prim bs bool-string
+str s unrestricted
+arr a dt
+cls c w:dt,u:u,i:is,b:bs,a:a,s:s n=C
+top C c
+finish printonrewrite
+maketx kinds=date-time,uuid,integer-string,bool-string debugtx debug
+fixedpoint debug
+gc
+print
+xf 1
+xf 3
+
+# A kind without a transformation is an error.
+builder
+prim i integer
+cls c i:i n=C
+top C c
+finish
+maketx kinds=class

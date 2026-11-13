@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"C\":{\"description\":\"Colors\",\"title\":\"C\",\"type\":\"string\",\"enum\":[\"r\",\"g\"],\"qt-accessors\":{\"r\":\"R\",\"g\":\"G\"}},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"c\":{\"$ref\":\"#/definitions/C\",\"title\":\"c\"}},\"additionalProperties\":false,\"propertyOrder\":[\"c\"],\"required\":[\"c\"],\"quicktypePropertyOrder\":[\"c\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

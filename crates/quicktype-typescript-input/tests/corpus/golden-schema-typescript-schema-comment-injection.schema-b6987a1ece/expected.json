@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"description\":\"Comment delimiters:\\n* /\\n/ *\\n{-\\n-}\\n\\\"\\\"\\\"\\n</summary> & <br>\\n}\\n}\\n}\\n}\\n}\",\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"trailingBackslash\":{\"description\":\"Ends with a backslash \\\\\",\"type\":\"string\",\"title\":\"trailingBackslash\"},\"trailingQuote\":{\"description\":\"Ends with a quote \\\"\",\"type\":\"string\",\"title\":\"trailingQuote\"},\"trailingTripleQuote\":{\"description\":\"Ends with a triple quote \\\"\\\"\\\"\",\"type\":\"string\",\"title\":\"trailingTripleQuote\"},\"value\":{\"description\":\"Property delimiters:\\n* /\\n/ *\\n{-\\n-}\\n\\\"\\\"\\\"\\n</summary> & <br>\\n}\\n}\\n}\\n}\\n}\",\"type\":\"string\",\"title\":\"value\"}},\"additionalProperties\":false,\"propertyOrder\":[\"trailingBackslash\",\"trailingQuote\",\"trailingTripleQuote\",\"value\"],\"required\":[\"value\"],\"quicktypePropertyOrder\":[\"trailingBackslash\",\"trailingQuote\",\"trailingTripleQuote\",\"value\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

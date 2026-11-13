@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Thing\":{\"description\":\"Thing description.\\nSecond line with {@link Other}.\",\"minimum\":3,\"title\":\"Thing\",\"type\":\"object\",\"properties\":{\"count\":{\"description\":\"count\",\"minimum\":0,\"maximum\":10,\"type\":\"number\",\"title\":\"count\"},\"email\":{\"format\":\"email\",\"type\":\"string\",\"title\":\"email\"},\"maybe\":{\"type\":[\"string\",\"null\"],\"title\":\"maybe\"},\"when\":{\"format\":\"date-time\",\"type\":\"string\",\"title\":\"when\"},\"slug\":{\"pattern\":\"^[a-z]+$\",\"type\":\"string\",\"title\":\"slug\"},\"d\":{\"default\":5,\"type\":\"number\",\"title\":\"d\"},\"ex\":{\"examples\":[\"a\",\"b\"],\"type\":\"string\",\"title\":\"ex\"},\"i\":{\"type\":\"integer\",\"title\":\"i\"},\"j\":{\"type\":\"number\",\"title\":\"j\"}},\"additionalProperties\":false,\"propertyOrder\":[\"count\",\"email\",\"maybe\",\"when\",\"slug\",\"d\",\"hidden\",\"ex\",\"i\",\"j\"],\"required\":[\"count\",\"d\",\"email\",\"ex\",\"i\",\"j\",\"maybe\",\"slug\",\"when\"],\"quicktypePropertyOrder\":[\"count\",\"email\",\"maybe\",\"when\",\"slug\",\"d\",\"hidden\",\"ex\",\"i\",\"j\"]},\"Other\":{\"title\":\"Other\",\"type\":\"object\",\"properties\":{\"o\":{\"type\":\"string\",\"title\":\"o\"}},\"additionalProperties\":false,\"propertyOrder\":[\"o\"],\"required\":[\"o\"],\"quicktypePropertyOrder\":[\"o\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

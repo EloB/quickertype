@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"a\"},\"b\":{\"type\":\"array\",\"items\":{\"type\":\"number\"},\"title\":\"b\"},\"c\":{\"type\":\"array\",\"items\":{\"type\":\"boolean\"},\"title\":\"c\"},\"d\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"title\":\"d\"},\"e\":{\"type\":\"array\",\"items\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"title\":\"e\"},\"f\":{\"type\":\"array\",\"items\":{\"type\":[\"null\",\"string\"]},\"title\":\"f\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"],\"required\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"],\"quicktypePropertyOrder\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

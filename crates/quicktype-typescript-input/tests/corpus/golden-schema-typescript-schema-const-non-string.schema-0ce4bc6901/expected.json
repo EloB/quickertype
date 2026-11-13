@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"amount\":{\"type\":\"number\",\"title\":\"amount\"},\"enabled\":{\"type\":\"boolean\",\"title\":\"enabled\"},\"kind\":{\"type\":\"string\",\"const\":\"widget\",\"title\":\"kind\"},\"ratio\":{\"type\":\"number\",\"title\":\"ratio\"},\"version\":{\"type\":\"number\",\"title\":\"version\"}},\"propertyOrder\":[\"amount\",\"enabled\",\"kind\",\"ratio\",\"version\"],\"required\":[\"amount\",\"enabled\",\"kind\",\"ratio\",\"version\"],\"quicktypePropertyOrder\":[\"amount\",\"enabled\",\"kind\",\"ratio\",\"version\"]},\"Kind\":{\"type\":\"string\",\"const\":\"widget\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,61 @@
+# CombineClasses: classes sharing at least 3/4 of their properties with
+# compatible types form cliques; each clique is unified. The clique a class
+# joins moves to the front. A second pass (only with same properties) is
+# Run's cleanup.
+builder
+prim i integer
+prim d double
+str s unrestricted
+prim nul null
+prim b bool
+cls c1 a:i,b:s,c:b,d:i n=C1
+cls c2 a:d,b:s,c:b n=C2
+cls c3 x:s,y:s n=C3
+cls c4 a:i,b:s,c:b,d:i,e:s n=C4
+cls c5 x:s,y:s,z?:nul n=C5
+cls c6 a:s,b:s,c:b n=C6
+union nullable c5,nul n=Nullable
+cls c7 x:nullable,y:s n=C7
+cls c8 p:i n=C8
+cls c9 p:i n=C9
+ucls fixed fixed p:i n=Fixed
+arr arr c4
+cls top c1:c1,c2:c2,c3:c3,c4:arr,c5:c5,c6:c6,c7:c7,c8:c8,c9:c9,f:fixed n=Top
+top Top top
+finish printonrewrite
+query named
+combine conflate debug
+combine same
+gc
+print
+
+# Alphabetized properties make the reconstituted classes unique.
+builder alpha
+prim i integer
+str s unrestricted
+cls c1 b:i,a:s n=C1
+cls c2 b:i,a:s,c:i n=C2
+cls c3 z:s,y:i n=C3
+cls top c1:c1,c2:c2,c3:c3 n=Top
+top Top top
+finish
+combine alpha conflate debug
+print
+combine alpha same
+gc alpha
+print
+
+# Without number conflation, integer and double properties don't match.
+builder
+prim i integer
+prim d double
+str s unrestricted
+cls c1 a:i,b:s,c:s,d:s n=C1
+cls c2 a:d,b:s,c:s,d:s n=C2
+cls top c1:c1,c2:c2 n=Top
+top Top top
+finish
+combine
+print
+combine conflate
+print

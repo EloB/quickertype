@@ -50,6 +50,7 @@ use crate::support::support::panic;
 use crate::ty::provenance_type_attribute_kind::{self, ProvenanceTypeAttributeKind};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
+use crate::ty::type_graph::TypeGraph;
 use crate::ty::type_ref::TypeRef;
 
 /// The kinds of type attributes (`TypeAttributeKind` instances in
@@ -164,6 +165,8 @@ pub trait TransformationAttribute: fmt::Debug {
     ) -> Result<Rc<dyn TransformationAttribute>>;
     /// For downcasting to the concrete transformation type.
     fn as_any(&self) -> &dyn Any;
+    /// `Transformation.targetType`, as a ref in the same graph.
+    fn target_type(&self) -> TypeRef;
 }
 
 /// A type attribute value. The variant determines its
@@ -601,6 +604,26 @@ plain_attribute_kind!(
     Transformation,
     Rc<dyn TransformationAttribute>
 );
+
+/// `transformationForType(t)` (`Transformers.ts`): the transformation
+/// attribute of `t`, if any.
+pub fn transformation_for_type(
+    graph: &TypeGraph,
+    t: TypeRef,
+) -> Result<Option<Rc<dyn TransformationAttribute>>> {
+    Ok(TransformationTypeAttributeKind
+        .try_get_in_attributes(graph.attributes(t)?)
+        .cloned())
+}
+
+/// `followTargetType(t)` (`Transformers.ts`): follows transformation target
+/// types from `t` until reaching a type without a transformation.
+pub fn follow_target_type(graph: &TypeGraph, mut t: TypeRef) -> Result<TypeRef> {
+    while let Some(xf) = transformation_for_type(graph, t)? {
+        t = xf.target_type();
+    }
+    Ok(t)
+}
 
 /// `CombinationKind`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
