@@ -787,14 +787,30 @@ function verdict(a, b) {
     return { same: false, text: `only ${engineNames[a.ok ? "ts" : "wasm"]} stopped with an error` };
 }
 
-/** quickertype's time against quicktype's, in words. */
-function relative(wasmMs, tsMs) {
-    const ratio = tsMs / wasmMs;
+/**
+ * Which engine was faster, the faster one named as the subject: "quicktype
+ * was 1.1× faster (152 ms vs 172 ms)", the subject's time first; within 5%,
+ * "quickertype and quicktype were about as fast (172 ms and 168 ms)".
+ * `ms` is each engine's time, { wasm, ts }; `qualifier` goes inside the
+ * parentheses ("start-up included"). As HTML, and `key`, which is the same
+ * for the same verdict (who, and how many times faster).
+ */
+function pace(ms, qualifier) {
+    const ratio = ms.ts / ms.wasm;
     if (!Number.isFinite(ratio) || ratio <= 0) return undefined;
-    const times = (r) => (r >= 10 ? Math.round(r) : r.toFixed(1));
-    if (ratio >= 1.05) return `${times(ratio)}× faster`;
-    if (ratio > 1 / 1.05) return "about as fast";
-    return `${times(1 / ratio)}× slower`;
+    const name = (engine) => `<b class="engine-name ${engine}">${engineNames[engine]}</b>`;
+    const extra = qualifier === undefined ? "" : `, ${escapeHtml(qualifier)}`;
+    if (ratio < 1.05 && ratio > 1 / 1.05) {
+        return { key: "same", html: `${name("wasm")} and ${name("ts")} were about as fast (${formatMs(ms.wasm)} and ${formatMs(ms.ts)}${extra})` };
+    }
+
+    const faster = ratio >= 1.05 ? "wasm" : "ts";
+    const r = faster === "wasm" ? ratio : 1 / ratio;
+    const times = r >= 10 ? String(Math.round(r)) : r.toFixed(1);
+    return {
+        key: `${faster} ${times}`,
+        html: `${name(faster)} was ${times}× faster (${formatMs(ms[faster])} vs ${formatMs(ms[otherEngine(faster)])}${extra})`,
+    };
 }
 
 /** A result's time, split into reading the input and generating; medians for a measurement. */
@@ -841,23 +857,25 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
     }${tag ? `<span class="lane-note warn">${escapeHtml(tag)}</span>` : ""}</div>`;
 }
 
-/** "quickertype: 2.90 ms · quicktype: 4.20 ms · 1.4× faster · identical output ✓", from both engines' results. */
+/**
+ * "quickertype was 1.4× faster (3.00 ms vs 4.20 ms) · identical output ✓",
+ * from both engines' results ("Warm medians: …" once measured; first runs
+ * are said to include start-up). If either stopped with an error, both
+ * times: "quickertype: 2.90 ms · quicktype: 4.20 ms · different errors ≠".
+ */
 function summary({ wasm, ts }, timeOf, phases, measured) {
     const v = verdict(wasm, ts);
-    const parts = [
-        `<span class="who wasm">${engineNames.wasm}: <b>${formatMs(timeOf(wasm))}</b></span>`,
-        `<span class="who ts">${engineNames.ts}: <b>${formatMs(timeOf(ts))}</b></span>`,
-    ];
-    if (wasm.ok && ts.ok) {
-        const pace = relative(phases(wasm).total, phases(ts).total);
-        if (pace !== undefined) {
-            const cold = measured ? [] : ["wasm", "ts"].filter((engine) => ({ wasm, ts })[engine].first);
-            const startUp =
-                cold.length === 2 ? ", start-up included" : cold.length === 1 ? `, ${engineNames[cold[0]]}'s start-up included` : "";
-            parts.push(`<span>${escapeHtml(pace + startUp)}</span>`);
-        }
-    }
-
+    const cold = measured ? [] : ["wasm", "ts"].filter((engine) => ({ wasm, ts })[engine].first);
+    const startUp =
+        cold.length === 2 ? "start-up included" : cold.length === 1 ? `${engineNames[cold[0]]}'s start-up included` : undefined;
+    const faster = wasm.ok && ts.ok ? pace({ wasm: phases(wasm).total, ts: phases(ts).total }, startUp) : undefined;
+    const parts =
+        faster !== undefined
+            ? [`<span class="pace">${faster.html}</span>`]
+            : [
+                  `<span class="who wasm">${engineNames.wasm}: <b>${formatMs(timeOf(wasm))}</b></span>`,
+                  `<span class="who ts">${engineNames.ts}: <b>${formatMs(timeOf(ts))}</b></span>`,
+              ];
     parts.push(
         `<span class="verdict ${v.same ? "same" : "differ"}">${escapeHtml(v.text)} <span class="verdict-mark" aria-hidden="true">${v.same ? "✓" : "≠"}</span></span>`,
     );
@@ -865,6 +883,7 @@ function summary({ wasm, ts }, timeOf, phases, measured) {
     return {
         same: v.same,
         detail: v.detail,
+        faster,
         html: `<p class="summary" role="status">${prefix}${parts.join('<span class="sep"> · </span>')}</p>`,
     };
 }
@@ -960,38 +979,39 @@ function renderMeter() {
 
     html += "</div>";
 
+    /** The fine print, as HTML. */
     const fine = [];
+    const say = (text) => fine.push(escapeHtml(text));
     let compare = "off";
     if (isResult(sides.wasm) && isResult(sides.ts)) {
         const line = summary(sides, timeOf, phases, measured);
         compare = line.same ? "identical" : "different";
         html += line.html;
-        if (line.detail !== undefined) fine.push(line.detail);
-        fine.push("The lighter part of each bar is reading the input; the rest is generating the code.");
+        if (line.detail !== undefined) say(line.detail);
+        say("The lighter part of each bar is reading the input; the rest is generating the code.");
         if (sides.wasm.ok && sides.ts.ok) {
-            const overall = relative(phases(sides.wasm).total, phases(sides.ts).total);
-            const generating = relative(phases(sides.wasm).generate, phases(sides.ts).generate);
-            if (generating !== undefined && generating !== overall) {
-                fine.push(`At generating the code alone, quickertype was ${generating}.`);
+            const generating = pace({ wasm: phases(sides.wasm).generate, ts: phases(sides.ts).generate });
+            if (generating !== undefined && generating.key !== line.faster?.key) {
+                fine.push(`At generating the code alone, ${generating.html}.`);
             }
         }
     } else if (!solo) {
         compare = "running";
     } else {
-        fine.push(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
+        say(`Switch to ${engineNames[otherEngine(shown.engine)]} to compare the engines on this input, or measure warm runs of both.`);
     }
 
     body.compare = compare;
     // Said when the times are compared (one engine's first run is marked as such on its bar).
     if (!solo && !measured && lanes.some((engine) => isResult(sides[engine]) && sides[engine].first)) {
-        fine.push(
+        say(
             "A worker's first run includes start-up: instantiating the WebAssembly engine, or compiling cold JavaScript. Measure warm runs to compare speed.",
         );
     }
 
-    if (measured) fine.push(`Each engine ran ${bench.wasm.times.length + 1} times on this input; the first run is not counted.`);
+    if (measured) say(`Each engine ran ${bench.wasm.times.length + 1} times on this input; the first run is not counted.`);
     const boot = bootNote(lanes);
-    if (boot) fine.push(boot);
+    if (boot) say(boot);
 
     if (bench?.failure !== undefined) {
         html += `<p class="bench-failure" role="alert">Measuring warm runs stopped: ${escapeHtml(bench.failure)}</p>`;
@@ -1008,7 +1028,7 @@ function renderMeter() {
     // aria-disabled rather than disabled, so that the button keeps the keyboard focus while it measures.
     const off = measuring || !result.ok;
     const focused = document.activeElement?.id === "measure";
-    html += `<div class="fine"><p>${escapeHtml(fine.join(" "))}</p><button type="button" id="measure" class="measure" title="Runs both engines 6 times on this input, and compares the medians of the last 5"${
+    html += `<div class="fine"><p>${fine.join(" ")}</p><button type="button" id="measure" class="measure" title="Runs both engines 6 times on this input, and compares the medians of the last 5"${
         off ? ' aria-disabled="true"' : ""
     }>${label}</button></div>`;
     els.meter.innerHTML = html;

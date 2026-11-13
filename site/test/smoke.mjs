@@ -426,16 +426,41 @@ async function comparedIdentical(what, measured = false) {
     assert.equal(shownNow.verdict, "identical", `${what}: ${shownNow.text}`);
     assert.deepEqual(shownNow.wasm, shownNow.ts, `${what}: the results differ`);
     const time = String.raw`\d[\d.]* m?s`;
-    const line = new RegExp(`^${measured ? "Warm medians: " : ""}quickertype: ${time} · quicktype: ${time} · .+ · identical output ✓$`);
-    assert.match(shownNow.text, line, what);
     assert.match(shownNow.fine, /^The outputs are identical byte for byte: \d+ files?, [\d,]+ bytes\. /, what);
     assert.deepEqual(
         shownNow.lanes.map(([name, t]) => [name, new RegExp(`^${time}$`).test(t)]),
         [["quickertype", true], ["quicktype", true]],
         `${what}: both bars with their times`,
     );
+    // Which engine was faster, named as the subject, with the bars' times
+    // (the subject's first); or both about as fast.
+    const startUp = String.raw`(?:, (?:(?:quickertype|quicktype)'s )?start-up included)?`;
+    const pace = (prefix) =>
+        new RegExp(
+            `^${prefix}(?:(quickertype|quicktype) was \\d[\\d.]*× faster \\((${time}) vs (${time})${startUp}\\)|quickertype and quicktype were about as fast \\((${time}) and (${time})${startUp}\\))`,
+        );
+    const lane = Object.fromEntries(shownNow.lanes);
+    const named = (match, where) => {
+        assert.ok(match !== null, `${what}: ${where}`);
+        if (match[1] === undefined) {
+            assert.deepEqual([match[4], match[5]], [lane.quickertype, lane.quicktype], `${what}: ${where}: the times`);
+            return;
+        }
+
+        const slower = match[1] === "quickertype" ? "quicktype" : "quickertype";
+        assert.deepEqual([match[2], match[3]], [lane[match[1]], lane[slower]], `${what}: ${where}: the times`);
+        assert.ok(seconds(match[2]) <= seconds(match[3]), `${what}: ${where}: ${match[1]} is named the faster`);
+    };
+    assert.match(shownNow.text, new RegExp(`${pace(measured ? "Warm medians: " : "").source} · identical output ✓$`), what);
+    named(pace(measured ? "Warm medians: " : "").exec(shownNow.text), `"${shownNow.text}"`);
+    // The fine print may say which was faster at generating the code alone, as plainly.
+    const generating = /At generating the code alone, (.*?\))\./.exec(shownNow.fine);
+    if (generating !== null) assert.match(generating[1], pace(""), `${what}: "${generating[0]}"`);
     return shownNow.text;
 }
+
+/** "3.00 ms" or "1.20 s" in seconds. */
+const seconds = (t) => Number.parseFloat(t) / (t.endsWith(" ms") ? 1000 : 1);
 
 /** A warm measurement of both engines on what the page shows has finished. */
 const measuredDone = `(() => {

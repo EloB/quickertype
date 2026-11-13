@@ -773,9 +773,17 @@ textarea:focus-visible {
     margin-top: 9px;
 }
 
-/* It wraps between its parts. */
-.summary > span:not(.sep) {
+/* It wraps between its parts; the sentence saying which engine was faster wraps between words. */
+.summary > span:not(.sep, .pace) {
     white-space: nowrap;
+}
+
+.engine-name.wasm {
+    color: var(--wasm);
+}
+
+.engine-name.ts {
+    color: var(--ts);
 }
 
 .summary .sep {
