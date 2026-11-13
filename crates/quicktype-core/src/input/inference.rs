@@ -163,48 +163,6 @@ impl<'c> TypeInference<'c> {
         })
     }
 
-    /// `resolveRef(ref, topLevel)`: follows a `#/a/0/b` JSON reference
-    /// through the types inferred for the top-level.
-    fn resolve_ref(
-        &self,
-        builder: &TypeBuilder<'_>,
-        reference: &str,
-        top_level: TypeRef,
-    ) -> Result<TypeRef> {
-        let error = |kind| message_error(kind, vec![("reference", reference.into())]);
-        if !reference.starts_with("#/") {
-            return error(ErrorKind::InferenceJSONReferenceNotRooted);
-        }
-        let mut tref = top_level;
-        for part in reference.split('/').skip(1) {
-            let mut t: &Type = builder.type_at_index(tref.index())?;
-            if t.is_union() {
-                let Some(nullable) = nullable_from_union(builder, t)? else {
-                    // FIXME in TypeScript: handle unions.
-                    return error(ErrorKind::InferenceJSONReferenceToUnion);
-                };
-                t = builder.type_at_index(nullable.index())?;
-            }
-
-            if t.is_class() {
-                let Some(cp) = t.properties()?.get(part) else {
-                    return error(ErrorKind::InferenceJSONReferenceWrongProperty);
-                };
-                tref = cp.type_ref;
-            } else if t.is_map() {
-                tref = t.map_values()?;
-            } else if t.is_array() {
-                if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
-                    return error(ErrorKind::InferenceJSONReferenceInvalidArrayIndex);
-                }
-                tref = t.items()?;
-            } else {
-                return error(ErrorKind::InferenceJSONReferenceWrongProperty);
-            }
-        }
-        Ok(tref)
-    }
-
     /// `inferTopLevelType(typeAttributes, valueArray, fixed)`: infers the
     /// type of a top-level's samples, then resolves the JSON references in
     /// them if `$ref`s are handled.
@@ -234,7 +192,7 @@ impl<'c> TypeInference<'c> {
             for (tref, refs) in intersections {
                 let resolved = refs
                     .iter()
-                    .map(|r| self.resolve_ref(builder, r, top_level))
+                    .map(|r| resolve_ref(builder, r, top_level))
                     .collect::<Result<IndexSet<TypeRef>>>()?;
                 builder.set_set_operation_members(tref, resolved)?;
             }
@@ -366,6 +324,47 @@ impl<'c> TypeInference<'c> {
         }
         builder.get_class_type(type_attributes, properties, forwarding_ref)
     }
+}
+
+/// `resolveRef(ref, topLevel)`: follows a `#/a/0/b` JSON reference
+/// through the types inferred for the top-level.
+pub(crate) fn resolve_ref(
+    builder: &TypeBuilder<'_>,
+    reference: &str,
+    top_level: TypeRef,
+) -> Result<TypeRef> {
+    let error = |kind| message_error(kind, vec![("reference", reference.into())]);
+    if !reference.starts_with("#/") {
+        return error(ErrorKind::InferenceJSONReferenceNotRooted);
+    }
+    let mut tref = top_level;
+    for part in reference.split('/').skip(1) {
+        let mut t: &Type = builder.type_at_index(tref.index())?;
+        if t.is_union() {
+            let Some(nullable) = nullable_from_union(builder, t)? else {
+                // FIXME in TypeScript: handle unions.
+                return error(ErrorKind::InferenceJSONReferenceToUnion);
+            };
+            t = builder.type_at_index(nullable.index())?;
+        }
+
+        if t.is_class() {
+            let Some(cp) = t.properties()?.get(part) else {
+                return error(ErrorKind::InferenceJSONReferenceWrongProperty);
+            };
+            tref = cp.type_ref;
+        } else if t.is_map() {
+            tref = t.map_values()?;
+        } else if t.is_array() {
+            if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
+                return error(ErrorKind::InferenceJSONReferenceInvalidArrayIndex);
+            }
+            tref = t.items()?;
+        } else {
+            return error(ErrorKind::InferenceJSONReferenceWrongProperty);
+        }
+    }
+    Ok(tref)
 }
 
 /// `nullableFromUnion(t)` for a union in the graph being built: its only

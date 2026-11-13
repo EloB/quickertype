@@ -30,6 +30,13 @@ findings per area, with file and line references.
   TypeScript CLI and ours on the same arguments in separate temp dirs and
   compares exit code, stdout, stderr and files; `--each <dir>` repeats it
   over many inputs. Use it for anything outside the corpus.
+- **JSON inference from running tallies:** `crates/quicktype-core/tests/streaming_inference.rs`
+  runs seeded generated inputs through inference from running tallies
+  and from `CompressedJSON` (the reference) and requires the same
+  `add_source` results, type graphs after inference and whole runs;
+  `cargo xtask streaming-fuzz` runs millions of seeds and dumps documents
+  for `cargo xtask diff --each` against the TypeScript CLI. See
+  [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md).
 - **GraphQL input:** `xtask/graphql-input/run-graphql-inputs.mjs` records
   the reference `GraphQLInput`'s type graph right after input (or its
   error) for every query in `tests/inputs/graphql`, hand-written queries,
@@ -276,7 +283,9 @@ the others name the fix they need.
   between runs). The port models this with one rule per reader, which
   any inference path must follow:
   - Inference: every `inferType` call (one for the top-level's samples,
-    one for the values of each nested array or object) runs under
+    one for the values of each nested array or object; in
+    `input/inference.rs`, and its counterpart in `tally_inference.rs` for
+    inference from running tallies) runs under
     `support::recursion::guard`, so a sample whose arrays and objects nest
     1,000 deep fails with that `RangeError`, and 999 levels are inferred
     (`[` × 999 + `]` × 999, or `{"a":` × 999 + `1` + `}` × 999). Between
@@ -287,7 +296,8 @@ the others name the fix they need.
     first and overflows at the 4,579th nested value (counting the sample
     itself; Node 24, fresh process), which it reports as the sample's
     parse error (`Syntax error in input JSON <name>: Maximum call stack
-    size exceeded`). The port's `process` fails the same way past depth
+    size exceeded`). The port's `process`, which feeds both the
+    compressed JSON and the running tallies, fails the same way past depth
     4,578 (`PROCESS_MAX_DEPTH` in `input/compressed_json.rs`). Samples
     between 1,000 and 4,578 levels deep reach inference and fail there.
   `crates/quicktype-core/tests/deep_json.rs` and the CLI's
