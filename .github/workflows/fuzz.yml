@@ -25,16 +25,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: json_stream, max_len: 16384, timeout: 10 }
-          - { target: json_parse, max_len: 16384, timeout: 10 }
-          - { target: json_schema, max_len: 16384, timeout: 30 }
-          - { target: graphql_parse, max_len: 16384, timeout: 10 }
-          - { target: graphql_input, max_len: 16384, timeout: 30 }
-          - { target: yaml, max_len: 16384, timeout: 10 }
-          - { target: uri, max_len: 1024, timeout: 10 }
-          - { target: number, max_len: 256, timeout: 10 }
-          - { target: cli_args, max_len: 2048, timeout: 20 }
-          - { target: pipeline, max_len: 16384, timeout: 30 }
+          - { target: json_stream, max_len: 16384, timeout: 10, dict: json }
+          - { target: json_parse, max_len: 16384, timeout: 10, dict: json }
+          - { target: json_schema, max_len: 16384, timeout: 30, dict: json_schema }
+          - { target: graphql_parse, max_len: 16384, timeout: 10, dict: graphql }
+          - { target: graphql_input, max_len: 16384, timeout: 30, dict: graphql }
+          - { target: yaml, max_len: 16384, timeout: 10, dict: yaml }
+          - { target: uri, max_len: 1024, timeout: 10, dict: uri }
+          - { target: number, max_len: 256, timeout: 10, dict: "" }
+          - { target: cli_args, max_len: 2048, timeout: 20, dict: cli }
+          - { target: pipeline, max_len: 16384, timeout: 30, dict: json }
     steps:
       - uses: actions/checkout@v4
       # rust-toolchain.toml pins the workspace's toolchain; cargo-fuzz needs
@@ -64,6 +64,7 @@ jobs:
           -timeout=${{ matrix.timeout }}
           -rss_limit_mb=4096
           -print_final_stats=1
+          ${{ matrix.dict && format('-dict=fuzz/dicts/{0}.dict', matrix.dict) || '' }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -54,7 +54,7 @@ rustup toolchain install nightly
 cargo install cargo-fuzz
 node fuzz/seed-corpora.mjs            # seed corpora from tests/inputs and the vectors
 cargo +nightly fuzz list
-cargo +nightly fuzz run pipeline -s none -- -max_len=16384 -timeout=30
+cargo +nightly fuzz run pipeline -s none -- -max_len=16384 -timeout=30 -dict=fuzz/dicts/json.dict
 ```
 
 The targets: `json_stream` and `json_parse` (the two JSON readers),
@@ -62,7 +62,9 @@ The targets: `json_stream` and `json_parse` (the two JSON readers),
 `graphql_input`, `yaml`, `uri`, `number`, `cli_args` (the CLI's option
 parsing) and `pipeline` (JSON to every language with arbitrary run and
 renderer options). Each file in `fuzz/fuzz_targets` describes its input
-format. `-s none` turns off AddressSanitizer: the code has no `unsafe`, and
+format, `fuzz/dicts` has token dictionaries for them (see
+`.github/workflows/fuzz.yml` for which goes with which, and for the
+lengths and timeouts). `-s none` turns off AddressSanitizer: the code has no `unsafe`, and
 ASan misreads `stacker`'s stack switching.
 
 A finding is written to `fuzz/artifacts/<target>/`. Minimize it with
