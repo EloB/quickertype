@@ -4,6 +4,15 @@ Newest first. Parity numbers are `cargo xtask parity` on `main`.
 
 ## 2026-11-13
 
+- **Parity 10,796 / 11,177 (96.6%), 0 regressions.** Merged Go + JSON
+  Schema output, GraphQL input (hand port of graphql-js 16's parser;
+  228 input cases, 2,510 parser vectors, 38 introspection runs identical),
+  and a recursion-guard sweep (14 languages used to abort on cyclic
+  schemas; all now return the reference's RangeError). Every input type and
+  every output language except C is on `main`; the remaining 381 cases all
+  need the C renderer (in progress).
+- Phase 7 (benchmarks + hot paths) started.
+
 - **Parity 10,174 / 11,177 (91.0%), 0 regressions.** Merged language wave
   2 so far: Crystal, C++; Swift, Objective-C, Dart; Ruby, Elixir, Python
   (each reviewed; 100% of render cases and every end-to-end case except
