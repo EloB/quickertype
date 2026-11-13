@@ -1,0 +1,376 @@
+//! `cargo xtask diff`: run the TypeScript quicktype CLI and ours side by side
+//! on the same arguments and compare exit code, stdout, stderr and every
+//! written file.
+//!
+//! Unlike `parity` (which replays recorded reference runs), this executes the
+//! reference live, so it works for any input or flag combination, e.g. your
+//! own JSON files or generated inputs.
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+use crate::parity::{build_cli, first_difference, snapshot};
+
+pub const USAGE: &str = "\
+cargo xtask diff [options] -- <quicktype args...>
+
+Runs the reference (TypeScript) quicktype and ours with the same arguments,
+each in its own temp dir, and compares exit code, stdout, stderr and files.
+
+  --ref \"<cmd ...>\"   reference command (default: node <checkout>/dist/index.js, where
+                      <checkout> is $QUICKTYPE_REF or the nearest quicktype/ beside
+                      the workspace or one of its parents)
+  --bin \"<cmd ...>\"   our command (default: builds target/release/quicktype)
+  --each <path>       run once per input file under <path> (file or directory,
+                      recursive), appending the file to the quicktype args
+  --ext <ext>         file extensions for --each (repeatable; default: json)
+  --stdin <file>      feed <file> to stdin of both runs
+  -j <n>              parallel jobs for --each (default: number of cores)
+  --show <n>          print details for the first n mismatches (default 10)
+
+Input paths in the quicktype args are resolved against the current directory;
+the value of -o/--out stays relative, so outputs land in the temp dirs.
+
+examples:
+  cargo xtask diff -- my.json --lang go
+  cargo xtask diff --each tests/inputs/json/samples -- --lang rust --just-types
+";
+
+struct Options {
+    reference: Option<Vec<String>>,
+    ours: Option<Vec<String>>,
+    each: Option<PathBuf>,
+    exts: Vec<String>,
+    stdin: Option<PathBuf>,
+    jobs: usize,
+    show: usize,
+    args: Vec<String>,
+}
+
+fn parse_options(args: Vec<String>) -> Result<Options, String> {
+    let mut o = Options {
+        reference: None,
+        ours: None,
+        each: None,
+        exts: vec![],
+        stdin: None,
+        jobs: std::thread::available_parallelism().map_or(4, |n| n.get()),
+        show: 10,
+        args: vec![],
+    };
+    let mut args = args.into_iter();
+    while let Some(a) = args.next() {
+        let mut value = || args.next().ok_or_else(|| format!("missing value for {a}"));
+        match a.as_str() {
+            "--" => {
+                o.args = args.collect();
+                break;
+            }
+            "--ref" => o.reference = Some(split_command(&value()?)),
+            "--bin" => o.ours = Some(split_command(&value()?)),
+            "--each" => o.each = Some(PathBuf::from(value()?)),
+            "--ext" => o.exts.push(value()?.trim_start_matches('.').to_owned()),
+            "--stdin" => o.stdin = Some(PathBuf::from(value()?)),
+            "-j" | "--jobs" => o.jobs = value()?.parse().map_err(|_| "bad -j")?,
+            "--show" => o.show = value()?.parse().map_err(|_| "bad --show")?,
+            _ => {
+                return Err(format!(
+                    "unknown argument {a} (quicktype args go after --)\n\n{USAGE}"
+                ));
+            }
+        }
+    }
+    if o.exts.is_empty() {
+        o.exts.push("json".into());
+    }
+    Ok(o)
+}
+
+fn split_command(s: &str) -> Vec<String> {
+    s.split_whitespace().map(String::from).collect()
+}
+
+/// Makes input paths absolute so both runs can execute in their own temp
+/// dirs. The value of `-o`/`--out` is left alone so outputs stay inside the
+/// temp dirs (and never overwrite files in the current directory).
+fn absolutize_inputs(args: &[String], cwd: &Path) -> Vec<String> {
+    let mut out = Vec::with_capacity(args.len());
+    let mut next_is_output = false;
+    for a in args {
+        if next_is_output {
+            out.push(a.clone());
+            next_is_output = false;
+            continue;
+        }
+        if a == "-o" || a == "--out" {
+            next_is_output = true;
+            out.push(a.clone());
+            continue;
+        }
+        let candidate = cwd.join(a);
+        if !a.starts_with('-') && !Path::new(a).is_absolute() && candidate.exists() {
+            out.push(candidate.to_string_lossy().into_owned());
+        } else {
+            out.push(a.clone());
+        }
+    }
+    out
+}
+
+struct RunResult {
+    code: Option<i32>,
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+    files: std::collections::BTreeMap<String, Vec<u8>>,
+}
+
+fn run_one(
+    cmd: &[String],
+    args: &[String],
+    stdin: Option<&Path>,
+    dir: &Path,
+) -> Result<RunResult, String> {
+    let _ = fs::remove_dir_all(dir);
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let stdin = match stdin {
+        Some(p) => Stdio::from(fs::File::open(p).map_err(|e| format!("{}: {e}", p.display()))?),
+        None => Stdio::null(),
+    };
+    let out = Command::new(&cmd[0])
+        .args(&cmd[1..])
+        .args(args)
+        .current_dir(dir)
+        .env("TZ", "UTC")
+        .stdin(stdin)
+        .output()
+        .map_err(|e| format!("cannot spawn {}: {e}", cmd[0]))?;
+    // Each run has its own temp dir; normalize it so messages compare equal.
+    let dir_str = dir.to_string_lossy();
+    let normalize = |b: Vec<u8>| -> Vec<u8> {
+        String::from_utf8(b)
+            .map(|s| s.replace(dir_str.as_ref(), "{CWD}").into_bytes())
+            .unwrap_or_else(|e| e.into_bytes())
+    };
+    Ok(RunResult {
+        code: out.status.code(),
+        stdout: normalize(out.stdout),
+        stderr: normalize(out.stderr),
+        files: snapshot(dir),
+    })
+}
+
+/// Returns `None` when both runs behaved identically, else a description.
+fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
+    let mut problems = vec![];
+    if reference.code != ours.code {
+        problems.push(format!(
+            "exit code: reference {:?}, ours {:?}",
+            reference.code, ours.code
+        ));
+    }
+    if reference.stdout != ours.stdout {
+        problems.push(format!(
+            "stdout differs at {}",
+            first_difference(&reference.stdout, &ours.stdout)
+        ));
+    }
+    if reference.stderr != ours.stderr {
+        problems.push(format!(
+            "stderr differs at {}",
+            first_difference(&reference.stderr, &ours.stderr)
+        ));
+    }
+    for (path, bytes) in &reference.files {
+        match ours.files.get(path) {
+            None => problems.push(format!("file {path}: missing in ours")),
+            Some(b) if b != bytes => {
+                problems.push(format!(
+                    "file {path} differs at {}",
+                    first_difference(bytes, b)
+                ));
+            }
+            Some(_) => {}
+        }
+    }
+    for path in ours
+        .files
+        .keys()
+        .filter(|p| !reference.files.contains_key(*p))
+    {
+        problems.push(format!("file {path}: only in ours"));
+    }
+    (!problems.is_empty()).then(|| problems.join("\n    "))
+}
+
+/// Locates the built TypeScript CLI: `$QUICKTYPE_REF/dist/index.js`, else the
+/// nearest `quicktype/dist/index.js` beside the workspace or one of its
+/// ancestors (so it works from git worktrees too).
+fn find_reference(root: &Path) -> Option<PathBuf> {
+    if let Some(dir) = std::env::var_os("QUICKTYPE_REF") {
+        let script = PathBuf::from(dir).join("dist/index.js");
+        return script.is_file().then_some(script);
+    }
+    root.ancestors()
+        .map(|a| a.join("quicktype/dist/index.js"))
+        .find(|p| p.is_file())
+}
+
+fn collect_inputs(path: &Path, exts: &[String], out: &mut Vec<PathBuf>) {
+    if path.is_dir() {
+        let mut entries: Vec<PathBuf> = fs::read_dir(path)
+            .map(|rd| rd.flatten().map(|e| e.path()).collect())
+            .unwrap_or_default();
+        entries.sort();
+        for entry in entries {
+            collect_inputs(&entry, exts, out);
+        }
+    } else if path
+        .extension()
+        .is_some_and(|e| exts.iter().any(|x| e == x.as_str()))
+    {
+        out.push(path.to_path_buf());
+    }
+}
+
+pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
+    let o = parse_options(args)?;
+    let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+
+    let reference = match &o.reference {
+        Some(cmd) if !cmd.is_empty() => cmd.clone(),
+        _ => {
+            let script = find_reference(root).ok_or(
+                "reference quicktype not found: set QUICKTYPE_REF to a built checkout \
+                 or pass --ref \"<cmd>\"",
+            )?;
+            vec!["node".into(), script.to_string_lossy().into_owned()]
+        }
+    };
+    let ours = match &o.ours {
+        Some(cmd) if !cmd.is_empty() => cmd.clone(),
+        _ => build_cli(root)?,
+    };
+
+    let base_args = absolutize_inputs(&o.args, &cwd);
+    let runs: Vec<(String, Vec<String>)> = match &o.each {
+        None => vec![(base_args.join(" "), base_args.clone())],
+        Some(path) => {
+            let mut inputs = vec![];
+            collect_inputs(&cwd.join(path), &o.exts, &mut inputs);
+            if inputs.is_empty() {
+                return Err(format!(
+                    "no .{} files under {}",
+                    o.exts.join("/."),
+                    path.display()
+                ));
+            }
+            inputs
+                .into_iter()
+                .map(|input| {
+                    let label = input
+                        .strip_prefix(&cwd)
+                        .unwrap_or(&input)
+                        .display()
+                        .to_string();
+                    let mut args = base_args.clone();
+                    args.push(input.to_string_lossy().into_owned());
+                    (label, args)
+                })
+                .collect()
+        }
+    };
+
+    let work = root.join("target/diff");
+    let stdin = o.stdin.as_ref().map(|p| cwd.join(p));
+    let next = AtomicUsize::new(0);
+    let mismatches = Mutex::new(Vec::new());
+    let errors = Mutex::new(Vec::new());
+    std::thread::scope(|s| {
+        for _ in 0..o.jobs.max(1).min(runs.len()) {
+            s.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    let Some((label, args)) = runs.get(i) else {
+                        break;
+                    };
+                    let result = run_one(
+                        &reference,
+                        args,
+                        stdin.as_deref(),
+                        &work.join(format!("r{i}")),
+                    )
+                    .and_then(|r| {
+                        run_one(&ours, args, stdin.as_deref(), &work.join(format!("o{i}")))
+                            .map(|o| (r, o))
+                    });
+                    match result {
+                        Ok((r, ours_result)) => {
+                            if let Some(problem) = compare(&r, &ours_result) {
+                                mismatches
+                                    .lock()
+                                    .expect("lock")
+                                    .push((label.clone(), problem));
+                            }
+                        }
+                        Err(e) => errors.lock().expect("lock").push((label.clone(), e)),
+                    }
+                    let _ = fs::remove_dir_all(work.join(format!("r{i}")));
+                    let _ = fs::remove_dir_all(work.join(format!("o{i}")));
+                }
+            });
+        }
+    });
+
+    let mut mismatches = mismatches.into_inner().expect("lock");
+    let errors = errors.into_inner().expect("lock");
+    mismatches.sort();
+    for (label, problem) in mismatches.iter().take(o.show) {
+        println!("MISMATCH {label}\n    {problem}\n");
+    }
+    if mismatches.len() > o.show {
+        println!("... and {} more mismatches\n", mismatches.len() - o.show);
+    }
+    for (label, e) in &errors {
+        println!("ERROR {label}: {e}");
+    }
+    let total = runs.len();
+    let matched = total - mismatches.len() - errors.len();
+    println!("diff: {matched}/{total} runs identical to the reference");
+    Ok(matched == total)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_paths_stay_relative_and_inputs_become_absolute() {
+        let dir = std::env::temp_dir().join("xtask-diff-test");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("in.json"), "{}").unwrap();
+        fs::write(dir.join("out.ts"), "").unwrap();
+        let args: Vec<String> = ["in.json", "-o", "out.ts", "--lang", "ts"]
+            .map(String::from)
+            .into();
+        let got = absolutize_inputs(&args, &dir);
+        assert_eq!(got[0], dir.join("in.json").to_string_lossy());
+        assert_eq!(&got[1..], ["-o", "out.ts", "--lang", "ts"]);
+    }
+
+    #[test]
+    fn identical_runs_compare_equal() {
+        let run = || RunResult {
+            code: Some(0),
+            stdout: b"x\n".to_vec(),
+            stderr: vec![],
+            files: Default::default(),
+        };
+        assert!(compare(&run(), &run()).is_none());
+        let mut other = run();
+        other.code = Some(1);
+        assert!(compare(&run(), &other).unwrap().contains("exit code"));
+    }
+}

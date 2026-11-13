@@ -46,6 +46,10 @@ cargo test                      # unit tests
 cargo xtask parity              # byte-for-byte parity against the golden corpus
 cargo xtask parity --filter rust/json/samples
 cargo xtask golden ../quicktype # re-record the corpus from a built quicktype checkout
+
+# run the TypeScript CLI and ours side by side on any arguments and compare
+cargo xtask diff -- my.json --lang go
+cargo xtask diff --each tests/inputs/json/samples -- --lang rust --just-types
 ```
 
 Validate the corpus itself against the TypeScript implementation (every case
