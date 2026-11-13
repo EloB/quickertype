@@ -1,16 +1,21 @@
-//! Inference from running tallies gives what quicktype infers from the
-//! compressed form of the samples (docs/STREAMING-INFERENCE.md): generated
-//! inputs go through both, and everything must be identical (each source's
-//! error, the type graph right after inference for every combination of
-//! the inference flags, and a whole run for a language and option set).
+//! Inference from running tallies, and from tallies of the compressed form,
+//! gives what quicktype infers from the compressed form of the samples
+//! value by value (docs/STREAMING-INFERENCE.md): generated inputs go
+//! through each, and everything must be identical (each source's error,
+//! the type graph right after inference for every combination of the
+//! inference flags, and a whole run for a language and option set).
 //!
-//! `tallies_infer_what_the_compressed_form_infers` checks a few thousand
-//! seeds; `cargo xtask streaming-fuzz` runs the ignored `fuzz` test over
-//! millions (`QUICKTYPE_STREAMING_SEEDS`, `QUICKTYPE_STREAMING_START`,
-//! `QUICKTYPE_STREAMING_JOBS`; per seed `QUICKTYPE_STREAMING_GRAPHS`
-//! graphs and `QUICKTYPE_STREAMING_RUNS` whole runs on every
-//! `QUICKTYPE_STREAMING_RUNS_EVERY`th seed; `QUICKTYPE_STREAMING_TRACE`
-//! prints each seed as it starts), and the
+//! `tallies_infer_what_the_compressed_form_infers` and
+//! `compressed_tallies_infer_what_the_compressed_form_infers` check a few
+//! thousand seeds; `cargo xtask streaming-fuzz` runs the ignored `fuzz`
+//! test over millions (`QUICKTYPE_STREAMING_SEEDS`,
+//! `QUICKTYPE_STREAMING_START`, `QUICKTYPE_STREAMING_JOBS`; per seed
+//! `QUICKTYPE_STREAMING_GRAPHS` graphs and `QUICKTYPE_STREAMING_RUNS` whole
+//! runs on every `QUICKTYPE_STREAMING_RUNS_EVERY`th seed;
+//! `QUICKTYPE_STREAMING_PATH` the ways of inferring compared with the
+//! reference, `running` (the CLI's, the default), `compressed` (the
+//! WebAssembly engine's) or `all`; `QUICKTYPE_STREAMING_TRACE` prints each
+//! seed as it starts), and the
 //! ignored `dump_documents` writes generated documents for comparing both
 //! CLIs with the TypeScript one (`QUICKTYPE_STREAMING_DUMP`).
 
@@ -19,7 +24,7 @@ mod streaming_support;
 use std::path::PathBuf;
 
 use streaming_support::generator::{self, Case, Encoding, Limits, Sample, Source};
-use streaming_support::{Effort, check_many};
+use streaming_support::{Effort, Path, check_many};
 
 const LIMITS: Limits = Limits {
     lone_surrogates: true,
@@ -51,7 +56,13 @@ fn jobs() -> usize {
     ) as usize
 }
 
-fn check_seeds(default_count: u64, limits: Limits, default_effort: Effort, progress: bool) {
+fn check_seeds(
+    default_count: u64,
+    limits: Limits,
+    default_effort: Effort,
+    progress: bool,
+    path: Path,
+) {
     let start = env_u64("QUICKTYPE_STREAMING_START", 0);
     let count = env_u64("QUICKTYPE_STREAMING_SEEDS", default_count);
     let effort = Effort {
@@ -60,9 +71,9 @@ fn check_seeds(default_count: u64, limits: Limits, default_effort: Effort, progr
         runs_every: env_u64("QUICKTYPE_STREAMING_RUNS_EVERY", default_effort.runs_every),
     };
     let begun = std::time::Instant::now();
-    match check_many(start, count, jobs(), limits, effort, progress) {
+    match check_many(start, count, jobs(), limits, effort, progress, path) {
         Ok(stats) => eprintln!(
-            "{count} seeds from {start}: 0 differences ({} graphs, {} runs of which {} failed alike, {} runs skipped for a $ref cycle through a union, {} source errors alike) in {:.1?}",
+            "{count} seeds from {start}, {path:?}: 0 differences ({} graphs, {} runs of which {} failed alike, {} runs skipped for a $ref cycle through a union, {} source errors alike) in {:.1?}",
             stats.graphs,
             stats.runs,
             stats.failed_runs,
@@ -81,7 +92,19 @@ fn tallies_infer_what_the_compressed_form_infers() {
         runs: 1,
         runs_every: 1,
     };
-    check_seeds(3_000, CI_LIMITS, effort, false);
+    check_seeds(3_000, CI_LIMITS, effort, false, Path::RunningTallies);
+}
+
+/// The WebAssembly engine's path: tallies of the compressed form, as the
+/// readers made it and as tables imported from JavaScript.
+#[test]
+fn compressed_tallies_infer_what_the_compressed_form_infers() {
+    let effort = Effort {
+        graphs: 5,
+        runs: 1,
+        runs_every: 1,
+    };
+    check_seeds(3_000, CI_LIMITS, effort, false, Path::CompressedTallies);
 }
 
 /// The long run (`cargo xtask streaming-fuzz`).
@@ -94,7 +117,10 @@ fn fuzz() {
         runs: 1,
         runs_every: 10,
     };
-    check_seeds(100_000, LIMITS, effort, true);
+    let path = std::env::var("QUICKTYPE_STREAMING_PATH").map_or(Path::RunningTallies, |name| {
+        Path::named(&name).unwrap_or_else(|| panic!("unknown QUICKTYPE_STREAMING_PATH {name}"))
+    });
+    check_seeds(100_000, LIMITS, effort, true, path);
 }
 
 /// Writes `QUICKTYPE_STREAMING_SEEDS` generated documents to the

@@ -38,11 +38,12 @@
 #[cfg(test)]
 use std::cell::Cell;
 use std::fmt;
+use std::rc::Rc;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
 
-use super::compressed_json::{CompressedJson, JsonSink, StringReaderState, Strings};
+use super::compressed_json::{CompressedJson, JsonSink, StringReaderState, Strings, Value};
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
 };
@@ -140,6 +141,10 @@ pub(crate) struct StringTally {
     pub(crate) without_enums: Option<TypeAttributes>,
     /// Whether some string here is not interned (the `$ref` check).
     pub(crate) not_interned: bool,
+    /// What `with_enums` and `without_enums` are known to absorb, as bits
+    /// (see [`add_unrestricted_once`]); only the walk over a compressed
+    /// form sets them, and a merge keeps them true.
+    absorbed: [u32; 2],
 }
 
 /// The `stringTypes` of `attributes`, if any.
@@ -173,6 +178,49 @@ fn add_unrestricted(combined: &mut Option<TypeAttributes>) -> Result<()> {
         combined,
         StringTypesTypeAttributeKind.make_attributes(StringTypes::unrestricted()),
     )
+}
+
+/// The bit of `StringTally::absorbed` for unrestricted string types, which
+/// absorb every other string type.
+const ABSORBS_UNRESTRICTED: u32 = 1 << 31;
+
+/// The bit of `StringTally::absorbed` for transformation `kind`; none
+/// (never recorded) for a kind past the bits.
+fn absorbs_transformation(kind: TypeKind) -> u32 {
+    match 1u32.checked_shl(kind as u32) {
+        Some(bit) if bit != ABSORBS_UNRESTRICTED => bit,
+        _ => 0,
+    }
+}
+
+/// [`add_unrestricted`], skipped once `absorbed` says the string types are
+/// unrestricted. Combining only ever adds (the union of string types is
+/// unrestricted if either is, and unites the transformations), so once
+/// the combined string types absorb an addition they always do, and the
+/// bit records that instead of looking at them for every value.
+fn add_unrestricted_once(combined: &mut Option<TypeAttributes>, absorbed: &mut u32) -> Result<()> {
+    if *absorbed & ABSORBS_UNRESTRICTED != 0 {
+        return Ok(());
+    }
+    add_unrestricted(combined)?;
+    *absorbed |= ABSORBS_UNRESTRICTED;
+    Ok(())
+}
+
+/// [`add_transformation`], skipped once `absorbed` says the string types
+/// allow `kind` or are unrestricted (see [`add_unrestricted_once`]).
+fn add_transformation_once(
+    combined: &mut Option<TypeAttributes>,
+    absorbed: &mut u32,
+    kind: TypeKind,
+) -> Result<()> {
+    let bit = absorbs_transformation(kind);
+    if *absorbed & (ABSORBS_UNRESTRICTED | bit) != 0 {
+        return Ok(());
+    }
+    add_transformation(combined, kind)?;
+    *absorbed |= bit;
+    Ok(())
 }
 
 /// Adds `new StringTypes(new Map(), new Set([kind]))`, unless the combined
@@ -480,6 +528,10 @@ pub(crate) struct Tallies {
     /// Nodes no tree uses any more, for reuse.
     free: Vec<NodeId>,
     strings: Strings,
+    /// For the tallies of a compressed form ([`tally_compressed`]): that
+    /// form, whose string table holds the keys and cases instead of
+    /// `strings`.
+    texts: Option<Rc<CompressedJson>>,
     /// Emptied string and object tallies, for reuse: each sample is read
     /// into a tree of its own, which merging empties. Boxed as the nodes
     /// hold them, so that reusing one moves a pointer.
@@ -531,6 +583,7 @@ impl Tallies {
             nodes: Vec::new(),
             free: Vec::new(),
             strings: Strings::new(),
+            texts: None,
             spare_strings: Vec::new(),
             spare_objects: Vec::new(),
             string_reader: StringReaderState::default(),
@@ -546,7 +599,10 @@ impl Tallies {
 
     /// The text of the key or string case `id`.
     pub(crate) fn text(&self, id: u32) -> Result<&str> {
-        defined(self.strings.get(id as usize))
+        match &self.texts {
+            Some(cjson) => defined(cjson.string(id)),
+            None => defined(self.strings.get(id as usize)),
+        }
     }
 
     /// The number of nodes in use (for tests).
@@ -712,6 +768,372 @@ impl Tallies {
         for old in replaced {
             self.free_tree(old);
         }
+    }
+}
+
+/// What [`CompressedTally`] knows of a string of the compressed form: not
+/// looked at yet, a text other than `"__proto__"`, or `"__proto__"`.
+const UNKNOWN: u8 = 0;
+const PLAIN: u8 = 1;
+const PROTO: u8 = 2;
+
+/// Tallies the values of a compressed form (each top-level's samples, in
+/// order) as reading their samples would have tallied them: the running
+/// tallies of samples that were read into a [`CompressedJson`] instead
+/// (the WebAssembly engine keeps its inputs in that form, which quicktype's
+/// API can ask for at any time), made in one walk over it when their types
+/// are inferred. Returns the tallies, whose keys and cases are the
+/// compressed form's strings, and each top-level's tree; `None` if the
+/// values are not as a reader makes them, where only inference from the
+/// values themselves is exact. See `docs/STREAMING-INFERENCE.md`, "Tallies
+/// of a compressed form".
+pub(crate) fn tally_compressed<'c>(
+    cjson: &Rc<CompressedJson>,
+    top_levels: impl IntoIterator<Item = &'c [Value]>,
+) -> Option<(Tallies, Vec<NodeId>)> {
+    // A string is known by its index, but for `"__proto__"`, which is
+    // interned anew each time and so is known by its text.
+    if !cjson.unique_strings() {
+        return None;
+    }
+    let mut tallies = Tallies::new();
+    tallies.texts = Some(Rc::clone(cjson));
+    let mut walk = CompressedTally::new(cjson);
+    let mut roots = Vec::new();
+    for samples in top_levels {
+        roots.push(walk.tally(&mut tallies, samples)?);
+    }
+    Some((tallies, roots))
+}
+
+/// The walk of [`tally_compressed`].
+///
+/// The values a reader made form a tree from each sample's root: every
+/// object and array is the value of exactly one key, element or root. A
+/// compressed form from elsewhere (the tables of a JavaScript
+/// `CompressedJSON`) could hold one that is reached twice, or a cycle; the
+/// walk then declines.
+struct CompressedTally<'c> {
+    cjson: &'c CompressedJson,
+    /// By string index: [`UNKNOWN`], [`PLAIN`] or [`PROTO`].
+    classes: Vec<u8>,
+    /// The index of the first `"__proto__"` looked at, which stands for
+    /// every one ([`NO_INDEX`] before).
+    proto: u32,
+    /// Bit sets of the objects and arrays reached so far.
+    objects_seen: Vec<u64>,
+    arrays_seen: Vec<u64>,
+    /// The containers being walked, innermost last.
+    stack: Vec<WalkFrame<'c>>,
+}
+
+/// No string index (yet).
+const NO_INDEX: u32 = u32::MAX;
+
+/// An object or array whose values [`CompressedTally`] is walking.
+enum WalkFrame<'c> {
+    Object {
+        entries: &'c [(Value, Value)],
+        /// The next entry.
+        next: usize,
+        /// The node of the object.
+        node: NodeId,
+        /// The index of the key expected next (see `Frame::Object`).
+        next_key: usize,
+    },
+    Array {
+        items: &'c [Value],
+        /// The next element.
+        next: usize,
+        /// The node of the elements.
+        node: NodeId,
+    },
+}
+
+/// Marks bit `index` of `bits`; whether it was clear.
+fn first_visit(bits: &mut [u64], index: u32) -> bool {
+    let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
+    match bits.get_mut(word) {
+        Some(w) if *w & bit == 0 => {
+            *w |= bit;
+            true
+        }
+        _ => false,
+    }
+}
+
+impl<'c> CompressedTally<'c> {
+    fn new(cjson: &'c CompressedJson) -> Self {
+        let (objects, arrays) = cjson.counts();
+        CompressedTally {
+            cjson,
+            classes: vec![UNKNOWN; cjson.table_counts().strings],
+            proto: NO_INDEX,
+            objects_seen: vec![0; objects.div_ceil(64)],
+            arrays_seen: vec![0; arrays.div_ceil(64)],
+            stack: Vec::new(),
+        }
+    }
+
+    /// Whether string `index` is `"__proto__"`.
+    fn is_proto(&mut self, index: u32) -> Result<bool> {
+        let class = defined(self.classes.get_mut(index as usize))?;
+        if *class == UNKNOWN {
+            *class = if defined(self.cjson.string(index))? == "__proto__" {
+                if self.proto == NO_INDEX {
+                    self.proto = index;
+                }
+                PROTO
+            } else {
+                PLAIN
+            };
+        }
+        Ok(*class == PROTO)
+    }
+
+    /// Tallies `samples` into a new tree of `tallies`, and returns it;
+    /// `None` if a value is not one a reader makes (see the type), or
+    /// tallying it fails.
+    fn tally(&mut self, tallies: &mut Tallies, samples: &[Value]) -> Option<NodeId> {
+        let root = tallies.new_tree().ok()?;
+        for &sample in samples {
+            if !self.walk(tallies, root, sample).unwrap_or(false) {
+                return None;
+            }
+        }
+        Some(root)
+    }
+
+    /// Tallies `value` and everything in it at `node`; whether it is a
+    /// tree as a reader makes it.
+    fn walk(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
+        if !self.visit(tallies, node, value)? {
+            return Ok(false);
+        }
+        while let Some(frame) = self.stack.last_mut() {
+            let (node, value) = match frame {
+                WalkFrame::Array { items, next, node } => match items.get(*next) {
+                    Some(&item) => {
+                        *next += 1;
+                        (*node, item)
+                    }
+                    None => {
+                        self.stack.pop();
+                        continue;
+                    }
+                },
+                WalkFrame::Object {
+                    entries,
+                    next,
+                    node,
+                    next_key,
+                } => match entries.get(*next) {
+                    Some(&(key, value)) => {
+                        *next += 1;
+                        let (object, expected) = (*node, *next_key);
+                        let Value::InternedString(key) = key else {
+                            return Ok(false);
+                        };
+                        let (child, following) = self.key(tallies, object, key, expected)?;
+                        if let Some(WalkFrame::Object { next_key, .. }) = self.stack.last_mut() {
+                            *next_key = following;
+                        }
+                        (child, value)
+                    }
+                    None => {
+                        self.stack.pop();
+                        continue;
+                    }
+                },
+            };
+            if !self.visit(tallies, node, value)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    /// Counts key `key` (a string index) in the object at `node`, where the
+    /// key at index `expected` is expected, as `TallyBuilder::tally_key`
+    /// counts its text. Returns the node of its value and the index of the
+    /// key expected next.
+    fn key(
+        &mut self,
+        tallies: &mut Tallies,
+        node: NodeId,
+        key: u32,
+        expected: usize,
+    ) -> Result<(NodeId, usize)> {
+        if self.is_proto(key)? {
+            let fresh = tallies.new_tree()?;
+            let object = defined(
+                defined(tallies.nodes.get_mut(node as usize))?
+                    .object
+                    .as_mut(),
+            )?;
+            object.add_proto_occurrences(1);
+            if let Some(old) = object.proto.replace(fresh) {
+                tallies.free_tree(old);
+            }
+            return Ok((fresh, expected));
+        }
+        let Tallies { nodes, free, .. } = tallies;
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        let index = match object.keys.get_index(expected) {
+            Some((&found, _)) if found == key => expected,
+            _ => match object.keys.get_index_of(&key) {
+                Some(index) => index,
+                None => {
+                    let fresh = alloc(nodes, free)?;
+                    let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+                    object.keys.insert(
+                        key,
+                        KeyTally {
+                            count: 0,
+                            node: fresh,
+                        },
+                    );
+                    object.keys.len() - 1
+                }
+            },
+        };
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        let (_, tally) = defined(object.keys.get_index_mut(index))?;
+        tally.count += 1;
+        Ok((tally.node, index + 1))
+    }
+
+    /// The string tally of `node`.
+    fn strings(tallies: &mut Tallies, node: NodeId) -> Result<&mut StringTally> {
+        let Tallies {
+            nodes,
+            spare_strings,
+            ..
+        } = tallies;
+        let n = defined(nodes.get_mut(node as usize))?;
+        Ok(n.strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
+    }
+
+    /// Tallies `value` at `node`, as the [`TallyBuilder`] event its reader
+    /// would have emitted (whose strings `commitString` classified as the
+    /// value records); an object or array is pushed, its values to come.
+    /// Whether the value is one a reader makes.
+    fn visit(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
+        let kind = match value {
+            Value::Null => TypeKind::Null,
+            Value::False | Value::True => TypeKind::Bool,
+            Value::Integer => TypeKind::Integer,
+            Value::Double => TypeKind::Double,
+            Value::InternedString(index) => {
+                // `TallyBuilder::add_case`.
+                let id = if self.is_proto(index)? {
+                    self.proto
+                } else {
+                    index
+                };
+                let strings = Self::strings(tallies, node)?;
+                *strings.cases.entry(id).or_insert(0) += 1;
+                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
+                return Ok(true);
+            }
+            Value::UninternedString => {
+                // `TallyBuilder::add_uninterned`.
+                let strings = Self::strings(tallies, node)?;
+                strings.not_interned = true;
+                add_unrestricted_once(&mut strings.with_enums, &mut strings.absorbed[0])?;
+                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
+                return Ok(true);
+            }
+            Value::StringFormat(kind) => {
+                // `TallyBuilder::add_string_format`.
+                let strings = Self::strings(tallies, node)?;
+                strings.not_interned = true;
+                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
+                add_transformation_once(
+                    &mut strings.without_enums,
+                    &mut strings.absorbed[1],
+                    kind,
+                )?;
+                return Ok(true);
+            }
+            Value::TransformedString(index) => {
+                // `TallyBuilder::add_transformed_string`, with the kind and
+                // attributes `commitString` classified the string by.
+                let text = defined(self.cjson.string(index))?;
+                let Some(kind) = infer_transformed_string_type_kind_for_string(
+                    text,
+                    self.cjson.date_time_recognizer(),
+                ) else {
+                    return Ok(false);
+                };
+                let Some(producer) = transformed_string_type_attributes_producer(kind) else {
+                    return Ok(false);
+                };
+                let attributes = producer(text);
+                let strings = Self::strings(tallies, node)?;
+                strings.not_interned = true;
+                add_produced(&mut strings.with_enums, &attributes)?;
+                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
+                add_produced(&mut strings.without_enums, &attributes)?;
+                add_transformation_once(
+                    &mut strings.without_enums,
+                    &mut strings.absorbed[1],
+                    kind,
+                )?;
+                return Ok(true);
+            }
+            Value::Object(index) => {
+                if !first_visit(&mut self.objects_seen, index) {
+                    return Ok(false);
+                }
+                // `push_object_context`.
+                let Tallies {
+                    nodes,
+                    spare_objects,
+                    ..
+                } = tallies;
+                let n = defined(nodes.get_mut(node as usize))?;
+                n.kinds.add(TypeKind::Object);
+                n.object
+                    .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
+                    .count += 1;
+                self.stack.push(WalkFrame::Object {
+                    entries: self.cjson.get_object_for_value(value)?,
+                    next: 0,
+                    node,
+                    next_key: 0,
+                });
+                return Ok(true);
+            }
+            Value::Array(index) => {
+                if !first_visit(&mut self.arrays_seen, index) {
+                    return Ok(false);
+                }
+                // `push_array_context`.
+                let items = match defined(tallies.nodes.get(node as usize))?.items {
+                    Some(items) => items,
+                    None => {
+                        let items = tallies.new_tree()?;
+                        defined(tallies.nodes.get_mut(node as usize))?.items = Some(items);
+                        items
+                    }
+                };
+                defined(tallies.nodes.get_mut(node as usize))?
+                    .kinds
+                    .add(TypeKind::Array);
+                self.stack.push(WalkFrame::Array {
+                    items: self.cjson.get_array_for_value(value)?,
+                    next: 0,
+                    node: items,
+                });
+                return Ok(true);
+            }
+        };
+        defined(tallies.nodes.get_mut(node as usize))?
+            .kinds
+            .add(kind);
+        Ok(true)
     }
 }
 
@@ -1358,6 +1780,124 @@ mod tests {
             parsed.merge(trees[0], trees[1]).unwrap();
             assert_eq!(dump(&parsed, trees[0]), dump(&streamed, root));
         }
+    }
+
+    /// Samples with every kind of value, `__proto__` (also as a string, and
+    /// repeated, which only the stream reader keeps), `$ref`s, repeated and
+    /// reordered keys, nesting and strings of every class.
+    const WALKED: [&str; 7] = [
+        r##"{"a":[1,"x",1.5,"2020-01-01T00:00:00Z",null,true],"$ref":"#/a","u":"http://h/x.png","__proto__":"__proto__"}"##,
+        r#"{"__proto__":[{"b":"0123"}],"e":{},"f":[[]],"g":"7","a":[{"b":"__proto__"}],"__proto__":{"p":1}}"#,
+        r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]},"6ba7b810-9dad-11d1-80b4-00c04fd430c8"]"#,
+        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg","x":"x","x":2}"#,
+        r#""long string, long string, long string, long string, long string, too""#,
+        r##"{"$ref":"#/z","$ref":"2020-01-01","a":{"$ref":"https://h/r"},"c":"false","t":"12:00:00Z"}"##,
+        r#"[[[["deep"]]],{"k":{"k":{"k":"__proto__"}}},-0,1e400,"x","x","y"]"#,
+    ];
+
+    /// Tallying the compressed form the readers made of samples gives the
+    /// tallies reading them gives (with either reader, references handled
+    /// or not), whatever the samples are grouped into.
+    #[test]
+    fn tallying_a_compressed_form_is_reading() {
+        for handle_refs in [false, true] {
+            let config = config(handle_refs);
+            let mut read_tallies = Tallies::new();
+            let expected = read(&mut read_tallies, &config, &WALKED);
+            let expected = dump(&read_tallies, expected);
+            let mut streamed = self::config(handle_refs);
+            let mut parsed = self::config(handle_refs);
+            let mut stream_roots = Vec::new();
+            let mut string_roots = Vec::new();
+            for sample in WALKED {
+                stream_roots.push(streamed.parse_stream(sample.as_bytes()).unwrap());
+                string_roots.push(parsed.parse_string(sample).unwrap());
+            }
+            // The stream reader keeps what the tallies were read with.
+            let streamed = Rc::new(streamed);
+            let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()]).unwrap();
+            assert_eq!(dump(&tallies, roots[0]), expected, "refs {handle_refs}");
+            // Split into top-levels: each its own tree.
+            let (first, rest) = stream_roots.split_at(3);
+            let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap();
+            let mut one = Tallies::new();
+            let a = read(&mut one, &config, &WALKED[..3]);
+            let b = read(&mut one, &config, &WALKED[3..]);
+            assert_eq!(dump(&tallies, roots[0]), dump(&one, a));
+            assert_eq!(dump(&tallies, roots[1]), dump(&one, b));
+            // `JSON.parse` semantics: as reading the text samples.
+            let mut text_tallies = Tallies::new();
+            let trees: Vec<NodeId> = WALKED
+                .iter()
+                .map(|sample| {
+                    parse_string_into(&mut TallyBuilder::new(&mut text_tallies, &config), sample)
+                        .unwrap()
+                })
+                .collect();
+            for &tree in &trees[1..] {
+                text_tallies.merge(trees[0], tree).unwrap();
+            }
+            let parsed = Rc::new(parsed);
+            let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()]).unwrap();
+            assert_eq!(
+                dump(&tallies, roots[0]),
+                dump(&text_tallies, trees[0]),
+                "refs {handle_refs}"
+            );
+        }
+    }
+
+    /// Tables no reader makes: the walk declines them.
+    #[test]
+    fn tables_no_reader_makes_are_declined() {
+        use crate::input::compressed_json::CompressedJsonTables;
+        let tables = |strings: &[&str], objects: &[i32], arrays: &[i32]| CompressedJsonTables {
+            strings: strings.iter().map(|s| (*s).to_owned()).collect(),
+            objects: objects.to_vec(),
+            object_offsets: if objects.is_empty() { vec![] } else { vec![0] },
+            arrays: arrays.to_vec(),
+            array_offsets: if arrays.is_empty() { vec![] } else { vec![0] },
+        };
+        let (string, integer, object, array, transformed) = (6, 4, 8, 9, 11);
+        let cases = [
+            // `[o, o]` with `o = {"a": 1}`: an object reached twice.
+            (tables(&["a"], &[string, integer], &[object, object]), array),
+            // `o = {"a": o}`: a cycle.
+            (tables(&["a"], &[string, object], &[]), object),
+            // `{"a": 1, "a": 1}` with the key twice in the string table.
+            (
+                tables(
+                    &["a", "a"],
+                    &[string, integer, string | 1 << 4, integer],
+                    &[],
+                ),
+                object,
+            ),
+            // `["x"]` with `"x"` a transformed string: no kind.
+            (tables(&["x"], &[], &[transformed]), array),
+        ];
+        for (tables, root) in cases {
+            let cjson =
+                CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
+                    .unwrap();
+            let (objects, arrays) = cjson.counts();
+            let root = cjson.decode_value(root, objects, arrays).unwrap();
+            assert!(
+                tally_compressed(&Rc::new(cjson), [[root].as_slice()]).is_none(),
+                "{tables:?}"
+            );
+        }
+        // The same tables without the anomaly are tallied.
+        let good = tables(&["a"], &[string, integer], &[object]);
+        let cjson =
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &good).unwrap();
+        let (objects, arrays) = cjson.counts();
+        let root = cjson.decode_value(array, objects, arrays).unwrap();
+        let (tallies, roots) = tally_compressed(&Rc::new(cjson), [[root].as_slice()]).unwrap();
+        assert_eq!(
+            dump(&tallies, roots[0]),
+            "[array] items [[object] objects 1 [] {\"a\"×1: [integer], }]"
+        );
     }
 
     #[test]
