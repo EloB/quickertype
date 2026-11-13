@@ -13,6 +13,7 @@
 //! `tests/vectors/`, which the integration tests replay without Node.
 
 pub mod number;
+pub mod sort;
 pub mod unicode;
 mod unicode_table;
 pub mod utf16;
