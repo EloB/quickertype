@@ -1,0 +1,2 @@
+# Corpus cases (directory names in tests/corpus) whose output is known to
+# differ from the reference, one per line. Empty: every case matches.

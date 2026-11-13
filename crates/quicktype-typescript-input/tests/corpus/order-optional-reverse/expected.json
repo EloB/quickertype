@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"anyOf\":[{\"$ref\":\"#/definitions/Z\"},{\"$ref\":\"#/definitions/Y\"}],\"title\":\"a\"},\"b\":{\"anyOf\":[{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Y\"}},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Z\"}}],\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"b\"],\"quicktypePropertyOrder\":[\"a\",\"b\"]},\"Y\":{\"title\":\"Y\",\"type\":\"object\",\"properties\":{\"y\":{\"type\":\"number\",\"const\":1,\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"y\"],\"required\":[\"y\"],\"quicktypePropertyOrder\":[\"y\"]},\"Z\":{\"title\":\"Z\",\"type\":\"object\",\"properties\":{\"z\":{\"type\":\"number\",\"const\":1,\"title\":\"z\"}},\"additionalProperties\":false,\"propertyOrder\":[\"z\"],\"required\":[\"z\"],\"quicktypePropertyOrder\":[\"z\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,3 @@
+{
+  "error": "TypeScript error: Could not resolve the path 'nothere' with the extensions: '.ts', '.tsx', '.d.ts', '.cts', '.d.cts', '.mts', '.d.mts'.\n  The file is in the program because:\n    Root file specified for compilation"
+}

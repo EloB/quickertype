@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"bar\":{\"type\":\"string\",\"title\":\"bar\"},\"enum\":{\"$ref\":\"#/definitions/Enum\",\"title\":\"enum\"},\"foo\":{\"type\":\"string\",\"title\":\"foo\"},\"union\":{\"$ref\":\"#/definitions/Union\",\"title\":\"union\"}},\"additionalProperties\":false,\"propertyOrder\":[\"bar\",\"enum\",\"foo\",\"union\"],\"required\":[\"bar\",\"enum\",\"foo\",\"union\"],\"quicktypePropertyOrder\":[\"bar\",\"enum\",\"foo\",\"union\"]},\"Enum\":{\"title\":\"Enum\",\"enum\":[\"blue\",\"green\",\"red\"],\"type\":\"string\"},\"Union\":{\"title\":\"Union\",\"type\":[\"number\",\"boolean\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Node\":{\"title\":\"Node\",\"type\":\"object\",\"properties\":{\"kids\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"$ref\":\"#/definitions/Leaf\"}]},\"title\":\"kids\"},\"parent\":{\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"$ref\":\"#/definitions/Leaf\"},{\"type\":\"null\"}],\"title\":\"parent\"}},\"additionalProperties\":false,\"propertyOrder\":[\"kids\",\"parent\"],\"required\":[\"kids\",\"parent\"],\"quicktypePropertyOrder\":[\"kids\",\"parent\"]},\"Leaf\":{\"title\":\"Leaf\",\"type\":\"object\",\"properties\":{\"v\":{\"type\":\"string\",\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"v\"],\"required\":[\"v\"],\"quicktypePropertyOrder\":[\"v\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

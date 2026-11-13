@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Shape\":{\"title\":\"Shape\",\"oneOf\":[{\"$ref\":\"#/definitions/Circle\"},{\"$ref\":\"#/definitions/Square\"}]},\"Circle\":{\"title\":\"Circle\",\"type\":\"object\",\"properties\":{\"r\":{\"type\":\"number\",\"title\":\"r\",\"default\":1},\"kind\":{\"type\":\"string\",\"title\":\"kind\",\"default\":\"\"}},\"additionalProperties\":false,\"propertyOrder\":[\"r\",\"kind\"],\"required\":[\"kind\",\"r\"],\"quicktypePropertyOrder\":[\"r\",\"kind\"]},\"Square\":{\"title\":\"Square\",\"type\":\"object\",\"properties\":{\"side\":{\"type\":\"number\",\"title\":\"side\",\"default\":1},\"kind\":{\"type\":\"string\",\"title\":\"kind\",\"default\":\"\"}},\"additionalProperties\":false,\"propertyOrder\":[\"side\",\"kind\"],\"required\":[\"kind\",\"side\"],\"quicktypePropertyOrder\":[\"side\",\"kind\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"s\":{\"$ref\":\"#/definitions/Shape\",\"title\":\"s\"}},\"additionalProperties\":false,\"propertyOrder\":[\"s\"],\"required\":[\"s\"],\"quicktypePropertyOrder\":[\"s\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

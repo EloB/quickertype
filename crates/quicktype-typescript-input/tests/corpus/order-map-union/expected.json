@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"const\":1,\"title\":\"a\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\"],\"required\":[\"a\"],\"quicktypePropertyOrder\":[\"a\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"u\":{\"anyOf\":[{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/A\"}},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/A\"}}],\"title\":\"u\"},\"v\":{\"anyOf\":[{\"$ref\":\"#/definitions/A\"},{\"$ref\":\"#/definitions/Record%3Cstring%2CA%3E\"}],\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"u\",\"v\"],\"required\":[\"u\",\"v\"],\"quicktypePropertyOrder\":[\"u\",\"v\"]},\"Record<string,A>\":{\"title\":\"Record<string,A>\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

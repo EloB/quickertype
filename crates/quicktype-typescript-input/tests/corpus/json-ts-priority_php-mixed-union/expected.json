@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"mixed\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"$ref\":\"#/definitions/MixedClass\"},{\"type\":[\"null\",\"string\",\"number\",\"boolean\"]}]},\"title\":\"mixed\"}},\"additionalProperties\":false,\"propertyOrder\":[\"mixed\"],\"required\":[\"mixed\"],\"quicktypePropertyOrder\":[\"mixed\"]},\"MixedClass\":{\"title\":\"MixedClass\",\"type\":\"object\",\"properties\":{\"nested\":{\"type\":\"string\",\"title\":\"nested\"}},\"additionalProperties\":false,\"propertyOrder\":[\"nested\"],\"required\":[\"nested\"],\"quicktypePropertyOrder\":[\"nested\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

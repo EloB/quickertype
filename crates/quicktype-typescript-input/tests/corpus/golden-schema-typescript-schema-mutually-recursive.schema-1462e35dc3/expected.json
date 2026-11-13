@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Foo\":{\"title\":\"Foo\",\"anyOf\":[{\"$ref\":\"#/definitions/TopLevel\"},{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/TopLevel\"}}]},\"Bar\":{\"title\":\"Bar\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"foo\":{\"$ref\":\"#/definitions/Foo\",\"title\":\"foo\"}},\"propertyOrder\":[\"foo\"],\"required\":[\"foo\"],\"quicktypePropertyOrder\":[\"foo\"]},\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"bar\":{\"$ref\":\"#/definitions/Bar\",\"title\":\"bar\"}},\"propertyOrder\":[\"bar\"],\"quicktypePropertyOrder\":[\"bar\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

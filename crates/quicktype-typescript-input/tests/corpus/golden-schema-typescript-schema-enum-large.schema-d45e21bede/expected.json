@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"callsign\":{\"$ref\":\"#/definitions/Callsign\",\"title\":\"callsign\"},\"priority\":{\"$ref\":\"#/definitions/Priority\",\"title\":\"priority\"}},\"propertyOrder\":[\"callsign\",\"priority\"],\"required\":[\"callsign\",\"priority\"],\"quicktypePropertyOrder\":[\"callsign\",\"priority\"]},\"Callsign\":{\"title\":\"Callsign\",\"enum\":[\"alpha\",\"bravo\",\"charlie\",\"delta\",\"echo\",\"foxtrot\",\"golf\",\"hotel\",\"india\",\"juliett\",\"kilo\",\"lima\",\"mike\",\"november\",\"oscar\",\"papa\",\"quebec\",\"romeo\",\"sierra\",\"tango\"],\"type\":\"string\"},\"Priority\":{\"title\":\"Priority\",\"enum\":[\"high\",\"low\",\"medium\"],\"type\":\"string\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

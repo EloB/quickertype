@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"map\":{\"$ref\":\"#/definitions/Map\",\"title\":\"map\"}},\"additionalProperties\":false,\"propertyOrder\":[\"map\"],\"quicktypePropertyOrder\":[\"map\"]},\"Map\":{\"title\":\"Map\",\"type\":\"object\",\"additionalProperties\":{\"type\":[\"number\",\"boolean\"]},\"properties\":{\"foo\":{\"type\":\"number\",\"title\":\"foo\"}},\"propertyOrder\":[\"foo\"],\"quicktypePropertyOrder\":[\"foo\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"arr\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Arr\"},\"title\":\"arr\"},\"for\":{\"type\":\"string\",\"title\":\"for\"},\"gve\":{\"$ref\":\"#/definitions/Gve\",\"title\":\"gve\"},\"lvc\":{\"enum\":[\"chaotic\",\"lawful\",\"neutral\"],\"type\":\"string\",\"title\":\"lvc\"},\"otherArr\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/OtherArr\"},\"title\":\"otherArr\"}},\"propertyOrder\":[\"arr\",\"for\",\"gve\",\"lvc\",\"otherArr\"],\"required\":[\"gve\"],\"quicktypePropertyOrder\":[\"arr\",\"for\",\"gve\",\"lvc\",\"otherArr\"]},\"Arr\":{\"title\":\"Arr\",\"anyOf\":[{\"enum\":[\"bar\",\"foo\",\"if\"],\"type\":\"string\"},{\"type\":\"number\"}]},\"OtherArr\":{\"title\":\"OtherArr\",\"enum\":[\"bar\",\"foo\",\"if\"],\"type\":\"string\"},\"Gve\":{\"title\":\"Gve\",\"enum\":[\"evil\",\"good\",\"neutral\"],\"type\":\"string\"},\"Lvc\":{\"title\":\"Lvc\",\"enum\":[\"chaotic\",\"lawful\",\"neutral\"],\"type\":\"string\"},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Node\":{\"title\":\"Node\",\"type\":\"object\",\"properties\":{\"value\":{\"type\":\"number\",\"title\":\"value\"},\"children\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Node\"},\"title\":\"children\"},\"parent\":{\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"type\":\"null\"}],\"title\":\"parent\"}},\"additionalProperties\":false,\"propertyOrder\":[\"value\",\"children\",\"parent\"],\"required\":[\"children\",\"value\"],\"quicktypePropertyOrder\":[\"value\",\"children\",\"parent\"]},\"Tree\":{\"title\":\"Tree\",\"type\":\"object\",\"properties\":{\"left\":{\"$ref\":\"#/definitions/Tree\",\"title\":\"left\"},\"right\":{\"$ref\":\"#/definitions/Tree\",\"title\":\"right\"},\"v\":{\"type\":\"string\",\"title\":\"v\"}},\"additionalProperties\":false,\"propertyOrder\":[\"left\",\"right\",\"v\"],\"required\":[\"v\"],\"quicktypePropertyOrder\":[\"left\",\"right\",\"v\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

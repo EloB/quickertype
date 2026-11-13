@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Env\":{\"title\":\"Env\",\"type\":\"object\",\"properties\":{\"flags\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"boolean\"},\"title\":\"flags\"},\"services\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/Service\"},\"title\":\"services\"},\"nested\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"object\",\"additionalProperties\":{\"type\":\"number\"}},\"title\":\"nested\"}},\"additionalProperties\":false,\"propertyOrder\":[\"flags\",\"services\",\"nested\"],\"required\":[\"flags\",\"nested\",\"services\"],\"quicktypePropertyOrder\":[\"flags\",\"services\",\"nested\"]},\"Service\":{\"title\":\"Service\",\"type\":\"object\",\"properties\":{\"url\":{\"type\":\"string\",\"title\":\"url\"}},\"additionalProperties\":false,\"propertyOrder\":[\"url\"],\"required\":[\"url\"],\"quicktypePropertyOrder\":[\"url\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

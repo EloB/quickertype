@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"pair\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"},{\"type\":\"number\"}],\"minItems\":2,\"maxItems\":2,\"title\":\"pair\"},\"labeled\":{\"type\":\"array\",\"items\":[{\"type\":\"string\",\"title\":\"name\"},{\"type\":\"number\",\"title\":\"age\"}],\"minItems\":2,\"maxItems\":2,\"title\":\"labeled\"},\"opt\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"},{\"type\":\"number\"}],\"minItems\":1,\"maxItems\":2,\"title\":\"opt\"},\"rest\":{\"type\":\"array\",\"items\":[{\"type\":\"string\"}],\"minItems\":1,\"additionalItems\":{\"type\":\"number\"},\"title\":\"rest\"},\"ro\":{\"type\":\"array\",\"items\":[{\"type\":\"boolean\"},{\"type\":\"boolean\"}],\"minItems\":2,\"maxItems\":2,\"title\":\"ro\"}},\"additionalProperties\":false,\"propertyOrder\":[\"pair\",\"labeled\",\"opt\",\"rest\",\"ro\"],\"required\":[\"labeled\",\"opt\",\"pair\",\"rest\",\"ro\"],\"quicktypePropertyOrder\":[\"pair\",\"labeled\",\"opt\",\"rest\",\"ro\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

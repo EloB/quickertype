@@ -1,0 +1,797 @@
+// To parse this data:
+//
+//   import { Convert, TopLevel } from "./TopLevel";
+//
+//   const topLevel = Convert.toTopLevel(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
+export interface TopLevel {
+    attendance:           number;
+    clock:                string;
+    disableMatch:         number;
+    inOT:                 number;
+    leaddata:             Array<LeaddatumElement[]>;
+    officials_referee1:   string;
+    officials_referee2:   string;
+    officials_referee3:   string;
+    othermatches:         Othermatch[];
+    pbp:                  Pbp[];
+    period:               number;
+    periodLengthOVERTIME: number;
+    periodLengthREGULAR:  number;
+    periodType:           PerType;
+    periodsMax:           number;
+    scorers:              { [key: string]: Scorer[] };
+    timeline:             unknown[];
+    tm:                   { [key: string]: Tm };
+    totalTimeAdded:       number;
+    totallds:             Totallds;
+}
+
+export type LeaddatumElement = LeaddatumEnum | number;
+
+export type LeaddatumEnum = "" | "P1" | "P2" | "P3" | "P4";
+
+export interface Othermatch {
+    clock:           string;
+    competitionName: string;
+    id:              string;
+    period:          number;
+    periodType:      PerType;
+    team1:           Team;
+    team1Name:       string;
+    team1Score:      number;
+    team2:           Team;
+    team2Name:       string;
+    team2Score:      number;
+}
+
+export type PerType = "REGULAR";
+
+export interface Team {
+    teamCode:              string;
+    teamCodeInternational: string;
+    teamName:              string;
+    teamNameInternational: string;
+}
+
+export interface Pbp {
+    actionType:                      ActionType;
+    familyName?:                     string;
+    familyNameInitial?:              FamilyNameInitial;
+    firstName?:                      string;
+    firstNameInitial?:               FirstNameInitial;
+    gt:                              string;
+    internationalFamilyName?:        string;
+    internationalFamilyNameInitial?: FamilyNameInitial;
+    internationalFirstName?:         string;
+    internationalFirstNameInitial?:  FirstNameInitial;
+    lead:                            number;
+    period:                          number;
+    periodType:                      PerType;
+    player:                          string;
+    pno:                             number;
+    qualifier:                       string;
+    s1:                              number;
+    s2:                              number;
+    scoreboardName?:                 ScoreboardName;
+    scoring:                         number;
+    shirtNumber:                     string;
+    subType:                         string;
+    success:                         number;
+    tno:                             number;
+}
+
+export type ActionType = "game" | "period" | "3pt" | "2pt" | "rebound" | "timeout" | "foulon" | "foul" | "assist" | "substitution" | "freethrow" | "steal" | "turnover" | "block" | "jumpball";
+
+export type FamilyNameInitial = "R" | "M" | "s" | "C" | "O" | "W" | "A" | "P" | "V" | "I" | "J" | "S" | "H" | "B";
+
+export type FirstNameInitial = "D" | "J" | "T" | "C" | "O" | "H" | "L" | "A" | "K" | "R" | "B" | "N";
+
+export type ScoreboardName = "" | "T. s" | "R. Ihata" | "D. Jones" | "B. Valentine";
+
+export interface Scorer {
+    familyName?:                     string;
+    familyNameInitial?:              FamilyNameInitial;
+    firstName?:                      string;
+    firstNameInitial?:               FirstNameInitial;
+    gt?:                             string;
+    internationalFamilyName?:        string;
+    internationalFamilyNameInitial?: FamilyNameInitial;
+    internationalFirstName?:         string;
+    internationalFirstNameInitial?:  FirstNameInitial;
+    name?:                           string;
+    per?:                            number;
+    perType?:                        PerType;
+    player?:                         string;
+    pno:                             number;
+    scoreboardName?:                 ScoreboardName;
+    shirtNumber:                     string;
+    summary?:                        string;
+    times?:                          Time[];
+    tno:                             number;
+    tot?:                            number;
+}
+
+export interface Time {
+    gt:      string;
+    per:     number;
+    perType: PerType;
+}
+
+export interface Tm {
+    code:                         string;
+    codeInternational:            string;
+    fouls:                        number;
+    full_score:                   number;
+    lds:                          Lds;
+    logo:                         string;
+    name:                         string;
+    nameInternational:            string;
+    p1_score:                     number;
+    p2_score:                     number;
+    p3_score:                     number;
+    p4_score:                     number;
+    pl:                           { [key: string]: Pl };
+    score:                        number;
+    scoring:                      Scorer[];
+    shortName:                    string;
+    shortNameInternational:       string;
+    shot:                         Shot[];
+    timeouts:                     number;
+    tot_eff_1:                    number;
+    tot_eff_2:                    number;
+    tot_eff_3:                    number;
+    tot_eff_4:                    number;
+    tot_eff_5:                    number;
+    tot_eff_6:                    number;
+    tot_eff_7:                    number;
+    tot_sAssists:                 number;
+    tot_sBenchPoints:             number;
+    tot_sBiggestLead:             number;
+    tot_sBiggestScoringRun:       number;
+    tot_sBlocks:                  number;
+    tot_sBlocksReceived:          number;
+    tot_sFieldGoalsAttempted:     number;
+    tot_sFieldGoalsMade:          number;
+    tot_sFieldGoalsPercentage:    number;
+    tot_sFoulsOn:                 number;
+    tot_sFoulsPersonal:           number;
+    tot_sFoulsTeam:               number;
+    tot_sFreeThrowsAttempted:     number;
+    tot_sFreeThrowsMade:          number;
+    tot_sFreeThrowsPercentage:    number;
+    tot_sLeadChanges:             number;
+    tot_sMinutes:                 number;
+    tot_sPoints:                  number;
+    tot_sPointsFastBreak:         number;
+    tot_sPointsFromTurnovers:     number;
+    tot_sPointsInThePaint:        number;
+    tot_sPointsSecondChance:      number;
+    tot_sReboundsDefensive:       number;
+    tot_sReboundsOffensive:       number;
+    tot_sReboundsTeam:            number;
+    tot_sReboundsTeamDefensive:   number;
+    tot_sReboundsTeamOffensive:   number;
+    tot_sReboundsTotal:           number;
+    tot_sSteals:                  number;
+    tot_sThreePointersAttempted:  number;
+    tot_sThreePointersMade:       number;
+    tot_sThreePointersPercentage: number;
+    tot_sTimeLeading:             number;
+    tot_sTimesScoresLevel:        number;
+    tot_sTurnovers:               number;
+    tot_sTurnoversTeam:           number;
+    tot_sTwoPointersAttempted:    number;
+    tot_sTwoPointersMade:         number;
+    tot_sTwoPointersPercentage:   number;
+}
+
+export interface Lds {
+    sAssists:       { [key: string]: Scorer };
+    sBlocks:        SBlocks;
+    sPoints:        { [key: string]: Scorer };
+    sReboundsTotal: { [key: string]: Scorer };
+    sSteals:        { [key: string]: Scorer };
+}
+
+export interface SBlocks {
+    "1": Scorer;
+}
+
+export interface Pl {
+    active:                         number;
+    captain?:                       number;
+    comp?:                          Comp;
+    eff_1:                          number;
+    eff_2:                          number;
+    eff_3:                          number;
+    eff_4:                          number;
+    eff_5:                          number;
+    eff_6:                          number;
+    eff_7:                          number;
+    familyName:                     string;
+    familyNameInitial:              FamilyNameInitial;
+    firstName:                      string;
+    firstNameInitial:               FirstNameInitial;
+    internationalFamilyName:        string;
+    internationalFamilyNameInitial: FamilyNameInitial;
+    internationalFirstName:         string;
+    internationalFirstNameInitial:  FirstNameInitial;
+    name:                           string;
+    playingPosition:                string;
+    sAssists:                       number;
+    sBlocks:                        number;
+    sBlocksReceived:                number;
+    sFieldGoalsAttempted:           number;
+    sFieldGoalsMade:                number;
+    sFieldGoalsPercentage:          number;
+    sFoulsOn:                       number;
+    sFoulsPersonal:                 number;
+    sFreeThrowsAttempted:           number;
+    sFreeThrowsMade:                number;
+    sFreeThrowsPercentage:          number;
+    sMinutes:                       SMinutes;
+    sPlusMinusPoints:               number;
+    sPoints:                        number;
+    sPointsFastBreak:               number;
+    sPointsInThePaint:              number;
+    sPointsSecondChance:            number;
+    sReboundsDefensive:             number;
+    sReboundsOffensive:             number;
+    sReboundsTotal:                 number;
+    sSteals:                        number;
+    sThreePointersAttempted:        number;
+    sThreePointersMade:             number;
+    sThreePointersPercentage:       number;
+    sTurnovers:                     number;
+    sTwoPointersAttempted:          number;
+    sTwoPointersMade:               number;
+    sTwoPointersPercentage:         number;
+    shirtNumber:                    string;
+    starter:                        number;
+}
+
+export interface Comp {
+    sAssistsAverage:       number;
+    sMinutesAverage:       string;
+    sPointsAverage:        number;
+    sReboundsTotalAverage: number;
+}
+
+export type SMinutes = number | string;
+
+export interface Shot {
+    actionType:  ActionType;
+    p:           number;
+    per:         number;
+    perType:     PerType;
+    player:      string;
+    pno:         number;
+    r:           number;
+    shirtNumber: string;
+    subType:     SubType;
+    tno:         number;
+    x:           number;
+    y:           number;
+}
+
+export type SubType = "jumpshot" | "layup" | "dunk";
+
+export interface Totallds {
+    sAssists:       { [key: string]: Scorer };
+    sBlocks:        { [key: string]: Scorer };
+    sPoints:        { [key: string]: Scorer };
+    sReboundsTotal: { [key: string]: Scorer };
+    sSteals:        { [key: string]: Scorer };
+}
+
+// Converts JSON strings to/from your types
+// and asserts the results of JSON.parse at runtime
+export class Convert {
+    public static toTopLevel(json: string): TopLevel {
+        return cast(JSON.parse(json), r("TopLevel"));
+    }
+
+    public static topLevelToJson(value: TopLevel): string {
+        return JSON.stringify(uncast(value, r("TopLevel")), null, 2);
+    }
+}
+
+function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
+    const prettyTyp = prettyTypeName(typ);
+    const parentText = parent ? ` on ${parent}` : '';
+    const keyText = key ? ` for key "${key}"` : '';
+    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);
+}
+
+function prettyTypeName(typ: any): string {
+    if (Array.isArray(typ)) {
+        if (typ.length === 2 && typ[0] === undefined) {
+            return `an optional ${prettyTypeName(typ[1])}`;
+        } else {
+            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(", ")}]`;
+        }
+    } else if (typeof typ === "object" && typ.literal !== undefined) {
+        return typ.literal;
+    } else {
+        return typeof typ;
+    }
+}
+
+function jsonToJSProps(typ: any): any {
+    if (typ.jsonToJS === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });
+        typ.jsonToJS = map;
+    }
+    return typ.jsonToJS;
+}
+
+function jsToJSONProps(typ: any): any {
+    if (typ.jsToJSON === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });
+        typ.jsToJSON = map;
+    }
+    return typ.jsToJSON;
+}
+
+function transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {
+    function transformPrimitive(typ: string, val: any): any {
+        if (typeof typ === typeof val) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+
+    function transformUnion(typs: any[], val: any): any {
+        // val must validate against one typ in typs
+        const l = typs.length;
+        for (let i = 0; i < l; i++) {
+            const typ = typs[i];
+            try {
+                return transform(val, typ, getProps);
+            } catch (_) {}
+        }
+        return invalidValue(typs, val, key, parent);
+    }
+
+    function transformEnum(cases: string[], val: any): any {
+        if (cases.indexOf(val) !== -1) return val;
+        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);
+    }
+
+    function transformArray(typ: any, val: any): any {
+        // val must be an array with no invalid elements
+        if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
+
+        return val.map(el => transform(el, typ, getProps));
+    }
+
+    function transformDate(val: any): any {
+        if (val === null) {
+            return null;
+        }
+        const d = new Date(val);
+        if (isNaN(d.valueOf())) {
+            return invalidValue(l("Date"), val, key, parent);
+        }
+        return d;
+    }
+
+    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {
+        if (val === null || typeof val !== "object" || Array.isArray(val)) {
+            return invalidValue(l(ref || "object"), val, key, parent);
+        }
+        const result: any = {};
+        Object.getOwnPropertyNames(props).forEach(key => {
+            const prop = props[key];
+            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
+            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+        });
+        Object.getOwnPropertyNames(val).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) {
+                result[key] = transform(val[key], additional, getProps, key, ref);
+            }
+        });
+        return result;
+    }
+
+    if (typ === "any") return val;
+    if (typ === null) {
+        if (val === null) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+    if (typ === false) return invalidValue(typ, val, key, parent);
+    let ref: any = undefined;
+    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }
+    if (Array.isArray(typ)) return transformEnum(typ, val);
+    if (typeof typ === "object") {
+        return typ.hasOwnProperty("pattern")      ? typeof val === "string" && new RegExp(typ.pattern).test(val) ? val : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("string")       ? typeof val === "string" && (typ.min === undefined || Array.from(val).length >= typ.min) && (typ.max === undefined || Array.from(val).length <= typ.max) ? transform(val, typ.string, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("number")       ? typeof val === "number" && (typ.min === undefined || val >= typ.min) && (typ.max === undefined || val <= typ.max) ? transform(val, typ.number, getProps, key, parent) : invalidValue(typ, val, key, parent)
+            : typ.hasOwnProperty("integer")      ? typeof val === "number" && val % 1 === 0 ? val : invalidValue(l("integer"), val, key, parent)
+            : typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
+            : invalidValue(typ, val, key, parent);
+    }
+    // Numbers can be parsed by Date but shouldn't be.
+    if (typ === Date && (typeof val === "string" || val instanceof Date)) return transformDate(val);
+    return transformPrimitive(typ, val);
+}
+
+function cast<T>(val: any, typ: any): T {
+    return transform(val, typ, jsonToJSProps);
+}
+
+function uncast<T>(val: T, typ: any): any {
+    return transform(val, typ, jsToJSONProps);
+}
+
+function l(typ: any) {
+    return { literal: typ };
+}
+
+function a(typ: any) {
+    return { arrayItems: typ };
+}
+
+function i(typ: any) {
+    return { integer: typ };
+}
+
+function p(pattern: any) {
+    return { pattern };
+}
+
+function s(typ: any, min: any, max: any) {
+    return { string: typ, min, max };
+}
+
+function n(typ: any, min: any, max: any) {
+    return { number: typ, min, max };
+}
+
+function u(...typs: any[]) {
+    return { unionMembers: typs };
+}
+
+function o(props: any[], additional: any) {
+    return { props, additional };
+}
+
+function m(additional: any) {
+    const props: any[] = [];
+    return { props, additional };
+}
+
+function r(name: string) {
+    return { ref: name };
+}
+
+const typeMap: any = {
+    "TopLevel": o([
+        { json: "attendance", js: "attendance", typ: i(0) },
+        { json: "clock", js: "clock", typ: "" },
+        { json: "disableMatch", js: "disableMatch", typ: i(0) },
+        { json: "inOT", js: "inOT", typ: i(0) },
+        { json: "leaddata", js: "leaddata", typ: a(a(u(r("LeaddatumEnum"), i(0)))) },
+        { json: "officials_referee1", js: "officials_referee1", typ: "" },
+        { json: "officials_referee2", js: "officials_referee2", typ: "" },
+        { json: "officials_referee3", js: "officials_referee3", typ: "" },
+        { json: "othermatches", js: "othermatches", typ: a(r("Othermatch")) },
+        { json: "pbp", js: "pbp", typ: a(r("Pbp")) },
+        { json: "period", js: "period", typ: i(0) },
+        { json: "periodLengthOVERTIME", js: "periodLengthOVERTIME", typ: i(0) },
+        { json: "periodLengthREGULAR", js: "periodLengthREGULAR", typ: i(0) },
+        { json: "periodType", js: "periodType", typ: r("PerType") },
+        { json: "periodsMax", js: "periodsMax", typ: i(0) },
+        { json: "scorers", js: "scorers", typ: m(a(r("Scorer"))) },
+        { json: "timeline", js: "timeline", typ: a("any") },
+        { json: "tm", js: "tm", typ: m(r("Tm")) },
+        { json: "totalTimeAdded", js: "totalTimeAdded", typ: i(0) },
+        { json: "totallds", js: "totallds", typ: r("Totallds") },
+    ], false),
+    "Othermatch": o([
+        { json: "clock", js: "clock", typ: "" },
+        { json: "competitionName", js: "competitionName", typ: "" },
+        { json: "id", js: "id", typ: "" },
+        { json: "period", js: "period", typ: i(0) },
+        { json: "periodType", js: "periodType", typ: r("PerType") },
+        { json: "team1", js: "team1", typ: r("Team") },
+        { json: "team1Name", js: "team1Name", typ: "" },
+        { json: "team1Score", js: "team1Score", typ: i(0) },
+        { json: "team2", js: "team2", typ: r("Team") },
+        { json: "team2Name", js: "team2Name", typ: "" },
+        { json: "team2Score", js: "team2Score", typ: i(0) },
+    ], false),
+    "Team": o([
+        { json: "teamCode", js: "teamCode", typ: "" },
+        { json: "teamCodeInternational", js: "teamCodeInternational", typ: "" },
+        { json: "teamName", js: "teamName", typ: "" },
+        { json: "teamNameInternational", js: "teamNameInternational", typ: "" },
+    ], false),
+    "Pbp": o([
+        { json: "actionType", js: "actionType", typ: r("ActionType") },
+        { json: "familyName", js: "familyName", typ: u(undefined, "") },
+        { json: "familyNameInitial", js: "familyNameInitial", typ: u(undefined, r("FamilyNameInitial")) },
+        { json: "firstName", js: "firstName", typ: u(undefined, "") },
+        { json: "firstNameInitial", js: "firstNameInitial", typ: u(undefined, r("FirstNameInitial")) },
+        { json: "gt", js: "gt", typ: "" },
+        { json: "internationalFamilyName", js: "internationalFamilyName", typ: u(undefined, "") },
+        { json: "internationalFamilyNameInitial", js: "internationalFamilyNameInitial", typ: u(undefined, r("FamilyNameInitial")) },
+        { json: "internationalFirstName", js: "internationalFirstName", typ: u(undefined, "") },
+        { json: "internationalFirstNameInitial", js: "internationalFirstNameInitial", typ: u(undefined, r("FirstNameInitial")) },
+        { json: "lead", js: "lead", typ: i(0) },
+        { json: "period", js: "period", typ: i(0) },
+        { json: "periodType", js: "periodType", typ: r("PerType") },
+        { json: "player", js: "player", typ: "" },
+        { json: "pno", js: "pno", typ: i(0) },
+        { json: "qualifier", js: "qualifier", typ: "" },
+        { json: "s1", js: "s1", typ: i(0) },
+        { json: "s2", js: "s2", typ: i(0) },
+        { json: "scoreboardName", js: "scoreboardName", typ: u(undefined, r("ScoreboardName")) },
+        { json: "scoring", js: "scoring", typ: i(0) },
+        { json: "shirtNumber", js: "shirtNumber", typ: "" },
+        { json: "subType", js: "subType", typ: "" },
+        { json: "success", js: "success", typ: i(0) },
+        { json: "tno", js: "tno", typ: i(0) },
+    ], false),
+    "Scorer": o([
+        { json: "familyName", js: "familyName", typ: u(undefined, "") },
+        { json: "familyNameInitial", js: "familyNameInitial", typ: u(undefined, r("FamilyNameInitial")) },
+        { json: "firstName", js: "firstName", typ: u(undefined, "") },
+        { json: "firstNameInitial", js: "firstNameInitial", typ: u(undefined, r("FirstNameInitial")) },
+        { json: "gt", js: "gt", typ: u(undefined, "") },
+        { json: "internationalFamilyName", js: "internationalFamilyName", typ: u(undefined, "") },
+        { json: "internationalFamilyNameInitial", js: "internationalFamilyNameInitial", typ: u(undefined, r("FamilyNameInitial")) },
+        { json: "internationalFirstName", js: "internationalFirstName", typ: u(undefined, "") },
+        { json: "internationalFirstNameInitial", js: "internationalFirstNameInitial", typ: u(undefined, r("FirstNameInitial")) },
+        { json: "name", js: "name", typ: u(undefined, "") },
+        { json: "per", js: "per", typ: u(undefined, i(0)) },
+        { json: "perType", js: "perType", typ: u(undefined, r("PerType")) },
+        { json: "player", js: "player", typ: u(undefined, "") },
+        { json: "pno", js: "pno", typ: i(0) },
+        { json: "scoreboardName", js: "scoreboardName", typ: u(undefined, r("ScoreboardName")) },
+        { json: "shirtNumber", js: "shirtNumber", typ: "" },
+        { json: "summary", js: "summary", typ: u(undefined, "") },
+        { json: "times", js: "times", typ: u(undefined, a(r("Time"))) },
+        { json: "tno", js: "tno", typ: i(0) },
+        { json: "tot", js: "tot", typ: u(undefined, i(0)) },
+    ], false),
+    "Time": o([
+        { json: "gt", js: "gt", typ: "" },
+        { json: "per", js: "per", typ: i(0) },
+        { json: "perType", js: "perType", typ: r("PerType") },
+    ], false),
+    "Tm": o([
+        { json: "code", js: "code", typ: "" },
+        { json: "codeInternational", js: "codeInternational", typ: "" },
+        { json: "fouls", js: "fouls", typ: i(0) },
+        { json: "full_score", js: "full_score", typ: i(0) },
+        { json: "lds", js: "lds", typ: r("Lds") },
+        { json: "logo", js: "logo", typ: "" },
+        { json: "name", js: "name", typ: "" },
+        { json: "nameInternational", js: "nameInternational", typ: "" },
+        { json: "p1_score", js: "p1_score", typ: i(0) },
+        { json: "p2_score", js: "p2_score", typ: i(0) },
+        { json: "p3_score", js: "p3_score", typ: i(0) },
+        { json: "p4_score", js: "p4_score", typ: i(0) },
+        { json: "pl", js: "pl", typ: m(r("Pl")) },
+        { json: "score", js: "score", typ: i(0) },
+        { json: "scoring", js: "scoring", typ: a(r("Scorer")) },
+        { json: "shortName", js: "shortName", typ: "" },
+        { json: "shortNameInternational", js: "shortNameInternational", typ: "" },
+        { json: "shot", js: "shot", typ: a(r("Shot")) },
+        { json: "timeouts", js: "timeouts", typ: i(0) },
+        { json: "tot_eff_1", js: "tot_eff_1", typ: i(0) },
+        { json: "tot_eff_2", js: "tot_eff_2", typ: i(0) },
+        { json: "tot_eff_3", js: "tot_eff_3", typ: 3.14 },
+        { json: "tot_eff_4", js: "tot_eff_4", typ: i(0) },
+        { json: "tot_eff_5", js: "tot_eff_5", typ: i(0) },
+        { json: "tot_eff_6", js: "tot_eff_6", typ: i(0) },
+        { json: "tot_eff_7", js: "tot_eff_7", typ: i(0) },
+        { json: "tot_sAssists", js: "tot_sAssists", typ: i(0) },
+        { json: "tot_sBenchPoints", js: "tot_sBenchPoints", typ: i(0) },
+        { json: "tot_sBiggestLead", js: "tot_sBiggestLead", typ: i(0) },
+        { json: "tot_sBiggestScoringRun", js: "tot_sBiggestScoringRun", typ: i(0) },
+        { json: "tot_sBlocks", js: "tot_sBlocks", typ: i(0) },
+        { json: "tot_sBlocksReceived", js: "tot_sBlocksReceived", typ: i(0) },
+        { json: "tot_sFieldGoalsAttempted", js: "tot_sFieldGoalsAttempted", typ: i(0) },
+        { json: "tot_sFieldGoalsMade", js: "tot_sFieldGoalsMade", typ: i(0) },
+        { json: "tot_sFieldGoalsPercentage", js: "tot_sFieldGoalsPercentage", typ: i(0) },
+        { json: "tot_sFoulsOn", js: "tot_sFoulsOn", typ: i(0) },
+        { json: "tot_sFoulsPersonal", js: "tot_sFoulsPersonal", typ: i(0) },
+        { json: "tot_sFoulsTeam", js: "tot_sFoulsTeam", typ: i(0) },
+        { json: "tot_sFreeThrowsAttempted", js: "tot_sFreeThrowsAttempted", typ: i(0) },
+        { json: "tot_sFreeThrowsMade", js: "tot_sFreeThrowsMade", typ: i(0) },
+        { json: "tot_sFreeThrowsPercentage", js: "tot_sFreeThrowsPercentage", typ: i(0) },
+        { json: "tot_sLeadChanges", js: "tot_sLeadChanges", typ: i(0) },
+        { json: "tot_sMinutes", js: "tot_sMinutes", typ: i(0) },
+        { json: "tot_sPoints", js: "tot_sPoints", typ: i(0) },
+        { json: "tot_sPointsFastBreak", js: "tot_sPointsFastBreak", typ: i(0) },
+        { json: "tot_sPointsFromTurnovers", js: "tot_sPointsFromTurnovers", typ: i(0) },
+        { json: "tot_sPointsInThePaint", js: "tot_sPointsInThePaint", typ: i(0) },
+        { json: "tot_sPointsSecondChance", js: "tot_sPointsSecondChance", typ: i(0) },
+        { json: "tot_sReboundsDefensive", js: "tot_sReboundsDefensive", typ: i(0) },
+        { json: "tot_sReboundsOffensive", js: "tot_sReboundsOffensive", typ: i(0) },
+        { json: "tot_sReboundsTeam", js: "tot_sReboundsTeam", typ: i(0) },
+        { json: "tot_sReboundsTeamDefensive", js: "tot_sReboundsTeamDefensive", typ: i(0) },
+        { json: "tot_sReboundsTeamOffensive", js: "tot_sReboundsTeamOffensive", typ: i(0) },
+        { json: "tot_sReboundsTotal", js: "tot_sReboundsTotal", typ: i(0) },
+        { json: "tot_sSteals", js: "tot_sSteals", typ: i(0) },
+        { json: "tot_sThreePointersAttempted", js: "tot_sThreePointersAttempted", typ: i(0) },
+        { json: "tot_sThreePointersMade", js: "tot_sThreePointersMade", typ: i(0) },
+        { json: "tot_sThreePointersPercentage", js: "tot_sThreePointersPercentage", typ: i(0) },
+        { json: "tot_sTimeLeading", js: "tot_sTimeLeading", typ: 3.14 },
+        { json: "tot_sTimesScoresLevel", js: "tot_sTimesScoresLevel", typ: i(0) },
+        { json: "tot_sTurnovers", js: "tot_sTurnovers", typ: i(0) },
+        { json: "tot_sTurnoversTeam", js: "tot_sTurnoversTeam", typ: i(0) },
+        { json: "tot_sTwoPointersAttempted", js: "tot_sTwoPointersAttempted", typ: i(0) },
+        { json: "tot_sTwoPointersMade", js: "tot_sTwoPointersMade", typ: i(0) },
+        { json: "tot_sTwoPointersPercentage", js: "tot_sTwoPointersPercentage", typ: i(0) },
+    ], false),
+    "Lds": o([
+        { json: "sAssists", js: "sAssists", typ: m(r("Scorer")) },
+        { json: "sBlocks", js: "sBlocks", typ: r("SBlocks") },
+        { json: "sPoints", js: "sPoints", typ: m(r("Scorer")) },
+        { json: "sReboundsTotal", js: "sReboundsTotal", typ: m(r("Scorer")) },
+        { json: "sSteals", js: "sSteals", typ: m(r("Scorer")) },
+    ], false),
+    "SBlocks": o([
+        { json: "1", js: "1", typ: r("Scorer") },
+    ], false),
+    "Pl": o([
+        { json: "active", js: "active", typ: i(0) },
+        { json: "captain", js: "captain", typ: u(undefined, i(0)) },
+        { json: "comp", js: "comp", typ: u(undefined, r("Comp")) },
+        { json: "eff_1", js: "eff_1", typ: i(0) },
+        { json: "eff_2", js: "eff_2", typ: i(0) },
+        { json: "eff_3", js: "eff_3", typ: 3.14 },
+        { json: "eff_4", js: "eff_4", typ: 3.14 },
+        { json: "eff_5", js: "eff_5", typ: i(0) },
+        { json: "eff_6", js: "eff_6", typ: i(0) },
+        { json: "eff_7", js: "eff_7", typ: i(0) },
+        { json: "familyName", js: "familyName", typ: "" },
+        { json: "familyNameInitial", js: "familyNameInitial", typ: r("FamilyNameInitial") },
+        { json: "firstName", js: "firstName", typ: "" },
+        { json: "firstNameInitial", js: "firstNameInitial", typ: r("FirstNameInitial") },
+        { json: "internationalFamilyName", js: "internationalFamilyName", typ: "" },
+        { json: "internationalFamilyNameInitial", js: "internationalFamilyNameInitial", typ: r("FamilyNameInitial") },
+        { json: "internationalFirstName", js: "internationalFirstName", typ: "" },
+        { json: "internationalFirstNameInitial", js: "internationalFirstNameInitial", typ: r("FirstNameInitial") },
+        { json: "name", js: "name", typ: "" },
+        { json: "playingPosition", js: "playingPosition", typ: "" },
+        { json: "sAssists", js: "sAssists", typ: i(0) },
+        { json: "sBlocks", js: "sBlocks", typ: i(0) },
+        { json: "sBlocksReceived", js: "sBlocksReceived", typ: i(0) },
+        { json: "sFieldGoalsAttempted", js: "sFieldGoalsAttempted", typ: i(0) },
+        { json: "sFieldGoalsMade", js: "sFieldGoalsMade", typ: i(0) },
+        { json: "sFieldGoalsPercentage", js: "sFieldGoalsPercentage", typ: i(0) },
+        { json: "sFoulsOn", js: "sFoulsOn", typ: i(0) },
+        { json: "sFoulsPersonal", js: "sFoulsPersonal", typ: i(0) },
+        { json: "sFreeThrowsAttempted", js: "sFreeThrowsAttempted", typ: i(0) },
+        { json: "sFreeThrowsMade", js: "sFreeThrowsMade", typ: i(0) },
+        { json: "sFreeThrowsPercentage", js: "sFreeThrowsPercentage", typ: i(0) },
+        { json: "sMinutes", js: "sMinutes", typ: u(i(0), "") },
+        { json: "sPlusMinusPoints", js: "sPlusMinusPoints", typ: i(0) },
+        { json: "sPoints", js: "sPoints", typ: i(0) },
+        { json: "sPointsFastBreak", js: "sPointsFastBreak", typ: i(0) },
+        { json: "sPointsInThePaint", js: "sPointsInThePaint", typ: i(0) },
+        { json: "sPointsSecondChance", js: "sPointsSecondChance", typ: i(0) },
+        { json: "sReboundsDefensive", js: "sReboundsDefensive", typ: i(0) },
+        { json: "sReboundsOffensive", js: "sReboundsOffensive", typ: i(0) },
+        { json: "sReboundsTotal", js: "sReboundsTotal", typ: i(0) },
+        { json: "sSteals", js: "sSteals", typ: i(0) },
+        { json: "sThreePointersAttempted", js: "sThreePointersAttempted", typ: i(0) },
+        { json: "sThreePointersMade", js: "sThreePointersMade", typ: i(0) },
+        { json: "sThreePointersPercentage", js: "sThreePointersPercentage", typ: i(0) },
+        { json: "sTurnovers", js: "sTurnovers", typ: i(0) },
+        { json: "sTwoPointersAttempted", js: "sTwoPointersAttempted", typ: i(0) },
+        { json: "sTwoPointersMade", js: "sTwoPointersMade", typ: i(0) },
+        { json: "sTwoPointersPercentage", js: "sTwoPointersPercentage", typ: i(0) },
+        { json: "shirtNumber", js: "shirtNumber", typ: "" },
+        { json: "starter", js: "starter", typ: i(0) },
+    ], false),
+    "Comp": o([
+        { json: "sAssistsAverage", js: "sAssistsAverage", typ: 3.14 },
+        { json: "sMinutesAverage", js: "sMinutesAverage", typ: "" },
+        { json: "sPointsAverage", js: "sPointsAverage", typ: 3.14 },
+        { json: "sReboundsTotalAverage", js: "sReboundsTotalAverage", typ: 3.14 },
+    ], false),
+    "Shot": o([
+        { json: "actionType", js: "actionType", typ: r("ActionType") },
+        { json: "p", js: "p", typ: i(0) },
+        { json: "per", js: "per", typ: i(0) },
+        { json: "perType", js: "perType", typ: r("PerType") },
+        { json: "player", js: "player", typ: "" },
+        { json: "pno", js: "pno", typ: i(0) },
+        { json: "r", js: "r", typ: i(0) },
+        { json: "shirtNumber", js: "shirtNumber", typ: "" },
+        { json: "subType", js: "subType", typ: r("SubType") },
+        { json: "tno", js: "tno", typ: i(0) },
+        { json: "x", js: "x", typ: i(0) },
+        { json: "y", js: "y", typ: i(0) },
+    ], false),
+    "Totallds": o([
+        { json: "sAssists", js: "sAssists", typ: m(r("Scorer")) },
+        { json: "sBlocks", js: "sBlocks", typ: m(r("Scorer")) },
+        { json: "sPoints", js: "sPoints", typ: m(r("Scorer")) },
+        { json: "sReboundsTotal", js: "sReboundsTotal", typ: m(r("Scorer")) },
+        { json: "sSteals", js: "sSteals", typ: m(r("Scorer")) },
+    ], false),
+    "LeaddatumEnum": [
+        "",
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+    ],
+    "PerType": [
+        "REGULAR",
+    ],
+    "ActionType": [
+        "game",
+        "period",
+        "3pt",
+        "2pt",
+        "rebound",
+        "timeout",
+        "foulon",
+        "foul",
+        "assist",
+        "substitution",
+        "freethrow",
+        "steal",
+        "turnover",
+        "block",
+        "jumpball",
+    ],
+    "FamilyNameInitial": [
+        "R",
+        "M",
+        "s",
+        "C",
+        "O",
+        "W",
+        "A",
+        "P",
+        "V",
+        "I",
+        "J",
+        "S",
+        "H",
+        "B",
+    ],
+    "FirstNameInitial": [
+        "D",
+        "J",
+        "T",
+        "C",
+        "O",
+        "H",
+        "L",
+        "A",
+        "K",
+        "R",
+        "B",
+        "N",
+    ],
+    "ScoreboardName": [
+        "",
+        "T. s",
+        "R. Ihata",
+        "D. Jones",
+        "B. Valentine",
+    ],
+    "SubType": [
+        "jumpshot",
+        "layup",
+        "dunk",
+    ],
+};

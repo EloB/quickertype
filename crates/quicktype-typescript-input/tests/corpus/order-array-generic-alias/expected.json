@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"L\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"$ref\":\"#/definitions/M\"},{\"$ref\":\"#/definitions/N\"}]}},\"N\":{\"title\":\"N\",\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"number\",\"const\":1,\"title\":\"n\"}},\"additionalProperties\":false,\"propertyOrder\":[\"n\"],\"required\":[\"n\"],\"quicktypePropertyOrder\":[\"n\"]},\"M\":{\"title\":\"M\",\"type\":\"object\",\"properties\":{\"m\":{\"type\":\"number\",\"const\":1,\"title\":\"m\"}},\"additionalProperties\":false,\"propertyOrder\":[\"m\"],\"required\":[\"m\"],\"quicktypePropertyOrder\":[\"m\"]},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"l\":{\"type\":\"array\",\"items\":{\"anyOf\":[{\"$ref\":\"#/definitions/M\"},{\"$ref\":\"#/definitions/N\"}]},\"title\":\"l\"},\"u\":{\"anyOf\":[{\"$ref\":\"#/definitions/M\"},{\"$ref\":\"#/definitions/N\"}],\"title\":\"u\"}},\"additionalProperties\":false,\"propertyOrder\":[\"l\",\"u\"],\"required\":[\"l\",\"u\"],\"quicktypePropertyOrder\":[\"l\",\"u\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

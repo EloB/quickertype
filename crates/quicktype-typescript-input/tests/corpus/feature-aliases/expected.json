@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"ID\":{\"type\":\"string\"},\"Kind\":{\"title\":\"Kind\",\"enum\":[\"a\",\"b\",\"c\"],\"type\":\"string\"},\"Num\":{\"title\":\"Num\",\"enum\":[1,2,3],\"type\":\"number\"},\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"string\",\"title\":\"id\"},\"kind\":{\"$ref\":\"#/definitions/Kind\",\"title\":\"kind\"},\"n\":{\"$ref\":\"#/definitions/Num\",\"title\":\"n\"},\"mixed\":{\"enum\":[1,true,\"x\"],\"title\":\"mixed\"},\"b\":{\"type\":\"boolean\",\"title\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"id\",\"kind\",\"n\",\"mixed\",\"b\"],\"required\":[\"b\",\"id\",\"kind\",\"mixed\",\"n\"],\"quicktypePropertyOrder\":[\"id\",\"kind\",\"n\",\"mixed\",\"b\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

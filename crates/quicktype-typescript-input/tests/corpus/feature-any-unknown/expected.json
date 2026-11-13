@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"T\":{\"title\":\"T\",\"type\":\"object\",\"properties\":{\"a\":{\"title\":\"a\"},\"u\":{\"title\":\"u\"},\"o\":{\"type\":\"object\",\"properties\":{},\"additionalProperties\":true,\"title\":\"o\"},\"e\":{\"type\":\"object\",\"properties\":{},\"title\":\"e\"},\"n\":{\"type\":\"null\",\"title\":\"n\"},\"s\":{\"type\":\"object\",\"title\":\"s\"},\"f\":{\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"title\":\"f\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"u\",\"o\",\"e\",\"n\",\"s\",\"f\"],\"required\":[\"a\",\"e\",\"f\",\"n\",\"o\",\"s\",\"u\"],\"quicktypePropertyOrder\":[\"a\",\"u\",\"o\",\"e\",\"n\",\"s\",\"f\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

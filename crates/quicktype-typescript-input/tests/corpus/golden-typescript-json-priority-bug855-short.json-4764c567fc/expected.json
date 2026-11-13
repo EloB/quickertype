@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"channel_id\":{\"type\":\"string\",\"title\":\"channel_id\"},\"channel_name\":{\"type\":\"string\",\"title\":\"channel_name\"},\"code\":{\"type\":\"string\",\"title\":\"code\"},\"emoticon_set\":{\"type\":\"number\",\"title\":\"emoticon_set\"},\"id\":{\"type\":\"number\",\"title\":\"id\"}},\"additionalProperties\":false,\"propertyOrder\":[\"channel_id\",\"channel_name\",\"code\",\"emoticon_set\",\"id\"],\"required\":[\"channel_id\",\"channel_name\",\"code\",\"emoticon_set\",\"id\"],\"quicktypePropertyOrder\":[\"channel_id\",\"channel_name\",\"code\",\"emoticon_set\",\"id\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

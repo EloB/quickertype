@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"data\":{\"type\":\"object\",\"additionalProperties\":{\"$ref\":\"#/definitions/Datum\"},\"propertyOrder\":[],\"title\":\"data\"},\"description\":{\"$ref\":\"#/definitions/Description\",\"title\":\"description\"}},\"additionalProperties\":false,\"propertyOrder\":[\"data\",\"description\"],\"required\":[\"data\",\"description\"],\"quicktypePropertyOrder\":[\"data\",\"description\"]},\"Datum\":{\"title\":\"Datum\",\"type\":\"object\",\"properties\":{\"anomaly\":{\"type\":\"string\",\"title\":\"anomaly\"},\"value\":{\"type\":\"string\",\"title\":\"value\"}},\"additionalProperties\":false,\"propertyOrder\":[\"anomaly\",\"value\"],\"required\":[\"anomaly\",\"value\"],\"quicktypePropertyOrder\":[\"anomaly\",\"value\"]},\"Description\":{\"title\":\"Description\",\"type\":\"object\",\"properties\":{\"base_period\":{\"type\":\"string\",\"title\":\"base_period\"},\"missing\":{\"type\":\"number\",\"title\":\"missing\"},\"title\":{\"type\":\"string\",\"title\":\"title\"}},\"additionalProperties\":false,\"propertyOrder\":[\"base_period\",\"missing\",\"title\"],\"required\":[\"base_period\",\"missing\",\"title\"],\"quicktypePropertyOrder\":[\"base_period\",\"missing\",\"title\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

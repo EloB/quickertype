@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"invoices\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/Invoice\"},\"title\":\"invoices\"}},\"additionalProperties\":false,\"propertyOrder\":[\"invoices\"],\"required\":[\"invoices\"],\"quicktypePropertyOrder\":[\"invoices\"]},\"Invoice\":{\"title\":\"Invoice\",\"type\":\"object\",\"properties\":{\"createdAt\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"date-time\"},{\"type\":\"null\"}],\"title\":\"createdAt\"},\"dueDate\":{\"anyOf\":[{\"type\":\"string\",\"format\":\"date-time\"},{\"type\":\"null\"}],\"title\":\"dueDate\"},\"name\":{\"type\":\"string\",\"title\":\"name\"}},\"additionalProperties\":false,\"propertyOrder\":[\"createdAt\",\"dueDate\",\"name\"],\"required\":[\"createdAt\",\"dueDate\",\"name\"],\"quicktypePropertyOrder\":[\"createdAt\",\"dueDate\",\"name\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Root\":{\"description\":\"The root type. \",\"title\":\"Root\",\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"number\",\"title\":\"id\"},\"child\":{\"$ref\":\"#/definitions/Child\",\"title\":\"child\"}},\"additionalProperties\":false,\"propertyOrder\":[\"id\",\"child\"],\"required\":[\"child\",\"id\"],\"quicktypePropertyOrder\":[\"id\",\"child\"]},\"Child\":{\"title\":\"Child\",\"type\":\"object\",\"properties\":{\"label\":{\"type\":\"string\",\"title\":\"label\"}},\"additionalProperties\":false,\"propertyOrder\":[\"label\"],\"required\":[\"label\"],\"quicktypePropertyOrder\":[\"label\"]}}}",
+  "name": "Root",
+  "uris": [
+    "#/definitions/Root"
+  ]
+}

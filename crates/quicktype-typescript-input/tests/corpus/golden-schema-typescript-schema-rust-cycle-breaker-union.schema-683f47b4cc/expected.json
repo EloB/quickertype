@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"next\":{\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"type\":[\"null\",\"string\"]}],\"title\":\"next\"},\"value\":{\"type\":\"string\",\"title\":\"value\"}},\"propertyOrder\":[\"next\",\"value\"],\"required\":[\"value\"],\"quicktypePropertyOrder\":[\"next\",\"value\"]},\"Node\":{\"title\":\"Node\",\"type\":\"object\",\"additionalProperties\":{},\"properties\":{\"next\":{\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"type\":[\"null\",\"string\"]}],\"title\":\"next\"},\"value\":{\"type\":\"string\",\"title\":\"value\"}},\"propertyOrder\":[\"next\",\"value\"],\"required\":[\"value\"],\"quicktypePropertyOrder\":[\"next\",\"value\"]},\"Next\":{\"title\":\"Next\",\"anyOf\":[{\"$ref\":\"#/definitions/Node\"},{\"type\":[\"null\",\"string\"]}]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

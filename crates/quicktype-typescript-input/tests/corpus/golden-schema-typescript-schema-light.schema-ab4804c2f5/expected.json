@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"TopLevel\":{\"title\":\"TopLevel\",\"type\":\"object\",\"properties\":{\"LightParams\":{\"$ref\":\"#/definitions/LightParams\",\"title\":\"LightParams\"}},\"additionalProperties\":false,\"propertyOrder\":[\"LightParams\"],\"required\":[\"LightParams\"],\"quicktypePropertyOrder\":[\"LightParams\"]},\"LightParams\":{\"title\":\"LightParams\",\"type\":\"object\",\"properties\":{\"app_id\":{\"type\":\"string\",\"title\":\"app_id\"},\"outlet_id\":{\"type\":\"string\",\"title\":\"outlet_id\"},\"rgba\":{\"type\":\"string\",\"title\":\"rgba\"}},\"additionalProperties\":false,\"propertyOrder\":[\"app_id\",\"outlet_id\",\"rgba\"],\"required\":[\"app_id\",\"outlet_id\",\"rgba\"],\"quicktypePropertyOrder\":[\"app_id\",\"outlet_id\",\"rgba\"]},\"Convert\":{\"title\":\"Convert\",\"type\":\"object\",\"additionalProperties\":false,\"propertyOrder\":[],\"quicktypePropertyOrder\":[]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
