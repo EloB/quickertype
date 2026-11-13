@@ -561,7 +561,7 @@ function genJsonTopLevels(rng, lang) {
     const names = new Set();
     const escapes = rng.chance(0.1);
     for (let t = 0; t < n; t++) {
-        let name = n === 1 && rng.chance(0.6) ? "TopLevel" : rng.chance(0.7) ? capitalize(compoundName(rng)) : genKey(rng);
+        let name = n === 1 && rng.chance(0.55) ? "TopLevel" : rng.chance(0.65) ? capitalize(compoundName(rng)) : rng.chance(0.7) ? genKey(rng) : rng.pick(ODD_KEYS);
         if (n > 1) {
             // CLI runs pass several top-levels as files in a directory.
             name = name.replace(/[/\\\0\n\r\t.]/g, "") || `T${t}`;
@@ -903,7 +903,9 @@ function genSchemas(rng) {
 // ---- Options -----------------------------------------------------------------
 
 const STRING_OPTION_VALUES = ["", "Foo", "foo", "my.package", "my-package", "a.b.c", "123", "class", "ñ",
-    "a b", "QT", "Foo_Bar", " x ", "default", "Main", "x", "io.example.app", "Some::Mod", "1abc", "_"];
+    "a b", "QT", "Foo_Bar", " x ", "default", "Main", "x", "io.example.app", "Some::Mod", "1abc", "_",
+    "日本", "😀", "Ünïcödé", "a\"b", "a'b", "a\\b", "*/", "${x}", "namespace", "package", "import", "a..b", ".a", "a.",
+    "A.B.C", "com.example.Foo", "my_package_2", "TopLevel", "Converter", "JSON", "x-y-z", "\t", "a/b"];
 
 function genRendererOptions(rng, definitions) {
     const options = {};
@@ -978,7 +980,10 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
     kase.api = {};
     if (extraRng.chance(0.1)) kase.api.indentation = extraRng.pick(["\t", " ", "    ", "", "   "]);
     if (extraRng.chance(0.08)) kase.api.leadingComments = genLeadingComments(extraRng);
-    if (extraRng.chance(0.15)) kase.api.outputFilename = extraRng.pick(["Foo.x", "out.ts", "my-file.go", "Model.java", "a.b.c", "x", "Top Level.swift"]);
+    if (extraRng.chance(0.15)) {
+        kase.api.outputFilename = extraRng.pick(["Foo.x", "out.ts", "my-file.go", "Model.java", "a.b.c", "x", "Top Level.swift",
+            "日本.ts", "ünïcode.h", "😀.rs", "class.py", "1abc.c", ".hidden", "no_extension", "a-b.c-d.e", "UPPER.H", "x.d.ts", "stdout"]);
+    }
     kase.debug = [];
     if (extraRng.chance(0.06)) {
         const components = ["print-graph", "print-reconstitution", "print-gather-names", "print-transformations", "provenance"];
@@ -987,7 +992,9 @@ export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, s
     }
 
     kase.cli = {};
-    if (extraRng.chance(0.3)) kase.cli.out = extraRng.pick(["out/Output", "out/model", "out/My-Types", "out/x.y"]);
+    if (extraRng.chance(0.3)) {
+        kase.cli.out = extraRng.pick(["out/Output", "out/model", "out/My-Types", "out/x.y", "out/日本", "out/class", "out/a b", "out/1abc", "out/x.d"]);
+    }
     if (extraRng.chance(0.2)) kase.cli.quiet = true;
     if (kind === "schema" && extraRng.chance(0.15)) {
         kase.cli.schemaFile = extraRng.pick(["schema", "Ünïcödé", "日本.schema", "x.y.z", "😀.json", "a b.json", "Top-Level", ".json", "ñ.ñ"]);
