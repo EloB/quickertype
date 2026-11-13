@@ -6,26 +6,26 @@
 //! Sources are opened here (missing files fail now) and read later, when
 //! the input parses them.
 
-use quicktype_core::{ErrorKind, QuickTypeError};
+use quicktype_core::{ErrorKind, JsonSchemaSourceData, QuickTypeError, Readable, parse_json};
 
 use crate::cli_options::CliOptions;
 use crate::js;
 use crate::messages::{CliError, message_error};
-use crate::node_io::{self, Readable};
-use crate::type_source::{GraphQlTypeSource, JsonTypeSource, SchemaTypeSource, TypeSource};
+use crate::node_fs;
+use crate::type_source::{GraphQlTypeSource, JsonTypeSource, TypeSource};
 use crate::url_grammar::urls_from_url_grammar;
 
 /// `sourceFromFileOrUrlArray(name, filesOrUrls, httpHeaders)`: one JSON
 /// source whose samples are all the files.
-fn source_from_file_or_url_array(
+async fn source_from_file_or_url_array(
     name: &str,
     files_or_urls: &[String],
     http_headers: &[String],
 ) -> Result<JsonTypeSource, CliError> {
-    let samples = files_or_urls
-        .iter()
-        .map(|file| node_io::readable_from_file_or_url(file, http_headers))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut samples = Vec::with_capacity(files_or_urls.len());
+    for file in files_or_urls {
+        samples.push(node_fs::readable_from_file_or_url(file, http_headers).await?);
+    }
     Ok(JsonTypeSource {
         name: name.to_owned(),
         samples,
@@ -46,20 +46,21 @@ pub fn type_name_from_filename(filename: &str) -> String {
 /// What `readFilesOrURLsInDirectory` collects for a GraphQL schema.
 struct GraphQlSchemaFile {
     readable: Readable,
+    file_name: String,
 }
 
 /// `readFilesOrURLsInDirectory(d)` of `samplesFromDirectory(dataDir)`: one
 /// source per file in `d`. `data_dir` is the directory given on the
 /// command line, which the errors name.
-fn read_files_or_urls_in_directory(
+async fn read_files_or_urls_in_directory(
     d: &str,
     data_dir: &str,
     http_headers: &[String],
 ) -> Result<Vec<TypeSource>, CliError> {
     let mut files = Vec::new();
-    for entry in node_io::readdir_sync(d)? {
+    for entry in node_fs::readdir_sync(d)? {
         let path = js::path_join(&[d, &entry]);
-        if node_io::is_file(&path)? {
+        if node_fs::is_file(&path)? {
             files.push(path);
         }
     }
@@ -76,20 +77,19 @@ fn read_files_or_urls_in_directory(
 
         // If the file holds a URL, that is the source.
         if file.ends_with(".url") {
-            file_or_url = js::trim(&node_io::read_file_sync_utf8(&file)?).to_owned();
+            file_or_url = js::trim(&node_fs::read_file_sync_utf8(&file)?).to_owned();
         }
 
         if file.ends_with(".url") || file.ends_with(".json") {
             sources_in_dir.push(TypeSource::Json(JsonTypeSource {
                 name,
-                samples: vec![node_io::readable_from_file_or_url(
-                    &file_or_url,
-                    http_headers,
-                )?],
+                samples: vec![
+                    node_fs::readable_from_file_or_url(&file_or_url, http_headers).await?,
+                ],
                 description: None,
             }));
         } else if file.ends_with(".schema") {
-            sources_in_dir.push(TypeSource::Schema(SchemaTypeSource {
+            sources_in_dir.push(TypeSource::Schema(JsonSchemaSourceData {
                 name,
                 uris: Some(vec![file_or_url]),
                 schema: None,
@@ -103,11 +103,14 @@ fn read_files_or_urls_in_directory(
                 ));
             }
             graphql_schema = Some(GraphQlSchemaFile {
-                readable: node_io::readable_from_file_or_url(&file_or_url, http_headers)?,
+                readable: node_fs::readable_from_file_or_url(&file_or_url, http_headers).await?,
+                file_name: file_or_url,
             });
         } else if file.ends_with(".graphql") {
-            let query =
-                node_io::readable_from_file_or_url(&file_or_url, http_headers)?.read_to_string()?;
+            let query = node_fs::read(
+                node_fs::readable_from_file_or_url(&file_or_url, http_headers).await?,
+            )
+            .await?;
             graphql_sources.push((name, query));
         }
     }
@@ -119,9 +122,11 @@ fn read_files_or_urls_in_directory(
                 vec![("dir", data_dir.into())],
             ));
         };
-        // TODO(graphql): TypeScript parses the schema here, with
-        // `parseJSON(…, "GraphQL schema", file)`.
-        let schema = schema.readable.read_to_string()?;
+        let schema = parse_json(
+            &node_fs::read(schema.readable).await?,
+            "GraphQL schema",
+            Some(&schema.file_name),
+        )?;
         for (name, query) in graphql_sources {
             sources_in_dir.push(TypeSource::GraphQl(GraphQlTypeSource {
                 name,
@@ -137,26 +142,26 @@ fn read_files_or_urls_in_directory(
 /// `samplesFromDirectory(dataDir, httpHeaders)`: the sources of the files
 /// in `data_dir`, then one source per subdirectory, whose JSON samples all
 /// go into one top-level named after it.
-fn samples_from_directory(
+async fn samples_from_directory(
     data_dir: &str,
     http_headers: &[String],
 ) -> Result<Vec<TypeSource>, CliError> {
     let mut directories = Vec::new();
-    for entry in node_io::readdir_sync(data_dir)? {
+    for entry in node_fs::readdir_sync(data_dir)? {
         let path = js::path_join(&[data_dir, &entry]);
-        if node_io::is_directory(&path)? {
+        if node_fs::is_directory(&path)? {
             directories.push(path);
         }
     }
 
-    let mut sources = read_files_or_urls_in_directory(data_dir, data_dir, http_headers)?;
+    let mut sources = read_files_or_urls_in_directory(data_dir, data_dir, http_headers).await?;
 
     for dir in directories {
         let mut json_samples = Vec::new();
         let mut schema_sources = Vec::new();
         let mut graphql_sources = Vec::new();
 
-        for source in read_files_or_urls_in_directory(&dir, data_dir, http_headers)? {
+        for source in read_files_or_urls_in_directory(&dir, data_dir, http_headers).await? {
             match source {
                 TypeSource::Json(json) => json_samples.extend(json.samples),
                 TypeSource::Schema(schema) => schema_sources.push(TypeSource::Schema(schema)),
@@ -193,37 +198,15 @@ fn samples_from_directory(
     Ok(sources)
 }
 
-/// `parseJSON(text, description, address)`.
-// TODO(parse-json): use the core's `parseJSON` port (with its YAML
-// fallback) once the JSON Schema input is on main.
-fn parse_json(
-    text: &str,
-    description: &str,
-    address: &str,
-) -> Result<quicktype_js_compat::json::JsonValue, CliError> {
-    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
-    quicktype_js_compat::json::parse(text).map_err(|e| {
-        QuickTypeError::new(
-            ErrorKind::MiscJSONParseError,
-            vec![
-                ("description", description.into()),
-                ("address", address.into()),
-                ("message", e.message().into()),
-            ],
-        )
-        .into()
-    })
-}
-
 /// `getSourceURIs(options)`: the `[name, uris]` pairs of `--src-urls`, or
 /// standard input for the top-level if there are no sources at all.
-fn get_source_uris(options: &CliOptions) -> Result<Vec<(String, Vec<String>)>, CliError> {
+async fn get_source_uris(options: &CliOptions) -> Result<Vec<(String, Vec<String>)>, CliError> {
     let http_headers = options.http_header.as_deref().unwrap_or_default();
     if let Some(src_urls) = &options.src_urls {
         let json = parse_json(
-            &node_io::read_from_file_or_url(src_urls, http_headers)?,
+            &node_fs::read_from_file_or_url(src_urls, http_headers).await?,
             "URL grammar",
-            src_urls,
+            Some(src_urls),
         )?;
         return Ok(urls_from_url_grammar(&json)?.into_iter().collect());
     }
@@ -235,21 +218,24 @@ fn get_source_uris(options: &CliOptions) -> Result<Vec<(String, Vec<String>)>, C
 
 /// `typeSourcesForURIs(name, uris, options)`: one JSON source with all
 /// `uris` as samples, or one schema source per URI.
-fn type_sources_for_uris(
+async fn type_sources_for_uris(
     name: &str,
     uris: &[String],
     options: &CliOptions,
 ) -> Result<Vec<TypeSource>, CliError> {
     match options.src_lang.as_str() {
-        "json" => Ok(vec![TypeSource::Json(source_from_file_or_url_array(
-            name,
-            uris,
-            options.http_header.as_deref().unwrap_or_default(),
-        )?)]),
+        "json" => Ok(vec![TypeSource::Json(
+            source_from_file_or_url_array(
+                name,
+                uris,
+                options.http_header.as_deref().unwrap_or_default(),
+            )
+            .await?,
+        )]),
         "schema" => Ok(uris
             .iter()
             .map(|uri| {
-                TypeSource::Schema(SchemaTypeSource {
+                TypeSource::Schema(JsonSchemaSourceData {
                     name: name.to_owned(),
                     uris: Some(vec![uri.clone()]),
                     schema: None,
@@ -267,22 +253,22 @@ fn type_sources_for_uris(
 /// `getSources(options)`: the sources of a JSON or JSON Schema run: the
 /// `--src-urls` (or standard input), then every directory, then all other
 /// sources as one top-level.
-pub fn get_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliError> {
+pub async fn get_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliError> {
     let http_headers = options.http_header.as_deref().unwrap_or_default();
     let mut sources = Vec::new();
-    for (name, uris) in get_source_uris(options)? {
-        sources.extend(type_sources_for_uris(&name, &uris, options)?);
+    for (name, uris) in get_source_uris(options).await? {
+        sources.extend(type_sources_for_uris(&name, &uris, options).await?);
     }
 
     let mut directories: Vec<&String> = Vec::new();
     for src in &options.src {
-        if node_io::exists_sync(src) && node_io::is_directory(src)? {
+        if node_fs::exists_sync(src) && node_fs::is_directory(src)? {
             directories.push(src);
         }
     }
 
     for data_dir in &directories {
-        sources.extend(samples_from_directory(data_dir, http_headers)?);
+        sources.extend(samples_from_directory(data_dir, http_headers).await?);
     }
 
     // Every source that is not a directory is a file or URL.
@@ -293,11 +279,7 @@ pub fn get_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliError> {
         .cloned()
         .collect();
     if !files_or_urls.is_empty() {
-        sources.extend(type_sources_for_uris(
-            &options.top_level,
-            &files_or_urls,
-            options,
-        )?);
+        sources.extend(type_sources_for_uris(&options.top_level, &files_or_urls, options).await?);
     }
 
     Ok(sources)

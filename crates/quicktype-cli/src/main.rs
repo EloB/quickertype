@@ -11,10 +11,8 @@
 //! [`quicktype_multi_file`] and write the files (`writeOutput`). The CLI
 //! uses only quicktype-core's public API.
 //!
-//! Not yet ported: GraphQL input (Phase 5), and JSON Schema input, URL
-//! sources and `--additional-schema`, which arrive with the core's JSON
-//! Schema input. They exit with an internal "not implemented" error (exit
-//! code 2).
+//! Not yet ported: GraphQL input and `--graphql-introspect` (Phase 5),
+//! which exit with an internal "not implemented" error (exit code 2).
 
 mod chalk;
 mod cli_options;
@@ -24,25 +22,23 @@ mod compressed_json_from_stream;
 mod graphql_introspection;
 mod js;
 mod messages;
-mod node_io;
+mod node_fs;
 mod sources;
 mod type_source;
 mod url_grammar;
 mod usage;
 
 use std::cell::RefCell;
-use std::future::Future;
 use std::io::{self, BufWriter, ErrorKind as IoErrorKind, Write};
 use std::process::ExitCode;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::task::{Context, Poll, Wake, Waker};
-use std::thread::{self, Thread};
+use std::thread;
 
 use quicktype_core::{
-    Comment, DebugOptions, ErrorKind, InferenceFlags, InputData, JsonSample, JsonSourceData,
-    MultiFileRenderResult, Options, QuickTypeError, RendererOptions, TargetLanguage,
-    default_target_languages, json_input_for_target_language, quicktype_multi_file,
+    Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, InferenceFlags, InputData,
+    JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData, MultiFileRenderResult,
+    Options, QuickTypeError, Readable, RendererOptions, TargetLanguage, block_on,
+    default_target_languages, json_input_for_target_language, parse_json, quicktype_multi_file,
     set_console_sink, sources_from_postman_collection, train_markov_chain,
 };
 use quicktype_js_compat::wordwrap::WordWrap;
@@ -50,8 +46,7 @@ use quicktype_js_compat::wordwrap::WordWrap;
 use crate::chalk::Chalk;
 use crate::cli_options::{CliOptions, parse_cli_options};
 use crate::messages::{CliError, message_error};
-use crate::node_io::Readable;
-use crate::type_source::{JsonTypeSource, SchemaTypeSource, TypeSource};
+use crate::type_source::{GraphQlTypeSource, JsonTypeSource, TypeSource};
 
 /// `packageJSON.version`.
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -115,37 +110,16 @@ impl Console {
     }
 }
 
-/// Runs `future` to completion on this thread. The engine's futures only
-/// wait for native I/O, which completes synchronously, so this never
-/// actually parks.
-// TODO(json-schema-input): use the core's `block_on` once it is on main.
-fn block_on<F: Future>(future: F) -> F::Output {
-    struct ThreadWaker(Thread);
-    impl Wake for ThreadWaker {
-        fn wake(self: Arc<Self>) {
-            self.0.unpark();
-        }
-    }
-    let mut future = std::pin::pin!(future);
-    let waker = Waker::from(Arc::new(ThreadWaker(thread::current())));
-    let mut context = Context::from_waker(&waker);
-    loop {
-        match future.as_mut().poll(&mut context) {
-            Poll::Ready(output) => return output,
-            Poll::Pending => thread::park(),
-        }
-    }
-}
-
 /// `makeInputData(sources, targetLanguage, additionalSchemaAddresses,
 /// handleJSONRefs, rendererOptions, httpHeaders)`: adds every source to the
 /// input of its kind, reading (and parsing) the JSON samples.
 async fn make_input_data(
     sources: Vec<TypeSource>,
     target_language: &'static dyn TargetLanguage,
-    _additional_schema_addresses: &[String],
+    additional_schema_addresses: &[String],
     handle_json_refs: bool,
     renderer_options: &RendererOptions,
+    http_headers: Option<&[String]>,
 ) -> Result<InputData, CliError> {
     let mut input_data = InputData::new();
     for source in sources {
@@ -164,11 +138,18 @@ async fn make_input_data(
                 )
                 .await?;
             }
-            TypeSource::Schema(_) => {
-                // TODO(json-schema-input): a `JsonSchemaInput` with a
-                // `FetchingJsonSchemaStore(httpHeaders)` and the additional
-                // schema addresses, once the JSON Schema input is on main.
-                return Err(CliError::NotImplemented("JSON Schema input".to_owned()));
+            TypeSource::Schema(source) => {
+                input_data
+                    .add_source("schema", source, || {
+                        JsonSchemaInput::new(
+                            Some(Box::new(FetchingJsonSchemaStore::new(
+                                http_headers.unwrap_or_default().to_vec(),
+                            ))),
+                            Vec::new(),
+                            additional_schema_addresses.to_vec(),
+                        )
+                    })
+                    .await?;
             }
         }
     }
@@ -196,8 +177,8 @@ async fn add_json_source(
     let mut read = Vec::with_capacity(samples.len());
     let mut read_error = None;
     for sample in samples {
-        match sample.read() {
-            Ok(bytes) => read.push(JsonSample::Stream(bytes)),
+        match node_fs::read(sample).await {
+            Ok(text) => read.push(JsonSample::Stream(text.into_bytes())),
             Err(e) => {
                 read_error = Some(e);
                 break;
@@ -274,14 +255,14 @@ fn parse_debug_options(debug: Option<&str>) -> Result<(DebugOptions, bool), CliE
 fn make_typescript_source(
     file_names: &[String],
     console: &Console,
-) -> Result<SchemaTypeSource, CliError> {
+) -> Result<JsonSchemaSourceData, CliError> {
     match quicktype_typescript_input::schema_for_typescript_sources(file_names) {
         Ok(output) => {
             for warning in &output.warnings {
                 console.error(warning);
             }
             let source = output.source;
-            Ok(SchemaTypeSource {
+            Ok(JsonSchemaSourceData {
                 name: source.name,
                 uris: Some(source.uris),
                 schema: Some(source.schema),
@@ -321,7 +302,7 @@ struct PostmanInputs {
 fn postman_sources(collection_files: &[String]) -> Result<PostmanInputs, CliError> {
     let mut inputs = PostmanInputs::default();
     for collection_file in collection_files {
-        let collection_json = node_io::read_file_sync_utf8(collection_file)?;
+        let collection_json = node_fs::read_file_sync_utf8(collection_file)?;
         let postman = sources_from_postman_collection(&collection_json, Some(collection_file))?;
         if postman.sources.len() > 1 {
             inputs.fixed_top_levels = true;
@@ -346,6 +327,50 @@ fn postman_sources(collection_files: &[String]) -> Result<PostmanInputs, CliErro
     Ok(inputs)
 }
 
+/// The sources of `--src-lang graphql`: each query file with the
+/// introspection schema of `--graphql-schema`.
+async fn graphql_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliError> {
+    if options.graphql_introspect.is_some() {
+        // TODO(graphql): `introspectServer`, Phase 5.
+        return Err(CliError::NotImplemented("--graphql-introspect".to_owned()));
+    }
+    let num_sources = options.src.len();
+    if num_sources == 0 {
+        return Err(message_error(ErrorKind::DriverNoGraphQLQueryGiven, vec![]));
+    }
+    let http_headers = options.http_header.as_deref().unwrap_or_default();
+    let mut schema_string: Option<String> = None;
+    let mut sources = Vec::with_capacity(num_sources);
+    for query_file in &options.src {
+        let mut schema_file_name = None;
+        let schema_text = match &schema_string {
+            Some(text) => text,
+            None => {
+                let file_name = options.graphql_schema.as_deref().ok_or_else(|| {
+                    QuickTypeError::internal("Defined value expected, but got undefined")
+                })?;
+                schema_file_name = Some(file_name);
+                schema_string.insert(node_fs::read_file_sync_utf8(file_name)?)
+            }
+        };
+        let schema = parse_json(schema_text, "GraphQL schema", schema_file_name)?;
+        let query =
+            node_fs::read(node_fs::readable_from_file_or_url(query_file, http_headers).await?)
+                .await?;
+        let name = if num_sources == 1 {
+            options.top_level.clone()
+        } else {
+            sources::type_name_from_filename(query_file)
+        };
+        sources.push(TypeSource::GraphQl(GraphQlTypeSource {
+            name,
+            schema,
+            query,
+        }));
+    }
+    Ok(sources)
+}
+
 /// TS `makeQuicktypeOptions(options)`: handles `--help`, `--version` and
 /// `--build-markov-chain` (returning `None`, as there is nothing to
 /// generate), collects the sources and builds the engine's options.
@@ -364,7 +389,7 @@ async fn make_quicktype_options(
         return Ok(None);
     }
     if let Some(corpus) = &options.build_markov_chain {
-        let contents = node_io::read_file_sync(corpus)?;
+        let contents = node_fs::read_file_sync(corpus)?;
         let contents = String::from_utf8_lossy(&contents);
         let lines: Vec<&str> = contents.split('\n').collect();
         console.log(&train_markov_chain(&lines, 3).to_json());
@@ -374,18 +399,8 @@ async fn make_quicktype_options(
     let mut leading_comments = None;
     let mut fixed_top_levels = false;
     let sources = match options.src_lang.as_str() {
-        "graphql" => {
-            if options.graphql_introspect.is_some() {
-                // TODO(graphql): `introspectServer`, Phase 5.
-                return Err(CliError::NotImplemented("--graphql-introspect".to_owned()));
-            }
-            if options.src.is_empty() {
-                return Err(message_error(ErrorKind::DriverNoGraphQLQueryGiven, vec![]));
-            }
-            // TODO(graphql): read the schema and the queries; Phase 5.
-            return Err(CliError::NotImplemented("GraphQL input".to_owned()));
-        }
-        "json" | "schema" => sources::get_sources(options)?,
+        "graphql" => graphql_sources(options).await?,
+        "json" | "schema" => sources::get_sources(options).await?,
         "typescript" => vec![TypeSource::Schema(make_typescript_source(
             &options.src,
             console,
@@ -434,6 +449,7 @@ async fn make_quicktype_options(
         &options.additional_schema,
         !inference_flags.ignore_json_refs,
         &options.renderer_options,
+        options.http_header.as_deref(),
     )
     .await?;
 
@@ -467,7 +483,7 @@ fn write_output(
 
         if let Some(out) = &options.out {
             let path = js::path_join(&[js::dirname(out), filename]);
-            node_io::write_file_sync(&path, &output)?;
+            node_fs::write_file_sync(&path, &output)?;
         } else {
             if !on_first {
                 console.write("\n");

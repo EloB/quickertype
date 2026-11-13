@@ -1,26 +1,21 @@
-//! The Node.js file system calls the CLI makes, with Node's error texts,
-//! and `readableFromFileOrURL` from
-//! `packages/quicktype-core/src/input/io/NodeIO.ts`.
+//! The Node.js `fs` calls in `src/index.ts`, with Node's error texts, and
+//! the CLI's use of quicktype-core's NodeIO port.
 //!
-//! quicktype reports Node's errors verbatim: a failed `fs.readFileSync` in
-//! `src/index.ts` rejects `main` with `ENOENT: no such file or directory,
-//! open 'x'`, and `readableFromFileOrURL` wraps its failures in
-//! `MiscReadError` with the error's `toString()`.
+//! quicktype reports Node's errors verbatim: a failed `fs.readFileSync`
+//! rejects `main` with `ENOENT: no such file or directory, open 'x'`.
 //!
-//! A source is resolved ("opened") when the CLI collects its sources and
-//! read only when the JSON input parses it, as TypeScript reads its Node
-//! streams lazily: standard input is not touched before errors that
-//! TypeScript reports first (e.g. an unknown `--debug` option).
-// TODO(json-schema-input): URLs and `file://` URIs go through the core's
-// `Io` trait once the JSON Schema input (which ports NodeIO) is on main.
+//! A source is opened ([`readable_from_file_or_url`]) when the CLI collects
+//! its sources and [`read`] only when the input parses it, as TypeScript
+//! reads its Node streams lazily: standard input is not touched before
+//! errors that TypeScript reports first (e.g. an unknown `--debug`
+//! option).
 
-use std::io::{self, Read};
+use std::io;
 use std::path::Path;
 
-use quicktype_core::ErrorKind;
+use quicktype_core::{Readable, StdIo};
 
-use crate::js;
-use crate::messages::{CliError, message_error};
+use crate::messages::CliError;
 
 /// libuv's error code and description for an I/O error, as Node prints
 /// them (`ENOENT`, `no such file or directory`).
@@ -110,119 +105,32 @@ pub fn readdir_sync(dir: &str) -> Result<Vec<String>, CliError> {
     Ok(names)
 }
 
-/// `resolveSymbolicLink(filePath)`: the target of a symbolic link (one
-/// level; a relative target is resolved against the link's directory), or
-/// the path itself.
-fn resolve_symbolic_link(file_path: &str) -> Result<String, String> {
-    if !lstat_sync(file_path)?.file_type().is_symlink() {
-        return Ok(file_path.to_owned());
-    }
-    let link =
-        std::fs::read_link(file_path).map_err(|e| fs_error_message(&e, "readlink", file_path))?;
-    let link = link.to_string_lossy().into_owned();
-    if link.starts_with('/') {
-        return Ok(link);
-    }
-    Ok(js::path_join(&[js::dirname(file_path), &link]))
+/// Reads an opened source to the end (TS: the JSON input consuming the
+/// stream, or `getStream`). A failed read makes Node emit an `error` event
+/// that nothing handles, so the reference crashes with a stack trace; we
+/// report the error's message instead (a known gap, see docs/PARITY.md).
+pub async fn read(readable: Readable) -> Result<String, CliError> {
+    readable
+        .read(&StdIo)
+        .await
+        .map_err(|e| CliError::Thrown(e.strip_prefix("Error: ").unwrap_or(&e).to_owned()))
 }
 
-/// A source that has been opened but not read (TS: a Node `Readable`).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Readable {
-    /// Standard input (`-`).
-    Stdin,
-    /// A file, after symbolic links were resolved.
-    File(String),
-    /// Text already in memory (a Postman response, a URL's body).
-    Text(String),
-}
-
-impl Readable {
-    /// Reads the whole source (TS: consuming the stream). A failed read
-    /// makes Node emit an `error` event that nothing handles, so the
-    /// reference crashes with a stack trace; we report the error's message
-    /// instead (a known gap, see docs/PARITY.md).
-    pub fn read(self) -> Result<Vec<u8>, CliError> {
-        match self {
-            Readable::Text(text) => Ok(text.into_bytes()),
-            Readable::File(path) => read_file_sync(&path),
-            Readable::Stdin => {
-                let mut bytes = Vec::new();
-                io::stdin()
-                    .lock()
-                    .read_to_end(&mut bytes)
-                    .map_err(|e| CliError::Thrown(fs_error_message(&e, "read", "-")))?;
-                Ok(bytes)
-            }
-        }
-    }
-
-    /// Reads the whole source as UTF-8 text (TS `getStream`), replacing
-    /// invalid sequences.
-    pub fn read_to_string(self) -> Result<String, CliError> {
-        self.read()
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
-    }
-}
-
-/// `readableFromFileOrURL(fileOrURL, httpHeaders)`: opens a file, or
-/// standard input for `-`.
-pub fn readable_from_file_or_url(
+/// `readableFromFileOrURL(fileOrURL, httpHeaders)` on the standard
+/// library.
+pub async fn readable_from_file_or_url(
     file_or_url: &str,
-    _http_headers: &[String],
+    http_headers: &[String],
 ) -> Result<Readable, CliError> {
-    if file_or_url.starts_with("file://") || looks_like_url(file_or_url) {
-        return Err(CliError::NotImplemented(format!(
-            "reading from URLs ({file_or_url})"
-        )));
-    }
-    if file_or_url == "-" {
-        return Ok(Readable::Stdin);
-    }
-    let file_path = resolve_symbolic_link(file_or_url).map_err(|message| {
-        message_error(
-            ErrorKind::MiscReadError,
-            vec![
-                ("fileOrURL", file_or_url.into()),
-                ("message", format!("Error: {message}").into()),
-            ],
-        )
-    })?;
-    if exists_sync(&file_path) {
-        return Ok(Readable::File(file_path));
-    }
-    Err(message_error(
-        ErrorKind::DriverInputFileDoesNotExist,
-        vec![("filename", file_or_url.into())],
-    ))
+    Ok(quicktype_core::readable_from_file_or_url(&StdIo, file_or_url, http_headers).await?)
 }
 
-/// `readFromFileOrURL(fileOrURL, httpHeaders)`: the whole text.
-pub fn read_from_file_or_url(
+/// `readFromFileOrURL(fileOrURL, httpHeaders)` on the standard library.
+pub async fn read_from_file_or_url(
     file_or_url: &str,
     http_headers: &[String],
 ) -> Result<String, CliError> {
-    readable_from_file_or_url(file_or_url, http_headers)?.read_to_string()
-}
-
-/// The first test of is-url 1.2.4 (`/^(?:\w+:)?\/\/(\S+)$/`), which every
-/// URL passes; enough to tell URLs, which need the core's `Io`, from paths.
-fn looks_like_url(s: &str) -> bool {
-    let rest = match s.find("//") {
-        Some(i) => {
-            let scheme = &s[..i];
-            let valid_scheme = scheme.is_empty()
-                || scheme
-                    .strip_suffix(':')
-                    .is_some_and(|w| !w.is_empty() && w.chars().all(js::is_word_char));
-            if !valid_scheme {
-                return false;
-            }
-            &s[i + 2..]
-        }
-        None => return false,
-    };
-    !rest.is_empty() && !rest.chars().any(js::is_whitespace)
+    Ok(quicktype_core::read_from_file_or_url(&StdIo, file_or_url, http_headers).await?)
 }
 
 #[cfg(test)]
@@ -245,23 +153,28 @@ mod tests {
 
     #[test]
     fn missing_files_fail_lstat() {
-        let e = readable_from_file_or_url("nonexistent.json", &[]).unwrap_err();
+        let e = quicktype_core::block_on(readable_from_file_or_url("nonexistent.json", &[]))
+            .unwrap_err();
         assert_eq!(
             e.to_string(),
             "Cannot read from file or URL nonexistent.json: Error: ENOENT: no such file or directory, lstat 'nonexistent.json'"
         );
         assert_eq!(
-            readable_from_file_or_url("-", &[]).unwrap(),
+            quicktype_core::block_on(readable_from_file_or_url("-", &[])).unwrap(),
             Readable::Stdin
         );
     }
 
     #[test]
-    fn urls() {
-        assert!(looks_like_url("https://example.com/a.json"));
-        assert!(looks_like_url("//example.com"));
-        assert!(!looks_like_url("a/b.json"));
-        assert!(!looks_like_url("a b://x"));
-        assert!(!looks_like_url("https://exa mple"));
+    fn directories_are_listed_in_byte_order() {
+        let dir = std::env::temp_dir().join(format!("qt-readdir-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for name in ["b", "10", "9", "Alpha", "_x", "a", "é"] {
+            std::fs::write(dir.join(name), "").unwrap();
+        }
+        let names = readdir_sync(&dir.to_string_lossy()).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(names, ["10", "9", "Alpha", "_x", "a", "b", "é"]);
     }
 }
