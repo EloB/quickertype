@@ -48,6 +48,23 @@ with quicktype's own packages:
   It is part of byte-for-byte parity (the `cli-version` golden cases), so it
   changes only when the corpus is re-recorded against a new quicktype
   ([ARCHITECTURE.md](ARCHITECTURE.md), section 6), never for a release.
+  For the same reason the CLI has no option that prints its own version (an
+  option quicktype does not know is an error, as in quicktype).
+- **The installed quickertype version** is known to whatever installed it:
+
+  | Installed with | Shows the version |
+  |---|---|
+  | Homebrew | `brew list --versions quickertype` (or `brew info quickertype`) |
+  | npm | `npm ls -g quickertype` |
+  | Cargo | `cargo install --list` (`quickertype v0.1.0:`) |
+  | shell installer | `jq -r .version ~/.config/quickertype/quickertype-receipt.json` (`$XDG_CONFIG_HOME/quickertype/` if that is set) |
+  | PowerShell installer | `version` in `%LOCALAPPDATA%\quickertype\quickertype-receipt.json` |
+  | MSI | Settings → Apps → Installed apps, or `winget list quickertype` |
+  | an archive | the GitHub Release it came from |
+
+  dist's installers write that receipt (`version` is the release's) unless
+  `QUICKERTYPE_DISABLE_UPDATE` or `QUICKERTYPE_UNMANAGED_INSTALL` is set;
+  `install-updater = false` only leaves out the updater binary.
 - The WebAssembly engine's `engineVersion()` returns the project's version;
   the facade only uses it to check that a module is this engine.
 
@@ -243,8 +260,21 @@ repository that change it.
    checksums), `host` (uploads everything and creates the GitHub Release),
    then in parallel `publish-homebrew-formula`, `publish-npm`,
    `custom-publish-crates` and `custom-publish-npm-core`, then `announce`.
-7. Try an install or two (`brew install EloB/tap/quickertype`,
-   `npx quickertype --version`, `cargo install quickertype`).
+7. Check that every registry has X.Y.Z, then install it once or twice and
+   check the installed version with the installer's own tool
+   ([above](#names-and-versions)). `quicktype --version` cannot tell: it
+   prints quicktype's version, 24.0.0, for every release.
+
+   ```sh
+   gh release view vX.Y.Z                      # the notes and every asset
+   npm view quickertype version                # X.Y.Z
+   npm view quickertype-core version           # X.Y.Z
+   cargo search quickertype --limit 5          # all five crates = "X.Y.Z"
+   brew update && brew info EloB/tap/quickertype   # stable X.Y.Z
+   brew install EloB/tap/quickertype && brew list --versions quickertype   # quickertype X.Y.Z
+   npm install -g quickertype@X.Y.Z && npm ls -g quickertype               # quickertype@X.Y.Z
+   cargo install quickertype --version X.Y.Z && cargo install --list       # quickertype vX.Y.Z:
+   ```
 
 For **0.1.0** the versions and the changelog section are already in place:
 set up the secrets, run the preflight, set the date in the `## [0.1.0]`

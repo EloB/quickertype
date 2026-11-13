@@ -51,8 +51,22 @@ powershell -ExecutionPolicy Bypass -c "irm https://github.com/EloB/quickertype/r
 Each installs a binary named `quicktype`, the same name as the TypeScript
 quicktype's, so install one or the other (see
 [docs/RELEASING.md](docs/RELEASING.md#the-quicktype-name)).
-`quicktype --version` reports the quicktype version it reproduces (24.0.0);
-the project has its own version, in [CHANGELOG.md](CHANGELOG.md).
+`quicktype --version` reports the quicktype version it reproduces (24.0.0),
+as part of matching quicktype's output; the project has its own version, in
+[CHANGELOG.md](CHANGELOG.md). To see which version of quickertype is
+installed, ask the tool that installed it:
+
+```sh
+brew list --versions quickertype       # quickertype 0.1.0
+npm ls -g quickertype                  # └── quickertype@0.1.0
+cargo install --list                   # quickertype v0.1.0:
+# the shell installer's receipt (under $XDG_CONFIG_HOME instead, if set):
+jq -r .version ~/.config/quickertype/quickertype-receipt.json   # 0.1.0
+```
+
+On Windows the PowerShell installer's receipt is
+`%LOCALAPPDATA%\quickertype\quickertype-receipt.json`, and the MSI shows its
+version under Settings → Apps → Installed apps (or `winget list quickertype`).
 
 The libraries:
 

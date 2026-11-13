@@ -6,9 +6,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The version is this port's own. `quicktype --version` reports the version
 of the TypeScript quicktype that the CLI reproduces, which is 24.0.0 for
-every release so far. [docs/RELEASING.md](docs/RELEASING.md) explains how a
-release is cut. The GitHub Release notes are the version's section of this
-file, so links in a section are absolute.
+every release so far; the installer shows which quickertype version is
+installed (`brew list --versions quickertype`, `npm ls -g quickertype`,
+`cargo install --list`, see [README.md](README.md#install)).
+[docs/RELEASING.md](docs/RELEASING.md) explains how a release is cut. The
+GitHub Release notes are the version's section of this file, so links in a
+section are absolute.
 
 ## [Unreleased]
 
