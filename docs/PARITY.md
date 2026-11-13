@@ -178,9 +178,9 @@ the others name the fix they need.
   inference recurses once per nesting level, as in TypeScript. There the
   JavaScript stack runs out somewhere between 500 and 1,000 levels
   (`Maximum call stack size exceeded`, depending on Node's stack size); the
-  port goes much deeper but eventually overflows the native stack and
-  aborts. Fix: an explicit depth limit reporting the `RangeError`, or
-  iterative inference.
+  port goes much deeper (the CLI generates on a thread with a 256 MB
+  stack) but eventually overflows the native stack and aborts. Fix: an
+  explicit depth limit reporting the `RangeError`, or iterative inference.
 - **Stack exhaustion in Postman collections.** The TypeScript recurses
   through nested folders and through `String(array)` when it formats a
   request's `method` and `url.raw`; the port is iterative and reports
@@ -195,6 +195,13 @@ the others name the fix they need.
   full, but the replay is not the checker; `docs/research/07` §10 lists the
   cases that can still differ. Without a TypeScript 7.0.2 compiler the
   input fails with an install hint, which the reference cannot do.
+- **Sources that fail while being read.** The CLI opens its sources
+  (`lstat`, `fetch`) when it collects them and reads them when the input
+  parses them. A read that fails after a successful open (`EACCES`,
+  `EISDIR` for a symbolic link to a directory) makes Node emit an `error`
+  event on the file stream that nothing handles: a runtime stack trace on
+  stderr and exit code 1. The Rust CLI prints `Error: <Node's message>.`
+  and exits 1.
 - **Write errors other than EPIPE.** Node turns a failed write to stdout or
   stderr (e.g. `EIO`, `ENOSPC`) into an uncaught exception: a runtime stack
   trace on stderr and exit code 1. The Rust CLI prints
