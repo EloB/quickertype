@@ -4,6 +4,8 @@
 //! ```text
 //! cargo bench -p quicktype-cli --bench in_process [-- [--iterations N] [--json]]
 //! cargo bench -p quicktype-cli --bench in_process --no-default-features   # system allocator
+//! QUICKTYPE_INFERENCE=compressed-json cargo bench -p quicktype-cli --bench in_process
+//!     # inference from the compressed form instead of from running tallies
 //! ```
 //!
 //! It lives in the CLI crate to run with the CLI's global allocator
@@ -71,6 +73,10 @@ fn run(lang: &str, text: &str) -> (Duration, Duration, usize) {
     let lang = get_target_language(lang).expect("built-in language");
     let start = Instant::now();
     let mut input = json_input_for_target_language(lang, false, &RendererOptions::new());
+    if std::env::var_os("QUICKTYPE_INFERENCE").is_some_and(|v| v == "compressed-json") {
+        // The reference inference (docs/STREAMING-INFERENCE.md), to compare.
+        input.set_tally_inference(false).expect("no sources yet");
+    }
     input
         .add_source_sync(JsonSourceData {
             name: "TopLevel".to_owned(),
