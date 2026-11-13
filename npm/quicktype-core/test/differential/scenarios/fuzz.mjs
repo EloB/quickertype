@@ -4,11 +4,15 @@
 // the case's renderer options, inference flags and API options.
 
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import * as path from "node:path";
 
-import { repositoryRoot } from "../packages.mjs";
+import { packageRoot, repositoryRoot } from "../packages.mjs";
 
 const casesDir = path.join(repositoryRoot, "tests", "fuzz-regressions");
+
+/** The CLI's `wordWrap`, for a Postman collection's description. */
+const wordWrap = createRequire(path.join(packageRoot, "package.json"))("wordwrap")(90);
 
 /** quicktype options named like the CLI's `--no-*` inference flags. */
 const inferenceFlags = [
@@ -43,10 +47,20 @@ export function scenarios() {
                 lang: kase.lang,
                 async run(qt) {
                     const inputData = new qt.InputData();
-                    if (kase.src === "json") {
+                    const extra = {};
+                    if (kase.src === "json" || kase.src === "postman") {
+                        let topLevels = kase.topLevels;
+                        if (kase.src === "postman") {
+                            // What the CLI does with a collection (its src/index.ts).
+                            const { sources, description } = qt.sourcesFromPostmanCollection(kase.postman, "in/collection.json");
+                            topLevels = sources;
+                            if (sources.length > 1) extra.fixedTopLevels = true;
+                            if (description !== undefined) extra.leadingComments = wordWrap(description).split("\n");
+                        }
+
                         const handleRefs = kase.flags.ignoreJsonRefs === false;
                         const input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.rendererOptions);
-                        for (const tl of kase.topLevels) await input.addSource({ name: tl.name, samples: tl.samples });
+                        for (const tl of topLevels) await input.addSource(tl);
                         inputData.addInput(input);
                     } else {
                         const input = new qt.JSONSchemaInput(new qt.FetchingJSONSchemaStore(), [], []);
@@ -61,6 +75,7 @@ export function scenarios() {
                         alphabetizeProperties: kase.flags.alphabetizeProperties === true,
                         allPropertiesOptional: kase.flags.allPropertiesOptional === true,
                         ...kase.api,
+                        ...extra,
                     };
                     for (const flag of inferenceFlags) options[flag] = kase.flags[flag] !== false;
                     for (const [component, name] of debugOptions) if (kase.debug?.includes(component)) options[name] = true;

@@ -20,7 +20,7 @@ export function modesFor(seed, kase, config) {
     if (kase.src === "graphql") return config.modes.includes("cli") ? ["cli"] : [];
     const modes = [];
     if (config.modes.includes("api")) modes.push("api");
-    if (config.modes.includes("stream") && kase.src === "json" && rng.chance(config.streamRate)) modes.push("stream");
+    if (config.modes.includes("stream") && (kase.src === "json" || kase.src === "postman") && rng.chance(config.streamRate)) modes.push("stream");
     if (config.modes.includes("cli") && rng.chance(config.cliRate)) modes.push("cli");
     return modes;
 }

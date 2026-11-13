@@ -47,6 +47,16 @@ awkward names), general options (`--no-maps`, `--no-enums`, `--no-uuids`,
   language keywords (`tests/keywords.txt`), acronyms (`tests/acronyms.txt`),
   integer-like strings, `__proto__` and other `Object.prototype` names,
   the empty string, whitespace, unicode and astral characters.
+- **A Postman collection** (`--src-lang postman`; in-process as the CLI
+  does it: `sourcesFromPostmanCollection`, the request descriptions as
+  top-level descriptions, the collection's description word-wrapped into
+  `leadingComments`, `fixedTopLevels` for several requests): requests in
+  nested folders whose responses hold JSON samples (and some that are not
+  JSON), with methods, URLs and descriptions.
+- **GraphQL** (CLI runs only; the WebAssembly engine has no GraphQL input):
+  an introspection result with scalars, enums, objects, interfaces and
+  unions, and one or more query documents with aliases, `@include`/`@skip`,
+  named and inline fragments and several operations.
 - **A JSON Schema**: objects (`properties`, `required` with the odd
   unknown name, `additionalProperties` as `false`, `true` or a schema,
   `patternProperties`, `quicktypePropertyOrder`), arrays (`items`, tuples,

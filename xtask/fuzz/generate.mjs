@@ -889,6 +889,58 @@ class SchemaGen {
     }
 }
 
+/**
+ * A Postman collection (CLI `--src-lang postman`): requests whose JSON
+ * response bodies are the samples, in nested folders, with names,
+ * methods, URLs and descriptions (which become top-level descriptions and
+ * the leading comments).
+ */
+function genPostman(rng) {
+    const pool = [];
+    const names = [];
+    const request = () => {
+        let name = rng.chance(0.7) ? `${rng.pick(["Get", "List", "Create", "Update", "Delete", "Search"])} ${compoundName(rng)}` : genKey(rng);
+        if (names.includes(name) && rng.chance(0.9)) name = `${name} ${names.length}`;
+        names.push(name);
+        const shape = genShape(rng, rng.range(1, 3), pool);
+        const responses = [];
+        const n = rng.weighted([[1, 0], [6, 1], [3, rng.range(2, 3)]]);
+        for (let i = 0; i < n; i++) {
+            const body = rng.weighted([
+                [10, () => str(toText(inst(rng, shape, { nodes: 300 }, false), rng.chance(0.5) ? "  " : undefined))],
+                [1, () => str("not json")],
+                [1, () => num("42")],
+                [0.5, () => lit("null")],
+            ])();
+            responses.push(obj([[str("name"), str("Example")], [str("code"), num("200")], [str("body"), body]]));
+        }
+
+        const req = [];
+        if (rng.chance(0.9)) req.push([str("method"), str(rng.pick(["GET", "POST", "PUT", "DELETE", "PATCH"]))]);
+        if (rng.chance(0.9)) {
+            const raw = rng.chance(0.9) ? `https://api.example.com/${compoundName(rng).replace(/ /g, "-")}?page=1` : rng.pick(["", "{{baseUrl}}/x"]);
+            req.push([str("url"), rng.chance(0.85) ? obj([[str("raw"), str(raw)], [str("host"), arr([str("api"), str("example"), str("com")])]]) : str(raw)]);
+        }
+
+        if (rng.chance(0.4)) req.push([str("description"), str(rng.pick(DESCRIPTIONS))]);
+        return obj([[str("name"), str(name)], [str("request"), obj(req)], [str("response"), arr(responses)]]);
+    };
+    const folder = (depth) => {
+        const items = [];
+        const n = rng.range(1, 3);
+        for (let i = 0; i < n; i++) items.push(depth > 0 && rng.chance(0.25) ? folder(depth - 1) : request());
+        const e = [[str("name"), str(compoundName(rng))], [str("item"), arr(items)]];
+        if (rng.chance(0.3)) e.push([str("info"), obj([[str("description"), str(rng.pick(DESCRIPTIONS))]])]);
+        return obj(e);
+    };
+    const items = [];
+    const n = rng.range(1, 4);
+    for (let i = 0; i < n; i++) items.push(rng.chance(0.25) ? folder(2) : request());
+    const info = [[str("name"), str(capitalize(compoundName(rng)))], [str("schema"), str("https://schema.getpostman.com/json/collection/v2.1.0/collection.json")]];
+    if (rng.chance(0.6)) info.push([str("description"), str(rng.chance(0.5) ? rng.pick(DESCRIPTIONS) : `${rng.pick(DESCRIPTIONS)} ${rng.pick(DESCRIPTIONS)} ${"word ".repeat(rng.range(10, 40))}`)]);
+    return toText(obj([[str("info"), obj(info)], [str("item"), arr(items)]]), "  ");
+}
+
 function genSchemas(rng) {
     const name = rng.weighted([[6, "TopLevel"], [3, capitalize(compoundName(rng))], [1, genKey(rng)]]);
     const gen = new SchemaGen(rng);
@@ -977,11 +1029,12 @@ function genLeadingComments(rng) {
 export function generateCase(seed, optionDefinitions, { languages = LANGUAGES, src } = {}) {
     const rng = new Rng(seed);
     const lang = rng.pick(languages);
-    const kind = src ?? rng.weighted([[57, "json"], [38, "schema"], [5, "graphql"]]);
+    const kind = src ?? rng.weighted([[53, "json"], [36, "schema"], [5, "graphql"], [6, "postman"]]);
     const kase = { seed, lang, src: kind };
     const inputRng = rng.fork();
     if (kind === "json") kase.topLevels = genJsonTopLevels(inputRng, lang);
     else if (kind === "schema") kase.schemas = genSchemas(inputRng);
+    else if (kind === "postman") kase.postman = genPostman(inputRng);
     else kase.graphql = { name: inputRng.chance(0.6) ? "TopLevel" : capitalize(compoundName(inputRng)), ...genGraphQL(inputRng, genKey, DESCRIPTIONS) };
     const optionRng = rng.fork();
     kase.rendererOptions = genRendererOptions(optionRng, optionDefinitions[lang] ?? []);

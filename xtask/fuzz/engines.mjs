@@ -24,6 +24,9 @@ import * as vm from "node:vm";
 
 import { INFERENCE_FLAGS } from "./generate.mjs";
 
+/** The CLI's `wordWrap` (the `wordwrap` package at width 90), for Postman descriptions. */
+let wordWrap90 = (s) => s;
+
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const packageRoot = path.join(repoRoot, "npm", "quicktype-core");
 const engineKey = Symbol.for("quicktype-core.engine");
@@ -64,6 +67,7 @@ function streamClassFor(reference, qt) {
 export function loadSides(reference) {
     const requireHere = createRequire(import.meta.url);
     const refQt = requireHere(path.join(reference, "packages", "quicktype-core"));
+    wordWrap90 = createRequire(path.join(reference, "dist", "index.js"))("wordwrap")(90);
     const refStream = requireHere(path.join(reference, "dist", "CompressedJSONFromStream.js")).CompressedJSONFromStream;
     const oursQt = requireHere(packageRoot);
     const stats = requireHere(path.join(packageRoot, "dist", "native", "bridge.js")).engineStats;
@@ -126,7 +130,17 @@ export function quicktypeOptions(kase, inputData, withApiExtras = true) {
 export async function runInProcess(side, kase, mode) {
     const { qt } = side;
     const inputData = new qt.InputData();
-    if (kase.src === "json") {
+    const options = quicktypeOptions(kase, inputData, mode === "api");
+    if (kase.src === "json" || kase.src === "postman") {
+        let topLevels = kase.topLevels;
+        if (kase.src === "postman") {
+            // What the CLI does with a collection (src/index.ts).
+            const { sources, description } = qt.sourcesFromPostmanCollection(kase.postman, "in/collection.json");
+            topLevels = sources;
+            if (sources.length > 1) options.fixedTopLevels = true;
+            if (description !== undefined) options.leadingComments = wordWrap90(description).split("\n");
+        }
+
         const handleRefs = kase.flags.ignoreJsonRefs === false;
         let input;
         if (mode === "stream") {
@@ -138,9 +152,9 @@ export async function runInProcess(side, kase, mode) {
             input = qt.jsonInputForTargetLanguage(kase.lang, undefined, handleRefs, kase.rendererOptions);
         }
 
-        for (const tl of kase.topLevels) {
+        for (const tl of topLevels) {
             const samples = mode === "stream" ? tl.samples.map((s) => Readable.from([Buffer.from(s, "utf8")])) : tl.samples;
-            await input.addSource({ name: tl.name, samples });
+            await input.addSource(tl.description === undefined ? { name: tl.name, samples } : { name: tl.name, description: tl.description, samples });
         }
 
         inputData.addInput(input);
@@ -150,7 +164,7 @@ export async function runInProcess(side, kase, mode) {
         inputData.addInput(input);
     }
 
-    return await qt.quicktypeMultiFile(quicktypeOptions(kase, inputData, mode === "api"));
+    return await qt.quicktypeMultiFile(options);
 }
 
 // ---- CLI ---------------------------------------------------------------------
@@ -186,6 +200,10 @@ export function cliInvocation(kase) {
 
             args.push("in");
         }
+    } else if (kase.src === "postman") {
+        args.push("--src-lang", "postman");
+        files.set("in/collection.json", kase.postman);
+        args.push("in/collection.json");
     } else if (kase.src === "graphql") {
         args.push("--src-lang", "graphql", "--graphql-schema", "in/schema.gqlschema", "--top-level", kase.graphql.name);
         files.set("in/schema.gqlschema", kase.graphql.schema);

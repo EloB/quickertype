@@ -269,6 +269,14 @@ async function shrinkInputs() {
                 );
             }
         }
+    } else if (current.src === "postman") {
+        await shrinkTree(
+            (c) => parse(c.postman),
+            (c, tree) => {
+                c.postman = toText(tree, "  ");
+                return c;
+            },
+        );
     } else if (current.src === "graphql") {
         if (current.graphql.name !== "TopLevel") {
             await attempt((c) => {
