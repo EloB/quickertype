@@ -871,6 +871,15 @@ pre#output:focus-visible {
     max-width: 80ch;
 }
 
+.credits p + p {
+    margin-top: 4px;
+}
+
+.credits code {
+    font: 11.5px var(--mono);
+    white-space: nowrap;
+}
+
 [hidden] {
     display: none !important;
 }

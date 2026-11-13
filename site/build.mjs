@@ -14,8 +14,9 @@
 // The languages and their options, and quicktype's general (run-level)
 // options, are read from quicktype-core's API here, at build time, and
 // embedded in main.js, so the page can show its controls before the worker
-// has loaded. File names carry a content hash, so a deploy never mixes old
-// and new files; every URL is relative.
+// has loaded. So is the quicktype commit the output matches, from
+// tests/golden/REFERENCE, for the page's footer. File names carry a content
+// hash, so a deploy never mixes old and new files; every URL is relative.
 
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
@@ -64,6 +65,15 @@ const presets = {
     objc: { "extra-comments": true },
     swift: { initializers: false },
     rust: { density: "dense" },
+};
+
+/**
+ * The quicktype commit whose output this repository matches is
+ * `quicktype_commit` in tests/golden/REFERENCE; its date is here. A new
+ * commit there needs its date here (the build says so).
+ */
+const upstreamCommitDates = {
+    c39af7d303b025280e2668a1b2d29913093593c9: "2026-09-08",
 };
 
 const qt = require(path.join(packageRoot, "dist", "index.js"));
@@ -140,6 +150,25 @@ function generalOptions() {
     return general;
 }
 
+/** The quicktype commit the output matches, from tests/golden/REFERENCE, with its date. */
+function upstream() {
+    const reference = fs.readFileSync(path.join(repositoryRoot, "tests", "golden", "REFERENCE"), "utf8");
+    const commit = /^quicktype_commit=([0-9a-f]{40})$/m.exec(reference)?.[1];
+    if (commit === undefined) throw new Error("tests/golden/REFERENCE has no quicktype_commit");
+    const date = upstreamCommitDates[commit];
+    if (date === undefined) {
+        throw new Error(`the date of quicktype commit ${commit} (tests/golden/REFERENCE) is not in upstreamCommitDates in site/build.mjs`);
+    }
+
+    const long = new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+    });
+    return { commit, short: commit.slice(0, 7), date, long };
+}
+
 function hash(content) {
     return createHash("sha256").update(content).digest("hex").slice(0, 10);
 }
@@ -210,10 +239,16 @@ for (const { file } of samples) {
     fs.copyFileSync(path.join(repositoryRoot, "tests", "inputs", file), path.join(dist, "samples", path.basename(file)));
 }
 
+const { commit, short, date, long } = upstream();
 const html = fs
     .readFileSync(path.join(src, "index.html"), "utf8")
     .replace("%STYLE%", `./${styleFile}`)
-    .replace("%MAIN%", `./${mainFile}`);
+    .replace("%MAIN%", `./${mainFile}`)
+    .replaceAll("%QUICKTYPE_COMMIT%", commit)
+    .replaceAll("%QUICKTYPE_SHORT%", short)
+    .replaceAll("%QUICKTYPE_DATE%", date)
+    .replaceAll("%QUICKTYPE_DATE_LONG%", long);
+if (/%[A-Z_]+%/.test(html)) throw new Error(`a placeholder is left in index.html: ${/%[A-Z_]+%/.exec(html)[0]}`);
 fs.writeFileSync(path.join(dist, "index.html"), html);
 
 const kib = (n) => `${(n / 1024).toFixed(1)} KiB`;

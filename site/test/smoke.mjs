@@ -16,10 +16,11 @@
 // with integers beyond 32 bits, renderer options given in the URL hash,
 // and an uploaded file too large for the editor; that the URL hash brings all
 // of those back; that the general options are labelled as in the CLI's
-// --help; that compare mode reports identical output with each engine in
-// its own worker; that invalid JSON shows quicktype's error; that the input
-// survives a reload (localStorage); and that 360 px and 390 px widths do not
-// scroll sideways. And three things that once went wrong: the code shown after a
+// --help; that the footer links the quicktype commit in tests/golden/REFERENCE;
+// that compare mode reports identical output with each engine in its own
+// worker; that invalid JSON shows quicktype's error; that the input survives
+// a reload (localStorage); and that 360 px and 390 px widths do not scroll
+// sideways. And three things that once went wrong: the code shown after a
 // slow run during which compare mode was turned off; a measurement asked for
 // while a run is under way; and a worker failing after it loaded.
 //
@@ -548,6 +549,32 @@ try {
         "quicktype --lang rust --top-level T32431 --density dense --integer-type force-i32 32431.json",
     );
     assert.match(forceI32, /pub time: f64,/);
+
+    // The footer: the quicktype commit the output matches, linked.
+    const reference = fs.readFileSync(path.join(repositoryRoot, "tests", "golden", "REFERENCE"), "utf8");
+    const commit = /^quicktype_commit=([0-9a-f]{40})$/m.exec(reference)[1];
+    const version = await page.evaluate(`({
+        href: document.querySelector("#version a").href,
+        text: document.getElementById("version").textContent,
+        date: document.querySelector("#version time").dateTime,
+    })`);
+    assert.equal(version.href, `https://github.com/glideapps/quicktype/commit/${commit}`);
+    assert.ok(version.text.startsWith(`Output matches quicktype at commit ${commit.slice(0, 7)} (`), version.text);
+    assert.match(version.text, /newer than the v26\.0\.0 release behind npx quicktype and app\.quicktype\.io/);
+    const checkout = [process.env.QUICKTYPE_REFERENCE, path.join(repositoryRoot, "..", "quicktype"), path.join(repositoryRoot, "..", "..", "quicktype")]
+        .filter((d) => d !== undefined && d !== "self")
+        .find((d) => fs.existsSync(path.join(d, ".git")));
+    const commitDate =
+        checkout === undefined
+            ? undefined
+            : spawnSync("git", ["-C", checkout, "log", "-1", "--date=format-local:%Y-%m-%d", "--format=%cd", commit], {
+                  encoding: "utf8",
+                  env: { ...process.env, TZ: "UTC" },
+              }).stdout.trim() || undefined;
+    if (commitDate !== undefined) assert.equal(version.date, commitDate, `the date of ${commit}`);
+    console.log(
+        `ok: footer: ${version.text}${commitDate === undefined ? " (no quicktype checkout to check the date against)" : ` (date checked in ${checkout})`}`,
+    );
 
     await page.navigate(`${url}#l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");
