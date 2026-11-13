@@ -109,6 +109,9 @@ impl std::fmt::Display for GeneralCategory {
 /// Values above U+10FFFF return [`GeneralCategory::Cc`], like the package's
 /// trie error value.
 pub fn get_category(code_point: u32) -> GeneralCategory {
+    if let Some(&category) = LATIN1.get(code_point as usize) {
+        return category;
+    }
     if code_point > 0x10FFFF {
         return GeneralCategory::Cc;
     }
@@ -118,6 +121,22 @@ pub fn get_category(code_point: u32) -> GeneralCategory {
         .get(run.wrapping_sub(1))
         .map_or(GeneralCategory::Cc, |&(_, category)| category)
 }
+
+/// The categories of U+0000 to U+00FF, where nearly all the characters of
+/// names are: a table lookup instead of a binary search over the runs.
+static LATIN1: [GeneralCategory; 256] = {
+    let mut table = [GeneralCategory::Cc; 256];
+    let mut run = 0;
+    let mut code_point = 0;
+    while code_point < 256 {
+        while run + 1 < CATEGORY_RUNS.len() && CATEGORY_RUNS[run + 1].0 <= code_point as u32 {
+            run += 1;
+        }
+        table[code_point] = CATEGORY_RUNS[run].1;
+        code_point += 1;
+    }
+    table
+};
 
 /// `unicode.isAlphabetic(codePoint)`: category `Lu`, `Ll`, `Lt`, `Lm`, `Lo` or
 /// `Nl`. This is category-based, not Unicode's `Alphabetic` property.
@@ -152,6 +171,18 @@ pub fn is_white_space(code_point: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_latin1_table_agrees_with_the_runs() {
+        for code_point in 0..256u32 {
+            let run = CATEGORY_RUNS.partition_point(|&(start, _)| start <= code_point);
+            assert_eq!(
+                get_category(code_point),
+                CATEGORY_RUNS[run - 1].1,
+                "U+{code_point:04X}"
+            );
+        }
+    }
 
     #[test]
     fn table_is_sorted_and_starts_at_zero() {
