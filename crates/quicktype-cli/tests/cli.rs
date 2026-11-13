@@ -452,3 +452,36 @@ fn kotlin_enum_cases_retain_their_typescript_string_values() {
     assert!(code.contains(r#"BringToFront("bringtofront")"#), "{code}");
     assert!(code.contains("fun fromValue(value: String): CanvasAction = when (value)"));
 }
+
+/// TypeScript reads and parses the samples of a top-level one after the
+/// other and stops at the first error, so a sample that fails to parse is
+/// reported without reading standard input, which stays open here.
+#[test]
+fn a_bad_sample_is_reported_before_stdin_is_read() {
+    let dir = work_dir("bad-then-stdin");
+    fs::write(dir.join("bad.json"), r#"{"a":"#).unwrap();
+    let mut child = Command::new(BIN)
+        .args(["--lang", "rust", "bad.json", "-"])
+        .current_dir(&dir)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let stdin = child.stdin.take();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    while child.try_wait().unwrap().is_none() {
+        if std::time::Instant::now() > deadline {
+            let _ = child.kill();
+            panic!("quicktype waited for standard input");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    drop(stdin);
+    let output = child.wait_with_output().unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        stderr(&output),
+        "Error: Syntax error in input JSON TopLevel: Parser has expected a value.\n"
+    );
+}

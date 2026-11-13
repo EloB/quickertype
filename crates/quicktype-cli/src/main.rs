@@ -157,11 +157,14 @@ async fn make_input_data(
 }
 
 /// `inputData.addSource("json", source, () =>
-/// jsonInputForTargetLanguage(...))`: reads the samples and parses them
-/// with stream-json's semantics.
+/// jsonInputForTargetLanguage(...))`: reads and parses the samples with
+/// stream-json's semantics.
 ///
-/// TypeScript reads each sample's stream while parsing, so a sample that
-/// fails to parse is reported before a later one that fails to read.
+/// TypeScript reads each sample's stream as it parses it, one sample after
+/// the other, and stops at the first error: a sample that fails to parse
+/// is reported before a later one is even read (`bad.json -` never touches
+/// standard input). So each sample is read and added on its own; a failure
+/// aborts the run, so the samples added before it do not matter.
 async fn add_json_source(
     input_data: &mut InputData,
     source: JsonTypeSource,
@@ -174,40 +177,27 @@ async fn add_json_source(
         samples,
         description,
     } = source;
-    let mut read = Vec::with_capacity(samples.len());
-    let mut read_error = None;
+    let make_input =
+        || json_input_for_target_language(target_language, handle_json_refs, renderer_options);
+    if samples.is_empty() {
+        // `DriverNoSamplesForTopLevel`.
+        let empty = JsonSourceData {
+            name,
+            samples: Vec::new(),
+            description,
+        };
+        return Ok(input_data.add_source("json", empty, make_input).await?);
+    }
     for sample in samples {
-        match node_fs::read(sample).await {
-            Ok(text) => read.push(JsonSample::Stream(text.into_bytes())),
-            Err(e) => {
-                read_error = Some(e);
-                break;
-            }
-        }
+        let text = node_fs::read(sample).await?;
+        let one = JsonSourceData {
+            name: name.clone(),
+            samples: vec![JsonSample::Stream(text.into_bytes())],
+            description: description.clone(),
+        };
+        input_data.add_source("json", one, make_input).await?;
     }
-    if read_error.is_none() || !read.is_empty() {
-        input_data
-            .add_source(
-                "json",
-                JsonSourceData {
-                    name,
-                    samples: read,
-                    description,
-                },
-                || {
-                    json_input_for_target_language(
-                        target_language,
-                        handle_json_refs,
-                        renderer_options,
-                    )
-                },
-            )
-            .await?;
-    }
-    match read_error {
-        Some(e) => Err(e),
-        None => Ok(()),
-    }
+    Ok(())
 }
 
 /// The `--debug` components: comma-separated, each trimmed; `all` turns
