@@ -312,6 +312,67 @@ export function scenarios() {
             await input.addSource({ name: "B", samples: ['[2147483648, {"$ref": "#/x"}]'] });
             return { result: await qt.quicktypeMultiFile({ lang: "typescript", inputData: data(qt, input) }), state: state(input, true) };
         }),
+        // A run holds the samples it was encoded with until it starts,
+        // even if a run on TypeScript fills the tables meanwhile (which
+        // drops the engine's copy) and another input is read into the
+        // engine; and the tables filled from the engine are TypeScript's.
+        scenario("a run waiting to start while a run on TypeScript fills the tables", async (qt) => {
+            const Custom = class extends Object.getPrototypeOf(qt.languageNamed("typescript")).constructor {};
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            await input.addSource({ name: "A", samples: ['{"a": [1, {"b": true}], "c": "2020-01-01"}'] });
+            const inputData = data(qt, input);
+            const pending = qt.quicktypeMultiFile({ lang: "typescript", inputData });
+            const fallback = qt.quicktypeMultiFileSync({ lang: new Custom(), inputData });
+            const other = qt.jsonInputForTargetLanguage("typescript");
+            other.addSourceSync({ name: "Other", samples: ['{"x": ["s", {"y": 2.5}], "z": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"}'] });
+            return {
+                first: await pending,
+                fallback,
+                other: await qt.quicktypeMultiFile({ lang: "typescript", inputData: data(qt, other) }),
+                state: state(input, true),
+                otherState: state(other, true),
+            };
+        }),
+        scenario("runs at once while samples are added and the tables filled", async (qt) => {
+            const Custom = class extends Object.getPrototypeOf(qt.languageNamed("go")).constructor {};
+            const input = qt.jsonInputForTargetLanguage("go");
+            await input.addSource({ name: "T", samples: ['{"id": 1, "tags": ["a"]}', '[{"id": 2.5}]'] });
+            const inputData = data(qt, input);
+            const runs = [qt.quicktypeMultiFile({ lang: "go", inputData })];
+            input.addSourceSync({ name: "U", samples: ['{"u": {"v": null}}'] });
+            runs.push(qt.quicktypeMultiFile({ lang: "go", inputData }));
+            runs.push(qt.quicktypeMultiFile({ lang: new Custom(), inputData }));
+            input.addSourceSync({ name: "W", samples: ['{"w": [true]}'] });
+            runs.push(qt.quicktypeMultiFile({ lang: "go", inputData }));
+            return { runs: await Promise.all(runs), state: state(input, true) };
+        }),
+        scenario("tables of duplicate __proto__ keys and of a sample that is not JSON", async (qt) => {
+            const input = qt.jsonInputForTargetLanguage("typescript");
+            const failures = [];
+            for (const samples of [
+                ['{"__proto__":1,"__proto__":2}'],
+                ['{"key1": [1, {"key2": '],
+                ['{"k": "v", "__proto__": {"__proto__": [1], "__proto__": "x"}}'],
+                ['{"d": "2020-01-01", "u": "https://example.com/a.png", "d2": "2021-02-03", "i": "12"}'],
+            ]) {
+                failures.push(await attempt("addSource", () => input.addSource({ name: "T", samples })));
+            }
+
+            return { failures, state: state(input, true) };
+        }),
+        scenario("a sample large enough to compile the engine", async (qt) => {
+            const records = Array.from({ length: 30_000 }, (_, i) => ({
+                id: i,
+                name: `name ${i % 97}`,
+                kind: ["a", "b", "c"][i % 3],
+                when: i % 5 === 0 ? "2020-01-01" : null,
+                tags: i % 7 === 0 ? [] : [i % 4, `t${i % 11}`],
+            }));
+            const input = qt.jsonInputForTargetLanguage("csharp");
+            await input.addSource({ name: "Records", samples: [JSON.stringify(records)] });
+            const result = await qt.quicktypeMultiFile({ lang: "csharp", inputData: data(qt, input) });
+            return { result, strings: state(input, true).strings.length };
+        }),
         scenario("onTiming and debug output with samples the engine read", async (qt) => {
             const input = qt.jsonInputForTargetLanguage("rust");
             await input.addSource({ name: "T", samples: ['{"a": [1, 2.5], "b": {"c": "x"}}'] });

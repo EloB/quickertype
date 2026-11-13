@@ -55,6 +55,11 @@ function withEngine(mode, f) {
 export function loadPackages() {
     const oursQt = require(packageRoot);
     const stats = require(path.join(packageRoot, "dist", "native", "bridge.js")).engineStats;
+    // JSON samples are read on the engine once it is compiled (a small
+    // sample does not compile it: src/native/samples.ts), so it is compiled
+    // here, as in a process that has run before: every scenario's samples
+    // are then the engine's to read.
+    require(path.join(packageRoot, "dist", "native", "engine.js")).engineSync();
     const checkout = findReferenceCheckout();
     const reference =
         checkout === undefined
