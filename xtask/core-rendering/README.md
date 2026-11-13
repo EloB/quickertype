@@ -33,8 +33,13 @@ annotations the CLI prints to stderr. A few cases from quicktype's unit tests
 Multi-file languages (Java) write every file next to `--out`, into the
 case's `dirs`, which the recorder creates first. When such a render goes to
 stdout, the CLI prints the files under `// <name>` headers; the fixture then
-names the stdout golden once (`stdout`) and the test joins the rendered
-files the same way.
+names the stdout golden once (`stdout`, with `quiet` for `--quiet`, which
+drops the separators) and the test joins the rendered files exactly like
+`writeOutput`. `cliCases` are CLI runs the corpus lacks (`cli-extra/*`, e.g.
+quiet multi-file stdout), recorded through the real CLI with their stdout
+inline (`stdoutText`). A case whose render differs from its golden, or that
+throws, is reported and skipped (the exit code is 1); the others are still
+recorded.
 
 ## Scenarios
 

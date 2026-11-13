@@ -15,25 +15,32 @@ mod render_support;
 use std::fs;
 use std::path::Path;
 
+use quicktype_core::target_language::MultiFileRenderResult;
 use render_support::{build_graph, first_difference, gather_and_render};
 use serde_json::Value;
 
-/// The CLI's stdout for a multi-file result (`writeOutput` without `--out`):
-/// every file under a `// <name>` header, separated by a blank line.
-fn join_stdout(result: &quicktype_core::target_language::MultiFileRenderResult) -> String {
-    let several = result.len() > 1;
-    result
-        .iter()
-        .map(|(name, serialized)| {
-            let text = serialized.lines.join("\n");
-            if several {
-                format!("// {name}\n\n{text}")
-            } else {
-                text
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+/// What the CLI's `writeOutput` prints for a render without `--out`,
+/// modeled exactly: each file under a `// <name>` header when there are
+/// several, separated by `"\n"` -- except with `--quiet`, where
+/// `writeOutput` `continue`s before clearing its `onFirst` flag, so no
+/// separator is ever printed.
+fn join_stdout(result: &MultiFileRenderResult, quiet: bool) -> String {
+    let mut out = String::new();
+    let mut on_first = true;
+    for (name, serialized) in result {
+        if !on_first {
+            out.push('\n');
+        }
+        if result.len() > 1 {
+            out.push_str(&format!("// {name}\n\n"));
+        }
+        out.push_str(&serialized.lines.join("\n"));
+        if quiet {
+            continue;
+        }
+        on_first = false;
+    }
+    out
 }
 
 fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
@@ -47,11 +54,20 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
         return Err(format!("files {names:?}, expected {expected_names:?}"));
     }
     // Several files printed to stdout (no `--out`): compare them joined the
-    // way the CLI's `writeOutput` prints them.
-    if let Some(stdout) = fixture["stdout"].as_str() {
-        let expected = fs::read_to_string(golden_dir.join(stdout))
-            .map_err(|e| format!("cannot read golden {stdout}: {e}"))?;
-        let actual = join_stdout(&result);
+    // way the CLI's `writeOutput` prints them, with the stdout golden
+    // (`stdout`) or the recorded stdout (`stdoutText`).
+    let stdout = match (fixture["stdout"].as_str(), fixture["stdoutText"].as_str()) {
+        (Some(path), _) => Some(
+            fs::read_to_string(golden_dir.join(path))
+                .map_err(|e| format!("cannot read golden {path}: {e}"))?,
+        ),
+        (None, Some(text)) => Some(text.to_owned()),
+        (None, None) => None,
+    };
+    let has_stdout = stdout.is_some();
+    if let Some(expected) = stdout {
+        let quiet = fixture["quiet"].as_bool().unwrap_or(false);
+        let actual = join_stdout(&result, quiet);
         if actual != expected {
             return Err(format!(
                 "stdout differs at {}",
@@ -68,7 +84,7 @@ fn run_case(fixture: &Value, golden_dir: &Path) -> Result<(), String> {
                     .map_err(|e| format!("cannot read golden {golden}: {e}"))?,
             ),
             (None, Some(text)) => Some(text.to_owned()),
-            (None, None) if fixture["stdout"].is_string() => None,
+            (None, None) if has_stdout => None,
             (None, None) => return Err(format!("{name}: no golden or text")),
         };
         let actual = serialized.lines.join("\n");
@@ -141,4 +157,27 @@ fn render_cases_match_reference() {
         failures.len(),
         failures.join("\n")
     );
+}
+
+#[test]
+fn join_stdout_models_write_output() {
+    let file = |lines: &[&str]| quicktype_core::source::SerializedRenderResult {
+        lines: lines.iter().map(|&l| l.to_owned()).collect(),
+        annotations: Vec::new(),
+    };
+    let mut result = MultiFileRenderResult::new();
+    result.insert("A.java".to_owned(), file(&["a", ""]));
+    result.insert("B.java".to_owned(), file(&["b", ""]));
+    assert_eq!(
+        join_stdout(&result, false),
+        "// A.java\n\na\n\n// B.java\n\nb\n"
+    );
+    // `--quiet` skips `onFirst = false`, so no separator is printed.
+    assert_eq!(
+        join_stdout(&result, true),
+        "// A.java\n\na\n// B.java\n\nb\n"
+    );
+    result.shift_remove("B.java");
+    assert_eq!(join_stdout(&result, false), "a\n");
+    assert_eq!(join_stdout(&result, true), "a\n");
 }
