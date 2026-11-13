@@ -27,6 +27,7 @@ use crate::attributes::type_attributes::{
 use crate::messages::Result;
 use crate::support::collection_utils::EqualityMap;
 use crate::support::fast_hash::HashMap;
+use crate::support::recursion::guard;
 use crate::support::support::{assert, console_log, indentation_string, panic};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::ty::{self, ClassProperty};
@@ -556,7 +557,27 @@ impl<'g> TypeBuilder<'g> {
     }
 
     /// `forceReconstituteTypeRef(originalRef, attributes, forwardingRef)`.
+    ///
+    /// Reconstitution recurses into the types a type refers to. Some remaps
+    /// never end (an intersection of a type with a union containing a map of
+    /// it), where TypeScript overflows the stack, so this is one level of a
+    /// guarded recursion.
     fn force_reconstitute_type_ref(
+        &mut self,
+        original_ref: TypeRef,
+        attributes: TypeAttributes,
+        maybe_forwarding_ref: Option<TypeRef>,
+    ) -> Result<TypeRef> {
+        guard(|| {
+            self.force_reconstitute_type_ref_unguarded(
+                original_ref,
+                attributes,
+                maybe_forwarding_ref,
+            )
+        })
+    }
+
+    fn force_reconstitute_type_ref_unguarded(
         &mut self,
         original_ref: TypeRef,
         attributes: TypeAttributes,

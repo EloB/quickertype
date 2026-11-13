@@ -1,0 +1,35 @@
+{
+  "description": "allOf of a reference to the root and an anyOf of it and a map of it: removeIndirectionIntersections' remap recurses without end, and TypeScript overflows the stack; the port must fail the same way instead of recursing for hours",
+  "seed": 575940,
+  "foundIn": "cli",
+  "case": {
+    "seed": 575940,
+    "lang": "typescript",
+    "src": "schema",
+    "schemas": [
+      {
+        "name": "TopLevel",
+        "text": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"m\": {\n      \"allOf\": [\n        {\n          \"$ref\": \"#\"\n        },\n        {\n          \"anyOf\": [\n            {\n              \"$ref\": \"#\"\n            },\n            {\n              \"additionalProperties\": {\n                \"$ref\": \"#\"\n              }\n            }\n          ]\n        }\n      ]\n    }\n  }\n}"
+      }
+    ],
+    "rendererOptions": {},
+    "flags": {},
+    "api": {},
+    "cli": {},
+    "debug": []
+  },
+  "cli": {
+    "args": [
+      "--lang",
+      "typescript",
+      "--src-lang",
+      "schema",
+      "--top-level",
+      "TopLevel",
+      "in/schema.json"
+    ],
+    "dirs": [],
+    "exit": 1,
+    "files": []
+  }
+}
