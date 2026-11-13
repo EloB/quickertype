@@ -10,6 +10,8 @@
 //! only by memory: the stack grows on demand where graphql-js would
 //! eventually overflow Node's stack (`docs/PARITY.md`, Known gaps).
 
+use quicktype_core::support::recursion::grow_stack;
+
 use super::ast::{
     Definition, Document, Field, FragmentDefinition, FragmentSpread, InlineFragment,
     OperationDefinition, OperationType, Selection, SelectionSet,
@@ -42,19 +44,6 @@ const DIRECTIVE_LOCATIONS: [&str; 20] = [
     "INPUT_FIELD_DEFINITION",
     "DIRECTIVE_DEFINITION",
 ];
-
-/// The stack kept free before a recursive rule continues on a new stack
-/// segment.
-const RED_ZONE: usize = 128 * 1024;
-
-/// The size of each new stack segment.
-const STACK_SEGMENT: usize = 2 * 1024 * 1024;
-
-/// Runs a recursive rule, on a new stack segment if the stack is nearly
-/// exhausted.
-fn grow<R>(f: impl FnOnce() -> R) -> R {
-    stacker::maybe_grow(RED_ZONE, STACK_SEGMENT, f)
-}
 
 /// `parse(source)`: the document, or graphql-js's `GraphQLError`.
 ///
@@ -220,7 +209,7 @@ impl Parser {
 
     /// `parseSelectionSet()`.
     fn parse_selection_set(&mut self) -> Result<SelectionSet> {
-        grow(|| {
+        grow_stack(|| {
             let selections =
                 self.many(TokenKind::BraceL, Self::parse_selection, TokenKind::BraceR)?;
             Ok(SelectionSet { selections })
@@ -334,30 +323,27 @@ impl Parser {
 
     /// `parseValueLiteral(isConst)`.
     fn parse_value_literal(&mut self, is_const: bool) -> Result<()> {
-        grow(|| {
-            let token = self.token().clone();
-            match token.kind {
-                TokenKind::BracketL => self.parse_list(is_const),
-                TokenKind::BraceL => self.parse_object(is_const),
-                TokenKind::Int | TokenKind::Float | TokenKind::Name => self.advance_lexer(),
-                TokenKind::String | TokenKind::BlockString => self.parse_string_literal(),
-                TokenKind::Dollar => {
-                    if is_const {
-                        self.expect_token(TokenKind::Dollar)?;
-                        let after = self.token();
-                        if after.kind == TokenKind::Name {
-                            let var_name = after.value.clone().unwrap_or_default();
-                            return Err(syntax_error(
-                                token.start,
-                                format!("Unexpected variable \"${var_name}\" in constant value."),
-                            ));
-                        }
-                        return Err(self.unexpected(Some(&token)));
-                    }
-                    self.parse_variable()
+        grow_stack(|| match self.token().kind {
+            TokenKind::BracketL => self.parse_list(is_const),
+            TokenKind::BraceL => self.parse_object(is_const),
+            TokenKind::Int | TokenKind::Float | TokenKind::Name => self.advance_lexer(),
+            TokenKind::String | TokenKind::BlockString => self.parse_string_literal(),
+            TokenKind::Dollar if is_const => {
+                let dollar = self.expect_token(TokenKind::Dollar)?;
+                let after = self.token();
+                if after.kind == TokenKind::Name {
+                    return Err(syntax_error(
+                        dollar.start,
+                        format!(
+                            "Unexpected variable \"${}\" in constant value.",
+                            after.value.as_deref().unwrap_or_default()
+                        ),
+                    ));
                 }
-                _ => Err(self.unexpected(None)),
+                Err(self.unexpected(Some(&dollar)))
             }
+            TokenKind::Dollar => self.parse_variable(),
+            _ => Err(self.unexpected(None)),
         })
     }
 
@@ -426,7 +412,7 @@ impl Parser {
 
     /// `parseTypeReference()`.
     fn parse_type_reference(&mut self) -> Result<()> {
-        grow(|| {
+        grow_stack(|| {
             if self.expect_optional_token(TokenKind::BracketL)? {
                 self.parse_type_reference()?;
                 self.expect_token(TokenKind::BracketR)?;
@@ -762,12 +748,11 @@ impl Parser {
 
     /// `parseDirectiveLocation()`.
     fn parse_directive_location(&mut self) -> Result<()> {
-        let start = self.token().clone();
-        let name = self.parse_name()?;
-        if DIRECTIVE_LOCATIONS.contains(&name.as_str()) {
+        let name = self.expect_token(TokenKind::Name)?;
+        if DIRECTIVE_LOCATIONS.contains(&name.value.as_deref().unwrap_or_default()) {
             return Ok(());
         }
-        Err(self.unexpected(Some(&start)))
+        Err(self.unexpected(Some(&name)))
     }
 
     // ---- Core parsing utility functions -------------------------------------
@@ -780,17 +765,16 @@ impl Parser {
     /// `expectToken(kind)`: the current token, if it is of `kind`, and
     /// advances.
     fn expect_token(&mut self, kind: TokenKind) -> Result<Token> {
-        let token = self.token().clone();
+        let token = self.token();
         if token.kind == kind {
-            self.advance_lexer()?;
-            return Ok(token);
+            return self.lexer.advance();
         }
         Err(syntax_error(
             token.start,
             format!(
                 "Expected {}, found {}.",
                 token_kind_desc(kind),
-                token_desc(&token)
+                token_desc(token)
             ),
         ))
     }
@@ -904,8 +888,7 @@ impl Parser {
 
     /// `advanceLexer()` (without `maxTokens`, which quicktype does not set).
     fn advance_lexer(&mut self) -> Result<()> {
-        self.lexer.advance()?;
-        Ok(())
+        self.lexer.advance().map(drop)
     }
 }
 

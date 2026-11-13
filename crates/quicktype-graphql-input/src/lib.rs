@@ -55,8 +55,8 @@ pub mod graphql;
 pub mod graphql_schema;
 mod js;
 
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use indexmap::{IndexMap, IndexSet};
 use quicktype_core::attributes::string_types::StringTypes;
@@ -67,7 +67,7 @@ use quicktype_core::attributes::type_names::{
     NamesTypeAttributeKind, TypeNames, make_names_type_attributes,
 };
 use quicktype_core::messages::{ErrorKind, message_assert};
-use quicktype_core::support::recursion::stack_overflow;
+use quicktype_core::support::recursion::{grow_stack, stack_overflow};
 use quicktype_core::support::support::{assert_never, panic};
 use quicktype_core::ty::transformed_string_type::TypeKind as IrTypeKind;
 use quicktype_core::ty::ty::ClassProperty;
@@ -81,17 +81,6 @@ use crate::graphql::ast::{
 };
 use crate::graphql_schema::TypeKind;
 use crate::js::{JsVal, object_prototype_function, type_error};
-
-/// The stack kept free before a recursion continues on a new segment.
-const RED_ZONE: usize = 128 * 1024;
-
-/// The size of each new stack segment.
-const STACK_SEGMENT: usize = 2 * 1024 * 1024;
-
-/// Runs one level of a recursion, on a new stack segment if needed.
-fn grow<R>(f: impl FnOnce() -> R) -> R {
-    stacker::maybe_grow(RED_ZONE, STACK_SEGMENT, f)
-}
 
 // ---- The schema (`GQLSchemaFromJSON`) ---------------------------------------
 
@@ -316,7 +305,7 @@ impl<'a> GqlSchema<'a> {
     /// `makeType(t)`: a named type's object, or a new object for a list or
     /// non-null wrapper.
     fn make_type(&mut self, t: JsVal<'a>) -> Result<GqlTypeRef> {
-        grow(|| {
+        grow_stack(|| {
             let name = t.get("name")?;
             if name.truthy() {
                 return match self.types.get(&name.to_js_string()) {
@@ -376,7 +365,12 @@ impl<'a> GqlSchema<'a> {
 }
 
 /// `getField(t, name)`: the field's type.
-fn get_field(schema: &GqlSchema<'_>, t: GqlTypeRef, name: &str) -> Result<GqlTypeRef> {
+fn get_field(schema: &GqlSchema<'_>, t: Option<GqlTypeRef>, name: &str) -> Result<GqlTypeRef> {
+    let Some(t) = t else {
+        return Err(type_error(
+            "Cannot read properties of undefined (reading 'fields')",
+        ));
+    };
     let Some(fields) = schema.get(t).and_then(|t| t.fields.as_ref()) else {
         return panic(format!(
             "Required field {name} in type {} which doesn't have fields.",
@@ -513,13 +507,13 @@ fn has_optional_directives(directives: &[String]) -> bool {
     directives.iter().any(|d| d == "include" || d == "skip")
 }
 
-/// The fragments whose expansion a selection came from, innermost first,
-/// and the fields between them. Used only to stop where TypeScript would
-/// loop or recurse forever.
-#[derive(Debug)]
-enum Expansion {
-    Fragment(String, Option<Rc<Expansion>>),
-    Field(Option<Rc<Expansion>>),
+/// The fragments being expanded, with the nesting level (in selection
+/// sets, one per field) of each expansion. Used only to stop where
+/// TypeScript would loop or recurse forever: a fragment spread inside its
+/// own expansion.
+#[derive(Debug, Default)]
+struct ActiveFragments {
+    levels: HashMap<String, usize>,
 }
 
 /// What the TypeScript does with a fragment spread inside its own
@@ -531,46 +525,37 @@ enum Cycle {
     Recursion,
 }
 
-fn find_cycle(ancestry: &Option<Rc<Expansion>>, fragment: &str) -> Option<Cycle> {
-    let mut crossed_field = false;
-    let mut link = ancestry.as_deref();
-    while let Some(expansion) = link {
-        link = match expansion {
-            Expansion::Fragment(name, parent) => {
-                if name == fragment {
-                    return Some(if crossed_field {
-                        Cycle::Recursion
-                    } else {
-                        Cycle::Loop
-                    });
-                }
-                parent.as_deref()
+impl ActiveFragments {
+    /// Whether spreading `fragment` at `level` repeats an expansion in
+    /// progress, and how.
+    fn cycle(&self, fragment: &str, level: usize) -> Option<Cycle> {
+        self.levels.get(fragment).map(|&l| {
+            if l == level {
+                Cycle::Loop
+            } else {
+                Cycle::Recursion
             }
-            Expansion::Field(parent) => {
-                crossed_field = true;
-                parent.as_deref()
-            }
-        };
+        })
     }
-    None
 }
 
-/// A selection to process (`Selection` in TypeScript).
+/// A selection to process (`Selection` in TypeScript). The type is
+/// `None` (`undefined`) for the selections of a fragment on a type the
+/// schema lacks, which TypeScript carries along when the fragment is
+/// optional anyway.
 struct PendingSelection<'q> {
     selection: &'q Selection,
-    in_type: GqlTypeRef,
+    in_type: Option<GqlTypeRef>,
     optional: bool,
-    ancestry: Option<Rc<Expansion>>,
 }
 
 /// `expandSelectionSet(selectionSet, inType, optional)`: the selections in
 /// reverse, so that popping them yields source order.
-fn expand_selection_set<'q>(
-    selection_set: &'q SelectionSet,
-    in_type: GqlTypeRef,
+fn expand_selection_set(
+    selection_set: &SelectionSet,
+    in_type: Option<GqlTypeRef>,
     optional: bool,
-    ancestry: &Option<Rc<Expansion>>,
-) -> impl Iterator<Item = PendingSelection<'q>> {
+) -> impl Iterator<Item = PendingSelection<'_>> {
     selection_set
         .selections
         .iter()
@@ -579,7 +564,6 @@ fn expand_selection_set<'q>(
             selection: s,
             in_type,
             optional: optional || has_optional_directives(s.directives()),
-            ancestry: ancestry.clone(),
         })
 }
 
@@ -601,6 +585,7 @@ struct GqlQuery<'s, 'a> {
     /// of `_fragments`.
     fragments_prototype: Option<FragmentDefinition>,
     queries: Vec<OperationDefinition>,
+    active: RefCell<ActiveFragments>,
 }
 
 impl<'s, 'a> GqlQuery<'s, 'a> {
@@ -612,6 +597,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
             fragments: HashMap::new(),
             fragments_prototype: None,
             queries: Vec::new(),
+            active: RefCell::default(),
         };
         for def in query_document.definitions {
             match def {
@@ -666,12 +652,14 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         panic(format!("Fragment {name} is not defined."))
     }
 
-    /// The type object of `types[name]`, for a type condition: a
-    /// `TypeError` when reading its `name` if there is none.
-    fn fragment_type(&self, name: &str) -> Result<GqlTypeRef> {
-        self.schema
-            .type_named(name)
-            .ok_or_else(|| type_error("Cannot read properties of undefined (reading 'name')"))
+    /// `t.name` of a type object that may be `undefined`.
+    fn name_of(&self, t: Option<GqlTypeRef>) -> Result<JsVal<'a>> {
+        match t {
+            Some(t) => Ok(self.schema.name(t)),
+            None => Err(type_error(
+                "Cannot read properties of undefined (reading 'name')",
+            )),
+        }
     }
 
     /// `makeIRTypeFromFieldNode(builder, fieldNode, fieldType,
@@ -682,9 +670,9 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         field_node: &crate::graphql::ast::Field,
         field_type: GqlTypeRef,
         containing_type_name: &str,
-        ancestry: &Option<Rc<Expansion>>,
+        level: usize,
     ) -> Result<TypeRef> {
-        grow(|| {
+        grow_stack(|| {
             let schema = self.schema;
             let field_name = field_node.name.as_str();
             let mut optional = has_optional_directives(&field_node.directives);
@@ -697,7 +685,6 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                     let Some(selection_set) = &field_node.selection_set else {
                         return panic("No selection set on object or interface");
                     };
-                    let inner = Some(Rc::new(Expansion::Field(ancestry.clone())));
                     let class = self.make_ir_type_from_selection_set(
                         builder,
                         selection_set,
@@ -705,7 +692,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                         field_name,
                         containing_type_name,
                         None,
-                        &inner,
+                        level + 1,
                     )?;
                     return make_nullable(builder, class, field_name, "", containing_type_name);
                 }
@@ -742,7 +729,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                         field_node,
                         of_type,
                         containing_type_name,
-                        ancestry,
+                        level,
                     )?;
                     builder.get_array_type(empty_type_attributes(), items, None)?
                 }
@@ -755,7 +742,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                         field_node,
                         of_type,
                         containing_type_name,
-                        ancestry,
+                        level,
                     )?;
                     remove_null(builder, inner)?
                 }
@@ -770,7 +757,8 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
 
     /// `makeIRTypeFromSelectionSet(builder, selectionSet, gqlType,
     /// containingFieldName, containingTypeName, overrideName)`. Empty
-    /// strings stand for `null` names.
+    /// strings stand for `null` names; `level` is the nesting in selection
+    /// sets (for [`ActiveFragments`]).
     #[allow(clippy::too_many_arguments)]
     fn make_ir_type_from_selection_set(
         &self,
@@ -780,7 +768,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         containing_field_name: &str,
         containing_type_name: &str,
         override_name: Option<&str>,
-        ancestry: &Option<Rc<Expansion>>,
+        level: usize,
     ) -> Result<TypeRef> {
         let schema = self.schema;
         if !matches!(
@@ -796,13 +784,23 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
         let name_or_override = override_name.map_or_else(|| gql_name.to_js_string(), str::to_owned);
         let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
         let mut selections: Vec<PendingSelection<'_>> =
-            expand_selection_set(selection_set, gql_type, false, ancestry).collect();
+            expand_selection_set(selection_set, Some(gql_type), false).collect();
+        // The fragment expansions in progress here, each with the stack
+        // height its selections start at: once the stack is below that,
+        // the expansion is done.
+        let mut expansions: Vec<(&str, usize)> = Vec::new();
         while let Some(next_item) = selections.pop() {
+            let height = selections.len();
+            while let Some(&(name, start)) = expansions.last()
+                && start > height
+            {
+                self.active.borrow_mut().levels.remove(name);
+                expansions.pop();
+            }
             let PendingSelection {
                 selection,
                 optional,
                 in_type,
-                ancestry,
             } = next_item;
             match selection {
                 Selection::Field(field) => {
@@ -813,7 +811,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                         field,
                         field_gql_type,
                         &name_or_override,
-                        &ancestry,
+                        level,
                     )?;
                     properties.insert(
                         given_name.clone(),
@@ -829,8 +827,13 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                             ));
                         }
                     };
-                    let fragment_type = self.fragment_type(&fragment.type_condition)?;
-                    match find_cycle(&ancestry, &spread.name) {
+                    let fragment_type = schema.type_named(&fragment.type_condition);
+                    // `fragmentType.name` is read only if not optional.
+                    let fragment_optional = optional
+                        || !self
+                            .name_of(fragment_type)?
+                            .strict_equals(self.name_of(in_type)?);
+                    match self.active.borrow().cycle(&spread.name, level) {
                         Some(Cycle::Recursion) => return Err(stack_overflow()),
                         Some(Cycle::Loop) => {
                             return panic(format!(
@@ -840,41 +843,41 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
                         }
                         None => {}
                     }
-                    let fragment_optional = optional
-                        || !schema
-                            .name(fragment_type)
-                            .strict_equals(schema.name(in_type));
-                    let inner = Some(Rc::new(Expansion::Fragment(
-                        spread.name.clone(),
-                        ancestry.clone(),
-                    )));
+                    self.active
+                        .borrow_mut()
+                        .levels
+                        .insert(spread.name.clone(), level);
+                    expansions.push((&spread.name, height));
                     selections.extend(expand_selection_set(
                         &fragment.selection_set,
                         fragment_type,
                         fragment_optional,
-                        &inner,
                     ));
                 }
                 Selection::InlineFragment(inline) => {
                     // FIXME (TS): support type conditions with discriminated unions
                     let fragment_type = match &inline.type_condition {
-                        Some(name) => self.fragment_type(name)?,
+                        Some(name) => schema.type_named(name),
                         None => in_type,
                     };
                     let fragment_optional = optional
-                        || !schema
-                            .name(fragment_type)
-                            .strict_equals(schema.name(in_type))
+                        || !self
+                            .name_of(fragment_type)?
+                            .strict_equals(self.name_of(in_type)?)
                         || has_optional_directives(&inline.directives);
                     selections.extend(expand_selection_set(
                         &inline.selection_set,
                         fragment_type,
                         fragment_optional,
-                        &ancestry,
                     ));
                 }
             }
         }
+        let mut active = self.active.borrow_mut();
+        for (name, _) in expansions {
+            active.levels.remove(name);
+        }
+        drop(active);
         builder.get_class_type(
             make_names(
                 &name_or_override,
@@ -914,7 +917,7 @@ impl<'s, 'a> GqlQuery<'s, 'a> {
             "",
             query_name,
             Some("data"),
-            &None,
+            0,
         )
     }
 }

@@ -254,34 +254,39 @@ impl Lexer {
         &self.token
     }
 
-    /// `advance()`: moves to the next non-ignored token.
-    pub fn advance(&mut self) -> Result<&Token, GraphQlError> {
-        let next = self.lookahead()?.clone();
-        self.next = None;
-        self.token = next;
-        Ok(&self.token)
+    /// `advance()`: moves to the next non-ignored token. Returns the token
+    /// it moved past (graphql-js's `lastToken`); at `<EOF>` the lexer stays
+    /// there and returns a copy of it.
+    pub fn advance(&mut self) -> Result<Token, GraphQlError> {
+        self.read_lookahead()?;
+        Ok(match self.next.take() {
+            Some(next) => std::mem::replace(&mut self.token, next),
+            None => self.token.clone(),
+        })
     }
 
     /// `lookahead()`: the next non-ignored token, without advancing. At
     /// `<EOF>` that is `<EOF>` itself.
     pub fn lookahead(&mut self) -> Result<&Token, GraphQlError> {
-        if self.token.kind == TokenKind::Eof {
-            return Ok(&self.token);
+        self.read_lookahead()?;
+        Ok(self.next.as_ref().unwrap_or(&self.token))
+    }
+
+    /// Reads the token after the current one into `next` (graphql-js's
+    /// `token.next` link), unless it is there already or the current token
+    /// is `<EOF>`.
+    fn read_lookahead(&mut self) -> Result<(), GraphQlError> {
+        if self.token.kind == TokenKind::Eof || self.next.is_some() {
+            return Ok(());
         }
-        if self.next.is_none() {
-            let mut end = self.token.end;
-            let token = loop {
-                let token = self.read_next_token(end)?;
-                if token.kind != TokenKind::Comment {
-                    break token;
-                }
-                end = token.end;
-            };
-            self.next = Some(token);
-        }
-        match &self.next {
-            Some(token) => Ok(token),
-            None => Ok(&self.token),
+        let mut end = self.token.end;
+        loop {
+            let token = self.read_next_token(end)?;
+            if token.kind != TokenKind::Comment {
+                self.next = Some(token);
+                return Ok(());
+            }
+            end = token.end;
         }
     }
 
@@ -796,7 +801,8 @@ mod tests {
         let mut lexer = Lexer::new(source);
         let mut out = Vec::new();
         loop {
-            let token = lexer.advance().map_err(|e| e.message().to_owned())?;
+            lexer.advance().map_err(|e| e.message().to_owned())?;
+            let token = lexer.token();
             out.push((token.kind, token.value.clone()));
             if token.kind == TokenKind::Eof {
                 return Ok(out);

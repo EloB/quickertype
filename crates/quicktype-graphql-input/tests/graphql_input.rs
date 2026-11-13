@@ -265,3 +265,38 @@ fn deep_queries_and_schemas_do_not_overflow() {
     input.add_types_sync(&mut builder).unwrap();
     assert!(builder.len() > 2 * depth);
 }
+
+/// A chain of 40,000 fragments, each spreading the next, is expanded in
+/// linear time (cycle detection once looked through every enclosing
+/// expansion at each spread). The reference takes about 0.5 s; the bound
+/// is generous for debug builds.
+#[test]
+fn long_fragment_chains_are_linear() {
+    let length = 40_000;
+    let mut query = String::from("{ viewer { ...F0 } }\n");
+    for i in 0..length {
+        let next = if i + 1 < length {
+            format!("...F{}", i + 1)
+        } else {
+            "name".to_owned()
+        };
+        query.push_str(&format!("fragment F{i} on User {{ age {next} }}\n"));
+    }
+    let schema_text = std::fs::read_to_string(fixture_dir().join("schemas/basic.gqlschema"))
+        .expect("the basic schema");
+    let mut input = GraphQlInput::new();
+    input.add_source_sync(GraphQlSourceData {
+        name: "Chain".to_owned(),
+        schema: parse_json(&schema_text, "GraphQL schema", None).unwrap(),
+        query,
+    });
+    let mut builder =
+        TypeBuilder::new(get_no_string_type_mapping(), false, false, false, false).unwrap();
+    let start = std::time::Instant::now();
+    input.add_types_sync(&mut builder).unwrap();
+    let elapsed = start.elapsed();
+    assert!(
+        elapsed < std::time::Duration::from_secs(5),
+        "expanding the chain took {elapsed:?}"
+    );
+}

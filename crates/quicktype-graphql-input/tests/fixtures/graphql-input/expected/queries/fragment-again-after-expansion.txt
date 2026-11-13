@@ -1,0 +1,29 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union name | children 1,0 | 2 | given name (User_name)
+3: class User | children 2 | 3 | given User (best,User_User,User_best)
+4: union best | children 3,1 | 4 | given best (User_best)
+5: integer | 5
+6: union age | children 5,1 | 6 | given age (User_age)
+7: class User | children 6,2 | 7 | given User (friends,User_User,User_friends)
+8: union friends | children 7,1 | 8 | given friends (User_friends)
+9: array | children 8 | 9
+10: union friends | children 9,1 | 10 | given friends (User_friends)
+11: class User | children 4,10,2 | 11 | given User (viewer,data_User,data_viewer)
+12: union viewer | children 11,1 | 12 | given viewer (data_viewer)
+13: class data | children 11 | 13 | given data (TopLevel_data)
+14: union | children 13,1 | 14
+15: class error | children 0 | 15 | given error (graphQLError)
+16: array errors | children 15 | 16 | given errors (graphQLErrors)
+17: class TopLevel | children 14,16 | 17 | given TopLevel ()
+# properties
+3 properties [["name",2,false]]
+7 properties [["name",2,false],["age",6,false]]
+11 properties [["name",2,false],["best",4,false],["friends",10,false]]
+13 properties [["viewer",11,false]]
+15 properties [["message",0,false]]
+17 properties [["data",14,false],["errors",16,true]]
+# top-levels
+"TopLevel": 17

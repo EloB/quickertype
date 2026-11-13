@@ -537,6 +537,86 @@
    ]
   },
   {
+   "id": "queries/optional-spread-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { hello }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-inline-unknown-type",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ... on Nope @include(if: true) { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-nested-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { ... { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-known-spread",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @skip(if: true) } fragment F on Nope { ...G } fragment G on Query { count }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-unknown-type-known-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "query { ...F @include(if: true) } fragment F on Nope { ... on Query { hello } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/optional-field-unknown-inline",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer @include(if: true) { ... on Nope { name } } }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-again-after-expansion",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...A best { ...A } friends { ...B } } } fragment A on User { name } fragment B on User { ...A age }"
+    }
+   ]
+  },
+  {
+   "id": "queries/fragment-chain",
+   "sources": [
+    {
+     "name": "TopLevel",
+     "schemaFile": "crates/quicktype-graphql-input/tests/fixtures/graphql-input/schemas/basic.gqlschema",
+     "query": "{ viewer { ...F0 } } fragment F0 on User { age ...F1 } fragment F1 on User { name ...F2 } fragment F2 on User { age ...F3 } fragment F3 on User { name ...F4 } fragment F4 on User { age ...F5 } fragment F5 on User { name ...F6 } fragment F6 on User { age ...F7 } fragment F7 on User { name ...F8 } fragment F8 on User { age ...F9 } fragment F9 on User { name ...F10 } fragment F10 on User { age ...F11 } fragment F11 on User { name ...F12 } fragment F12 on User { age ...F13 } fragment F13 on User { name ...F14 } fragment F14 on User { age ...F15 } fragment F15 on User { name ...F16 } fragment F16 on User { age ...F17 } fragment F17 on User { name ...F18 } fragment F18 on User { age ...F19 } fragment F19 on User { name ...F20 } fragment F20 on User { age ...F21 } fragment F21 on User { name ...F22 } fragment F22 on User { age ...F23 } fragment F23 on User { name ...F24 } fragment F24 on User { age ...F25 } fragment F25 on User { name ...F26 } fragment F26 on User { age ...F27 } fragment F27 on User { name ...F28 } fragment F28 on User { age ...F29 } fragment F29 on User { name ...F30 } fragment F30 on User { age ...F31 } fragment F31 on User { name ...F32 } fragment F32 on User { age ...F33 } fragment F33 on User { name ...F34 } fragment F34 on User { age ...F35 } fragment F35 on User { name ...F36 } fragment F36 on User { age ...F37 } fragment F37 on User { name ...F38 } fragment F38 on User { age ...F39 } fragment F39 on User { name ...F40 } fragment F40 on User { age ...F41 } fragment F41 on User { name ...F42 } fragment F42 on User { age ...F43 } fragment F43 on User { name ...F44 } fragment F44 on User { age ...F45 } fragment F45 on User { name ...F46 } fragment F46 on User { age ...F47 } fragment F47 on User { name ...F48 } fragment F48 on User { age ...F49 } fragment F49 on User { name ...F50 } fragment F50 on User { age ...F51 } fragment F51 on User { name ...F52 } fragment F52 on User { age ...F53 } fragment F53 on User { name ...F54 } fragment F54 on User { age ...F55 } fragment F55 on User { name ...F56 } fragment F56 on User { age ...F57 } fragment F57 on User { name ...F58 } fragment F58 on User { age ...F59 } fragment F59 on User { name id }"
+    }
+   ]
+  },
+  {
    "id": "queries/object-without-selection",
    "sources": [
     {

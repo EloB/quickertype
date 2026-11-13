@@ -228,6 +228,16 @@ q("unknown-fragment", "{ viewer { ...Nope } }");
 q("fragment-on-unknown-type", "{ viewer { ...F } } fragment F on Nope { name }");
 q("inline-on-unknown-type", "{ viewer { ... on Nope { name } } }");
 q("field-on-union", "{ pet { name } }");
+// An optional fragment on a type the schema lacks: TypeScript never reads
+// the missing type's name and carries `undefined` along.
+q("optional-spread-unknown-type", "query { ...F @skip(if: true) } fragment F on Nope { hello }");
+q("optional-inline-unknown-type", "query { ... on Nope @include(if: true) { hello } }");
+q("optional-unknown-type-nested-inline", "query { ...F @skip(if: true) } fragment F on Nope { ... { hello } }");
+q("optional-unknown-type-known-spread", "query { ...F @skip(if: true) } fragment F on Nope { ...G } fragment G on Query { count }");
+q("optional-unknown-type-known-inline", "query { ...F @include(if: true) } fragment F on Nope { ... on Query { hello } }");
+q("optional-field-unknown-inline", "{ viewer @include(if: true) { ... on Nope { name } } }");
+q("fragment-again-after-expansion", "{ viewer { ...A best { ...A } friends { ...B } } } fragment A on User { name } fragment B on User { ...A age }");
+q("fragment-chain", `{ viewer { ...F0 } } ${Array.from({ length: 60 }, (_, i) => `fragment F${i} on User { ${i % 2 ? "name" : "age"} ${i < 59 ? `...F${i + 1}` : "id"} }`).join(" ")}`);
 q("object-without-selection", "{ viewer }");
 q("scalar-with-selection", "{ count { x } }");
 q("input-object-field", "{ users { name } }");

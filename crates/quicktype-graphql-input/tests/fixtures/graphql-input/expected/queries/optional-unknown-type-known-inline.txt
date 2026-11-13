@@ -1,0 +1,16 @@
+# kind graphql; needIR true; needSchemaProcessing false
+# graph
+0: string | 0 | unrestricted
+1: null | 1
+2: union hello | children 1,0 | 2 | given hello (data_hello)
+3: class data | children 2 | 3 | given data (TopLevel_data)
+4: union | children 3,1 | 4
+5: class error | children 0 | 5 | given error (graphQLError)
+6: array errors | children 5 | 6 | given errors (graphQLErrors)
+7: class TopLevel | children 4,6 | 7 | given TopLevel ()
+# properties
+3 properties [["hello",2,true]]
+5 properties [["message",0,false]]
+7 properties [["data",4,false],["errors",6,true]]
+# top-levels
+"TopLevel": 7
