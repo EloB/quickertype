@@ -455,6 +455,17 @@ impl JsonInput {
         compressed_json: Rc<CompressedJson>,
         top_levels: Vec<CompressedTopLevel>,
     ) -> Result<Self> {
+        Self::over_compressed(compressed_json, top_levels, false)
+    }
+
+    /// An input that infers from `compressed_json`, with `top_levels`
+    /// whose samples are encoded as in TypeScript; samples that are
+    /// strings only if `allow_strings` (see [`from_shared`](Self::from_shared)).
+    fn over_compressed(
+        compressed_json: Rc<CompressedJson>,
+        top_levels: Vec<CompressedTopLevel>,
+        allow_strings: bool,
+    ) -> Result<Self> {
         let (objects, arrays) = compressed_json.counts();
         let mut input = JsonInput {
             compressed_json,
@@ -469,7 +480,9 @@ impl JsonInput {
                     |&v| match input.compressed_json.decode_value(v, objects, arrays)? {
                         Value::InternedString(_)
                         | Value::StringFormat(_)
-                        | Value::TransformedString(_) => {
+                        | Value::TransformedString(_)
+                            if !allow_strings =>
+                        {
                             panic("A shared JSON sample cannot be an interned string")
                         }
                         value => Ok(value),
@@ -514,21 +527,7 @@ impl JsonInput {
     ) -> Result<Self> {
         let compressed_json =
             CompressedJson::from_tables(date_time_recognizer, handle_refs, tables)?;
-        let (objects, arrays) = compressed_json.counts();
-        let mut input = JsonInput {
-            compressed_json: Rc::new(compressed_json),
-            top_levels: IndexMap::new(),
-            tallies: None,
-        };
-        for top_level in top_levels {
-            let values = top_level
-                .samples
-                .iter()
-                .map(|&v| input.compressed_json.decode_value(v, objects, arrays))
-                .collect::<Result<Vec<Value>>>()?;
-            input.add_samples(&top_level.name, values, top_level.description.as_deref());
-        }
-        Ok(input)
+        Self::over_compressed(Rc::new(compressed_json), top_levels, true)
     }
 
     /// The inverse of [`from_compressed`](Self::from_compressed): the
