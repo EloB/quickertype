@@ -491,8 +491,10 @@ impl JsHost {
     /// The run's outcome as the facade expects it: the result, or the
     /// value to throw.
     /// The run's outcome as the facade expects it: `{ files }`,
-    /// `{ error }` (see [`encode_error`]) or `{ thrown }`, the value a
-    /// callback threw.
+    /// `{ error }` (see [`encode_error`]), `{ thrown }`, the value a
+    /// callback threw, or `{ unsupported }`, the feature this port does not
+    /// have yet ([`QuickTypeError::unsupported_feature`]), for which the
+    /// facade runs TypeScript instead.
     pub fn finish(&self, result: Result<MultiFileRenderResult>) -> JsValue {
         let outcome = Object::new();
         if let Some(exception) = self.deferred.borrow_mut().take() {
@@ -501,6 +503,10 @@ impl JsHost {
         }
         match result {
             Ok(files) => set(&outcome, "files", &encode_files(&files)),
+            Err(error) if error.unsupported_feature().is_some() => {
+                let feature = error.unsupported_feature().unwrap_or_default();
+                set(&outcome, "unsupported", &JsValue::from_str(feature));
+            }
             Err(error) => {
                 let thrown = self.thrown.borrow();
                 match thrown.iter().find(|(e, _)| *e == error) {

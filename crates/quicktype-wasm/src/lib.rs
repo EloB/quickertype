@@ -26,8 +26,11 @@
 //!
 //! A finished run is `{ files }`, `{ error }` (`{ qt: { kind, properties }
 //! }` for quicktype's messages, rebuilt with the JavaScript `messageError`;
-//! `{ js: { name, message } }` for JavaScript exceptions) or `{ thrown }`,
-//! the very value a host callback threw. The engine never panics on
+//! `{ js: { name, message } }` for JavaScript exceptions), `{ thrown }`,
+//! the very value a host callback threw, or `{ unsupported: feature }` for
+//! something the port cannot do yet, which the facade then runs on the
+//! TypeScript engine (it asks [`supports_language`] first, so that only
+//! features found mid-run come back this way). The engine never panics on
 //! purpose; should it, the panic hook reports the message to the facade
 //! (`host.panicked`) before the instance traps (release builds abort on
 //! panic), and the facade discards the instance and reports an
@@ -216,6 +219,26 @@ pub fn settle(id: u32, call_id: u32, ok: bool, value: JsValue) {
     if let Some(host) = host {
         host.settle(call_id, if ok { Ok(value) } else { Err(value) });
     }
+}
+
+/// Whether the engine has the renderer of the built-in language `name`
+/// ([`has_renderer`](quicktype_core::internal::has_renderer)); the facade
+/// runs the TypeScript engine for those it lacks, before the run has any
+/// side effects. Unknown names are not supported.
+#[wasm_bindgen(js_name = supportsLanguage)]
+pub fn supports_language(name: &str) -> bool {
+    thread_local! {
+        static SUPPORTED: RefCell<std::collections::HashMap<String, bool>> =
+            RefCell::new(std::collections::HashMap::new());
+    }
+    if let Some(known) = SUPPORTED.with(|s| s.borrow().get(name).copied()) {
+        return known;
+    }
+    let supported = quicktype_core::get_target_language(name)
+        .map(quicktype_core::internal::has_renderer)
+        .unwrap_or(false);
+    SUPPORTED.with(|s| s.borrow_mut().insert(name.to_owned(), supported));
+    supported
 }
 
 /// The engine's version (the workspace version, which is quicktype's).
