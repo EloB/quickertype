@@ -15,10 +15,9 @@ for every input cannot be guaranteed: that would require replaying TS 5's checke
 likely.
 
 **Implemented** in `crates/quicktype-typescript-input` (§10), following §7. The refined creation-order replay
-closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on 477 of the 479
-cases of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation
-and 27 `review-*` cases from the code reviews); the other two are inherited documentation that TS 7 resolves
-differently (§10, known divergences).
+closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on all 488 cases
+of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation and
+36 `review-*` cases from the code reviews).
 §10 lists what is still known to diverge.
 
 ## 1. The reference pipeline
@@ -403,13 +402,25 @@ off). In verify mode (`testing::verify_local_answers`, which the differential te
 compiler these too and panics on a difference. `QUICKTYPE_TSC_STATS=1` prints the requests by method, their bytes and
 time, and the callbacks answered.
 
+**Inherited documentation.** typescript-json-schema reads TS 5.9's `symbol.getDocumentationComment(checker)`, which
+inherits: when a declaration's own comment has no text (no JSDoc, tags only, an empty one) or it has `@inheritDoc`,
+`findBaseOfDeclaration` takes the property of its name on the super types of its class or interface (`extends`, then
+`implements`; a constructor parameter's class) in order, and the first one found that was not met before gives its
+documentation (recursively; for an accessor, the base's getters' or setters' first), joined before the member's own
+with `@inheritDoc`. TS 7's `getDocumentationComment` inherits only for members without any JSDoc, through `extends`.
+`tjs/comments` ports TS 5.9's rules: own documentation as `getJsDocCommentsFromDeclarations` reads it (only the last
+JSDoc of a declaration, `@overload` tags of earlier ones, an `@inheritDoc` tag's comment, a parameter's `@param`), and
+the bases through `getTypeAtLocation` of the heritage clauses' types and `getPropertyOfType`. TS 7's rendering is used
+for declarations whose comments TS 5.9 finds elsewhere (a variable's statement) and for base members in library files.
+Tags are never inherited: typescript-json-schema calls `getJsDocTags()` without a checker.
+
 **Testing.** `tests/differential.rs` runs every case of `tests/corpus` through the port and compares schema string,
 name, uris and stderr lines with `expected.json`, recorded from the reference by `xtask/typescript-input/record.mjs`
 (one Node process per case). It finds tsc like the CLI, or in a sibling `quicktype` checkout's `node_modules`, and is
 skipped with a message otherwise. A whole case takes 0.2–0.4 s in a release build, including the compiler start and
 the full semantic check, against about 3 s for the reference CLI.
 
-**Known divergences** (only the first occurs in the corpus):
+**Known divergences** (none occurs in the corpus):
 
 * Union order is a replay, not the checker: classes' eager checks (property initializers, implements clauses),
   property types resolved by base-type assignability checks for `extends`, types first created inside function or
@@ -418,10 +429,6 @@ the full semantic check, against about 3 s for the reference CLI.
 * Names of generic instantiations with union arguments use TS 7's member order (`Box<A | B>`).
 * A file outside the working directory that is *imported* (not a root file) gets TS 7's TS6059 text, with absolute
   paths.
-* Inherited documentation: TS 5.9's `getDocumentationComment` gives a class or interface member the documentation of
-  the base's member when the member's own comment has no text (no JSDoc, one with tags only, or an empty one), and
-  looks through `implements` too; TS 7 inherits only for a member without JSDoc of its own, through `extends`
-  (`review-inherited-docs`, `review-inherited-class`, listed in `tests/known-differences.txt`).
 * JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt). Neither version
   inherits tags from a base declaration: an overriding property (in an interface that extends, or a class that
   extends or implements) keeps only its own, in both; TS 7.0.2's `GetSymbolJSDocTags` has no lookup of bases.

@@ -15,6 +15,20 @@ section are absolute.
 
 ## [Unreleased]
 
+### Fixed
+
+- **TypeScript input: descriptions inherited from base members as
+  quicktype gives them.** A member whose own JSDoc has no text (none,
+  only tags such as `@deprecated`, or an empty `/** */`) takes the
+  description of the same member of the first base that has it, through
+  `extends` and `implements`, along chains, for getters and setters, and
+  for a constructor's parameter properties; `@inheritDoc` joins the
+  base's description before the member's own. A declaration with several
+  JSDoc comments takes only the last one's text. quicktype gets these
+  from TypeScript 5.9; TypeScript 7 inherits only for members without any
+  JSDoc and only through `extends`, so the descriptions were missing (or,
+  with several comments, all of them were joined).
+
 ## [0.2.0] - 2026-11-14
 
 Large JSON and JSON Lines files read on every core, JSON Lines input,
