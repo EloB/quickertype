@@ -95,7 +95,10 @@
 // and big-inputs.json hold; every chart and bar there has an accessible
 // label and a table; the charts take their colours from the theme; every
 // link resolves (pages and data here, anchors, files in this repository,
-// commits); and neither page scrolls sideways at 360 or 390 px. "Measure
+// commits); and neither page scrolls sideways at 360 or 390 px. The
+// README's charts (docs/assets/charts, by site/readme-charts.mjs) show the
+// numbers in its tables, and its tables are in the shape they are drawn
+// from: a number changed there without the charts redrawn fails. "Measure
 // warm runs" says what it does, and does it: one warm-up and 5 timed runs
 // per engine, one engine after the other.
 //
@@ -128,6 +131,7 @@ import {
     speedupText,
     times as speedup,
 } from "../benchmarks.mjs";
+import { chartProblems, chartUrl, readmeFile } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
 
@@ -486,6 +490,27 @@ const speedNow = speedFacts(benchmarkData.bench);
     assert.equal(unknownCommit.quickertype, `not known: ${why}`);
     assert.ok(!unknownCommit.html.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
     console.log("ok: the page says what the data holds: the tile's benchmark, the number of runs, unexpected exits (with the note, or as a warning), a machine as far as it was recorded, an unknown commit");
+}
+
+// The README's charts show its tables' numbers (regenerate them with
+// `node site/readme-charts.mjs`); one changed without them is caught, and
+// so is a table in a shape they are not drawn from.
+{
+    const problems = chartProblems();
+    assert.deepEqual(problems, [], "the README's charts are not what its tables say; regenerate them: node site/readme-charts.mjs");
+    const readme = fs.readFileSync(readmeFile, "utf8");
+    const edited = (from, to) => {
+        assert.equal(readme.split(from).length, 2, `README.md has "${from}" once`);
+        return readme.replace(from, to);
+    };
+    const stale = (chart) => [`docs/assets/charts/${chart}-light.svg does not show the README's numbers`, `docs/assets/charts/${chart}-dark.svg does not show the README's numbers`];
+    assert.deepEqual(chartProblems(edited("| 2.3 ms | 96× |", "| 2.3 ms | 97× |")), stale("cli-speed"));
+    assert.deepEqual(chartProblems(edited("| 62 MiB | 10× less |", "| 31 MiB | 20× less |")), stale("cli-memory"));
+    assert.deepEqual(chartProblems(edited("| 2.3 ms | 2.2× |", "| 2.3 ms | 2.3× |")), stale("browser-speed"));
+    assert.deepEqual(chartProblems(edited(` srcset="${chartUrl("browser-speed-dark.svg")}"`, "")), [`README.md does not show browser-speed's dark chart (srcset="${chartUrl("browser-speed-dark.svg")}")`]);
+    assert.throws(() => chartProblems(edited("| Run | quicktype | quickertype | Faster |", "| Run | quicktype | quickertype | Speed-up |")), /^Error: README\.md, the CLI's table: the header is /);
+    assert.throws(() => chartProblems(edited("| 10× less |", "| a tenth |")), /"a tenth" is not a ratio/);
+    console.log("ok: the README's charts show its tables' numbers; a number changed without them, a chart it does not show and a table in another shape are caught");
 }
 
 const browser = findBrowser();

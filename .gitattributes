@@ -25,3 +25,5 @@ crates/quicktype-typescript-input/tests/corpus/** linguist-vendored
 tests/fuzz-regressions/** linguist-generated
 npm/quicktype-core/src/** linguist-vendored
 npm/quicktype-core/src/native/** -linguist-vendored
+# The README's charts, drawn by site/readme-charts.mjs from its tables.
+docs/assets/charts/** linguist-generated
