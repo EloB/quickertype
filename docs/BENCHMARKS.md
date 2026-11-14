@@ -1447,6 +1447,16 @@ so did everything with the seeding commit alone (−1.3% to +1.1% in
 total). The rulings gain is small because most of their strings are
 comments too long to intern. The engine is 0.5 KB larger.
 
+Whole runs (`compare.mjs --browser`, the three commits together against
+the commit before them, and TypeScript, in one page):
+
+| Input | Before | After | TypeScript | × TypeScript, before → after |
+|---|---:|---:|---:|---:|
+| pokedex (82 KB) | 2.30 | 2.30 | 5.20 | 2.26× → 2.26× |
+| generated (2 MB) | 18.0 | 17.4 | 49.0 | 2.72× → 2.82× |
+| generated (20 MB) | 158 | 152 | 448 | 2.83× → 2.95× |
+| rulings (27 MB) | 60.9 | 59.8 | 180 | 2.95× → 3.01× |
+
 Natively (the `phases` example, mimalloc) the change is about neutral.
 Hashing is a smaller share of reading there, and the machine was heavily
 loaded (load average 30 to 75), so these are medians of 10 to 20
