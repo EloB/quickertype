@@ -1,6 +1,7 @@
 //! Runs generated inputs through the ways of inferring JSON types, running
-//! tallies, tallies of the compressed form and quicktype's compressed form
-//! value by value (the reference), and compares everything that comes out:
+//! tallies (also read on several threads), tallies of the compressed form
+//! and quicktype's compressed form value by value (the reference), and
+//! compares everything that comes out:
 //! each source's error, the type graph right after inference (all types in
 //! index order, with every attribute) for several inference flags, and a
 //! whole run for a language and an option set.
@@ -10,7 +11,9 @@ pub mod generator;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+use quicktype_core::ParallelOptions;
 use quicktype_core::input::inputs::{InputData, JsonInference, JsonInput, JsonSourceData};
+use quicktype_core::internal::{Fault, parallel_reads, parallel_sample};
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::Type;
 use quicktype_core::ty::type_builder::TypeBuilder;
@@ -70,11 +73,32 @@ impl Read for Chunked {
     }
 }
 
-fn sample(s: &generator::Sample, seed: u64) -> JsonSample {
-    match s.encoding {
-        Encoding::Stream => JsonSample::Stream(s.text.as_bytes().to_vec()),
-        Encoding::Text => JsonSample::String(s.text.clone()),
-        Encoding::Reader(max) => JsonSample::Reader(SampleReader::new(Chunked {
+/// The sample `s`; with `parallel`, a byte stream is read as a file whose
+/// large top-level array is read on several threads, with options picked
+/// by `seed`: 2 to 5 threads, ranges of one byte to half the sample, and
+/// sometimes a budget for the parts' trees so small that the rest is read
+/// in one go after the first part (and, with the fault, the parts' trees
+/// merged out of order).
+fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSample {
+    match (s.encoding, parallel) {
+        (Encoding::Text, _) => JsonSample::String(s.text.clone()),
+        (_, Some(fault)) => {
+            let mut rng = Rng::new(seed ^ 0x9A7A_11E1);
+            let len = s.text.len() as u64;
+            let mut options = ParallelOptions::default()
+                .with_threads(rng.range(2, 5) as usize)
+                .with_small_ranges(rng.range(1, (len / 2).max(1)) as usize)
+                .with_min_len(0);
+            if fault {
+                options = options.with_fault(Fault::Prepend);
+            }
+            if rng.chance(20) {
+                options.budget = Some(rng.below(4096));
+            }
+            JsonSample::Reader(parallel_sample(s.text.as_bytes().to_vec(), options))
+        }
+        (Encoding::Stream, None) => JsonSample::Stream(s.text.as_bytes().to_vec()),
+        (Encoding::Reader(max), None) => JsonSample::Reader(SampleReader::new(Chunked {
             data: s.text.as_bytes().to_vec(),
             position: 0,
             rng: Rng::new(seed),
@@ -92,6 +116,11 @@ pub enum Inference {
     /// From running tallies, counted while the samples are read (the
     /// CLI's).
     RunningTallies,
+    /// The same, with every byte stream read as a file is: a large
+    /// top-level array on several threads, split at seeded points (the
+    /// CLI's for regular files); with `fault`, merging the parts' trees out
+    /// of order, which must be caught.
+    Parallel { fault: bool },
     /// From tallies of the compressed form the readers made, made when the
     /// types are inferred and kept with the form for the next inference:
     /// the WebAssembly engine's, for the samples it read
@@ -108,11 +137,17 @@ pub enum Inference {
 pub enum Path {
     /// Running tallies (the CLI's).
     RunningTallies,
+    /// Running tallies with samples read on several threads (the CLI's
+    /// for regular files).
+    Parallel,
     /// Tallies of the compressed form, as the readers made it and as
     /// imported tables (the WebAssembly engine's).
     CompressedTallies,
     /// All of them.
     All,
+    /// Samples read on several threads with a fault injected, to see that
+    /// the comparison catches it.
+    ParallelFault,
 }
 
 impl Inference {
@@ -123,7 +158,7 @@ impl Inference {
     fn inferred_from(self, first: bool) -> JsonInference {
         match self {
             Inference::Reference => JsonInference::CompressedValues,
-            Inference::RunningTallies => JsonInference::RunningTallies,
+            Inference::RunningTallies | Inference::Parallel { .. } => JsonInference::RunningTallies,
             Inference::CompressedTallies if !first => JsonInference::KeptTallies,
             Inference::CompressedTallies | Inference::ImportedTables => {
                 JsonInference::CompressedTallies
@@ -137,21 +172,27 @@ impl Path {
     fn tested(self) -> &'static [Inference] {
         match self {
             Path::RunningTallies => &[Inference::RunningTallies],
+            Path::Parallel => &[Inference::Parallel { fault: false }],
             Path::CompressedTallies => &[Inference::CompressedTallies, Inference::ImportedTables],
             Path::All => &[
                 Inference::RunningTallies,
+                Inference::Parallel { fault: false },
                 Inference::CompressedTallies,
                 Inference::ImportedTables,
             ],
+            Path::ParallelFault => &[Inference::Parallel { fault: true }],
         }
     }
 
-    /// The path named `name` (`running`, `compressed` or `all`).
+    /// The path named `name` (`running`, `parallel`, `compressed`, `all`
+    /// or `parallel-fault`).
     pub fn named(name: &str) -> Option<Path> {
         match name {
             "running" => Some(Path::RunningTallies),
+            "parallel" => Some(Path::Parallel),
             "compressed" => Some(Path::CompressedTallies),
             "all" => Some(Path::All),
+            "parallel-fault" => Some(Path::ParallelFault),
             _ => None,
         }
     }
@@ -167,8 +208,15 @@ fn input(
     inference: Option<Inference>,
 ) -> (JsonInput, Vec<String>) {
     let mut input = json_input_for_target_language(lang, case.handle_refs, renderer_options);
+    let parallel = match inference {
+        Some(Inference::Parallel { fault }) => Some(fault),
+        _ => None,
+    };
     if let Some(inference) = inference {
-        let tallies = inference == Inference::RunningTallies;
+        let tallies = matches!(
+            inference,
+            Inference::RunningTallies | Inference::Parallel { .. }
+        );
         input.set_tally_inference(tallies).expect("no sources yet");
         assert_eq!(input.tally_inference(), tallies);
     }
@@ -178,7 +226,7 @@ fn input(
             .samples
             .iter()
             .enumerate()
-            .map(|(j, s)| sample(s, (i * 16 + j) as u64))
+            .map(|(j, s)| sample(s, (i * 16 + j) as u64, parallel))
             .collect();
         let result = input.add_source_sync(JsonSourceData {
             name: source.name.clone(),
@@ -204,7 +252,7 @@ fn input(
             .expect("its own tables");
             input.set_tally_compressed(true);
         }
-        Some(Inference::RunningTallies) | None => {}
+        Some(Inference::RunningTallies | Inference::Parallel { .. }) | None => {}
     }
     (input, results)
 }
@@ -364,6 +412,10 @@ pub struct Stats {
     /// Of `runs`, those that failed (alike on every way).
     pub failed_runs: u64,
     pub source_errors: u64,
+    /// Samples the parallel way read on several threads, whole or in part
+    /// (the rest in one go).
+    pub parallel_whole: u64,
+    pub parallel_in_part: u64,
 }
 
 /// Compares the sources' results and the graphs of `case` read for
@@ -381,7 +433,11 @@ fn compare_graphs(
         input(case, lang, &renderer_options, Some(Inference::Reference));
     let mut tested = Vec::new();
     for &inference in path.tested() {
+        let before = parallel_reads();
         let (input, sources) = input(case, lang, &renderer_options, Some(inference));
+        let after = parallel_reads();
+        stats.parallel_whole += (after.whole - before.whole) as u64;
+        stats.parallel_in_part += (after.in_part - before.in_part) as u64;
         if sources != reference_sources {
             return Err(format!(
                 "add_source differs\n  {inference:?}: {sources:?}\n  reference: {reference_sources:?}"
@@ -638,8 +694,8 @@ pub fn graph_text(case: &Case) -> String {
 }
 
 /// Checks `count` seeds from `start` on `jobs` threads, the ways of
-/// inferring of `path` against the reference; returns the totals or the
-/// differences.
+/// inferring of `path` against the reference; returns the totals, or how
+/// many seeds differ followed by the first 20 differences.
 pub fn check_many(
     start: u64,
     count: u64,
@@ -656,6 +712,7 @@ pub fn check_many(
     let next = AtomicU64::new(0);
     let totals = Mutex::new(Stats::default());
     let failures = Mutex::new(Vec::new());
+    let differing = AtomicU64::new(0);
     std::thread::scope(|s| {
         for _ in 0..jobs.max(1) {
             std::thread::Builder::new()
@@ -678,8 +735,11 @@ pub fn check_many(
                                 t.skipped_runs += stats.skipped_runs;
                                 t.failed_runs += stats.failed_runs;
                                 t.source_errors += stats.source_errors;
+                                t.parallel_whole += stats.parallel_whole;
+                                t.parallel_in_part += stats.parallel_in_part;
                             }
                             Err(e) => {
+                                differing.fetch_add(1, Ordering::Relaxed);
                                 let mut f = failures.lock().unwrap();
                                 if f.len() < 20 {
                                     f.push(e);
@@ -694,10 +754,12 @@ pub fn check_many(
                 .expect("spawn");
         }
     });
-    let failures = failures.into_inner().unwrap();
+    let mut failures = failures.into_inner().unwrap();
     if failures.is_empty() {
         Ok(totals.into_inner().unwrap())
     } else {
+        let differing = differing.into_inner();
+        failures.insert(0, format!("{differing} of {count} seeds differ"));
         Err(failures)
     }
 }

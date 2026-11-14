@@ -188,6 +188,8 @@ pub use crate::input::io::node_io::{
     HttpResponse, Io, IoError, IoErrorKind, Readable, RequestInit, is_url, read_from_file_or_url,
     readable_from_file_or_url,
 };
+#[cfg(not(target_family = "wasm"))]
+pub use crate::input::parallel_read::ParallelOptions;
 
 // ---- Languages and renderer options --------------------------------------
 
@@ -218,6 +220,17 @@ pub mod internal {
     pub use crate::input::compressed_json::CompressedJsonTables;
     pub use crate::input::inputs::CompressedTopLevel;
     pub use crate::input::io::{LocalBoxFuture, block_on};
+    #[cfg(all(not(target_family = "wasm"), any(unix, windows), feature = "fs"))]
+    pub use crate::input::parallel_read::parallel_file_sample;
+    #[cfg(all(
+        not(target_family = "wasm"),
+        any(debug_assertions, feature = "test-support")
+    ))]
+    pub use crate::input::parallel_read::parallel_reads;
+    #[cfg(not(target_family = "wasm"))]
+    pub use crate::input::parallel_read::parallel_sample;
+    #[cfg(all(not(target_family = "wasm"), feature = "test-support"))]
+    pub use crate::input::parallel_read::{Fault, ParallelReads};
     pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
     pub use crate::source::Source;
     pub use crate::support::support::{capture_console, set_console_error_sink};

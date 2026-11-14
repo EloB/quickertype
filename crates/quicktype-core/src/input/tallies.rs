@@ -62,6 +62,12 @@ use crate::support::fast_hash::BuildHasher;
 use crate::support::support::{defined, panic};
 use crate::ty::transformed_string_type::{TypeKind, transformed_string_type_attributes_producer};
 
+/// Trees that move between threads, for reading a sample on several.
+#[cfg(not(target_family = "wasm"))]
+mod portable;
+#[cfg(not(target_family = "wasm"))]
+pub(crate) use portable::PortableTree;
+
 /// A node's index in [`Tallies`].
 pub(crate) type NodeId = u32;
 
@@ -1752,6 +1758,24 @@ impl<'a> TallyBuilder<'a> {
             root: None,
             frames: Vec::new(),
         }
+    }
+
+    /// A builder that goes on reading the sample whose tree is `root`, in
+    /// its top-level array (whose elements are at the root's items), as if
+    /// it had read the elements so far: for the rest of a sample read in
+    /// part on several threads, after a comma between the array's elements
+    /// (see `input/parallel_read.rs`).
+    #[cfg(not(target_family = "wasm"))]
+    pub(crate) fn in_array(
+        running: &'a mut RunningTallies,
+        config: &'a CompressedJson,
+        root: NodeId,
+    ) -> Result<Self> {
+        let items = defined(running.tallies.node(root)?.items)?;
+        let mut builder = Self::new(running, config);
+        builder.root = Some(root);
+        builder.frames.push(Frame::Array { items });
+        Ok(builder)
     }
 
     /// The node the next value goes to (TS `commitValue`'s destination);

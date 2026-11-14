@@ -30,9 +30,13 @@ in process (built in target/streaming-fuzz, without LTO).
   --runs-every <n>
                  whole runs on every <n>th seed (default 10)
   --path <p>     what is compared with the reference: `running` (running
-                 tallies, the CLI's; the default), `compressed` (tallies
-                 of the compressed form as the readers made it and as
-                 imported tables, the WebAssembly engine's) or `all`
+                 tallies, the CLI's; the default), `parallel` (the same,
+                 with large arrays read on several threads at seeded
+                 split points, the CLI's for regular files), `compressed`
+                 (tallies of the compressed form as the readers made it
+                 and as imported tables, the WebAssembly engine's) or
+                 `all`; `parallel-fault` injects a fault in reading on
+                 several threads, which must be caught
   --trace        print each seed as it starts (to find one that crashes)
   --dump <dir>   instead, write <n> generated documents (default 2000) to
                  <dir> as <seed>.json, for `cargo xtask diff --each <dir>`
@@ -41,6 +45,7 @@ examples:
   cargo xtask streaming-fuzz --seeds 1_000_000 -j 8
   cargo xtask streaming-fuzz --start 5000000 --seeds 100000 --runs 3
   cargo xtask streaming-fuzz --path compressed --seeds 1_000_000
+  cargo xtask streaming-fuzz --path parallel --seeds 1_000_000
   cargo xtask streaming-fuzz --dump target/streaming-docs --seeds 2000
 ";
 
@@ -70,7 +75,10 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
             other => return Err(format!("unknown option {other}\n\n{USAGE}")),
         }
     }
-    if !matches!(path.as_str(), "running" | "compressed" | "all") {
+    if !matches!(
+        path.as_str(),
+        "running" | "parallel" | "compressed" | "all" | "parallel-fault"
+    ) {
         return Err(format!("unknown --path {path}\n\n{USAGE}"));
     }
     let test = if dump.is_some() {

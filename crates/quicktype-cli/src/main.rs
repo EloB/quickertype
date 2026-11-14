@@ -36,9 +36,9 @@ use quicktype_core::internal::{block_on, train_markov_chain};
 use quicktype_core::{
     Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, INFERENCE_FLAGS, InferenceFlags,
     InputData, JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData,
-    MultiFileRenderResult, Options, QuickTypeError, Readable, RendererOptions, SampleReader, StdIo,
-    TargetLanguage, default_target_languages, json_input_for_target_language, parse_json,
-    quicktype_multi_file, set_console_sink, sources_from_postman_collection,
+    MultiFileRenderResult, Options, ParallelOptions, QuickTypeError, Readable, RendererOptions,
+    SampleReader, StdIo, TargetLanguage, default_target_languages, json_input_for_target_language,
+    parse_json, quicktype_multi_file, set_console_sink, sources_from_postman_collection,
 };
 use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::wordwrap::WordWrap;
@@ -197,14 +197,19 @@ async fn add_json_source(
         };
         return Ok(input_data.add_source("json", empty, make_input).await?);
     }
+    // A regular file can also be read at any offset: a large top-level
+    // array in it is read on several threads.
+    let read_options = read_options();
     for sample in samples {
         // Read chunk by chunk as it is parsed, like TypeScript's stream:
         // a large file is never held whole.
-        let reader = SampleReader::new(sample.readable.open_std().map_err(CliError::Io)?);
         let sample = if sample.json_lines {
+            // JSON Lines are read in one go.
+            let reader = SampleReader::new(sample.readable.open_std().map_err(CliError::Io)?);
             JsonSample::ReaderLines(reader)
         } else {
-            JsonSample::Reader(reader)
+            let reader = sample.readable.open_sample(read_options);
+            JsonSample::Reader(reader.map_err(CliError::Io)?)
         };
         let one = JsonSourceData {
             name: name.clone(),
@@ -214,6 +219,34 @@ async fn add_json_source(
         input_data.add_source("json", one, make_input).await?;
     }
     Ok(())
+}
+
+/// How large top-level arrays are read on several threads: the library's
+/// defaults, but for the internal variables `QUICKTYPE_READ_THREADS` (the
+/// threads), `QUICKTYPE_READ_CHUNK` (the range size, for samples of any
+/// size) and `QUICKTYPE_READ_BUDGET` (the bytes the parts' trees may take),
+/// for tests and benchmarks. There is no option, and the output does not
+/// depend on them; values that are not numbers are ignored, and the
+/// library bounds the threads.
+fn read_options() -> ParallelOptions {
+    let number = |name: &str| {
+        std::env::var(name)
+            .ok()
+            .and_then(|v| v.trim().parse::<u64>().ok())
+    };
+    let mut options = ParallelOptions::default();
+    if let Some(threads) = number("QUICKTYPE_READ_THREADS") {
+        options.threads = usize::try_from(threads).unwrap_or(usize::MAX);
+    }
+    if let Some(range) = number("QUICKTYPE_READ_CHUNK") {
+        options = options
+            .with_small_ranges(usize::try_from(range).unwrap_or(usize::MAX))
+            .with_min_len(0);
+    }
+    if let Some(budget) = number("QUICKTYPE_READ_BUDGET") {
+        options.budget = Some(budget);
+    }
+    options
 }
 
 /// The `--debug` components: comma-separated, each trimmed; `all` turns
@@ -586,7 +619,24 @@ fn cli_main(args: Vec<String>) -> u8 {
     };
     console.flush();
     set_console_sink(None);
+    #[cfg(debug_assertions)]
+    report_reads();
     code
+}
+
+/// In debug builds, with the internal variable `QUICKTYPE_READ_REPORT`
+/// set to a path, writes there how this thread read the samples on several
+/// threads, for the CLI's tests: the output does not change.
+#[cfg(debug_assertions)]
+fn report_reads() {
+    if let Some(path) = std::env::var_os("QUICKTYPE_READ_REPORT") {
+        let reads = quicktype_core::internal::parallel_reads();
+        let report = format!(
+            "whole {} in_part {} again {}\n",
+            reads.whole, reads.in_part, reads.again
+        );
+        let _ = std::fs::write(path, report);
+    }
 }
 
 fn main() -> ExitCode {

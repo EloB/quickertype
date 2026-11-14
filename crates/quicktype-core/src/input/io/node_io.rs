@@ -440,6 +440,19 @@ pub async fn read_from_file_or_url(
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StdIo;
 
+/// A failed read of a sample's stream (a file's or standard input's) as
+/// Node reports it, wrapped in the reader's error: its `read` error,
+/// without a path (`EISDIR: illegal operation on a directory, read`).
+/// An interrupted read is left as it is, to be retried.
+#[cfg(any(feature = "fs", not(target_family = "wasm")))]
+pub(crate) fn stream_read_error(e: std::io::Error) -> std::io::Error {
+    if e.kind() == std::io::ErrorKind::Interrupted {
+        e
+    } else {
+        std::io::Error::other(IoError::from_fs(&e, "read", None))
+    }
+}
+
 #[cfg(feature = "fs")]
 mod std_io {
     use std::io::Read;
@@ -521,22 +534,20 @@ mod std_io {
         name
     }
 
-    /// A reader whose errors wrap the [`IoError`] Node would report.
-    struct NodeReader<R> {
-        inner: R,
-        error: fn(&std::io::Error) -> IoError,
-    }
+    /// A reader whose errors wrap the [`IoError`] Node would report
+    /// ([`stream_read_error`](super::stream_read_error)).
+    struct NodeReader<R>(R);
 
     impl<R: Read> Read for NodeReader<R> {
         fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            self.inner.read(buf).map_err(|e| {
-                if e.kind() == std::io::ErrorKind::Interrupted {
-                    e
-                } else {
-                    std::io::Error::other((self.error)(&e))
-                }
-            })
+            self.0.read(buf).map_err(super::stream_read_error)
         }
+    }
+
+    /// Opens the file `path` to read, as Node's `ReadStream` does: Node's
+    /// `open` error (`ENOENT: …, open 'x'`) if it cannot be.
+    fn open_file(path: &str) -> Result<std::fs::File, IoError> {
+        std::fs::File::open(path).map_err(|e| node_error(&e, "open", path))
     }
 
     impl super::Readable {
@@ -550,24 +561,63 @@ mod std_io {
         /// read` for a symbolic link to a directory), wrapped in the
         /// reader's [`std::io::Error`].
         pub fn open_std(self) -> Result<Box<dyn Read>, IoError> {
-            let read_error: fn(&std::io::Error) -> IoError = |e| IoError::from_fs(e, "read", None);
             match self {
                 super::Readable::Text(text) => {
                     Ok(Box::new(std::io::Cursor::new(text.into_bytes())))
                 }
-                super::Readable::Stdin => Ok(Box::new(NodeReader {
-                    inner: std::io::stdin(),
-                    error: read_error,
-                })),
-                super::Readable::File(path) => {
-                    let file =
-                        std::fs::File::open(&path).map_err(|e| node_error(&e, "open", &path))?;
-                    Ok(Box::new(NodeReader {
-                        inner: file,
-                        error: read_error,
-                    }))
+                super::Readable::Stdin => Ok(Box::new(NodeReader(std::io::stdin()))),
+                super::Readable::File(path) => Ok(Box::new(NodeReader(open_file(&path)?))),
+            }
+        }
+
+        /// [`open_std`](Self::open_std) as a [`JsonSample::Reader`]
+        /// sample. A regular file (on Unix and Windows), or standard input
+        /// redirected from one (on Unix), can then also be read at any
+        /// offset, so that a large top-level array in it is read on several
+        /// threads as `options` say, into the same tallies (see
+        /// `docs/STREAMING-INFERENCE.md`, "Reading on several threads").
+        ///
+        /// [`JsonSample::Reader`]: crate::JsonSample::Reader
+        #[cfg(not(target_family = "wasm"))]
+        pub fn open_sample(
+            self,
+            options: crate::ParallelOptions,
+        ) -> Result<crate::SampleReader, IoError> {
+            #[cfg(not(any(unix, windows)))]
+            let _ = options;
+            #[cfg(any(unix, windows))]
+            if let super::Readable::File(path) = &self {
+                let file = open_file(path)?;
+                if file.metadata().is_ok_and(|m| m.is_file()) {
+                    let sample = crate::input::parallel_read::PositionalSample::file(
+                        file,
+                        std::path::Path::new(path),
+                        options,
+                    );
+                    return Ok(crate::SampleReader::positional(sample));
+                }
+                return Ok(crate::SampleReader::new(NodeReader(file)));
+            }
+            // Standard input, from where it is (all of it, unless a sample
+            // read it to its end before; nothing reads it in part), as a
+            // file of its own. Not on Windows, where a console or a pipe is
+            // not told from a file as surely.
+            #[cfg(unix)]
+            if let super::Readable::Stdin = &self {
+                use std::os::fd::AsFd;
+                let file = std::io::stdin()
+                    .as_fd()
+                    .try_clone_to_owned()
+                    .ok()
+                    .map(std::fs::File::from)
+                    .filter(|file| file.metadata().is_ok_and(|m| m.is_file()));
+                if let Some(sample) = file.and_then(|file| {
+                    crate::input::parallel_read::PositionalSample::stdin(file, options)
+                }) {
+                    return Ok(crate::SampleReader::positional(sample));
                 }
             }
+            self.open_std().map(crate::SampleReader::new)
         }
     }
 

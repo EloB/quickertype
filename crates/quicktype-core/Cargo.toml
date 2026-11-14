@@ -23,6 +23,10 @@ name = "quicktype_core"
 
 [features]
 default = ["fs"]
+# Test hooks of reading on several threads (a fault to inject, counts of
+# how samples were read), for this crate's tests and the differential
+# harness: not in a normal build.
+test-support = []
 # `StdIo`: reading schemas and inputs from the file system and stdin.
 fs = []
 # HTTP(S) URLs for `StdIo` (ureq with rustls), as the native CLI needs.
@@ -56,6 +60,8 @@ wasm-bindgen = { workspace = true, optional = true }
 
 [dev-dependencies]
 flate2.workspace = true
+# This crate with its test hooks, for its integration tests.
+quickertype-core = { path = ".", features = ["test-support"] }
 # `preserve_order`: the differential tests rebuild type graphs from fixture
 # dumps whose attribute objects list the attributes in JavaScript `Map`
 # order, which the JSON Schema output depends on. Only the tests read

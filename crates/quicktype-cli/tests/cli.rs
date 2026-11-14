@@ -742,3 +742,69 @@ fn a_failed_read_is_node_s_read_error() {
         "Error: EISDIR: illegal operation on a directory, read.\n"
     );
 }
+
+/// A large top-level array in a file is read on several threads; here a
+/// small one (about 900 KB), forced with the internal
+/// `QUICKTYPE_READ_THREADS` and `QUICKTYPE_READ_CHUNK` so that it is split
+/// among two threads or more: the output, errors and exit code are those
+/// of reading it in one go. In debug builds the CLI reports how it read
+/// the file (`QUICKTYPE_READ_REPORT`), so that a change that kept it from
+/// reading on several threads fails here.
+#[test]
+fn files_read_on_several_threads_read_as_in_one_go() {
+    let dir = work_dir("parallel-read");
+    let records: Vec<String> = (0..16_000)
+        .map(|i| {
+            format!(
+                r#"{{"id":{i},"kind":"k{}","s":"a,]\"{}","ok":{}}}"#,
+                i % 5,
+                i % 9,
+                i % 2 == 0
+            )
+        })
+        .collect();
+    let good = format!("[{}]", records.join(",\n"));
+    let broken = good.replacen(r#""id":1500,"#, r#""id":1500,,"#, 1);
+    for (name, text) in [("good.json", good), ("broken.json", broken)] {
+        fs::write(dir.join(name), text).unwrap();
+        let report = dir.join("report.txt");
+        let run = |threads: &str, chunk: &str| {
+            let _ = fs::remove_file(&report);
+            let output = Command::new(BIN)
+                .args([name, "-l", "ts"])
+                .current_dir(&dir)
+                .env("QUICKTYPE_READ_THREADS", threads)
+                .env("QUICKTYPE_READ_CHUNK", chunk)
+                .env("QUICKTYPE_READ_REPORT", &report)
+                .output()
+                .unwrap();
+            (output, fs::read_to_string(&report).unwrap_or_default())
+        };
+        let (one, read) = run("1", "1024");
+        if cfg!(debug_assertions) {
+            assert_eq!(read, "whole 0 in_part 0 again 0\n", "{name} in one go");
+        }
+        for (threads, chunk) in [("2", "1024"), ("4", "100"), ("8", "65536")] {
+            let (several, read) = run(threads, chunk);
+            assert_eq!(
+                (several.status.code(), &several.stdout, &several.stderr),
+                (one.status.code(), &one.stdout, &one.stderr),
+                "{name}, {threads} threads, chunks of {chunk}"
+            );
+            // Read whole on several threads; the broken file, in part (its
+            // error after the parts before it), or again in one go if the
+            // error is in the first part.
+            let expected = if name == "good.json" {
+                "whole 1 in_part 0 again 0\n"
+            } else {
+                "whole 0 in_part 1 again 0\n"
+            };
+            if cfg!(debug_assertions) {
+                assert_eq!(
+                    read, expected,
+                    "{name}, {threads} threads, chunks of {chunk}"
+                );
+            }
+        }
+    }
+}

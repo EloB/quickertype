@@ -200,7 +200,7 @@ inputs, the full corpus), profiling, and optimization without changing output.
       inference needs: superseded by Phase 8a, which keeps one combined
       set per place.
 
-## Phase 8 — Big inputs (in progress: 8a done)
+## Phase 8 — Big inputs (done)
 
 Inference from running tallies instead of a full copy of the document, then
 parallel chunks (threads in the CLI, workers in browsers) whose tallies merge
@@ -225,5 +225,15 @@ fields and strings instead of the file size.
       → 60 MiB, as for the 40 MB input it repeats; a quarter to a third
       less CPU time (see
       [BENCHMARKS.md](BENCHMARKS.md#streaming-inference-phase-8a)).
-- [ ] 8b — Parallel chunks: tallies of chunks read on several threads (or
-      workers) and merged in file order (`Tallies::merge` is the merge).
+- [x] 8b — Parallel chunks (`perf/parallel-read`): the CLI reads a regular
+      file of 8 MiB or more whose top-level value is an array (or standard
+      input redirected from one) on several threads, cut where a scan
+      that knows strings and escapes finds the commas between its
+      elements; each part's tallies are appended in file order
+      (`Tallies::merge` is the merge), within a memory budget, and
+      anything unexpected reads the rest in one go. The design and why it
+      is exact: [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#reading-on-several-threads);
+      1M records 4.5× faster on 12 cores
+      ([BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads)). The
+      WebAssembly engine still reads on one thread (workers in browsers
+      are not done).

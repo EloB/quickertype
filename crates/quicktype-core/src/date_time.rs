@@ -10,8 +10,10 @@
 //! only ASCII digits, the `regex` crate's would match any Unicode digit.
 
 /// `DateTimeRecognizer`: decides which strings are dates, times and
-/// date-times.
-pub trait DateTimeRecognizer {
+/// date-times. A recognizer decides from the string alone, and is shared
+/// by the threads that read a large file (the CLI reads one on several):
+/// hence `Send + Sync`.
+pub trait DateTimeRecognizer: Send + Sync {
     /// Whether `s` is a date (`2020-01-31`).
     fn is_date(&self, s: &str) -> bool;
     /// Whether `s` is a time (`10:00:00Z`).

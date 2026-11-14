@@ -12,9 +12,11 @@
 //! `QUICKTYPE_STREAMING_GRAPHS` graphs and `QUICKTYPE_STREAMING_RUNS` whole
 //! runs on every `QUICKTYPE_STREAMING_RUNS_EVERY`th seed;
 //! `QUICKTYPE_STREAMING_PATH` the ways of inferring compared with the
-//! reference, `running` (the CLI's, the default), `compressed` (the
-//! WebAssembly engine's) or `all`; `QUICKTYPE_STREAMING_TRACE` prints each
-//! seed as it starts), and the
+//! reference, `running` (the CLI's, the default), `parallel` (the CLI's
+//! for regular files: large arrays read on several threads), `compressed`
+//! (the WebAssembly engine's) or `all`, or `parallel-fault` (with a fault
+//! that must be caught); `QUICKTYPE_STREAMING_TRACE` prints each seed as it
+//! starts), and the
 //! ignored `dump_documents` writes generated documents for comparing both
 //! CLIs with the TypeScript one (`QUICKTYPE_STREAMING_DUMP`).
 
@@ -72,15 +74,21 @@ fn check_seeds(
     let begun = std::time::Instant::now();
     match check_many(start, count, jobs(), limits, effort, progress, path) {
         Ok(stats) => eprintln!(
-            "{count} seeds from {start}, {path:?}: 0 differences ({} graphs, {} runs of which {} failed alike, {} runs skipped for a $ref cycle through a union, {} source errors alike) in {:.1?}",
+            "{count} seeds from {start}, {path:?}: 0 differences ({} graphs, {} runs of which {} failed alike, {} runs skipped for a $ref cycle through a union, {} source errors alike; samples read on several threads: {} whole, {} in part) in {:.1?}",
             stats.graphs,
             stats.runs,
             stats.failed_runs,
             stats.skipped_runs,
             stats.source_errors,
+            stats.parallel_whole,
+            stats.parallel_in_part,
             begun.elapsed()
         ),
-        Err(failures) => panic!("{}", failures.join("\n\n")),
+        Err(failures) => {
+            // The fuzz run silences panics: the count goes to stderr.
+            eprintln!("{}", failures[0]);
+            panic!("{}", failures.join("\n\n"))
+        }
     }
 }
 
@@ -96,6 +104,34 @@ fn tallies_infer_what_the_compressed_form_infers() {
         runs_every: 1,
     };
     check_seeds(3_000, CI_LIMITS, effort, false, Path::All);
+}
+
+/// The comparison catches a fault in reading on several threads: with the
+/// parts' trees merged out of order, some seeds' graphs or
+/// whole runs differ from the reference's (and every difference found is
+/// one of those).
+#[test]
+fn a_broken_merge_is_caught() {
+    let effort = Effort {
+        graphs: 2,
+        runs: 1,
+        runs_every: 1,
+    };
+    let failures = check_many(
+        0,
+        300,
+        jobs(),
+        CI_LIMITS,
+        effort,
+        false,
+        Path::ParallelFault,
+    )
+    .expect_err("the fault is caught");
+    eprintln!("{}", failures[0]);
+    assert!(
+        failures[1..].iter().all(|f| f.contains(" differ")),
+        "{failures:#?}"
+    );
 }
 
 /// The long run (`cargo xtask streaming-fuzz`).

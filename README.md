@@ -62,6 +62,10 @@ files. Wall time, median of 10 runs:
 - **Large files:** a 2.6 GB JSON file becomes TypeScript types at a peak
   of 60 MiB (14.3 s of CPU time). Memory grows with what is distinct in
   the JSON, not with its size.
+- **Several cores:** a file of 8 MiB or more whose top-level value is an
+  array is read on all cores: an array of 1 million records (267 MB)
+  becomes TypeScript types in 50 ms instead of 261 ms on a 12-core
+  M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
   Node.js's startup (about 215 ms); on large inputs it is the engine. As
   libraries in a warm process, the native engine is 2.4× faster than

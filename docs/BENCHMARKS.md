@@ -537,6 +537,128 @@ done
 
 with `rulings-100k.json` made as in [PROFILE-RECORDS.md](PROFILE-RECORDS.md#reproducing).
 
+## Reading on several threads
+
+A regular file of 8 MiB or more whose top-level value is an array (and
+standard input redirected from one) is read on several threads, into the
+same tallies as reading it in one go (see
+[STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#reading-on-several-threads)).
+Output is byte-identical: 260,928 CLI runs against main (2,416 files ×
+9 option sets × 12 settings of threads and chunk size), 6,048 on arrays
+whose places come to absorb every string partway, 3,024 on arrays full
+of URIs (ports, user info, queries, IPv6 hosts), 252 on arrays with a
+string of 50 million backslashes, 432 on arrays of elements with keys of
+their own, 756 on the large inputs below (all
+from a path and from standard input), the differential harness on
+200,000 seeds and the `json_split` fuzz target.
+
+**Scaling.** `cargo build --release -p quickertype`, `-l ts -o
+/dev/null`; the threads set with `QUICKTYPE_READ_THREADS` (the default is
+12, the machine's cores), interleaved with main; medians of 15 runs (11
+for 1M records); wall / CPU time in ms (user + system, from `wait4`) and
+peak RSS. Main is `e2e3f3fc9` (with JSON Lines and the walk's URI
+tallying, which this branch is rebased on). Load average 4.1 to 4.5 on
+12 cores.
+
+| Input | Main | 1 thread | 2 | 4 | 8 | 12 (default) |
+|---|---:|---:|---:|---:|---:|---:|
+| 100k records (26.8 MB) | 30.9 / 29.7, 6.1 MiB | 30.5 / 29.3, 6.0 MiB | 21.1 / 38.5, 8.4 MiB | 14.3 / 40.3, 11.7 MiB | 10.8 / 44.5, 16.0 MiB | **10.5** / 55.7, 19.7 MiB |
+| 1M records (267 MB) | 261 / 259, 6.0 MiB | 261 / 259, 6.0 MiB | 142 / 354, 9.8 MiB | 82.3 / 360, 13.4 MiB | 56.3 / 385, 17.8 MiB | **49.9** / 435, 21.2 MiB |
+| 1M records, `< file` on standard input | 262 / 260, 6.1 MiB | 261 / 260, 6.0 MiB | | | 56.8 / 385, 17.7 MiB | **50.1** / 439, 21.1 MiB |
+| 20k articles, long text (23.4 MB) | 62.5 / 61.1, 19.2 MiB | 62.1 / 60.7, 19.1 MiB | 40.1 / 73.2, 22.9 MiB | 27.2 / 76.6, 26.8 MiB | **21.3** / 85.9, 31.5 MiB | 21.7 / 101, 36.4 MiB |
+| 100k records, pretty-printed (30.3 MB) | 33.0 / 31.8, 6.1 MiB | 33.1 / 31.9, 6.0 MiB | 22.7 / 42.3, 8.5 MiB | 14.8 / 44.0, 11.5 MiB | **11.2** / 49.1, 15.8 MiB | 11.3 / 60.8, 20.6 MiB |
+
+The 1M records take 5.2× less wall time on 12 threads and 4.6× less on
+8, for 1.5–1.7× the CPU time: the ranges are scanned once before their
+parts are tallied (about 4 GB/s per thread, 65 ms of CPU for 267 MB),
+each byte is read from the page cache twice, and the efficiency cores
+are slower (on the text-heavy and pretty-printed records, 8 threads are
+as fast as 12). Reading on every core is the first to slow down when
+other work runs: at load average 5 to 8 the builds before the last
+review took 57 to 63 ms on the 1M records. Peak RSS grows by 1.25–1.6 MiB per thread: read
+buffers, the tallies of the part each thread reads, and the allocator's
+per-thread heaps. A pipe (`cat file |`) and JSON Lines are read in one
+go, as before.
+
+**Where it starts to pay.** The same records, cut to 2–64 MB, read in one
+go (`QUICKTYPE_READ_THREADS=1`) and on 12 threads with every sample split
+(`QUICKTYPE_READ_CHUNK=4194304`, which also lifts the 8 MiB threshold;
+the ranges are then 256 KiB, and the threads that read as many as get
+four each: 2, 4, 8 and 9 up to 9 MB); medians of 15, load average 4.1:
+
+| Size | In one go | Up to 12 threads |
+|---|---:|---:|
+| 2 MB | 5.8 / 4.9 ms, 6.0 MiB | 5.2 / 6.4 ms, 8.9 MiB |
+| 4 MB | 8.8 / 7.6 ms, 6.0 MiB | 6.8 / 10.8 ms, 10.0 MiB |
+| 8 MB | 11.8 / 10.9 ms, 6.0 MiB | 6.7 / 18.7 ms, 14.4 MiB |
+| 9.4 MB | 13.3 / 12.3 ms, 6.0 MiB | 7.1 / 24.1 ms, 16.4 MiB |
+| 16 MB | 20.0 / 18.9 ms, 6.0 MiB | 8.7 / 39.7 ms, 19.2 MiB |
+| 32 MB | 35.8 / 34.8 ms, 6.0 MiB | 11.3 / 65.1 ms, 19.8 MiB |
+| 64 MB | 67.5 / 66.2 ms, 6.0 MiB | 16.2 / 114.5 ms, 20.3 MiB |
+
+Below 8 MB the threads save at most 2 ms, for 1.3–1.4 times the CPU
+time and 3–4 MiB more memory; from 8 MB on they save 43% and more. So
+samples under 8 MiB are read in one go.
+
+**Elements with large tallies of their own.** The 2.6 GB input of
+[Memory on large inputs](#memory-on-large-inputs) is an array of 60
+copies of the 40 MB generated document, each with a map of 209,519
+distinct keys: one element's tallies alone take about 45 MB, so tallying
+elements beside each other multiplies them. With the default budget for
+the parts' trees (the threads that read times the range size, or
+32 MiB), the
+first element shows that one part's tree would fill it, and the rest is
+read in one go, as before. A larger budget (`QUICKTYPE_READ_BUDGET`,
+internal) trades that memory for time. Medians of 3, load average 3.1 to
+3.6:
+
+| 2.6 GB generated input | Wall | CPU | Peak RSS |
+|---|---:|---:|---:|
+| Main | 7.25 s | 7.24 s | 63.1 MiB |
+| 1 thread | 7.20 s | 7.19 s | 63.1 MiB |
+| 2, 4, 8, 12 threads, default budget | 7.16–7.22 s | 7.16–7.22 s | 63.1–64.3 MiB |
+| 4 threads, budget 512 MiB | 2.65 s | 11.9 s | 557 MiB |
+| 8 threads, budget 1 GiB | 1.87 s | 13.1 s | 921 MiB |
+| 12 threads, budget 1 GiB | 1.95 s | 14.7 s | 1,314 MiB |
+
+The budget bounds what the parts given out and not appended yet hold:
+their trees as estimated while they are read, and their trees' own
+sizes once read, while they wait for the parts before them. A part's
+tallies are moved to the reading thread, not copied. Above the 63 MiB
+of reading in one go, the peak was 0.84 to 1.22 times the budget. The
+first parts are read on the reading thread, as the others are elsewhere,
+until they hold 64 KiB of text: their trees give the first ratio of tree
+to text the parts given out are estimated by.
+
+**Elements with keys of their own.** Where those first parts' trees are
+more than 8 times their text, the rest is read in one go: appending such
+trees on the reading thread costs about as much as reading them. 30 MB
+arrays, 12 threads, medians of 7, load average 3.3 to 3.6 (the ratio as
+the first parts measure it):
+
+| Input | Ratio | Main | On several threads | Now |
+|---|---:|---:|---:|---:|
+| 1.5M elements, one distinct key each | 27 | 203 / 200 ms, 235 MiB | 226 / 381 ms, 457 MiB | 205 / 211 ms, 239 MiB |
+| distinct keys with 35-byte strings | 9.5 | 168 / 166 ms, 359 MiB | 217 / 402 ms, 581 MiB | 170 / 176 ms, 361 MiB |
+| records with one distinct key each among shared ones | 4.3 | 149 / 147 ms, 74 MiB | 60.7 / 250 ms, 175 MiB | 60.2 / 245 ms, 183 MiB |
+
+**Arrays that do not split.** An array whose elements are longer than a
+part the budget lets be read beside others is read in one go as soon as
+the ranges scanned past the last split are that long, without scanning
+the rest. The 1M records inside one object, in a one-element array
+(267 MB), on 12 threads: 262 / 272 ms against main's 257 / 256 ms
+(medians of 7, load average 3.7 to 3.9).
+
+**Long runs of backslashes.** Whether a range's first byte is escaped
+comes from the ranges before it where the 64 bytes before it are all
+backslashes, so a long run is read once. The 20,000 records with one
+string of 50 million backslashes (50.7 MB, an even run, and an odd run
+that escapes a quote), on 12 threads, medians of 9, load average 4.1:
+95.9 / 110.8 ms and 191 MiB against main's 92.1 / 89.8 ms and 192 MiB
+(the string is one token, read on one thread). Looking back from each
+range for where the run starts took 130 / 328 ms and 342 MiB (load
+average 23).
+
 ## Profiling
 
 ```sh

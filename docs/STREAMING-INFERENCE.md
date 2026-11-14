@@ -382,6 +382,214 @@ an input that infers from tallies does not have: there it is an error,
 and an input that is to be exported is made with
 `set_tally_inference(false)` before its sources are added.
 
+## Reading on several threads
+
+Reading and tallying are almost all of a large run, so the CLI reads a
+regular file that holds a large top-level array on several threads
+(`input/parallel_read.rs`, with the scan in `input/json_split.rs`), into
+the same tallies as reading it in one go. Standard input redirected from
+a regular file (`quickertype < big.json`) is read the same way, from where
+it stands, and is left at its end as reading it in one go leaves it.
+
+### How
+
+1. **Ranges.** The file is cut into ranges of 4 MiB, or smaller (down
+   to 256 KiB) where that would give each thread fewer than four; where
+   even those give fewer, fewer threads read (as many as get four). In
+   parallel, each range is *summarized*: a scan that knows strings and
+   escapes, 64 bytes at a time (simdjson's first stage, with eight-byte
+   words for SIMD registers, since the workspace has no unsafe code).
+   Whether a range's first byte is escaped follows from the backslashes
+   just before it; where the 64 bytes before it are all backslashes, the
+   range is summarized for both cases, and the ranges before it tell
+   which holds (each summary says whether the byte after its range is
+   escaped). Its unescaped quotes flip the string state, so the bytes in
+   strings are those of one of two cases, the range starting outside a
+   string or in one; the summary keeps, for both, how much deeper the
+   range ends than it starts and a lower bound of the depths in it.
+2. **States.** In order, the summaries give the exact escape, string
+   state and depth at each range's start. Each range whose depths may
+   reach 1 is then searched, in parallel, for its first comma at depth 1
+   outside strings: a comma between two of the top-level array's
+   elements.
+3. **Parts.** Between consecutive such commas lie the *parts*, about a
+   range each. Each is read by the stream tokenizer as the array of its
+   elements (`[` + part + `]`, or `[` + part for the last part, which runs
+   to the end of the file), into tallies of its own: the first ones on the
+   reading thread, until they hold 64 KiB of text (or a 64th of a smaller
+   sample; the first range is twice that long, so they are short), to
+   measure their trees, and the others on other threads. The tokenizer
+   reads them at offsets of the file, 64 KiB at a time, as it reads any
+   stream.
+4. **Appending.** A part's tree crosses threads as a `PortableTree`
+   (`input/tallies/portable.rs`): the same nodes, its keys and cases as
+   ids into its own string table, and its string attributes (string types
+   and URI attributes, the only kinds strings add) as plain values instead
+   of `Rc`s. The reading thread imports the trees in document order (a
+   copy that maps each id to the id of the same text in the sample's
+   string table) and appends each to the sample's tree with
+   `Tallies::merge`.
+
+The parts read elsewhere hold trees of their own, which take as much
+memory as the tallies of their text: a fraction of it for arrays of
+records, whose elements share their places, but as much as a whole
+sample's tallies for an element as large as a part full of distinct keys
+or strings. (A part's tallies are moved into the portable tree, and that
+into the sample's tallies, not copied.) So each part given out holds
+bytes until it is appended: its tree as estimated while it is read (by
+the largest ratio of tree to text seen, and at least the smallest tree
+seen; the first ratio is that of the first parts' trees, read on the
+reading thread before any part is given out), its tree's own size once
+read and while it waits for the parts before it. Together they may hold
+at most the threads that read times the range size, or 32 MiB, and at
+most 2 × threads + 2 parts are given out beyond the last one appended.
+Where a single part's tree would take half of the budget, the parallel
+reading stops and the rest is read in one go (below), which shares one
+set of tallies for all elements; so it does, without scanning on, once
+the ranges hold no split for as long as such a part. Summaries run only
+a few ranges ahead of the next part to give out, so the second read of a
+range finds it cached.
+
+Files are read at offsets with `pread` on Unix and `seek_read` on
+Windows, which also moves the file's position: every reading in one go
+that follows seeks first. Windows serializes the reads of one handle
+opened for synchronous reads (as std opens files), so there each read
+takes a handle of its own: the file opened again from its path, as long
+as that holds a regular file of the same size and times (otherwise the
+first handle, shared). Ranges are 256 KiB at least, and a sample has at
+most 65,536 of them, whatever the options ask for; at most 1,024 threads
+read, and as many as the ranges give four each. Read in one go, as
+before: samples under 8 MiB, samples that would have fewer than two
+threads, top-levels that are not arrays, arrays whose first element is
+longer than a part the budget would read beside others, standard input
+from a pipe or a terminal (it cannot be read at offsets, and reading it
+ahead would hold it in memory), standard input on Windows (a console or
+a pipe is not told from a file as surely there), text samples
+(`JSON.parse` semantics), JSON Lines samples, streams the Rust API hands
+in (`SampleReader::new`) and the WebAssembly engine; and if the system
+will not start the threads. (A date/time recognizer decides from the
+string alone and is `Send + Sync`: the threads share the sample's.)
+
+### Why it is exact
+
+*The parts read as the sample's elements.* The tokenizer is a state
+machine. After `[`, the state is: a value expected (or the `]` of an empty
+array), one array open. After a comma between the array's elements, it is
+the same, but for that `]`. So if a part read as `[` + part + `]`
+succeeds, and its first byte (after whitespace) exists and is not `]`,
+the tokenizer reading the whole sample reads that part's bytes the same
+way, event for event, when it gets there: it is in the same state, and
+reads the same bytes. At the part's end it has read whole values (the
+part read as complete values of an array), and what comes next, `,`
+instead of `]`, ends a number or a literal as `]` does (both are neither
+digits nor word characters), and ends nothing else. Then the comma puts it
+back in the state the next part starts from. The first part starts right
+after `[`, as the sample does there; the last part runs to the end of the
+file, so the array's `]` and whatever follows it (only whitespace, or the
+part fails) are read as the sample reads them. By induction over the
+parts, the sample read in one go emits exactly the events of the parts in
+order, between the `[` and the end.
+
+That holds wherever the commas are. The scan only proposes them: were one
+not between two elements (the scan is exact for valid JSON, and wrong
+only where JSON is not valid), a part around it would not read as a
+complete array of values, and the parallel reading would stop. So the
+scan can change how fast a sample is read, never what is read.
+
+*The text is the same.* The sample is decoded as Node's `StringDecoder`
+decodes it, invalid UTF-8 included. A part starts after a comma, an ASCII
+byte, before which the decoder holds nothing (an incomplete sequence
+becomes U+FFFD before an ASCII byte is decoded), and the decoder's output
+does not depend on where the chunks it is given begin (the reader's
+chunking tests). So a part's text is the text of the sample at that
+place.
+
+*The trees are the tree of reading on.* A part's tree, imported, is the
+same tree with the same texts (`PortableTree` keeps every node, count,
+key and case in its order, and its string attributes by value, kinds in
+their order). Appending trees in document order with `Tallies::merge`
+gives the tree of reading their samples on (`merging_trees_is_reading_on`;
+`merging_imported_trees_is_reading_on` groups the samples every way). The
+parts' trees are those of arrays of their elements: their roots hold the
+`array` kind and the elements at their items, as the sample's root does,
+so the appended tree is the sample's tree. That includes places whose
+strings come to absorb every string (and so hold no cases, see
+[Interned strings](#interned-strings-cases-and-counts)): a part's place
+may absorb from one of its values on, or only once appended to the parts
+before it, and `StringTally::append` forgets the cases when the union
+absorbs, as reading on would have (the merging test runs samples whose
+places start absorbing partway, split every way). String ids are only
+identities (every list of keys and cases keeps its first-seen order), so
+the order in which texts enter the string table does not matter.
+
+*Errors.* A part that does not read as the sample's elements (it fails,
+it is empty, it starts with `]`), a read that fails, or a merge that
+fails ends the parallel reading. The parts before it have been appended;
+by the argument above, reading the sample in one go would be right after
+the comma that ends them, in the state a part starts from, with the
+tallies of everything before. So the rest is read in one go from there
+(`compressed_json_from_stream::parse_array_rest_into`, the tokenizer
+started in that state) on into the tree of the parts so far
+(`TallyBuilder::in_array`), and it reports what reading in one go reports:
+the first error in document order, with its message, or the tree. If the
+first part fails, the whole sample is read in one go from its start. The
+same goes for the memory budget above. A file whose length changed while
+it was read is read again in one go. (stream-json's errors carry no
+position, but the rest is read by the same tokenizer from the same state
+anyway.) A job that panics on another thread hands its panic to the
+reading thread, which raises it, as reading in one go would panic.
+
+### Testing it
+
+- Unit tests (`input/json_split.rs`): the masks for every byte value at
+  every position of a word, the escapes against byte by byte for runs of
+  every length and 80,000 random masks, the split search from every
+  position of 1,500 random documents and byte strings, and summaries of
+  random cuts of 3,000 more, against a byte-by-byte scan.
+- Unit tests (`input/tallies/portable.rs`, `input/parallel_read.rs`): a
+  tree made portable and imported is the tree read, in tallies that know
+  other texts already; merged imported trees are the tree of reading on
+  for every grouping of the samples; samples read on several threads
+  (whole, in part, from the start again) give the tree or the error of
+  reading in one go for random documents, cut, extended and broken, with
+  random range sizes and thread counts, for every range size of documents
+  with strings holding brackets, commas and escaped quotes, and for
+  broken arrays with every range size (an error in the first part, the
+  last, between, at a part's end, trailing commas, garbage after the
+  array, invalid UTF-8 in and out of strings); a tree budget that admits
+  one part reads the rest in one go; behind a part read slowly (a test
+  hook), the parts' trees stay within the budget but for one, and parts
+  longer than the ranges scanned ahead are still read beside it; arrays of
+  elements longer than a part the budget lets be read beside others are
+  read in one go after scanning that much; a thread that does not start
+  makes the sample read in one go; a panic on a reading thread reaches
+  the caller; an import that fails part way leaves the tallies as they
+  were; the plans: threads as many as the ranges keep busy (two at
+  least, 1,024 at most however many are asked for), ranges of 256 KiB at
+  least and at most 65,536 of them; parts whose trees are 30 times their
+  text are measured before any is given out, and stay within the budget;
+  long runs of backslashes, cut anywhere, give the escapes of a
+  byte-by-byte scan, and are read whole on several threads; a file
+  opened again for each thread reads as in one go, and a file put in its
+  place is not opened; a file written while it is read (shorter, or of
+  the same length) is read again in one go; and a fault that merges the
+  parts' trees out of order is caught. The test hooks (the fault, the
+  counts of how samples were read) need the crate's `test-support`
+  feature, which its own tests turn on, or a debug build.
+- Files written by the tests and read at offsets
+  (`tests/parallel_files.rs` in quicktype-core, and the CLI's
+  `files_read_on_several_threads_read_as_in_one_go` with the internal
+  variables), on every platform CI tests, Windows included.
+- The differential harness reads every byte-stream sample on several
+  threads (`Path::Parallel`, in `Path::All`), with 2 to 5 threads, ranges
+  of one byte to half the sample and, for a fifth of the samples, a tree
+  budget so small that the rest is read in one go after the first part.
+  `cargo xtask streaming-fuzz --path parallel`; `--path parallel-fault`
+  injects the fault, which the comparison must catch, and the test
+  `a_broken_merge_is_caught` checks that it does.
+- The fuzz target `json_split` reads arbitrary bytes both ways and
+  compares the source's error or the type graph.
+
 ## Tallies of a compressed form
 
 The WebAssembly engine reads the samples of a JavaScript `JSONInput` into
@@ -533,6 +741,18 @@ not), and keeps those with the form with
 `JsonInput::set_keep_tallies(true)`, which `from_shared` sets.
 `JsonInput::inferred_from` tells which it did last.
 
+How the CLI reads a large file on several threads ([Reading on several
+threads](#reading-on-several-threads)) can be set in the environment, for
+tests and benchmarks only (there is no CLI option, and the output does
+not depend on it): `QUICKTYPE_READ_THREADS` the number of threads (the
+default is as many as the machine runs at once; 1 reads in one go), and
+`QUICKTYPE_READ_CHUNK` the range size in bytes, which also reads samples
+of any size so (by default only those of 8 MiB or more), and
+`QUICKTYPE_READ_BUDGET` the bytes the parts' trees under way may take.
+The CLI reads them and hands the library a `ParallelOptions`
+(`Readable::open_sample`); the library itself reads no environment
+variable, and its defaults are the CLI's.
+
 ## Memory
 
 A tally grows with the number of places, distinct keys per place, and
@@ -546,6 +766,14 @@ inference needs all of them with their counts), the text of the keys and
 strings of a sample that failed stays in the string table, and a
 `__proto__` key costs an entry only when a new key was listed since its
 previous occurrence.
+
+Reading on several threads adds, per thread, its read buffers (a 64 KiB
+scan buffer and the tokenizer's 64 KiB window and chunk) and the tallies
+of the part it reads, and on the reading thread the trees of parts
+waiting to be appended. The parts' trees under way are bounded (see
+[Reading on several threads](#reading-on-several-threads)); see
+[BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads) for peak RSS by
+thread count.
 
 ## Testing
 

@@ -37,6 +37,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "json_split"
+path = "fuzz_targets/json_split.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "json_parse"
 path = "fuzz_targets/json_parse.rs"
 test = false

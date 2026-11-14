@@ -410,6 +410,7 @@ dependencies = [
  "foldhash",
  "hashbrown",
  "indexmap",
+ "quickertype-core",
  "quickertype-js-compat",
  "regex",
  "serde_json",

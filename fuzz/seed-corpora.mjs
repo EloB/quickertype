@@ -79,6 +79,8 @@ jsonFiles.forEach((path, i) => {
   const text = read(path);
   seed("json_stream", cat(Buffer.from([i & 1]), text));
   seed("json_parse", cat(Buffer.from([i & 1]), text));
+  // Threads, range size, flags (`handleRefs`, a tiny tree budget).
+  seed("json_split", cat(Buffer.from([i, byte(), i & 3]), text));
   seed("yaml", text);
   // Stream and JSON.parse semantics, plain and with random options.
   seed("pipeline", cat(header(i, 0), text));
