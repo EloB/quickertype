@@ -148,8 +148,11 @@ divergence (the case, the first difference, both outcomes) and
 (same mode, same kind of reference outcome): options, top-levels and
 samples first, then each JSON sample or schema as a lossless syntax tree
 (`json-text.mjs`). `record.mjs` writes the shrunk case to
-`tests/fuzz-regressions/<name>/` with the reference CLI's output;
-`crates/quicktype-cli/tests/fuzz_regressions.rs` replays it with our binary
+`tests/fuzz-regressions/<name>/` with the reference CLI's output (and the
+environment variables our side ran with, `cli.env`, such as the jsonl
+mode's reading on several threads);
+`crates/quicktype-cli/tests/fuzz_regressions.rs` replays it with our binary,
+with those variables,
 and the npm differential suite (`fuzz` category) through the API, with the
 fuzzer's own code for in-process runs (`run-case.mjs`), in the mode the case
 was found in (a "stream" case reads its samples with the reference CLI's
