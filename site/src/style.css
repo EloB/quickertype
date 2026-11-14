@@ -392,8 +392,21 @@ button.quiet:hover:not(:disabled) {
     flex: none;
 }
 
-/* Too narrow for the input's controls on one row: the sample and Open file fill the second. */
-@container input (width < 440px) {
+/*
+ * Too narrow for the input's controls on one row (the input kind's three
+ * choices, the sample and Open file need some 530 px): the kind fills the
+ * first row, its choices alike, and the sample and Open file the second.
+ */
+@container input (width < 560px) {
+    #input-pane .pane-head .segmented {
+        flex: 1 1 100%;
+    }
+
+    #input-pane .pane-head .segmented label {
+        flex: 1;
+        text-align: center;
+    }
+
     #input-pane .head-actions {
         flex: 1 1 100%;
     }

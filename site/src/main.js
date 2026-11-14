@@ -27,6 +27,7 @@ import { hashKeys, hashVersion } from "./hash.js";
 import { highlight } from "./highlight.js";
 import { escapeHtml } from "./html.js";
 import { formatBytes, tooLarge, unreadable } from "./input-file.js";
+import { isJsonLinesName } from "./json-lines.js";
 import { openAtLoad, panelKey, roomBesideQuery } from "./panel.js";
 
 const languages = __LANGUAGES__;
@@ -131,6 +132,7 @@ function median(xs) {
 // State
 
 const state = {
+    /** What the input is: "json", "jsonl" (JSON Lines, as `--src-lang jsonl`) or "schema". */
     kind: "json",
     /** The input's text; "" for a file too large for the editor, until it is shown there. */
     text: "",
@@ -241,7 +243,7 @@ function loadSavedInput() {
     try {
         const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null");
         if (saved === null || typeof saved.text !== "string") return undefined;
-        if (saved.kind !== "json" && saved.kind !== "schema") return undefined;
+        if (!["json", "jsonl", "schema"].includes(saved.kind)) return undefined;
         return saved;
     } catch {
         return undefined;
@@ -384,15 +386,24 @@ function renderControls() {
 function inputFileName() {
     if (state.source.type === "sample") return sampleWithId(state.source.id).path.split("/").pop();
     if (state.source.type === "file") return state.source.fileName;
-    return state.kind === "schema" ? "input.schema" : "input.json";
+    return { schema: "input.schema", jsonl: "input.jsonl" }[state.kind] ?? "input.json";
 }
 
 const shellQuote = (s) => (/^[A-Za-z0-9_.,:/=+@%-]+$/.test(s) ? s : `'${s.replace(/'/g, "'\\''")}'`);
 
-/** The arguments of the quickertype CLI command that gives the same output, quoted for a shell. */
+/**
+ * The arguments of the quickertype CLI command that gives the same output,
+ * quoted for a shell. The CLI reads a file named `*.jsonl` or `*.ndjson`
+ * as JSON Lines: only another kind of input than its name says needs
+ * `--src-lang` (`jsonl` for JSON Lines in `data.json`, `json` for JSON in
+ * `data.jsonl`).
+ */
 function cliArgs() {
     const args = ["quickertype"];
+    const file = inputFileName();
     if (state.kind === "schema") args.push("--src-lang", "schema");
+    else if (state.kind === "jsonl" && !isJsonLinesName(file)) args.push("--src-lang", "jsonl");
+    else if (state.kind === "json" && isJsonLinesName(file)) args.push("--src-lang", "json");
     args.push("--lang", state.lang.names[0], "--top-level", topLevelName());
     for (const g of general) if (state.general[g.name]) args.push(`--${g.name}`);
     const options = rendererOptions();
@@ -403,7 +414,7 @@ function cliArgs() {
         else args.push(`--${definition.name}`, value);
     }
 
-    args.push(inputFileName());
+    args.push(file);
     return args.map(shellQuote);
 }
 
@@ -790,8 +801,8 @@ function renderCode() {
         els.error.className = "empty";
         // Beside the input, or (phones) with the input a switch away; the stylesheet shows one.
         els.error.innerHTML =
-            `<p class="beside">Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.</p>` +
-            `<p class="alone">Switch to <button type="button" class="quiet show-input">Input</button> to paste JSON or a JSON Schema, load a sample, or open a file.</p>`;
+            `<p class="beside">Paste JSON, JSON Lines or a JSON Schema in the Input pane, load a sample, or drop a file there.</p>` +
+            `<p class="alone">Switch to <button type="button" class="quiet show-input">Input</button> to paste JSON, JSON Lines or a JSON Schema, load a sample, or open a file.</p>`;
     } else if (drawNote) {
         els.error.className = "error";
         const { title, message, link } = result.error;
@@ -1132,6 +1143,9 @@ function drawMeter() {
         note(
             "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
         );
+        if (view.request?.kind === "jsonl") {
+            note("quicktype has no JSON Lines input: it is given the JSON array of the values on the lines, which is what quickertype reads them as.");
+        }
         if (!measured && (sides.wasm.reused || sides.ts.reused)) {
             note("A run on the same input, read the same way, reuses the input both engines read before, so it only generates the code.");
         }
@@ -1535,12 +1549,13 @@ async function loadSample(sample, keepName = false, compare = false) {
 }
 
 /**
- * Opens a file (from the file picker or a drop) and runs it. A file small
- * enough for the editor is read here; a larger one is posted to the workers
- * as it is, after a look at its first kilobyte (a JSON Schema?). A file too
- * large to read as text, or one that cannot be read, is an error in the
- * output pane (see inputFailed): the input before stays the input, in the
- * editor and saved.
+ * Opens a file (from the file picker or a drop) and runs it. A file named
+ * `*.jsonl` or `*.ndjson` (in any case) is JSON Lines, as for the CLI. A
+ * file small enough for the editor is read here; a larger one is posted to
+ * the workers as it is, after a look at its first kilobyte (a JSON
+ * Schema?). A file too large to read as text, or one that cannot be read,
+ * is an error in the output pane (see inputFailed): the input before stays
+ * the input, in the editor and saved.
  */
 async function loadFile(file) {
     const { name, size, lastModified } = file;
@@ -1565,8 +1580,8 @@ async function loadFile(file) {
     // Another input came first.
     if (ticket !== opening) return;
     if (text === "" && size > 0) return inputFailed(unreadable(name, new Error("the browser returned no text")));
-    const schema = schemaName || /"\$schema"\s*:/.test((head ?? text).slice(0, 1000));
-    setInput(text ?? "", source, schema ? "schema" : "json", nameFromFile(name), false, text === undefined ? file : undefined);
+    const kind = isJsonLinesName(name) ? "jsonl" : schemaName || /"\$schema"\s*:/.test((head ?? text).slice(0, 1000)) ? "schema" : "json";
+    setInput(text ?? "", source, kind, nameFromFile(name), false, text === undefined ? file : undefined);
     void run();
 }
 

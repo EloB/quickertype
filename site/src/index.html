@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>quickertype — quicktype on WebAssembly</title>
-<meta name="description" content="Generate types and converters from JSON or JSON Schema in your browser, with quicktype's own API running on a Rust/WebAssembly engine.">
+<meta name="description" content="Generate types and converters from JSON, JSON Lines or JSON Schema in your browser, with quicktype's own API running on a Rust/WebAssembly engine.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23201d33'/%3E%3Crect x='6' y='9' width='9' height='5' rx='2.5' fill='%23a08cff'/%3E%3Crect x='6' y='18' width='20' height='5' rx='2.5' fill='%236ea8ea'/%3E%3C/svg%3E">
 <!-- Where the options go, before the first paint (src/head.js, inlined by the build). -->
 <script>%HEAD_SCRIPT%</script>
@@ -34,12 +34,13 @@
     <div class="pane-head">
       <div class="segmented" role="radiogroup" aria-label="Input kind">
         <label><input type="radio" name="kind" value="json" checked><span>JSON</span></label>
+        <label><input type="radio" name="kind" value="jsonl"><span>JSON Lines</span></label>
         <label><input type="radio" name="kind" value="schema"><span>JSON Schema</span></label>
       </div>
       <div class="head-actions">
         <select id="sample" aria-label="Load a sample"></select>
         <button id="open" type="button">Open file</button>
-        <input id="file" type="file" accept=".json,.schema,application/json,text/plain" hidden>
+        <input id="file" type="file" accept=".json,.jsonl,.ndjson,.schema,application/json,application/jsonl,application/x-ndjson,text/plain" hidden>
       </div>
     </div>
     <div class="pane-sub">
@@ -48,7 +49,7 @@
       <span class="drop-hint">Drop a file anywhere on this side</span>
       <span class="tip-wrap">
         <button type="button" class="tip-button" aria-expanded="false" aria-controls="input-note" aria-label="About the input"></button>
-        <span id="input-note" class="tip" role="note" hidden>Paste JSON or a JSON Schema, load a sample, or open a file; drop one anywhere on this side. TypeScript input needs the TypeScript compiler, which doesn't run in the browser; the CLI has it. Samples are from quicktype's test suite (Apache-2.0).</span>
+        <span id="input-note" class="tip" role="note" hidden>Paste JSON, JSON Lines or a JSON Schema, load a sample, or open a file; drop one anywhere on this side. JSON Lines (a <code>.jsonl</code> or <code>.ndjson</code> file) hold one JSON value per line, typed as the JSON array of the values, as by the CLI. TypeScript input needs the TypeScript compiler, which doesn't run in the browser; the CLI has it. Samples are from quicktype's test suite (Apache-2.0).</span>
       </span>
     </div>
     <div class="editor">
@@ -61,7 +62,7 @@
           <button id="large-edit" type="button">Show in the editor</button>
         </div>
       </div>
-      <div class="drop" aria-hidden="true"><span>Drop a JSON or JSON Schema file</span></div>
+      <div class="drop" aria-hidden="true"><span>Drop a JSON, JSON Lines or JSON Schema file</span></div>
     </div>
   </section>
 

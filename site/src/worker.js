@@ -3,7 +3,7 @@
 // the page), another on the TypeScript engine (`?engine=ts`, quicktype);
 // each starts when the page first needs it.
 //
-// Request:  { id, kind: "json" | "schema", lang, name, text | file, rendererOptions,
+// Request:  { id, kind: "json" | "jsonl" | "schema", lang, name, text | file, rendererOptions,
 //             options, warmup?, repeat?, heldLimit? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
 //           { type: "result", id, ok, files | error, ms, times, inputTimes, reused, evicted,
@@ -46,8 +46,17 @@
 // UTF-8 (`addSource` decodes them as `TextDecoder` does, as `file.text()`
 // would), and its engine reads them without a JavaScript string in
 // between.
+//
+// JSON Lines (`kind: "jsonl"`, a `.jsonl` or `.ndjson` file, or the
+// input kind picked) are quickertype's, not quicktype's: the WebAssembly
+// worker reads them as quickertype-core does, `addSource({ jsonLines:
+// true })`, the array of their values; the TypeScript worker, which is
+// quicktype, gets that array as JSON (json-lines.js, made from the bytes
+// of a file, then decoded once), so that the outputs compare. Making the
+// array is part of reading the input, not of the timed runs.
 
-import { tooLarge, unreadable } from "./input-file.js";
+import { jsonLinesToArray } from "./json-lines.js";
+import { maxTextBytes, tooLarge, unreadable } from "./input-file.js";
 import { boot } from "./worker-boot.js";
 
 import {
@@ -107,18 +116,20 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
         // As the CLI's makeInputData: `$ref`s are references with
         // --no-ignore-json-refs, and the renderer options set the range of
         // integers (Rust's `integer-type`, cJSON's `integer-size`). How it
-        // reads samples is the key, with the top-level name: the
-        // configuration quickertype-core reads them with, from the input.
+        // reads samples is the key, with the top-level name and whether
+        // the sample is JSON Lines: the configuration quickertype-core
+        // reads them with, from the input.
+        const lines = kind === "jsonl" && boot.engine === "wasm";
         const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
         const reading = readingKey(input);
-        const key = reading === undefined ? undefined : JSON.stringify([name, reading]);
+        const key = reading === undefined ? undefined : JSON.stringify([name, lines, reading]);
         const kept = settleLastRead(sample, key, reuse);
         if (kept !== undefined) {
             inputData.addInput(kept);
             phases.reused = true;
         } else {
             try {
-                await input.addSource({ name, samples: [sample] });
+                await input.addSource(lines ? { name, samples: [sample], jsonLines: true } : { name, samples: [sample] });
             } catch (e) {
                 // A failed read keeps nothing.
                 releaseJSONInput(input);
@@ -181,15 +192,18 @@ let lastFile;
 
 /**
  * The input's sample: `text`, or the file's, read once per file (its bytes
- * on the WebAssembly worker for a JSON file, else its text). Throws
- * { title, message, link? } if it cannot be read.
+ * on the WebAssembly worker for a JSON or JSON Lines file, else its text);
+ * for JSON Lines on the TypeScript worker, the JSON array of their values
+ * (see the top). Throws { title, message, link? } if it cannot be read.
  */
 async function inputSample({ kind, text, file }) {
-    const bytes = boot.engine === "wasm" && kind !== "schema";
-    const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, bytes]);
+    // What the sample is made of: the file's bytes, its text, or (JSON
+    // Lines for quicktype) the array made from its bytes.
+    const form = boot.engine === "wasm" && kind !== "schema" ? "bytes" : kind === "jsonl" ? "array" : "text";
+    const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, form]);
     // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
-    if (file === undefined) return text;
+    if (file === undefined) return form === "array" ? jsonLinesToArray(text) : text;
     if (lastFile !== undefined) return lastFile.sample;
     const large = tooLarge(file.name, file.size);
     if (large !== undefined) throw large;
@@ -198,13 +212,20 @@ async function inputSample({ kind, text, file }) {
     settleLastRead(undefined, undefined, false);
     let read;
     try {
-        read = bytes ? new Uint8Array(await file.arrayBuffer()) : await file.text();
+        read = form === "text" ? await file.text() : new Uint8Array(await file.arrayBuffer());
     } catch (e) {
         throw unreadable(file.name, e);
     }
 
     // Browsers have been seen to read what they cannot hold as "".
-    if (read.length === 0 && file.size > 0) throw unreadable(file.name, new Error(`the browser returned no ${bytes ? "bytes" : "text"}`));
+    if (read.length === 0 && file.size > 0) throw unreadable(file.name, new Error(`the browser returned no ${form === "text" ? "text" : "bytes"}`));
+    if (form === "array") {
+        // The array, from the bytes; then its text, which is what quicktype's API takes.
+        const array = jsonLinesToArray(read);
+        if (array.length > maxTextBytes) throw tooLarge(file.name, array.length);
+        read = new TextDecoder().decode(array);
+    }
+
     lastFile = { key, sample: read };
     return read;
 }
