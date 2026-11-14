@@ -197,6 +197,9 @@ async fn add_json_source(
         };
         return Ok(input_data.add_source("json", empty, make_input).await?);
     }
+    // A regular file can also be read at any offset: a large top-level
+    // array in it is read on several threads.
+    let read_options = read_options();
     for sample in samples {
         // Read chunk by chunk as it is parsed, like TypeScript's stream:
         // a large file is never held whole.
@@ -205,9 +208,7 @@ async fn add_json_source(
             let reader = SampleReader::new(sample.readable.open_std().map_err(CliError::Io)?);
             JsonSample::ReaderLines(reader)
         } else {
-            // A regular file can also be read at any offset: a large
-            // top-level array in it is read on several threads.
-            let reader = sample.readable.open_sample(read_options());
+            let reader = sample.readable.open_sample(read_options);
             JsonSample::Reader(reader.map_err(CliError::Io)?)
         };
         let one = JsonSourceData {
