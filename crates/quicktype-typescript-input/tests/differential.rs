@@ -26,6 +26,11 @@
 //! Cases listed in `tests/known-differences.txt` are expected to differ; the
 //! test fails if one of them starts to match, so the list stays exact.
 //!
+//! Every answer the session gives without asking the compiler is checked
+//! against the compiler's (`testing::verify_local_answers`), and the
+//! questions the generator still asks one at a time after the prefetch are
+//! counted and bounded ([`MAX_MISSES`]).
+//!
 //! `TS_INPUT_FILTER=<substring>` runs only matching cases;
 //! `TS_INPUT_CORPUS=<dir>` runs another corpus recorded the same way;
 //! `TS_INPUT_DUMP=<dir>` writes `<case>.expected`/`<case>.actual` for every
@@ -35,21 +40,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use quicktype_typescript_input::schema_for_typescript_sources_in;
+use quicktype_typescript_input::testing;
 use quicktype_typescript_input::tsc::locate;
 use serde_json::Value;
-
-fn find_tsc(crate_dir: &Path) -> Option<PathBuf> {
-    if std::env::var_os(locate::TSC_ENV).is_some() {
-        return locate::locate(crate_dir).ok();
-    }
-    if let Ok(exe) = locate::locate(crate_dir) {
-        return Some(exe);
-    }
-    crate_dir.ancestors().find_map(|dir| {
-        let exe = locate::platform_package_exe(&dir.join("quicktype").join("node_modules"));
-        (exe.is_file() && locate::has_pinned_version(&exe)).then_some(exe)
-    })
-}
 
 /// The reference's result for a case, as one comparable string.
 fn expected(dir: &Path) -> String {
@@ -102,7 +95,7 @@ fn actual(dir: &Path, tsc: &Path) -> String {
 #[test]
 fn corpus_matches_reference() {
     let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let Some(tsc) = find_tsc(crate_dir) else {
+    let Some(tsc) = locate::for_tests(crate_dir) else {
         eprintln!(
             "SKIPPED: TypeScript 7.0.2 compiler not found; set {} to run the TypeScript-input differential test",
             locate::TSC_ENV
@@ -131,18 +124,30 @@ fn corpus_matches_reference() {
     cases.sort();
     let queue = Mutex::new(cases.clone());
     let differing = Mutex::new(Vec::new());
+    let misses = Mutex::new(Vec::new());
     let threads = std::thread::available_parallelism()
         .map_or(4, |n| n.get())
         .min(8);
     std::thread::scope(|scope| {
         for _ in 0..threads {
             scope.spawn(|| {
+                // Every answer the session knows without asking is checked
+                // against the compiler's (a difference panics), and the
+                // questions the generator still asks one at a time after the
+                // prefetch are counted.
+                testing::verify_local_answers(true);
+                testing::record_misses(true);
                 loop {
                     let Some(case) = queue.lock().unwrap().pop() else {
                         break;
                     };
                     let dir = corpus.join(&case);
+                    testing::take_misses();
                     let (want, got) = (expected(&dir), actual(&dir, &tsc));
+                    let missed = testing::take_misses();
+                    if !missed.is_empty() {
+                        misses.lock().unwrap().push((case.clone(), missed));
+                    }
                     if want != got {
                         differing.lock().unwrap().push((case, want, got));
                     }
@@ -152,6 +157,8 @@ fn corpus_matches_reference() {
     });
     let mut differing = differing.into_inner().unwrap();
     differing.sort();
+    let mut misses = misses.into_inner().unwrap();
+    misses.sort();
     if let Some(dump) = std::env::var_os("TS_INPUT_DUMP") {
         let dump = PathBuf::from(dump);
         std::fs::create_dir_all(&dump).expect("dump directory");
@@ -199,6 +206,24 @@ fn corpus_matches_reference() {
             }
         }
     }
+    // The prefetch walk mirrors the generator's traversal by hand; when the
+    // two drift apart, the generator's questions go back to one round trip
+    // each, without changing any output. Over the corpus, one question is
+    // left to the generator (the JSDoc tags of the library's `Readonly`
+    // alias, in review-aliased-tuple-labels); a few more means the walk no
+    // longer foresees what the generator asks.
+    let missed: u64 = misses.iter().flat_map(|(_, m)| m.values()).sum();
+    if filter.is_none() && custom_corpus.is_none() && missed > MAX_MISSES {
+        let list: Vec<String> = misses
+            .iter()
+            .map(|(c, m)| format!("  {c}: {m:?}"))
+            .collect();
+        problems.push(format!(
+            "the generator asked the compiler {missed} questions the prefetch did not foresee \
+             (at most {MAX_MISSES} expected):\n{}",
+            list.join("\n")
+        ));
+    }
     assert!(
         problems.is_empty(),
         "{} unexpected results:\n{}",
@@ -206,3 +231,6 @@ fn corpus_matches_reference() {
         problems.join("\n")
     );
 }
+
+/// Questions the generator may ask the compiler itself over the corpus.
+const MAX_MISSES: u64 = 2;
