@@ -171,6 +171,10 @@ const SCAN_MEMBERS: usize = 16;
 /// Tapes of up to this many nodes (32 KiB) are kept for the next sample.
 const KEEP_NODES: usize = 1 << 12;
 
+/// The least spare room, in bytes, for which a tape is shrunk before it is
+/// committed (see [`read_string_sample_into`]).
+const SHRINK_SPARE: usize = 1 << 20;
+
 /// The key table is kept for the next sample while it has at most this
 /// many keys, of at most [`KEEP_KEY_BYTES`] of text.
 const KEEP_KEYS: usize = 1 << 12;
@@ -358,6 +362,12 @@ enum Kind {
     Text,
     /// A string with escapes, decoded: `a..a + b` in the decoded buffer.
     Decoded,
+    /// A [`Kind::Text`] longer than `b` holds ([`MAX_INLINE`]): `a..a +
+    /// long[b]` in the text, its length in the tape's side table.
+    LongText,
+    /// A [`Kind::Decoded`] longer than `b` holds: `a..a + long[b]` in the
+    /// decoded buffer.
+    LongDecoded,
     /// An object key: key `a` of the key table, or [`PROTO`].
     Key,
     /// An object; its content (keys and values) ends before node `a`; `b`
@@ -367,8 +377,10 @@ enum Kind {
     Array,
 }
 
-/// The kinds by their number in a [`Node`].
-const KINDS: [Kind; 10] = [
+/// The kinds by their number in a [`Node`]: all four bits' worth, so that
+/// a node's kind is found without a bounds check (the last four are never
+/// made).
+const KINDS: [Kind; 16] = [
     Kind::Null,
     Kind::False,
     Kind::True,
@@ -376,9 +388,15 @@ const KINDS: [Kind; 10] = [
     Kind::Double,
     Kind::Text,
     Kind::Decoded,
+    Kind::LongText,
+    Kind::LongDecoded,
     Kind::Key,
     Kind::Object,
     Kind::Array,
+    Kind::Null,
+    Kind::Null,
+    Kind::Null,
+    Kind::Null,
 ];
 
 /// The bits of [`Node`]'s second word that hold `b`; the kind is in the
@@ -386,13 +404,14 @@ const KINDS: [Kind; 10] = [
 const B_BITS: u32 = 28;
 const B_MASK: u32 = (1 << B_BITS) - 1;
 
-/// The longest string the tape holds, in bytes (256 MiB; 64 KiB in tests,
-/// so that they can reach it): a sample with a longer one is read whole,
-/// as a text too long for the tape's offsets is.
-const MAX_STRING: u32 = if cfg!(test) { 1 << 16 } else { B_MASK };
+/// The longest string a node holds the length of, in bytes (256 MiB; 64
+/// KiB in tests, so that they reach it): a longer one's length goes to the
+/// tape's side table ([`Kind::LongText`], [`Kind::LongDecoded`]).
+const MAX_INLINE: u32 = if cfg!(test) { 1 << 16 } else { B_MASK };
 
-/// A tape node, of 8 bytes: its kind, `a`, and `b` (a string's length, or
-/// whether an object is reordered), which is at most [`B_MASK`].
+/// A tape node, of 8 bytes: its kind, `a`, and `b` (a string's length or
+/// its index in the side table, or whether an object is reordered), which
+/// is at most [`B_MASK`].
 #[derive(Clone, Copy, Debug)]
 struct Node {
     a: u32,
@@ -421,8 +440,6 @@ impl Node {
 enum Stop {
     Syntax,
     Declined(Decline),
-    /// A string longer than [`MAX_STRING`].
-    TooLong,
 }
 
 /// An object whose members are being recorded.
@@ -456,6 +473,10 @@ struct Recorder<'t> {
     bytes: &'t [u8],
     pos: usize,
     nodes: Vec<Node>,
+    /// The lengths of the strings longer than a node holds
+    /// ([`MAX_INLINE`]), which [`Kind::LongText`] and [`Kind::LongDecoded`]
+    /// nodes index.
+    long: Vec<u32>,
     /// The decoded strings with escapes, back to back.
     decoded: String,
     /// The current key, if it has escapes.
@@ -483,6 +504,7 @@ impl<'t> Recorder<'t> {
             bytes: text.as_bytes(),
             pos: 0,
             nodes: std::mem::take(&mut sink.string_reader().spare_nodes),
+            long: Vec::new(),
             decoded: String::new(),
             key: String::new(),
             limits,
@@ -510,7 +532,8 @@ impl<'t> Recorder<'t> {
     fn close(&mut self, node: usize, reordered: bool) {
         let end = self.nodes.len() as u32;
         let n = &mut self.nodes[node];
-        *n = Node::new(n.kind(), end, u32::from(reordered));
+        n.a = end;
+        n.kind_b = n.kind_b & !B_MASK | u32::from(reordered);
     }
 
     /// Opens a container one level deeper than `depth` containers.
@@ -564,18 +587,28 @@ impl<'t> Recorder<'t> {
                 Some(b'"') => {
                     self.pos += 1;
                     let start = self.decoded.len();
-                    let (kind, a, b) = match self.string(false)? {
-                        Some((a, b)) => (Kind::Text, a, b),
+                    let (kind, a, len) = match self.string(false)? {
+                        Some((a, len)) => (Kind::Text, a, len),
                         None => (
                             Kind::Decoded,
                             start as u32,
                             (self.decoded.len() - start) as u32,
                         ),
                     };
-                    if b > MAX_STRING {
-                        return Err(Stop::TooLong);
+                    if len <= MAX_INLINE {
+                        self.push(kind, a, len);
+                    } else {
+                        // At most a few: each is longer than 2^28 bytes of
+                        // the text (but in tests).
+                        let index = self.long.len() as u32;
+                        self.long.push(len);
+                        let long = if kind == Kind::Text {
+                            Kind::LongText
+                        } else {
+                            Kind::LongDecoded
+                        };
+                        self.push(long, a, index);
                     }
-                    self.push(kind, a, b);
                 }
                 Some(b'-' | b'0'..=b'9') => {
                     let kind = self.number(sink)?;
@@ -966,6 +999,7 @@ impl<'t> Recorder<'t> {
 struct Tape<'t> {
     text: &'t str,
     nodes: &'t [Node],
+    long: &'t [u32],
     decoded: &'t str,
 }
 
@@ -1048,10 +1082,19 @@ impl Tape<'_> {
                 Kind::Integer => sink.commit_number(false)?,
                 Kind::Double => sink.commit_number(true)?,
                 Kind::Text => {
-                    sink.commit_string(&self.text[node.a as usize..(node.a + node.b()) as usize])?
+                    sink.commit_string(&self.text[node.a as usize..][..node.b() as usize])?
                 }
-                Kind::Decoded => sink
-                    .commit_string(&self.decoded[node.a as usize..(node.a + node.b()) as usize])?,
+                Kind::Decoded => {
+                    sink.commit_string(&self.decoded[node.a as usize..][..node.b() as usize])?
+                }
+                Kind::LongText => {
+                    let len = self.long[node.b() as usize] as usize;
+                    sink.commit_string(&self.text[node.a as usize..][..len])?
+                }
+                Kind::LongDecoded => {
+                    let len = self.long[node.b() as usize] as usize;
+                    sink.commit_string(&self.decoded[node.a as usize..][..len])?
+                }
                 Kind::Object => {
                     sink.push_object_context()?;
                     frames.push(if node.b() != 0 {
@@ -1147,19 +1190,25 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
     let recorded = recorder.record(sink);
     drop(span);
     let Recorder {
-        mut nodes, decoded, ..
+        mut nodes,
+        long,
+        decoded,
+        ..
     } = recorder;
     let result = match recorded {
         Ok(()) => {
             // A large tape is kept only while it is committed, beside the
-            // compressed form that grows meanwhile: without the room its
-            // doubling left (in WebAssembly, freed in place for the form).
-            if nodes.capacity() > KEEP_NODES {
+            // compressed form that grows meanwhile: when its doubling left
+            // a lot of room (a quarter of it or more, and at least 1 MiB),
+            // without it (in WebAssembly, freed in place for the form).
+            let spare = nodes.capacity() - nodes.len();
+            if spare >= nodes.capacity() / 4 && spare * size_of::<Node>() >= SHRINK_SPARE {
                 nodes.shrink_to_fit();
             }
             let tape = Tape {
                 text,
                 nodes: &nodes,
+                long: &long,
                 decoded: &decoded,
             };
             let span = crate::trace::span("read: commit");
@@ -1171,9 +1220,8 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
             committed.map_err(|e| ReadStringError::Parse(ParseError::Quicktype(e)))
         }
         Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
-        // V8's message, from the port of its parser; or a string too long
-        // for the tape.
-        Err(Stop::Syntax | Stop::TooLong) => read_whole(sink, text, limits),
+        // V8's message, from the port of its parser.
+        Err(Stop::Syntax) => read_whole(sink, text, limits),
     };
     sink.string_reader().finish_sample(nodes);
     result

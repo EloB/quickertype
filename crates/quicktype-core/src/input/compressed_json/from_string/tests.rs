@@ -486,8 +486,21 @@ fn syntax_errors_commit_nothing() {
 #[test]
 fn tape_nodes_keep_their_kind() {
     assert_eq!(std::mem::size_of::<Node>(), 8);
-    for (i, kind) in KINDS.into_iter().enumerate() {
-        assert_eq!(kind as usize, i);
+    for kind in [
+        Kind::Null,
+        Kind::False,
+        Kind::True,
+        Kind::Integer,
+        Kind::Double,
+        Kind::Text,
+        Kind::Decoded,
+        Kind::LongText,
+        Kind::LongDecoded,
+        Kind::Key,
+        Kind::Object,
+        Kind::Array,
+    ] {
+        assert_eq!(KINDS[kind as usize], kind);
         for b in [0, 1, B_MASK] {
             let node = Node::new(kind, u32::MAX - 1, b);
             assert_eq!((node.kind(), node.a, node.b()), (kind, u32::MAX - 1, b));
@@ -495,50 +508,35 @@ fn tape_nodes_keep_their_kind() {
     }
 }
 
-/// A sample with a string longer than the tape holds ([`MAX_STRING`]
-/// bytes, 64 KiB in tests), with or without escapes, is read whole: the
-/// same values, or with limits, declined with nothing committed. A string
-/// of exactly that length is on the tape.
+/// A string longer than a node holds the length of ([`MAX_INLINE`] bytes,
+/// 64 KiB in tests), with or without escapes, has its length in the
+/// tape's side table: the sample is read on the tape, within limits too,
+/// as the value read whole is read. Long URIs show that their text is
+/// whole (the string table keeps it), beside URIs of exactly the limit and
+/// short strings after them.
 #[test]
-fn strings_too_long_for_the_tape() {
-    let long = "x".repeat(MAX_STRING as usize + 1);
-    for text in [
-        format!(r#"[{{"a": "{long}", "b": "short"}}, "{long}é", "s"]"#),
-        format!(r#"{{"a": ["\n{long}"], "b": 1}}"#),
-    ] {
-        let mut tape = reader(None, false);
-        let mut whole = reader(None, false);
-        let read = tape
-            .read_string_sample(&text, StringSampleLimits::default())
-            .unwrap();
-        let parsed = parse_string_value_into(&mut whole, &text).unwrap();
-        assert_eq!(dump(&tape, read), dump(&whole, parsed));
-        assert_eq!(tape.to_tables(&[]), whole.to_tables(&[]));
-        let limits = StringSampleLimits {
-            max_depth: Some(10),
-            lone_surrogates: false,
-        };
-        let mut r = reader(None, false);
-        assert_eq!(
-            r.read_string_sample(&text, limits),
-            Err(ReadStringError::Declined(Decline::Unchecked))
-        );
-        assert_eq!(
-            r.table_counts(),
-            crate::input::compressed_json::TableCounts::default()
-        );
-    }
-    let mut r = reader(None, false);
-    let fits = format!(
-        r#"["{}", "\n{}"]"#,
-        "x".repeat(MAX_STRING as usize),
-        "y".repeat(MAX_STRING as usize - 1)
-    );
+fn strings_longer_than_a_node_holds() {
+    let long = "x".repeat(MAX_INLINE as usize + 1);
+    let fits = "y".repeat(MAX_INLINE as usize - "https://h/.png".len());
     let limits = StringSampleLimits {
         max_depth: Some(10),
         lone_surrogates: false,
     };
-    assert!(r.read_string_sample(&fits, limits).is_ok());
+    for text in [
+        format!(
+            r#"[{{"a": "https://h/{long}.png", "b": "short"}}, "{long}é", "s", "https://h/{fits}.png"]"#
+        ),
+        format!(
+            r#"{{"a": ["https:\/\/h\/{long}.gif", "\n{long}"], "b": "https:\/\/h\/{fits}.jpg", "c": "a"}}"#
+        ),
+    ] {
+        let mut tape = reader(None, false);
+        let mut whole = reader(None, false);
+        let read = tape.read_string_sample(&text, limits).unwrap();
+        let parsed = parse_string_value_into(&mut whole, &text).unwrap();
+        assert_eq!(dump(&tape, read), dump(&whole, parsed));
+        assert_eq!(tape.to_tables(&[]), whole.to_tables(&[]));
+    }
 }
 
 /// The tape and the key table of a large sample are not kept; those of a
