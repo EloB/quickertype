@@ -15,9 +15,10 @@ for every input cannot be guaranteed: that would require replaying TS 5's checke
 likely.
 
 **Implemented** in `crates/quicktype-typescript-input` (§10), following §7. The refined creation-order replay
-closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on all 474 cases
-of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation and
-22 `review-*` cases from the code review).
+closes the six remaining misses: the Rust port matches the reference on **all 596 spike cases** and on 477 of the 479
+cases of the committed differential corpus (`tests/corpus`, including 30 `order-*` probes of the union-order emulation
+and 27 `review-*` cases from the code reviews); the other two are inherited documentation that TS 7 resolves
+differently (§10, known divergences).
 §10 lists what is still known to diverge.
 
 ## 1. The reference pipeline
@@ -390,7 +391,7 @@ session answers once; before the generator runs, `tjs/prefetch` walks the type g
 first, and asks for each type and symbol it reaches what the generator may need (names, members, index signatures,
 properties and their types, JSDoc) in one pipelined batch per step, with `getTypesOfSymbols`,
 `getSymbolsAtLocations` and `getTypeAtLocations` merging many queries into one request. The generator then runs on
-the answers: 29 requests one at a time and 8 to 14 batches, whatever the size of the input (see
+the answers: 29 requests one at a time and 8 to 15 batches, whatever the size of the input (see
 [BENCHMARKS.md](../BENCHMARKS.md#typescript-input)). Three answers are known without asking, from TypeScript 7.0.2's
 code: `getJsDocTags` is empty when no declaration, its initializer or an ancestor has a JSDoc with tags
 (`GetSymbolJSDocTags` reads the declaration's JSDoc and the hosts `GetNextJSDocCommentLocation` walks to, and inherits
@@ -408,7 +409,7 @@ name, uris and stderr lines with `expected.json`, recorded from the reference by
 skipped with a message otherwise. A whole case takes 0.2–0.4 s in a release build, including the compiler start and
 the full semantic check, against about 3 s for the reference CLI.
 
-**Known divergences** (none occurs in the corpus):
+**Known divergences** (only the first occurs in the corpus):
 
 * Union order is a replay, not the checker: classes' eager checks (property initializers, implements clauses),
   property types resolved by base-type assignability checks for `extends`, types first created inside function or
@@ -417,6 +418,10 @@ the full semantic check, against about 3 s for the reference CLI.
 * Names of generic instantiations with union arguments use TS 7's member order (`Box<A | B>`).
 * A file outside the working directory that is *imported* (not a root file) gets TS 7's TS6059 text, with absolute
   paths.
+* Inherited documentation: TS 5.9's `getDocumentationComment` gives a class or interface member the documentation of
+  the base's member when the member's own comment has no text (no JSDoc, one with tags only, or an empty one), and
+  looks through `implements` too; TS 7 inherits only for a member without JSDoc of its own, through `extends`
+  (`review-inherited-docs`, `review-inherited-class`, listed in `tests/known-differences.txt`).
 * JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt). Neither version
   inherits tags from a base declaration: an overriding property (in an interface that extends, or a class that
   extends or implements) keeps only its own, in both; TS 7.0.2's `GetSymbolJSDocTags` has no lookup of bases.

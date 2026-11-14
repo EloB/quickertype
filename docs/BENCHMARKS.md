@@ -993,12 +993,12 @@ then runs on the answers; see the commits for how.
 
 | Input | Main: requests (all round trips) | Now: requests | one at a time | pipelined batches | tsc's own processing, main → now |
 |---|---:|---:|---:|---:|---:|
-| Flat 500 | 45,480 | 2,636 | 29 | 8 | 272 → 182 ms |
-| Flat 2,000 | 181,859 | 10,139 | 29 | 8 | 616 → 287 ms |
-| Flat 10,000 | 909,165 | 50,156 | 29 | 8 | 2,558 → 858 ms |
-| Typings 1,000 | 123,216 | 26,150 | 29 | 14 | 534 → 299 ms |
-| Typings 3,000 | 370,574 | 77,378 | 29 | 14 | 1,346 → 648 ms |
-| Typings 10,000 | 1,241,162 | 258,465 | 29 | 14 | 4,304 → 1,957 ms |
+| Flat 500 | 45,480 | 2,645 | 29 | 8 | 272 → 182 ms |
+| Flat 2,000 | 181,859 | 10,148 | 29 | 8 | 616 → 287 ms |
+| Flat 10,000 | 909,165 | 50,166 | 29 | 8 | 2,558 → 858 ms |
+| Typings 1,000 | 123,216 | 27,130 | 29 | 15 | 534 → 299 ms |
+| Typings 3,000 | 370,574 | 80,237 | 29 | 15 | 1,346 → 648 ms |
+| Typings 10,000 | 1,241,162 | 267,998 | 29 | 15 | 4,304 → 1,957 ms |
 
 The 29 are the session (`initialize`, `updateSnapshot`), the
 diagnostics, the file list and ASTs, and a few one-off questions; the
@@ -1006,7 +1006,10 @@ batches are the steps of the walk over the type graph, so neither grows
 with the input (the `round_trips_do_not_grow_with_the_input` test keeps
 it so). `QUICKTYPE_TSC_STATS=1` prints these counts per method. The
 compiler's own processing time was measured with `tsc --api --timing`
-and its `getServerTiming` request, which the statistics do not use.
+and its `getServerTiming` request, which the statistics do not use,
+before the walk took in the library types, accessors and type parameters
+the generator also walks (3.5% more requests on the typings, 9 more on
+the flat input).
 
 **Time.** Best of 3 interleaved runs (quicktype, main, now, one after
 the other per input); wall time and peak RSS. Load average 2.7 to 4.3 on
