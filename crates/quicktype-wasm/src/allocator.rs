@@ -25,15 +25,21 @@
 //! When the current slab fills up, it leaves the list, and the fullest of
 //! the next [`PICK`] becomes current: allocations go where blocks are
 //! already in use, and the emptier slabs get a chance to empty. A full slab
-//! goes back on the list, second, when one of its blocks is freed. A slab
-//! whose blocks are all free leaves its list for a pool of empty slabs,
-//! unless it is its size's last one (so that allocating and freeing one
-//! block over and over stays on the fast paths). Any size takes from the
-//! pool, the lowest first, before asking dlmalloc for a new slab. The pool
-//! keeps the [`POOL`] lowest and gives the others back to dlmalloc, so the
-//! slabs it holds sit low in the heap, out of the way of large blocks. What
-//! a large run used for small blocks is free for anything once the blocks
-//! are freed, and the memory grows about as far as with dlmalloc alone
+//! goes back on the list, second, once an eighth of its blocks are free:
+//! a slab with a block or two free would fill at once and send the next
+//! allocation down the slow path again (when every so many elements of a
+//! large collection are dropped, every allocation would).
+//!
+//! A slab whose blocks are all free leaves its list for a pool of empty
+//! slabs, unless it is its size's last one (so that allocating and freeing
+//! one block over and over stays on the fast paths). When a slab goes to
+//! the pool, a size whose last slab is empty and higher takes it instead,
+//! and its own goes to the pool. A new slab comes from the pool (the lowest
+//! first) before dlmalloc. The pool keeps the [`POOL`] lowest and gives the
+//! others back to dlmalloc, so the empty slabs kept sit low in the heap,
+//! out of the way of large blocks. What a
+//! large run used for small blocks is free for anything once the blocks are
+//! freed, and the memory grows about as far as with dlmalloc alone
 //! (docs/BENCHMARKS.md, "Small blocks from slabs").
 //!
 //! A slab is 8 bytes short of 16 KiB: dlmalloc puts a chunk's 8-byte header
@@ -208,6 +214,18 @@ mod system {
     #[cfg(target_arch = "wasm32")]
     use super::{grow_ahead, memory_size};
 
+    /// Runs `f`, an allocation from `System`, and grows the memory ahead
+    /// if it grew (in WebAssembly).
+    #[inline(always)]
+    fn growing(f: impl FnOnce() -> *mut u8) -> *mut u8 {
+        #[cfg(target_arch = "wasm32")]
+        let before = memory_size::<0>();
+        let ptr = f();
+        #[cfg(target_arch = "wasm32")]
+        grow_ahead(before);
+        ptr
+    }
+
     /// `System.alloc`.
     ///
     /// # Safety
@@ -215,13 +233,8 @@ mod system {
     /// As [`GlobalAlloc::alloc`].
     #[inline]
     pub(super) unsafe fn alloc(layout: Layout) -> *mut u8 {
-        #[cfg(target_arch = "wasm32")]
-        let before = memory_size::<0>();
         // SAFETY: the caller's contract.
-        let ptr = unsafe { System.alloc(layout) };
-        #[cfg(target_arch = "wasm32")]
-        grow_ahead(before);
-        ptr
+        growing(|| unsafe { System.alloc(layout) })
     }
 
     /// `System.alloc_zeroed`.
@@ -231,13 +244,8 @@ mod system {
     /// As [`GlobalAlloc::alloc_zeroed`].
     #[inline]
     pub(super) unsafe fn alloc_zeroed(layout: Layout) -> *mut u8 {
-        #[cfg(target_arch = "wasm32")]
-        let before = memory_size::<0>();
         // SAFETY: the caller's contract.
-        let ptr = unsafe { System.alloc_zeroed(layout) };
-        #[cfg(target_arch = "wasm32")]
-        grow_ahead(before);
-        ptr
+        growing(|| unsafe { System.alloc_zeroed(layout) })
     }
 
     /// `System.realloc`.
@@ -247,13 +255,8 @@ mod system {
     /// As [`GlobalAlloc::realloc`].
     #[inline]
     pub(super) unsafe fn realloc(ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-        #[cfg(target_arch = "wasm32")]
-        let before = memory_size::<0>();
         // SAFETY: the caller's contract.
-        let new = unsafe { System.realloc(ptr, layout, new_size) };
-        #[cfg(target_arch = "wasm32")]
-        grow_ahead(before);
-        new
+        growing(|| unsafe { System.realloc(ptr, layout, new_size) })
     }
 
     /// `System.dealloc`.
@@ -295,6 +298,9 @@ struct Slab {
     used: u32,
     /// Whether the slab is on its size's list.
     listed: bool,
+    /// When full (off its list): the most blocks handed out with which it
+    /// goes back on the list, an eighth of its blocks free.
+    relist: u16,
     /// The neighbours on that list.
     next: *mut Slab,
     prev: *mut Slab,
@@ -302,6 +308,17 @@ struct Slab {
 
 /// Where blocks start in a slab: after the header, aligned to 8.
 const FIRST: usize = (std::mem::size_of::<Slab>() + 7) & !7;
+
+/// Whether listed slab `s` is the only one on its list.
+///
+/// # Safety
+///
+/// `s` is live.
+#[inline(always)]
+unsafe fn is_only(s: *mut Slab) -> bool {
+    // SAFETY: the caller's contract.
+    unsafe { (*s).prev.is_null() && (*s).next.is_null() }
+}
 
 /// Small blocks from slabs, the others from [`System`].
 pub(crate) struct Heap {
@@ -312,6 +329,7 @@ pub(crate) struct Heap {
     pool: [*mut Slab; POOL],
     pooled: usize,
     /// Slabs taken from [`System`] and not given back.
+    #[cfg(test)]
     held: usize,
 }
 
@@ -322,6 +340,7 @@ impl Heap {
             lists: [null_mut(); CLASSES],
             pool: [null_mut(); POOL],
             pooled: 0,
+            #[cfg(test)]
             held: 0,
         }
     }
@@ -449,28 +468,31 @@ impl Heap {
     }
 
     /// The size's current slab is full, or there is none: drops it from
-    /// the list, makes the fullest of the next [`PICK`] slabs current (or a
-    /// slab from the pool or from `System`), and takes a block from it.
+    /// the list, makes the fullest of the next [`PICK`] current (or a new
+    /// slab, [`Heap::start_slab`]), and takes a block from it (through
+    /// [`Heap::alloc_small`], now that the current slab has room).
     #[cold]
     #[inline(never)]
     unsafe fn alloc_from_next(&mut self, c: usize) -> *mut u8 {
-        // SAFETY: listed and pooled slabs are live; listed slabs other than
-        // the current one have room.
+        // SAFETY: listed slabs are live, and those other than the current
+        // one have room.
         unsafe {
             let full = self.lists[c];
             if !full.is_null() {
                 self.unlink(full, c);
                 (*full).listed = false;
             }
-            let mut s = self.lists[c];
-            if s.is_null() {
-                s = self.start_slab(c);
+            let first = self.lists[c];
+            let s = if first.is_null() {
+                let s = self.start_slab(c);
                 if s.is_null() {
                     return null_mut();
                 }
+                s
             } else {
-                let mut fullest = s;
-                let mut other = (*s).next;
+                // The fullest of the next few (all have an eighth free).
+                let mut fullest = first;
+                let mut other = (*first).next;
                 for _ in 1..PICK {
                     if other.is_null() {
                         break;
@@ -480,54 +502,53 @@ impl Heap {
                     }
                     other = (*other).next;
                 }
-                if fullest != s {
+                if fullest != first {
                     self.unlink(fullest, c);
                     self.push_front(fullest, c);
                 }
-                s = fullest;
-            }
-            // It has room.
-            let block = (*s).free;
-            if !block.is_null() {
-                (*s).free = *block.cast::<*mut u8>();
-                (*s).used += 1;
-                return block;
-            }
-            let bump = (*s).bump;
-            (*s).bump = bump + (*s).size;
-            (*s).used += 1;
-            bump as *mut u8
+                fullest
+            };
+            debug_assert_eq!(self.lists[c], s);
+            self.alloc_small(c)
         }
     }
 
     /// A new current slab for size class `c`, whose list is empty: the
-    /// lowest from the pool, or one from `System` (null if there is no
-    /// memory for one). It has no blocks handed out yet.
+    /// lowest from the pool, else one from `System` (null if there is no
+    /// memory for one).
     unsafe fn start_slab(&mut self, c: usize) -> *mut Slab {
         // SAFETY: pooled slabs are live; a new one is a fresh block of
         // `SLAB_LAYOUT`.
         unsafe {
-            let s = if self.pooled == 0 {
+            let s = if self.pooled > 0 {
+                self.take_lowest_pooled()
+            } else {
                 let slab = system::alloc(SLAB_LAYOUT);
                 if slab.is_null() {
                     return null_mut();
                 }
-                self.held += 1;
-                slab.cast::<Slab>()
-            } else {
-                let pool = &mut self.pool[..self.pooled];
-                let mut low = 0;
-                for (i, &p) in pool.iter().enumerate() {
-                    if p < pool[low] {
-                        low = i;
-                    }
+                #[cfg(test)]
+                {
+                    self.held += 1;
                 }
-                let s = pool[low];
-                pool[low] = pool[pool.len() - 1];
-                self.pooled -= 1;
-                s
+                slab.cast::<Slab>()
             };
-            let size = (c + 1) * 8;
+            Self::format(s, c);
+            self.lists[c] = s;
+            s
+        }
+    }
+
+    /// Writes the header of empty slab `s` for size class `c`, listed and
+    /// alone on its list.
+    ///
+    /// # Safety
+    ///
+    /// `s` is a live slab with no blocks handed out.
+    unsafe fn format(s: *mut Slab, c: usize) {
+        let size = (c + 1) * 8;
+        // SAFETY: the caller's contract.
+        unsafe {
             s.write(Slab {
                 free: null_mut(),
                 bump: s as usize + FIRST,
@@ -535,11 +556,13 @@ impl Heap {
                 size,
                 used: 0,
                 listed: true,
+                relist: {
+                    let capacity = (SLAB_BYTES - FIRST) / size;
+                    (capacity - (capacity / 8).max(1)) as u16
+                },
                 next: null_mut(),
                 prev: null_mut(),
             });
-            self.lists[c] = s;
-            s
         }
     }
 
@@ -559,22 +582,27 @@ impl Heap {
             (*s).free = block;
             let used = (*s).used - 1;
             (*s).used = used;
-            // Back on the list, or empty and not the size's last slab.
-            if !(*s).listed || (used == 0 && !((*s).prev.is_null() && (*s).next.is_null())) {
+            // Full (perhaps back on the list), or empty and not the size's
+            // last slab (off to the pool).
+            if !(*s).listed || (used == 0 && !is_only(s)) {
                 self.freed_into(s, c);
             }
         }
     }
 
     /// A block was freed into slab `s` (of size class `c`), which was full
-    /// or is now empty: back on its list (second), or off to the pool or
-    /// `System`, unless it is its size's last slab.
+    /// or is empty: back on its list (second) once an eighth of it is free,
+    /// or off to the pool, unless it is the size's last.
     #[cold]
     #[inline(never)]
     unsafe fn freed_into(&mut self, s: *mut Slab, c: usize) {
-        // SAFETY: `s` and the slabs on its list are live.
+        // SAFETY: `s`, the slabs on its list and pooled slabs are live.
         unsafe {
             if !(*s).listed {
+                // Back once an eighth of it is free.
+                if (*s).used > u32::from((*s).relist) {
+                    return;
+                }
                 let current = self.lists[c];
                 if current.is_null() {
                     self.push_front(s, c);
@@ -593,27 +621,73 @@ impl Heap {
                     return;
                 }
             }
-            // Empty. The size's last slab stays.
-            if (*s).prev.is_null() && (*s).next.is_null() {
+            // Empty: the size's last slab stays.
+            if is_only(s) {
                 return;
             }
             self.unlink(s, c);
-            // Into the pool, which keeps the lowest empty slabs; the highest
-            // goes back to `System`.
-            if self.pooled < POOL {
-                self.pool[self.pooled] = s;
-                self.pooled += 1;
-                return;
+            self.pool_put(s);
+        }
+    }
+
+    /// Puts empty slab `s`, on no list, into the pool, which keeps the
+    /// lowest empty slabs; the highest goes back to `System`. If a size's
+    /// last slab is empty and higher than `s`, the size takes `s` instead,
+    /// and its slab goes to the pool (the highest such, so that the slabs
+    /// kept empty sit as low as they can).
+    ///
+    /// # Safety
+    ///
+    /// `s` is a live slab with no blocks handed out, on no list.
+    unsafe fn pool_put(&mut self, mut s: *mut Slab) {
+        let mut owner = CLASSES;
+        let mut high = s;
+        for (k, &h) in self.lists.iter().enumerate() {
+            // SAFETY: listed slabs are live.
+            if !h.is_null() && h > high && unsafe { (*h).used == 0 && is_only(h) } {
+                high = h;
+                owner = k;
             }
-            let mut high = s;
-            for p in &mut self.pool {
-                if *p > high {
-                    std::mem::swap(p, &mut high);
-                }
+        }
+        if owner < CLASSES {
+            // SAFETY: `s` is empty and live (the caller's contract).
+            unsafe { Self::format(s, owner) };
+            self.lists[owner] = s;
+            s = high;
+        }
+        if self.pooled < POOL {
+            self.pool[self.pooled] = s;
+            self.pooled += 1;
+            return;
+        }
+        let mut high = s;
+        for p in &mut self.pool {
+            if *p > high {
+                std::mem::swap(p, &mut high);
             }
-            system::dealloc(high.cast(), SLAB_LAYOUT);
+        }
+        // SAFETY: the caller's contract; a slab came from `System` with
+        // `SLAB_LAYOUT`.
+        unsafe { system::dealloc(high.cast(), SLAB_LAYOUT) };
+        #[cfg(test)]
+        {
             self.held -= 1;
         }
+    }
+
+    /// Takes the lowest slab out of the pool, which is not empty.
+    fn take_lowest_pooled(&mut self) -> *mut Slab {
+        let pool = &mut self.pool[..self.pooled];
+        let mut low = 0;
+        for (i, &p) in pool.iter().enumerate() {
+            if p < pool[low] {
+                low = i;
+            }
+        }
+        let s = pool[low];
+        pool[low] = pool[pool.len() - 1];
+        self.pooled -= 1;
+        s
     }
 
     /// Takes listed slab `s` off size class `c`'s list.

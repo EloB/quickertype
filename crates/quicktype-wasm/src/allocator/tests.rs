@@ -24,6 +24,15 @@ fn slab_of(block: *mut u8) -> *mut Slab {
     (block as usize & !(SLAB - 1)) as *mut Slab
 }
 
+/// Checks that a small block lies within its slab's blocks.
+fn in_its_slab(p: *mut u8, size: usize, align: usize) {
+    if is_small(size, align) {
+        let s = slab_of(p) as usize;
+        assert!(p as usize >= s + FIRST && p as usize + size <= s + SLAB_BYTES);
+        assert_eq!((p as usize - s - FIRST) % ((class(size) + 1) * 8), 0);
+    }
+}
+
 /// How many blocks of `size` bytes a slab holds.
 fn per_slab(size: usize) -> usize {
     (SLAB_BYTES - FIRST) / size
@@ -85,11 +94,11 @@ fn freeing_many_slabs_keeps_the_lowest_in_the_pool() {
     }
     // The last slab to empty stays its size's; the pool keeps the 32
     // lowest of the others, and the rest went back.
-    let last = heap.lists[c];
-    assert_eq!(last, all[slabs - 1]);
+    let kept = heap.lists[c];
+    assert_eq!(kept, all[slabs - 1]);
     assert_eq!(heap.pooled, POOL);
     assert_eq!(heap.held, POOL + 1);
-    let mut others: Vec<*mut Slab> = all.iter().copied().filter(|&s| s != last).collect();
+    let mut others: Vec<*mut Slab> = all.iter().copied().filter(|&s| s != kept).collect();
     others.sort();
     let mut pooled = heap.pool.to_vec();
     pooled.sort();
@@ -202,34 +211,91 @@ fn allocating_and_freeing_one_block_keeps_its_slab() {
 }
 
 #[test]
-fn the_fullest_slab_becomes_current() {
+fn a_full_slab_comes_back_with_an_eighth_free_and_the_fullest_goes_next() {
     let mut heap = Heap::new();
     let size = 128;
     let n = per_slab(size);
+    let eighth = (n / 8).max(1);
     let l = layout(size, 8);
     unsafe {
-        let blocks: Vec<*mut u8> = (0..3 * n).map(|_| heap.alloc(l)).collect();
-        let (s1, s2, s3) = (
-            slab_of(blocks[0]),
-            slab_of(blocks[n]),
-            slab_of(blocks[2 * n]),
-        );
-        // Half of the first slab freed, one block of the second.
-        for &p in &blocks[..n / 2] {
+        let blocks: Vec<*mut u8> = (0..4 * n).map(|_| heap.alloc(l)).collect();
+        let slabs: Vec<*mut Slab> = (0..4).map(|k| slab_of(blocks[k * n])).collect();
+        // The fourth is current and full. Freeing in the first: it stays
+        // off its list until an eighth of it is free.
+        for (k, &p) in blocks[..eighth].iter().enumerate() {
+            assert!(!(*slabs[0]).listed);
+            heap.dealloc(p, l);
+            assert_eq!((*slabs[0]).listed, k + 1 == eighth);
+        }
+        // A quarter of the second; a block of the third (off its list).
+        let mut freed: Vec<*mut u8> = blocks[..eighth].to_vec();
+        freed.extend_from_slice(&blocks[n..n + n / 4]);
+        freed.push(blocks[2 * n]);
+        for &p in &freed[eighth..] {
             heap.dealloc(p, l);
         }
-        heap.dealloc(blocks[n], l);
-        assert_eq!(heap.lists[class(size)], s3);
-        // The third is full: the second (fullest) is next, then the first.
-        let p = heap.alloc(l);
-        assert_eq!(slab_of(p), s2);
-        let q = heap.alloc(l);
-        assert_eq!(slab_of(q), s1);
-        heap.dealloc(p, l);
-        heap.dealloc(q, l);
-        for &b in blocks[n / 2..].iter().filter(|&&b| b != blocks[n]) {
-            heap.dealloc(b, l);
+        assert!(!(*slabs[2]).listed);
+        assert_eq!(heap.lists[class(size)], slabs[3]);
+        let held = heap.held;
+        let mut again = Vec::new();
+        let mut alloc = |again: &mut Vec<*mut u8>| {
+            let p = heap.alloc(l);
+            again.push(p);
+            slab_of(p)
+        };
+        // The first (fullest), then the second; then a new slab, not the
+        // third.
+        for _ in 0..eighth {
+            assert_eq!(alloc(&mut again), slabs[0]);
         }
+        for _ in 0..n / 4 {
+            assert_eq!(alloc(&mut again), slabs[1]);
+        }
+        let new = alloc(&mut again);
+        assert!(!slabs.contains(&new));
+        assert_eq!(heap.held, held + 1);
+        for p in again
+            .into_iter()
+            .chain(blocks.iter().copied().filter(|b| !freed.contains(b)))
+        {
+            heap.dealloc(p, l);
+        }
+    }
+    release(&mut heap);
+}
+
+#[test]
+fn a_size_with_an_empty_last_slab_takes_a_lower_one_going_to_the_pool() {
+    let mut heap = Heap::new();
+    let (a, b) = (layout(8, 8), layout(32, 8));
+    let n = per_slab(32);
+    unsafe {
+        // Size `a` keeps an empty slab.
+        let p = heap.alloc(a);
+        heap.dealloc(p, a);
+        let y = heap.lists[class(8)];
+        // Size `b`: a full slab, and a block in a second; the full one
+        // empties, and goes to the pool.
+        let first: Vec<*mut u8> = (0..n).map(|_| heap.alloc(b)).collect();
+        let extra = heap.alloc(b);
+        let x = slab_of(first[0]);
+        for &q in &first {
+            heap.dealloc(q, b);
+        }
+        // `a` keeps the lower of the two, the pool has the other.
+        assert_eq!(heap.lists[class(8)], x.min(y));
+        assert_eq!((*x.min(y)).size, 8);
+        assert_eq!(heap.pool[..heap.pooled], [x.max(y)]);
+        // Allocating and freeing one block of `a` stays on that slab.
+        let q = heap.alloc(a);
+        assert_eq!(slab_of(q), x.min(y));
+        for _ in 0..100 {
+            heap.dealloc(q, a);
+            assert_eq!(heap.alloc(a), q);
+        }
+        heap.dealloc(q, a);
+        heap.dealloc(extra, b);
+        assert_eq!(heap.pool[..heap.pooled], [x.max(y)]);
     }
     release(&mut heap);
 }
@@ -276,10 +342,7 @@ fn random_allocations_keep_their_contents_and_never_overlap() {
             if zeroed {
                 assert!((0..size).all(|i| unsafe { p.add(i).read() } == 0));
             }
-            if is_small(size, align) {
-                let s = slab_of(p) as usize;
-                assert!(p as usize >= s + FIRST && p as usize + size <= s + SLAB_BYTES);
-            }
+            in_its_slab(p, size, align);
             unsafe { fill(p, size, step) };
             live.push((p, size, align, step));
         } else if op < 16 {
@@ -293,6 +356,7 @@ fn random_allocations_keep_their_contents_and_never_overlap() {
             let q = unsafe { heap.realloc(p, layout(size, align), new_size) };
             assert!(!q.is_null());
             assert_eq!(q as usize % align, 0);
+            in_its_slab(q, new_size, align);
             assert!(unsafe { holds(q, size.min(new_size), tag) });
             unsafe { fill(q, new_size, step) };
             live[k] = (q, new_size, align, step);
