@@ -23,20 +23,24 @@ section are absolute.
   with every option.
   - The CLI reads files and URLs named `*.jsonl` or `*.ndjson` so (a
     URL by its path, without the query). `--src-lang jsonl` reads every
-    JSON input so, standard input included, and lets a directory take its
-    `*.jsonl` and `*.ndjson` files, which it otherwise ignores as
-    quicktype does. `--src-lang json` reads them as JSON, as quicktype
-    does. `--help` lists `jsonl` among the source languages.
-  - **This changes what a `.jsonl` or `.ndjson` file gives without
-    `--src-lang`:** quicktype reads it as one JSON value, so a file with
-    one line gave that value's type (say, an object) and now gives an
-    array of it; a file with more lines was a syntax error and now works.
-    Pass `--src-lang json` for the old behavior.
+    JSON input named on the command line so, standard input included;
+    `--src-lang json` reads them as JSON, as quicktype does. `--help`
+    lists `jsonl` among the source languages.
+  - A directory reads each file as its name says, whatever `--src-lang`
+    says: its `*.jsonl` and `*.ndjson` files as JSON Lines, its `.json`
+    files as JSON, and a `.url` file by its URL's name.
+  - **This changes what `.jsonl` and `.ndjson` files give:** quicktype
+    reads such a file as one JSON value, so a file with one line gave
+    that value's type (say, an object) and now gives an array of it; a
+    file with more lines was a syntax error and now works. Pass
+    `--src-lang json` for the old behavior of a file named on the command
+    line. A directory, which ignored them, now reads them.
   - Values are separated by line breaks (`\n` or `\r\n`); blank lines
     are skipped, the last line break is optional, a value may span lines
-    (a pretty-printed one), and two values on one line are an error. A
-    file without values is `[]`. A syntax error names the line its value
-    starts on (`Syntax error in input JSON cards: line 3: …`).
+    (a pretty-printed one), a byte order mark may come first, and two
+    values on one line are an error. A file without values is `[]`. A
+    syntax error names the line its value starts on (`Syntax error in
+    input JSON cards: line 3: …`).
   - quickertype-core: `JsonSample::StringLines`, `StreamLines` and
     `ReaderLines`, the JSON Lines forms of `String`, `Stream` and
     `Reader`.

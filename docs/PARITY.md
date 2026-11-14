@@ -229,8 +229,8 @@ semantics were verified.
 
 quickertype reads [JSON Lines](https://jsonlines.org), which quicktype
 does not. It is an addition: on every input quicktype accepts, quickertype
-does what quicktype does, except for the files and URLs named
-`*.jsonl` or `*.ndjson` that the CLI now reads as JSON Lines (below).
+does what quicktype does, except for the files and URLs named `*.jsonl`
+or `*.ndjson`, which the CLI now reads as JSON Lines (below).
 
 - **The rule.** A JSON Lines sample with the values `V1`…`Vn` is read as
   the JSON array `[V1,…,Vn]`: every output (all languages, options and
@@ -250,63 +250,79 @@ does what quicktype does, except for the files and URLs named
 - **Edge cases.** A sample without values (an empty file, or blank lines
   only) is `[]`, which quicktype types as an array of `any`
   (`unknown[]` in TypeScript); one value is an array of one, not the
-  value. A byte order mark is an error, as it is in a JSON file:
-  stream-json's `expected a value`, `JSON.parse`'s `Unexpected token`.
+  value. A UTF-8 byte order mark may come first (Windows tools write
+  one): it is skipped, and the values are the same, so the rule holds.
+  Anywhere else it is an error, and in a JSON sample it stays the error
+  it is in quicktype.
 - **Errors.** A syntax error is quicktype's `MiscJSONParseError` for JSON,
   `Syntax error in input JSON <name>: <message>`, with the message
   starting with the line the bad value starts on: `line 3: Parser cannot
   parse input: expected ','` (the CLI's reader, whose messages have no
-  position), or `line 3:` and `JSON.parse`'s message, whose positions,
-  lines and columns count in the whole text. A value that does not end before the next line
+  position). With `JSON.parse`'s reader, `line 3:` comes before V8's
+  message, whose position counts in the whole text (after a byte order
+  mark), without V8's `(line L column C)`: V8 ends a line at a carriage
+  return too, JSON Lines only at a line feed, and one count of lines is
+  less confusing than two (`1\r2` is `line 1: Unexpected non-whitespace
+  character after JSON at position 2`). Lines are counted in line feeds
+  for both readers. A value that does not end before the next line
   starts is reported on its own line (`{"a": 1` then `{"b": 2}`: line 1,
   `expected ','`). The CLI exits with code 1, as for any JSON error. Read
   errors, and errors past the syntax (`Maximum call stack size exceeded`,
   which the equivalent array gives too), are reported as they are.
-- **CLI: which inputs.** Without `--src-lang`, files and URLs whose name
-  ends in `.jsonl` or `.ndjson`, in any case, are JSON Lines; a URL's name
-  is its path, without the query and the fragment
-  (`https://example.com/cards.jsonl?page=2`). `--src-lang jsonl` makes
-  every JSON sample JSON Lines: files of any name, URLs, standard input,
-  `--src-urls`, and the files in directories. `--src-lang json` (or any
+- **CLI: inputs named on the command line** (files, URLs, standard input,
+  `--src-urls`). Without `--src-lang`, those whose name ends in `.jsonl`
+  or `.ndjson`, in any case, are JSON Lines; a URL's name is its path,
+  without the query and the fragment
+  (`https://example.com/cards.jsonl?page=2`). `--src-lang jsonl` makes all
+  of them JSON Lines, whatever their names. `--src-lang json` (or any
   other source language given) reads none as JSON Lines, as quicktype
   reads every sample, so an explicit source language wins. The CLI keeps
   quicktype's top-level names (`cards.jsonl` names `Cards`, as
   `cards.json` does).
-- **CLI: directories.** A directory takes quicktype's files: `.json` and
-  `.url` as JSON samples, `.schema`, `.gqlschema` and `.graphql`.
-  `.jsonl` and `.ndjson` files are not picked up, so a directory gives
-  what it gives in quicktype, unless `--src-lang jsonl` is given: then
-  they are, and every JSON sample in it is JSON Lines. A `.url` file
-  whose URL names JSON Lines is JSON Lines.
+- **CLI: directories.** A file in a directory is read as its name says,
+  whatever `--src-lang` says: `.json` files as JSON, `*.jsonl` and
+  `*.ndjson` files (in any case) as JSON Lines, a `.url` file by its URL's
+  name; `.schema`, `.gqlschema` and `.graphql` files as in quicktype. So a
+  directory that mixes JSON and JSON Lines files gives each its types,
+  however it is read: with one setting for the whole directory, either
+  the `.jsonl` files would be lost or the `.json` files would become
+  arrays.
 - **CLI: several inputs.** Each file is one sample, so a JSON Lines file
   is one array sample beside the others of its top-level (`a.json
   b.jsonl` gives what `a.json` and the array of `b.jsonl`'s values give).
-- **The one change for existing inputs.** quicktype reads a `.jsonl` or
-  `.ndjson` file as one JSON value. quickertype reads it as JSON Lines
-  without `--src-lang`: a one-line file that gave its value's type (an
-  object) now gives an array of it, and a file with more lines, which was
-  a syntax error, now works. `--src-lang json` gives quicktype's
-  behavior.
+- **The change for existing inputs.** quicktype reads a `.jsonl` or
+  `.ndjson` file named on the command line as one JSON value, and a
+  directory ignores such files. quickertype reads them as JSON Lines: a
+  one-line file that gave its value's type (an object) now gives an
+  array of it, a file with more lines, which was a syntax error, now
+  works, and a directory's `.jsonl` files now give top-levels.
+  `--src-lang json` gives quicktype's behavior for a file named on the
+  command line.
 - **`--help`** lists `jsonl` among the source languages, its second
   difference from quicktype's (see [How parity is
   tested](#how-parity-is-tested)).
 - **Rust API.** `JsonSample::StringLines`, `StreamLines` and
   `ReaderLines` are `String`, `Stream` and `Reader` for JSON Lines.
-- **Speed.** The readers count line feeds only as they skip whitespace,
-  so a JSON Lines file reads as fast as the same values as an array: on a
-  656 MB file of 120,000 records, the CLI retires as many instructions as
-  on the array (within 0.1%), and holds as little memory (it reads a
-  stream, never the whole file).
+- **Speed.** JSON Lines have a parser loop of their own
+  (`Tokenizer::run_lines`), whose whitespace loop also counts the line
+  feeds; JSON's (`run`) is the one it was, expanded from the same macro
+  of the parser's states, and the helpers both call are inlined into
+  both, as they were into JSON's. So reading JSON costs exactly what it
+  did: on a 656 MB array of 120,000 records, the CLI retires the
+  instructions it did before JSON Lines (within the run-to-run noise,
+  0.03%), and on the same records as JSON Lines 0.7% fewer, holding as
+  little memory (it reads a stream, never the whole file).
 - **How it is tested.** The readers' unit tests compare JSON Lines with
   their array (the same compressed values and tables, in memory and in
   chunks of 1 byte up), and their errors and lines;
   `crates/quicktype-core/tests/json_lines.rs` runs generated JSON Lines
   and their arrays through every language with several options and
   requires identical output; `crates/quicktype-cli/tests/json_lines.rs`
-  and `url_input.rs` pin the CLI's choices and errors; the differential
-  fuzzer's `jsonl` mode compares our CLI on JSON Lines with quicktype's
-  on the arrays; and the `json_stream` and `json_parse` cargo-fuzz
-  targets read arbitrary bytes as JSON Lines too.
+  and `url_input.rs` pin the CLI's choices (mixed directories with and
+  without `--src-lang`) and errors; the differential fuzzer's `jsonl`
+  mode compares our CLI on JSON Lines with quicktype's on the arrays; and
+  the `json_stream` and `json_parse` cargo-fuzz targets read arbitrary
+  bytes as JSON Lines too.
 
 ## Known gaps
 

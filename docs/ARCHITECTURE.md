@@ -90,9 +90,11 @@ crates/quicktype-cli/src/main.rs      write_output
    `--version` and `--build-markov-chain`, then collects sources by `--src-lang`:
    - `json`/`schema`: `sources::get_sources` returns `TypeSource`s; files and
      URLs are opened now and read when the input parses them, as in TS.
-     Not in TS: `jsonl`, and without `--src-lang` the files and URLs named
-     `*.jsonl` or `*.ndjson`, are JSON Lines (`sources::JsonLines`), which
-     `add_json_source` reads as `JsonSample::ReaderLines`.
+     Not in TS: JSON Lines, which `add_json_source` reads as
+     `JsonSample::ReaderLines`: the inputs named on the command line as
+     `CliOptions::json_lines` says (`--src-lang jsonl`, or without
+     `--src-lang` those named `*.jsonl` or `*.ndjson`), and in directories
+     every `*.jsonl` and `*.ndjson` file (`sources::is_json_lines_name`).
    - `graphql`: `graphql_sources` (`graphql_introspection::introspect_server`
      for `--graphql-introspect`).
    - `typescript`: `make_typescript_source` →
