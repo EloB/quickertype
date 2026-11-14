@@ -52,7 +52,7 @@ use crate::input::io::node_io::stream_read_error;
 /// threads at once.
 pub(crate) enum Positional {
     /// A regular file.
-    #[cfg(all(unix, feature = "fs"))]
+    #[cfg(all(any(unix, windows), feature = "fs"))]
     File(std::fs::File),
     /// Bytes in memory (for tests and fuzzing).
     Memory(Vec<u8>),
@@ -61,7 +61,7 @@ pub(crate) enum Positional {
 impl Positional {
     fn len(&self) -> io::Result<u64> {
         match self {
-            #[cfg(all(unix, feature = "fs"))]
+            #[cfg(all(any(unix, windows), feature = "fs"))]
             Positional::File(file) => Ok(file.metadata()?.len()),
             Positional::Memory(bytes) => Ok(bytes.len() as u64),
         }
@@ -72,14 +72,12 @@ impl Positional {
         let mut total = 0;
         while !buf.is_empty() {
             let n = match self {
-                #[cfg(all(unix, feature = "fs"))]
-                Positional::File(file) => {
-                    match std::os::unix::fs::FileExt::read_at(file, buf, offset) {
-                        Ok(n) => n,
-                        Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
-                        Err(e) => return Err(e),
-                    }
-                }
+                #[cfg(all(any(unix, windows), feature = "fs"))]
+                Positional::File(file) => match read_file_at(file, buf, offset) {
+                    Ok(n) => n,
+                    Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
+                    Err(e) => return Err(e),
+                },
                 Positional::Memory(bytes) => {
                     let start = usize::try_from(offset).map_or(bytes.len(), |o| o.min(bytes.len()));
                     let n = buf.len().min(bytes.len() - start);
@@ -98,6 +96,20 @@ impl Positional {
     }
 }
 
+/// Reads `file` into `buf` from `offset`, from any thread: `pread` on Unix.
+#[cfg(all(unix, feature = "fs"))]
+fn read_file_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+    std::os::unix::fs::FileExt::read_at(file, buf, offset)
+}
+
+/// Reads `file` into `buf` from `offset`, from any thread: `seek_read` on
+/// Windows, which also moves the file's position (reading it in one go
+/// seeks first, see [`StreamFrom`]).
+#[cfg(all(windows, feature = "fs"))]
+fn read_file_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+    std::os::windows::fs::FileExt::seek_read(file, buf, offset)
+}
+
 /// A sample whose bytes can be read at any offset: a regular file the CLI
 /// reads, which it reads on several threads when it is a large top-level
 /// array ([`read`]), and otherwise in one go
@@ -113,7 +125,7 @@ pub(crate) struct PositionalSample {
 
 impl PositionalSample {
     /// The regular file `file`, from its start.
-    #[cfg(all(unix, feature = "fs"))]
+    #[cfg(all(any(unix, windows), feature = "fs"))]
     pub(crate) fn file(file: std::fs::File) -> Self {
         PositionalSample {
             source: Positional::File(file),
@@ -139,7 +151,7 @@ impl PositionalSample {
     /// Moves a file to its end, where reading it in one go leaves it (for
     /// standard input, which another sample may read again).
     fn seek_to_end(&self) {
-        #[cfg(all(unix, feature = "fs"))]
+        #[cfg(all(any(unix, windows), feature = "fs"))]
         if let Positional::File(file) = &self.source {
             let _ = io::Seek::seek(&mut &*file, io::SeekFrom::End(0));
         }
@@ -164,7 +176,7 @@ impl PositionalSample {
     /// reads at offsets, which leaves a file's position where it was.)
     fn into_reader_from(self, from: u64) -> Box<dyn Read> {
         match self.source {
-            #[cfg(all(unix, feature = "fs"))]
+            #[cfg(all(any(unix, windows), feature = "fs"))]
             Positional::File(file) => Box::new(StreamFrom {
                 inner: file,
                 seek_to: Some(from),
@@ -303,6 +315,18 @@ impl ParallelOptions {
 /// read with `options` (for tests and fuzzing).
 pub fn parallel_sample(bytes: Vec<u8>, options: ParallelOptions) -> crate::SampleReader {
     crate::SampleReader::positional(PositionalSample::memory(bytes, options))
+}
+
+/// A sample of the regular file `file` (a
+/// [`JsonSample::Reader`](crate::JsonSample::Reader)), read with `options`
+/// (for tests).
+#[cfg(all(any(unix, windows), feature = "fs"))]
+pub fn parallel_file_sample(file: std::fs::File, options: ParallelOptions) -> crate::SampleReader {
+    crate::SampleReader::positional(PositionalSample {
+        source: Positional::File(file),
+        start: 0,
+        options: Some(options),
+    })
 }
 
 /// How samples were read on several threads.

@@ -218,6 +218,8 @@ pub mod internal {
     pub use crate::input::compressed_json::CompressedJsonTables;
     pub use crate::input::inputs::CompressedTopLevel;
     pub use crate::input::io::{LocalBoxFuture, block_on};
+    #[cfg(all(not(target_family = "wasm"), any(unix, windows), feature = "fs"))]
+    pub use crate::input::parallel_read::parallel_file_sample;
     #[cfg(not(target_family = "wasm"))]
     pub use crate::input::parallel_read::{
         Fault, ParallelOptions, parallel_reads, parallel_sample,

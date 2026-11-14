@@ -571,43 +571,40 @@ mod std_io {
         }
 
         /// [`open_std`](Self::open_std) as a [`JsonSample::Reader`]
-        /// sample. A regular file, or standard input redirected from one,
-        /// can then also be read at any offset, so that a large top-level
-        /// array in it is read on several threads, into the same tallies
-        /// (on Unix; see `docs/STREAMING-INFERENCE.md`, "Reading on several
-        /// threads").
+        /// sample. A regular file (on Unix and Windows), or standard input
+        /// redirected from one (on Unix), can then also be read at any
+        /// offset, so that a large top-level array in it is read on several
+        /// threads, into the same tallies (see `docs/STREAMING-INFERENCE.md`,
+        /// "Reading on several threads").
         ///
         /// [`JsonSample::Reader`]: crate::JsonSample::Reader
         pub fn open_sample(self) -> Result<crate::SampleReader, IoError> {
+            #[cfg(any(unix, windows))]
+            if let super::Readable::File(path) = &self {
+                let file = open_file(path)?;
+                if file.metadata().is_ok_and(|m| m.is_file()) {
+                    let sample = crate::input::parallel_read::PositionalSample::file(file);
+                    return Ok(crate::SampleReader::positional(sample));
+                }
+                return Ok(crate::SampleReader::new(NodeReader(file)));
+            }
+            // Standard input, from where it is (all of it, unless a sample
+            // read it to its end before; nothing reads it in part), as a
+            // file of its own. Not on Windows, where a console or a pipe is
+            // not told from a file as surely.
             #[cfg(unix)]
-            {
-                use crate::input::parallel_read::PositionalSample;
-                let regular = |file: &std::fs::File| file.metadata().is_ok_and(|m| m.is_file());
-                match &self {
-                    super::Readable::File(path) => {
-                        let file = open_file(path)?;
-                        if regular(&file) {
-                            let sample = PositionalSample::file(file);
-                            return Ok(crate::SampleReader::positional(sample));
-                        }
-                        return Ok(crate::SampleReader::new(NodeReader(file)));
-                    }
-                    // Standard input, from where it is (all of it, unless a
-                    // sample read it to its end before; nothing reads it in
-                    // part), as a file of its own.
-                    super::Readable::Stdin => {
-                        use std::os::fd::AsFd;
-                        let file = std::io::stdin()
-                            .as_fd()
-                            .try_clone_to_owned()
-                            .ok()
-                            .map(std::fs::File::from)
-                            .filter(regular);
-                        if let Some(sample) = file.and_then(PositionalSample::stdin) {
-                            return Ok(crate::SampleReader::positional(sample));
-                        }
-                    }
-                    super::Readable::Text(_) => {}
+            if let super::Readable::Stdin = &self {
+                use std::os::fd::AsFd;
+                let file = std::io::stdin()
+                    .as_fd()
+                    .try_clone_to_owned()
+                    .ok()
+                    .map(std::fs::File::from)
+                    .filter(|file| file.metadata().is_ok_and(|m| m.is_file()));
+                if let Some(sample) =
+                    file.and_then(crate::input::parallel_read::PositionalSample::stdin)
+                {
+                    return Ok(crate::SampleReader::positional(sample));
                 }
             }
             self.open_std().map(crate::SampleReader::new)
