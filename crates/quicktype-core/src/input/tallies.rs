@@ -197,6 +197,7 @@ fn absorbs_transformation(kind: TypeKind) -> u32 {
 /// unrestricted if either is, and unites the transformations), so once
 /// the combined string types absorb an addition they always do, and the
 /// bit records that instead of looking at them for every value.
+#[inline(always)]
 fn add_unrestricted_once(combined: &mut Option<TypeAttributes>, absorbed: &mut u32) -> Result<()> {
     if *absorbed & ABSORBS_UNRESTRICTED != 0 {
         return Ok(());
@@ -208,6 +209,7 @@ fn add_unrestricted_once(combined: &mut Option<TypeAttributes>, absorbed: &mut u
 
 /// [`add_transformation`], skipped once `absorbed` says the string types
 /// allow `kind` or are unrestricted (see [`add_unrestricted_once`]).
+#[inline(always)]
 fn add_transformation_once(
     combined: &mut Option<TypeAttributes>,
     absorbed: &mut u32,
@@ -333,11 +335,13 @@ fn take_combined(
 impl StringTally {
     /// What an interned string (`Tag.InternedString`) adds besides its
     /// case: an unrestricted string, without enum inference.
+    #[inline(always)]
     fn add_interned(&mut self) -> Result<()> {
         add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
     }
 
     /// A string too long to intern (`Tag.UninternedString`).
+    #[inline(always)]
     fn add_uninterned(&mut self) -> Result<()> {
         self.not_interned = true;
         add_unrestricted_once(&mut self.with_enums, &mut self.absorbed[0])?;
@@ -346,6 +350,7 @@ impl StringTally {
 
     /// A string of a transformed kind without attribute producer
     /// (`Tag.StringFormat`).
+    #[inline(always)]
     fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
         self.not_interned = true;
         add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
@@ -574,6 +579,9 @@ pub(crate) struct Tallies {
     spare_strings: Vec<Box<StringTally>>,
     #[allow(clippy::vec_box)]
     spare_objects: Vec<Box<ObjectTally>>,
+    /// Where string cases were counted last ([`CaseSlot`]); empty until
+    /// the first case, then [`CASE_SLOTS`] long.
+    case_slots: Vec<CaseSlot>,
     /// Makes the next [`merge`](Self::merge) fail after planning this many
     /// steps (for tests).
     #[cfg(test)]
@@ -652,6 +660,7 @@ impl Tallies {
             free: Vec::new(),
             spare_strings: Vec::new(),
             spare_objects: Vec::new(),
+            case_slots: Vec::new(),
             #[cfg(test)]
             fail_merge_at: Cell::new(None),
         }
@@ -825,6 +834,245 @@ impl Tallies {
     }
 }
 
+/// A key as [`Tallies::add_key`] counts it: the id of its text in the
+/// tallies' string table, which may have to be found first.
+pub(crate) trait KeyId {
+    /// Whether the key is the string `id`.
+    fn is(&self, id: u32) -> bool;
+    /// Its string id.
+    fn id(self) -> u32;
+}
+
+/// A key known by its string id (the walk's, an index of the compressed
+/// form's string table).
+impl KeyId for u32 {
+    fn is(&self, id: u32) -> bool {
+        *self == id
+    }
+
+    fn id(self) -> u32 {
+        self
+    }
+}
+
+/// A key known by its text (a reader's), found in the string table (and
+/// added to it) only when it is not the key expected.
+struct KeyText<'a> {
+    strings: &'a mut Strings,
+    text: &'a str,
+}
+
+impl KeyId for KeyText<'_> {
+    fn is(&self, id: u32) -> bool {
+        self.strings.get(id as usize) == Some(self.text)
+    }
+
+    fn id(self) -> u32 {
+        self.strings.intern_text(self.text)
+    }
+}
+
+/// How many places [`Tallies`] remembers where a string case was counted
+/// (see [`CaseSlot`]): 12 KiB, made with the first case.
+const CASE_SLOTS: usize = 1 << 10;
+
+/// Where a string case was counted last, at a slot of [`Tallies`] chosen
+/// by its string id and node: its position among the node's cases. A case
+/// that recurs at a place (an enum's) is then counted without hashing it.
+/// The slot may be another case's, or stale (its node freed and reused,
+/// its tally merged); a position is used only if the node's case there is
+/// the string, which is then its position, whatever put it there.
+#[derive(Clone, Copy, Default)]
+struct CaseSlot {
+    id: u32,
+    node: NodeId,
+    position: u32,
+}
+
+/// The slot of string `id` at `node`.
+fn case_slot(id: u32, node: NodeId) -> usize {
+    (id ^ node.wrapping_mul(0x9E37_79B9)) as usize & (CASE_SLOTS - 1)
+}
+
+/// What each value adds at the node of its place: the handlers both the
+/// [`TallyBuilder`] (for each event of a reader) and the walk over a
+/// compressed form ([`tally_compressed`], for each value the event made)
+/// call, so that they tally the same values alike. Keys and string cases
+/// are string ids.
+impl Tallies {
+    #[inline]
+    fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
+        defined(self.nodes.get_mut(id as usize))
+    }
+
+    /// The strings at `node`, a new tally if there are none yet.
+    #[inline]
+    fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
+        let Tallies {
+            nodes,
+            spare_strings,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        Ok(n.strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
+    }
+
+    /// A `null`, a boolean or a number, of non-string `kind`.
+    #[inline]
+    pub(crate) fn add_kind(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
+        self.node_mut(node)?.kinds.add(kind);
+        Ok(())
+    }
+
+    /// An interned string (`Tag.InternedString`): the case `id`.
+    #[inline]
+    pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
+        let Tallies {
+            nodes,
+            spare_strings,
+            case_slots,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        let strings = n
+            .strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default());
+        if case_slots.is_empty() {
+            *case_slots = vec![CaseSlot::default(); CASE_SLOTS];
+        }
+        let slot = &mut case_slots[case_slot(id, node)];
+        match strings.cases.get_index_mut(slot.position as usize) {
+            Some((&case, count)) if slot.id == id && slot.node == node && case == id => {
+                *count += 1;
+            }
+            _ => {
+                let entry = strings.cases.entry(id);
+                *slot = CaseSlot {
+                    id,
+                    node,
+                    position: entry.index() as u32,
+                };
+                *entry.or_insert(0) += 1;
+            }
+        }
+        strings.add_interned()
+    }
+
+    /// A string too long to intern (`Tag.UninternedString`).
+    #[inline]
+    pub(crate) fn add_uninterned(&mut self, node: NodeId) -> Result<()> {
+        self.strings_mut(node)?.add_uninterned()
+    }
+
+    /// A string of a transformed kind without attribute producer
+    /// (`Tag.StringFormat`).
+    #[inline]
+    pub(crate) fn add_string_format(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
+        self.strings_mut(node)?.add_string_format(kind)
+    }
+
+    /// A string of a transformed kind with an attribute producer (`uri`,
+    /// `Tag.TransformedString`), which made `attributes` of it.
+    pub(crate) fn add_transformed_string(
+        &mut self,
+        node: NodeId,
+        kind: TypeKind,
+        attributes: &TypeAttributes,
+    ) -> Result<()> {
+        self.strings_mut(node)?
+            .add_transformed_string(kind, attributes)
+    }
+
+    /// An object, where it starts (`pushObjectContext`); its keys and
+    /// values follow.
+    #[inline]
+    pub(crate) fn add_object(&mut self, node: NodeId) -> Result<()> {
+        let Tallies {
+            nodes,
+            spare_objects,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        n.kinds.add(TypeKind::Object);
+        n.object
+            .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
+            .count += 1;
+        Ok(())
+    }
+
+    /// An array, where it starts (`pushArrayContext`): returns the node of
+    /// its elements, which follow.
+    pub(crate) fn add_array(&mut self, node: NodeId) -> Result<NodeId> {
+        let items = match self.node(node)?.items {
+            Some(items) => items,
+            None => {
+                let items = self.new_tree()?;
+                self.node_mut(node)?.items = Some(items);
+                items
+            }
+        };
+        self.node_mut(node)?.kinds.add(TypeKind::Array);
+        Ok(items)
+    }
+
+    /// The key `__proto__` of the object at `node` (`setPropertyKey`):
+    /// listed again at each occurrence, and only its last value counts, so
+    /// this returns a new node for its value and frees the previous one.
+    pub(crate) fn add_proto_key(&mut self, node: NodeId) -> Result<NodeId> {
+        let fresh = self.new_tree()?;
+        let object = defined(self.node_mut(node)?.object.as_mut())?;
+        object.add_proto_occurrences(1);
+        if let Some(old) = object.proto.replace(fresh) {
+            self.free_tree(old);
+        }
+        Ok(fresh)
+    }
+
+    /// A key other than `__proto__` of the object at `node`
+    /// (`setPropertyKey`), where the key at index `expected` of the place's
+    /// keys is expected: objects at one place usually list their keys in
+    /// the same order, and a key found there is counted without a lookup.
+    /// Returns the node of the key's value and the index of the key
+    /// expected next.
+    #[inline]
+    pub(crate) fn add_key(
+        &mut self,
+        node: NodeId,
+        key: impl KeyId,
+        expected: usize,
+    ) -> Result<(NodeId, usize)> {
+        let Tallies { nodes, free, .. } = self;
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        if let Some((&found, tally)) = object.keys.get_index_mut(expected)
+            && key.is(found)
+        {
+            tally.count += 1;
+            return Ok((tally.node, expected + 1));
+        }
+        let id = key.id();
+        let index = match object.keys.get_index_of(&id) {
+            Some(index) => index,
+            None => {
+                let fresh = alloc(nodes, free)?;
+                let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+                object.keys.insert(
+                    id,
+                    KeyTally {
+                        count: 0,
+                        node: fresh,
+                    },
+                );
+                object.keys.len() - 1
+            }
+        };
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        let (_, tally) = defined(object.keys.get_index_mut(index))?;
+        tally.count += 1;
+        Ok((tally.node, index + 1))
+    }
+}
+
 /// What [`CompressedTally`] knows of a string of the compressed form: not
 /// looked at yet, a text other than `"__proto__"`, or `"__proto__"`.
 const UNKNOWN: u8 = 0;
@@ -838,12 +1086,11 @@ const PROTO: u8 = 2;
 /// API can ask for at any time), made in one walk over it when their types
 /// are inferred. Returns the tallies, whose keys and cases are the
 /// compressed form's strings ([`CompressedJson::strings`]), and each
-/// top-level's tree; `Ok(None)` if the
-/// values are not as a reader makes them (see [`CompressedTally`]), where
-/// only inference from the values themselves is exact. An error is one
-/// tallying raises (as reading the samples would have), not a decline:
-/// it is the run's. See `docs/STREAMING-INFERENCE.md`, "Tallies of a
-/// compressed form".
+/// top-level's tree; `Ok(None)` if the values are not as a reader makes
+/// them (see [`CompressedTally`]), where only inference from the values
+/// themselves is exact. An error is one tallying raises (as reading the
+/// samples would have), not a decline: it is the run's. See
+/// `docs/STREAMING-INFERENCE.md`, "Tallies of a compressed form".
 pub(crate) fn tally_compressed<'c>(
     cjson: &CompressedJson,
     top_levels: impl IntoIterator<Item = &'c [Value]>,
@@ -865,7 +1112,9 @@ pub(crate) fn tally_compressed<'c>(
     Ok(Some((tallies, roots)))
 }
 
-/// The walk of [`tally_compressed`].
+/// The walk of [`tally_compressed`]: for each value, what the
+/// [`TallyBuilder`] does for the reader's event that made it, with the
+/// same handlers ([`Tallies::add_kind`] and the others).
 ///
 /// The values a reader made form a tree from each sample's root: every
 /// object and array is the value of exactly one key, element or root. A
@@ -883,11 +1132,6 @@ struct CompressedTally<'c> {
     /// The index of the first `"__proto__"` looked at, which stands for
     /// every one ([`NO_INDEX`] before).
     proto: u32,
-    /// By string index: the node whose cases it was last counted in, and
-    /// its position among them. Most strings occur at one place, where
-    /// this finds them without hashing; it is checked against the cases,
-    /// since the node may have been freed and reused since.
-    case_positions: Vec<(NodeId, u32)>,
     /// Bit sets of the objects and arrays reached so far.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
@@ -906,7 +1150,7 @@ enum WalkFrame<'c> {
         next: usize,
         /// The node of the object.
         node: NodeId,
-        /// The index of the key expected next (see `Frame::Object`).
+        /// The index of the key expected next (see [`Tallies::add_key`]).
         next_key: usize,
     },
     Array {
@@ -935,7 +1179,6 @@ impl<'c> CompressedTally<'c> {
             cjson,
             classes: vec![UNKNOWN; cjson.table_counts().strings],
             proto: NO_INDEX,
-            case_positions: vec![(NO_INDEX, 0); cjson.table_counts().strings],
             objects_seen: vec![0; objects.div_ceil(64)],
             arrays_seen: vec![0; arrays.div_ceil(64)],
             stack: Vec::new(),
@@ -1021,9 +1264,9 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// Counts key `key` (a string index) in the object at `node`, where the
-    /// key at index `expected` is expected, as `TallyBuilder::tally_key`
-    /// counts its text. Returns the node of its value and the index of the
-    /// key expected next.
+    /// key at index `expected` is expected, as the [`TallyBuilder`] counts
+    /// its text. Returns the node of its value and the index of the key
+    /// expected next.
     fn key(
         &mut self,
         tallies: &mut Tallies,
@@ -1032,104 +1275,36 @@ impl<'c> CompressedTally<'c> {
         expected: usize,
     ) -> Result<(NodeId, usize)> {
         if self.is_proto(key)? {
-            let fresh = tallies.new_tree()?;
-            let object = defined(
-                defined(tallies.nodes.get_mut(node as usize))?
-                    .object
-                    .as_mut(),
-            )?;
-            object.add_proto_occurrences(1);
-            if let Some(old) = object.proto.replace(fresh) {
-                tallies.free_tree(old);
-            }
-            return Ok((fresh, expected));
+            Ok((tallies.add_proto_key(node)?, expected))
+        } else {
+            tallies.add_key(node, key, expected)
         }
-        let Tallies { nodes, free, .. } = tallies;
-        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-        // Objects at one place usually list their keys in the same order.
-        if let Some((&found, tally)) = object.keys.get_index_mut(expected)
-            && found == key
-        {
-            tally.count += 1;
-            return Ok((tally.node, expected + 1));
-        }
-        let index = match object.keys.get_index_of(&key) {
-            Some(index) => index,
-            None => {
-                let fresh = alloc(nodes, free)?;
-                let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                object.keys.insert(
-                    key,
-                    KeyTally {
-                        count: 0,
-                        node: fresh,
-                    },
-                );
-                object.keys.len() - 1
-            }
-        };
-        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-        let (_, tally) = defined(object.keys.get_index_mut(index))?;
-        tally.count += 1;
-        Ok((tally.node, index + 1))
     }
 
-    /// The string tally of `node`.
-    #[inline]
-    fn strings(tallies: &mut Tallies, node: NodeId) -> Result<&mut StringTally> {
-        let Tallies {
-            nodes,
-            spare_strings,
-            ..
-        } = tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        Ok(n.strings
-            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
-    }
-
-    /// Tallies `value` at `node`, as the [`TallyBuilder`] event its reader
-    /// would have emitted (whose strings `commitString` classified as the
-    /// value records); an object or array is pushed, its values to come.
-    /// Whether the value is one a reader makes.
+    /// Tallies `value` at `node`, as the [`TallyBuilder`] tallies the
+    /// reader's event that made it (whose strings `commitString` classified
+    /// as the value records); an object or array is pushed, its values to
+    /// come. Whether the value is one a reader makes.
     fn visit(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
-        let kind = match value {
-            Value::Null => TypeKind::Null,
-            Value::False | Value::True => TypeKind::Bool,
-            Value::Integer => TypeKind::Integer,
-            Value::Double => TypeKind::Double,
+        match value {
+            Value::Null => tallies.add_kind(node, TypeKind::Null)?,
+            Value::False | Value::True => tallies.add_kind(node, TypeKind::Bool)?,
+            Value::Integer => tallies.add_kind(node, TypeKind::Integer)?,
+            Value::Double => tallies.add_kind(node, TypeKind::Double)?,
             Value::InternedString(index) => {
-                // `TallyBuilder::add_case`.
+                // Every `"__proto__"` is the first one's case.
                 let id = if self.is_proto(index)? {
                     self.proto
                 } else {
                     index
                 };
-                let strings = Self::strings(tallies, node)?;
-                let slot = defined(self.case_positions.get_mut(id as usize))?;
-                match strings.cases.get_index_mut(slot.1 as usize) {
-                    Some((&case, count)) if slot.0 == node && case == id => *count += 1,
-                    _ => {
-                        let entry = strings.cases.entry(id);
-                        *slot = (node, entry.index() as u32);
-                        *entry.or_insert(0) += 1;
-                    }
-                }
-                strings.add_interned()?;
-                return Ok(true);
+                tallies.add_case(node, id)?;
             }
-            Value::UninternedString => {
-                // `TallyBuilder::add_uninterned`.
-                Self::strings(tallies, node)?.add_uninterned()?;
-                return Ok(true);
-            }
-            Value::StringFormat(kind) => {
-                // `TallyBuilder::add_string_format`.
-                Self::strings(tallies, node)?.add_string_format(kind)?;
-                return Ok(true);
-            }
+            Value::UninternedString => tallies.add_uninterned(node)?,
+            Value::StringFormat(kind) => tallies.add_string_format(node, kind)?,
             Value::TransformedString(index) => {
-                // `TallyBuilder::add_transformed_string`, with the kind and
-                // attributes `commitString` classified the string by.
+                // The kind and attributes `commitString` classified the
+                // string by.
                 let text = defined(self.cjson.string(index))?;
                 let Some(kind) = infer_transformed_string_type_kind_for_string(
                     text,
@@ -1140,60 +1315,32 @@ impl<'c> CompressedTally<'c> {
                 let Some(producer) = transformed_string_type_attributes_producer(kind) else {
                     return Ok(false);
                 };
-                let attributes = producer(text);
-                Self::strings(tallies, node)?.add_transformed_string(kind, &attributes)?;
-                return Ok(true);
+                tallies.add_transformed_string(node, kind, &producer(text))?;
             }
             Value::Object(index) => {
                 if !first_visit(&mut self.objects_seen, index)? {
                     return Ok(false);
                 }
-                // `push_object_context`.
-                let Tallies {
-                    nodes,
-                    spare_objects,
-                    ..
-                } = tallies;
-                let n = defined(nodes.get_mut(node as usize))?;
-                n.kinds.add(TypeKind::Object);
-                n.object
-                    .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
-                    .count += 1;
+                tallies.add_object(node)?;
                 self.stack.push(WalkFrame::Object {
                     entries: self.cjson.get_object_for_value(value)?,
                     next: 0,
                     node,
                     next_key: 0,
                 });
-                return Ok(true);
             }
             Value::Array(index) => {
                 if !first_visit(&mut self.arrays_seen, index)? {
                     return Ok(false);
                 }
-                // `push_array_context`.
-                let items = match defined(tallies.nodes.get(node as usize))?.items {
-                    Some(items) => items,
-                    None => {
-                        let items = tallies.new_tree()?;
-                        defined(tallies.nodes.get_mut(node as usize))?.items = Some(items);
-                        items
-                    }
-                };
-                defined(tallies.nodes.get_mut(node as usize))?
-                    .kinds
-                    .add(TypeKind::Array);
+                let items = tallies.add_array(node)?;
                 self.stack.push(WalkFrame::Array {
                     items: self.cjson.get_array_for_value(value)?,
                     next: 0,
                     node: items,
                 });
-                return Ok(true);
             }
-        };
-        defined(tallies.nodes.get_mut(node as usize))?
-            .kinds
-            .add(kind);
+        }
         Ok(true)
     }
 }
@@ -1208,9 +1355,7 @@ enum Frame {
         value: Option<NodeId>,
         /// Whether the current key is `"$ref"` (TS `isExpectingRef`).
         expecting_ref: bool,
-        /// The index of the key expected next: objects at one place
-        /// usually list their keys in the same order, and a key found
-        /// there needs no lookup.
+        /// The index of the key expected next (see [`Tallies::add_key`]).
         next_key: usize,
     },
     Array {
@@ -1225,7 +1370,9 @@ enum Frame {
 /// ([`reset_partial_sample`](JsonSink::reset_partial_sample), or when the
 /// builder is dropped), so it leaves nothing behind but the text of its
 /// keys and strings in the shared string table, which nothing refers to.
-/// Appending a sample to others is [`Tallies::merge`]'s job.
+/// Appending a sample to others is [`Tallies::merge`]'s job. What each
+/// event adds is [`Tallies`]' handlers' job ([`Tallies::add_kind`] and the
+/// others), which the walk over a compressed form calls too.
 pub(crate) struct TallyBuilder<'a> {
     tallies: &'a mut Tallies,
     /// The text of the keys and cases.
@@ -1282,91 +1429,35 @@ impl<'a> TallyBuilder<'a> {
         }
     }
 
-    fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
-        defined(self.tallies.nodes.get_mut(id as usize))
-    }
-
-    /// What [`JsonSink::set_property_key`] does in the tallies: counts
-    /// `key` in the current object, with only the fields of the tallies it
-    /// needs, so that `key` can be borrowed from another of them (the
-    /// reader's key table, [`JsonSink::set_property_key_read`]). Returns
-    /// the key's value node, the index of the key expected next, and the
-    /// `__proto__` tree it replaced ([`key_set`](Self::key_set) does the
-    /// rest).
-    fn tally_key(
-        frames: &[Frame],
-        nodes: &mut Vec<Node>,
-        free: &mut Vec<NodeId>,
+    /// What [`JsonSink::set_property_key`] does: counts `key` in the
+    /// current object, and makes its value's node where the next value
+    /// goes. Takes only the fields it needs, so that `key` can be borrowed
+    /// from another (the reader's key table,
+    /// [`JsonSink::set_property_key_read`]).
+    fn set_key(
+        tallies: &mut Tallies,
         strings: &mut Strings,
+        frames: &mut [Frame],
         key: &str,
-    ) -> Result<(NodeId, usize, Option<NodeId>)> {
-        let Some(&Frame::Object { node, next_key, .. }) = frames.last() else {
+    ) -> Result<()> {
+        let Some(Frame::Object {
+            node,
+            value,
+            expecting_ref,
+            next_key,
+        }) = frames.last_mut()
+        else {
             return panic("Setting a key outside an object");
         };
-        let mut replaced = None;
-        let (value, next_key) = if key == "__proto__" {
-            let fresh = alloc(nodes, free)?;
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            object.add_proto_occurrences(1);
-            replaced = object.proto.replace(fresh);
-            (fresh, next_key)
+        let (child, following) = if key == "__proto__" {
+            (tallies.add_proto_key(*node)?, *next_key)
         } else {
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let expected = object
-                .keys
-                .get_index(next_key)
-                .is_some_and(|(&id, _)| strings.get(id as usize) == Some(key));
-            let index = if expected {
-                next_key
-            } else {
-                let id = strings.intern_text(key);
-                match object.keys.get_index_of(&id) {
-                    Some(index) => index,
-                    None => {
-                        let fresh = alloc(nodes, free)?;
-                        let object =
-                            defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                        object.keys.insert(
-                            id,
-                            KeyTally {
-                                count: 0,
-                                node: fresh,
-                            },
-                        );
-                        object.keys.len() - 1
-                    }
-                }
-            };
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let (_, tally) = defined(object.keys.get_index_mut(index))?;
-            tally.count += 1;
-            (tally.node, index + 1)
+            tallies.add_key(*node, KeyText { strings, text: key }, *next_key)?
         };
-        Ok((value, next_key, replaced))
-    }
-
-    /// The rest of [`JsonSink::set_property_key`], after
-    /// [`tally_key`](Self::tally_key): frees the `__proto__` tree the key
-    /// replaced, and makes the key's value node where the next value goes.
-    fn key_set(
-        &mut self,
-        (value, next_key, replaced): (NodeId, usize, Option<NodeId>),
-        is_ref: bool,
-    ) {
-        if let Some(old) = replaced {
-            self.tallies.free_tree(old);
-        }
-        if let Some(Frame::Object {
-            value: v,
-            expecting_ref,
-            next_key: n,
-            ..
-        }) = self.frames.last_mut()
-        {
-            *v = Some(value);
-            *expecting_ref = is_ref;
-            *n = next_key;
-        }
+        *value = Some(child);
+        *expecting_ref = key == "$ref";
+        *next_key = following;
+        Ok(())
     }
 
     /// The current key's value is complete (TS: `currentKey = undefined`).
@@ -1379,29 +1470,16 @@ impl<'a> TallyBuilder<'a> {
     /// A value of a non-string `kind`.
     fn add_kind(&mut self, kind: TypeKind) -> Result<()> {
         let node = self.destination()?;
-        self.node_mut(node)?.kinds.add(kind);
+        self.tallies.add_kind(node, kind)?;
         self.value_done();
         Ok(())
-    }
-
-    fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
-        let Tallies {
-            nodes,
-            spare_strings,
-            ..
-        } = &mut *self.tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        Ok(n.strings
-            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
     }
 
     /// An interned string (`Tag.InternedString`).
     fn add_case(&mut self, s: &str) -> Result<()> {
         let node = self.destination()?;
         let id = self.strings.intern_text(s);
-        let strings = self.strings_mut(node)?;
-        *strings.cases.entry(id).or_insert(0) += 1;
-        strings.add_interned()?;
+        self.tallies.add_case(node, id)?;
         self.value_done();
         Ok(())
     }
@@ -1409,7 +1487,7 @@ impl<'a> TallyBuilder<'a> {
     /// A string too long to intern (`Tag.UninternedString`).
     fn add_uninterned(&mut self) -> Result<()> {
         let node = self.destination()?;
-        self.strings_mut(node)?.add_uninterned()?;
+        self.tallies.add_uninterned(node)?;
         self.value_done();
         Ok(())
     }
@@ -1418,7 +1496,7 @@ impl<'a> TallyBuilder<'a> {
     /// (`Tag.StringFormat`).
     fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
         let node = self.destination()?;
-        self.strings_mut(node)?.add_string_format(kind)?;
+        self.tallies.add_string_format(node, kind)?;
         self.value_done();
         Ok(())
     }
@@ -1431,8 +1509,8 @@ impl<'a> TallyBuilder<'a> {
         attributes: &TypeAttributes,
     ) -> Result<()> {
         let node = self.destination()?;
-        self.strings_mut(node)?
-            .add_transformed_string(kind, attributes)?;
+        self.tallies
+            .add_transformed_string(node, kind, attributes)?;
         self.value_done();
         Ok(())
     }
@@ -1482,16 +1560,7 @@ impl JsonSink for TallyBuilder<'_> {
 
     fn push_object_context(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let Tallies {
-            nodes,
-            spare_objects,
-            ..
-        } = &mut *self.tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        n.kinds.add(TypeKind::Object);
-        n.object
-            .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
-            .count += 1;
+        self.tallies.add_object(node)?;
         self.frames.push(Frame::Object {
             node,
             value: None,
@@ -1502,10 +1571,7 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        let Tallies { nodes, free, .. } = &mut *self.tallies;
-        let set = Self::tally_key(&self.frames, nodes, free, self.strings, key)?;
-        self.key_set(set, key == "$ref");
-        Ok(())
+        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
     }
 
     fn finish_object(&mut self) -> Result<()> {
@@ -1520,15 +1586,7 @@ impl JsonSink for TallyBuilder<'_> {
 
     fn push_array_context(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let items = match self.node_mut(node)?.items {
-            Some(items) => items,
-            None => {
-                let items = self.tallies.new_tree()?;
-                self.node_mut(node)?.items = Some(items);
-                items
-            }
-        };
-        self.node_mut(node)?.kinds.add(TypeKind::Array);
+        let items = self.tallies.add_array(node)?;
         self.frames.push(Frame::Array { items });
         Ok(())
     }
@@ -1572,12 +1630,8 @@ impl JsonSink for TallyBuilder<'_> {
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
         // The key is the reader's, borrowed beside the fields it is
         // counted in.
-        let Tallies { nodes, free, .. } = &mut *self.tallies;
         let key = self.string_reader.key_text(id);
-        let set = Self::tally_key(&self.frames, nodes, free, self.strings, key)?;
-        let is_ref = key == "$ref";
-        self.key_set(set, is_ref);
-        Ok(())
+        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before
