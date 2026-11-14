@@ -151,8 +151,12 @@ const glueExports = [
     "__heapPeak",
 ];
 
-/** Exports only builds with a feature have (`--trace`). */
-const featureExports = args.has("--trace") ? ["__trace"] : [];
+/**
+ * Exports only builds with a feature have (`--trace`), which the glue has
+ * if the module it was made from has them: what is built, or reused with
+ * --skip-wasm.
+ */
+const featureExportNames = ["__trace"];
 
 /** The wasm-bindgen glue as the body of `function createGlue()`. */
 function glueFactory() {
@@ -200,6 +204,8 @@ function glueFactory() {
         throw new Error("glue: unexpected export or import.meta left");
     }
 
+    const featureExports = featureExportNames.filter((name) => new RegExp(`^function ${name}\\(`, "m").test(glue));
+    if (args.has("--trace") && !featureExports.includes("__trace")) throw new Error("glue: --trace, but the module has no __trace");
     const exported = [...glueExports, ...featureExports];
     for (const name of exported) {
         if (!new RegExp(`^function ${name}\\(`, "m").test(glue)) {

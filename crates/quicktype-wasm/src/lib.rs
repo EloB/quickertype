@@ -366,16 +366,18 @@ pub fn memory_pages() -> u32 {
     0
 }
 
-#[cfg(feature = "trace")]
+#[cfg(all(feature = "trace", target_arch = "wasm32"))]
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = performance, js_name = now)]
     fn performance_now() -> f64;
 }
 
-/// Gives the trace `performance.now` as its clock (`trace` builds only).
+/// Gives the trace `performance.now` as its clock (`trace` builds for
+/// WebAssembly only: natively the trace reads `Instant`, and the import
+/// cannot be called).
 fn install_clock() {
-    #[cfg(feature = "trace")]
+    #[cfg(all(feature = "trace", target_arch = "wasm32"))]
     trace::set_clock(performance_now);
 }
 
