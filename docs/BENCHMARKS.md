@@ -819,7 +819,12 @@ byte-identical: `cargo xtask parity` (11,177 of 11,177), the streaming
 harness on every path (300,000 seeds, 0 differences, the walk's tallies
 checked to be used), the differential suite (19,078 scenarios, 0
 different), and every benchmark below checks that the outputs are the
-same.
+same. A second review then had every input over a form use the tallies
+kept with it, a declined walk kept like tallies, the kept tallies shrunk
+to what they hold and sharing the input's lists of samples, each
+string's text compared with `"__proto__"` once per walk, and the facade
+take up the bytes of all the forms a run used before it evicts; the
+numbers below are with those.
 
 **Machine and method.** As above (M2 Max, Chrome 157 headless, Node.js
 24.16.0), "before" being main at `84e0f4e0a`, "after" this branch, in one
@@ -835,15 +840,17 @@ generating:
 
 | Input | Before | After | TypeScript |
 |---|---:|---:|---:|
-| generated (20 MB) | 99.2 + 47.5 = 147; again 46.9 | 99.4 + 49.6 = 149; again **13.9** | 258 + 148 = 407; again 157 |
-| 100k records (27 MB) | 56.2 + 8.30 = 64.5; again 8.00 | 55.9 + 7.90 = 63.8; again **1.60** | 81.0 + 88.3 = 170; again 74.1 |
+| generated (20 MB) | 97.3 + 46.5 = 144; again 45.9 | 97.1 + 49.1 = 146; again **13.6** | 248 + 144 = 393; again 136 |
+| 100k records (27 MB) | 54.6 + 8.30 = 62.9; again 7.90 | 54.7 + 8.10 = 62.7; again **1.60** | 81.5 + 84.9 = 167; again 69.4 |
 
-First runs are as before. The generated input's first run takes about
-1.5 ms more to generate (3%; the first rounds of the change put it at 1.3
-to 2.2 ms, measured at each commit of the branch: it comes with the
-handlers that reading and the walk now share, and no layout of the case
-slots tried, from 1,024 slots to a position per string, removed it), and
-the records' about 0.5 ms less. Cold (a fresh browser after the page
+First runs are as before, but for the generated input's, which takes
+1.4 to 2.6 ms more to generate (3 to 5%, from run to run of the
+benchmark). Measured at each commit of the branch, it comes with the
+handlers that reading and the walk now share; no layout of the case
+slots tried (from 1,024 slots to a position per string) removed it, nor
+did the later fixes (shrinking the kept tallies costs nothing measurable
+here: 49.0 against 49.1 ms without it). The records' first run takes
+about 0.2 to 0.5 ms less. Cold (a fresh browser after the page
 compiled the module, median of 7): generated 133 + 89.4 = 222 before,
 131 + 89.6 = 220 after (TypeScript 263 + 192 = 453); records 73.7 + 37.9
 = 112 before, 73.4 + 36.4 = 110 after (TypeScript 85.2 + 101 = 188).
@@ -861,16 +868,19 @@ them):
 
 | Input | After `addSource`, before / after | After a run, before / after |
 |---|---:|---:|
-| pokedex (82 KB) | 1,676,020 / 1,676,028 | 1,676,020 / 1,713,100 (+2.2%) |
-| generated (2 MB) | 4,064,024 / 4,064,032 | 4,064,024 / 5,305,629 (+31%) |
-| generated (20 MB) | 29,165,128 / 29,165,136 | 29,165,128 / 38,323,341 (+31%) |
-| 100k records (27 MB) | 11,879,620 / 11,879,628 | 11,879,620 / 12,296,597 (+3.5%) |
+| pokedex (82 KB) | 1,676,020 / 1,676,028 | 1,676,020 / 1,703,851 (+1.7%) |
+| generated (2 MB) | 4,064,024 / 4,064,032 | 4,064,024 / 4,934,692 (+21%) |
+| generated (20 MB) | 29,165,128 / 29,165,136 | 29,165,128 / 36,349,347 (+25%) |
+| 100k records (27 MB) | 11,879,620 / 11,879,628 | 11,879,620 / 12,190,139 (+2.6%) |
 
 A form is 8 bytes larger (the cell for the kept tallies). The generated
 inputs keep the most: a place per key of a map of random keys, and many
-distinct strings. Under a 16 MiB limit, 96 inputs of a 1 MB sample, each
+distinct strings. Kept tallies are shrunk to what they hold (their
+nodes, cases and keys had room for up to twice as many): before that,
+the generated 20 MB input's took 9,158,205 bytes, 2 MB's 1,241,597, the
+records' 416,969 and pokedex's 37,072. Under a 16 MiB limit, 96 inputs of a 1 MB sample, each
 run once, leave the engine's memory where they left it before (874
-pages), with fewer forms kept (2.86 MiB each with their tallies, 2.19
+pages), with fewer forms kept (2.63 MiB each with their tallies, 2.19
 without).
 
 The walk's own allocations no longer follow the size of the form: it
