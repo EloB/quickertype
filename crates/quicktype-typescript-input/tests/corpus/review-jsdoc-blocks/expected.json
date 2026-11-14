@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Base\":{\"title\":\"Base\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"Base x.\",\"type\":\"string\",\"title\":\"x\"},\"y\":{\"description\":\"Base y.\",\"type\":\"string\",\"title\":\"y\"},\"z\":{\"description\":\"Base z.\",\"type\":\"string\",\"title\":\"z\"},\"w\":{\"description\":\"Base w.\",\"type\":\"string\",\"title\":\"w\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\",\"z\",\"w\"],\"required\":[\"w\",\"x\",\"y\",\"z\"],\"quicktypePropertyOrder\":[\"x\",\"y\",\"z\",\"w\"]},\"Derived\":{\"description\":\"Second block.\",\"title\":\"Derived\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"Base x.\\nOwn x.\",\"type\":\"string\",\"title\":\"x\"},\"y\":{\"description\":\"Base y.\",\"type\":\"string\",\"title\":\"y\"},\"z\":{\"description\":\"Own z.\",\"type\":\"string\",\"title\":\"z\"},\"w\":{\"description\":\"Base w.\",\"type\":\"string\",\"title\":\"w\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\",\"z\",\"w\"],\"required\":[\"w\",\"x\",\"y\",\"z\"],\"quicktypePropertyOrder\":[\"x\",\"y\",\"z\",\"w\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

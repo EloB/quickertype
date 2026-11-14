@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"Base\":{\"title\":\"Base\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"The x of Base.\",\"type\":\"string\",\"title\":\"x\"},\"y\":{\"description\":\"The y of Base.\",\"type\":\"string\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"The x of Base.\",\"type\":\"string\",\"title\":\"x\"},\"y\":{\"description\":\"The y of Base.\",\"type\":\"string\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"T\":{\"title\":\"T\",\"additionalProperties\":false,\"type\":\"object\",\"properties\":{\"y\":{\"type\":\"string\",\"title\":\"y\"},\"z\":{\"type\":\"string\",\"title\":\"z\"}},\"required\":[\"y\",\"z\"]},\"U\":{\"title\":\"U\",\"additionalProperties\":false,\"type\":\"object\",\"properties\":{\"x\":{\"type\":\"string\",\"title\":\"x\"}},\"required\":[\"x\"]},\"Holder\":{\"title\":\"Holder\",\"type\":\"object\",\"properties\":{\"t\":{\"$ref\":\"#/definitions/T\",\"title\":\"t\"},\"u\":{\"$ref\":\"#/definitions/U\",\"title\":\"u\"}},\"additionalProperties\":false,\"propertyOrder\":[\"t\",\"u\"],\"required\":[\"t\",\"u\"],\"quicktypePropertyOrder\":[\"t\",\"u\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

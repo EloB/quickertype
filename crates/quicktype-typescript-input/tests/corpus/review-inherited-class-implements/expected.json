@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"I\":{\"title\":\"I\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"From I.\",\"type\":\"string\",\"title\":\"x\"},\"y\":{\"description\":\"From I too.\",\"type\":\"string\",\"title\":\"y\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"P\":{\"title\":\"P\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"From I.\",\"type\":\"string\",\"title\":\"x\",\"default\":\"\"},\"y\":{\"description\":\"From P.\",\"type\":\"string\",\"title\":\"y\",\"default\":\"\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]},\"Q\":{\"title\":\"Q\",\"type\":\"object\",\"properties\":{\"x\":{\"description\":\"From I.\",\"type\":\"string\",\"title\":\"x\",\"default\":\"\"},\"y\":{\"description\":\"From P.\",\"type\":\"string\",\"title\":\"y\",\"default\":\"\"}},\"additionalProperties\":false,\"propertyOrder\":[\"x\",\"y\"],\"required\":[\"x\",\"y\"],\"quicktypePropertyOrder\":[\"x\",\"y\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
