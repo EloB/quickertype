@@ -18,6 +18,7 @@
 mod comments;
 mod initializer;
 pub mod order;
+mod prefetch;
 pub mod text;
 
 use std::collections::HashMap;
@@ -37,9 +38,9 @@ pub const NO_TRUNCATION: u32 = 1;
 /// `TypeFormatFlags.UseFullyQualifiedType`.
 pub const USE_FULLY_QUALIFIED_TYPE: u32 = 64;
 /// `NodeBuilderFlags.NoTruncation`.
-const NODE_BUILDER_NO_TRUNCATION: u32 = 1;
+pub(super) const NODE_BUILDER_NO_TRUNCATION: u32 = 1;
 /// `NodeBuilderFlags.InTypeAlias`: print the type itself, not its alias.
-const NODE_BUILDER_IN_TYPE_ALIAS: u32 = 8_388_608;
+pub(super) const NODE_BUILDER_IN_TYPE_ALIAS: u32 = 8_388_608;
 
 const NUMERIC_INDEX_PATTERN: &str = "^[0-9]+$";
 const VALIDATION_KEYWORDS: &[&str] = &[
@@ -121,6 +122,8 @@ pub struct Generator<'s> {
     pub warnings: Vec<String>,
     all_symbols: HashMap<String, Rc<Type>>,
     user_symbols: Vec<(String, Rc<Symbol>)>,
+    /// Positions in `user_symbols` by name.
+    user_index: HashMap<String, usize>,
     inheriting_types: HashMap<String, Vec<String>>,
     reffed_definitions: Obj,
     type_names_by_id: HashMap<u64, String>,
@@ -211,6 +214,7 @@ impl<'s> Generator<'s> {
             warnings: Vec::new(),
             all_symbols: HashMap::new(),
             user_symbols: Vec::new(),
+            user_index: HashMap::new(),
             inheriting_types: HashMap::new(),
             reffed_definitions: Value::object(),
             type_names_by_id: HashMap::new(),
@@ -246,6 +250,12 @@ impl<'s> Generator<'s> {
             .collect();
         let symbols = s.symbols_at(&name_nodes)?;
         let types = s.types_at(&decls)?;
+        prefetch::warm(
+            s,
+            user_files,
+            &types.iter().flatten().cloned().collect::<Vec<_>>(),
+            &symbols.iter().flatten().cloned().collect::<Vec<_>>(),
+        )?;
         for ((decl, symbol), node_type) in decls.iter().zip(symbols).zip(types) {
             let Some(node_type) = node_type else { continue };
             // A nameless `export default class {}` has no name to ask about;
@@ -260,15 +270,17 @@ impl<'s> Generator<'s> {
             let name = text::strip_quoted_prefix(&g.fqn(&symbol)?);
             // `if (!userSymbols[name])` on a plain object: `Object.prototype`
             // names count as present.
-            if !g.user_symbols.iter().any(|(n, _)| *n == name)
-                && !js::is_object_prototype_key(&name)
-            {
+            let known = g.user_index.get(&name).copied();
+            if known.is_none() && !js::is_object_prototype_key(&name) {
                 g.all_symbols.insert(name.clone(), Rc::clone(&node_type));
             }
             if name != "__proto__" {
-                match g.user_symbols.iter_mut().find(|(n, _)| *n == name) {
-                    Some(entry) => entry.1 = Rc::clone(&symbol),
-                    None => g.user_symbols.push((name.clone(), Rc::clone(&symbol))),
+                match known {
+                    Some(i) => g.user_symbols[i].1 = Rc::clone(&symbol),
+                    None => {
+                        g.user_index.insert(name.clone(), g.user_symbols.len());
+                        g.user_symbols.push((name.clone(), Rc::clone(&symbol)));
+                    }
                 }
             }
             if has(node_type.flags, tf::Object) && has(node_type.object_flags, of::ClassOrInterface)
@@ -290,7 +302,7 @@ impl<'s> Generator<'s> {
         let names = js_key_order(self.user_symbols.iter().map(|(n, _)| n.clone()).collect());
         let mut main = Vec::new();
         for name in names {
-            let Some((_, sym)) = self.user_symbols.iter().find(|(n, _)| *n == name) else {
+            let Some((_, sym)) = self.user_index.get(&name).map(|i| &self.user_symbols[*i]) else {
                 continue;
             };
             if let Some(d) = sym.declarations.first() {

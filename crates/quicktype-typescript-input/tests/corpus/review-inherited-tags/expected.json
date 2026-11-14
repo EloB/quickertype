@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"at\":{\"format\":\"date-time\",\"type\":\"string\",\"title\":\"at\"},\"n\":{\"minimum\":1,\"type\":\"number\",\"title\":\"n\"},\"m\":{\"description\":\"Docs of m.\",\"maximum\":9,\"type\":\"number\",\"title\":\"m\"}},\"additionalProperties\":false,\"propertyOrder\":[\"at\",\"n\",\"m\"],\"required\":[\"at\",\"m\",\"n\"],\"quicktypePropertyOrder\":[\"at\",\"n\",\"m\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"at\":{\"type\":\"string\",\"title\":\"at\"},\"n\":{\"type\":\"number\",\"title\":\"n\"},\"m\":{\"description\":\"Docs of m.\",\"maximum\":9,\"type\":\"number\",\"title\":\"m\"}},\"additionalProperties\":false,\"propertyOrder\":[\"at\",\"n\",\"m\"],\"required\":[\"at\",\"m\",\"n\"],\"quicktypePropertyOrder\":[\"at\",\"n\",\"m\"]},\"C\":{\"title\":\"C\",\"type\":\"object\",\"properties\":{\"at\":{\"type\":\"string\",\"title\":\"at\"},\"m\":{\"description\":\"Docs of m.\",\"type\":\"number\",\"title\":\"m\"},\"n\":{\"type\":\"number\",\"title\":\"n\"}},\"additionalProperties\":false,\"propertyOrder\":[\"at\",\"m\",\"n\"],\"required\":[\"at\",\"m\",\"n\"],\"quicktypePropertyOrder\":[\"at\",\"m\",\"n\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

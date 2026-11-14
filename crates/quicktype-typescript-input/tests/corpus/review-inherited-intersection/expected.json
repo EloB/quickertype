@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"a\":{\"description\":\"The a of A.\",\"minimum\":1,\"type\":\"number\",\"title\":\"a\"},\"c\":{\"description\":\"The c of A.\",\"type\":\"string\",\"title\":\"c\"}},\"additionalProperties\":false,\"propertyOrder\":[\"a\",\"c\"],\"required\":[\"a\",\"c\"],\"quicktypePropertyOrder\":[\"a\",\"c\"]},\"T\":{\"title\":\"T\",\"additionalProperties\":false,\"type\":\"object\",\"properties\":{\"a\":{\"maximum\":3,\"type\":\"number\",\"title\":\"a\"},\"b\":{\"type\":\"string\",\"title\":\"b\"},\"c\":{\"type\":\"string\",\"title\":\"c\"}},\"required\":[\"a\",\"b\",\"c\"]},\"U\":{\"title\":\"U\",\"type\":\"object\",\"properties\":{\"t\":{\"$ref\":\"#/definitions/T\",\"title\":\"t\"},\"both\":{\"additionalProperties\":false,\"type\":\"object\",\"properties\":{\"d\":{\"type\":\"boolean\",\"title\":\"d\"}},\"title\":\"both\"}},\"additionalProperties\":false,\"propertyOrder\":[\"t\",\"both\"],\"required\":[\"both\",\"t\"],\"quicktypePropertyOrder\":[\"t\",\"both\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}

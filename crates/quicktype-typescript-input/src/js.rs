@@ -15,6 +15,7 @@
 
 use std::cell::RefCell;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 pub use quicktype_js_compat::json::quote;
@@ -147,30 +148,65 @@ impl Value {
 /// A JavaScript object's own enumerable string-keyed properties.
 #[derive(Default, Debug)]
 pub struct JsObject {
+    /// In insertion order.
     entries: Vec<(String, Value)>,
+    /// Positions in `entries` by key, once there are enough entries that a
+    /// linear search costs more than hashing (the schema's `definitions`
+    /// hold one entry per type).
+    index: Option<HashMap<String, usize>>,
+    /// Whether some key is an array index (and `keys` must sort).
+    has_index_keys: bool,
 }
 
+/// Entries from which a [`JsObject`] keeps a hash index.
+const INDEXED_FROM: usize = 16;
+
 impl JsObject {
+    fn position(&self, key: &str) -> Option<usize> {
+        match &self.index {
+            Some(index) => index.get(key).copied(),
+            None => self.entries.iter().position(|(k, _)| k == key),
+        }
+    }
+
     /// The value of own property `key`.
     pub fn get(&self, key: &str) -> Option<Value> {
-        self.entries
-            .iter()
-            .find(|(k, _)| k == key)
-            .map(|(_, v)| v.clone())
+        self.position(key).map(|i| self.entries[i].1.clone())
     }
 
     /// `hasOwnProperty(key)`.
     pub fn has(&self, key: &str) -> bool {
-        self.entries.iter().any(|(k, _)| k == key)
+        self.position(key).is_some()
     }
 
     /// Defines own property `key` (`CreateDataProperty`: object literals,
     /// spread, `JSON.parse`); an existing key keeps its position.
     pub fn define(&mut self, key: &str, value: Value) {
-        match self.entries.iter_mut().find(|(k, _)| k == key) {
-            Some(entry) => entry.1 = value,
-            None => self.entries.push((key.to_owned(), value)),
+        match self.position(key) {
+            Some(i) => self.entries[i].1 = value,
+            None => {
+                self.has_index_keys |= is_array_index(key);
+                self.entries.push((key.to_owned(), value));
+                let at = self.entries.len() - 1;
+                match &mut self.index {
+                    Some(index) => {
+                        index.insert(key.to_owned(), at);
+                    }
+                    None if self.entries.len() >= INDEXED_FROM => self.reindex(),
+                    None => {}
+                }
+            }
         }
+    }
+
+    fn reindex(&mut self) {
+        self.index = Some(
+            self.entries
+                .iter()
+                .enumerate()
+                .map(|(i, (k, _))| (k.clone(), i))
+                .collect(),
+        );
     }
 
     /// `obj[key] = value`. Assigning `__proto__` changes the prototype rather
@@ -183,36 +219,52 @@ impl JsObject {
 
     /// `delete obj[key]`.
     pub fn remove(&mut self, key: &str) {
-        self.entries.retain(|(k, _)| k != key);
+        if let Some(i) = self.position(key) {
+            self.entries.remove(i);
+            if self.index.is_some() {
+                self.reindex();
+            }
+        }
+    }
+
+    /// Positions in `entries`, in `Object.keys` order: array indices
+    /// ascending, then the other keys in insertion order.
+    fn order(&self) -> Vec<usize> {
+        if !self.has_index_keys {
+            return (0..self.entries.len()).collect();
+        }
+        let mut indices: Vec<(u64, usize)> = self
+            .entries
+            .iter()
+            .enumerate()
+            .filter(|(_, (k, _))| is_array_index(k))
+            .map(|(i, (k, _))| (k.parse().unwrap_or(0), i))
+            .collect();
+        indices.sort_by_key(|(n, _)| *n);
+        let mut order: Vec<usize> = indices.into_iter().map(|(_, i)| i).collect();
+        order.extend(
+            self.entries
+                .iter()
+                .enumerate()
+                .filter(|(_, (k, _))| !is_array_index(k))
+                .map(|(i, _)| i),
+        );
+        order
     }
 
     /// `Object.keys(obj)`: array indices ascending, then insertion order.
     pub fn keys(&self) -> Vec<String> {
-        let mut indices: Vec<(u64, &String)> = self
-            .entries
-            .iter()
-            .filter(|(k, _)| is_array_index(k))
-            .map(|(k, _)| (k.parse().unwrap_or(0), k))
-            .collect();
-        indices.sort_by_key(|(n, _)| *n);
-        let mut keys: Vec<String> = indices.into_iter().map(|(_, k)| k.clone()).collect();
-        keys.extend(
-            self.entries
-                .iter()
-                .filter(|(k, _)| !is_array_index(k))
-                .map(|(k, _)| k.clone()),
-        );
-        keys
+        self.order()
+            .into_iter()
+            .map(|i| self.entries[i].0.clone())
+            .collect()
     }
 
     /// `Object.entries(obj)`.
     pub fn entries(&self) -> Vec<(String, Value)> {
-        self.keys()
+        self.order()
             .into_iter()
-            .map(|k| {
-                let v = self.get(&k).unwrap_or(Value::Undefined);
-                (k, v)
-            })
+            .map(|i| self.entries[i].clone())
             .collect()
     }
 
@@ -419,6 +471,47 @@ mod tests {
         assert_eq!(o.borrow().keys(), ["0", "1", "b", "a", "01", "4294967295"]);
         o.borrow_mut().set("__proto__", Value::Null);
         assert!(!o.borrow().has("__proto__"));
+    }
+
+    #[test]
+    fn large_objects_keep_order_through_the_index() {
+        let o = Value::object();
+        let mut expected: Vec<String> = Vec::new();
+        for i in 0..40 {
+            let k = if i % 7 == 0 {
+                (100 - i).to_string()
+            } else {
+                format!("k{i}")
+            };
+            o.borrow_mut().set(&k, Value::Number(f64::from(i)));
+            expected.push(k);
+        }
+        // Redefining keeps the position; removing shifts the rest.
+        o.borrow_mut().set("k3", Value::str("x"));
+        o.borrow_mut().remove("k5");
+        o.borrow_mut().remove("absent");
+        o.borrow_mut().set("k5", Value::Null);
+        expected.retain(|k| k != "k5");
+        expected.push("k5".into());
+        let mut numeric: Vec<u64> = expected.iter().filter_map(|k| k.parse().ok()).collect();
+        numeric.sort_unstable();
+        let mut order: Vec<String> = numeric.iter().map(u64::to_string).collect();
+        order.extend(
+            expected
+                .iter()
+                .filter(|k| k.parse::<u64>().is_err())
+                .cloned(),
+        );
+        let obj = o.borrow();
+        assert_eq!(obj.keys(), order);
+        assert_eq!(obj.len(), 40);
+        assert_eq!(
+            obj.get("k3").and_then(|v| v.as_str().map(str::to_owned)),
+            Some("x".into())
+        );
+        assert!(obj.has("k5") && obj.has("93") && !obj.has("k100"));
+        let entries: Vec<String> = obj.entries().into_iter().map(|(k, _)| k).collect();
+        assert_eq!(entries, order);
     }
 
     #[test]

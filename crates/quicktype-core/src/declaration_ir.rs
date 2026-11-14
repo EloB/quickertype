@@ -162,10 +162,9 @@ impl DeclarationBuilder<'_> {
         let components_graph = graph.strongly_connected_components()?;
         let roots = components_graph.find_roots();
         let top_down = self.top_down;
-        for component in &roots {
-            components_graph.dfs_traversal(component, top_down, |c| self.visit_component(c))?;
-        }
-        Ok(())
+        // One traversal per root, as quicktype does; `visit_component` does
+        // nothing for a component it has seen, so they share what they reach.
+        components_graph.dfs_traversal_from_roots(&roots, top_down, |c| self.visit_component(c))
     }
 
     fn visit_component(&mut self, component: &Vec<TypeRef>) -> Result<()> {

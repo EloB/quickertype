@@ -331,6 +331,17 @@ impl Node {
             .collect()
     }
 
+    /// Whether this JSDoc comment has comment text: a `comment` child that
+    /// is not an empty node list (a JSDoc of tags only has none, or an empty
+    /// one).
+    pub fn has_comment(&self) -> bool {
+        match self.named("comment") {
+            Some(c) if c.kind() == KIND_NODE_LIST => !c.raw_children().is_empty(),
+            Some(_) => true,
+            None => false,
+        }
+    }
+
     /// A named child (`getNamedChild`), possibly a node list.
     pub fn named(&self, property: &str) -> Option<Node> {
         let order = child_properties(self.kind())

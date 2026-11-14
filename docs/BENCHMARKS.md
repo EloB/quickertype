@@ -942,6 +942,122 @@ the file is read in one go.
 Without that bound they were scanned until half the budget (5.6 / 14.9
 ms; with a 1 GiB budget, all 266 MB: 17.0 / 119 ms, now 5.8 / 5.6).
 
+## TypeScript input
+
+`quickertype -s typescript file.ts -l rust -o out.rs` against the
+TypeScript reference (quicktype with TypeScript 5.9 in Node.js v24.16.0)
+and against main at `972d0a9f9`, which this change starts from.
+quickertype type-checks the sources with the TypeScript 7.0.2 native
+compiler (`tsc --api`) and asks its checker about every declaration,
+type and symbol over a pipe ([07-typescript-input.md](research/07-typescript-input.md)).
+Every output below is byte-identical to quicktype's.
+
+**Inputs.** Generated files of exported interfaces that refer to each
+other:
+
+- *Flat*: 6 to 15 properties each; 500 (0.16 MB), 2,000 (0.62 MB) and
+  10,000 interfaces (3.1 MB). The generator meant to mix twelve kinds of
+  property, but its random numbers (`seed % k` of a linear congruential
+  generator) repeat in short cycles: of the 10,000 interfaces' 102,000
+  properties, a third each are `string`, `string[]` and `"red" |
+  "green" | "blue"`, and 304 refer to another interface (`TypeN | null`,
+  `TypeN[]`).
+- *Typings*: shaped like an API's typings. One interface in eleven is a
+  base and a third of the others extend one, some bases extend others;
+  string-literal type aliases; `X | null`, `X | string`, `X[] | null`,
+  `Array<X | null>`, `ReadonlyArray<…>`, object literals, index
+  signatures, tuples and `Date`; JSDoc comments, with and without tags
+  (`@deprecated`, `@format`); each interface refers to some of the 40
+  before it. 1,100 (0.42 MB), 3,300 (1.3 MB) and 11,000 interfaces
+  (4.2 MB, 88,000 properties), named by their models: 1,000, 3,000 and
+  10,000.
+
+They leave out what quicktype itself fails on (and quickertype with it,
+on purpose): generic instantiations (`Page<T>`, `Record<K, V>`,
+`Partial<T>`: "Key Page%3CT%3E not in schema object"); unions of two
+interfaces spread over the graph (quicktype merges the classes of a
+union, and the merges cascade: more than five minutes at 1,000
+interfaces, in both); references in no particular order among thousands
+of interfaces (typescript-json-schema defines a type when it first meets
+it, depth first, so the recursion grows with the graph and Node.js
+overflows its stack); and a string `enum` in a union with `null`, two
+optional properties of the same string enum in one interface, or two
+string enums with the same values ("Internal error: Cannot combine type
+attribute accessorNames").
+
+**Requests to the compiler.** Main asks one question at a time and waits
+for each answer: 91 round trips per flat interface, 113 per typings
+interface. Now the requests go out in a few pipelined batches (the
+compiler answers one message at a time, in order), and the generator
+then runs on the answers; see the commits for how.
+
+| Input | Main: requests (all round trips) | Now: requests | one at a time | pipelined batches | tsc's own processing, main → now |
+|---|---:|---:|---:|---:|---:|
+| Flat 500 | 45,480 | 2,645 | 29 | 8 | 272 → 182 ms |
+| Flat 2,000 | 181,859 | 10,148 | 29 | 8 | 616 → 287 ms |
+| Flat 10,000 | 909,165 | 50,166 | 29 | 8 | 2,558 → 858 ms |
+| Typings 1,000 | 123,216 | 27,130 | 29 | 15 | 534 → 299 ms |
+| Typings 3,000 | 370,574 | 80,237 | 29 | 15 | 1,346 → 648 ms |
+| Typings 10,000 | 1,241,162 | 267,998 | 29 | 15 | 4,304 → 1,957 ms |
+
+The 29 are the session (`initialize`, `updateSnapshot`), the
+diagnostics, the file list and ASTs, and a few one-off questions; the
+batches are the steps of the walk over the type graph, so neither grows
+with the input (the `round_trips_do_not_grow_with_the_input` test keeps
+it so). `QUICKTYPE_TSC_STATS=1` prints these counts per method. The
+compiler's own processing time was measured with `tsc --api --timing`
+and its `getServerTiming` request, which the statistics do not use,
+before the walk took in the library types, accessors and type parameters
+the generator also walks (3.5% more requests on the typings, 9 more on
+the flat input).
+
+**Time.** Best of 3 interleaved runs (quicktype, main, now, one after
+the other per input); wall time and peak RSS. Load average 2.7 to 4.3 on
+12 cores, with another agent's builds coming and going.
+
+| Input | quicktype | main | now | vs quicktype | vs main |
+|---|---:|---:|---:|---:|---:|
+| Flat 500 | 1.26 s, 385 MiB | 0.87 s, 151 MiB | **0.40 s**, 120 MiB | 3.1× | 2.2× |
+| Flat 2,000 | 2.72 s, 784 MiB | 3.22 s, 204 MiB | **1.22 s**, 177 MiB | 2.2× | 2.6× |
+| Flat 10,000 | 16.9 s, 1,923 MiB | 23.0 s, 639 MiB | **5.54 s**, 629 MiB | 3.1× | 4.1× |
+| Typings 1,000 | 2.50 s, 705 MiB | 2.30 s, 198 MiB | **1.11 s**, 179 MiB | 2.3× | 2.1× |
+| Typings 3,000 | 6.26 s, 1,030 MiB | 6.55 s, 323 MiB | **2.73 s**, 292 MiB | 2.3× | 2.4× |
+| Typings 10,000 | 28.4 s, 2,184 MiB | 25.5 s, 781 MiB | **8.41 s**, 778 MiB | 3.4× | 3.0× |
+
+Main was slower than quicktype from 2,000 flat interfaces on, and grew
+faster than linearly (×7.1 from 2,000 to 10,000). Two causes besides
+the round trips were quadratic: the TypeScript input's JavaScript objects
+looked their keys up one by one (the schema's `definitions` hold one per
+type), and four steps of the engine, which every input with thousands of
+types goes through, JSON Schema in particular. Their times on the
+10,000-interface inputs, main → now:
+
+| Phase (`--debug print-times`) | Flat 10,000 | Typings 10,000 |
+|---|---:|---:|
+| expand strings | 2,367 → 104 ms | 184 → 113 ms |
+| render (naming, declarations) | 4,117 → 284 ms | 2,044 → 524 ms |
+
+- *expand strings*: with JSON Schema enums, each restricted string's
+  cases became an enum set and were taken out of an `IndexMap` with
+  `shift_remove` (moving all later entries), and each string then
+  searched every set for an equal one.
+- *naming*: the check that an assigned name does not conflict went
+  through every named already given the proposed string (`id` is given
+  in thousands of classes), and finished namespaces left the queue with
+  `shift_remove`.
+- *declarations*: one depth-first traversal per root of the declaration
+  graph, each with its own visited set, walked what the roots share again
+  for each root.
+
+**What is left.** On the flat input the compiler's part is now its
+check and its answers (0.9 s at 10,000), and the rest is the engine's
+linear phases (reading the schema, 1.2 s; making optional properties
+nullable, 0.7 s; resolving intersections, 0.4 s). On the typings, the
+compiler's processing (2.0 s at 10,000, about 100,000 of its 258,000
+answers are `typeToString`) is most of the TypeScript input's time; the
+check alone is 124 ms even for one interface, the libraries included,
+as in the reference. A file of one interface converts in 0.16 s.
+
 ## Profiling
 
 ```sh

@@ -181,6 +181,24 @@ fn not_found(why: &str) -> Error {
     ))
 }
 
+/// The compiler for this crate's tests: `$QUICKTYPE_TSC` (and nothing
+/// else when it is set), the usual lookup from `crate_dir`, or the
+/// `node_modules` of a sibling `quicktype` checkout (the layout `cargo
+/// xtask golden` uses). `None` makes a test skip itself.
+#[doc(hidden)]
+pub fn for_tests(crate_dir: &Path) -> Option<PathBuf> {
+    if std::env::var_os(TSC_ENV).is_some() {
+        return locate(crate_dir).ok();
+    }
+    if let Ok(exe) = locate(crate_dir) {
+        return Some(exe);
+    }
+    crate_dir.ancestors().find_map(|dir| {
+        let exe = platform_package_exe(&dir.join("quicktype").join("node_modules"));
+        (exe.is_file() && has_pinned_version(&exe)).then_some(exe)
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

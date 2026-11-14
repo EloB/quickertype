@@ -698,10 +698,21 @@ impl NamingContext<'_> {
         };
         let members = self.naming.members(namespace);
         let forbidden = &self.forbidden_nameds[&namespace];
-        // The name is assigned, but it might still not be forbidden.
-        nameds
-            .iter()
-            .any(|n| members.contains(n) || forbidden.contains(n))
+        // The name is assigned, but it might still not be forbidden: is one
+        // of the nameds it is assigned to a member or forbidden here? A
+        // common property name is assigned in thousands of namespaces, so
+        // ask from the smaller side; `nameds` holds exactly the nameds
+        // assigned `proposed`.
+        if nameds.len() <= members.len() + forbidden.len() {
+            nameds
+                .iter()
+                .any(|n| members.contains(n) || forbidden.contains(n))
+        } else {
+            members
+                .iter()
+                .chain(forbidden)
+                .any(|&n| self.names.get(n) == Some(proposed))
+        }
     }
 
     fn assign(&mut self, named: Name, namespace: NamespaceId, name: &str) -> Result<()> {
@@ -753,11 +764,17 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         }
     }
 
-    let mut unfinished: IndexSet<NamespaceId> = namespaces
+    // The unfinished namespaces in order. A finished one is marked and
+    // dropped from the list in bulk now and then: taking each out right away
+    // (`unfinished.delete(namespace)`) would move all later entries every
+    // time, quadratic in the number of classes.
+    let mut unfinished: Vec<NamespaceId> = namespaces
         .iter()
         .copied()
         .filter(|&ns| naming.members(ns).iter().any(|&m| !ctx.names.has(m)))
         .collect();
+    let mut finished = vec![false; naming.namespaces.len()];
+    let mut finished_in_list = 0;
 
     loop {
         // 1. Find a namespace whose forbiddens are all fully named, and which
@@ -765,6 +782,9 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         //    satisfied.
         let mut ready_namespace = None;
         for &ns in &unfinished {
+            if finished[ns.0 as usize] {
+                continue;
+            }
             if ctx.are_forbiddens_fully_named(ns)
                 && naming
                     .members(ns)
@@ -840,7 +860,12 @@ pub fn assign_names(naming: &Naming, root_namespaces: &[NamespaceId]) -> Result<
         }
 
         if naming.members(namespace).iter().all(|&m| ctx.names.has(m)) {
-            unfinished.shift_remove(&namespace);
+            finished[namespace.0 as usize] = true;
+            finished_in_list += 1;
+            if finished_in_list * 2 > unfinished.len() {
+                unfinished.retain(|ns| !finished[ns.0 as usize]);
+                finished_in_list = 0;
+            }
         }
     }
 }
@@ -884,6 +909,53 @@ mod tests {
         assert_eq!(names.get(first), Some("first"));
         assert_eq!(names.get(dependency), Some("dependency"));
         assert_eq!(names.get(dependent), Some("dependencyDependent"));
+    }
+
+    #[test]
+    fn conflicts_are_found_from_either_side() {
+        let namer = identity_namer();
+        let mut naming = Naming::new();
+        let spaces: Vec<NamespaceId> = (0..4)
+            .map(|i| naming.namespace(format!("ns{i}"), None, [], []))
+            .collect();
+        let members: Vec<Name> = spaces
+            .iter()
+            .map(|&ns| {
+                let n = naming.simple_name(["x"], &namer, 1);
+                naming.add(ns, n)
+            })
+            .collect();
+        // One member and one forbidden named: fewer than the four nameds
+        // assigned "x", so these are asked from the namespace's side.
+        let small = naming.namespace("small", None, [spaces[0]], []);
+        let y = naming.simple_name(["y"], &namer, 1);
+        naming.add(small, y);
+        let empty = naming.namespace("empty", None, [], []);
+        // Six members and one forbidden named: asked from the nameds' side.
+        let big = naming.namespace("big", None, [spaces[2]], []);
+        for _ in 0..6 {
+            let n = naming.simple_name(["z"], &namer, 1);
+            naming.add(big, n);
+        }
+        let mut ctx = NamingContext {
+            naming: &naming,
+            names: Names {
+                assigned: vec![None; naming.names.len()],
+            },
+            nameds_for_name: HashMap::default(),
+            forbidden_nameds: HashMap::default(),
+        };
+        for (&ns, &m) in spaces.iter().zip(&members) {
+            ctx.assign(m, ns, "x").unwrap();
+        }
+        assert!(ctx.is_conflicting(small, "x"));
+        assert!(ctx.is_conflicting(spaces[1], "x"));
+        assert!(!ctx.is_conflicting(empty, "x"));
+        assert!(!ctx.is_conflicting(small, "y"));
+        assert!(ctx.is_conflicting(big, "x"));
+        ctx.assign(y, small, "y").unwrap();
+        assert!(ctx.is_conflicting(small, "y"));
+        assert!(!ctx.is_conflicting(big, "y"));
     }
 
     // Ported from test/unit/naming.test.ts.
