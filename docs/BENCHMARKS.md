@@ -1842,8 +1842,9 @@ The changes, one commit each:
    or `[` and with at most a decimal port that urijs accepts, no
    backslash, tab or line break before the query) is read in one pass
    over a table of the bytes that matter, which finds the path's last
-   dot on the way; every other URI goes to urijs' parser, as before (and
-   the walk keeps the parts of the last 256 it parsed, by string index). A test compares the two on 200,000 random strings of the
+   dot on the way; every other URI goes to urijs' parser, as before. The
+   walk keeps the parts of the last 256 URIs by string index, so a URI
+   that recurs is read or parsed once. A test compares the two on 200,000 random strings of the
    characters that matter to urijs, and `cargo xtask diff` against
    TypeScript quicktype gave identical output for 600 documents of URIs
    of every shape and 30 of generated cards (JSON Schema, which shows the

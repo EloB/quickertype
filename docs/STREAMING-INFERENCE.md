@@ -422,9 +422,8 @@ with references handled) is `add_case`, an uninterned one
 `add_uninterned`, a string format `add_string_format` with its kind, and
 a transformed string `add_uri` with the protocol and extension of its
 text (`uri_inference_parts`, of which `uriInferenceAttributesProducer`
-makes its attributes; a URI urijs' parser has to read, which recurs
-under one index, is parsed once while the walk keeps the last 256 by
-index). A transformed string is a `uri`: `commitString` records a string
+makes its attributes; a URI that recurs, under one index, is read once
+while the walk keeps the parts of the last 256 by index). A transformed string is a `uri`: `commitString` records a string
 as one only for a kind with an attribute producer, with the form's
 date/time recognizer, and `uri` is the only such kind. Imported tables
 are checked as their values are decoded: one that is not a `uri` to the

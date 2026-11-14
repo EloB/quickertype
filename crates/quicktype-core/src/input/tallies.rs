@@ -1446,13 +1446,12 @@ struct CompressedTally<'c> {
     /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
-    /// The parts of the URIs urijs' parser read so far (those that are
-    /// not plain: user info, brackets, an unusual port), at the slot of
-    /// their string index ([`PARSED_SLOTS`] of them, made with the first):
-    /// the same text recurs under the same index, and is parsed once while
-    /// its slot keeps it. Plain URIs are read each time, which costs less
-    /// than keeping them.
-    parsed: Vec<Option<(u32, Option<UriParts<'static>>)>>,
+    /// The parts of the URIs read so far, at the slot of their string
+    /// index ([`URI_SLOTS`] of them, made with the first): the same text
+    /// recurs under the same index, and is read once (or parsed, if it is
+    /// not plain) while its slot keeps it. A plain URI's parts borrow its
+    /// text from the form.
+    uris: Vec<Option<(u32, Option<UriParts<'c>>)>>,
     /// The containers being walked, innermost last.
     stack: Vec<WalkFrame<'c>>,
 }
@@ -1460,10 +1459,10 @@ struct CompressedTally<'c> {
 /// No string index (yet).
 const NO_INDEX: u32 = u32::MAX;
 
-/// How many parsed URIs the walk keeps the parts of, by string index: a
-/// bounded number, since an input of distinct URIs would gain nothing from
-/// keeping them all, and one whose URIs recur has few of them.
-const PARSED_SLOTS: usize = 256;
+/// How many URIs the walk keeps the parts of, by string index: a bounded
+/// number, since an input of distinct URIs would gain nothing from keeping
+/// them all, and one whose URIs recur has few of them.
+const URI_SLOTS: usize = 256;
 
 /// An object or array whose values [`CompressedTally`] is walking.
 enum WalkFrame<'c> {
@@ -1513,7 +1512,7 @@ impl<'c> CompressedTally<'c> {
             proto: NO_INDEX,
             objects_seen: Vec::new(),
             arrays_seen: Vec::new(),
-            parsed: Vec::new(),
+            uris: Vec::new(),
             stack: Vec::new(),
         }
     }
@@ -1549,16 +1548,18 @@ impl<'c> CompressedTally<'c> {
     /// kind with an attribute producer, which every transformed string of
     /// a form the walk takes is ([`CompressedJson::transformed_are_uris`]).
     fn transformed(&mut self, tallies: &mut Tallies, node: NodeId, index: u32) -> Result<()> {
-        let text = defined(self.cjson.string(index))?;
-        if let Some(parts) = plain_uri_parts(text) {
-            return tallies.add_uri(node, Some(&parts));
+        let cjson: &'c CompressedJson = self.cjson;
+        if self.uris.is_empty() {
+            self.uris.resize_with(URI_SLOTS, || None);
         }
-        if self.parsed.is_empty() {
-            self.parsed.resize_with(PARSED_SLOTS, || None);
-        }
-        let slot = &mut self.parsed[index as usize % PARSED_SLOTS];
+        let slot = &mut self.uris[index as usize % URI_SLOTS];
         if !matches!(slot, Some((known, _)) if *known == index) {
-            *slot = Some((index, parsed_uri_parts(text)));
+            let text = defined(cjson.string(index))?;
+            let parts = match plain_uri_parts(text) {
+                Some(parts) => Some(parts),
+                None => parsed_uri_parts(text),
+            };
+            *slot = Some((index, parts));
         }
         let parts = slot.as_ref().and_then(|(_, parts)| parts.as_ref());
         tallies.add_uri(node, parts)
