@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="177" viewBox="0 0 520 177" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+<title id="title">Peak memory, generated JSON (40 MB)</title>
+<desc id="desc">quickertype's CLI uses 10× less than quicktype's. quicktype: 625 MiB; quickertype: 62 MiB.</desc>
+<rect x="0.5" y="0.5" width="519" height="176" rx="10" fill="#1a1c23" stroke="#2d303a"/>
+<text x="20" y="35" font-size="15" font-weight="600" fill="#e5e6ec">Peak memory, generated JSON (40 MB)</text>
+<text x="20" y="53.5" font-size="12.5" fill="#9a9dab">quickertype's CLI uses 10× less than quicktype's</text>
+<text x="20" y="85.5" font-size="13.5" fill="#e5e6ec">quicktype</text>
+<path d="M20 92.5H428.29A4 4 0 0 1 432.29 96.5V100.5A4 4 0 0 1 428.29 104.5H20Z" fill="#696c79"/>
+<text x="439.29" y="103.23" font-size="13.5" font-weight="600" fill="#e5e6ec">625 MiB</text>
+<text x="20" y="136" font-size="13.5" fill="#e5e6ec">quickertype</text>
+<path d="M20 143H56.9A4 4 0 0 1 60.9 147V151A4 4 0 0 1 56.9 155H20Z" fill="#9085e9"/>
+<text x="67.9" y="153.73" font-size="13.5" font-weight="600" fill="#e5e6ec">62 MiB</text>
+</svg>

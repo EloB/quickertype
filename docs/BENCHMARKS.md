@@ -1144,6 +1144,7 @@ cargo xtask bench --no-ref            # without the TypeScript CLI
 cargo xtask bench --out report.md     # also write the Markdown table
 cargo xtask bench --corpus --in-process --json site/data/benchmarks.json
                                       # the playground's numbers, as JSON
+node site/readme-charts.mjs           # the README's charts, from its tables (see README charts)
 
 # Before/after: build the older commit in its own worktree and pass it.
 git worktree add ../qt-before 11091954f
@@ -1190,3 +1191,41 @@ Notes:
   runs exited unexpectedly is added by hand when the snapshot is made, as
   `corpus.results.<id>.unexpected_exits_note` (a sentence); without one,
   the page shows the number as a warning.
+
+## README charts
+
+The charts in the README's "Speed and memory" (`docs/assets/charts`, a
+light and a dark SVG each) are drawn from the README's two tables by
+`site/readme-charts.mjs`, so they show exactly what the tables say. After
+changing a number in either table, regenerate them:
+
+```sh
+node site/readme-charts.mjs
+```
+
+`node site/readme-charts.mjs --check`, which `site/test/smoke.mjs` runs
+(in the Pages workflow), fails when a chart is missing or out of date, when
+the README does not show one, or when a table is no longer in the shape the
+charts are drawn from. The README loads them by absolute URL from
+`raw.githubusercontent.com` on `main`, since npm does not resolve relative
+image paths, nor crates.io a relative `srcset`; a README on a package page
+therefore shows `main`'s charts.
+
+They read the README rather than `site/data/benchmarks.json` for now: the
+README's CLI rows are newer than that file (the `cargo xtask bench` run
+in [Reading after the CLI profile](#reading-after-the-cli-profile)), and
+its browser table ([Warm runs in Chrome](#warm-runs-in-chrome-step-by-step))
+is in no data file. Until `benchmarks.json` is measured again, these rows
+differ (quicktype's column, startup and the corpus agree):
+
+| README row | README | `site/data/benchmarks.json` |
+|---|---:|---:|
+| `pokedex.json` (82 KB) → TypeScript | 4.3 ms, 60× | 4.78 ms, 54× |
+| `github-events.json` (82 KB) → 8 languages | 5.6–8.2 ms, 35–50× | 6.35–9.03 ms, 32–43× |
+| GraphQL schema (1.2 MB) and query → TypeScript | 8.9 ms, 28× | 9.28 ms, 26× |
+| JSON Schema (vega-lite, 306 KB) → TypeScript | 36 ms, 11× | 37.4 ms, 11× |
+| Generated JSON (40 MB) → TypeScript | 179 ms, 15× | 319 ms, 8.2× |
+| Peak memory, generated JSON (40 MB) | 62 MiB, 10× less | 177.5 MiB, 3.5× less |
+
+`site/data/big-inputs.json`'s 40 MB row (154.2 MiB) is older than the
+README's too. The benchmarks page shows the data files' numbers.

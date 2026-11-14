@@ -33,6 +33,13 @@ Smithy, Swift, TypeScript, TypeScript Effect Schema and TypeScript Zod.
 The CLI against quicktype's CLI on the same inputs; both write the same
 files. Wall time, median of 10 runs:
 
+<p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/cli-speed-dark.svg">
+  <img alt="Bar chart: how many times faster quickertype's CLI is than quicktype's, for each run in the table below, from startup to quicktype's whole test corpus." src="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/cli-speed-light.svg" width="520">
+</picture>
+</p>
+
 | Run | quicktype | quickertype | Faster |
 |---|---:|---:|---:|
 | Startup (`--version`) | 217 ms | 2.3 ms | 96× |
@@ -43,6 +50,13 @@ files. Wall time, median of 10 runs:
 | Generated JSON (40 MB) → TypeScript | 2,621 ms | 179 ms | 15× |
 | quicktype's test corpus: 11,178 CLI runs, 12 in parallel | 572 s | 12.5 s | 46× |
 | Peak memory, generated JSON (40 MB) | 625 MiB | 62 MiB | 10× less |
+
+<p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/cli-memory-dark.svg">
+  <img alt="Bar chart: quicktype's and quickertype's peak memory, from the table's last row." src="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/cli-memory-light.svg" width="520">
+</picture>
+</p>
 
 - **Large files:** a 2.6 GB JSON file becomes TypeScript types at a peak
   of 60 MiB (14.3 s of CPU time). Memory grows with what is distinct in
@@ -55,6 +69,13 @@ files. Wall time, median of 10 runs:
   WebAssembly engine behind quicktype's own API (`addSource`, then
   `quicktypeMultiFile` to TypeScript), warm in headless Chrome, against
   quicktype's TypeScript engine in the same page:
+
+  <p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/browser-speed-dark.svg">
+    <img alt="Bar chart: how many times faster quickertype's WebAssembly engine is than quicktype's TypeScript engine in the browser, for each input in the table below." src="https://raw.githubusercontent.com/EloB/quickertype/main/docs/assets/charts/browser-speed-light.svg" width="520">
+  </picture>
+  </p>
 
   | Input | quicktype | quickertype | Faster |
   |---|---:|---:|---:|
