@@ -24,7 +24,12 @@
 // thread): read here once, before the timed runs, and kept for the next
 // request on the same file (its name, size and modification time). A
 // request that does not carry that file (typed text, a sample, another
-// file) lets it go: its text can be most of a gigabyte.
+// file) lets it go: its text can be most of a gigabyte. The TypeScript
+// worker reads a file as text, as quicktype's API takes it; the
+// WebAssembly worker reads its bytes, which quickertype-core takes as
+// UTF-8 (`addSource` decodes them as `TextDecoder` does, as `file.text()`
+// would), and its engine reads them without a JavaScript string in
+// between.
 
 import { tooLarge, unreadable } from "./input-file.js";
 import { boot } from "./worker-boot.js";
@@ -39,19 +44,19 @@ import {
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
 
 /** One quicktype run, as quicktype's CLI would do it for a file of `kind`. */
-async function generate({ kind, lang, name, text, rendererOptions, options = {} }, phases) {
+async function generate({ kind, lang, name, sample, rendererOptions, options = {} }, phases) {
     const start = performance.now();
     const inputData = new InputData();
     if (kind === "schema") {
         const input = new JSONSchemaInput(new FetchingJSONSchemaStore());
-        await input.addSource({ name, schema: text });
+        await input.addSource({ name, schema: sample });
         inputData.addInput(input);
     } else {
         // As the CLI's makeInputData: `$ref`s are references with
         // --no-ignore-json-refs, and the renderer options set the range of
         // integers (Rust's `integer-type`, cJSON's `integer-size`).
         const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
-        await input.addSource({ name, samples: [text] });
+        await input.addSource({ name, samples: [sample] });
         inputData.addInput(input);
     }
 
@@ -95,46 +100,51 @@ function serialize(result) {
 
 let runs = 0;
 
-/** The file read last, while requests carry it: { key, text }. */
+/** The file read last, while requests carry it: { key, sample }. */
 let lastFile;
 
-/** The input's text: `text`, or the file's, read once per file. Throws { title, message, link? } if it cannot be read. */
-async function inputText({ text, file }) {
-    const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type]);
-    // Another input than the file kept: let its text go (before reading the next file, if there is one).
+/**
+ * The input's sample: `text`, or the file's, read once per file (its bytes
+ * on the WebAssembly worker for a JSON file, else its text). Throws
+ * { title, message, link? } if it cannot be read.
+ */
+async function inputSample({ kind, text, file }) {
+    const bytes = boot.engine === "wasm" && kind !== "schema";
+    const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, bytes]);
+    // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
     if (file === undefined) return text;
-    if (lastFile !== undefined) return lastFile.text;
+    if (lastFile !== undefined) return lastFile.sample;
     const large = tooLarge(file.name, file.size);
     if (large !== undefined) throw large;
     let read;
     try {
-        read = await file.text();
+        read = bytes ? new Uint8Array(await file.arrayBuffer()) : await file.text();
     } catch (e) {
         throw unreadable(file.name, e);
     }
 
     // Browsers have been seen to read what they cannot hold as "".
-    if (read === "" && file.size > 0) throw unreadable(file.name, new Error("the browser returned no text"));
-    lastFile = { key, text: read };
+    if (read.length === 0 && file.size > 0) throw unreadable(file.name, new Error(`the browser returned no ${bytes ? "bytes" : "text"}`));
+    lastFile = { key, sample: read };
     return read;
 }
 
 async function handle(request) {
     const first = runs === 0;
-    let text;
+    let sample;
     try {
-        text = await inputText(request);
+        sample = await inputSample(request);
     } catch (error) {
         // The input's error, not the engine's: no engine ran.
         return { type: "result", id: request.id, ok: false, error, times: [], inputTimes: [], first, ran: undefined };
     }
 
-    return timedRuns(request, text, first);
+    return timedRuns(request, sample, first);
 }
 
-/** `warmup` untimed runs, then `repeat` timed ones, on `text`; the reply has the last run's result. */
-async function timedRuns(request, text, first) {
+/** `warmup` untimed runs, then `repeat` timed ones, on `sample`; the reply has the last run's result. */
+async function timedRuns(request, sample, first) {
     const warmup = request.warmup ?? 0;
     const repeat = Math.max(1, request.repeat ?? 1);
     const times = [];
@@ -145,7 +155,7 @@ async function timedRuns(request, text, first) {
         const phases = {};
         const start = performance.now();
         try {
-            const result = await generate({ ...request, text }, phases);
+            const result = await generate({ ...request, sample }, phases);
             const ms = performance.now() - start;
             if (i >= warmup) {
                 times.push(ms);
