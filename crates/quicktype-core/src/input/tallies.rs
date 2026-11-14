@@ -1285,6 +1285,11 @@ struct CompressedTally<'c> {
     /// Whether the form has a `"__proto__"` text; most have none, and then
     /// no string is looked at to tell.
     protos: bool,
+    /// When it has: by string index, whether the string was looked at, and
+    /// whether it is `"__proto__"` (a bit each, made with the first look),
+    /// so that each string's text is compared once.
+    proto_seen: Vec<u64>,
+    proto_strings: Vec<u64>,
     /// The index of the first `"__proto__"` looked at, which stands for
     /// every one ([`NO_INDEX`] before).
     proto: u32,
@@ -1353,6 +1358,8 @@ impl<'c> CompressedTally<'c> {
             cjson,
             counts: cjson.table_counts(),
             protos: cjson.has_proto_strings(),
+            proto_seen: Vec::new(),
+            proto_strings: Vec::new(),
             proto: NO_INDEX,
             objects_seen: Vec::new(),
             arrays_seen: Vec::new(),
@@ -1365,19 +1372,27 @@ impl<'c> CompressedTally<'c> {
     /// table is a value that is not there, as looking it up finds.
     #[inline(always)]
     fn is_proto(&mut self, index: u32) -> Result<bool> {
-        if !self.protos {
-            return match (index as usize) < self.counts.strings {
-                true => Ok(false),
-                false => defined(None),
-            };
+        if index as usize >= self.counts.strings {
+            return defined(None);
         }
-        if defined(self.cjson.string(index))? != "__proto__" {
+        if !self.protos {
             return Ok(false);
         }
-        if self.proto == NO_INDEX {
-            self.proto = index;
+        if self.proto_seen.is_empty() {
+            self.proto_seen = vec![0; self.counts.strings.div_ceil(64)];
+            self.proto_strings = vec![0; self.counts.strings.div_ceil(64)];
         }
-        Ok(true)
+        let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
+        if self.proto_seen[word] & bit == 0 {
+            self.proto_seen[word] |= bit;
+            if defined(self.cjson.string(index))? == "__proto__" {
+                self.proto_strings[word] |= bit;
+                if self.proto == NO_INDEX {
+                    self.proto = index;
+                }
+            }
+        }
+        Ok(self.proto_strings[word] & bit != 0)
     }
 
     /// The kind and attributes `commitString` classified the transformed
