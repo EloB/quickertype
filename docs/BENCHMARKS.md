@@ -243,7 +243,7 @@ and measure with `/usr/bin/time -l` (delete the file afterwards):
 cargo xtask bench --no-ref --filter "generated (40" -n 1   # writes target/bench/generated-large.json
 python3 -c 'd = open("target/bench/generated-large.json", "rb").read().rstrip()
 open("target/bench/huge.json", "wb").write(b"[" + b",\n".join([d] * 60) + b"]")'
-/usr/bin/time -l target/release/quicktype target/bench/huge.json -l ts -o out.ts
+/usr/bin/time -l target/release/quickertype target/bench/huge.json -l ts -o out.ts
 rm target/bench/huge.json
 ```
 
@@ -339,10 +339,10 @@ To reproduce, as in [Memory on large inputs](#memory-on-large-inputs),
 with `target/before/quicktype` built from `e41fe731d`:
 
 ```sh
-for bin in target/before/quicktype target/release/quicktype; do
+for bin in target/before/quicktype target/release/quickertype; do
   /usr/bin/time -l $bin target/bench/huge.json -l ts -o /dev/null
 done
-QUICKTYPE_INFERENCE=compressed-json target/release/quicktype ...   # the reference path, same binary
+QUICKTYPE_INFERENCE=compressed-json target/release/quickertype ...   # the reference path, same binary
 cargo bench -p quickertype --bench in_process --no-run   # prints the benchmark binary
 /usr/bin/time -l <benchmark binary> --parse-only -n 30   # the parse phase's CPU time
 ```
@@ -530,7 +530,7 @@ To reproduce: build main in a second work tree (or copy its
 
 ```sh
 cargo xtask bench --baseline ../main/target/release/quicktype
-for bin in ../main/target/release/quicktype target/release/quicktype; do
+for bin in ../main/target/release/quicktype target/release/quickertype; do
   /usr/bin/time -l $bin rulings-100k.json -l ts -o out.ts
 done
 ```
@@ -541,8 +541,8 @@ with `rulings-100k.json` made as in [PROFILE-RECORDS.md](PROFILE-RECORDS.md#repr
 
 ```sh
 cargo build --profile profiling -p quickertype    # release + symbols
-samply record target/profiling/quicktype big.json -l ts -o out.ts
-target/release/quicktype big.json -l ts -o out.ts --debug print-times
+samply record target/profiling/quickertype big.json -l ts -o out.ts
+target/release/quickertype big.json -l ts -o out.ts --debug print-times
 cargo build --profile profiling -p quickertype --bench in_process
 samply record target/profiling/deps/in_process-<hash> -n 50 --filter github-events --lang c++
 ```

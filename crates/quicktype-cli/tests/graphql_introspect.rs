@@ -20,7 +20,7 @@ use quicktype_graphql_input::graphql::get_introspection_query;
 use quicktype_js_compat::json;
 use serde_json::{Map, Value, json};
 
-const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
+const BIN: &str = env!("CARGO_BIN_EXE_quickertype");
 
 fn manifest() -> Value {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/graphql-introspect.json");

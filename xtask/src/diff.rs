@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, Once};
 
-use crate::parity::{build_cli, first_difference, snapshot};
+use crate::parity::{build_cli, first_difference, normalize_help, snapshot};
 
 pub const USAGE: &str = "\
 cargo xtask diff [options] -- <quicktype args...>
@@ -23,7 +23,7 @@ each in its own temp dir, and compares exit code, stdout, stderr and files.
   --ref \"<cmd ...>\"   reference command (default: node <checkout>/dist/index.js, where
                       <checkout> is $QUICKTYPE_REFERENCE, else the first built
                       ../quicktype or ../../quicktype beside the workspace)
-  --bin \"<cmd ...>\"   our command (default: builds target/release/quicktype)
+  --bin \"<cmd ...>\"   our command (default: builds target/release/quickertype)
   --each <path>       run once per input file under <path> (file or directory,
                       recursive), appending the file to the quicktype args
   --ext <ext>         file extensions for --each (repeatable; default: json)
@@ -223,6 +223,8 @@ fn run_one(
 }
 
 /// Returns `None` when both runs behaved identically, else a description.
+/// Our `--help` names the command `quickertype`; its stdout is compared as
+/// quicktype's (`normalize_help`), as `parity` does.
 fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
     let mut problems = vec![];
     if reference.code != ours.code {
@@ -231,11 +233,13 @@ fn compare(reference: &RunResult, ours: &RunResult) -> Option<String> {
             reference.code, ours.code
         ));
     }
-    if reference.stdout != ours.stdout {
-        problems.push(format!(
+    match normalize_help(&reference.stdout, &ours.stdout) {
+        Err(e) => problems.push(format!("stdout: {e}")),
+        Ok(our_stdout) if reference.stdout != *our_stdout => problems.push(format!(
             "stdout differs at {}",
-            first_difference(&reference.stdout, &ours.stdout)
-        ));
+            first_difference(&reference.stdout, &our_stdout)
+        )),
+        Ok(_) => {}
     }
     if reference.stderr != ours.stderr {
         problems.push(format!(

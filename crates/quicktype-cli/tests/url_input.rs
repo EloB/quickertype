@@ -8,7 +8,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
+const BIN: &str = env!("CARGO_BIN_EXE_quickertype");
 
 const SAMPLE: &str = r#"{"veryUniquePropertyName":"quicktype","count":3}"#;
 const MAIN_SCHEMA: &str = r#"{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"referenced":{"$ref":"referenced.schema"}},"required":["referenced"]}"#;

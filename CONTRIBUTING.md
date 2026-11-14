@@ -74,7 +74,7 @@ A finding is written to `fuzz/artifacts/<target>/`. Minimize it with
 `cargo +nightly fuzz tmin -s none <target> <file>`. For `pipeline`,
 `json_schema` and `graphql_input`, running the target on the file with
 `QUICKTYPE_FUZZ_EXPLAIN=<dir>` writes the inputs to `<dir>` and prints the
-equivalent `quicktype` command line, to compare with the TypeScript CLI
+equivalent `quickertype` command line, to compare with the TypeScript CLI
 (`cargo xtask diff`). Fix the port to do what quicktype does, and add a
 regression test. `.github/workflows/fuzz.yml` runs every target for a few
 minutes each week.

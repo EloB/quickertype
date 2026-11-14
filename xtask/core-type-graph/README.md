@@ -52,7 +52,7 @@ end to end, find the first diverging stage with:
 
 ```sh
 node ../quicktype/dist/index.js --lang rust --debug print-graph,provenance input.json > ts.txt
-target/release/quicktype --lang rust --debug print-graph,provenance input.json > rs.txt
+target/release/quickertype --lang rust --debug print-graph,provenance input.json > rs.txt
 diff ts.txt rs.txt | head
 ```
 

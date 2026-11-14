@@ -1,4 +1,4 @@
-//! End-to-end tests of the `quicktype` binary: the port of
+//! End-to-end tests of the `quickertype` binary: the port of
 //! `test/unit/cli-epipe.test.ts`, and the generation path of
 //! `src/index.ts` (sources, output, issues, errors and exit codes).
 //!
@@ -11,7 +11,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
-const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
+const BIN: &str = env!("CARGO_BIN_EXE_quickertype");
 
 /// The separator Node's `path.join` uses: `path.win32`'s on Windows.
 const SEP: char = if cfg!(windows) { '\\' } else { '/' };

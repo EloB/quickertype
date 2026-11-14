@@ -7,8 +7,8 @@
 // Checks that the page loads with every language and runs on the
 // WebAssembly engine; that its default view (pokedex.json → TypeScript,
 // quicktype's defaults: types plus converters), pokedex.json → Rust, and a
-// JSON Schema sample give the same bytes as the quicktype CLI with the
-// arguments the page shows under the output ("Same as quicktype …"), as do
+// JSON Schema sample give the same bytes as the quickertype CLI with the
+// arguments the page shows under the output ("Same as quickertype …"), as do
 // `just-types` turned on, the presets the page shares with app.quicktype.io
 // (Rust, Swift, Objective-C) and one moved back to quicktype's default,
 // quicktype's general options one by one and combined, `--no-ignore-json-refs`
@@ -96,7 +96,7 @@
 // warm runs" says what it does, and does it: one warm-up and 5 timed runs
 // per engine, one engine after the other.
 //
-// The CLI is required: $QUICKTYPE_CLI, else target/release/quicktype
+// The CLI is required: $QUICKTYPE_CLI, else target/release/quickertype
 // (`cargo build --release -p quickertype`). The browser is $CHROME, else
 // Google Chrome or Chromium; without one the test says so and exits 0 (in
 // CI it fails).
@@ -160,9 +160,9 @@ function findBrowser() {
 // ---------------------------------------------------------------------------
 // Expected output
 
-const cli = process.env.QUICKTYPE_CLI ?? path.join(repositoryRoot, "target", "release", "quicktype");
+const cli = process.env.QUICKTYPE_CLI ?? path.join(repositoryRoot, "target", "release", "quickertype");
 if (!fs.existsSync(cli)) {
-    console.log(`No quicktype CLI at ${cli}: build it with \`cargo build --release -p quickertype\` or set QUICKTYPE_CLI.`);
+    console.log(`No quickertype CLI at ${cli}: build it with \`cargo build --release -p quickertype\` or set QUICKTYPE_CLI.`);
     process.exit(1);
 }
 
@@ -180,12 +180,12 @@ const sampleFiles = {
 };
 
 /**
- * Runs the command the page shows ("quicktype --lang rust … pokedex.json"):
+ * Runs the command the page shows ("quickertype --lang rust … pokedex.json"):
  * the output, and the issues quicktype reports as `Line n: message`.
  */
 function expectedFor(command) {
     const args = command.split(" ");
-    assert.equal(args.shift(), "quicktype");
+    assert.equal(args.shift(), "quickertype");
     const input = args.pop();
     assert.ok(input in sampleFiles, `unexpected input file ${input}`);
     const run = spawnSync(cli, [...args, path.resolve(repositoryRoot, sampleFiles[input])], {
@@ -478,7 +478,7 @@ const speedNow = speedFacts(benchmarkData.bench);
     const linux = pageFor((d) => (d.machine = { cpu: "aarch64, CPU part 0xd0c", cores: "64", os: "Linux 6.1.0-18-arm64" }));
     assert.equal(linux.machine, "aarch64, CPU part 0xd0c, 64 cores, Linux 6.1.0-18-arm64 (the memory not recorded)");
     // A CLI whose commit bench could not tell: said, not linked.
-    const why = "--bin runs /usr/local/bin/quicktype, which is not in the target directory of a git work tree";
+    const why = "--bin runs /usr/local/bin/quickertype, which is not in the target directory of a git work tree";
     const unknownCommit = pageFor((d) => Object.assign(d.commits, { quickertype: null, quickertype_modified: null, quickertype_source: why }));
     assert.equal(unknownCommit.quickertype, `not known: ${why}`);
     assert.ok(!unknownCommit.html.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
@@ -1027,7 +1027,7 @@ try {
     // TypeScript with quicktype's defaults: types plus converters, as
     // `quicktype` gives them; `just-types` is off, with a hint saying what
     // that means; the general options are off and collapsed.
-    const defaultTs = await sameAsCli("default: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    const defaultTs = await sameAsCli("default: pokedex.json → TypeScript", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     const defaults = await page.evaluate(`({
         hash: location.hash,
         justTypes: document.getElementById("opt-just-types").checked,
@@ -1361,27 +1361,27 @@ try {
     }
     console.log("ok: the notes behind an \"i\" open with Enter, inside the window, and close with Escape");
 
-    // just-types on: types only, as `quicktype --just-types`; the hash says
+    // just-types on: types only, as `quickertype --just-types`; the hash says
     // so and brings it back; off again, the converters are back.
     await click("opt-just-types");
     const justTypes = await sameAsCli(
         "pokedex.json → TypeScript, just-types",
-        "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json",
+        "quickertype --lang typescript --top-level Pokedex --just-types pokedex.json",
     );
     assert.doesNotMatch(justTypes, /Convert/);
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&just-types=true");
     await page.navigate(`${url}#v=2&l=typescript&s=pokedex&just-types=true`);
     await page.waitFor(settled, "the run with just-types from the hash");
     assert.equal(await page.evaluate("document.getElementById('opt-just-types').checked"), true);
-    await sameAsCli("just-types from the hash", "quicktype --lang typescript --top-level Pokedex --just-types pokedex.json");
+    await sameAsCli("just-types from the hash", "quickertype --lang typescript --top-level Pokedex --just-types pokedex.json");
     await click("opt-just-types");
-    assert.equal(await sameAsCli("just-types off again", "quicktype --lang typescript --top-level Pokedex pokedex.json"), defaultTs);
+    assert.equal(await sameAsCli("just-types off again", "quickertype --lang typescript --top-level Pokedex pokedex.json"), defaultTs);
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
 
     // A language without a boolean just-types option: quicktype's defaults,
     // no just-types control or hint, no preset.
     await select("lang", "typescript-zod");
-    await sameAsCli("pokedex.json → TypeScript Zod", "quicktype --lang typescript-zod --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → TypeScript Zod", "quickertype --lang typescript-zod --top-level Pokedex pokedex.json");
     const zod = await page.evaluate(`({
         hash: location.hash,
         justTypes: document.getElementById("opt-just-types") !== null,
@@ -1405,25 +1405,25 @@ try {
     // hash, and a link without the key gets the preset.
     await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");
-    await sameAsCli("pokedex.json → Rust (preset)", "quicktype --lang rust --top-level Pokedex --density dense pokedex.json");
+    await sameAsCli("pokedex.json → Rust (preset)", "quickertype --lang rust --top-level Pokedex --density dense pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=rust&s=pokedex");
     assert.equal(await page.evaluate("document.getElementById('opt-density').closest('label').querySelectorAll('.preset').length"), 1);
     await page.screenshot("preset-rust.png");
     await select("opt-density", "normal");
-    await sameAsCli("pokedex.json → Rust, density back to normal", "quicktype --lang rust --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → Rust, density back to normal", "quickertype --lang rust --top-level Pokedex pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=rust&s=pokedex&density=normal");
     await page.navigate(`${url}#v=2&l=rust&s=pokedex&density=normal`);
     await page.waitFor(settled, "the run with density=normal from the hash");
     assert.equal(await page.evaluate("document.getElementById('opt-density').value"), "normal");
-    await sameAsCli("density=normal from the hash", "quicktype --lang rust --top-level Pokedex pokedex.json");
+    await sameAsCli("density=normal from the hash", "quickertype --lang rust --top-level Pokedex pokedex.json");
     await select("lang", "swift");
-    await sameAsCli("pokedex.json → Swift (preset)", "quicktype --lang swift --top-level Pokedex --no-initializers pokedex.json");
+    await sameAsCli("pokedex.json → Swift (preset)", "quickertype --lang swift --top-level Pokedex --no-initializers pokedex.json");
     assert.equal(await page.evaluate("document.getElementById('opt-initializers').checked"), false);
     await click("opt-initializers");
-    await sameAsCli("pokedex.json → Swift, initializers back on", "quicktype --lang swift --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → Swift, initializers back on", "quickertype --lang swift --top-level Pokedex pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=swift&s=pokedex&initializers=true");
     await select("lang", "objc");
-    await sameAsCli("pokedex.json → Objective-C (preset)", "quicktype --lang objc --top-level Pokedex --extra-comments pokedex.json");
+    await sameAsCli("pokedex.json → Objective-C (preset)", "quickertype --lang objc --top-level Pokedex --extra-comments pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=objc&s=pokedex");
     assert.equal(await page.evaluate("document.querySelector('#options .more')?.open ?? false"), false, "More options opened");
     console.log("ok: presets as on app.quicktype.io (Rust, Swift, Objective-C); one moved back is explicit in the hash");
@@ -1431,9 +1431,9 @@ try {
     // A link from before the presets (no `v`) means quicktype's defaults,
     // and is rewritten as a link that says so; a new link gets the presets.
     for (const [old, command, rewritten] of [
-        ["#l=rust&s=pokedex", "quicktype --lang rust --top-level Pokedex pokedex.json", "#v=2&l=rust&s=pokedex&density=normal"],
-        ["#l=swift&s=pokedex", "quicktype --lang swift --top-level Pokedex pokedex.json", "#v=2&l=swift&s=pokedex&initializers=true"],
-        ["#l=objc&s=pokedex&extra-comments=true", "quicktype --lang objc --top-level Pokedex --extra-comments pokedex.json", "#v=2&l=objc&s=pokedex"],
+        ["#l=rust&s=pokedex", "quickertype --lang rust --top-level Pokedex pokedex.json", "#v=2&l=rust&s=pokedex&density=normal"],
+        ["#l=swift&s=pokedex", "quickertype --lang swift --top-level Pokedex pokedex.json", "#v=2&l=swift&s=pokedex&initializers=true"],
+        ["#l=objc&s=pokedex&extra-comments=true", "quickertype --lang objc --top-level Pokedex --extra-comments pokedex.json", "#v=2&l=objc&s=pokedex"],
     ]) {
         await page.navigate(`${url}${old}`);
         await page.waitFor(settled, `the run for the old link ${old}`);
@@ -1444,7 +1444,7 @@ try {
 
     await page.navigate(`${url}#v=2&l=swift&s=pokedex`);
     await page.waitFor(settled, "the run for a new Swift link");
-    await sameAsCli("new link #v=2&l=swift&s=pokedex", "quicktype --lang swift --top-level Pokedex --no-initializers pokedex.json");
+    await sameAsCli("new link #v=2&l=swift&s=pokedex", "quickertype --lang swift --top-level Pokedex --no-initializers pokedex.json");
     console.log("ok: links without v= get quicktype's defaults (and are rewritten with v=2); links with it get the presets");
     console.log("ok: links without e= (old ones too) run on quickertype");
 
@@ -1478,14 +1478,14 @@ try {
     for (const [sample, name, flag] of generalCases) {
         if (sample !== current) {
             await select("sample", sample);
-            without = await sameAsCli(`${sample}.json → TypeScript`, `quicktype --lang typescript --top-level ${name} ${sample}.json`);
+            without = await sameAsCli(`${sample}.json → TypeScript`, `quickertype --lang typescript --top-level ${name} ${sample}.json`);
             current = sample;
         }
 
         await click(`general-${flag}`);
         const withFlag = await sameAsCli(
             `${sample}.json → TypeScript, --${flag}`,
-            `quicktype --lang typescript --top-level ${name} --${flag} ${sample}.json`,
+            `quickertype --lang typescript --top-level ${name} --${flag} ${sample}.json`,
         );
         assert.notEqual(withFlag, without, `--${flag} changed nothing`);
         assert.equal(await hashNow(), `#v=2&l=typescript&s=${sample}&${flag}=true`);
@@ -1501,7 +1501,7 @@ try {
     );
     await sameAsCli(
         "pokedex.json → TypeScript, --all-properties-optional --no-enums",
-        "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
+        "quickertype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
     );
     const twoHash = await hashNow();
     assert.equal(twoHash, "#v=2&l=typescript&s=pokedex&all-properties-optional=true&no-enums=true");
@@ -1515,7 +1515,7 @@ try {
     assert.deepEqual(restoredGeneral, { open: true, count: "2 on", on: ["all-properties-optional", "no-enums"] });
     await sameAsCli(
         "two general options from the hash",
-        "quicktype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
+        "quickertype --lang typescript --top-level Pokedex --all-properties-optional --no-enums pokedex.json",
     );
     await page.screenshot("general-open.png");
     const wide = await commandShown("the command with two general options");
@@ -1532,7 +1532,7 @@ try {
     assert.deepEqual(closed, { open: false, count: "3 on" });
     await sameAsCli(
         "kitchen-sink.json → TypeScript, three general options, General closed",
-        "quicktype --lang typescript --top-level KitchenSink --all-properties-optional --no-maps --no-enums kitchen-sink.json",
+        "quickertype --lang typescript --top-level KitchenSink --all-properties-optional --no-maps --no-enums kitchen-sink.json",
     );
     console.log("ok: a link with general options opens General; closed by the user, it stays closed");
     // The Options button counts the options changed, general and the
@@ -1555,18 +1555,18 @@ try {
     await page.waitFor(settled, "the run on Rust with two general options");
     await sameAsCli(
         "github-events.json → Rust, --alphabetize-properties --no-date-times and the preset",
-        "quicktype --lang rust --top-level GithubEvents --alphabetize-properties --no-date-times --density dense github-events.json",
+        "quickertype --lang rust --top-level GithubEvents --alphabetize-properties --no-date-times --density dense github-events.json",
     );
 
     // --no-ignore-json-refs: `$ref`s in an uploaded JSON file are references.
     await page.navigate(`${url}#v=2&l=typescript`);
     await page.waitFor(settled, "the run before the upload");
     await upload(path.join(repositoryRoot, sampleFiles["2465e.json"]));
-    const refsIgnored = await sameAsCli("uploaded 2465e.json → TypeScript", "quicktype --lang typescript --top-level T2465e 2465e.json");
+    const refsIgnored = await sameAsCli("uploaded 2465e.json → TypeScript", "quickertype --lang typescript --top-level T2465e 2465e.json");
     await click("general-no-ignore-json-refs");
     const refsFollowed = await sameAsCli(
         "uploaded 2465e.json → TypeScript, --no-ignore-json-refs",
-        "quicktype --lang typescript --top-level T2465e --no-ignore-json-refs 2465e.json",
+        "quickertype --lang typescript --top-level T2465e --no-ignore-json-refs 2465e.json",
     );
     assert.notEqual(refsFollowed, refsIgnored, "--no-ignore-json-refs changed nothing");
 
@@ -1578,7 +1578,7 @@ try {
     await upload(path.join(repositoryRoot, sampleFiles["32431.json"]));
     const forceI32 = await sameAsCli(
         "uploaded 32431.json → Rust, --integer-type force-i32",
-        "quicktype --lang rust --top-level T32431 --density dense --integer-type force-i32 32431.json",
+        "quickertype --lang rust --top-level T32431 --density dense --integer-type force-i32 32431.json",
     );
     assert.match(forceI32, /pub time: f64,/);
 
@@ -1612,7 +1612,7 @@ try {
     // What the live region says from here on (checked after the warm runs).
     await watchLive();
     await select("lang", "typescript");
-    await sameAsCli("pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → TypeScript", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     await page.screenshot("desktop-light.png");
 
     // Switching to quicktype: the same input and options on quicktype's
@@ -1620,7 +1620,7 @@ try {
     // then compares both engines' results. Back on quickertype, nothing runs.
     let ran = await switchEngine("ts", "the switch to quicktype");
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype ran");
-    await sameAsCli("pokedex.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    await sameAsCli("pokedex.json → TypeScript on quicktype", "quickertype --lang typescript --top-level Pokedex pokedex.json", "ts");
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&e=quicktype");
     let compare = await comparedIdentical("quicktype after quickertype");
     console.log(`ok: switched to quicktype: only quicktype ran; ${compare}`);
@@ -1654,7 +1654,7 @@ try {
     await pressEnter();
     assert.deepEqual(await details(), { expanded: "false", shown: false, focused: "meter-toggle" }, "Enter on the comparison, to close it");
     console.log("ok: the comparison's details open and close with Enter, and keep the focus and stay open while it is drawn again");
-    await sameAsCli("pokedex.json → TypeScript on quickertype again", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → TypeScript on quickertype again", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
     await comparedIdentical("quickertype after quicktype");
     console.log("ok: back on quickertype: nothing ran, the comparison stays");
@@ -1729,7 +1729,7 @@ try {
         "the measurement and the switch made during it",
         300_000,
     );
-    await sameAsCli("a switch to quicktype during a measurement", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    await sameAsCli("a switch to quicktype during a measurement", "quickertype --lang typescript --top-level Pokedex pokedex.json", "ts");
     compare = await comparedIdentical("a switch to quicktype during a measurement", true);
     {
         const after = await runCounts();
@@ -1749,7 +1749,7 @@ try {
     await select("sample", "description");
     await sameAsCli(
         "description.schema → TypeScript",
-        "quicktype --src-lang schema --lang typescript --top-level Description description.schema",
+        "quickertype --src-lang schema --lang typescript --top-level Description description.schema",
     );
 
     // Several files: tabs.
@@ -1825,7 +1825,7 @@ try {
     const firstRequest = requests.length;
     await page.navigate(`${url}#v=2&l=typescript&s=pokedex&e=quicktype`);
     await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run on quicktype alone");
-    await sameAsCli("a link to quicktype: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    await sameAsCli("a link to quicktype: pokedex.json → TypeScript", "quickertype --lang typescript --top-level Pokedex pokedex.json", "ts");
     const alone = await page.evaluate(`({
         hash: location.hash,
         wasmWorker: playground.engines.wasm.worker !== undefined,
@@ -1851,19 +1851,19 @@ try {
     assert.deepEqual(ran, { wasm: 1, ts: 0 }, "ArrowRight to quickertype ran");
     assert.deepEqual(await engineSwitch(), { engine: "wasm", checked: "wasm", focused: "wasm" });
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
-    await sameAsCli("ArrowRight: pokedex.json → TypeScript on quickertype", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await sameAsCli("ArrowRight: pokedex.json → TypeScript on quickertype", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     await comparedIdentical("quickertype after a link to quicktype");
     ran = await switchEngine("ts", "ArrowLeft to quicktype", () => press("ArrowLeft", 37));
     assert.deepEqual(ran, { wasm: 0, ts: 0 }, "ArrowLeft back to quicktype ran");
     assert.deepEqual(await engineSwitch(), { engine: "ts", checked: "ts", focused: "ts" });
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex&e=quicktype");
-    await sameAsCli("ArrowLeft: pokedex.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Pokedex pokedex.json", "ts");
+    await sameAsCli("ArrowLeft: pokedex.json → TypeScript on quicktype", "quickertype --lang typescript --top-level Pokedex pokedex.json", "ts");
     console.log("ok: the arrow keys move between the engines; each runs the input only once");
 
     // A link from the old compare mode (`c=1`): quickertype, and both engines run.
     await page.navigate(`${url}#v=2&l=typescript&s=pokedex&c=1`);
     await page.waitFor(`${settled} && document.body.dataset.status === "done"`, "the run for a compare-mode link");
-    await sameAsCli("a compare-mode link: pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await sameAsCli("a compare-mode link: pokedex.json → TypeScript", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     compare = await comparedIdentical("a compare-mode link");
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
     console.log(`ok: a link from compare mode (c=1) runs both engines: ${compare}`);
@@ -1876,7 +1876,7 @@ try {
     await page.waitFor(settled, "the run with options");
     await sameAsCli(
         "pokedex.json → C# with options",
-        "quicktype --lang cs --top-level Pokedex --framework NewtonSoft --density dense --namespace Pokemon.Models --virtual --no-dateonly-timeonly-converters pokedex.json",
+        "quickertype --lang cs --top-level Pokedex --framework NewtonSoft --density dense --namespace Pokemon.Models --virtual --no-dateonly-timeonly-converters pokedex.json",
     );
     const controls = await page.evaluate(`({
         namespace: document.getElementById("opt-namespace").value,
@@ -1909,13 +1909,13 @@ try {
     assert.deepEqual([large.panel, large.editor], [true, false], "a large file is shown as a panel, not in the editor");
     await sameAsCli(
         `uploaded big-senators.json (${(fs.statSync(big).size / 1e6).toFixed(1)} MB) → Rust`,
-        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
+        "quickertype --lang rust --top-level BigSenators --density dense big-senators.json",
     );
     ran = await switchEngine("ts", "quicktype on the large file");
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the large file ran");
     await sameAsCli(
         "uploaded big-senators.json → Rust on quicktype",
-        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
+        "quickertype --lang rust --top-level BigSenators --density dense big-senators.json",
         "ts",
     );
     await comparedIdentical("the large file");
@@ -1953,10 +1953,10 @@ try {
         const second = await spanOf("ts", counts.ts);
         assert.ok(second.sent >= first.received, "quicktype started before quickertype's run of the same input ended");
     }
-    await sameAsCli("big-senators.json → Go on quicktype", "quicktype --lang go --top-level BigSenators big-senators.json", "ts");
+    await sameAsCli("big-senators.json → Go on quicktype", "quickertype --lang go --top-level BigSenators big-senators.json", "ts");
     ran = await switchEngine("wasm", "back to quickertype after a switch during a run");
     assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype after a switch during a run ran");
-    await sameAsCli("big-senators.json → Go on quickertype", "quicktype --lang go --top-level BigSenators big-senators.json");
+    await sameAsCli("big-senators.json → Go on quickertype", "quickertype --lang go --top-level BigSenators big-senators.json");
     await comparedIdentical("Go after a switch during a run");
     console.log("ok: the engine switched during a run: the new result is drawn, and Copy/Download give what is shown");
 
@@ -2006,7 +2006,7 @@ try {
     assert.ok(await page.evaluate("playground.engines.wasm.worker !== globalThis.failedWorker"), "the worker was not replaced");
     await sameAsCli(
         "after the worker failed, a new one: big-senators.json → Rust",
-        "quicktype --lang rust --top-level BigSenators --density dense big-senators.json",
+        "quickertype --lang rust --top-level BigSenators --density dense big-senators.json",
     );
     console.log(`ok: a worker failing after it loaded: "${failure}"`);
 
@@ -2034,11 +2034,11 @@ try {
     });
     ran = await switchEngine("wasm", "back to quickertype after quicktype's worker failed");
     assert.deepEqual(ran, { wasm: 0, ts: 0 });
-    await sameAsCli("back on quickertype after quicktype's worker failed: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators --density dense big-senators.json");
+    await sameAsCli("back on quickertype after quicktype's worker failed: big-senators.json → Rust", "quickertype --lang rust --top-level BigSenators --density dense big-senators.json");
     ran = await switchEngine("ts", "quicktype again after its worker failed");
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "quicktype again after its worker failed: it ran");
     assert.ok(await page.evaluate("playground.engines.ts.worker !== globalThis.failedTs"), "quicktype's worker was not replaced");
-    await sameAsCli("quicktype again after its worker failed: big-senators.json → Rust", "quicktype --lang rust --top-level BigSenators --density dense big-senators.json", "ts");
+    await sameAsCli("quicktype again after its worker failed: big-senators.json → Rust", "quickertype --lang rust --top-level BigSenators --density dense big-senators.json", "ts");
     await comparedIdentical("quicktype again after its worker failed");
     console.log(`ok: a worker failure is shown, not kept ("${tsFailure.message}"); switching back runs again, on a new worker`);
 
@@ -2116,12 +2116,12 @@ try {
     const senatorsFile = chosen("senators.json", readInput("us-senators.json"));
     for (const again of ["", " again"]) {
         await openFile(senatorsFile);
-        await sameAsCli(`Open file: senators.json${again}`, "quicktype --lang typescript --top-level Senators senators.json");
+        await sameAsCli(`Open file: senators.json${again}`, "quickertype --lang typescript --top-level Senators senators.json");
     }
     await openFile(chosen("description.schema", readInput("description.schema")));
-    await sameAsCli("Open file: description.schema", "quicktype --src-lang schema --lang typescript --top-level Description description.schema");
+    await sameAsCli("Open file: description.schema", "quickertype --src-lang schema --lang typescript --top-level Description description.schema");
     await openFile(chosen("pokedex.backup", readInput("pokedex.json")));
-    await sameAsCli("Open file: pokedex.backup (outside the chooser's filter)", "quicktype --lang typescript --top-level Pokedex pokedex.backup");
+    await sameAsCli("Open file: pokedex.backup (outside the chooser's filter)", "quickertype --lang typescript --top-level Pokedex pokedex.backup");
     console.log("ok: Open file through the browser's file chooser: JSON, the same file twice, JSON Schema, an extension outside the filter");
 
     // A large file (26 MB, ~100k small records with long strings) never
@@ -2158,11 +2158,11 @@ try {
         `({ input: document.body.dataset.input, ratio: document.getElementById("output-pane").offsetWidth / document.getElementById("input-pane").offsetWidth })`,
     );
     assert.deepEqual({ ...largeLayout, ratio: largeLayout.ratio >= 1.9 }, { input: "large", ratio: true }, `the large file: the output is ${largeLayout.ratio.toFixed(2)}× as wide as the input`);
-    await sameAsCli(`Open file: rulings.json (${(rulings.text.length / 1e6).toFixed(1)} MB, ${rulings.records} records) → TypeScript`, "quicktype --lang typescript --top-level Rulings rulings.json");
+    await sameAsCli(`Open file: rulings.json (${(rulings.text.length / 1e6).toFixed(1)} MB, ${rulings.records} records) → TypeScript`, "quickertype --lang typescript --top-level Rulings rulings.json");
     await page.screenshot("speed-large-file.png");
     ran = await switchEngine("ts", "quicktype on the 26 MB file", undefined);
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the 26 MB file ran");
-    await sameAsCli("Open file: rulings.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Rulings rulings.json", "ts");
+    await sameAsCli("Open file: rulings.json → TypeScript on quicktype", "quickertype --lang typescript --top-level Rulings rulings.json", "ts");
     await comparedIdentical("the 26 MB file");
     // Read, run (the comparison's time ticking), and run on quicktype: the live region said the two results only.
     const liveLarge = await liveSaid(["generated", "compared"], "the live region, with the 26 MB file");
@@ -2211,7 +2211,7 @@ try {
     await openFailed("a dropped 3 GB file", { title: "dropped-huge.json is too large for the browser", message: tooLargeMessage, before: largeBefore, cli: true });
     chosen("dropped.json", readInput("pokedex.json"));
     await andRun(drop("dropped.json", readInput("pokedex.json").toString("utf8")), "a dropped file");
-    await sameAsCli("a dropped file: dropped.json → TypeScript", "quicktype --lang typescript --top-level Dropped dropped.json");
+    await sameAsCli("a dropped file: dropped.json → TypeScript", "quickertype --lang typescript --top-level Dropped dropped.json");
     console.log(`ok: a file too large for a browser, one that cannot be read, and one dropped: "${tooLargeMessage}"; the input before (rulings.json) stays the input`);
 
     // Typed input survives a file that cannot be opened: it stays the input,
@@ -2229,7 +2229,7 @@ try {
     );
     chosen("input.json", typed);
     const typedCommand = await page.evaluate("playground.cli()");
-    assert.match(typedCommand, /^quicktype --lang typescript .* input\.json$/);
+    assert.match(typedCommand, /^quickertype --lang typescript .* input\.json$/);
     await sameAsCli("typed input", typedCommand);
     const savedTyped = `JSON.parse(localStorage.getItem("quickertype.input") ?? "null")?.text === ${JSON.stringify(typed)}`;
     await page.waitFor(savedTyped, "the typed input, saved");
@@ -2256,7 +2256,7 @@ try {
     // result.
     const goneFile = chosen("gone.json", JSON.stringify(Array.from({ length: 12 }, () => JSON.parse(readInput("us-senators.json"))), undefined, 2));
     await openFile(goneFile);
-    await sameAsCli("Open file: gone.json → TypeScript", "quicktype --lang typescript --top-level Gone gone.json");
+    await sameAsCli("Open file: gone.json → TypeScript", "quickertype --lang typescript --top-level Gone gone.json");
     await page.evaluate("globalThis.goneFile = playground.view.request.file");
     fs.rmSync(goneFile);
     ran = await switchEngine("ts", "quicktype on a file deleted after it was opened");
@@ -2289,7 +2289,7 @@ try {
         })()`);
     assert.deepEqual(await fromKeptText(), { ok: true, title: null }, "quickertype's worker did not keep the text of the file it read");
     await select("sample", "pokedex");
-    await sameAsCli("a sample after gone.json", "quicktype --lang typescript --top-level Pokedex pokedex.json");
+    await sameAsCli("a sample after gone.json", "quickertype --lang typescript --top-level Pokedex pokedex.json");
     assert.deepEqual(await fromKeptText(), { ok: false, title: "Could not read gone.json" }, "quickertype's worker kept the large file after a sample");
     console.log("ok: a worker lets a large file's text go once a request does not carry that file (a sample)");
 
@@ -2310,7 +2310,7 @@ try {
         };
     })()`);
     await openFile(editorFile);
-    await sameAsCli("Open file: editor.json → TypeScript", "quicktype --lang typescript --top-level Editor editor.json");
+    await sameAsCli("Open file: editor.json → TypeScript", "quickertype --lang typescript --top-level Editor editor.json");
     const editButton = `(() => { const b = document.getElementById("large-edit"); return { label: b.textContent, disabled: b.getAttribute("aria-disabled"), shown: !b.hidden }; })()`;
     assert.deepEqual(await page.evaluate(editButton), { label: "Show in the editor", disabled: null, shown: true });
     const whileReading = await page.evaluate(`(() => {
@@ -2339,7 +2339,7 @@ try {
     });
     const tooBigForEditor = chosen("editor-60mb.json", readInput("pokedex.json"));
     await openFile(tooBigForEditor);
-    await sameAsCli("Open file: editor-60mb.json (60 MB, faked) → TypeScript", "quicktype --lang typescript --top-level Editor60mb editor-60mb.json");
+    await sameAsCli("Open file: editor-60mb.json (60 MB, faked) → TypeScript", "quickertype --lang typescript --top-level Editor60mb editor-60mb.json");
     const refused = await page.evaluate(`(async () => {
         const reads = editorReads;
         document.getElementById("large-edit").click();

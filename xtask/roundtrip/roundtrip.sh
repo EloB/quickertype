@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs quicktype's own end-to-end fixture suite (test/fixtures.ts) against
-# this repository's quicktype binary.  See README.md.
+# this repository's quickertype binary.  See README.md.
 #
 #   roundtrip.sh prepare <dir> [--from <quicktype checkout>]
 #   roundtrip.sh run <dir> [--bin <command> | --ts] [--results <file>]
@@ -132,7 +132,7 @@ cmd_run() {
         bin="node $dir/dist/index.js"
     elif [ -z "$bin" ]; then
         (cd "$repo" && cargo build --release --quiet -p quickertype)
-        bin="$repo/target/release/quicktype"
+        bin="$repo/target/release/quickertype"
     fi
     if [ -z "$results" ]; then
         results="$dir/roundtrip-results.jsonl"
@@ -188,7 +188,7 @@ cmd_steps() {
         die "$dir has no harness patch, or an older one; run: $0 prepare $dir"
     if [ -z "$bin" ]; then
         (cd "$repo" && cargo build --release --quiet -p quickertype)
-        bin="$repo/target/release/quicktype"
+        bin="$repo/target/release/quickertype"
     fi
     # The steps' outputs, in a directory of its own under $base: removed
     # when every step matches, kept (only the mismatching steps) otherwise.

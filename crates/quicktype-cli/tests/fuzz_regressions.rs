@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
-const BIN: &str = env!("CARGO_BIN_EXE_quicktype");
+const BIN: &str = env!("CARGO_BIN_EXE_quickertype");
 
 /// How long one case may run (debug builds are slow).
 const TIMEOUT: Duration = Duration::from_secs(120);

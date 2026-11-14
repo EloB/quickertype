@@ -42,7 +42,7 @@ report (median and min wall time, peak RSS, speedup).
   --ref-dir <dir>        the quicktype checkout --in-process benchmarks (default:
                          the checkout of --ref's dist/index.js)
   --no-ref               do not run the TypeScript CLI
-  --bin \"<cmd ...>\"      our CLI (default: builds target/release/quicktype)
+  --bin \"<cmd ...>\"      our CLI (default: builds target/release/quickertype)
   --baseline \"<cmd ...>\" an older build of ours to compare with (\"before\")
   -n, --iterations <n>   timed runs per benchmark and command (default 10)
   --filter <substr>      only benchmarks whose name contains <substr> (repeatable)
@@ -1724,7 +1724,7 @@ mod tests {
         git(&tree, &["add", "."]);
         git(&tree, &["commit", "-q", "-m", "x"]);
         let head = git_head(&tree).unwrap();
-        let binary = tree.join("target/release/quicktype");
+        let binary = tree.join("target/release/quickertype");
         fs::write(&binary, "").unwrap();
         let program = binary.to_string_lossy().into_owned();
 
@@ -1761,7 +1761,7 @@ mod tests {
         );
 
         // In the work tree, but not in its target directory.
-        let elsewhere = tree.join("quicktype");
+        let elsewhere = tree.join("quickertype");
         fs::write(&elsewhere, "").unwrap();
         let outside = Provenance::given(&elsewhere.to_string_lossy(), "--bin");
         assert_eq!(outside.commit, None);

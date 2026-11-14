@@ -18,13 +18,16 @@
 //!   case directory (a missing file means empty output). An optional `stdin`
 //!   names a file that is piped to the process. Before comparing, the
 //!   absolute inputs directory in the actual output is replaced by `{INPUTS}`
-//!   and the work directory by `{CWD}`, exactly as the recorder did.
+//!   and the work directory by `{CWD}`, exactly as the recorder did, and
+//!   the command lines of `--help`'s stdout are turned back into quicktype's
+//!   ([`normalize_help`]).
 //!
 //! A case may set extra environment variables with `env`. Every step runs
 //! with `TZ=UTC` and `NODE_NO_WARNINGS=1`, and without `FORCE_COLOR`,
 //! `NO_COLOR` and `NODE_OPTIONS`, so the developer's shell cannot change the
 //! result.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -39,7 +42,7 @@ pub const USAGE: &str = "\
 cargo xtask parity [options]
 
   --bin \"<cmd ...>\"    quicktype command to test (default: builds and uses
-                       target/release/quicktype). The TypeScript reference:
+                       target/release/quickertype). The TypeScript reference:
                        --bin \"node ../quicktype/dist/index.js\"
   --filter <substr>    only cases whose id contains <substr> (repeatable, OR)
   -j <n>               parallel jobs (default: number of cores)
@@ -194,6 +197,92 @@ fn normalize_output(output: &[u8], placeholders: &[(String, &str)]) -> Vec<u8> {
     out
 }
 
+/// Our CLI's command: the binary `build_cli` builds (`[[bin]]` in
+/// crates/quicktype-cli/Cargo.toml), which `--help` names where quicktype's
+/// says `quicktype`.
+pub(crate) const COMMAND: &str = "quickertype";
+
+/// A header line of command-line-usage's output (unindented, bold with
+/// colors), as text.
+fn help_header(line: &[u8]) -> Option<&[u8]> {
+    if line.is_empty() || line[0] == b' ' {
+        return None;
+    }
+    let line = line.strip_prefix(b"\x1b[1m").unwrap_or(line);
+    Some(line.strip_suffix(b"\x1b[22m").unwrap_or(line))
+}
+
+/// `actual`, a stdout of ours, as quicktype's `expected` would have it.
+///
+/// Our `--help` names the command [`COMMAND`] where quicktype's says
+/// `quicktype`: the lines of its Synopsis and Examples sections that start
+/// with `  $ quickertype `. Each such line must be `expected`'s line at the
+/// same place with the name swapped and two fewer spaces of padding at its
+/// end (command-line-usage pads every line to the same width, and the
+/// longer name takes two), and is turned into that line; anything else,
+/// such as a line that the longer name made wrap, is an error that says
+/// so. Every other line, and any output that is not `--help`'s (the
+/// Synopsis header after an empty line), is left to the byte-for-byte
+/// comparison, and returned without a copy.
+pub(crate) fn normalize_help<'a>(
+    expected: &[u8],
+    actual: &'a [u8],
+) -> Result<Cow<'a, [u8]>, String> {
+    const THEIRS: &[u8] = b"  $ quicktype ";
+    let ours = format!("  $ {COMMAND} ");
+    let ours = ours.as_bytes();
+    let mut lines = actual.split(|&b| b == b'\n');
+    let is_help =
+        lines.next() == Some(b"") && lines.next().and_then(help_header) == Some(b"Synopsis");
+    if !is_help || !actual.windows(ours.len()).any(|w| w == ours) {
+        return Ok(Cow::Borrowed(actual));
+    }
+    let padding = ours.len() - THEIRS.len();
+    let mut expected_lines = expected.split(|&b| b == b'\n');
+    let mut out = Vec::with_capacity(actual.len());
+    let (mut section, mut after_header) = (None, false);
+    for (i, line) in actual.split(|&b| b == b'\n').enumerate() {
+        let expected_line = expected_lines.next();
+        if i > 0 {
+            out.push(b'\n');
+        }
+        // A section: a header, an empty line, its lines, an empty line.
+        if line.is_empty() {
+            if !after_header {
+                section = None;
+            }
+            after_header = false;
+        } else if let Some(header) = help_header(line) {
+            (section, after_header) = (Some(header), true);
+        } else {
+            after_header = false;
+        }
+        let rest = match line.strip_prefix(ours) {
+            Some(rest) if matches!(section, Some(b"Synopsis" | b"Examples")) => rest,
+            _ => {
+                out.extend_from_slice(line);
+                continue;
+            }
+        };
+        let start = out.len();
+        out.extend_from_slice(THEIRS);
+        out.extend_from_slice(rest);
+        out.resize(out.len() + padding, b' ');
+        if expected_line != Some(&out[start..]) {
+            return Err(format!(
+                "line {}: ours, {:?}, is not quicktype's, {}, with the command renamed `{COMMAND}` and {padding} fewer spaces of padding (did the longer name make the line wrap?)",
+                i + 1,
+                String::from_utf8_lossy(line),
+                expected_line.map_or_else(
+                    || "<eof>".to_owned(),
+                    |l| format!("{:?}", String::from_utf8_lossy(l))
+                ),
+            ));
+        }
+    }
+    Ok(Cow::Owned(out))
+}
+
 /// The given and the canonical form of `dir`, for output normalization.
 fn path_forms(dir: &Path, placeholder: &'static str) -> Vec<(String, &'static str)> {
     let mut forms = vec![(dir.to_string_lossy().into_owned(), placeholder)];
@@ -221,7 +310,12 @@ fn check_stream(
         Err(e) => return Err(format!("golden {}: {e}", path.display())),
     };
     let actual = normalize_output(actual, placeholders);
-    if expected == actual {
+    let actual = if stream == "stdout" {
+        normalize_help(&expected, &actual).map_err(|e| format!("step {step}: {stream}: {e}"))?
+    } else {
+        Cow::Borrowed(actual.as_slice())
+    };
+    if expected == *actual {
         Ok(())
     } else {
         Err(format!(
@@ -399,7 +493,8 @@ pub(crate) fn build_cli(root: &Path) -> Result<Vec<String>, String> {
         return Err("building the quicktype CLI (package quickertype) failed".into());
     }
     Ok(vec![
-        root.join("target/release/quicktype")
+        root.join("target/release")
+            .join(COMMAND)
             .to_string_lossy()
             .into_owned(),
     ])
@@ -572,4 +667,63 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     }
 
     Ok(regressions.is_empty() && (!o.strict || failures.is_empty()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_help;
+
+    /// A help with two command lines, in the Synopsis and the Examples,
+    /// padded to 40 columns, with `name` as the command.
+    fn help(name: &str, extra: &str) -> Vec<u8> {
+        let pad = |s: String| format!("{s:<40}");
+        [
+            String::new(),
+            "Synopsis".to_owned(),
+            String::new(),
+            pad(format!("  $ {name} [--lang LANG] FILE")),
+            String::new(),
+            "\x1b[1mExamples\x1b[22m".to_owned(),
+            String::new(),
+            pad(format!("  $ {name} -l go samples")),
+            String::new(),
+            format!("  Learn more{extra}"),
+            String::new(),
+        ]
+        .join("\n")
+        .into_bytes()
+    }
+
+    #[test]
+    fn help_command_lines_become_quicktypes() {
+        let theirs = help("quicktype", "");
+        let ours = help("quickertype", "");
+        assert_ne!(ours, theirs);
+        assert_eq!(*normalize_help(&theirs, &ours).unwrap(), theirs);
+        // quicktype's own help, and output that is not help, as they are.
+        assert_eq!(*normalize_help(&theirs, &theirs).unwrap(), theirs);
+        let code = b"// x\n  $ quickertype -h\n";
+        assert_eq!(*normalize_help(code, code).unwrap(), code[..]);
+    }
+
+    #[test]
+    fn other_help_lines_are_compared_as_they_are() {
+        // Outside the Synopsis and the Examples, a command line stays ours.
+        let theirs = help("quicktype", "\n  $ quicktype -h");
+        let ours = help("quickertype", "\n  $ quickertype -h");
+        let normalized = normalize_help(&theirs, &ours).unwrap();
+        assert_ne!(*normalized, theirs);
+        assert!(normalized.ends_with(b"\n  $ quickertype -h\n"));
+    }
+
+    #[test]
+    fn a_command_line_without_the_padding_is_an_error() {
+        let theirs = help("quicktype", "");
+        let ours = String::from_utf8(help("quickertype", ""))
+            .unwrap()
+            .replace("go samples   ", "go samples    ");
+        let error = normalize_help(&theirs, ours.as_bytes()).unwrap_err();
+        assert!(error.starts_with("line 8: "), "{error}");
+        assert!(error.contains("2 fewer spaces"), "{error}");
+    }
 }

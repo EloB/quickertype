@@ -1,8 +1,9 @@
-//! The `quicktype` CLI. Port of `src/index.ts`.
+//! The `quickertype` CLI. Port of `src/index.ts`.
 //!
 //! Contract: for any argv, stdin and input files, this binary must produce
 //! byte-identical stdout, stderr, exit code and output files to the
-//! TypeScript `quicktype` it replaces. `cargo xtask parity` checks that.
+//! TypeScript `quicktype` it replaces, except for the command's name in
+//! `--help` (`$ quickertype ...`). `cargo xtask parity` checks that.
 //!
 //! The flow is TypeScript's `main`: parse the options (both passes, with
 //! command-line-args' semantics), handle `--help`, `--version`,

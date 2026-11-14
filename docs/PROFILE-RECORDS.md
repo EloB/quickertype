@@ -135,7 +135,7 @@ Wall time / CPU time in ms, and peak RSS in MiB. Medians.
 | | `-l rust` | 493 / 489, 43.3 | 1,060 / 1,042, 572 | 5,135 / 6,731, 1,490 |
 | | `-l ts --just-types` | 484 / 483, 44.1 | 1,095 / 1,074, 572 | 5,430 / 6,969, 1,671 |
 
-Fixed costs, from the same harness: `quicktype --version` takes
+Fixed costs, from the same harness: `quickertype --version` takes
 3.6 / 2.7 ms, and `/usr/bin/true` 2.4 / 1.6 ms. A 9-byte input takes
 5.4 / 4.1 ms. Node needs 260 ms to print its version.
 
@@ -678,10 +678,10 @@ Exactness of what is implemented:
 node -e 'import("./npm/quicktype-core/test/bench/generate.mjs").then(({generateRulings}) =>
   require("fs").writeFileSync("rulings-100k.json", generateRulings(100000)))'
 cargo build --profile profiling -p quickertype
-target/profiling/quicktype rulings-100k.json -l ts -o out.ts --debug print-times
-QUICKTYPE_INFERENCE=compressed-json target/profiling/quicktype rulings-100k.json -l ts -o out.ts
+target/profiling/quickertype rulings-100k.json -l ts -o out.ts --debug print-times
+QUICKTYPE_INFERENCE=compressed-json target/profiling/quickertype rulings-100k.json -l ts -o out.ts
 samply record -r 4000 --iteration-count 40 --unstable-presymbolicate \
-  target/profiling/quicktype rulings-100k.json -l ts -o out.ts
+  target/profiling/quickertype rulings-100k.json -l ts -o out.ts
 node ../quicktype/dist/index.js rulings-100k.json -l ts -o out.ts --debug print-times
 ```
 

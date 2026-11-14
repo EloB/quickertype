@@ -1,6 +1,10 @@
 //! quicktype's `--help` text. Port of `usage`, `makeSectionsBeforeRenderers`,
 //! `sectionsAfterRenderers`, `makeLangTypeLabel` and
 //! `tableOptionsForOptions` in `src/index.ts`.
+//!
+//! The one difference is the command in the synopsis and the examples
+//! ([`COMMAND`]: `$ quickertype ...`, not `$ quicktype ...`), which
+//! `cargo xtask parity` turns back into quicktype's before comparing.
 
 use quicktype_core::TargetLanguage;
 
@@ -10,6 +14,12 @@ use crate::command_line_usage::{
     ColumnOptions, Content, Section, TableOptions, command_line_usage,
 };
 use crate::js;
+
+/// The command the synopsis and the examples show: the binary's name
+/// (`[[bin]]` in Cargo.toml), `quickertype`, where quicktype's says
+/// `quicktype`. (In the `cli_args` fuzz target, which compiles this file,
+/// it is that target's name.)
+const COMMAND: &str = env!("CARGO_BIN_NAME");
 
 /// `tableOptionsForOptions`: two fixed columns of 60.
 fn table_options_for_options() -> TableOptions {
@@ -61,7 +71,7 @@ fn make_sections_before_renderers(
             header: Some("Synopsis".to_owned()),
             content: Some(Content::Lines(vec![
                 format!(
-                    "$ quicktype [{} LANG] [{} SRC_LANG] [{} FILE] FILE|URL ...",
+                    "$ {COMMAND} [{} LANG] [{} SRC_LANG] [{} FILE] FILE|URL ...",
                     chalk.bold("--lang"),
                     chalk.bold("--src-lang"),
                     chalk.bold("--out"),
@@ -93,17 +103,17 @@ fn sections_after_renderers(chalk: &Chalk) -> Vec<Section> {
             header: Some("Examples".to_owned()),
             content: Some(Content::Lines(vec![
                 chalk.dim("Generate C# to parse a Bitcoin API"),
-                "$ quicktype -o LatestBlock.cs https://blockchain.info/latestblock".to_owned(),
+                format!("$ {COMMAND} -o LatestBlock.cs https://blockchain.info/latestblock"),
                 String::new(),
                 chalk.dim("Generate Go code from a directory of samples containing:"),
                 chalk.dim(
                     "  - Foo.json\n  + Bar\n    - bar-sample-1.json\n    - bar-sample-2.json\n  - Baz.url",
                 ),
-                "$ quicktype -l go samples".to_owned(),
+                format!("$ {COMMAND} -l go samples"),
                 String::new(),
                 chalk.dim("Generate JSON Schema, then TypeScript"),
-                "$ quicktype -o schema.json https://blockchain.info/latestblock".to_owned(),
-                "$ quicktype -o bitcoin.ts --src-lang schema schema.json".to_owned(),
+                format!("$ {COMMAND} -o schema.json https://blockchain.info/latestblock"),
+                format!("$ {COMMAND} -o bitcoin.ts --src-lang schema schema.json"),
             ])),
         },
         Section::Content {

@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file. The
 format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The version is this port's own. `quicktype --version` reports the version
+The version is this port's own. `quickertype --version` reports the version
 of the TypeScript quicktype that the CLI reproduces, which is 24.0.0 for
 every release so far; the installer shows which quickertype version is
 installed (`brew list --versions quickertype`, `npm ls -g quickertype`,
@@ -17,6 +17,34 @@ section are absolute.
 
 ### Changed
 
+- **Breaking: the command is now `quickertype`,** not `quicktype`, so that
+  it installs beside the TypeScript quicktype (homebrew-core's `quicktype`
+  formula, npm's `quicktype` package). Its arguments, output files and
+  messages are quicktype's as before; `--help` names the command
+  `quickertype` in its synopsis and examples. To keep typing `quicktype`,
+  add `alias quicktype=quickertype` to your shell's startup file; scripts,
+  Makefiles and CI don't read aliases, so for them put a symlink named
+  `quicktype` to `quickertype` in a directory on their `PATH`
+  (`ln -s "$(command -v quickertype)" ~/.local/bin/quicktype`). The
+  packages, archives and installers keep their names.
+
+  0.1.0 installed the command as `quicktype`. Upgrading with Homebrew
+  (`brew upgrade quickertype`), npm (`npm install -g quickertype`) or the
+  MSI removes it. The others leave it where 0.1.0 put it:
+
+  - the shell installer: delete `$CARGO_HOME/bin/quicktype`
+    (`~/.cargo/bin/quicktype` by default);
+  - the PowerShell installer: delete `%CARGO_HOME%\bin\quicktype.exe`
+    (`%USERPROFILE%\.cargo\bin\quicktype.exe` by default);
+  - `cargo install`: it installs the new version beside 0.1.0's
+    `$CARGO_HOME/bin/quicktype` and lists both (`cargo install --list`);
+    `cargo uninstall quickertype@0.1.0` deletes `quicktype` and keeps
+    `quickertype`;
+  - an archive from the GitHub Release: delete its `quicktype` wherever
+    you put it.
+
+  If you unlinked homebrew-core's `quicktype` for 0.1.0,
+  `brew link quicktype` links it again.
 - The JavaScript API's WebAssembly engine keeps the tallies a run inferred
   an input's types from with the input's samples, so that the next run on
   the same input (another language, other options) does not walk them
