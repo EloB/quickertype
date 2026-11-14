@@ -272,9 +272,14 @@ limit it grew by 2.2 MiB per input, to 539 MiB.)
 - *The same runs.* A run on the engine builds the same compressed form
   from the shared samples that it would build from the tables (the
   tables are its encoding), with the `_topLevels` read when the run
-  starts, as before. Reading samples prints nothing and reports no timing
-  in TypeScript, nor here; a run's `read input` timing covers inference
-  in both. `quicktypeMultiFileSync` uses the shared samples like
+  starts, as before. Either way it infers the types from tallies of that
+  form, made in one walk over it when the run starts, which give the
+  types quicktype infers from its values
+  ([docs/STREAMING-INFERENCE.md](../../docs/STREAMING-INFERENCE.md),
+  "Tallies of a compressed form"); the tallies are freed when inference
+  ends, so the form is all the engine keeps of an input. Reading samples
+  prints nothing and reports no timing in TypeScript, nor here; a run's
+  `read input` timing covers inference in both. `quicktypeMultiFileSync` uses the shared samples like
   `quicktype()`; where the engine is not compiled yet, samples are read
   by TypeScript in the first place.
 - *Everything else is TypeScript.* Whenever the engine does not take a
