@@ -225,21 +225,46 @@ fn is_integer_string(s: &str) -> bool {
 
 /// `UUID` (`/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/`).
 fn is_uuid(s: &str) -> bool {
-    let hex = |part: &[u8]| {
-        part.iter()
-            .all(|&b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    let Ok(b) = <&[u8; 36]>::try_from(s.as_bytes()) else {
+        return false;
     };
-    let b = s.as_bytes();
-    b.len() == 36
-        && b[8] == b'-'
+    // The 32 hex digits as four words of eight, checked without a branch
+    // per byte: whether a digit is a decimal one or a letter is data, and
+    // a branch on it is mispredicted half the time (in WebAssembly, where
+    // V8 keeps the branches, a UUID took about 50 ns that way).
+    let word = |i: usize| {
+        let mut w = [0; 8];
+        w.copy_from_slice(&b[i..i + 8]);
+        u64::from_le_bytes(w)
+    };
+    let half = |i: usize| {
+        let mut h = [0; 4];
+        h.copy_from_slice(&b[i..i + 4]);
+        u64::from(u32::from_le_bytes(h))
+    };
+    let digits = [
+        word(0),
+        half(9) | half(14) << 32,
+        half(19) | half(24) << 32,
+        word(28),
+    ];
+    b[8] == b'-'
         && b[13] == b'-'
         && b[18] == b'-'
         && b[23] == b'-'
-        && hex(&b[..8])
-        && hex(&b[9..13])
-        && hex(&b[14..18])
-        && hex(&b[19..23])
-        && hex(&b[24..])
+        && digits.iter().all(|&w| all_lowercase_hex(w))
+}
+
+/// Whether each of the eight bytes of `w` is `0`–`9` or `a`–`f`.
+fn all_lowercase_hex(w: u64) -> bool {
+    const ONES: u64 = u64::from_ne_bytes([1; 8]);
+    const HIGH: u64 = ONES << 7;
+    // Bit 7 of each byte below 0x80 that is at least `n` (adding 0x80 − n
+    // to such a byte carries into no other).
+    let at_least = |n: u8| w.wrapping_add(ONES * u64::from(0x80 - n)) & HIGH;
+    let decimal = at_least(b'0') & !at_least(b'9' + 1);
+    let letter = at_least(b'a') & !at_least(b'f' + 1);
+    w & HIGH == 0 && decimal | letter == HIGH
 }
 
 /// What a `URI` (`/^(https?|ftp):\/\/[^{}]+$/`) starts with. The regex has
@@ -310,6 +335,47 @@ mod tests {
     use crate::date_time::DefaultDateTimeRecognizer;
     use crate::language::kotlin::utils::KotlinDateTimeRecognizer;
     use crate::language::swift::utils::SwiftDateTimeRecognizer;
+
+    /// Every byte value at every position of a UUID, against the pattern
+    /// checked part by part.
+    #[test]
+    fn uuid_bytes() {
+        let pattern = |b: &[u8]| {
+            let hex = |part: &[u8]| part.iter().all(|&c| matches!(c, b'0'..=b'9' | b'a'..=b'f'));
+            b.len() == 36
+                && [8, 13, 18, 23].iter().all(|&i| b[i] == b'-')
+                && hex(&b[..8])
+                && hex(&b[9..13])
+                && hex(&b[14..18])
+                && hex(&b[19..23])
+                && hex(&b[24..])
+        };
+        let valid = *b"0123abcd-ef45-6789-a0b1-c2d3e4f5a6b7";
+        for i in 0..36 {
+            for c in 0..=255u8 {
+                let mut b = valid;
+                b[i] = c;
+                if let Ok(s) = std::str::from_utf8(&b) {
+                    assert_eq!(is_uuid(s), pattern(&b), "{s:?}");
+                }
+            }
+            // A two-byte character in place of two digits.
+            if i < 35
+                && i != 8
+                && i != 13
+                && i != 18
+                && i != 23
+                && i != 7
+                && i != 12
+                && i != 17
+                && i != 22
+            {
+                let mut b = valid;
+                b[i..i + 2].copy_from_slice("é".as_bytes());
+                assert!(!is_uuid(std::str::from_utf8(&b).unwrap()));
+            }
+        }
+    }
 
     #[test]
     fn uuids() {
