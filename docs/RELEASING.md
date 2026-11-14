@@ -114,15 +114,23 @@ The command is `quickertype` (`[[bin]]` in
 not `quicktype`, so that it installs beside the TypeScript quicktype:
 homebrew-core's `quicktype` formula and the `quicktype` npm package both
 install a `quicktype` command, which Homebrew refuses to link twice and npm
-refuses with `EEXIST`. `alias quicktype=quickertype`, or a `quicktype`
-symlink to it on `PATH`, makes it a drop-in replacement. dist's
-`bin-aliases` could install that symlink, but it would bring the conflicts
-back, so it is not set.
+refuses with `EEXIST`. For a drop-in replacement,
+`alias quicktype=quickertype` covers an interactive shell, and a
+`quicktype` symlink to it on `PATH` covers scripts, Makefiles and CI too.
+dist's `bin-aliases` could install that symlink, but it would bring the
+conflicts back, so it is not set.
 
 0.1.0 installed the command as `quicktype`. Upgrading with Homebrew, npm or
 the MSI removes that binary; the shell and PowerShell installers and
 `cargo install` leave it where 0.1.0 put it
-([CHANGELOG.md](../CHANGELOG.md) says where).
+([CHANGELOG.md](../CHANGELOG.md) says where). Cargo (1.99, checked with
+installs from one source path into a scratch root) removes a binary that a
+package no longer has only when the new version replaces one of the old
+version's binaries, which `quickertype` does not: `cargo install` adds the
+new version beside `quickertype v0.1.0` and lists both, and
+`cargo uninstall quickertype@0.1.0` deletes `quicktype` alone. Reinstalling
+the same version with the new name (from a checkout, say) lists both
+binaries under that version instead, and uninstalling it deletes both.
 
 ## Secrets and one-time setup
 

@@ -22,24 +22,26 @@ section are absolute.
   formula, npm's `quicktype` package). Its arguments, output files and
   messages are quicktype's as before; `--help` names the command
   `quickertype` in its synopsis and examples. To keep typing `quicktype`,
-  add `alias quicktype=quickertype` to your shell's startup file, or put a
-  symlink named `quicktype` to `quickertype` in a directory on your `PATH`
+  add `alias quicktype=quickertype` to your shell's startup file; scripts,
+  Makefiles and CI don't read aliases, so for them put a symlink named
+  `quicktype` to `quickertype` in a directory on their `PATH`
   (`ln -s "$(command -v quickertype)" ~/.local/bin/quicktype`). The
   packages, archives and installers keep their names.
 
   0.1.0 installed the command as `quicktype`. Upgrading with Homebrew
   (`brew upgrade quickertype`), npm (`npm install -g quickertype`) or the
-  MSI removes it. The other installers leave it where 0.1.0 put it, to
-  delete by hand:
+  MSI removes it. The others leave it where 0.1.0 put it:
 
-  - the shell installer: `$CARGO_HOME/bin/quicktype`
+  - the shell installer: delete `$CARGO_HOME/bin/quicktype`
     (`~/.cargo/bin/quicktype` by default);
-  - the PowerShell installer: `%CARGO_HOME%\bin\quicktype.exe`
+  - the PowerShell installer: delete `%CARGO_HOME%\bin\quicktype.exe`
     (`%USERPROFILE%\.cargo\bin\quicktype.exe` by default);
-  - `cargo install`: `$CARGO_HOME/bin/quicktype` too, which Cargo still
-    lists as `quickertype v0.1.0`; `cargo uninstall quickertype@0.1.0`
-    deletes it;
-  - an archive from the GitHub Release: wherever you put its `quicktype`.
+  - `cargo install`: it installs the new version beside 0.1.0's
+    `$CARGO_HOME/bin/quicktype` and lists both (`cargo install --list`);
+    `cargo uninstall quickertype@0.1.0` deletes `quicktype` and keeps
+    `quickertype`;
+  - an archive from the GitHub Release: delete its `quicktype` wherever
+    you put it.
 
   If you unlinked homebrew-core's `quicktype` for 0.1.0,
   `brew link quicktype` links it again.

@@ -14,7 +14,8 @@ which generates types and serializers from JSON, JSON Schema, GraphQL,
 Postman collections and TypeScript. It is a drop-in replacement:
 
 - **The `quicktype` CLI,** as the `quickertype` command: the same flags,
-  help text, messages, exit codes and output files, byte for byte.
+  help text, messages, exit codes and output files, byte for byte, except
+  the command's name in `--help`'s synopsis and examples.
 - **The `quicktype-core` JavaScript API** as
   [`quickertype-core`](npm/quicktype-core/README.md) on npm: quicktype's own
   TypeScript API and `.d.ts` files, with the engine compiled to WebAssembly,
@@ -107,8 +108,9 @@ cargo build --release -p quickertype  # the binary is target/release/quickertype
 ```
 
 **The command is `quickertype`,** so it installs beside the TypeScript
-quicktype. `alias quicktype=quickertype` (or a `quicktype` symlink to it
-on `PATH`) makes it a drop-in replacement, for scripts too. 0.1.0
+quicktype. For a drop-in replacement, `alias quicktype=quickertype` covers
+what you type in your shell; scripts, Makefiles and CI don't read aliases,
+so for them put a symlink named `quicktype` to it on `PATH`. 0.1.0
 installed it as `quicktype`; the [changelog](CHANGELOG.md) says how to
 remove that one.
 
@@ -229,7 +231,7 @@ TypeScript input are the `quickertype-graphql-input` and
 
 | Check | What it compares |
 |---|---|
-| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 match. |
+| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 match, except the command's name in `--help`'s synopsis and examples, which must be the only difference ([docs/PARITY.md](docs/PARITY.md#how-parity-is-tested)). |
 | **JS API differential suite** (`npm run test:differential`, in CI) | About 19,000 API calls, made on quicktype's `quicktype-core` and on `quickertype-core`: every file, line, annotation, error and console message. |
 | **Round trip** ([`xtask/roundtrip`](xtask/roundtrip/README.md), weekly) | quicktype's own end-to-end fixtures, run with this binary: the generated code is compiled and must round-trip the samples, in the 26 languages quicktype has fixtures for. |
 | **Differential fuzzing** ([`xtask/fuzz`](xtask/fuzz/README.md)) | Seeded random JSON, JSON Schema, Postman and GraphQL inputs with random options, in every language, against quicktype in process and through both CLIs. Divergences are minimized into regression tests. |
