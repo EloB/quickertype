@@ -22,19 +22,21 @@ section are absolute.
   exactly the code quicktype gives for `[V1,…,Vn]`, in every language and
   with every option.
   - The CLI reads files and URLs named `*.jsonl` or `*.ndjson` so (a
-    URL by its path, without the query). `--src-lang jsonl` reads every
-    JSON input named on the command line so, standard input included;
-    `--src-lang json` reads them as JSON, as quicktype does. `--help`
+    URL by its path, without the query), and so does a directory: its
+    `*.jsonl` and `*.ndjson` files as JSON Lines, its `.json` files as
+    JSON, and a `.url` file by its URL's name. `--src-lang jsonl` reads
+    every JSON input named on the command line so, standard input
+    included, and directories by the names as without it. `--help`
     lists `jsonl` among the source languages.
-  - A directory reads each file as its name says, whatever `--src-lang`
-    says: its `*.jsonl` and `*.ndjson` files as JSON Lines, its `.json`
-    files as JSON, and a `.url` file by its URL's name.
-  - **This changes what `.jsonl` and `.ndjson` files give:** quicktype
-    reads such a file as one JSON value, so a file with one line gave
-    that value's type (say, an object) and now gives an array of it; a
-    file with more lines was a syntax error and now works. Pass
-    `--src-lang json` for the old behavior of a file named on the command
-    line. A directory, which ignored them, now reads them.
+  - With an explicit `--src-lang` other than `jsonl` (`json`, `schema`,
+    ...), quickertype behaves exactly as quicktype: no input is JSON
+    Lines, and directories ignore `.jsonl` and `.ndjson` files.
+  - **This changes what `.jsonl` and `.ndjson` files give without
+    `--src-lang`:** quicktype reads such a file as one JSON value, so a
+    file with one line gave that value's type (say, an object) and now
+    gives an array of it; a file with more lines was a syntax error and
+    now works; and a directory, which ignored them, now reads them. Pass
+    `--src-lang json` for quicktype's behavior.
   - Values are separated by line breaks (`\n` or `\r\n`); blank lines
     are skipped, the last line break is optional, a value may span lines
     (a pretty-printed one), a byte order mark may come first, and two

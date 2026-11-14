@@ -230,7 +230,9 @@ semantics were verified.
 quickertype reads [JSON Lines](https://jsonlines.org), which quicktype
 does not. It is an addition: on every input quicktype accepts, quickertype
 does what quicktype does, except for the files and URLs named `*.jsonl`
-or `*.ndjson`, which the CLI now reads as JSON Lines (below).
+or `*.ndjson`, which the CLI now reads as JSON Lines without `--src-lang`
+(below). With an explicit `--src-lang` other than `jsonl`, quickertype
+behaves exactly as quicktype.
 
 - **The rule.** A JSON Lines sample with the values `V1`…`Vn` is read as
   the JSON array `[V1,…,Vn]`: every output (all languages, options and
@@ -269,35 +271,39 @@ or `*.ndjson`, which the CLI now reads as JSON Lines (below).
   `expected ','`). The CLI exits with code 1, as for any JSON error. Read
   errors, and errors past the syntax (`Maximum call stack size exceeded`,
   which the equivalent array gives too), are reported as they are.
-- **CLI: inputs named on the command line** (files, URLs, standard input,
-  `--src-urls`). Without `--src-lang`, those whose name ends in `.jsonl`
-  or `.ndjson`, in any case, are JSON Lines; a URL's name is its path,
-  without the query and the fragment
-  (`https://example.com/cards.jsonl?page=2`). `--src-lang jsonl` makes all
-  of them JSON Lines, whatever their names. `--src-lang json` (or any
-  other source language given) reads none as JSON Lines, as quicktype
-  reads every sample, so an explicit source language wins. The CLI keeps
-  quicktype's top-level names (`cards.jsonl` names `Cards`, as
-  `cards.json` does).
-- **CLI: directories.** A file in a directory is read as its name says,
-  whatever `--src-lang` says: `.json` files as JSON, `*.jsonl` and
-  `*.ndjson` files (in any case) as JSON Lines, a `.url` file by its URL's
-  name; `.schema`, `.gqlschema` and `.graphql` files as in quicktype. So a
-  directory that mixes JSON and JSON Lines files gives each its types,
-  however it is read: with one setting for the whole directory, either
-  the `.jsonl` files would be lost or the `.json` files would become
-  arrays.
+- **CLI: which inputs.** It depends on `--src-lang` alone:
+  - *None:* the inputs named on the command line (files, URLs,
+    `--src-urls`) whose name ends in `.jsonl` or `.ndjson`, in any case,
+    are JSON Lines; a URL's name is its path, without the query and the
+    fragment (`https://example.com/cards.jsonl?page=2`). Standard input is
+    JSON. A directory reads each file as its name says: `.json` files as
+    JSON, `*.jsonl` and `*.ndjson` files as JSON Lines, a `.url` file by
+    its URL's name, and `.schema`, `.gqlschema` and `.graphql` files as
+    in quicktype. So a directory that mixes JSON and JSON Lines files
+    gives each its types.
+  - *`jsonl`:* every input named on the command line is JSON Lines,
+    whatever its name, standard input included; directories as without
+    `--src-lang`.
+  - *Any other* (`json`, `schema`, ...): quickertype behaves exactly as
+    quicktype. No input is JSON Lines, and a directory takes the files
+    quicktype takes, ignoring `.jsonl` and `.ndjson` files (a stray one
+    beside a `.schema` file in a subdirectory changes nothing) and
+    reading a `.url` file's URL as JSON. `--src-lang json` is how to get
+    quicktype's behavior for every input.
+
+  The CLI keeps quicktype's top-level names (`cards.jsonl` names `Cards`,
+  as `cards.json` does).
 - **CLI: several inputs.** Each file is one sample, so a JSON Lines file
   is one array sample beside the others of its top-level (`a.json
   b.jsonl` gives what `a.json` and the array of `b.jsonl`'s values give).
 - **The change for existing inputs.** quicktype reads a `.jsonl` or
   `.ndjson` file named on the command line as one JSON value, and a
-  directory ignores such files. quickertype reads them as JSON Lines: a
-  one-line file that gave its value's type (an object) now gives an
-  array of it, a file with more lines, which was a syntax error, now
-  works, and a directory's `.jsonl` files now give top-levels.
-  `--src-lang json` gives quicktype's behavior for a file named on the
-  command line.
+  directory ignores such files. Without `--src-lang` (or with `jsonl`),
+  quickertype reads them as JSON Lines: a one-line file that gave its
+  value's type (an object) now gives an array of it, a file with more
+  lines, which was a syntax error, now works, and a directory's `.jsonl`
+  files now give top-levels. With any other `--src-lang`, nothing
+  changes.
 - **`--help`** lists `jsonl` among the source languages, its second
   difference from quicktype's (see [How parity is
   tested](#how-parity-is-tested)).
@@ -318,9 +324,12 @@ or `*.ndjson`, which the CLI now reads as JSON Lines (below).
   `crates/quicktype-core/tests/json_lines.rs` runs generated JSON Lines
   and their arrays through every language with several options and
   requires identical output; `crates/quicktype-cli/tests/json_lines.rs`
-  and `url_input.rs` pin the CLI's choices (mixed directories with and
-  without `--src-lang`) and errors; the differential fuzzer's `jsonl`
-  mode compares our CLI on JSON Lines with quicktype's on the arrays; and
+  and `url_input.rs` pin the CLI's choices (mixed directories, stray
+  JSON Lines files beside schemas and GraphQL under an explicit
+  `--src-lang`, `.url` files) and errors; the differential fuzzer's
+  `jsonl` mode compares our CLI on JSON Lines with quicktype's on the
+  arrays, and directories with stray JSON Lines files under an explicit
+  `--src-lang` with quicktype on the same directories; and
   the `json_stream` and `json_parse` cargo-fuzz targets read arbitrary
   bytes as JSON Lines too.
 

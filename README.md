@@ -173,11 +173,12 @@ those values. The output is what quicktype gives for that array, byte for
 byte, in every language and with every option.
 
 - Files and URLs named `*.jsonl` or `*.ndjson` are JSON Lines (a URL by
-  its path, without the query). `--src-lang jsonl` (`-s jsonl`) makes
-  every JSON input named on the command line JSON Lines, standard input
-  too; `--src-lang json` reads them as plain JSON.
-- In a directory, each file's name decides, whatever `--src-lang` says:
-  `*.jsonl` and `*.ndjson` files are JSON Lines, `.json` files JSON.
+  its path, without the query), in directories too, where `.json` files
+  stay JSON. `--src-lang jsonl` (`-s jsonl`) makes every JSON input named
+  on the command line JSON Lines, standard input too.
+- With an explicit `--src-lang` other than `jsonl` (`-s json`, ...),
+  quickertype behaves exactly as quicktype: nothing is JSON Lines, and
+  directories ignore `.jsonl` files.
 - Line breaks are `\n` or `\r\n`; blank lines are skipped, a value may span
   lines, a byte order mark may come first, and two values on one line are
   an error. A file without values gives `[]`, and a file with one value an
@@ -189,8 +190,8 @@ byte, in every language and with every option.
 
 Because files named `.jsonl` were JSON to quicktype, a one-line `.jsonl`
 file that gave an object now gives an array of that object, and a
-directory now reads the `.jsonl` files it ignored
-([docs/PARITY.md](docs/PARITY.md#json-lines) has the details). In the Rust
+directory now reads the `.jsonl` files it ignored, unless `-s json` is
+given ([docs/PARITY.md](docs/PARITY.md#json-lines) has the details). In the Rust
 API, JSON Lines samples are `JsonSample::StringLines`, `StreamLines` and
 `ReaderLines`.
 
