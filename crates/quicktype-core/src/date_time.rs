@@ -25,7 +25,8 @@ pub trait DateTimeRecognizer {
     /// recognizer, which is faster and gives the same answer
     /// ([`infer_transformed_string_type_kind_for_string`](crate::attributes::string_types::infer_transformed_string_type_kind_for_string)).
     /// `false` unless a recognizer says otherwise, which keeps quicktype's
-    /// order of checks; [`DefaultDateTimeRecognizer`] says `true`.
+    /// order of checks. The built-in recognizers (the default one, Kotlin's
+    /// and Swift's) all say `true`.
     fn rejects_uuids(&self) -> bool {
         false
     }

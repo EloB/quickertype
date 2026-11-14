@@ -553,8 +553,9 @@ How it differs from the prototypes:
   lowest set bit, where it went on byte by byte from the start of that
   word.
 - Item 3b asks the recognizer whether a UUID can be a date, time or
-  date-time to it (`DateTimeRecognizer::rejects_uuids`, `true` only for
-  the default one), and tests only strings of 36 bytes.
+  date-time to it (`DateTimeRecognizer::rejects_uuids`, `false` by
+  default, `true` for the three built-in recognizers: the default one,
+  Kotlin's and Swift's), and tests only strings of 36 bytes.
 - Item 6 builds dense DFAs, which load in about 40 µs. Sparse ones would
   be 22% smaller but take 360–450 µs to load. The WebAssembly module
   uses them too: it grows by 183 KB, 20 KB gzipped (see
@@ -582,8 +583,8 @@ Exactness of what is implemented:
   or multi-byte character at every offset modulo 8 from the quote, read
   whole and in chunks of 1 to 17 bytes. The UUID-first classifier is
   compared with the recognizer-first order on 50,000 strings of 36
-  characters. Pluralize's DFAs select exactly the rules whose own regex
-  matches, on 31,586 words.
+  characters, under each built-in recognizer. Pluralize's DFAs select
+  exactly the rules whose own regex matches, on 31,586 words.
 - `cargo xtask parity`: 11,177 of 11,177. The fuzz targets `json_stream`
   and `json_parse` ran 5 minutes each (1.8 million inputs each) without a
   finding. npm/quicktype-core's tests, its differential suite (19,078

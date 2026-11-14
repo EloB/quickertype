@@ -159,6 +159,13 @@ impl DateTimeRecognizer for KotlinDateTimeRecognizer {
             _ => false,
         }
     }
+
+    /// A date has 10 characters, where a UUID has 36; a time has `:` third,
+    /// where a UUID has a hex digit; and a date-time has an upper-case `T`,
+    /// which a UUID (lower-case hex) never has.
+    fn rejects_uuids(&self) -> bool {
+        true
+    }
 }
 
 #[cfg(test)]

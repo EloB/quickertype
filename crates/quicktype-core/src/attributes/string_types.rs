@@ -290,6 +290,8 @@ pub fn infer_transformed_string_type_kind_for_string(
 mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
+    use crate::language::kotlin::utils::KotlinDateTimeRecognizer;
+    use crate::language::swift::utils::SwiftDateTimeRecognizer;
 
     #[test]
     fn uuids() {
@@ -407,27 +409,28 @@ mod tests {
         assert_eq!(infer("zebra"), None);
     }
 
-    /// The default recognizer, asked first, as a recognizer of one's own
-    /// is.
-    struct InOrder;
-    impl DateTimeRecognizer for InOrder {
+    /// A recognizer asked before the UUID test, as one that does not
+    /// reject UUIDs is.
+    struct InOrder<'r>(&'r dyn DateTimeRecognizer);
+    impl DateTimeRecognizer for InOrder<'_> {
         fn is_date(&self, s: &str) -> bool {
-            DefaultDateTimeRecognizer.is_date(s)
+            self.0.is_date(s)
         }
         fn is_time(&self, s: &str) -> bool {
-            DefaultDateTimeRecognizer.is_time(s)
+            self.0.is_time(s)
         }
         fn is_date_time(&self, s: &str) -> bool {
-            DefaultDateTimeRecognizer.is_date_time(s)
+            self.0.is_date_time(s)
         }
     }
 
-    /// Under the default recognizer, UUIDs are tested for first: every
-    /// string of 36 characters, UUIDs, near-UUIDs and date-times among
-    /// them, is classified as when the recognizer is asked first; and the
-    /// recognizer finds no UUID to be a date, time or date-time.
+    /// Under the built-in recognizers (the default one, Kotlin's and
+    /// Swift's), UUIDs are tested for first: every string of 36
+    /// characters, UUIDs, near-UUIDs and date-times among them, is
+    /// classified as when the recognizer is asked first; and no recognizer
+    /// finds a UUID to be a date, time or date-time.
     #[test]
-    fn uuids_first_under_the_default_recognizer() {
+    fn uuids_first_under_the_built_in_recognizers() {
         let mut state: u64 = 0x2545_F491_4F6C_DD1D;
         let mut next = move || {
             state ^= state << 13;
@@ -445,6 +448,8 @@ mod tests {
             "00000000-0000-0000-0000-000000000000".into(),
             "2020-01-31T10:00:00.1234567890+01:00".into(),
             "2020-01-31t10:00:00.12345678901234Z".into(),
+            "2016-02-29T00:00:00.123456789+05:30".into(),
+            "0002-0008-0001T0002:0045:0003.1234Z".into(),
         ];
         for _ in 0..50_000 {
             let alphabet = alphabets[(next() % 3) as usize];
@@ -458,20 +463,27 @@ mod tests {
             }
             strings.push(String::from_utf8(s).unwrap());
         }
-        let mut uuids = 0;
-        for s in &strings {
-            let fast = infer_transformed_string_type_kind_for_string(s, &DefaultDateTimeRecognizer);
-            assert_eq!(
-                fast,
-                infer_transformed_string_type_kind_for_string(s, &InOrder),
-                "{s}"
-            );
-            if is_uuid(s) {
-                uuids += 1;
-                let r = DefaultDateTimeRecognizer;
-                assert!(!r.is_date(s) && !r.is_time(s) && !r.is_date_time(s), "{s}");
+        let recognizers: [&dyn DateTimeRecognizer; 3] = [
+            &DefaultDateTimeRecognizer,
+            &KotlinDateTimeRecognizer,
+            &SwiftDateTimeRecognizer,
+        ];
+        for r in recognizers {
+            assert!(r.rejects_uuids());
+            let mut uuids = 0;
+            let mut dates = 0;
+            for s in &strings {
+                let fast = infer_transformed_string_type_kind_for_string(s, r);
+                let in_order = infer_transformed_string_type_kind_for_string(s, &InOrder(r));
+                assert_eq!(fast, in_order, "{s}");
+                dates += usize::from(matches!(fast, Some(TypeKind::DateTime)));
+                if is_uuid(s) {
+                    uuids += 1;
+                    assert!(!r.is_date(s) && !r.is_time(s) && !r.is_date_time(s), "{s}");
+                }
             }
+            assert!(uuids > 1_000, "{uuids} UUIDs");
+            assert!(dates > 0, "no date-time among the strings");
         }
-        assert!(uuids > 1_000, "{uuids} UUIDs");
     }
 }
