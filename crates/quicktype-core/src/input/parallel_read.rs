@@ -425,6 +425,15 @@ pub const MAX_RANGES: usize = 1 << 16;
 /// theirs).
 const PROBE_LEN: u64 = 64 << 10;
 
+/// Where the first parts' trees are more than this many times their text
+/// (elements of distinct keys; measured on PROBE_LEN of text, in samples
+/// of 4 MiB or more), the rest is read in one go: appending such trees on
+/// the reading thread costs about as much as reading them, so the threads
+/// would only add memory. (Measured: trees 4.3 times their
+/// text read 2.5 times as fast on 12 threads, 9.5 and 27 times 1.3 and 1.15
+/// times as slow; see docs/BENCHMARKS.md.)
+const MAX_RATIO: f64 = 8.0;
+
 impl Default for ParallelOptions {
     /// As many threads as the machine runs at once, ranges of
     /// [`DEFAULT_RANGE`] bytes for samples of [`DEFAULT_MIN_LEN`] or more,
@@ -1314,6 +1323,11 @@ impl Reading<'_> {
                 if probed >= plan.probe || (all_formed && appended == parts.len()) {
                     ratio = ratio.max(probe_bytes as f64 / probed as f64);
                     measured = true;
+                    // (Of PROBE_LEN at least: a smaller sample's first parts
+                    // are mostly what any tree holds, a 64 KiB block of text.)
+                    if ratio > MAX_RATIO && probed >= PROBE_LEN {
+                        return rest(running, root, &parts, appended);
+                    }
                 }
             }
             // The others, elsewhere, as the budget allows.
@@ -1681,11 +1695,16 @@ mod tests {
 
     /// Where the parts' trees would take too much memory beside each
     /// other, the rest is read in one go into the first part's tree: here
-    /// a first element with many distinct keys, as large as the budget.
+    /// a first element with many distinct keys (whose values are long
+    /// strings, so that the trees are a few times their text, not more
+    /// than MAX_RATIO), as large as the budget.
     #[test]
     fn large_trees_are_read_on_in_one_go() {
         let config = config(false);
-        let keys: Vec<String> = (0..20_000).map(|i| format!("\"key{i}\":{i}")).collect();
+        let value = "v".repeat(100);
+        let keys: Vec<String> = (0..5_000)
+            .map(|i| format!("\"key{i}\":\"{value}\""))
+            .collect();
         let element = format!("{{{}}}", keys.join(","));
         let bytes = format!("[{element},{element},{element},{{\"x\":[1]}}]");
         let expected = in_one_go(&config, bytes.as_bytes());
@@ -1697,7 +1716,7 @@ mod tests {
         // Where it allows only one of these parts at a time, the rest is
         // read in one go.
         let mut options = options(3, 1000);
-        options.budget = Some(4 << 20);
+        options.budget = Some(2 << 20);
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         assert_eq!(result, expected);
         assert_eq!(how.in_part, 1, "{how:?}");
@@ -1972,30 +1991,51 @@ mod tests {
         }
     }
 
-    /// Parts whose trees are many times their text (an element for each
-    /// key, all of them distinct) are measured before any is read
-    /// elsewhere: behind a part read slowly, the parts given out and not
-    /// appended yet (their trees, once read) hold at most the budget, but
-    /// for one part over it.
+    /// Parts whose trees are several times their text (a distinct key in
+    /// each element) are measured before any is read elsewhere: behind a
+    /// part read slowly, the parts given out and not appended yet (their
+    /// trees, once read) hold at most the budget, but for one part over it.
     #[test]
     fn trees_larger_than_their_text_stay_within_the_budget() {
         let config = config(false);
-        let elements: Vec<String> = (0..100_000).map(|i| format!(r#"{{"k{i}":{i}}}"#)).collect();
+        let elements: Vec<String> = (0..200_000)
+            .map(|i| {
+                format!(
+                    r#"{{"id":{i},"k{i}":1,"name":"n{}","tags":["a","b"]}}"#,
+                    i % 50
+                )
+            })
+            .collect();
         let bytes = format!("[{}]", elements.join(","));
-        let budget = 2 << 20;
-        let options = options(4, 16 << 10).with_budget(Some(budget));
+        let budget = 4 << 20;
+        let options = options(4, 256 << 10).with_budget(Some(budget));
         SLOW_PART.with(|s| s.set(Some((3, std::time::Duration::from_millis(300)))));
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         SLOW_PART.with(|s| s.set(None));
         assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
         assert_eq!(how.whole + how.in_part, 1, "{how:?}");
         let (peak, largest) = HELD.with(Cell::get);
-        // The parts' trees are many times their text.
-        assert!(largest > 4 * (16 << 10), "{largest}");
+        // The parts' trees are several times their text.
+        assert!(largest > 2 * (256 << 10), "{largest}");
         assert!(
             peak <= budget + largest,
             "{peak} bytes held, over {budget} + {largest}"
         );
+    }
+
+    /// Where the first parts' trees are more than MAX_RATIO times their text
+    /// (an element for each key, all of them distinct; 4.4 MB, so that they
+    /// hold PROBE_LEN), no part is given out: the rest is read in one go
+    /// after them.
+    #[test]
+    fn trees_far_larger_than_their_text_are_read_on_in_one_go() {
+        let config = config(false);
+        let elements: Vec<String> = (0..300_000).map(|i| format!(r#"{{"k{i}":{i}}}"#)).collect();
+        let bytes = format!("[{}]", elements.join(","));
+        let (result, how) = read_with(&config, bytes.as_bytes(), options(4, 256 << 10));
+        assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
+        assert_eq!(how.in_part, 1, "{how:?}");
+        assert_eq!(AHEAD.with(Cell::get), 0);
     }
 
     /// Where the system refuses a reading thread, the sample is read in one
