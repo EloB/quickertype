@@ -191,6 +191,11 @@ struct Tokenizer<'r, W> {
     read_error: Option<ParseError>,
     text: W,
     index: usize,
+    /// How far into the window `index` must be for the text before it to
+    /// be dropped ([`discard_consumed`](Self::discard_consumed)): the chunk
+    /// size when streaming, and never (`usize::MAX`) for a sample in
+    /// memory, which keeps its text.
+    discard_at: usize,
 }
 
 /// The tokenizer's text: a sample in memory (`&str`, or the `String` it
@@ -255,6 +260,7 @@ impl<'r, W: Window> Tokenizer<'r, W> {
             read_error: None,
             text,
             index: 0,
+            discard_at: usize::MAX,
         }
     }
 
@@ -276,6 +282,7 @@ impl<'r> Tokenizer<'r, String> {
             read_error: None,
             text: String::new(),
             index: 0,
+            discard_at: chunk_size,
         }
     }
 }
@@ -376,12 +383,17 @@ impl<W: Window> Tokenizer<'_, W> {
 
     /// Drops the text before the current position, between tokens, once
     /// there is enough of it to be worth moving the rest (a sample in
-    /// memory keeps its text).
+    /// memory keeps its text). One comparison per token.
+    #[inline]
     fn discard_consumed(&mut self) {
-        if self.reader.is_some()
-            && self.index >= self.chunk_size
-            && self.text().is_char_boundary(self.index)
-        {
+        if self.index >= self.discard_at {
+            self.discard();
+        }
+    }
+
+    #[cold]
+    fn discard(&mut self) {
+        if self.text().is_char_boundary(self.index) {
             if let Some(text) = self.text.as_string() {
                 text.drain(..self.index);
                 self.index = 0;

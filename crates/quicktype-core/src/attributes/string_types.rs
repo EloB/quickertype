@@ -261,6 +261,12 @@ pub fn infer_transformed_string_type_kind_for_string(
     if !matches!(first, b'0'..=b'9' | b'-' | b'a'..=b'f' | b't' | b'h') {
         return None;
     }
+    // A UUID is never an integer or boolean string, and to a recognizer
+    // that rejects UUIDs, never a date, time or date-time either: testing
+    // for it first gives the same answer without the checks before it.
+    if s.len() == 36 && recognizer.rejects_uuids() && is_uuid(s) {
+        return Some(TypeKind::Uuid);
+    }
     if recognizer.is_date(s) {
         Some(TypeKind::Date)
     } else if recognizer.is_time(s) {
@@ -283,6 +289,7 @@ pub fn infer_transformed_string_type_kind_for_string(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::date_time::DefaultDateTimeRecognizer;
 
     #[test]
     fn uuids() {
@@ -398,5 +405,73 @@ mod tests {
         assert_eq!(infer("http://{x}"), None);
         assert_eq!(infer(""), None);
         assert_eq!(infer("zebra"), None);
+    }
+
+    /// The default recognizer, asked first, as a recognizer of one's own
+    /// is.
+    struct InOrder;
+    impl DateTimeRecognizer for InOrder {
+        fn is_date(&self, s: &str) -> bool {
+            DefaultDateTimeRecognizer.is_date(s)
+        }
+        fn is_time(&self, s: &str) -> bool {
+            DefaultDateTimeRecognizer.is_time(s)
+        }
+        fn is_date_time(&self, s: &str) -> bool {
+            DefaultDateTimeRecognizer.is_date_time(s)
+        }
+    }
+
+    /// Under the default recognizer, UUIDs are tested for first: every
+    /// string of 36 characters, UUIDs, near-UUIDs and date-times among
+    /// them, is classified as when the recognizer is asked first; and the
+    /// recognizer finds no UUID to be a date, time or date-time.
+    #[test]
+    fn uuids_first_under_the_default_recognizer() {
+        let mut state: u64 = 0x2545_F491_4F6C_DD1D;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        let alphabets: [&[u8]; 3] = [
+            b"0123456789abcdef",
+            b"0123456789abcdefABCDEF-",
+            b"0123456789-:.+tTzZ",
+        ];
+        let mut strings: Vec<String> = vec![
+            "123e4567-e89b-12d3-a456-426614174000".into(),
+            "00000000-0000-0000-0000-000000000000".into(),
+            "2020-01-31T10:00:00.1234567890+01:00".into(),
+            "2020-01-31t10:00:00.12345678901234Z".into(),
+        ];
+        for _ in 0..50_000 {
+            let alphabet = alphabets[(next() % 3) as usize];
+            let mut s: Vec<u8> = (0..36)
+                .map(|_| alphabet[(next() % alphabet.len() as u64) as usize])
+                .collect();
+            if next() % 2 == 0 {
+                for at in [8, 13, 18, 23] {
+                    s[at] = b'-';
+                }
+            }
+            strings.push(String::from_utf8(s).unwrap());
+        }
+        let mut uuids = 0;
+        for s in &strings {
+            let fast = infer_transformed_string_type_kind_for_string(s, &DefaultDateTimeRecognizer);
+            assert_eq!(
+                fast,
+                infer_transformed_string_type_kind_for_string(s, &InOrder),
+                "{s}"
+            );
+            if is_uuid(s) {
+                uuids += 1;
+                let r = DefaultDateTimeRecognizer;
+                assert!(!r.is_date(s) && !r.is_time(s) && !r.is_date_time(s), "{s}");
+            }
+        }
+        assert!(uuids > 1_000, "{uuids} UUIDs");
     }
 }
