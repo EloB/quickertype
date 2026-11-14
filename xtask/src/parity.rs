@@ -19,8 +19,8 @@
 //!   names a file that is piped to the process. Before comparing, the
 //!   absolute inputs directory in the actual output is replaced by `{INPUTS}`
 //!   and the work directory by `{CWD}`, exactly as the recorder did, and
-//!   the command lines of `--help`'s stdout are turned back into quicktype's
-//!   ([`normalize_help`]).
+//!   the command lines and the source languages of `--help`'s stdout are
+//!   turned back into quicktype's ([`normalize_help`]).
 //!
 //! A case may set extra environment variables with `env`. Every step runs
 //! with `TZ=UTC` and `NODE_NO_WARNINGS=1`, and without `FORCE_COLOR`,
@@ -212,18 +212,31 @@ fn help_header(line: &[u8]) -> Option<&[u8]> {
     Some(line.strip_suffix(b"\x1b[22m").unwrap_or(line))
 }
 
+/// The start of quicktype's line of source languages in `--help`'s
+/// Synopsis, and of ours, which adds `jsonl` (JSON Lines) after `json`.
+const THEIR_SOURCE_LANGUAGES: &[u8] = b"  SRC_LANG ... json|";
+const OUR_SOURCE_LANGUAGES: &[u8] = b"  SRC_LANG ... json|jsonl|";
+
 /// `actual`, a stdout of ours, as quicktype's `expected` would have it.
 ///
-/// Our `--help` names the command [`COMMAND`] where quicktype's says
-/// `quicktype`: the lines of its Synopsis and Examples sections that start
-/// with `  $ quickertype `. Each such line must be `expected`'s line at the
-/// same place with the name swapped and two fewer spaces of padding at its
-/// end (command-line-usage pads every line to the same width, and the
-/// longer name takes two), and is turned into that line; anything else,
-/// such as a line that the longer name made wrap, is an error that says
-/// so. Every other line, and any output that is not `--help`'s (the
-/// Synopsis header after an empty line), is left to the byte-for-byte
-/// comparison, and returned without a copy.
+/// Our `--help` differs from quicktype's in two ways, on lines of its own:
+///
+/// - It names the command [`COMMAND`] where quicktype's says `quicktype`:
+///   the lines of its Synopsis and Examples sections that start with
+///   `  $ quickertype `. Each such line must be `expected`'s line at the
+///   same place with the name swapped and two fewer spaces of padding at
+///   its end (command-line-usage pads every line to the same width, and
+///   the longer name takes two).
+/// - Its Synopsis lists `jsonl` among the source languages: the line that
+///   starts with `  SRC_LANG ... json|jsonl|` must be `expected`'s line at
+///   the same place with `jsonl|` added after `json|` and six fewer spaces
+///   of padding.
+///
+/// Each such line is turned into `expected`'s; anything else, such as a
+/// line that the longer text made wrap, is an error that says so. Every
+/// other line, and any output that is not `--help`'s (the Synopsis header
+/// after an empty line), is left to the byte-for-byte comparison, and
+/// returned without a copy.
 pub(crate) fn normalize_help<'a>(
     expected: &[u8],
     actual: &'a [u8],
@@ -257,20 +270,32 @@ pub(crate) fn normalize_help<'a>(
         } else {
             after_header = false;
         }
-        let rest = match line.strip_prefix(ours) {
-            Some(rest) if matches!(section, Some(b"Synopsis" | b"Examples")) => rest,
+        // Our line's prefix, quicktype's, and what the difference is.
+        let (rest, theirs, padding, what) = match (section, line) {
+            (Some(b"Synopsis" | b"Examples"), _) if line.starts_with(ours) => (
+                &line[ours.len()..],
+                THEIRS,
+                padding,
+                format!("the command renamed `{COMMAND}`"),
+            ),
+            (Some(b"Synopsis"), _) if line.starts_with(OUR_SOURCE_LANGUAGES) => (
+                &line[OUR_SOURCE_LANGUAGES.len()..],
+                THEIR_SOURCE_LANGUAGES,
+                OUR_SOURCE_LANGUAGES.len() - THEIR_SOURCE_LANGUAGES.len(),
+                "`jsonl` among the source languages".to_owned(),
+            ),
             _ => {
                 out.extend_from_slice(line);
                 continue;
             }
         };
         let start = out.len();
-        out.extend_from_slice(THEIRS);
+        out.extend_from_slice(theirs);
         out.extend_from_slice(rest);
         out.resize(out.len() + padding, b' ');
         if expected_line != Some(&out[start..]) {
             return Err(format!(
-                "line {}: ours, {:?}, is not quicktype's, {}, with the command renamed `{COMMAND}` and {padding} fewer spaces of padding (did the longer name make the line wrap?)",
+                "line {}: ours, {:?}, is not quicktype's, {}, with {what} and {padding} fewer spaces of padding (did the longer line wrap?)",
                 i + 1,
                 String::from_utf8_lossy(line),
                 expected_line.map_or_else(
@@ -674,14 +699,17 @@ mod tests {
     use super::normalize_help;
 
     /// A help with two command lines, in the Synopsis and the Examples,
-    /// padded to 40 columns, with `name` as the command.
-    fn help(name: &str, extra: &str) -> Vec<u8> {
-        let pad = |s: String| format!("{s:<40}");
+    /// and the source languages in the Synopsis, padded to 50 columns,
+    /// with `name` as the command and `languages` as the source languages.
+    fn help_with(name: &str, languages: &str, extra: &str) -> Vec<u8> {
+        let pad = |s: String| format!("{s:<50}");
         [
             String::new(),
             "Synopsis".to_owned(),
             String::new(),
             pad(format!("  $ {name} [--lang LANG] FILE")),
+            pad(String::new()),
+            pad(format!("  SRC_LANG ... {languages}")),
             String::new(),
             "\x1b[1mExamples\x1b[22m".to_owned(),
             String::new(),
@@ -692,6 +720,20 @@ mod tests {
         ]
         .join("\n")
         .into_bytes()
+    }
+
+    const THEIR_LANGUAGES: &str = "json|schema|graphql";
+    const OUR_LANGUAGES: &str = "json|jsonl|schema|graphql";
+
+    /// [`help_with`] quicktype's source languages for `quicktype`, ours
+    /// otherwise.
+    fn help(name: &str, extra: &str) -> Vec<u8> {
+        let languages = if name == "quicktype" {
+            THEIR_LANGUAGES
+        } else {
+            OUR_LANGUAGES
+        };
+        help_with(name, languages, extra)
     }
 
     #[test]
@@ -723,7 +765,44 @@ mod tests {
             .unwrap()
             .replace("go samples   ", "go samples    ");
         let error = normalize_help(&theirs, ours.as_bytes()).unwrap_err();
-        assert!(error.starts_with("line 8: "), "{error}");
+        assert!(error.starts_with("line 10: "), "{error}");
         assert!(error.contains("2 fewer spaces"), "{error}");
+    }
+
+    /// Only `jsonl` after `json`, with six fewer spaces of padding, is
+    /// turned into quicktype's source languages.
+    #[test]
+    fn source_languages_with_jsonl_become_quicktypes() {
+        let theirs = help("quicktype", "");
+        // With the padding one space off.
+        let ours = String::from_utf8(help("quickertype", ""))
+            .unwrap()
+            .replace("graphql     ", "graphql      ");
+        let error = normalize_help(&theirs, ours.as_bytes()).unwrap_err();
+        assert!(error.starts_with("line 6: "), "{error}");
+        assert!(
+            error.contains("`jsonl` among the source languages and 6 fewer spaces"),
+            "{error}"
+        );
+        // Another change on the line is an error.
+        let ours = help_with("quickertype", "json|jsonl|schema|graphql|x", "");
+        let error = normalize_help(&theirs, &ours).unwrap_err();
+        assert!(error.starts_with("line 6: "), "{error}");
+        // `jsonl` anywhere else, or outside the Synopsis, stays ours.
+        for (languages, extra) in [
+            ("json|schema|jsonl|graphql", ""),
+            (
+                THEIR_LANGUAGES,
+                "\n  SRC_LANG ... json|jsonl|schema|graphql",
+            ),
+        ] {
+            let ours = help_with("quickertype", languages, extra);
+            let normalized = normalize_help(&theirs, &ours).unwrap();
+            assert_ne!(*normalized, theirs, "{languages} {extra:?}");
+            assert!(normalized.windows(5).any(|w| w == b"jsonl"));
+        }
+        // quicktype's own languages are left as they are.
+        let ours = help_with("quickertype", THEIR_LANGUAGES, "");
+        assert_eq!(*normalize_help(&theirs, &ours).unwrap(), theirs);
     }
 }
