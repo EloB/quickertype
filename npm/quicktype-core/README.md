@@ -31,7 +31,8 @@ const { lines } = await quicktype({ inputData, lang: "typescript" });
 ### JSON samples as bytes
 
 The JSON inputs of `jsonInputForTargetLanguage` also take a sample as its
-UTF-8 bytes: a `Uint8Array`, or a Node.js `Buffer`. This is an addition to
+UTF-8 bytes: a `Uint8Array`, or a Node.js `Buffer`, also one from another
+realm (a `vm` context, an iframe). This is an addition to
 quicktype-core's API. A sample given as bytes is the text that
 `new TextDecoder().decode(bytes)` gives, which is also what a browser's
 `file.text()` gives for a file: a leading byte order mark is not part of
@@ -52,7 +53,10 @@ In a browser, use `new Uint8Array(await file.arrayBuffer())`. Bytes can
 also hold a file too large to be a JavaScript string, which in V8 is about
 2^29 UTF-16 code units. The bytes are read when `addSource` is called, so
 changing them afterwards changes nothing. On the TypeScript engine (see
-below), the bytes are decoded first, then parsed with `JSON.parse`.
+below), the bytes are decoded first, then parsed with `JSON.parse`. Bytes
+that are not UTF-8 are decoded once either way, and what the decoder
+throws (a `RangeError` for a text longer than the longest string) is
+`addSource`'s error, as on the TypeScript engine.
 
 `require("quickertype-core")` works too. The package matches `quicktype-core`
 24.0.0 at quicktype commit

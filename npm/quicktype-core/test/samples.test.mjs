@@ -1255,3 +1255,123 @@ test("an input released is freed in the engine at once, and is not evicted", asy
 
     noLeases();
 });
+
+// What the decoder throws for bytes that are not UTF-8 (a `RangeError` for
+// a text longer than the longest string) is the input's error, thrown from
+// `addSource` as on TypeScript: the engine has not failed, and keeps every
+// other input's samples. Such bytes are decoded once, also when the engine
+// then leaves the text to TypeScript (not JSON, or a string root).
+test("bytes that are not UTF-8: the decoder's error is the input's, and they are decoded once", async () => {
+    const decoderClass = globalThis.TextDecoder;
+    const decode = decoderClass.prototype.decode;
+    const notUtf8 = (json) => {
+        const bytes = utf8(json);
+        const at = bytes.indexOf(0x7e); // "~": a byte that becomes U+FFFD
+        bytes[at] = 0xff;
+        return bytes;
+    };
+    // How often the sample's own bytes were decoded (the glue decodes the
+    // engine's strings with a TextDecoder too).
+    let decoded = 0;
+    let watched;
+    let failing = false;
+    decoderClass.prototype.decode = function (input) {
+        if (input !== undefined && input === watched) {
+            decoded++;
+            if (failing) throw new RangeError("Invalid string length");
+        }
+        return decode.call(this, input);
+    };
+    try {
+        const glue = engine.engineSync();
+        const other = await addAll("rust", plainGroups);
+        const expected = await inMode("ts", async () => [...(await run(await addAll("rust", plainGroups), "rust"))]);
+        const before = { ...engineStats };
+        failing = true;
+        for (const sync of [false, true]) {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            watched = notUtf8('{"a": "~"}');
+            const add = { name: "T", samples: [watched] };
+            const failed = await outcome(async () => (sync ? input.addSourceSync(add) : input.addSource(add)));
+            // quicktype's "Syntax error in input JSON" around it, as on TypeScript.
+            assert.match(failed.error?.message ?? "", /Invalid string length/);
+            const ts = await inMode("ts", async () => outcome(async () => qt.jsonInputForTargetLanguage("rust").addSource(add)));
+            assert.deepEqual(failed, ts);
+        }
+
+        failing = false;
+        // The engine did not fail: the other input's samples are still there.
+        assert.equal(engine.currentEngine(), glue);
+        assert.ok(!engine.isDiscarded(glue));
+        assert.equal(engineStats.rerun, before.rerun);
+        assert.deepEqual([...(await run(other, "rust"))], expected);
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+
+        // Read on the engine: one decode.
+        for (const [json, form] of [
+            ['{"a": "~", "b": [1]}', "read by the engine"],
+            ['[1, "~", ', "not JSON"],
+            ['"~ a string root"', "a string root, left to TypeScript"],
+        ]) {
+            const bytes = notUtf8(json);
+            const text = new TextDecoder().decode(bytes);
+            watched = bytes;
+            decoded = 0;
+            const ours = await outcome(async () => {
+                const input = qt.jsonInputForTargetLanguage("rust");
+                await input.addSource({ name: "T", samples: [bytes] });
+                return inside(input);
+            });
+            assert.equal(decoded, 1, form);
+            const theirs = await inMode("ts", async () =>
+                outcome(async () => {
+                    const input = qt.jsonInputForTargetLanguage("rust");
+                    await input.addSource({ name: "T", samples: [text] });
+                    return inside(input);
+                }),
+            );
+            assert.deepEqual(ours, theirs, form);
+        }
+    } finally {
+        decoderClass.prototype.decode = decode;
+    }
+
+    noLeases();
+});
+
+// A `Uint8Array` (or `Buffer`) from another realm, such as a `vm` context
+// or an iframe, is bytes too, though `instanceof Uint8Array` says no.
+test("bytes from another realm are bytes", async () => {
+    const vm = await import("node:vm");
+    const groups = Object.entries(samples);
+    const expected = await inMode("ts", async () => inside(await addAll("typescript", groups)));
+    const foreign = (text) => vm.runInNewContext("new Uint8Array(bytes)", { bytes: [...utf8(text)] });
+    assert.ok(!(foreign("1") instanceof Uint8Array));
+    for (const mode of [undefined, "ts"]) {
+        const before = engineStats.samplesRead;
+        const input = await inMode(mode, async () => addAll("typescript", groups.map(([name, list]) => [name, list.map(foreign)])));
+        assert.deepEqual(inside(input), expected, mode ?? "the engine");
+        if (mode === undefined) assert.ok(engineStats.samplesRead > before);
+    }
+
+    // Not the comma-joined byte values (`[49]` is "1", not 49).
+    const one = qt.jsonInputForTargetLanguage("typescript");
+    await one.addSource({ name: "One", samples: [foreign('"x"')] });
+    assert.deepEqual([...(await run(one, "typescript"))], await inMode("ts", async () => [...(await run(await addAll("typescript", [["One", ['"x"']]]), "typescript"))]));
+    noLeases();
+});
+
+// How an input's samples are read, for the playground's reuse of an input
+// (`readingKey`, not public): from the configuration the engine reads them
+// with, so that two inputs share it exactly when they read alike.
+test("the reading key follows the CompressedJSON's configuration", () => {
+    const key = (lang, handleRefs = false, rendererOptions = {}) =>
+        nativeSamples.readingKey(qt.jsonInputForTargetLanguage(lang, undefined, handleRefs, rendererOptions));
+    assert.equal(key("go"), key("cs"));
+    assert.notEqual(key("go"), key("kotlin"));
+    assert.notEqual(key("kotlin"), key("swift"));
+    assert.notEqual(key("go"), key("go", true));
+    assert.notEqual(key("rust"), key("rust", false, { "integer-type": "force-i32" }));
+    assert.equal(nativeSamples.readingKey(new qt.JSONInput(new (class extends CompressedJSONFromString {})(new DefaultDateTimeRecognizer(), false))), undefined);
+    assert.equal(nativeSamples.readingKey({}), undefined);
+});

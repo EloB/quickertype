@@ -50,7 +50,7 @@ import { CompressedJSONFromString, Tag, valueTag } from "../input/CompressedJSON
 import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
-import { installSampleReader, sampleText } from "./hook.js";
+import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
@@ -227,6 +227,23 @@ export function releaseJSONInput(input: any): void {
         drop(state.glue, state.id);
         engineStats.dropped++;
     }
+}
+
+/**
+ * Not public (the playground's workers use it): how `input`'s samples are
+ * read, as a string that two JSON inputs share exactly when their
+ * `CompressedJSON`s read samples the same way (the configuration the
+ * engine reads them with: the built-in date/time recognizer, whether `$ref`s
+ * are references, and the integer range); `undefined` for an input that
+ * is not one of `jsonInputForTargetLanguage`'s, or whose configuration
+ * the engine does not model.
+ */
+export function readingKey(input: any): string | undefined {
+    const cjson = input?._compressedJSON;
+    if (cjson === undefined || cjson === null || Object.getPrototypeOf(cjson) !== CompressedJSONFromString.prototype) return undefined;
+    const config = configOf(cjson);
+    if (config === undefined) return undefined;
+    return JSON.stringify([config.dateTime, !!config.handleRefs, config.range]);
 }
 
 /** `WeakRef`, where the host has it. */
@@ -845,10 +862,30 @@ function declined(cjson: object): undefined {
     return undefined;
 }
 
+/**
+ * `jsonRead` (or `jsonReadBytes`) of `sample` into `state`'s form: what it
+ * returned, and what the forms hold afterwards; `undefined` if the engine
+ * failed (it is discarded).
+ */
+function readOnEngine(state: NativeSamples, sample: string | Uint8Array): { value: number; held: number } | undefined {
+    const { glue, id } = state;
+    try {
+        const before = glue.jsonHeld();
+        const value = typeof sample === "string" ? glue.jsonRead(id, sample) : glue.jsonReadBytes(id, sample);
+        const held = glue.jsonHeld();
+        state.bytes += held - before;
+        return { value, held };
+    } catch (e) {
+        engineFailed(glue, e);
+        return undefined;
+    }
+}
+
 /** The reader `CompressedJSONFromString.parseSync` asks first (see the top). */
 function readSample(cjson: any, sample: unknown): number | undefined {
+    passDecoded(undefined);
     let state = states.get(cjson);
-    const bytes = sample instanceof Uint8Array;
+    const bytes = isBytes(sample);
     if ((typeof sample !== "string" && !bytes) || engineMode() === "ts") return declined(cjson);
     let text = sample as string | Uint8Array;
     // A string is scanned for lone surrogates only once the engine is to
@@ -866,27 +903,25 @@ function readSample(cjson: any, sample: unknown): number | undefined {
         return declined(cjson);
     }
 
-    let value: number;
-    let held: number;
-    try {
-        const before = state.glue.jsonHeld();
-        if (typeof text === "string") {
-            value = state.glue.jsonRead(state.id, text);
-        } else {
-            value = state.glue.jsonReadBytes(state.id, text);
-            if (value === notUtf8) {
-                // What the decoder replaces is read as it replaces it.
-                text = sampleText(text) as string;
-                value = state.glue.jsonRead(state.id, text);
-            }
+    let read = readOnEngine(state, text);
+    if (read?.value === notUtf8) {
+        // What the decoder replaces is read as it replaces it. Decoded here,
+        // outside the engine's calls: what the decoder throws (a text
+        // longer than the longest string) is the input's, thrown from
+        // `addSource` as TypeScript's own decoding of it would be. Nothing
+        // was read.
+        text = decodeUtf8(text as Uint8Array);
+        read = readOnEngine(state, text);
+        if (read === undefined || read.value <= 0) {
+            // `parseSync` then parses this text, without decoding it again.
+            const result = read === undefined || read.value !== 0 ? declined(cjson) : undefined;
+            passDecoded(sample as Uint8Array, text);
+            return result;
         }
-
-        held = state.glue.jsonHeld();
-        state.bytes += held - before;
-    } catch (e) {
-        engineFailed(state.glue, e);
-        return declined(cjson);
     }
+
+    if (read === undefined) return declined(cjson);
+    const { value, held } = read;
 
     if (value > 0) {
         state.textLength += text.length;
