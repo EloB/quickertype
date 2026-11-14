@@ -1601,13 +1601,13 @@ try {
     await page.waitFor(settled, "the run on Go");
     assert.deepEqual(await reading(), { reused: false, read: true }, "a first run reads its input");
     await select("lang", "cs");
-    await sameAsCli("pokedex.json → C#, on the input read for Go", "quicktype --lang cs --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → C#, on the input read for Go", "quickertype --lang cs --top-level Pokedex pokedex.json");
     assert.deepEqual(await reading(), { reused: true, read: false }, "Go → C# reuses the input read");
     let switched = await switchEngine("ts", "the switch to quicktype, on C#");
     assert.deepEqual(switched, { wasm: 0, ts: 1 });
     assert.deepEqual(await reading("ts"), { reused: false, read: true }, "quicktype's first run reads its input");
     await select("lang", "java");
-    await sameAsCli("pokedex.json → Java on quicktype, on the input read for C#", "quicktype --lang java --top-level Pokedex pokedex.json", "ts");
+    await sameAsCli("pokedex.json → Java on quicktype, on the input read for C#", "quickertype --lang java --top-level Pokedex pokedex.json", "ts");
     assert.deepEqual(await reading("ts"), { reused: true, read: false }, "quicktype: C# → Java reuses the input read");
     switched = await switchEngine("wasm", "the switch back to quickertype, on Java");
     assert.deepEqual(switched, { wasm: 1, ts: 0 });
@@ -1617,7 +1617,7 @@ try {
         /reuses the input both engines read before, so it only generates the code/,
     );
     await select("lang", "kotlin");
-    await sameAsCli("pokedex.json → Kotlin, which reads dates its own way", "quicktype --lang kotlin --top-level Pokedex pokedex.json");
+    await sameAsCli("pokedex.json → Kotlin, which reads dates its own way", "quickertype --lang kotlin --top-level Pokedex pokedex.json");
     assert.deepEqual(await reading(), { reused: false, read: true }, "Kotlin reads the input again");
     await select("lang", "go");
     assert.deepEqual(await reading(), { reused: false, read: true }, "Go after Kotlin reads the input again");
