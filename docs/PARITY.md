@@ -309,6 +309,24 @@ behaves exactly as quicktype.
   tested](#how-parity-is-tested)).
 - **Rust API.** `JsonSample::StringLines`, `StreamLines` and
   `ReaderLines` are `String`, `Stream` and `Reader` for JSON Lines.
+- **JavaScript API** (quickertype-core on npm). A source with `jsonLines:
+  true` (`addSource`, `addSourceSync`) reads each of its samples, a
+  string or its UTF-8 bytes, as JSON Lines, with `JSON.parse`'s semantics,
+  by the rule and the lines above; without it, a sample is one JSON
+  value, as in quicktype. The WebAssembly engine reads the sample as
+  `JsonSample::StringLines` does; what it does not read (as for JSON
+  samples: lone surrogates, deep nesting, an engine not compiled yet),
+  the facade's own reader reads, value by value with `JSON.parse`. A
+  sample that is not JSON Lines is read by that reader only, so that the
+  error is the same on both engines: `line N:` before the host's
+  `JSON.parse` message for the value on that line (for two values on one
+  line, for the two), whose positions count from the value's start,
+  without V8's `(line L column C)` (`1\r2` is `line 1: Unexpected
+  non-whitespace character after JSON at position 2` here too, while
+  `{"a": 1}` then `{"b": 2} x` is at position 9 rather than 18). The
+  playground reads `.jsonl` and `.ndjson` files so, and gives quicktype,
+  which has no JSON Lines, the JSON array of the values for its
+  comparison.
 - **Speed.** JSON Lines have a parser loop of their own
   (`Tokenizer::run_lines`), whose whitespace loop also counts the line
   feeds; JSON's (`run`) is the one it was, expanded from the same macro

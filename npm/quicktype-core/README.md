@@ -91,7 +91,7 @@ const { lines } = await quicktype({ inputData, lang: "typescript" });
 - Each value is read as `JSON.parse` reads a JSON sample. A syntax error
   names the line its value starts on, followed by `JSON.parse`'s message
   for that value, whose positions count from the value's start (V8's
-  `(line L column C)` is left out): `Syntax error in input JSON cards:
+  `(line L column C)` is left out): `Syntax error in input JSON Cards:
   line 3: Expected ',' or '}' after property value in JSON at position
   9`. The CLI names the same line; its message after it is quicktype's
   CLI's, which reads files with another parser.

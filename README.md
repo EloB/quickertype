@@ -225,6 +225,23 @@ given ([docs/PARITY.md](docs/PARITY.md#json-lines) has the details). In the Rust
 API, JSON Lines samples are `JsonSample::StringLines`, `StreamLines` and
 `ReaderLines`.
 
+In the JavaScript API ([quickertype-core](npm/quicktype-core/README.md#json-lines)
+on npm), a source with `jsonLines: true` takes JSON Lines samples, as
+strings or as bytes:
+
+```ts
+const input = jsonInputForTargetLanguage("typescript");
+await input.addSource({ name: "Cards", samples: [fs.readFileSync("cards.jsonl")], jsonLines: true });
+```
+
+The rules are the same; the values are read with `JSON.parse`'s grammar,
+as the API reads JSON, so the message after the line is `JSON.parse`'s:
+`Syntax error in input JSON Cards: line 3: Expected ',' or '}' after
+property value in JSON at position 9`. The
+[playground](https://elob.github.io/quickertype/app/) reads `.jsonl` and
+`.ndjson` files as JSON Lines too, and text typed or pasted with the input
+kind JSON Lines.
+
 ### The JavaScript API
 
 ```sh
