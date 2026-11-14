@@ -225,9 +225,9 @@ pub struct ParallelOptions {
 #[doc(hidden)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Fault {
-    /// Reads the first two parts read on other threads each with the
-    /// other's text, which appends their trees the wrong way round.
-    SwapParts,
+    /// Merges each part's tree in front of the parts' before it instead of
+    /// after them: the trees merged out of order.
+    Prepend,
 }
 
 /// The default range size: large enough that the tallies of a part, and
@@ -795,8 +795,6 @@ impl Reading<'_> {
         let mut ratio: f64 = 1.0;
         let mut root: Option<NodeId> = None;
         let mut buffer = vec![0u8; SCAN_PIECE];
-        // Whether the fault swapped the first parts given out.
-        let mut swapped = false;
         // Jobs given out and not done yet.
         let mut pending = 0usize;
         let part_len = |part: &Part| part.to.unwrap_or(self.len) - part.from;
@@ -817,18 +815,11 @@ impl Reading<'_> {
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
             // Summaries a few ranges past those formed into parts, and
-            // while parts wait to be given out, not much past the next
-            // (unless the fault holds it back until the one after forms).
-            let held = options.fault == Some(Fault::SwapParts)
-                && dispatched == 1
-                && parts.len() <= 2
-                && !all_formed;
-            let limit = match parts.get(dispatched) {
-                Some(next) if !held => next
-                    .from
-                    .saturating_add((2 * threads + 2) as u64 * self.range),
-                _ => u64::MAX,
-            };
+            // while parts wait to be given out, not much past the next.
+            let limit = parts.get(dispatched).map_or(u64::MAX, |next| {
+                next.from
+                    .saturating_add((2 * threads + 2) as u64 * self.range)
+            });
             while summarized < n
                 && summarized < formed + 2 * threads + 2
                 && self.bounds(summarized).0 < limit
@@ -902,20 +893,7 @@ impl Reading<'_> {
                 if estimates.values().sum::<u64>() + estimate > budget && !estimates.is_empty() {
                     break;
                 }
-                let mut part = parts[dispatched];
-                if options.fault == Some(Fault::SwapParts) {
-                    // Parts 1 and 2 the wrong way round, once both are formed.
-                    match dispatched {
-                        1 if parts.len() > 2 => {
-                            part = parts[2];
-                            swapped = true;
-                        }
-                        1 if !all_formed => break,
-                        2 if swapped => part = parts[1],
-                        _ => {}
-                    }
-                }
-                self.push(Job::Tally(dispatched, part));
+                self.push(Job::Tally(dispatched, parts[dispatched]));
                 estimates.insert(dispatched, estimate);
                 pending += 1;
                 dispatched += 1;
@@ -951,16 +929,22 @@ impl Reading<'_> {
                     waiting.insert(i, tree);
                     // Append the trees in order.
                     while let Some(tree) = waiting.remove(&appended) {
-                        let root = root?;
+                        let so_far = root?;
                         let imported = match running.tallies.import(&mut running.strings, &tree) {
                             Ok(imported) => imported,
-                            Err(_) => return rest(running, Some(root), &parts, appended),
+                            Err(_) => return rest(running, Some(so_far), &parts, appended),
+                        };
+                        // (The fault merges the tree so far into this one.)
+                        let (into, from) = match options.fault {
+                            Some(Fault::Prepend) => (imported, so_far),
+                            None => (so_far, imported),
                         };
                         // A failed merge changes nothing, and frees what it
                         // was given.
-                        if running.tallies.merge(root, imported).is_err() {
-                            return rest(running, Some(root), &parts, appended);
+                        if running.tallies.merge(into, from).is_err() {
+                            return rest(running, Some(into), &parts, appended);
                         }
+                        root = Some(into);
                         appended += 1;
                     }
                 }
@@ -1235,16 +1219,16 @@ mod tests {
         assert_eq!(how.in_part, 1, "{how:?}");
     }
 
-    /// The fault is caught: appending the first two parts read elsewhere
-    /// the other way round gives another tree.
+    /// The fault is caught: merging the parts' trees out of order gives
+    /// another tree.
     #[test]
-    fn swapped_parts_are_caught() {
+    fn merging_out_of_order_is_caught() {
         let config = config(false);
         let bytes = br#"[{"z":0},{"a":1},{"b":"x"},{"c":null}]"#;
         let mut options = options(2, 1);
         let expected = in_one_go(&config, bytes);
         assert_eq!(read_with(&config, bytes, options).0, expected);
-        options.fault = Some(Fault::SwapParts);
+        options.fault = Some(Fault::Prepend);
         assert_ne!(read_with(&config, bytes, options).0, expected);
     }
 }

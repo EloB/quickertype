@@ -76,8 +76,8 @@ impl Read for Chunked {
 /// large top-level array is read on several threads, with options picked
 /// by `seed`: 2 to 5 threads, ranges of one byte to half the sample, and
 /// sometimes a budget for the parts' trees so small that the rest is read
-/// in one go after the first part (and, with the fault, the trees of two
-/// parts appended the wrong way round).
+/// in one go after the first part (and, with the fault, the parts' trees
+/// merged out of order).
 fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSample {
     match (s.encoding, parallel) {
         (Encoding::Text, _) => JsonSample::String(s.text.clone()),
@@ -89,7 +89,7 @@ fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSampl
                 range: rng.range(1, (len / 2).max(1)) as usize,
                 min_len: 0,
                 budget: ParallelOptions::from_env().budget,
-                fault: fault.then_some(Fault::SwapParts),
+                fault: fault.then_some(Fault::Prepend),
             };
             if rng.chance(20) {
                 options.budget = rng.below(4096);
@@ -117,8 +117,8 @@ pub enum Inference {
     RunningTallies,
     /// The same, with every byte stream read as a file is: a large
     /// top-level array on several threads, split at seeded points (the
-    /// CLI's for regular files); with `fault`, appending two parts' trees
-    /// the wrong way round, which must be caught.
+    /// CLI's for regular files); with `fault`, merging the parts' trees out
+    /// of order, which must be caught.
     Parallel { fault: bool },
     /// From tallies of the compressed form the readers made, made when the
     /// types are inferred and kept with the form for the next inference:

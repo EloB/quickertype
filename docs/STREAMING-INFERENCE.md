@@ -526,8 +526,8 @@ anyway.)
   broken arrays with every range size (an error in the first part, the
   last, between, at a part's end, trailing commas, garbage after the
   array, invalid UTF-8 in and out of strings); a tree budget that admits
-  one part reads the rest in one go; and a fault that appends two parts
-  the wrong way round is caught.
+  one part reads the rest in one go; and a fault that merges the parts'
+  trees out of order is caught.
 - The differential harness reads every byte-stream sample on several
   threads (`Path::Parallel`, in `Path::All`), with 2 to 5 threads, ranges
   of one byte to half the sample and, for a fifth of the samples, a tree

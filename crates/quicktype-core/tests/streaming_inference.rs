@@ -107,7 +107,7 @@ fn tallies_infer_what_the_compressed_form_infers() {
 }
 
 /// The comparison catches a fault in reading on several threads: with the
-/// trees of two parts appended the wrong way round, some seeds' graphs or
+/// parts' trees merged out of order, some seeds' graphs or
 /// whole runs differ from the reference's (and every difference found is
 /// one of those).
 #[test]
