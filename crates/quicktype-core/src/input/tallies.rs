@@ -1746,9 +1746,13 @@ impl<'a> TallyBuilder<'a> {
                     .add_transformed_string(node, kind, &producer(s)),
                 None => self.tallies.add_string_format(node, kind),
             },
-            // A case is not counted where the strings absorb it
-            // (`Tallies::add_case`), so it need not be interned there.
-            None if utf16::len(s) <= 64 => {
+            // At most 64 UTF-16 code units: each takes 1 to 3 UTF-8 bytes,
+            // or 4 bytes for a surrogate pair, so a string of at most 64
+            // bytes has at most 64 units and one of more than 192 bytes
+            // more, and only the others are measured. A case is not
+            // counted where the strings absorb it (`Tallies::add_case`), so
+            // it need not be interned there.
+            None if s.len() <= 64 || (s.len() <= 192 && utf16::len(s) <= 64) => {
                 if self.tallies.absorbs_strings(node)? {
                     Ok(())
                 } else {
