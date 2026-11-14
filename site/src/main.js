@@ -1202,6 +1202,8 @@ const firstOption = () => els.optionsPanel.querySelector(".inspector-body :is(in
 function openPanel(focus) {
     const panel = els.optionsPanel;
     if (!panel.open) {
+        // No reason yet: one the browser closes says none.
+        panel.returnValue = "";
         if (!roomBeside.matches) panel.showModal();
         else if (focus) panel.show();
         else panel.open = true;
@@ -1211,19 +1213,27 @@ function openPanel(focus) {
     if (focus) firstOption()?.focus();
 }
 
+/**
+ * Why the page closed the options, passed to close() as the dialog's
+ * returnValue for its close event: the viewer closed them, or the window
+ * crossed `roomBeside` (not the viewer's choice). Closed by the browser
+ * itself, the dialog has no reason (openPanel clears it).
+ */
+const closedBy = { viewer: "viewer", resize: "resize" };
+
 /** Closes the options; the keyboard focus, if it was in them, goes back to the Options button. */
-function closePanel() {
+function closePanel(reason) {
     const panel = els.optionsPanel;
     const inside = panel.contains(document.activeElement);
-    if (panel.open) panel.close();
+    if (panel.open) panel.close(reason);
     renderPanel();
     if (inside) els.optionsToggle.focus();
 }
 
-/** Opened or closed by the viewer: remembered for the next visit. */
+/** Opened or closed by the viewer: remembered for the next visit (closed by the browser: see the close event). */
 function setPanel(open) {
     if (open) openPanel(true);
-    else closePanel();
+    else closePanel(closedBy.viewer);
     savePanel(open);
 }
 
@@ -1241,24 +1251,40 @@ function bindPanel() {
         event.preventDefault();
         setPanel(false);
     });
-    /** Closed as the window crossed the width below (the close event comes later): the focus is left where it is. */
-    let resized = false;
-    // Closed some other way (a drawer's Escape the page could not cancel): the page says so.
+    // However it closed (by the page, or by the browser: a drawer's Escape
+    // the page could not cancel), the page says so. Unless the window's
+    // width closed it, or it is open again by the time the event comes (the
+    // width moved it, or the viewer opened it again), it is the viewer's
+    // choice, kept for the next visit, and the focus, if it was lost with
+    // the dialog, goes back to Options.
     panel.addEventListener("close", () => {
         renderPanel();
-        if (resized) resized = false;
-        else if (document.activeElement === document.body || document.activeElement === null) els.optionsToggle.focus();
+        if (panel.open || panel.returnValue === closedBy.resize) return;
+        savePanel(false);
+        if (document.activeElement === document.body || document.activeElement === null) els.optionsToggle.focus();
     });
-    // A click on the drawer's backdrop (the dialog itself, outside its content) closes it.
+    // A click on the drawer's backdrop closes it: pressed and released
+    // there, outside the drawer's box (a drag out of the drawer ends on the
+    // backdrop too, and its click is the dialog's).
+    const onBackdrop = (event) => {
+        if (event.target !== panel || !panel.matches(":modal")) return false;
+        const box = panel.getBoundingClientRect();
+        return event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+    };
+    let pressedOnBackdrop = false;
+    panel.addEventListener("pointerdown", (event) => {
+        pressedOnBackdrop = onBackdrop(event);
+    });
     panel.addEventListener("click", (event) => {
-        if (event.target === panel && panel.matches(":modal")) setPanel(false);
+        const backdrop = pressedOnBackdrop && onBackdrop(event);
+        pressedOnBackdrop = false;
+        if (backdrop) setPanel(false);
     });
     // Across the width where the options move between beside the output and a drawer: open beside it, or closed.
     roomBeside.addEventListener("change", () => {
         if (!panel.open) return;
         const inside = panel.contains(document.activeElement);
-        resized = true;
-        panel.close();
+        panel.close(closedBy.resize);
         if (roomBeside.matches) openPanel(inside);
         else if (inside) els.optionsToggle.focus();
         renderPanel();

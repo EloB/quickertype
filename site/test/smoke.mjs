@@ -43,7 +43,9 @@
 // button): opened, the focus moves to their first control; closed, back to
 // the Options button; the viewer's choice is kept for the next visit. In a
 // narrower window they are a modal drawer (the page behind inert, closed by
-// Escape or its backdrop). The comparison's details open with Enter, and stay
+// Escape or a click on its backdrop, not by a drag from or to it); closed by
+// the browser itself, the choice is kept too, while the window's width
+// moving them saves nothing. The comparison's details open with Enter, and stay
 // open, with the focus, as the comparison is drawn again; the notes behind
 // an "i" open with Enter and close with Escape. Phones show one pane at a
 // time, the output first, its code in the first screen, the input a tap
@@ -1112,15 +1114,74 @@ try {
         { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined },
         "Escape in the drawer",
     );
+    // A drag from the drawer to its backdrop, or the other way, is no click
+    // on the backdrop: the drawer stays open. A click on the backdrop closes it.
     await page.evaluate("document.getElementById('options-toggle').click()");
+    await settledMotion();
+    const inDrawer = await page.evaluate(
+        `(() => { const r = document.getElementById("options-heading").getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+    );
+    const onBackdrop = { x: 40, y: 400 };
+    for (const [from, to, what] of [[inDrawer, onBackdrop, "from the drawer to its backdrop"], [onBackdrop, inDrawer, "from the backdrop into the drawer"]]) {
+        await page.send("Input.dispatchMouseEvent", { type: "mousePressed", ...from, button: "left", buttons: 1, clickCount: 1 });
+        await page.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...to, button: "left", buttons: 1 });
+        await page.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
+        assert.equal((await panelNow()).layout, "drawer", `a drag ${what}`);
+    }
     for (const type of ["mousePressed", "mouseReleased"]) {
-        await page.send("Input.dispatchMouseEvent", { type, x: 40, y: 400, button: "left", clickCount: 1 });
+        await page.send("Input.dispatchMouseEvent", { type, ...onBackdrop, button: "left", clickCount: 1 });
     }
     assert.equal((await panelNow()).layout, "closed", "a click on the drawer's backdrop");
+    const savedPanel = () => page.evaluate("localStorage.getItem('quickertype.options')");
+    assert.equal(await savedPanel(), "closed", "closed by a click on the backdrop: kept");
+
+    // Closed by the browser itself (a drawer's Escape without user
+    // activation, which the page cannot cancel; or close() from outside the
+    // page's code): the choice is kept all the same, the focus back on Options.
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run at 1024 px");
+    for (const how of ["Escape", "close()"]) {
+        // Opened by a script (no user activation).
+        await page.evaluate("document.getElementById('options-toggle').click()");
+        await settledMotion();
+        assert.equal(await savedPanel(), "open", `opened, before ${how}`);
+        if (how === "Escape") await pressEscape();
+        else await page.evaluate("document.getElementById('options-panel').close()");
+        await page.waitFor("document.body.dataset.panel === 'closed'", `the drawer closed by ${how}`);
+        assert.deepEqual(
+            { saved: await savedPanel(), focus: (await panelNow()).focus },
+            { saved: "closed", focus: "toggle" },
+            `the drawer closed by the browser (${how})`,
+        );
+    }
+
+    // Open as the window widens past where the options fit beside the
+    // output, or narrows below it: not the viewer's choice, so nothing is
+    // saved. Widened, they move beside the output with the focus; narrowed,
+    // they close, the focus back on Options.
+    await page.evaluate("document.getElementById('options-toggle').focus()");
+    await pressEnter();
     await page.viewport(1440, 900);
+    await page.waitFor("document.body.dataset.panel === 'inline'", "the drawer moving beside the output as the window widens");
+    await settledMotion();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
+        { open: true, modal: false, layout: "inline", expanded: "true", focus: "first", codeWidth: undefined, saved: "open" },
+        "the drawer, as the window widens",
+    );
+    await page.viewport(1024, 768);
+    await page.waitFor("document.body.dataset.panel === 'closed'", "the options closing as the window narrows");
+    await settledMotion();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined, saved: "open" },
+        "the options beside the output, as the window narrows",
+    );
+    await page.viewport(1440, 900);
+    await page.waitFor("document.body.dataset.panel === 'closed'", "the options staying closed as the window widens");
     await page.evaluate("document.getElementById('options-toggle').click()");
     assert.equal((await panelNow()).layout, "inline", "the options opened again beside the output");
-    console.log("ok: at 1024 px the options are a modal drawer: focus in it, the page behind inert; Escape or the backdrop closes it, the focus back on Options");
+    console.log("ok: at 1024 px the options are a modal drawer: focus in it, the page behind inert; Escape or the backdrop closes it, not a drag from or to it, the focus back on Options; closed by the browser, the choice is kept; the window's width saves nothing");
 
     // The notes behind an "i": Enter opens one, inside the window; Escape
     // closes it, the focus back on its button.
