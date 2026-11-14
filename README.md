@@ -13,8 +13,8 @@ quickertype is a port of [quicktype](https://github.com/glideapps/quicktype),
 which generates types and serializers from JSON, JSON Schema, GraphQL,
 Postman collections and TypeScript. It is a drop-in replacement:
 
-- **The `quicktype` CLI:** the same flags, help text, messages, exit codes
-  and output files, byte for byte.
+- **The `quicktype` CLI,** as the `quickertype` command: the same flags,
+  help text, messages, exit codes and output files, byte for byte.
 - **The `quicktype-core` JavaScript API** as
   [`quickertype-core`](npm/quicktype-core/README.md) on npm: quicktype's own
   TypeScript API and `.d.ts` files, with the engine compiled to WebAssembly,
@@ -103,17 +103,16 @@ From source:
 
 ```sh
 git clone https://github.com/EloB/quickertype && cd quickertype
-cargo build --release -p quickertype  # the binary is target/release/quicktype
+cargo build --release -p quickertype  # the binary is target/release/quickertype
 ```
 
-**The binary is named `quicktype`,** like quicktype's, so scripts keep
-working. Installed next to the TypeScript quicktype, the two conflict:
-Homebrew won't link a second `quicktype`, npm fails with `EEXIST`, and
-otherwise the first `quicktype` on `PATH` wins. Uninstall one first
-(`brew uninstall quicktype`, `npm uninstall -g quicktype`); see
-[docs/RELEASING.md](docs/RELEASING.md#the-quicktype-name).
+**The command is `quickertype`,** so it installs beside the TypeScript
+quicktype. `alias quicktype=quickertype` (or a `quicktype` symlink to it
+on `PATH`) makes it a drop-in replacement, for scripts too. 0.1.0
+installed it as `quicktype`; the [changelog](CHANGELOG.md) says how to
+remove that one.
 
-**Which version is installed?** `quicktype --version` prints
+**Which version is installed?** `quickertype --version` prints
 `quicktype version 24.0.0`, quicktype's version, because that output is
 part of parity too. quickertype's own version is known to whatever
 installed it:
@@ -131,28 +130,28 @@ installed it:
 
 ### The CLI
 
-The commands are quicktype's:
+The arguments are quicktype's:
 
 ```sh
 # JSON to TypeScript; the language follows from the file name
-quicktype pokedex.json -o Pokedex.ts
+quickertype pokedex.json -o Pokedex.ts
 
 # JSON from standard input to Rust, or to Go
-echo '{ "name": "David" }' | quicktype -l rust
-echo '[1, 2, 3]' | quicktype -o ints.go
+echo '{ "name": "David" }' | quickertype -l rust
+echo '[1, 2, 3]' | quickertype -o ints.go
 
 # Infer a JSON Schema from samples, then generate code from the schema
-quicktype pokedex.json -l schema -o schema.json
-quicktype -s schema schema.json -o Models.ts
+quickertype pokedex.json -l schema -o schema.json
+quickertype -s schema schema.json -o Models.ts
 
 # GraphQL: a query, typed against the schema's introspection result
-quicktype -s graphql --graphql-schema github.gqlschema query.graphql -o Query.ts
+quickertype -s graphql --graphql-schema github.gqlschema query.graphql -o Query.ts
 
 # TypeScript input
-quicktype person.ts -o Person.swift
+quickertype person.ts -o Person.swift
 
 # Every language, option and renderer option
-quicktype --help
+quickertype --help
 ```
 
 TypeScript input runs the TypeScript 7 native compiler, where quicktype runs
@@ -219,7 +218,7 @@ fn main() -> Result<(), QuickTypeError> {
 }
 ```
 
-It prints what `quicktype -l rust -t Person` prints for that sample. The
+It prints what `quickertype -l rust -t Person` prints for that sample. The
 example is
 [`crates/quicktype-core/examples/json_to_rust.rs`](crates/quicktype-core/examples/json_to_rust.rs)
 (`cargo run -p quickertype-core --example json_to_rust`). GraphQL and
@@ -254,7 +253,7 @@ generated code that is wrong in quicktype too, worth fixing upstream first.
   (September 8, 2026; [`tests/golden/REFERENCE`](tests/golden/REFERENCE)).
   That is newer than quicktype 26.0.0, the latest release on npm (July 20,
   2026), so output can differ from `npx quicktype` and app.quicktype.io
-  where quicktype has changed since. `quicktype --version` prints 24.0.0,
+  where quicktype has changed since. `quickertype --version` prints 24.0.0,
   the version in quicktype's `package.json` at that commit.
 - It is built to follow upstream: `crates/quicktype-core/src` mirrors
   `packages/quicktype-core/src` file for file, every module names its
@@ -267,7 +266,7 @@ generated code that is wrong in quicktype too, worth fixing upstream first.
 ```
 crates/                        published as quickertype-*; library names stay quicktype_*
   quicktype-core/              the engine (port of packages/quicktype-core)
-  quicktype-cli/               the `quicktype` binary (port of src/), package `quickertype`
+  quicktype-cli/               the `quickertype` binary (port of src/), package `quickertype`
   quicktype-graphql-input/     GraphQL input (port of packages/quicktype-graphql-input)
   quicktype-typescript-input/  TypeScript input via the TypeScript 7 native checker
                                (port of packages/quicktype-typescript-input + typescript-json-schema)
@@ -328,7 +327,7 @@ npm run test:differential       # API calls against the reference quicktype-core
 cd ../..
 node site/build.mjs             # the playground, into site/dist
 node site/test/serve.mjs        # http://127.0.0.1:8080/quickertype/
-node site/test/smoke.mjs        # headless Chrome, output compared with target/release/quicktype
+node site/test/smoke.mjs        # headless Chrome, output compared with target/release/quickertype
 ```
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and porting rules,

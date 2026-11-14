@@ -91,7 +91,7 @@ Each case runs in up to three modes (`--modes`, chosen per seed):
   gets that class compiled against itself and registered as a native input,
   so these runs still go to the WebAssembly engine.
 - **cli** (`--cli-rate`, default 8%): `node <reference>/dist/index.js` and
-  `target/release/quicktype` with the same arguments, each in a fresh
+  `target/release/quickertype` with the same arguments, each in a fresh
   directory holding the same input files (one top-level: its samples as
   files; several: a directory of `<name>.json`); exit code, stdout, stderr
   and written files are compared. This covers the native-only code: argument

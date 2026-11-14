@@ -29,7 +29,7 @@ quicktype-graphql-input    → quicktype-core, quicktype-js-compat
 quicktype-typescript-input → quicktype-js-compat           (not quicktype-core)
 quicktype-core             → quicktype-js-compat
 quicktype-js-compat        → no workspace crate
-xtask                      → no workspace crate (runs the built `quicktype` binary)
+xtask                      → no workspace crate (runs the built `quickertype` binary)
 npm/quicktype-core         → loads the .wasm that quicktype-wasm compiles to
 ```
 
@@ -64,7 +64,7 @@ hidden modules (`ty`, `attributes`, ...), as any `Input` implementation must.
 
 ## 2. One run, end to end
 
-`quicktype --lang rust -o out.rs x.json`, by file:
+`quickertype --lang rust -o out.rs x.json`, by file:
 
 ```
 crates/quicktype-cli/src/main.rs      main → cli_main → block_on(run)

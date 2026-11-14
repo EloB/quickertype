@@ -57,7 +57,7 @@ in the port.
 xtask/roundtrip/roundtrip.sh prepare ../quicktype-roundtrip --from ../quicktype
 
 # Fixtures (names from test/fixtures.ts, comma-separated) with our binary.
-# Builds target/release/quicktype unless --bin is given.
+# Builds target/release/quickertype unless --bin is given.
 xtask/roundtrip/roundtrip.sh run ../quicktype-roundtrip --quick --cpus 4 \
     --results /tmp/ours.jsonl python,schema-python
 

@@ -17,7 +17,7 @@ with quicktype's own packages:
 
 | Directory | Package | Library (import) name |
 |---|---|---|
-| `crates/quicktype-cli` | `quickertype` (crates.io; binary `quicktype`) | |
+| `crates/quicktype-cli` | `quickertype` (crates.io; binary `quickertype`) | |
 | `crates/quicktype-core` | `quickertype-core` (crates.io) | `quicktype_core` |
 | `crates/quicktype-js-compat` | `quickertype-js-compat` (crates.io) | `quicktype_js_compat` |
 | `crates/quicktype-graphql-input` | `quickertype-graphql-input` (crates.io) | `quicktype_graphql_input` |
@@ -42,7 +42,7 @@ with quicktype's own packages:
     [`npm/quicktype-core/package.json`](../npm/quicktype-core/package.json)
     and in its `package-lock.json` (the top-level one and the root
     package's), which `publish-npm-core.yml` checks.
-- **quicktype's version** is what `quicktype --version` prints
+- **quicktype's version** is what `quickertype --version` prints
   (`quicktype version 24.0.0`): `QUICKTYPE_VERSION` in
   [`crates/quicktype-cli/src/main.rs`](../crates/quicktype-cli/src/main.rs).
   It is part of byte-for-byte parity (the `cli-version` golden cases), so it
@@ -81,7 +81,7 @@ with quicktype's own packages:
 | npm: [`quickertype-core`](https://www.npmjs.com/package/quickertype-core) | quicktype's `quicktype-core` API on the WebAssembly engine, with provenance | `npm install quickertype-core` |
 | crates.io: [`quickertype`](https://crates.io/crates/quickertype) and the four library crates | the sources, built by Cargo on install | `cargo install quickertype`, or `quickertype-core = "0.1"` as a dependency |
 
-Every CLI install gives one binary, `quicktype`. The shell and PowerShell
+Every CLI install gives one binary, `quickertype`. The shell and PowerShell
 installers and `cargo install` put it in `$CARGO_HOME/bin` (`~/.cargo/bin`
 by default). Each archive holds the binary, `README.md`, `LICENSE`,
 `CHANGELOG.md` and `NOTICE`; each crate and `quickertype-core` also ship
@@ -109,23 +109,20 @@ publishes as `latest` only.
 
 ## The `quicktype` name
 
-The binary is called `quicktype`, like the TypeScript quicktype's, so that
-this CLI is a drop-in replacement. Installed side by side, the two collide:
+The command is `quickertype` (`[[bin]]` in
+[`crates/quicktype-cli/Cargo.toml`](../crates/quicktype-cli/Cargo.toml)),
+not `quicktype`, so that it installs beside the TypeScript quicktype:
+homebrew-core's `quicktype` formula and the `quicktype` npm package both
+install a `quicktype` command, which Homebrew refuses to link twice and npm
+refuses with `EEXIST`. `alias quicktype=quickertype`, or a `quicktype`
+symlink to it on `PATH`, makes it a drop-in replacement. dist's
+`bin-aliases` could install that symlink, but it would bring the conflicts
+back, so it is not set.
 
-- **Homebrew:** homebrew-core's `quicktype` formula links the same
-  `bin/quicktype`. dist's formula template (0.34.0) cannot declare
-  `conflicts_with`, so Homebrew installs `quickertype` but refuses to link
-  it ("Could not symlink bin/quicktype"). Use one at a time:
-  `brew uninstall quicktype` (or `brew unlink quicktype`), then
-  `brew link quickertype`.
-- **npm:** the `quicktype` package's bin is also `quicktype`.
-  `npm install -g quickertype` then fails with `EEXIST`; uninstall the other
-  one first (`npm uninstall -g quicktype`). npm has no way to declare the
-  conflict. (`quickertype-core` is a library and has no bin.)
-- **Shell, PowerShell, MSI and `cargo install`:** whichever `quicktype`
-  comes first on `PATH` runs. `quicktype --version` prints the same text for
-  both; `which -a quicktype` (or `where quicktype` on Windows) shows which
-  is which.
+0.1.0 installed the command as `quicktype`. Upgrading with Homebrew, npm or
+the MSI removes that binary; the shell and PowerShell installers and
+`cargo install` leave it where 0.1.0 put it
+([CHANGELOG.md](../CHANGELOG.md) says where).
 
 ## Secrets and one-time setup
 
@@ -262,7 +259,7 @@ repository that change it.
    `custom-publish-crates` and `custom-publish-npm-core`, then `announce`.
 7. Check that every registry has X.Y.Z, then install it once or twice and
    check the installed version with the installer's own tool
-   ([above](#names-and-versions)). `quicktype --version` cannot tell: it
+   ([above](#names-and-versions)). `quickertype --version` cannot tell: it
    prints quicktype's version, 24.0.0, for every release.
 
    ```sh
