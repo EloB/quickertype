@@ -133,7 +133,8 @@ impl fmt::Debug for KindOrder {
 pub(crate) struct StringTally {
     /// The interned strings (`Tag.InternedString`, each one
     /// `addStringCase(s, 1)` with enum inference), by their index in
-    /// [`Tallies`]' strings, with their counts, in first-seen order.
+    /// [`Tallies`]' strings, with their counts, in first-seen order; none
+    /// once the strings absorb every string ([`Tallies::add_case`]).
     pub(crate) cases: IndexMap<u32, u64, BuildHasher>,
     /// What the other strings add to the accumulator's `string` attributes
     /// (`addStringType("string", ...)`), combined in order as
@@ -348,6 +349,17 @@ impl StringTally {
         self.absorbed[0] & self.absorbed[1] & ABSORBS_UNRESTRICTED != 0
     }
 
+    /// Forgets the cases once the string types absorb every string: nothing
+    /// reads them any more (see [`Tallies::add_case`]), and none are counted
+    /// from then on, so a place that absorbs holds none, however its values
+    /// were split into samples and merged.
+    #[inline(always)]
+    fn forget_absorbed_cases(&mut self) {
+        if self.absorbs_strings() && !self.cases.is_empty() {
+            self.cases = IndexMap::default();
+        }
+    }
+
     /// What an interned string (`Tag.InternedString`) adds besides its
     /// case: an unrestricted string, without enum inference.
     #[inline(always)]
@@ -360,7 +372,11 @@ impl StringTally {
     fn add_uninterned(&mut self) -> Result<()> {
         self.not_interned = true;
         add_unrestricted_once(&mut self.with_enums, &mut self.absorbed[0])?;
-        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])?;
+        // The only value that makes the string types unrestricted with
+        // enum inference, and so the strings absorb from here on.
+        self.forget_absorbed_cases();
+        Ok(())
     }
 
     /// A string of a transformed kind without attribute producer
@@ -399,6 +415,19 @@ impl StringTally {
     /// [`combined_with`](Self::combined_with) computed for them, and
     /// empties `other`.
     fn append(&mut self, other: &mut StringTally, (with_enums, without_enums): Combined) {
+        // What either combination absorbs, their union does.
+        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
+            *absorbed |= other;
+        }
+        // The union absorbs every string if either tally does (only an
+        // uninterned string sets the bit with enum inference, and it sets
+        // both). Reading on would have forgotten every case at the value
+        // that made it absorb them and counted none after: so the merged
+        // place holds none either.
+        if self.absorbs_strings() {
+            other.cases.clear();
+            self.forget_absorbed_cases();
+        }
         for (id, count) in other.cases.drain(..) {
             *self.cases.entry(id).or_insert(0) += count;
         }
@@ -409,10 +438,6 @@ impl StringTally {
             without_enums,
         );
         self.not_interned |= other.not_interned;
-        // What either combination absorbs, their union does.
-        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
-            *absorbed |= other;
-        }
     }
 }
 
@@ -1115,7 +1140,10 @@ impl Tallies {
     /// another place's, which is unrestricted if either is. So a case
     /// left out here is not needed later, by a merge, by tallies kept
     /// with a compressed form for later runs, or by inference with other
-    /// flags.
+    /// flags. For the same reasons a place forgets the cases it counted
+    /// when it starts absorbing them, alone or in a merge
+    /// ([`StringTally::forget_absorbed_cases`]): a place that absorbs
+    /// holds no cases at all, so merged tallies equal those of reading on.
     #[inline(always)]
     pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
         let Tallies {
@@ -2405,10 +2433,11 @@ mod tests {
     }
 
     /// Once a place's strings are unrestricted with and without enum
-    /// inference, its strings are neither counted nor interned, but for
-    /// URIs, whose attributes still count, and references. A merge of
-    /// such a place with one that is not keeps what the other counted,
-    /// either way round; the walk over a compressed form tallies alike.
+    /// inference, it forgets the cases it counted, and its strings are
+    /// neither counted nor interned, but for URIs, whose attributes still
+    /// count, and references. A merge of such a place with one that is not
+    /// holds no cases either, whichever is merged into which; the walk
+    /// over a compressed form tallies alike.
     #[test]
     fn strings_a_place_absorbs_are_not_counted() {
         let long = "x".repeat(70);
@@ -2418,7 +2447,7 @@ mod tests {
             format!(r#"["a","{long}","b","https://h/c.PNG","a","ftp://h/d.zip","2020-01-01","c"]"#);
         let root = read(&mut tallies, &config, &[&sample]);
         let items = tallies.tallies.node(root).unwrap().items.unwrap();
-        assert_eq!(cases(&tallies, items), [("a".to_owned(), 1)]);
+        assert!(cases(&tallies, items).is_empty());
         assert!(tallies.tallies.absorbs_strings(items).unwrap());
         for text in ["b", "c"] {
             assert!(!(0..tallies.strings.len()).any(|i| tallies.strings.get(i) == Some(text)));
@@ -2447,11 +2476,18 @@ mod tests {
             let (into, from) = if counted_first { (a, b) } else { (b, a) };
             tallies.tallies.merge(into, from).unwrap();
             let items = tallies.tallies.node(into).unwrap().items.unwrap();
-            assert_eq!(
-                cases(&tallies, items),
-                [("d".to_owned(), 2), ("e".to_owned(), 1)]
-            );
+            assert!(cases(&tallies, items).is_empty());
             assert!(tallies.tallies.absorbs_strings(items).unwrap());
+            // As reading the samples on in one tree.
+            let mut on = RunningTallies::new();
+            let samples = if counted_first {
+                [counted, absorbing.as_str()]
+            } else {
+                [absorbing.as_str(), counted]
+            };
+            let one = read(&mut on, &config, &[&format!("[{}]", samples.join(","))]);
+            let one = on.tallies.node(one).unwrap().items.unwrap();
+            assert_eq!(dump(&tallies, into), dump(&on, one));
         }
         // References are counted wherever they are.
         let config = self::config(true);

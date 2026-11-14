@@ -129,10 +129,11 @@ only known when the types are added, after the samples were read; the
 But a place stops counting cases once its string types are unrestricted
 both with and without enum inference (`StringTally::absorbs_strings`:
 the `absorbed` bit of unrestricted strings in both combinations, see the
-next section), and the readers do not even classify or intern a string
-there that cannot be a URI (`may_have_attributes`: only `uri` has
-attributes of its own, and a URI starts with `h` or `f`). Nothing reads
-those cases:
+next section), and forgets the cases it counted until then
+(`forget_absorbed_cases`, also when a merge makes it absorb them). The
+readers do not even classify or intern a string there that cannot be a
+URI (`may_have_attributes`: only `uri` has attributes of its own, and a
+URI starts with `h` or `f`). Nothing reads those cases:
 
 - With enum inference they are replayed as `addStringCase`, and
   `getMemberKinds` unites `StringTypes(cases)` with the combined string
@@ -345,11 +346,10 @@ merged recursively. Each rule is the corresponding operation applied to
 the concatenation, so a merged tree equals the tree of reading on: the
 unit test `merging_trees_is_reading_on` checks that the merged trees of a
 sequence of samples, split anywhere, equal the items of one array of
-those samples read in one go. The one exception is the cases of a place
-whose string types absorb them (see "Interned strings"): read on in one
-tree, the place stops counting cases at the value that makes it absorb
-them, while a later sample's own tree counts its cases until its own
-place absorbs them. Inference reads neither, so it infers the same.
+those samples read in one go. That holds for a place whose string types
+come to absorb every string too (see "Interned strings"): it holds no
+cases, read on or merged, since it forgets them when it starts absorbing
+them, whichever tree that happens in, and counts none after.
 
 The CLI adds each file (or standard input) as its own source, with one
 sample, so a directory of samples is merged into one tree per top-level.
@@ -430,10 +430,8 @@ in order, then for each object at a place, in that order, its entries,
 and for each array its elements. A container is tallied where it starts,
 as the builder tallies it. Each top-level's samples go into one tree,
 where reading gives each sample a tree and merges them, which is the
-same tree (`merging_trees_is_reading_on`) but for cases at places that
-absorb them, which inference does not read. The tallies are therefore
-the ones reading the samples gives, as far as inference can tell, and
-everything above applies.
+same tree (`merging_trees_is_reading_on`). The tallies are therefore the
+ones reading the samples gives, and everything above applies.
 
 One difference cannot be observed: a key or case is known by its index
 in the form's string table, not in a table of the tallies' own; every
