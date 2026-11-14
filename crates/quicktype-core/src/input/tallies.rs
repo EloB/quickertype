@@ -1967,7 +1967,7 @@ impl Drop for TallyBuilder<'_> {
 mod tests {
     use super::*;
     use crate::date_time::DefaultDateTimeRecognizer;
-    use crate::input::compressed_json::parse_string_into;
+    use crate::input::compressed_json::{Framing, parse_string_into};
     use crate::input::compressed_json_from_stream::parse_stream_into;
 
     fn config(handle_refs: bool) -> CompressedJson {
@@ -1980,8 +1980,12 @@ mod tests {
         let trees: Vec<NodeId> = samples
             .iter()
             .map(|sample| {
-                parse_stream_into(&mut TallyBuilder::new(tallies, config), sample.as_bytes())
-                    .expect("valid JSON")
+                parse_stream_into(
+                    &mut TallyBuilder::new(tallies, config),
+                    sample.as_bytes(),
+                    Framing::Value,
+                )
+                .expect("valid JSON")
             })
             .collect();
         let (&first, rest) = trees.split_first().expect("a sample");
@@ -2179,8 +2183,10 @@ mod tests {
         for cut in 1..broken.len() {
             let mut tallies = RunningTallies::new();
             let mut builder = TallyBuilder::new(&mut tallies, &config);
-            assert!(parse_stream_into(&mut builder, &broken.as_bytes()[..cut]).is_err());
-            let tree = parse_stream_into(&mut builder, good.as_bytes()).unwrap();
+            assert!(
+                parse_stream_into(&mut builder, &broken.as_bytes()[..cut], Framing::Value).is_err()
+            );
+            let tree = parse_stream_into(&mut builder, good.as_bytes(), Framing::Value).unwrap();
             drop(builder);
             assert_eq!(
                 (dump(&tallies, tree), tallies.tallies.live_nodes()),
@@ -2215,7 +2221,12 @@ mod tests {
             let trees: Vec<NodeId> = samples
                 .iter()
                 .map(|sample| {
-                    parse_string_into(&mut TallyBuilder::new(&mut parsed, &config), sample).unwrap()
+                    parse_string_into(
+                        &mut TallyBuilder::new(&mut parsed, &config),
+                        sample,
+                        Framing::Value,
+                    )
+                    .unwrap()
                 })
                 .collect();
             parsed.tallies.merge(trees[0], trees[1]).unwrap();
@@ -2273,8 +2284,12 @@ mod tests {
             let trees: Vec<NodeId> = WALKED
                 .iter()
                 .map(|sample| {
-                    parse_string_into(&mut TallyBuilder::new(&mut text_tallies, &config), sample)
-                        .unwrap()
+                    parse_string_into(
+                        &mut TallyBuilder::new(&mut text_tallies, &config),
+                        sample,
+                        Framing::Value,
+                    )
+                    .unwrap()
                 })
                 .collect();
             for &tree in &trees[1..] {

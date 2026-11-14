@@ -712,10 +712,9 @@ fn as_deep_as_process_goes() {
     assert!(strings.starts_with(&["v".into(), "k".into(), "n".into(), "s".into()]));
 }
 
-/// [`parse_string_framed_into`](super::super::parse_string_framed_into)
-/// for JSON Lines.
+/// [`parse_string_into`](super::super::parse_string_into) for JSON Lines.
 fn parse_lines_into(cjson: &mut CompressedJson, text: &str) -> Result<Value, ParseError> {
-    super::super::parse_string_framed_into(cjson, text, Framing::Lines)
+    super::super::parse_string_into(cjson, text, Framing::Lines)
 }
 
 /// Reads each JSON Lines text in `texts` both ways, into one compressed

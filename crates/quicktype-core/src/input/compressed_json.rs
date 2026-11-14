@@ -1015,7 +1015,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_string(&mut self, text: &str) -> Result<Value, ParseError> {
-        parse_string_into(self, text)
+        parse_string_into(self, text, Framing::Value)
     }
 
     /// How many strings, objects and arrays there are.
@@ -1379,24 +1379,19 @@ pub(crate) fn read_sample_into<S: JsonSink>(
     sink: &mut S,
     sample: JsonSample,
 ) -> Result<S::Root, ParseError> {
-    use crate::input::compressed_json_from_stream::{
-        parse_stream_framed_into, parse_stream_reader_framed_into,
-    };
+    use crate::input::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
     use JsonSample::{Reader, ReaderLines, Stream, StreamLines, String, StringLines};
     let framing = match &sample {
         String(_) | Stream(_) | Reader(_) => Framing::Value,
         StringLines(_) | StreamLines(_) | ReaderLines(_) => Framing::Lines,
     };
     match sample {
-        String(text) | StringLines(text) => parse_string_framed_into(sink, &text, framing),
-        Stream(bytes) | StreamLines(bytes) => parse_stream_framed_into(sink, &bytes, framing),
+        String(text) | StringLines(text) => parse_string_into(sink, &text, framing),
+        Stream(bytes) | StreamLines(bytes) => parse_stream_into(sink, &bytes, framing),
         Reader(reader) | ReaderLines(reader) => match reader.take() {
-            Some(mut stream) => parse_stream_reader_framed_into(sink, &mut *stream, framing),
+            Some(mut stream) => parse_stream_reader_into(sink, &mut *stream, framing),
             None => Err(ParseError::Read(crate::input::inputs::already_read(
-                match framing {
-                    Framing::Value => "Reader",
-                    Framing::Lines => "ReaderLines",
-                },
+                framing,
             ))),
         },
     }
@@ -1404,20 +1399,11 @@ pub(crate) fn read_sample_into<S: JsonSink>(
 
 /// [`CompressedJson::parse_string`] into any [`JsonSink`]: `JSON.parse`,
 /// then `process` the value, read in one pass over the text without
-/// building the value (`from_string`). A sample that is not JSON emits
-/// nothing; one that fails later is forgotten
+/// building the value (`from_string`); with [`Framing::Lines`], the JSON
+/// Lines text's values as the elements of one array. A sample that is not
+/// JSON emits nothing; one that fails later is forgotten
 /// ([`JsonSink::reset_partial_sample`]).
 pub(crate) fn parse_string_into<S: JsonSink>(
-    sink: &mut S,
-    text: &str,
-) -> Result<S::Root, ParseError> {
-    parse_string_framed_into(sink, text, Framing::Value)
-}
-
-/// [`parse_string_into`] framed as `framing` says: with
-/// [`Framing::Lines`], the JSON Lines text's values as the elements of
-/// one array.
-pub(crate) fn parse_string_framed_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
     framing: Framing,

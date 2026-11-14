@@ -75,7 +75,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        parse_stream_into(self, sample)
+        parse_stream_into(self, sample, Framing::Value)
     }
 
     /// [`parse_stream`](Self::parse_stream) on a byte stream, read chunk
@@ -84,7 +84,7 @@ impl CompressedJson {
     /// error wraps an [`IoError`], that is the exception reported (its
     /// name and message), otherwise an `Error` with the error's text.
     pub fn parse_stream_reader(&mut self, reader: &mut dyn Read) -> Result<Value, ParseError> {
-        parse_stream_reader_into(self, reader)
+        parse_stream_reader_into(self, reader, Framing::Value)
     }
 
     #[cfg(test)]
@@ -93,58 +93,34 @@ impl CompressedJson {
         reader: &mut dyn Read,
         chunk_size: usize,
     ) -> Result<Value, ParseError> {
-        parse_stream_chunked_into(self, reader, chunk_size)
+        parse_stream_chunked_into(self, reader, chunk_size, Framing::Value)
     }
 }
 
-/// [`CompressedJson::parse_stream`] into any [`JsonSink`].
+/// [`CompressedJson::parse_stream`] into any [`JsonSink`], framed as
+/// `framing` says: with [`Framing::Lines`], the array of the JSON Lines
+/// sample's values.
 pub(crate) fn parse_stream_into<S: JsonSink>(
     sink: &mut S,
     sample: &[u8],
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
     // In memory: decode once (borrowing valid UTF-8) and tokenize it
     // as one window.
     match utf8::decode(sample) {
-        Cow::Borrowed(text) => tokenize(sink, Tokenizer::in_memory(text)),
-        Cow::Owned(text) => tokenize(sink, Tokenizer::in_memory(text)),
+        Cow::Borrowed(text) => tokenize_framed(sink, Tokenizer::in_memory(text), framing),
+        Cow::Owned(text) => tokenize_framed(sink, Tokenizer::in_memory(text), framing),
     }
 }
 
-/// [`parse_stream_into`] framed as `framing` says: with
-/// [`Framing::Lines`], the array of the JSON Lines sample's values.
-pub(crate) fn parse_stream_framed_into<S: JsonSink>(
-    sink: &mut S,
-    sample: &[u8],
-    framing: Framing,
-) -> Result<S::Root, ParseError> {
-    match framing {
-        Framing::Value => parse_stream_into(sink, sample),
-        Framing::Lines => match utf8::decode(sample) {
-            Cow::Borrowed(text) => tokenize_lines(sink, Tokenizer::in_memory(text)),
-            Cow::Owned(text) => tokenize_lines(sink, Tokenizer::in_memory(text)),
-        },
-    }
-}
-
-/// [`CompressedJson::parse_stream_reader`] into any [`JsonSink`].
+/// [`CompressedJson::parse_stream_reader`] into any [`JsonSink`], framed
+/// as `framing` says.
 pub(crate) fn parse_stream_reader_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
-) -> Result<S::Root, ParseError> {
-    parse_stream_chunked_into(sink, reader, CHUNK_SIZE)
-}
-
-/// [`parse_stream_reader_into`] framed as `framing` says (see
-/// [`parse_stream_framed_into`]).
-pub(crate) fn parse_stream_reader_framed_into<S: JsonSink>(
-    sink: &mut S,
-    reader: &mut dyn Read,
     framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    match framing {
-        Framing::Value => parse_stream_reader_into(sink, reader),
-        Framing::Lines => parse_stream_lines_chunked_into(sink, reader, CHUNK_SIZE),
-    }
+    parse_stream_chunked_into(sink, reader, CHUNK_SIZE, framing)
 }
 
 /// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
@@ -152,17 +128,21 @@ pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
     chunk_size: usize,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    tokenize(sink, Tokenizer::streaming(reader, chunk_size))
+    tokenize_framed(sink, Tokenizer::streaming(reader, chunk_size), framing)
 }
 
-/// [`parse_stream_chunked_into`] for JSON Lines.
-pub(crate) fn parse_stream_lines_chunked_into<S: JsonSink>(
+/// [`tokenize`] or [`tokenize_lines`], as `framing` says.
+fn tokenize_framed<S: JsonSink, W: Window>(
     sink: &mut S,
-    reader: &mut dyn Read,
-    chunk_size: usize,
+    tokenizer: Tokenizer<'_, W>,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    tokenize_lines(sink, Tokenizer::streaming(reader, chunk_size))
+    match framing {
+        Framing::Value => tokenize(sink, tokenizer),
+        Framing::Lines => tokenize_lines(sink, tokenizer),
+    }
 }
 
 fn tokenize<S: JsonSink, W: Window>(
@@ -279,8 +259,8 @@ struct Lines {
     feeds: usize,
     /// The line the current value starts on, from 1.
     value_line: usize,
-    /// How many values have started.
-    values: usize,
+    /// Whether a value has started.
+    started: bool,
 }
 
 impl Default for Lines {
@@ -288,7 +268,7 @@ impl Default for Lines {
         Lines {
             feeds: 0,
             value_line: 1,
-            values: 0,
+            started: false,
         }
     }
 }
@@ -731,10 +711,10 @@ impl<W: Window> Tokenizer<'_, W> {
                 return Ok(sink.finish()?);
             }
             lines.value_line = lines.feeds + 1;
-            lines.values += 1;
-            if lines.values > 1 && lines.feeds == feeds {
+            if lines.started && lines.feeds == feeds {
                 return Err(syntax("Parser cannot parse input: unexpected characters"));
             }
+            lines.started = true;
             expect = Expect::Value;
         })
     }
@@ -1266,7 +1246,7 @@ mod tests {
         size: usize,
     ) -> Result<(Value, crate::input::compressed_json::CompressedJsonTables), ParseError> {
         let mut r = reader(Some(INT64_RANGE.clone()));
-        let value = parse_stream_lines_chunked_into(&mut r, &mut &*bytes, size)?;
+        let value = parse_stream_chunked_into(&mut r, &mut &*bytes, size, Framing::Lines)?;
         Ok((value, r.to_tables(&[value]).0))
     }
 
@@ -1296,7 +1276,7 @@ mod tests {
                         .map(|v| (v, r.to_tables(&[v]).0));
                     assert!(expected.is_ok());
                     let mut r = reader(Some(INT64_RANGE.clone()));
-                    let whole = parse_stream_framed_into(&mut r, lines.as_bytes(), Framing::Lines)
+                    let whole = parse_stream_into(&mut r, lines.as_bytes(), Framing::Lines)
                         .map(|v| (v, r.to_tables(&[v]).0));
                     assert_eq!(whole, expected, "{n} values");
                     for size in [1, 2, 7, 64, 8 * 1024] {
@@ -1372,7 +1352,7 @@ mod tests {
         ];
         for &(input, message) in cases {
             let mut r = reader(Some(INT64_RANGE.clone()));
-            let whole = parse_stream_framed_into(&mut r, input.as_bytes(), Framing::Lines);
+            let whole = parse_stream_into(&mut r, input.as_bytes(), Framing::Lines);
             assert_eq!(
                 whole.as_ref().err().map(ParseError::message),
                 message,
@@ -1410,7 +1390,7 @@ mod tests {
             }
         }
         assert_eq!(
-            parse_stream_reader_framed_into(&mut reader(None), &mut Failing, Framing::Lines),
+            parse_stream_reader_into(&mut reader(None), &mut Failing, Framing::Lines),
             Err(ParseError::Read(QuickTypeError::js_exception(
                 JsErrorName::Error,
                 "broken"
@@ -1435,7 +1415,7 @@ mod tests {
             );
         }
         let mut r = reader(Some(INT64_RANGE.clone()));
-        let whole = parse_stream_framed_into(&mut r, lines.as_bytes(), Framing::Lines)
+        let whole = parse_stream_into(&mut r, lines.as_bytes(), Framing::Lines)
             .map(|v| (v, r.to_tables(&[v]).0));
         assert_eq!(whole, expected);
         // JSON keeps it an error, as quicktype's CLI does.
@@ -1465,9 +1445,8 @@ mod tests {
         let n = 100_000;
         let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
         let mut r = reader(None);
-        let value =
-            parse_stream_framed_into(&mut r, format!("{deep}\n{deep}").as_bytes(), Framing::Lines)
-                .unwrap();
+        let value = parse_stream_into(&mut r, format!("{deep}\n{deep}").as_bytes(), Framing::Lines)
+            .unwrap();
         assert_eq!(r.get_array_for_value(value).unwrap().len(), 2);
     }
 

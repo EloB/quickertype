@@ -96,6 +96,9 @@ pub struct JsonLinesParseError {
 /// V8's and count positions in `text`; the line is
 /// [`JsonLinesParseError::line`]. A second value on a line is `Unexpected
 /// non-whitespace character after JSON`, as for `JSON.parse` of that line.
+/// The values are built and kept, as `JSON.parse` builds the array of them
+/// (also before an error, as `JSON.parse` builds a value before it finds
+/// what follows it wrong); lines are counted only for an error.
 ///
 /// ```
 /// use quicktype_js_compat::json::{self, parse::parse_lines};
@@ -119,24 +122,21 @@ pub fn parse_lines(text: &str) -> Result<Vec<JsonValue>, JsonLinesParseError> {
         with_line_and_column: false,
     };
     let mut values = Vec::new();
-    // The line feeds before `counted`.
-    let (mut feeds, mut counted) = (0, 0);
     loop {
         let after_value = parser.pos;
         let token = parser.skip_whitespace();
-        feeds += bytes[counted..parser.pos]
-            .iter()
-            .filter(|&&b| b == b'\n')
-            .count();
-        counted = parser.pos;
         if token == Token::Eos {
             return Ok(values);
         }
+        // The line of the value that starts here, for an error: counted
+        // only then, in one pass (a raw line feed can only be whitespace).
+        let start = parser.pos;
         let fail = |error| JsonLinesParseError {
             error,
-            line: feeds + 1,
+            line: 1 + bytes[..start].iter().filter(|&&b| b == b'\n').count(),
         };
-        if !values.is_empty() && !bytes[after_value..parser.pos].contains(&b'\n') {
+        // The whitespace since the last value holds a line feed.
+        if !values.is_empty() && !bytes[after_value..start].contains(&b'\n') {
             return Err(fail(
                 parser.positional(Positional::UnexpectedNonWhiteSpaceCharacter),
             ));

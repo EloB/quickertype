@@ -25,7 +25,7 @@ use std::sync::OnceLock;
 use indexmap::{IndexMap, IndexSet};
 
 use super::compressed_json::{
-    CompressedJson, CompressedJsonTables, JsonSample, ParseError, Value, read_sample_into,
+    CompressedJson, CompressedJsonTables, Framing, JsonSample, ParseError, Value, read_sample_into,
 };
 use super::inference::TypeInference;
 use super::tallies::{
@@ -978,9 +978,13 @@ impl Input for JsonInput {
     }
 }
 
-/// The error for a [`JsonSample::Reader`] or [`JsonSample::ReaderLines`]
-/// (`variant`) read a second time.
-pub(crate) fn already_read(variant: &str) -> QuickTypeError {
+/// The error for a [`JsonSample::Reader`] read a second time, or for a
+/// [`JsonSample::ReaderLines`] (`framing` says which).
+pub(crate) fn already_read(framing: Framing) -> QuickTypeError {
+    let variant = match framing {
+        Framing::Value => "Reader",
+        Framing::Lines => "ReaderLines",
+    };
     QuickTypeError::internal(format!(
         "This JsonSample::{variant}'s stream was already read; a SampleReader can be read once"
     ))
