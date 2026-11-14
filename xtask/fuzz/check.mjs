@@ -48,7 +48,7 @@ export async function makeChecker({ reference, bin }) {
     async function check(kase, mode) {
         if (mode === "stream" && kase.src !== "json" && kase.src !== "postman" && kase.src !== "mixed") return { status: "skip" };
         // The WebAssembly engine has no GraphQL input: GraphQL runs only through the CLIs.
-        if (kase.src === "graphql" && mode !== "cli") return { status: "skip" };
+        if (kase.src === "graphql" && mode !== "cli" && mode !== "jsonl") return { status: "skip" };
         if (mode === "cli") {
             if (!cliCompatible(kase)) return { status: "skip" };
             const invocation = cliInvocation(kase);

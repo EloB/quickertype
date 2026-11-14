@@ -115,8 +115,12 @@ Each case runs in some of these modes (`--modes`, chosen per seed):
   top-level's files are the arguments, named `.jsonl`, `.ndjson` or
   `.JSONL`, or anything with `--src-lang jsonl`; several top-levels are a
   directory of `.jsonl`, `.ndjson` and `.json` files, run without
-  `--src-lang`, with `json` and with `jsonl` (a directory goes by the
-  files' names). A divergence records our side's run with the
+  `--src-lang` or with `jsonl` (a directory goes by the files' names).
+  JSON Schema, GraphQL and mixed cases run as a directory with an
+  explicit `--src-lang` other than `jsonl` (`schema`, or `json`) that
+  also holds stray `.jsonl` and `.NDJSON` files, the same on both sides
+  (the schema in a subdirectory beside one): quickertype must ignore
+  them, as quicktype does. A divergence records our side's run with the
   reference's outcome.
 - **chain** (JSON and Postman cases, `--chain-rate`, default 15%): the
   reference turns the case into a JSON Schema (target language `schema`),

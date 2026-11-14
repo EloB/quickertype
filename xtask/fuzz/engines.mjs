@@ -193,14 +193,16 @@ function isOneValue(text) {
  * case and its seed, so a saved case replays them.
  */
 export function jsonlInvocations(kase) {
-    if (kase.src !== "json" || !cliCompatible(kase)) return undefined;
+    if (!cliCompatible(kase)) return undefined;
+    if (kase.src !== "json") return strayInvocation(kase);
     const rng = new Rng((kase.seed ?? 0) ^ 0x75e1);
     const separators = ["\n", "\r\n", "\n\n", "\n \t\n", " \r\n", "\r\n\r\n"];
     const arounds = ["", "\n", "\r\n", " \n", "\n\n"];
     const several = kase.topLevels.length > 1;
     // For arguments: `--src-lang jsonl` makes every file JSON Lines,
-    // otherwise their names do. A directory goes by the names either way.
-    const srcLang = several ? rng.pick([undefined, "json", "jsonl"]) : rng.chance(0.3) ? "jsonl" : undefined;
+    // otherwise their names do. A directory goes by the names either way
+    // (with another `--src-lang`, it would be quicktype's and ignore them).
+    const srcLang = several ? rng.pick([undefined, "jsonl"]) : rng.chance(0.3) ? "jsonl" : undefined;
     const byName = several || srcLang === undefined;
     const lineFiles = (values) => {
         const between = rng.sample(separators, rng.range(1, 3));
@@ -278,6 +280,49 @@ export function jsonlInvocations(kase) {
     if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
     const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
     return { ours: { args: oursArgs, files: ours, dirs }, ref: { args: refArgs, files: ref, dirs } };
+}
+
+/**
+ * The "jsonl" mode's invocations of a JSON Schema, GraphQL or mixed case:
+ * a directory read with an explicit `--src-lang` other than `jsonl`
+ * (`schema` for a schema, `json` otherwise), which holds stray JSON Lines
+ * files besides the case's own, the same on both sides. With such a
+ * `--src-lang` quickertype is quicktype, whose directories ignore
+ * `.jsonl` and `.ndjson` files: the outcomes must be identical. The schema
+ * sits in a subdirectory beside a stray file, where reading it would mix
+ * JSON with JSON Schema.
+ */
+function strayInvocation(kase) {
+    const files = new Map();
+    let args;
+    if (kase.src === "mixed") {
+        const invocation = cliInvocation(kase);
+        if (invocation === undefined) return undefined;
+        for (const [f, text] of invocation.files) files.set(f, text);
+        args = invocation.args;
+    } else if (kase.src === "schema") {
+        if (kase.schemas[0].uris !== undefined) return undefined;
+        files.set("in/sub/TopLevel.schema", kase.schemas[0].text);
+        args = ["--lang", kase.lang, "--src-lang", "schema", "in", ...optionArgs(kase)];
+    } else if (kase.src === "graphql") {
+        files.set("in/schema.gqlschema", kase.graphql.schema);
+        for (const q of kase.graphql.queries) files.set(kase.graphql.queries.length === 1 ? "in/query.graphql" : `in/${q.name}.graphql`, q.query);
+        args = ["--lang", kase.lang, "--src-lang", "json", "in", ...optionArgs(kase)];
+    } else {
+        return undefined;
+    }
+
+    const lines = '{"a": 1, "b": "x"}\n{"a": 2.5}\n';
+    files.set(kase.src === "schema" ? "in/sub/data.jsonl" : "in/stray.jsonl", lines);
+    files.set("in/zz/more.NDJSON", lines);
+    if (args.some((a) => a.includes("\0"))) return undefined;
+    const written = [...files.keys()];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    if (unportablePaths(written).length > 0) return undefined;
+    if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
+    const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
+    const invocation = { args, files, dirs };
+    return { ours: invocation, ref: invocation };
 }
 
 /**

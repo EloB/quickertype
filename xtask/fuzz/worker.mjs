@@ -18,13 +18,18 @@ const definitions = optionDefinitions(checker.sides.ref.qt);
 /** The modes a seed runs in (seeded, so a seed always runs the same way). */
 export function modesFor(seed, kase, config) {
     const rng = new Rng(seed ^ 0x5eed);
-    if (kase.src === "graphql") return config.modes.includes("cli") ? ["cli"] : [];
+    if (kase.src === "graphql") {
+        const modes = config.modes.includes("cli") ? ["cli"] : [];
+        if (config.modes.includes("jsonl") && rng.chance(config.jsonlRate)) modes.push("jsonl");
+        return modes;
+    }
     const modes = [];
     if (config.modes.includes("api")) modes.push("api");
     if (config.modes.includes("stream") && ["json", "postman", "mixed"].includes(kase.src) && rng.chance(config.streamRate)) modes.push("stream");
     if (config.modes.includes("cli") && rng.chance(config.cliRate)) modes.push("cli");
-    // JSON Lines (not in quicktype) against the arrays of their values.
-    if (config.modes.includes("jsonl") && kase.src === "json" && rng.chance(config.jsonlRate)) modes.push("jsonl");
+    // JSON Lines (not in quicktype) against the arrays of their values;
+    // for schema and mixed cases, stray JSON Lines files in directories.
+    if (config.modes.includes("jsonl") && rng.chance(config.jsonlRate)) modes.push("jsonl");
     // The reference's JSON Schema of the case, as input in its own right.
     if (config.modes.includes("chain") && (kase.src === "json" || kase.src === "postman") && rng.chance(config.chainRate)) modes.push("chain");
     return modes;
