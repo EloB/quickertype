@@ -1930,14 +1930,15 @@ impl JsonSink for TallyBuilder<'_> {
 
     /// A key of the reader's key table: its id in the string table is
     /// found once per key and remembered by the reader
-    /// ([`StringReaderState::key_index`]), and the key expected next is
-    /// matched by that id, without comparing texts.
+    /// ([`StringReaderState::key_index`]), the key expected next is
+    /// matched by that id, and `"$ref"` is known by its key id
+    /// ([`StringReaderState::is_reference`]): no text is compared.
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
         let read = match self.string_reader.key_index(id, self.strings) {
             Some(key) => ReadKey::Index(key),
             None => ReadKey::Proto,
         };
-        let is_ref = self.string_reader.key_text(id) == "$ref";
+        let is_ref = self.string_reader.is_reference(id);
         Self::set_key(self.tallies, &mut self.frames, read, is_ref)
     }
 
