@@ -111,8 +111,12 @@ u8`). `method` and `payload` are `bin` (`0xc4` u8 len / `0xc5` u16 BE / `0xc6` u
 * client → server: 1 Request, 2 CallResponse, 3 CallError;
 * server → client: 4 Response, 5 Error (payload = UTF-8 message), 6 Call.
 
-The channel is strictly serial: one outstanding request. While serving it, the server may send `Call` messages
-(virtual-FS callbacks), and the client must answer each one. The final `Response` carries the request's method name.
+The JS client keeps one request outstanding. While serving it, the server may send `Call` messages (virtual-FS
+callbacks), and the client must answer each one. The final `Response` carries the request's method name. The server
+(`internal/api/conn_sync.go`) reads, handles and answers one message at a time in arrival order, so a client may
+write several requests before reading the answers (pipelining), as long as none of them can call back: the answer
+to a `Call` would queue behind the other requests. Checker and program queries do not call back; building a snapshot
+does.
 Payloads are JSON text, except the responses of `getSourceFile`, `typeToTypeNode` and
 `signatureToSignatureDeclaration`, which are binary ASTs. An empty payload means `undefined`. No msgpack crate is
 needed: about 40 lines of Rust, see Appendix A.
@@ -359,13 +363,14 @@ crates/quicktype-typescript-input/
 | module | port of |
 |---|---|
 | `tsc/locate` | `lib/getExePath.js`, plus `$QUICKTYPE_TSC` and `PATH` (§8); exact `Version 7.0.2` check |
-| `tsc/channel` | `api/syncChannel.js`: framing, `readFile`/`fileExists` callbacks (in-memory tsconfig), stderr drain, kill on drop |
-| `tsc/api` | `api/sync/api.js`: typed requests, symbol/type caches by handle, lazy `{objectId}` getters, batch endpoints |
+| `tsc/channel` | `api/syncChannel.js`: framing, `readFile`/`fileExists` callbacks (in-memory tsconfig), stderr drain, kill on drop; pipelined batches and request statistics |
+| `tsc/api` | `api/sync/api.js`: typed requests, symbol/type caches by handle, lazy `{objectId}` getters, batch endpoints; one cache of answers per query, filled one at a time or by `prefetch` |
 | `tsc/ast` | `api/node/*.js`: binary AST v5, WTF-8 strings, UTF-16 positions, `getText`, `operator`, modifiers |
 | `tsc/generated` | enums and `childProperties` of typescript@7.0.2 (`xtask/typescript-input/gen-tables.mjs`) |
 | `tjs` | `JsonSchemaGenerator` of typescript-json-schema 0.67.4, quicktype's `getTypeDefinition` patch |
 | `tjs/comments` | `parseCommentsIntoDefinition`; TS 5.9 `getDocumentationComment` display parts (`buildLinkParts`) |
 | `tjs/order` | TS 5.9 union member order (creation replay) and inherited property order |
+| `tjs/prefetch` | (no original) a breadth-first walk that asks what the generator will ask, in pipelined batches |
 | `tjs/initializer` | the `vm2` evaluation of class initializers, as a constant-expression evaluator |
 | `js` | JavaScript objects (shared references, own-property order, `__proto__`), `JSON.parse`, `parseFloat` |
 | `lib` | `schemaForTypeScriptSources`: options, TS6053/TS6059 texts, diagnostics order and flattening, post-processing |
@@ -378,6 +383,24 @@ resolving it; on an array type it only checks the element; unions, tuples and ty
 children. `getTypeFromTypeNode` resolves aliases on first use and defers the arguments of array, tuple and generic
 references inside type aliases (`isDeferredTypeReferenceNode`). Types the library check creates first (non-generic
 library types such as `Date`, and measured instantiations such as `string[]`) rank before user types.
+
+**Requests.** Asked one at a time, the generator needs about 90 round trips per interface, since it knows its next
+question only from the last answer (909,165 for 10,000 interfaces). Every per-object question is a `Query` that the
+session answers once; before the generator runs, `tjs/prefetch` walks the type graph from the declarations, breadth
+first, and asks for each type and symbol it reaches what the generator may need (names, members, index signatures,
+properties and their types, JSDoc) in one pipelined batch per step, with `getTypesOfSymbols`,
+`getSymbolsAtLocations` and `getTypeAtLocations` merging many queries into one request. The generator then runs on
+the answers: 29 requests one at a time and 8 to 14 batches, whatever the size of the input (see
+[BENCHMARKS.md](../BENCHMARKS.md#typescript-input)). Three answers are known without asking, from TypeScript 7.0.2's
+code: `getJsDocTags` is empty when no declaration, its initializer or an ancestor has a JSDoc with tags
+(`GetSymbolJSDocTags` reads the declaration's JSDoc and the hosts `GetNextJSDocCommentLocation` walks to, and inherits
+none); `getDocumentationComment` is empty when every declaration's last JSDoc has no text, or it has none and is not a
+parameter, variable, function, overload, or member of a class or interface with base types (the cases where
+`getJSDocOrTag` looks elsewhere); and a property's type at its owner's declaration is its declared type
+(`GetTypeOfSymbolAtLocation` narrows only at identifiers and property accesses, and `exactOptionalPropertyTypes` is
+off). In verify mode (`testing::verify_local_answers`, which the differential test turns on) the session asks the
+compiler these too and panics on a difference. `QUICKTYPE_TSC_STATS=1` prints the requests by method, their bytes and
+time, and the callbacks answered.
 
 **Testing.** `tests/differential.rs` runs every case of `tests/corpus` through the port and compares schema string,
 name, uris and stderr lines with `expected.json`, recorded from the reference by `xtask/typescript-input/record.mjs`
@@ -394,8 +417,9 @@ the full semantic check, against about 3 s for the reference CLI.
 * Names of generic instantiations with union arguments use TS 7's member order (`Box<A | B>`).
 * A file outside the working directory that is *imported* (not a root file) gets TS 7's TS6059 text, with absolute
   paths.
-* JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt), and tags may be
-  inherited from base declarations where TS 5.9's checker-less `symbol.getJsDocTags()` did not inherit them.
+* JSDoc tags: TS 7's `getJsDocTags` text is used as is (a `{@link}` inside a tag is not rebuilt). Neither version
+  inherits tags from a base declaration: an overriding property (in an interface that extends, or a class that
+  extends or implements) keeps only its own, in both; TS 7.0.2's `GetSymbolJSDocTags` has no lookup of bases.
 * JSDoc values that `require()` a module, and the `T[K]` index-signature branch that reads checker internals, are not
   supported. Initializers are evaluated from their syntax tree with JavaScript semantics (literals, templates,
   unary/binary/logical/conditional operators, `typeof`/`void`); anything needing an environment is reported as

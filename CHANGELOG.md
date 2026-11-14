@@ -15,6 +15,27 @@ section are absolute.
 
 ## [Unreleased]
 
+### Changed
+
+- **TypeScript input is 2.2 to 3.4 times as fast as quicktype's** (it
+  was slower from about 2,000 interfaces on): 10,000 interfaces that
+  refer to each other become Rust in 5.5 instead of 23 s (quicktype:
+  17 s), and 10,000 interfaces shaped like an API's typings in 8.4
+  instead of 25 s (quicktype: 28 s). The questions to the TypeScript 7
+  compiler go out in a few pipelined batches instead of one round trip
+  each (909,000 for those 10,000 interfaces; now 29 requests one at a
+  time and 8 batches), answers are cached, and JSDoc that cannot exist is
+  not asked for. Output is unchanged. See
+  [docs/BENCHMARKS.md](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#typescript-input).
+  - `QUICKTYPE_TSC_STATS=1` prints the requests to the compiler, by
+    method, when a conversion ends.
+- Inputs with thousands of types render faster in every language and
+  input kind: four steps of the engine were quadratic in the number of
+  types (expanding JSON Schema enums, checking name conflicts, taking
+  named namespaces off the naming queue, and collecting declarations).
+  For the schema of 10,000 TypeScript interfaces, expanding strings takes
+  0.10 instead of 2.4 s, and rendering Rust 0.28 instead of 4.1 s.
+
 ## [0.2.0] - 2026-11-14
 
 Large JSON and JSON Lines files read on every core, JSON Lines input, a
