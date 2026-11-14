@@ -424,8 +424,9 @@ it stands, and is left at its end as reading it in one go leaves it.
    string table) and appends each to the sample's tree with
    `Tallies::merge`.
 
-The parts read elsewhere hold trees of their own, which take as much
-memory as the tallies of their text: a fraction of it for arrays of
+The parts read elsewhere hold trees of their own (and, while one is
+copied for the reading thread, the copy too), which take as much memory
+as the tallies of their text: a fraction of it for arrays of
 records, whose elements share their places, but as much as a whole
 sample's tallies for an element as large as a part full of distinct keys
 or strings. So the trees under way, estimated by the largest ratio of

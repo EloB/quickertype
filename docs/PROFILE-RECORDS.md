@@ -462,7 +462,8 @@ through it at 920 MB/s (29.2 ms, without prototype 2).
      records (−10%). *Exactness:* the same results by the arguments given;
      the prototype's tallies dump equals the original's on every input
      tried.
-4. **Read samples on several threads, and merge the tallies.** For a
+4. **Read samples on several threads, and merge the tallies.** *Done;
+   see [Status](#status).* For a
    top-level array, split the file at element boundaries. Finding them
    needs a quote- and escape-aware pre-scan, as in simdjson's first stage.
    Then tally each part on its own thread, and merge the trees in order
@@ -537,7 +538,7 @@ table, so the steps add up only roughly.
 | 3a. One threshold in `discard_consumed` | done | about −2.3 ms | 100k: 40.9 → 39.4 (−3.6%); 1M: 374 → 354 |
 | 3b. UUID shape first, under the default recognizer | done | with 3c, classification 34.9 → 31.2 ms in the parse bench | 100k: 39.4 → 36.7 (−7%); 1M: 354 → 331; nothing on text without UUIDs |
 | 3c. The UTF-16 bound in `commit_string` | done | (with 3b) | 100k: 30.4 → 29.8 (−2%); generated 43.7 MB: 175 → 170 (−3%) |
-| 4. Several threads | not started | – | – |
+| 4. Several threads | done (`perf/parallel-read`) | 4–6× less wall time on 8 cores (estimate) | 1M: 297 → 66.5 ms on 12 threads (4.5×), 71.8 ms on 8 (4.1×), 1.5–1.7× the CPU; 100k: 32.9 → 12.1 ms; text-heavy 69.5 → 24.5 ms; pretty-printed 35.2 → 12.8 ms |
 | 5. Last-case cache | tried, dropped | −1 to −2 ms (estimate) | the tallies' case slots already count a recurring case without hashing its id; comparing a string with its place's last case before hashing it saved under 1% on the records and cost 1.5–2.4% on the generated input, whose places vary |
 | 6. Pluralize's rules built at compile time | done | −0.7 ms | 9-byte input 4.4 → 3.7 ms, pokedex 5.5 → 4.8 ms, 100k 37.1 → 36.4 ms; peak RSS −1.0 to −1.6 MiB on small inputs |
 | 7. A cheaper window | not started | – | – |
@@ -601,6 +602,25 @@ How it differs from the prototypes:
   cases), item 5 was dropped and never touched the walk, and inlining
   the walk's other handlers (`add_transformed_string`, `add_proto_key`)
   did not change it either (48.7 against 48.9 ms).
+- Item 4 (branch `perf/parallel-read`, see
+  [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#reading-on-several-threads)
+  and [BENCHMARKS.md](BENCHMARKS.md#reading-on-several-threads)): the
+  pre-scan runs in parallel too, since one thread scans at about 3 GB/s
+  and would cap the gain near 3×. Each range is summarized for both
+  string states at its start, the summaries resolve in order, and the
+  ranges that may reach depth 1 are searched for their first comma
+  between elements. Parts are read at offsets of the file (no `mmap`),
+  64 KiB at a time, so memory stays bounded; their trees cross threads in
+  a portable form (string attributes hold `Rc`s) and are appended in
+  order with `Tallies::merge`. A part that fails does not make the whole
+  file read again: the rest is read in one go from the last comma the
+  appended parts end at, on into their tree, which reports the same first
+  error. Standard input redirected from a file is read the same way;
+  a pipe is read in one go. The parts' trees under way are bounded (the
+  threads times the range size, or 32 MiB): elements whose own tallies
+  are that large (the 2.6 GB input of 40 MB elements with 209,519-key
+  maps) are read in one go after the first, which keeps that input at
+  its 65 MiB instead of 1–1.4 GiB, but without the gain.
 
 Exactness of what is implemented:
 
@@ -628,7 +648,17 @@ Exactness of what is implemented:
   exactly the rules whose own regex matches, on 31,586 words.
 - `cargo xtask parity`: 11,177 of 11,177. The fuzz targets `json_stream`
   and `json_parse` ran 5 minutes each (1.8 million inputs each) without a
-  finding. npm/quicktype-core's tests, its differential suite (19,078
+  finding.
+- Item 4: the CLI against main on 260,928 runs (2,416 files: these, 148
+  edge cases around range boundaries, and the 2,000 generated documents;
+  × 9 option sets × 12 settings of threads, 1, 2, 3, 8 and the default,
+  and chunk size, 16 B to 64 KiB), 13,416 failing identically, and 756
+  runs on the large inputs, from a path and from standard input. The
+  differential harness's `parallel` way: 200,000 seeds, 0 differences
+  (470,140 samples read whole on several threads, 19,306 in part); a
+  fault that reads two parts with each other's text is caught on 3,595
+  of 20,000 seeds. The fuzz target `json_split` ran 110,653 inputs
+  without a finding. npm/quicktype-core's tests, its differential suite (19,078
   scenarios, 0 different) and its browser smoke test pass.
 - The second phase (items 2, 3c and 8) the same way: 20,484 CLI runs
   identical to main before either phase; `cargo xtask streaming-fuzz
