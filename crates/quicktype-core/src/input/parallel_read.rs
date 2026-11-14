@@ -32,6 +32,7 @@
 //! ([`Reading::coordinate`]): where a single part's would take too much,
 //! the rest is read in one go into the sample's tree.
 
+#[cfg(any(test, debug_assertions, feature = "test-support"))]
 use std::cell::Cell;
 use std::collections::{BTreeMap, VecDeque};
 use std::io::{self, Read};
@@ -300,8 +301,10 @@ impl<R: Read + io::Seek> Read for StreamFrom<R> {
 /// ([`Readable::open_sample`](crate::Readable::open_sample)). The output
 /// does not depend on them. The defaults ([`Default`]) are those of the
 /// CLI, which tests and benchmarks change with internal environment
-/// variables; the library reads none.
+/// variables; the library reads none. Made from the defaults, with the
+/// `with_` methods or by setting the fields.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct ParallelOptions {
     /// The most threads that read (besides the one that reads the
     /// sample): fewer for samples with fewer than [`PARTS_PER_THREAD`]
@@ -320,12 +323,51 @@ pub struct ParallelOptions {
     /// (`None`), the threads that read times the range size, or
     /// [`TREE_BUDGET`].
     pub budget: Option<u64>,
-    /// A fault to inject, to check that the checks catch it (for tests).
-    #[doc(hidden)]
-    pub fault: Option<Fault>,
+    /// A fault to inject, to check that the checks catch it (for tests:
+    /// see [`with_fault`](Self::with_fault)).
+    #[cfg(any(test, feature = "test-support"))]
+    fault: Option<Fault>,
 }
 
-/// A fault [`ParallelOptions::fault`] injects.
+impl ParallelOptions {
+    /// These options with at most `threads` reading threads.
+    pub fn with_threads(mut self, threads: usize) -> Self {
+        self.threads = threads;
+        self
+    }
+
+    /// These options with ranges of at most `range` bytes.
+    pub fn with_range(mut self, range: usize) -> Self {
+        self.range = range;
+        self
+    }
+
+    /// These options for samples of `min_len` bytes or more.
+    pub fn with_min_len(mut self, min_len: u64) -> Self {
+        self.min_len = min_len;
+        self
+    }
+
+    /// These options with a budget of `budget` bytes for the parts' trees,
+    /// or the default one.
+    pub fn with_budget(mut self, budget: Option<u64>) -> Self {
+        self.budget = budget;
+        self
+    }
+
+    /// These options injecting `fault` (for tests, with the
+    /// `test-support` feature).
+    #[cfg(any(test, feature = "test-support"))]
+    #[doc(hidden)]
+    pub fn with_fault(mut self, fault: Fault) -> Self {
+        self.fault = Some(fault);
+        self
+    }
+}
+
+/// A fault [`ParallelOptions::with_fault`] injects (for tests, with the
+/// `test-support` feature).
+#[cfg(any(test, feature = "test-support"))]
 #[doc(hidden)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Fault {
@@ -375,6 +417,7 @@ impl Default for ParallelOptions {
             range: DEFAULT_RANGE,
             min_len: DEFAULT_MIN_LEN,
             budget: None,
+            #[cfg(any(test, feature = "test-support"))]
             fault: None,
         }
     }
@@ -400,7 +443,8 @@ pub fn parallel_file_sample(
     )))
 }
 
-/// How samples were read on several threads.
+/// How samples were read on several threads (counted in debug builds and
+/// with the `test-support` feature, for tests).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ParallelReads {
     /// Read whole on several threads.
@@ -447,34 +491,43 @@ thread_local! {
     static AHEAD: Cell<usize> = const { Cell::new(0) };
 }
 
+#[cfg(any(test, debug_assertions, feature = "test-support"))]
 thread_local! {
     static READS: Cell<ParallelReads> = const {
         Cell::new(ParallelReads { whole: 0, in_part: 0, again: 0 })
     };
 }
 
-/// How this thread read samples on several threads (for tests).
+/// How this thread read samples on several threads (for tests: in debug
+/// builds and with the `test-support` feature).
+#[cfg(any(test, debug_assertions, feature = "test-support"))]
 pub fn parallel_reads() -> ParallelReads {
     READS.with(Cell::get)
 }
 
+/// Counts how a sample was read (in debug builds and with the
+/// `test-support` feature).
 fn count_read(count: impl FnOnce(&mut ParallelReads)) {
+    #[cfg(any(test, debug_assertions, feature = "test-support"))]
     READS.with(|r| {
         let mut reads = r.get();
         count(&mut reads);
         r.set(reads);
     });
+    #[cfg(not(any(test, debug_assertions, feature = "test-support")))]
+    let _ = count;
 }
 
 /// How a sample is read on several threads, for its size: the size of its
 /// ranges and how many there are, the threads that read it, the budget
-/// for the parts' trees, and the fault to inject.
+/// for the parts' trees, and the fault to inject (for tests).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Plan {
     range: u64,
     ranges: usize,
     threads: usize,
     budget: u64,
+    #[cfg(any(test, feature = "test-support"))]
     fault: Option<Fault>,
 }
 
@@ -508,6 +561,7 @@ impl Plan {
             budget: options
                 .budget
                 .unwrap_or_else(|| (threads as u64).saturating_mul(range).max(TREE_BUDGET)),
+            #[cfg(any(test, feature = "test-support"))]
             fault: options.fault,
         })
     }
@@ -1041,10 +1095,7 @@ impl Reading<'_> {
         plan: Plan,
     ) -> Option<Outcome> {
         let Plan {
-            threads,
-            budget,
-            fault,
-            ..
+            threads, budget, ..
         } = plan;
         let n = self.ranges;
         let mut summaries: Vec<Option<RangeSummary>> = vec![None; n];
@@ -1268,10 +1319,12 @@ impl Reading<'_> {
                             Ok(imported) => imported,
                             Err(_) => return rest(running, Some(so_far), &parts, appended),
                         };
+                        let (into, from) = (so_far, imported);
                         // (The fault merges the tree so far into this one.)
-                        let (into, from) = match fault {
-                            Some(Fault::Prepend) => (imported, so_far),
-                            None => (so_far, imported),
+                        #[cfg(any(test, feature = "test-support"))]
+                        let (into, from) = match plan.fault {
+                            Some(Fault::Prepend) => (from, into),
+                            None => (into, from),
                         };
                         // A failed merge changes nothing, and frees what it
                         // was given.
@@ -1373,13 +1426,10 @@ mod tests {
     }
 
     fn options(threads: usize, range: usize) -> ParallelOptions {
-        ParallelOptions {
-            threads,
-            range,
-            min_len: 0,
-            budget: None,
-            fault: None,
-        }
+        ParallelOptions::default()
+            .with_threads(threads)
+            .with_range(range)
+            .with_min_len(0)
     }
 
     /// A sample read on several threads reads as in one go, its tree or its
@@ -1788,13 +1838,10 @@ mod tests {
     #[test]
     fn threads_are_as_many_as_the_ranges_keep_busy() {
         let plan = |threads, range, budget, size| {
-            let options = ParallelOptions {
-                threads,
-                range,
-                min_len: DEFAULT_MIN_LEN,
-                budget,
-                fault: None,
-            };
+            let options = ParallelOptions::default()
+                .with_threads(threads)
+                .with_range(range)
+                .with_budget(budget);
             Plan::new(options, size).map(|p| (p.range, p.ranges, p.threads, p.budget))
         };
         const MIB: u64 = 1 << 20;
@@ -1860,10 +1907,10 @@ mod tests {
     fn merging_out_of_order_is_caught() {
         let config = config(false);
         let bytes = br#"[{"z":0},{"a":1},{"b":"x"},{"c":null}]"#;
-        let mut options = options(2, 1);
+        let options = options(2, 1);
         let expected = in_one_go(&config, bytes);
         assert_eq!(read_with(&config, bytes, options).0, expected);
-        options.fault = Some(Fault::Prepend);
+        let options = options.with_fault(Fault::Prepend);
         assert_ne!(read_with(&config, bytes, options).0, expected);
     }
 }

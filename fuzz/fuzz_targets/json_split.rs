@@ -24,13 +24,11 @@ fuzz_target!(|data: &[u8]| {
     let [threads, range, flags, sample @ ..] = data else {
         return;
     };
-    let options = ParallelOptions {
-        threads: 2 + usize::from(threads % 3),
-        range: 1 + usize::from(*range),
-        min_len: 0,
-        budget: (flags & 2 != 0).then_some(1 << 12),
-        fault: None,
-    };
+    let options = ParallelOptions::default()
+        .with_threads(2 + usize::from(threads % 3))
+        .with_range(1 + usize::from(*range))
+        .with_min_len(0)
+        .with_budget((flags & 2 != 0).then_some(1 << 12));
     let handle_refs = flags & 1 != 0;
     let parallel = read(JsonSample::Reader(parallel_sample(sample.to_vec(), options)), handle_refs);
     let in_one_go = read(JsonSample::Stream(sample.to_vec()), handle_refs);

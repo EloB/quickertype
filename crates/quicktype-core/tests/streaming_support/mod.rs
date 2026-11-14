@@ -85,13 +85,13 @@ fn sample(s: &generator::Sample, seed: u64, parallel: Option<bool>) -> JsonSampl
         (_, Some(fault)) => {
             let mut rng = Rng::new(seed ^ 0x9A7A_11E1);
             let len = s.text.len() as u64;
-            let mut options = ParallelOptions {
-                threads: rng.range(2, 5) as usize,
-                range: rng.range(1, (len / 2).max(1)) as usize,
-                min_len: 0,
-                budget: None,
-                fault: fault.then_some(Fault::Prepend),
-            };
+            let mut options = ParallelOptions::default()
+                .with_threads(rng.range(2, 5) as usize)
+                .with_range(rng.range(1, (len / 2).max(1)) as usize)
+                .with_min_len(0);
+            if fault {
+                options = options.with_fault(Fault::Prepend);
+            }
             if rng.chance(20) {
                 options.budget = Some(rng.below(4096));
             }

@@ -71,13 +71,10 @@ fn files_read_on_several_threads_read_as_in_one_go() {
         let expected = read(JsonSample::Stream(text.clone().into_bytes()));
         for threads in [2, 4] {
             for range in [64, 4_096, 65_536] {
-                let options = ParallelOptions {
-                    threads,
-                    range,
-                    min_len: 0,
-                    budget: None,
-                    fault: None,
-                };
+                let options = ParallelOptions::default()
+                    .with_threads(threads)
+                    .with_range(range)
+                    .with_min_len(0);
                 let before = parallel_reads();
                 let sample = parallel_file_sample(&path, options).unwrap();
                 let got = read(JsonSample::Reader(sample));
