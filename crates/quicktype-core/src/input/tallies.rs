@@ -41,7 +41,7 @@ use std::fmt;
 use std::mem::size_of;
 use std::rc::Rc;
 
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use quicktype_js_compat::utf16;
 
 use super::compressed_json::{
@@ -54,7 +54,7 @@ use crate::attributes::string_types::{
 use crate::attributes::type_attributes::{
     AttributeKind, CombinationKind, TypeAttributes, combine_type_attributes2,
 };
-use crate::attributes::uri_attributes::UriTypeAttributeKind;
+use crate::attributes::uri_attributes::{UriParts, UriTypeAttributeKind, uri_inference_parts};
 use crate::messages::Result;
 use crate::support::fast_hash::BuildHasher;
 use crate::support::support::{defined, panic};
@@ -270,6 +270,43 @@ fn add_produced(combined: &mut Option<TypeAttributes>, attributes: &TypeAttribut
     combine_into(combined, attributes.clone())
 }
 
+/// [`add_produced`] for a `uri` string whose attributes are those of
+/// `parts` (none for `None`, a URI urijs cannot parse): they are made only
+/// if the combined URI attributes lack its protocol or its extension.
+#[inline(always)]
+fn add_uri_parts(
+    combined: &mut Option<TypeAttributes>,
+    parts: Option<&UriParts<'_>>,
+) -> Result<()> {
+    let Some(parts) = parts else {
+        // No attributes, which add nothing.
+        return Ok(());
+    };
+    if let Some((protocols, extensions)) = combined
+        .as_ref()
+        .and_then(|c| UriTypeAttributeKind.try_get_in_attributes(c))
+        && holds(protocols, &parts.protocol)
+        && parts
+            .extension
+            .as_deref()
+            .is_none_or(|e| holds(extensions, e))
+    {
+        return Ok(());
+    }
+    combine_into(combined, parts.attributes())
+}
+
+/// Whether `set` holds `s`: compared one by one while the set is small,
+/// which is cheaper than hashing `s`.
+#[inline(always)]
+fn holds(set: &IndexSet<String>, s: &str) -> bool {
+    if set.len() <= 8 {
+        set.iter().any(|x| x == s)
+    } else {
+        set.contains(s)
+    }
+}
+
 /// The attribute combinations of two string tallies, one after the other
 /// (with and without enum inference): see [`StringTally::combined_with`].
 type Combined = (Option<TypeAttributes>, Option<TypeAttributes>);
@@ -400,6 +437,23 @@ impl StringTally {
         add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
         add_produced(&mut self.without_enums, attributes)?;
         add_transformation_once(&mut self.without_enums, &mut self.absorbed[1], kind)
+    }
+
+    /// A `uri` string (`Tag.TransformedString`) of which
+    /// `uriInferenceAttributesProducer` makes the attributes of `parts`:
+    /// [`add_transformed_string`](Self::add_transformed_string), without
+    /// making the attributes where they add nothing.
+    #[inline(always)]
+    fn add_uri(&mut self, parts: Option<&UriParts<'_>>) -> Result<()> {
+        self.not_interned = true;
+        add_uri_parts(&mut self.with_enums, parts)?;
+        add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], TypeKind::Uri)?;
+        add_uri_parts(&mut self.without_enums, parts)?;
+        add_transformation_once(
+            &mut self.without_enums,
+            &mut self.absorbed[1],
+            TypeKind::Uri,
+        )
     }
 
     /// The fallible part of appending `other`'s strings after these: the
@@ -1214,6 +1268,15 @@ impl Tallies {
             .add_transformed_string(kind, attributes)
     }
 
+    /// A `uri` string (`Tag.TransformedString`), whose protocol and
+    /// extension are `parts` ([`uri_inference_parts`]; `None` if urijs
+    /// cannot parse it): [`add_transformed_string`](Self::add_transformed_string)
+    /// with the attributes `uriInferenceAttributesProducer` makes of it.
+    #[inline(always)]
+    pub(crate) fn add_uri(&mut self, node: NodeId, parts: Option<&UriParts<'_>>) -> Result<()> {
+        self.strings_mut(node)?.add_uri(parts)
+    }
+
     /// An object, where it starts (`pushObjectContext`); its keys and
     /// values follow.
     #[inline(always)]
@@ -1378,11 +1441,11 @@ struct CompressedTally<'c> {
     /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
-    /// The kind and attributes of transformed strings recognized so far,
-    /// at the slot of their string index ([`TRANSFORMED_SLOTS`] of them,
-    /// made with the first): the same text recurs under the same index,
-    /// and is recognized once while its slot keeps it.
-    transformed: Vec<Option<(u32, TypeKind, TypeAttributes)>>,
+    /// The kinds of the transformed strings recognized so far, at the slot
+    /// of their string index ([`TRANSFORMED_SLOTS`] of them, made with the
+    /// first): the same text recurs under the same index, and is
+    /// recognized once while its slot keeps it.
+    transformed: Vec<(u32, Option<TypeKind>)>,
     /// The containers being walked, innermost last.
     stack: Vec<WalkFrame<'c>>,
 }
@@ -1390,10 +1453,10 @@ struct CompressedTally<'c> {
 /// No string index (yet).
 const NO_INDEX: u32 = u32::MAX;
 
-/// How many transformed strings (URIs) the walk keeps the kind and
-/// attributes of, by string index: a bounded number, since an input of
-/// distinct URIs would gain nothing from keeping them all (each a few
-/// hundred bytes), and one whose URIs recur has few of them.
+/// How many transformed strings (URIs) the walk keeps the kind of, by
+/// string index: a bounded number, since an input of distinct URIs would
+/// gain nothing from keeping them all, and one whose URIs recur has few
+/// of them.
 const TRANSFORMED_SLOTS: usize = 256;
 
 /// An object or array whose values [`CompressedTally`] is walking.
@@ -1476,31 +1539,40 @@ impl<'c> CompressedTally<'c> {
         Ok(self.proto_strings[word] & bit != 0)
     }
 
-    /// The kind and attributes `commitString` classified the transformed
-    /// string `index` by, recognized from its text as `Inference.ts`
-    /// recognizes them (once while its slot keeps them); `None` if it has
-    /// no kind or no attribute producer.
-    fn transformed(&mut self, index: u32) -> Result<Option<(TypeKind, &TypeAttributes)>> {
+    /// The kind `commitString` classified the transformed string `index`,
+    /// of text `text`, as: recognized from its text as `Inference.ts`
+    /// recognizes it (once while its slot keeps it).
+    fn transformed_kind(&mut self, index: u32, text: &str) -> Option<TypeKind> {
         if self.transformed.is_empty() {
-            self.transformed.resize_with(TRANSFORMED_SLOTS, || None);
+            self.transformed = vec![(NO_INDEX, None); TRANSFORMED_SLOTS];
         }
         let slot = &mut self.transformed[index as usize % TRANSFORMED_SLOTS];
-        if !matches!(slot, Some((known, ..)) if *known == index) {
-            let text = defined(self.cjson.string(index))?;
-            let Some(kind) = infer_transformed_string_type_kind_for_string(
-                text,
-                self.cjson.date_time_recognizer(),
-            ) else {
-                return Ok(None);
-            };
-            let Some(producer) = transformed_string_type_attributes_producer(kind) else {
-                return Ok(None);
-            };
-            *slot = Some((index, kind, producer(text)));
+        if slot.0 != index {
+            let recognizer = self.cjson.date_time_recognizer();
+            *slot = (
+                index,
+                infer_transformed_string_type_kind_for_string(text, recognizer),
+            );
         }
-        Ok(slot
-            .as_ref()
-            .map(|(_, kind, attributes)| (*kind, attributes)))
+        slot.1
+    }
+
+    /// Tallies the transformed string `index` at `node`, of the kind
+    /// `commitString` classified it as ([`transformed_kind`](Self::transformed_kind));
+    /// whether it has a kind with an attribute producer, as a reader's
+    /// always has. A `uri` is tallied by its parts, made each time: they
+    /// cost less than keeping them would.
+    fn transformed(&mut self, tallies: &mut Tallies, node: NodeId, index: u32) -> Result<bool> {
+        let text = defined(self.cjson.string(index))?;
+        match self.transformed_kind(index, text) {
+            Some(TypeKind::Uri) => tallies.add_uri(node, uri_inference_parts(text).as_ref())?,
+            Some(kind) => match transformed_string_type_attributes_producer(kind) {
+                Some(producer) => tallies.add_transformed_string(node, kind, &producer(text))?,
+                None => return Ok(false),
+            },
+            None => return Ok(false),
+        }
+        Ok(true)
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
@@ -1604,10 +1676,9 @@ impl<'c> CompressedTally<'c> {
             Value::UninternedString => tallies.add_uninterned(node)?,
             Value::StringFormat(kind) => tallies.add_string_format(node, kind)?,
             Value::TransformedString(index) => {
-                let Some((kind, attributes)) = self.transformed(index)? else {
+                if !self.transformed(tallies, node, index)? {
                     return Ok(false);
-                };
-                tallies.add_transformed_string(node, kind, attributes)?;
+                }
             }
             Value::Object(index) => {
                 if !first_visit(&mut self.objects_seen, index, self.counts.objects)? {
@@ -1780,6 +1851,7 @@ impl<'a> TallyBuilder<'a> {
     /// strings there absorb every string ([`Tallies::absorbs_strings`]).
     fn add_string(&mut self, node: NodeId, s: &str, absorbs: bool) -> Result<()> {
         match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
+            Some(TypeKind::Uri) => self.tallies.add_uri(node, uri_inference_parts(s).as_ref()),
             Some(kind) => match transformed_string_type_attributes_producer(kind) {
                 Some(producer) => self
                     .tallies

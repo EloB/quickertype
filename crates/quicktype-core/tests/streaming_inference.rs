@@ -232,6 +232,31 @@ fn duplicate_keys_samples_and_sources() {
     ));
 }
 
+/// URIs are tallied by their protocol and extension, whose attributes are
+/// made only where they add one: places of plain URIs and of URIs urijs'
+/// parser reads in its own ways (user info, ports, one it cannot parse,
+/// which has no attributes, a backslash, a path that is not ASCII), with
+/// known and new protocols and extensions in either order, URIs that recur
+/// and others, next to other strings, over samples and sources merged.
+#[test]
+fn uris_of_every_shape() {
+    let first = r#"[{"u":"https://a.example/x.png?1","v":"http://u:p@h/y.JPG","w":"ftp://h:99999/z.gz"},{"u":"https://a.example/x.png?1","v":"https://h/y.jpg#f.txt","w":"https://h:8080/z.GZ"},{"u":"https://b.example/x.PNG","v":"plain","w":"http:///\\a/b.c"},{"u":"http://c/d/e","v":"http://h/\u00fc.\u00c9X","w":["https://h/a.tar.gz","ftp://h/.htaccess"]}]"#;
+    let second = r#"[{"u":"ftp://a/x.webp","v":"http://h/y.jpg","w":"https://h:0/z"},{"u":"https://a.example/x.png?1","v":"2020-01-01","w":"https://[::1]:80/q.Png"}]"#;
+    let third = r#"{"u":["https://a/b.png","https://a/c.png","http://a/d.PNG","https://a/e"],"v":{"x":"https://e/f.json"}}"#;
+    for handle_refs in [false, true] {
+        check_case(&case(
+            handle_refs,
+            &[
+                ("A", &[first, second]),
+                ("A", &[second, first]),
+                ("B", &[third, first]),
+                ("C", &[third]),
+            ],
+            Encoding::Stream,
+        ));
+    }
+}
+
 /// Strings at a place whose string types are unrestricted with and
 /// without enum inference are not counted (`Tallies::add_case`), but URIs
 /// and references are: such places in one sample, in later samples and
