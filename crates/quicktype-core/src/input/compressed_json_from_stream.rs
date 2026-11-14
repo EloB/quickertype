@@ -35,6 +35,7 @@ use std::io::Read;
 use quicktype_js_compat::utf8;
 
 use super::compressed_json::{CompressedJson, JsonSink, ParseError, Value};
+use super::json_scan::plain_run;
 use crate::input::io::node_io::IoError;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 
@@ -242,11 +243,6 @@ fn is_word(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_'
 }
 
-/// A string character that needs no escape handling.
-fn is_plain(b: u8) -> bool {
-    b >= 0x20 && b != b'"' && b != b'\\'
-}
-
 impl<'r, W: Window> Tokenizer<'r, W> {
     /// A tokenizer over a whole sample in memory.
     fn in_memory(text: W) -> Self {
@@ -357,6 +353,21 @@ impl<W: Window> Tokenizer<'_, W> {
             let rest = &self.text().as_bytes()[self.index..];
             let n = rest.iter().position(|&b| !p(b)).unwrap_or(rest.len());
             self.index += n;
+            if self.index < self.text().len() || !self.fill() {
+                return;
+            }
+        }
+    }
+
+    /// Advances past string characters that need no escape handling: to
+    /// the next `"`, `\` or control character
+    /// ([`is_string_stop`](super::json_scan::is_string_stop)), eight
+    /// bytes at a time ([`plain_run`]). Where the window ends first, it
+    /// reads more and goes on, as [`skip`](Self::skip) does.
+    #[inline]
+    fn skip_plain(&mut self) {
+        loop {
+            self.index = plain_run(self.text().as_bytes(), self.index);
             if self.index < self.text().len() || !self.fill() {
                 return;
             }
@@ -562,7 +573,7 @@ impl<W: Window> Tokenizer<'_, W> {
     fn string(&mut self) -> Result<Token, ParseError> {
         let start = self.index;
         // The common case: no escapes up to the closing quote.
-        self.skip(is_plain);
+        self.skip_plain();
         if self.peek() == Some(b'"') {
             let end = self.index;
             self.index += 1;
@@ -617,7 +628,7 @@ impl<W: Window> Tokenizer<'_, W> {
                 0..0x20 => return Err(syntax("Parser cannot parse input: escaped characters")),
                 _ => {
                     let start = self.index;
-                    self.skip(is_plain);
+                    self.skip_plain();
                     let run = &self.text()[start..self.index];
                     match &mut units {
                         Some(units) => units.extend(run.encode_utf16()),
@@ -901,6 +912,78 @@ mod tests {
                     whole,
                     "chunks of {size}: {:?}",
                     String::from_utf8_lossy(&doc[..doc.len().min(80)])
+                );
+            }
+        }
+    }
+
+    /// The key a one-key document spells, or the error, read in memory
+    /// (`None`) or in chunks of `size`.
+    fn only_key(doc: &[u8], size: Option<usize>) -> Result<String, String> {
+        let mut r = reader(Some(INT64_RANGE.clone()));
+        let value = match size {
+            None => r.parse_stream(doc),
+            Some(size) => r.parse_stream_chunked(&mut &*doc, size),
+        }
+        .map_err(|e| e.message().to_owned())?;
+        let members = r.get_object_for_value(value).unwrap();
+        assert_eq!(members.len(), 1);
+        Ok(r.get_string_for_value(members[0].0).unwrap().to_owned())
+    }
+
+    /// Strings are scanned eight bytes at a time (`json_scan::plain_run`),
+    /// and byte by byte where fewer than eight are left in the window.
+    /// Wherever a stop byte, an escape or a multi-byte character falls,
+    /// at every offset modulo 8 from the opening quote and at every point
+    /// between chunks (of 1 to 17 bytes), the key reads as what it spells,
+    /// or fails with the error of the stop it reaches.
+    #[test]
+    fn string_scan_at_every_offset_and_chunk_boundary() {
+        const ESCAPED: &str = "Parser cannot parse input: escaped characters";
+        // What follows a run of plain bytes, and what it reads as.
+        let pieces: &[(&[u8], Result<&str, &str>)] = &[
+            (b"", Ok("")),
+            (b"\\n", Ok("\n")),
+            (b"\\\"", Ok("\"")),
+            (b"\\\\x", Ok("\\x")),
+            (b"\\u00e9", Ok("\u{e9}")),
+            (b"\\ud83d\\ude00", Ok("\u{1F600}")),
+            (
+                "\u{e9}\u{20AC}\u{1F600}".as_bytes(),
+                Ok("\u{e9}\u{20AC}\u{1F600}"),
+            ),
+            (b" !#[]^\x7f", Ok(" !#[]^\x7f")),
+            (b"\xff\xc3", Ok("\u{FFFD}\u{FFFD}")),
+            (b"\"", Err("Parser cannot parse input: expected ':'")),
+            (b"\x00", Err(ESCAPED)),
+            (b"\t", Err(ESCAPED)),
+            (b"\x1f", Err(ESCAPED)),
+            (b"\\x", Err(ESCAPED)),
+        ];
+        for lead in 0..20 {
+            for &(piece, read) in pieces {
+                for trail in [0, 1, 7, 8, 9] {
+                    let mut doc = b"{\"".to_vec();
+                    doc.extend(std::iter::repeat_n(b'a', lead));
+                    doc.extend_from_slice(piece);
+                    doc.extend(std::iter::repeat_n(b'b', trail));
+                    doc.extend_from_slice(b"\":0}");
+                    let expected = read
+                        .map(|text| format!("{}{text}{}", "a".repeat(lead), "b".repeat(trail)))
+                        .map_err(str::to_owned);
+                    assert_eq!(only_key(&doc, None), expected, "{doc:?}");
+                    for size in 1..=17 {
+                        assert_eq!(only_key(&doc, Some(size)), expected, "{doc:?} in {size}");
+                    }
+                }
+            }
+            // The input ends in the string.
+            let mut doc = b"{\"".to_vec();
+            doc.extend(std::iter::repeat_n(b'a', lead));
+            for size in [None, Some(1), Some(3), Some(8)] {
+                assert_eq!(
+                    only_key(&doc, size),
+                    Err("Parser has expected a string value".to_owned())
                 );
             }
         }

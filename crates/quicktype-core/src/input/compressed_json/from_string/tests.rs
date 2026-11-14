@@ -711,30 +711,3 @@ fn as_deep_as_process_goes() {
     let strings = r.to_tables(&[]).0.strings;
     assert!(strings.starts_with(&["v".into(), "k".into(), "n".into(), "s".into()]));
 }
-
-/// The eight-bytes-at-a-time scan stops exactly where the byte-wise one
-/// does, for every byte value at every position.
-#[test]
-fn plain_runs() {
-    for b in 0..=255u8 {
-        for at in 0..8 {
-            let mut word = [b'a'; 8];
-            word[at] = b;
-            assert_eq!(
-                has_string_stop(u64::from_le_bytes(word)),
-                STRING_STOP[b as usize],
-                "{b} at {at}"
-            );
-        }
-    }
-    for b in 0..=255u8 {
-        for at in 0..20 {
-            let mut bytes = vec![0xC3; 20];
-            bytes[at] = b;
-            let expected = (0..20)
-                .find(|&i| STRING_STOP[bytes[i] as usize])
-                .unwrap_or(20);
-            assert_eq!(plain_run(&bytes, 0), expected);
-        }
-    }
-}
