@@ -254,7 +254,7 @@ export async function runCli(command, invocation, timeoutMs = 120_000) {
 export function cliCommands(reference, ourBinary) {
     return {
         ref: [process.execPath, path.join(reference, "dist", "index.js")],
-        ours: [ourBinary ?? path.join(repoRoot, "target", "release", "quicktype")],
+        ours: [ourBinary ?? path.join(repoRoot, "target", "release", "quickertype")],
     };
 }
 

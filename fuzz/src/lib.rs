@@ -158,7 +158,7 @@ impl RunConfig {
 
 /// For reproducing an input with the CLIs: with the environment variable
 /// `QUICKTYPE_FUZZ_EXPLAIN` set to a directory, writes `files` there and
-/// prints the quicktype command line that runs `config` on them (plus
+/// prints the quickertype command line that runs `config` on them (plus
 /// `args`), and what only the API can express.
 pub fn explain(config: &RunConfig, args: &[String], files: &[(String, Vec<u8>)]) {
     let Some(dir) = std::env::var_os("QUICKTYPE_FUZZ_EXPLAIN") else {
@@ -175,7 +175,7 @@ pub fn explain(config: &RunConfig, args: &[String], files: &[(String, Vec<u8>)])
     let (mut cli, api_only) = config.cli_args();
     cli.extend(args.iter().cloned());
     let quoted: Vec<String> = cli.iter().map(|a| format!("{a:?}")).collect();
-    eprintln!("cd {dir:?} && quicktype {}", quoted.join(" "));
+    eprintln!("cd {dir:?} && quickertype {}", quoted.join(" "));
     if !api_only.is_empty() {
         eprintln!("API only: {}", api_only.join(", "));
     }

@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='quicktype.exe'
+                                Name='quickertype.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\quicktype.exe'
+                                Source='$(var.CargoTargetBinDir)\quickertype.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>

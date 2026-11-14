@@ -35,7 +35,7 @@ jobs:
   # The CLI and the tests on the other platforms the release builds for
   # (docs/RELEASING.md). The parity corpus runs on Linux only (`parity`).
   # The CLI's integration tests build the binary themselves
-  # (`CARGO_BIN_EXE_quicktype`).
+  # (`CARGO_BIN_EXE_quickertype`).
   test-platforms:
     name: test (${{ matrix.os }})
     strategy:

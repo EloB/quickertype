@@ -741,7 +741,7 @@ ${bench.note ? `<p class="fineprint">${e(bench.note)}</p>` : ""}
 
     sections.push(`<section id="get-the-cli" aria-labelledby="get-title">
 <h2 id="get-title">Get the CLI</h2>
-<p>Its command is <code>quicktype</code>, with quicktype's flags and quicktype's output, so install it instead of quicktype, not beside it. With Homebrew (macOS, Linux), npm, or Cargo:</p>
+<p>Its command is <code>quickertype</code>, with quicktype's flags and quicktype's output. With Homebrew (macOS, Linux), npm, or Cargo:</p>
 <pre class="commands"><code>brew install elob/tap/quickertype
 npm install -g quickertype
 cargo install quickertype</code></pre>

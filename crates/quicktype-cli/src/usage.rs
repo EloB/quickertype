@@ -1,6 +1,10 @@
 //! quicktype's `--help` text. Port of `usage`, `makeSectionsBeforeRenderers`,
 //! `sectionsAfterRenderers`, `makeLangTypeLabel` and
 //! `tableOptionsForOptions` in `src/index.ts`.
+//!
+//! The one difference is the command in the synopsis and the examples
+//! (`$ quickertype ...`, not `$ quicktype ...`), which `cargo xtask parity`
+//! normalizes back before comparing.
 
 use quicktype_core::TargetLanguage;
 
@@ -61,7 +65,7 @@ fn make_sections_before_renderers(
             header: Some("Synopsis".to_owned()),
             content: Some(Content::Lines(vec![
                 format!(
-                    "$ quicktype [{} LANG] [{} SRC_LANG] [{} FILE] FILE|URL ...",
+                    "$ quickertype [{} LANG] [{} SRC_LANG] [{} FILE] FILE|URL ...",
                     chalk.bold("--lang"),
                     chalk.bold("--src-lang"),
                     chalk.bold("--out"),
@@ -93,17 +97,17 @@ fn sections_after_renderers(chalk: &Chalk) -> Vec<Section> {
             header: Some("Examples".to_owned()),
             content: Some(Content::Lines(vec![
                 chalk.dim("Generate C# to parse a Bitcoin API"),
-                "$ quicktype -o LatestBlock.cs https://blockchain.info/latestblock".to_owned(),
+                "$ quickertype -o LatestBlock.cs https://blockchain.info/latestblock".to_owned(),
                 String::new(),
                 chalk.dim("Generate Go code from a directory of samples containing:"),
                 chalk.dim(
                     "  - Foo.json\n  + Bar\n    - bar-sample-1.json\n    - bar-sample-2.json\n  - Baz.url",
                 ),
-                "$ quicktype -l go samples".to_owned(),
+                "$ quickertype -l go samples".to_owned(),
                 String::new(),
                 chalk.dim("Generate JSON Schema, then TypeScript"),
-                "$ quicktype -o schema.json https://blockchain.info/latestblock".to_owned(),
-                "$ quicktype -o bitcoin.ts --src-lang schema schema.json".to_owned(),
+                "$ quickertype -o schema.json https://blockchain.info/latestblock".to_owned(),
+                "$ quickertype -o bitcoin.ts --src-lang schema schema.json".to_owned(),
             ])),
         },
         Section::Content {

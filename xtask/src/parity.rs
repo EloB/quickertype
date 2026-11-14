@@ -18,7 +18,9 @@
 //!   case directory (a missing file means empty output). An optional `stdin`
 //!   names a file that is piped to the process. Before comparing, the
 //!   absolute inputs directory in the actual output is replaced by `{INPUTS}`
-//!   and the work directory by `{CWD}`, exactly as the recorder did.
+//!   and the work directory by `{CWD}`, exactly as the recorder did, and
+//!   `--help`'s command lines are turned back into quicktype's
+//!   ([`normalize_command_name`]).
 //!
 //! A case may set extra environment variables with `env`. Every step runs
 //! with `TZ=UTC` and `NODE_NO_WARNINGS=1`, and without `FORCE_COLOR`,
@@ -39,7 +41,7 @@ pub const USAGE: &str = "\
 cargo xtask parity [options]
 
   --bin \"<cmd ...>\"    quicktype command to test (default: builds and uses
-                       target/release/quicktype). The TypeScript reference:
+                       target/release/quickertype). The TypeScript reference:
                        --bin \"node ../quicktype/dist/index.js\"
   --filter <substr>    only cases whose id contains <substr> (repeatable, OR)
   -j <n>               parallel jobs (default: number of cores)
@@ -194,6 +196,35 @@ fn normalize_output(output: &[u8], placeholders: &[(String, &str)]) -> Vec<u8> {
     out
 }
 
+/// Our `--help` names the command `quickertype` where quicktype's names it
+/// `quicktype`: in the synopsis and the examples, the lines that start with
+/// `  $ quickertype `. Everything else is quicktype's text. This turns those
+/// lines back into quicktype's, so that the rest is compared byte for byte:
+/// the name, and the two columns of padding that the longer name took from
+/// the end of the line (command-line-usage pads every line of the help to
+/// the same width). Output without such lines (the reference's, or any
+/// other than `--help`'s) is returned unchanged.
+pub(crate) fn normalize_command_name(output: &[u8]) -> Vec<u8> {
+    const OURS: &[u8] = b"  $ quickertype ";
+    const THEIRS: &[u8] = b"  $ quicktype ";
+    let mut out = Vec::with_capacity(output.len());
+    for line in output.split_inclusive(|&b| b == b'\n') {
+        let (text, end) = line
+            .strip_suffix(b"\n")
+            .map_or((line, &b""[..]), |text| (text, &b"\n"[..]));
+        match text.strip_prefix(OURS) {
+            Some(rest) => {
+                out.extend_from_slice(THEIRS);
+                out.extend_from_slice(rest);
+                out.resize(out.len() + OURS.len() - THEIRS.len(), b' ');
+                out.extend_from_slice(end);
+            }
+            None => out.extend_from_slice(line),
+        }
+    }
+    out
+}
+
 /// The given and the canonical form of `dir`, for output normalization.
 fn path_forms(dir: &Path, placeholder: &'static str) -> Vec<(String, &'static str)> {
     let mut forms = vec![(dir.to_string_lossy().into_owned(), placeholder)];
@@ -220,7 +251,7 @@ fn check_stream(
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => vec![],
         Err(e) => return Err(format!("golden {}: {e}", path.display())),
     };
-    let actual = normalize_output(actual, placeholders);
+    let actual = normalize_command_name(&normalize_output(actual, placeholders));
     if expected == actual {
         Ok(())
     } else {
@@ -399,7 +430,7 @@ pub(crate) fn build_cli(root: &Path) -> Result<Vec<String>, String> {
         return Err("building the quicktype CLI (package quickertype) failed".into());
     }
     Ok(vec![
-        root.join("target/release/quicktype")
+        root.join("target/release/quickertype")
             .to_string_lossy()
             .into_owned(),
     ])
@@ -572,4 +603,20 @@ pub fn run(root: &Path, args: Vec<String>) -> Result<bool, String> {
     }
 
     Ok(regressions.is_empty() && (!o.strict || failures.is_empty()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_command_name;
+
+    #[test]
+    fn help_command_lines_become_quicktypes() {
+        let ours = b"\nSynopsis\n\n  $ quickertype -l go samples   \n  Learn more at quicktype.io \n  $ quickertype -h";
+        let theirs = b"\nSynopsis\n\n  $ quicktype -l go samples     \n  Learn more at quicktype.io \n  $ quicktype -h  ";
+        assert_eq!(normalize_command_name(ours), theirs);
+        // quicktype's own output, and any line not starting the same way.
+        assert_eq!(normalize_command_name(theirs), theirs);
+        let other = b"x  $ quickertype -h\n$ quickertype -h\n";
+        assert_eq!(normalize_command_name(other), other);
+    }
 }
