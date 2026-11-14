@@ -1136,12 +1136,23 @@ struct CompressedTally<'c> {
     /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
+    /// The kind and attributes of transformed strings recognized so far,
+    /// at the slot of their string index ([`TRANSFORMED_SLOTS`] of them,
+    /// made with the first): the same text recurs under the same index,
+    /// and is recognized once while its slot keeps it.
+    transformed: Vec<Option<(u32, TypeKind, TypeAttributes)>>,
     /// The containers being walked, innermost last.
     stack: Vec<WalkFrame<'c>>,
 }
 
 /// No string index (yet).
 const NO_INDEX: u32 = u32::MAX;
+
+/// How many transformed strings (URIs) the walk keeps the kind and
+/// attributes of, by string index: a bounded number, since an input of
+/// distinct URIs would gain nothing from keeping them all (each a few
+/// hundred bytes), and one whose URIs recur has few of them.
+const TRANSFORMED_SLOTS: usize = 256;
 
 /// An object or array whose values [`CompressedTally`] is walking.
 enum WalkFrame<'c> {
@@ -1189,6 +1200,7 @@ impl<'c> CompressedTally<'c> {
             proto: NO_INDEX,
             objects_seen: Vec::new(),
             arrays_seen: Vec::new(),
+            transformed: Vec::new(),
             stack: Vec::new(),
         }
     }
@@ -1210,6 +1222,33 @@ impl<'c> CompressedTally<'c> {
             self.proto = index;
         }
         Ok(true)
+    }
+
+    /// The kind and attributes `commitString` classified the transformed
+    /// string `index` by, recognized from its text as `Inference.ts`
+    /// recognizes them (once while its slot keeps them); `None` if it has
+    /// no kind or no attribute producer.
+    fn transformed(&mut self, index: u32) -> Result<Option<(TypeKind, &TypeAttributes)>> {
+        if self.transformed.is_empty() {
+            self.transformed.resize_with(TRANSFORMED_SLOTS, || None);
+        }
+        let slot = &mut self.transformed[index as usize % TRANSFORMED_SLOTS];
+        if !matches!(slot, Some((known, ..)) if *known == index) {
+            let text = defined(self.cjson.string(index))?;
+            let Some(kind) = infer_transformed_string_type_kind_for_string(
+                text,
+                self.cjson.date_time_recognizer(),
+            ) else {
+                return Ok(None);
+            };
+            let Some(producer) = transformed_string_type_attributes_producer(kind) else {
+                return Ok(None);
+            };
+            *slot = Some((index, kind, producer(text)));
+        }
+        Ok(slot
+            .as_ref()
+            .map(|(_, kind, attributes)| (*kind, attributes)))
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
@@ -1313,19 +1352,10 @@ impl<'c> CompressedTally<'c> {
             Value::UninternedString => tallies.add_uninterned(node)?,
             Value::StringFormat(kind) => tallies.add_string_format(node, kind)?,
             Value::TransformedString(index) => {
-                // The kind and attributes `commitString` classified the
-                // string by.
-                let text = defined(self.cjson.string(index))?;
-                let Some(kind) = infer_transformed_string_type_kind_for_string(
-                    text,
-                    self.cjson.date_time_recognizer(),
-                ) else {
+                let Some((kind, attributes)) = self.transformed(index)? else {
                     return Ok(false);
                 };
-                let Some(producer) = transformed_string_type_attributes_producer(kind) else {
-                    return Ok(false);
-                };
-                tallies.add_transformed_string(node, kind, &producer(text))?;
+                tallies.add_transformed_string(node, kind, attributes)?;
             }
             Value::Object(index) => {
                 if !first_visit(&mut self.objects_seen, index, self.counts.objects)? {
@@ -1975,6 +2005,33 @@ mod tests {
                 "refs {handle_refs}"
             );
         }
+    }
+
+    /// URIs that recur, between others that push them out of the walk's
+    /// slots of recognized strings, are tallied as reading tallies them.
+    #[test]
+    fn recurring_uris_are_tallied_as_read() {
+        let uris: Vec<String> = (0..2_000)
+            .map(|i| match i % 4 {
+                0 => format!(r#""http://h/{i}.png""#),
+                1 => r#""https://h/same.jpg""#.to_owned(),
+                2 => format!(r#""ftp://h/{}.gif""#, i % 7),
+                _ => r#""2020-01-01""#.to_owned(),
+            })
+            .collect();
+        let sample = format!("[{}]", uris.join(","));
+        let config = config(false);
+        let mut read_tallies = RunningTallies::new();
+        let expected = read(&mut read_tallies, &config, &[&sample]);
+        let mut cjson = self::config(false);
+        let root = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (tallies, roots) = tally_compressed(&cjson, [[root].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            tallies.dump(cjson.strings(), roots[0]),
+            dump(&read_tallies, expected)
+        );
     }
 
     /// Tables no reader makes: the walk declines them.

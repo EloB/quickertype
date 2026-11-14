@@ -364,7 +364,9 @@ with references handled) is `add_case`, an uninterned one
 `add_uninterned`, a string format `add_string_format` with its kind, and
 a transformed string `add_transformed_string` with the kind and
 attributes of its text, computed with the form's date/time recognizer as
-`Inference.ts` computes them. These are the very handlers the builder
+`Inference.ts` computes them (once for a text that recurs, which has one
+index: the walk keeps those of the last 256 by index). These are the
+very handlers the builder
 calls for the reader's events (`Tallies::add_kind`, `add_case`,
 `add_object`, `add_array`, `add_key`, `add_proto_key` and the others,
 which take the node of the place and a string id): the builder finds the
