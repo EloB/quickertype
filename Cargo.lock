@@ -407,7 +407,6 @@ version = "0.2.0"
 dependencies = [
  "brotli-decompressor",
  "flate2",
- "foldhash",
  "hashbrown",
  "indexmap",
  "quickertype-core",
@@ -417,7 +416,6 @@ dependencies = [
  "stacker",
  "ureq",
  "url",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -434,6 +432,7 @@ dependencies = [
 name = "quickertype-js-compat"
 version = "0.2.0"
 dependencies = [
+ "foldhash",
  "indexmap",
  "regex",
  "regex-automata",

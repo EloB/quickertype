@@ -22,6 +22,7 @@ dist = false
 name = "quicktype_js_compat"
 
 [dependencies]
+foldhash.workspace = true
 indexmap.workspace = true
 regex.workspace = true
 # `dfa-search`: pluralize's rule selectors, which the build script makes.
@@ -38,6 +39,15 @@ wasm-bindgen = { workspace = true, optional = true }
 # what the TypeScript quicktype computes there). Needs a JavaScript host
 # with wasm-bindgen glue; see `number::pow`.
 js-host-math = ["dep:wasm-bindgen"]
+# On wasm32, seed every hash map and set (`hash`) from the JavaScript
+# host's `crypto.getRandomValues`, as the `quicktype-wasm` bindings do.
+# Needs a JavaScript host with wasm-bindgen glue, which must call
+# `hash::init()` when it starts and handle its error. Without the feature,
+# a wasm32 build seeds its maps from `std`'s `RandomState` (fixed on
+# wasm32-unknown-unknown, which has no randomness of its own) unless the
+# embedder calls `hash::seed` first. quickertype-core's `js-host-random`
+# turns it on.
+js-host-random = ["dep:wasm-bindgen"]
 
 [build-dependencies]
 regex-automata = { workspace = true, features = ["dfa-build"] }
