@@ -27,6 +27,9 @@ default = ["fs"]
 fs = []
 # HTTP(S) URLs for `StdIo` (ureq with rustls), as the native CLI needs.
 http = ["fs", "dep:ureq", "dep:url", "dep:flate2", "dep:brotli-decompressor"]
+# Records where a run's time goes (`trace`), for measurements; off in
+# every build that ships.
+trace = []
 
 [dependencies]
 foldhash.workspace = true

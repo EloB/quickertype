@@ -188,6 +188,7 @@ fn get_string(object: &JsValue, key: &str) -> Option<String> {
 
 /// Reads the facade's request.
 pub fn decode_request(value: &JsValue) -> Result<Request> {
+    let _span = quicktype_core::trace::span("decode request");
     let req: &RequestObject = value.unchecked_ref();
     let switches = req.switches();
     let switch = |name: &str| get(&switches, name).as_bool() == Some(true);

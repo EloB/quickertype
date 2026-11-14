@@ -458,6 +458,7 @@ version = "0.1.0"
 dependencies = [
  "indexmap",
  "js-sys",
+ "mimalloc",
  "quickertype-core",
  "quickertype-js-compat",
  "serde_json",

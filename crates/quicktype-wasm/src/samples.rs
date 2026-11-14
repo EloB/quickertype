@@ -144,6 +144,7 @@ pub fn json_create(
 /// [`DECLINED`].
 #[wasm_bindgen(js_name = jsonRead)]
 pub fn json_read(id: f64, text: &str) -> i32 {
+    let _span = quicktype_core::trace::span("jsonRead");
     read_with(id, |cjson| cjson.read_string_sample(text, LIMITS))
 }
 

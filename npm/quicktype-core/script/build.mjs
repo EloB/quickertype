@@ -1,7 +1,7 @@
 // Builds the package: the WebAssembly engine (crates/quicktype-wasm) and
 // the TypeScript facade, as CommonJS (dist/) and ES modules (dist/esm/).
 //
-//   node script/build.mjs [--skip-wasm] [--debug] [--heap-stats]
+//   node script/build.mjs [--skip-wasm] [--debug] [--heap-stats] [--trace]
 //
 // 1. `cargo build -p quicktype-wasm --target wasm32-unknown-unknown --release`
 // 2. `wasm-bindgen --target web` (the CLI version must equal the
@@ -19,7 +19,9 @@
 // already, if it was a release build); --no-wasm-opt leaves out step 3;
 // --heap-stats builds the engine with the `heap-stats` feature, whose
 // allocator counts the bytes in use and their peak (`__heapBytes`,
-// `__heapPeak`), for measurements (it costs about 2% of a run's time).
+// `__heapPeak`), for measurements (it costs about 2% of a run's time);
+// --trace builds it with the `trace` feature, which records where a run's
+// time goes (`__trace`; docs/BENCHMARKS.md).
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -75,7 +77,8 @@ function findBindgen() {
 function buildWasm() {
     const cargoArgs = ["build", "-p", "quicktype-wasm", "--target", "wasm32-unknown-unknown"];
     if (profile === "release") cargoArgs.push("--release");
-    if (args.has("--heap-stats")) cargoArgs.push("--features", "heap-stats");
+    const features = ["heap-stats", "trace"].filter((f) => args.has(`--${f}`));
+    if (features.length > 0) cargoArgs.push("--features", features.join(","));
     run("cargo", cargoArgs, { cwd: repositoryRoot });
     const wasm = path.join(
         repositoryRoot,
@@ -147,6 +150,9 @@ const glueExports = [
     "__heapPeak",
 ];
 
+/** Exports only builds with a feature have (`--trace`). */
+const featureExports = args.has("--trace") ? ["__trace"] : [];
+
 /** The wasm-bindgen glue as the body of `function createGlue()`. */
 function glueFactory() {
     let glue = fs.readFileSync(path.join(bindgenDir, "quicktype_wasm.js"), "utf8");
@@ -193,7 +199,8 @@ function glueFactory() {
         throw new Error("glue: unexpected export or import.meta left");
     }
 
-    for (const name of glueExports) {
+    const exported = [...glueExports, ...featureExports];
+    for (const name of exported) {
         if (!new RegExp(`^function ${name}\\(`, "m").test(glue)) {
             throw new Error(`glue: ${name} missing`);
         }
@@ -204,7 +211,7 @@ function glueFactory() {
 
 function createGlue() {
 ${body}
-    return { ${glueExports.join(", ")} };
+    return { ${exported.join(", ")} };
 }
 `;
 }

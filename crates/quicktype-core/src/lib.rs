@@ -124,6 +124,8 @@ pub mod support;
 #[doc(hidden)]
 pub mod target_language;
 #[doc(hidden)]
+pub mod trace;
+#[doc(hidden)]
 pub mod transformers;
 #[doc(hidden)]
 pub mod ty;

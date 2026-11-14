@@ -569,6 +569,39 @@ These were measured before Phase 8a. For a record array after it, with a
 comparison of our JSON readers against `serde_json` and `simd-json`, see
 [PROFILE-RECORDS.md](PROFILE-RECORDS.md).
 
+### Phase by phase, WebAssembly against native (`trace`)
+
+The `trace` feature of quickertype-core (forwarded by quicktype-wasm)
+records how long each phase takes: the reader's two passes over a sample
+(`read: record`, which scans, validates and writes the tape, and `read:
+commit`, which classifies and interns into the compressed form), every
+timed pass of a run (`read input` also split into `read input: tally the
+form` and `read input: infer`), and in the engine decoding the request,
+assembling the options and turning the outcome into JavaScript values.
+Each span goes into a buffer that is allocated once and read out once,
+after the work (`quicktype_core::trace::take`; the engine's `__trace()`),
+so nothing crosses into JavaScript while a run is timed. The clock is
+`performance.now()` in WebAssembly and `Instant` natively. Without the
+feature the spans are empty and compile away: the engine the package
+ships is the same size and has the same code and exports with or without
+the spans in the source (only line numbers in panic messages move), and
+has no `__trace` export.
+
+```sh
+# WebAssembly in headless Chrome (a cross-origin isolated page, for 5 µs
+# timer steps instead of 100 µs): addSource + quicktypeMultiFile to
+# TypeScript, warm, medians of each phase. The copy into WebAssembly memory
+# and the facade's share are timed around the glue's calls.
+(cd npm/quicktype-core && node script/build.mjs --trace)
+node npm/quicktype-core/test/bench/phases.mjs [--only REGEX] [--rounds N] [--json]
+# The same entry points natively, in process (jsonCreate and jsonRead, then
+# a run over a lease on the form), with the same spans; mimalloc.
+cargo run --release -p quicktype-wasm --features trace --example phases -- input.json [ROUNDS]
+```
+
+`phases.mjs --json` also writes its inputs to
+`npm/quicktype-core/build/bench/phases/`, for the native side.
+
 ## WebAssembly
 
 The JS API's engine is `crates/quicktype-wasm` behind `npm/quicktype-core`.

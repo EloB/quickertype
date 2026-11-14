@@ -61,6 +61,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll, Waker};
 
+use quicktype_core::trace;
 use wasm_bindgen::prelude::*;
 
 use crate::js::JsHost;
@@ -108,6 +109,7 @@ fn install() {
     if INSTALLED.with(|i| i.replace(true)) {
         return;
     }
+    install_clock();
     quicktype_core::set_console_sink(Some(Box::new(|line| {
         if let Some(host) = active() {
             host.buffer_line(false, line);
@@ -160,10 +162,13 @@ fn run_future(
         let result = async {
             let request = request?;
             let _forms = SharedForms::of(&request);
+            let span = trace::span("assemble");
             let options = assemble::assemble(request, Rc::new(Rc::clone(&host)))?;
+            drop(span);
             quicktype_core::quicktype_multi_file(options).await
         }
         .await;
+        let _span = trace::span("outcome to JavaScript");
         host.finish(result)
     })
 }
@@ -359,6 +364,42 @@ pub fn memory_pages() -> u32 {
     return std::arch::wasm32::memory_size::<0>() as u32;
     #[cfg(not(target_arch = "wasm32"))]
     0
+}
+
+#[cfg(feature = "trace")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = performance, js_name = now)]
+    fn performance_now() -> f64;
+}
+
+/// Gives the trace `performance.now` as its clock (`trace` builds only).
+fn install_clock() {
+    #[cfg(feature = "trace")]
+    trace::set_clock(performance_now);
+}
+
+/// The spans recorded since the last call (`quicktype_core::trace`), one
+/// per line, `name\tstart\tend` in milliseconds of `performance.now`, then
+/// a line `dropped\t<n>` if the buffer was full. Only in builds with the
+/// `trace` feature, for measurements (docs/BENCHMARKS.md): the others do
+/// not have it. Read it once after the work: nothing is sent to JavaScript
+/// while it is recorded. The first call also sets the trace's clock.
+#[cfg(feature = "trace")]
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __trace)]
+pub fn take_trace() -> String {
+    use std::fmt::Write as _;
+    install_clock();
+    let (spans, dropped) = trace::take();
+    let mut out = String::new();
+    for (name, start, end) in spans {
+        let _ = writeln!(out, "{name}\t{start}\t{end}");
+    }
+    if dropped > 0 {
+        let _ = writeln!(out, "dropped\t{dropped}");
+    }
+    out
 }
 
 /// Panics, for the facade's test of what happens when the engine traps

@@ -135,6 +135,7 @@ impl RunContext {
         name: &str,
         f: impl FnOnce() -> std::result::Result<T, E>,
     ) -> std::result::Result<T, E> {
+        let _span = crate::trace::span(name);
         let start = (self.clock)();
         let result = f()?;
         self.report(name, (self.clock)() - start);
@@ -149,6 +150,7 @@ impl RunContext {
         name: &str,
         f: impl Future<Output = std::result::Result<T, E>>,
     ) -> std::result::Result<T, E> {
+        let _span = crate::trace::span(name);
         let start = (self.clock)();
         let result = f.await?;
         self.report(name, (self.clock)() - start);
@@ -161,6 +163,7 @@ impl RunContext {
         let on_timing = self.on_timing.clone();
         let print_times = self.debug_print_times;
         Rc::new(move |name, f| {
+            let _span = crate::trace::span(name);
             let start = clock();
             f();
             report(print_times, on_timing.as_ref(), name, clock() - start);
@@ -867,6 +870,7 @@ impl<'a> Run<'a> {
         WithTypeNames {
             type_names,
             future: Box::pin(async move {
+                let _span = crate::trace::span("run");
                 if let Some(result) = self.pre_run()? {
                     return Ok(result);
                 }
@@ -879,6 +883,7 @@ impl<'a> Run<'a> {
     /// `runSync()`, with the run's own random type names.
     fn run_sync(mut self) -> Result<MultiFileRenderResult> {
         with_type_name_generator(&Rc::new(TypeNameGenerator::new()), || {
+            let _span = crate::trace::span("run");
             if let Some(result) = self.pre_run()? {
                 return Ok(result);
             }

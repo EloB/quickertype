@@ -54,6 +54,8 @@ export interface WasmGlue {
     __heapBytes(): number;
     /** `NaN` unless the engine is built with `--heap-stats`. */
     __heapPeak(): number;
+    /** The spans recorded since the last call; only in engines built with `--trace`. */
+    __trace?(): string;
     engineVersion(): string;
     __pow(x: number, y: number): number;
     __panicForTests(): void;
