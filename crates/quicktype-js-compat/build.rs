@@ -25,9 +25,11 @@ fn main() {
         let patterns = rule_patterns(rules, UNCOUNTABLE_RULES);
         let dfa = dense::Builder::new()
             .configure(
+                // Minimized, the DFAs are 3% smaller and load as fast.
                 dense::Config::new()
                     .match_kind(MatchKind::All)
-                    .start_kind(StartKind::Unanchored),
+                    .start_kind(StartKind::Unanchored)
+                    .minimize(true),
             )
             .thompson(thompson::Config::new().which_captures(WhichCaptures::None))
             .build_many(&patterns)
