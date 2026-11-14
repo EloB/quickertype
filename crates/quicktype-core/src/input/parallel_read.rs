@@ -974,13 +974,16 @@ impl Reading<'_> {
                 _ => return None,
             }
         }
-        let mut reader = PartReader {
-            reading: self,
-            open: true,
-            at: part.from,
-            end,
-            close: part.to.is_some(),
-        };
+        // `[`, the part, and `]` unless the part runs to the end of the
+        // sample (where the array's own `]` is).
+        let close: &[u8] = if part.to.is_some() { b"]" } else { b"" };
+        let mut reader = b"["
+            .chain(RangeReader {
+                reading: self,
+                at: part.from,
+                end,
+            })
+            .chain(close);
         parse_stream_reader_into(
             &mut TallyBuilder::new(running, config),
             &mut reader,
@@ -1284,47 +1287,24 @@ impl Reading<'_> {
     }
 }
 
-/// A part's bytes as the array of its elements: `[`, the part, and `]`
-/// unless the part runs to the end of the sample (where the array's own
-/// `]` is). Reading stops early when the reading is given up.
-struct PartReader<'r, 's> {
+/// The sample's bytes from `at` to `end`. Reading stops early when the
+/// reading is given up.
+struct RangeReader<'r, 's> {
     reading: &'r Reading<'s>,
-    /// Whether the `[` is still to be read.
-    open: bool,
     at: u64,
     end: u64,
-    /// Whether a `]` is to be read after the part.
-    close: bool,
 }
 
-impl Read for PartReader<'_, '_> {
+impl Read for RangeReader<'_, '_> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.reading.aborted()?;
-        let mut n = 0;
-        if self.open && !buf.is_empty() {
-            buf[0] = b'[';
-            self.open = false;
-            n = 1;
+        let want = usize::try_from(self.end - self.at).map_or(buf.len(), |r| r.min(buf.len()));
+        let read = self.reading.source.read_at(&mut buf[..want], self.at)?;
+        if read < want {
+            return Err(io::ErrorKind::UnexpectedEof.into());
         }
-        if self.at < self.end && n < buf.len() {
-            let want =
-                usize::try_from(self.end - self.at).map_or(buf.len() - n, |r| r.min(buf.len() - n));
-            let read = self
-                .reading
-                .source
-                .read_at(&mut buf[n..n + want], self.at)?;
-            if read < want {
-                return Err(io::ErrorKind::UnexpectedEof.into());
-            }
-            self.at += read as u64;
-            n += read;
-        }
-        if self.at == self.end && self.close && n < buf.len() {
-            buf[n] = b']';
-            self.close = false;
-            n += 1;
-        }
-        Ok(n)
+        self.at += read as u64;
+        Ok(read)
     }
 }
 
