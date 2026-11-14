@@ -36,9 +36,16 @@ pub struct NamesTypeAttributeKind;
 pub const TOO_MANY_NAMES_THRESHOLD: usize = 1000;
 
 struct RandomNames {
-    chance: Chance,
+    /// `Chance(31415)`, seeded when the first random name is drawn: the
+    /// seeding (624 steps of the Mersenne Twister) took about 8% of a run
+    /// on a tiny input in WebAssembly, and most runs draw no random name.
+    /// Nothing else draws from it, so the names are the same.
+    chance: Option<Chance>,
     used: HashSet<String>,
 }
+
+/// The seed of `initTypeNames`'s generator.
+const SEED: u32 = 31415;
 
 /// The random type names of one run: the generator `initTypeNames` seeds
 /// (`Chance(31415)`) and the names drawn so far.
@@ -48,7 +55,7 @@ impl TypeNameGenerator {
     /// A freshly seeded generator, as `initTypeNames()` leaves it.
     pub fn new() -> Self {
         TypeNameGenerator(RefCell::new(RandomNames {
-            chance: Chance::new(31415),
+            chance: None,
             used: HashSet::default(),
         }))
     }
@@ -56,12 +63,14 @@ impl TypeNameGenerator {
     /// `makeRandomName()`: `"${city} ${animal}"`, retried until unused.
     fn make_random_name(&self) -> String {
         let mut r = self.0.borrow_mut();
+        let RandomNames { chance, used } = &mut *r;
+        let chance = chance.get_or_insert_with(|| Chance::new(SEED));
         loop {
-            let name = format!("{} {}", r.chance.city(), r.chance.animal());
-            if r.used.contains(&name) {
+            let name = format!("{} {}", chance.city(), chance.animal());
+            if used.contains(&name) {
                 continue;
             }
-            r.used.insert(name.clone());
+            used.insert(name.clone());
             return name;
         }
     }
@@ -480,6 +489,25 @@ pub fn make_names_type_attributes_from_names(names: TypeNames) -> TypeAttributes
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The generator seeded when the first name is drawn gives the names
+    /// `Chance(31415)` gives from the start (`chance.txt` checks those
+    /// against TypeScript).
+    #[test]
+    fn random_names_from_a_generator_seeded_late() {
+        let generator = TypeNameGenerator::new();
+        let mut chance = Chance::new(SEED);
+        let mut used = HashSet::default();
+        for _ in 0..500 {
+            let expected = loop {
+                let name = format!("{} {}", chance.city(), chance.animal());
+                if used.insert(name.clone()) {
+                    break name;
+                }
+            };
+            assert_eq!(generator.make_random_name(), expected);
+        }
+    }
 
     fn set(names: &[&str]) -> IndexSet<String> {
         names.iter().map(|s| (*s).to_owned()).collect()
