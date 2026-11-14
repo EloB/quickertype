@@ -387,9 +387,11 @@ and an input that is to be exported is made with
 Reading and tallying are almost all of a large run, so the CLI reads a
 regular file that holds a large top-level array on several threads
 (`input/parallel_read.rs`, with the scan in `input/json_split.rs`), into
-the same tallies as reading it in one go. Standard input redirected from
-a regular file (`quickertype < big.json`) is read the same way, from where
-it stands, and is left at its end as reading it in one go leaves it.
+the same tallies as reading it in one go; and large JSON Lines, split
+between their lines ([JSON Lines](#json-lines), below). Standard input
+redirected from a regular file (`quickertype < big.json`) is read the
+same way, from where it stands, and is left at its end as reading it in
+one go leaves it.
 
 ### How
 
@@ -460,14 +462,15 @@ first handle, shared). Ranges are 256 KiB at least, and a sample has at
 most 65,536 of them, whatever the options ask for; at most 1,024 threads
 read, and as many as the ranges give four each. Read in one go, as
 before: samples under 8 MiB, samples that would have fewer than two
-threads, top-levels that are not arrays, arrays whose first element is
-longer than a part the budget would read beside others, standard input
-from a pipe or a terminal (it cannot be read at offsets, and reading it
-ahead would hold it in memory), standard input on Windows (a console or
-a pipe is not told from a file as surely there), text samples
-(`JSON.parse` semantics), JSON Lines samples, streams the Rust API hands
-in (`SampleReader::new`) and the WebAssembly engine; and if the system
-will not start the threads. (A date/time recognizer decides from the
+threads, JSON samples whose top-level is not an array, arrays whose
+first element is longer than a part the budget would read beside others
+(JSON Lines whose first value is), standard input from a pipe or a
+terminal (it cannot be read at offsets, and reading it ahead would hold
+it in memory), standard input on Windows (a console or a pipe is not
+told from a file as surely there), text samples (`JSON.parse`
+semantics, JSON Lines' too), samples in memory (`JsonSample::Stream` and
+`StreamLines`), streams the Rust API hands in (`SampleReader::new`) and
+the WebAssembly engine; and if the system will not start the threads. (A date/time recognizer decides from the
 string alone and is `Send + Sync`: the threads share the sample's.)
 
 ### Why it is exact
@@ -539,6 +542,51 @@ position, but the rest is read by the same tokenizer from the same state
 anyway.) A job that panics on another thread hands its panic to the
 reading thread, which raises it, as reading in one go would panic.
 
+### JSON Lines
+
+A JSON Lines sample (`JsonSample::ReaderLines`: a `.jsonl` file, or any
+input with `--src-lang jsonl`) is read the same way, with the same
+ranges, budget and fallbacks, but split between its lines:
+
+- **Splits.** The search looks for a line feed outside strings at depth 0
+  instead of a comma at depth 1 (`json_split::Separator`). A raw line
+  feed is JSON whitespace: in a string it is an error (a control
+  character), in an array or object it is at depth 1 or more, so outside
+  every value it lies between two values (or before the first, after the
+  last).
+- **Parts.** The bytes between two such line feeds (from the sample's
+  start for the first part, to its end for the last) are read as JSON
+  Lines, the array of their values, into tallies of their own
+  (`compressed_json_from_stream::parse_lines_part_into`). A part may hold
+  nothing but blank lines; only the first may start with a byte order
+  mark, which reading in one go skips only there. Each part also counts
+  the line feeds it holds (the tokenizer counts them anyway, for the line
+  of an error).
+- **Why it is exact.** Reading JSON Lines, the tokenizer is between
+  values at a line feed outside every value (`Expect::Done`, nothing
+  open); a part read as JSON Lines starts in that state and ends after
+  whole values, and the line feed after it ends a number or a literal as
+  the end of the part does. So the argument above holds with the line
+  feed for the comma: the sample read in one go emits the events of the
+  parts in order, within the array its values are read as. The check
+  that two values are not on one line asks whether a line feed came
+  since the last value, and one did at every part's start. The parts'
+  trees are arrays of their values; one of blank lines only is an empty
+  array, which appends nothing (it adds the `array` kind the sample's
+  root has, and no items).
+- **Errors.** When a part does not read, the rest is read in one go from
+  the line feed after the parts appended
+  (`compressed_json_from_stream::parse_lines_rest_into`, the tokenizer
+  between values, the array open in the tree) with the line count started
+  at the line feeds before it: those the parts appended hold, and those
+  after each of them. So an error names the line reading the whole sample
+  in one go names (the line its value starts on). A first part that
+  fails, whose lines may not have been counted, makes the whole sample
+  read in one go from its start.
+- **Speed.** A sample read in one go is read as before: the rest reader
+  is an instance of the JSON Lines loop of its own (`run_lines` takes the
+  rest mode as a constant).
+
 ### Testing it
 
 - Unit tests (`input/json_split.rs`): the masks for every byte value at
@@ -573,13 +621,26 @@ reading thread, which raises it, as reading in one go would panic.
   opened again for each thread reads as in one go, and a file put in its
   place is not opened; a file written while it is read (shorter, or of
   the same length) is read again in one go; and a fault that merges the
-  parts' trees out of order is caught. The test hooks (the fault, the
-  counts of how samples were read) need the crate's `test-support`
-  feature, which its own tests turn on, or a debug build.
+  parts' trees out of order is caught. JSON Lines read on several
+  threads give the tree or the error, on its line, of reading in one go:
+  random JSON Lines (values that span lines, LF and CRLF, blank and
+  whitespace-only lines, with and without a last line feed) broken now
+  and then (a stray bracket, cut, two values on a line, a raw line feed
+  in a string, a byte order mark first or on a later line), with random
+  range sizes and thread counts; documents split at every point
+  (strings with escaped line feeds and brackets, parts of blank lines
+  only, first or not, a byte order mark); broken ones with every range
+  size; values longer than the budget allows, read in one go or after a
+  short first one, with the line of an error after it; a file that
+  changes; the fault. The test hooks (the fault, the counts of how
+  samples were read) need the crate's `test-support` feature, which its
+  own tests turn on, or a debug build.
 - Files written by the tests and read at offsets
-  (`tests/parallel_files.rs` in quicktype-core, and the CLI's
-  `files_read_on_several_threads_read_as_in_one_go` with the internal
-  variables), on every platform CI tests, Windows included.
+  (`tests/parallel_files.rs` in quicktype-core, arrays and JSON Lines,
+  and the CLI's `files_read_on_several_threads_read_as_in_one_go` and
+  `json_lines_read_on_several_threads_read_as_in_one_go`, the latter from
+  a `.jsonl` file and from standard input with `--src-lang jsonl`, with
+  the internal variables), on every platform CI tests, Windows included.
 - The differential harness reads every byte-stream sample on several
   threads (`Path::Parallel`, in `Path::All`), with 2 to 5 threads, ranges
   of one byte to half the sample and, for a fifth of the samples, a tree
@@ -587,8 +648,13 @@ reading thread, which raises it, as reading in one go would panic.
   `cargo xtask streaming-fuzz --path parallel`; `--path parallel-fault`
   injects the fault, which the comparison must catch, and the test
   `a_broken_merge_is_caught` checks that it does.
-- The fuzz target `json_split` reads arbitrary bytes both ways and
-  compares the source's error or the type graph.
+- `tests/json_lines.rs` (JSON Lines against the arrays of their values,
+  through every language) gives a part of its readers as files read on
+  several threads, with ranges of 1 to 500 bytes.
+- The fuzz target `json_split` reads arbitrary bytes both ways, as a JSON
+  sample or as JSON Lines (bit 2 of its flags), and compares the source's
+  error or the type graph. The differential fuzzer's `jsonl` mode has our
+  CLI read its JSON Lines files on several threads half the time.
 
 ## Tallies of a compressed form
 

@@ -306,7 +306,8 @@ impl<R: Read + io::Seek> Read for StreamFrom<R> {
     }
 }
 
-/// How a large top-level array in a sample is read on several threads
+/// How a large top-level array (or large JSON Lines) in a sample is read
+/// on several threads
 /// ([`Readable::open_sample`](crate::Readable::open_sample)). The output
 /// does not depend on them. The defaults ([`Default`]) are those of the
 /// CLI, which tests and benchmarks change with internal environment
@@ -460,8 +461,9 @@ impl Default for ParallelOptions {
     }
 }
 
-/// A sample of `bytes` (a [`JsonSample::Reader`](crate::JsonSample::Reader)),
-/// read with `options` (for tests and fuzzing).
+/// A sample of `bytes` (for a [`JsonSample::Reader`](crate::JsonSample::Reader)
+/// or [`JsonSample::ReaderLines`](crate::JsonSample::ReaderLines)), read with
+/// `options` (for tests and fuzzing).
 pub fn parallel_sample(bytes: Vec<u8>, options: ParallelOptions) -> crate::SampleReader {
     crate::SampleReader::positional(PositionalSample::memory(bytes, options))
 }

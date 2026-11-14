@@ -317,7 +317,12 @@ behaves exactly as quicktype.
   did: on a 656 MB array of 120,000 records, the CLI retires the
   instructions it did before JSON Lines (within the run-to-run noise,
   0.03%), and on the same records as JSON Lines 0.7% fewer, holding as
-  little memory (it reads a stream, never the whole file).
+  little memory (it reads a stream, never the whole file). A large JSON
+  Lines file (8 MiB or more, or standard input redirected from one) is
+  read on several threads, as a large array is, split between its lines
+  ([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#json-lines)): the
+  output and the errors, with their lines, are those of reading it in
+  one go.
 - **How it is tested.** The readers' unit tests compare JSON Lines with
   their array (the same compressed values and tables, in memory and in
   chunks of 1 byte up), and their errors and lines;
@@ -328,10 +333,15 @@ behaves exactly as quicktype.
   JSON Lines files beside schemas and GraphQL under an explicit
   `--src-lang`, `.url` files) and errors; the differential fuzzer's
   `jsonl` mode compares our CLI on JSON Lines with quicktype's on the
-  arrays, and directories with stray JSON Lines files under an explicit
-  `--src-lang` with quicktype on the same directories; and
-  the `json_stream` and `json_parse` cargo-fuzz targets read arbitrary
-  bytes as JSON Lines too.
+  arrays (half the time with our CLI reading them on several threads),
+  and directories with stray JSON Lines files under an explicit
+  `--src-lang` with quicktype on the same directories; and the
+  `json_stream`, `json_parse` and `json_split` cargo-fuzz targets read
+  arbitrary bytes as JSON Lines too (`json_split` on several threads and
+  in one go). Reading on several threads has tests of its own: random
+  and broken JSON Lines split everywhere, the line of every error, files
+  and standard input
+  ([STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#testing-it)).
 
 ## Known gaps
 

@@ -570,14 +570,16 @@ mod std_io {
             }
         }
 
-        /// [`open_std`](Self::open_std) as a [`JsonSample::Reader`]
-        /// sample. A regular file (on Unix and Windows), or standard input
-        /// redirected from one (on Unix), can then also be read at any
-        /// offset, so that a large top-level array in it is read on several
-        /// threads as `options` say, into the same tallies (see
+        /// [`open_std`](Self::open_std) as a [`JsonSample::Reader`] (or
+        /// [`JsonSample::ReaderLines`]) sample. A regular file (on Unix and
+        /// Windows), or standard input redirected from one (on Unix), can
+        /// then also be read at any offset, so that a large top-level array
+        /// (or large JSON Lines) in it is read on several threads as
+        /// `options` say, into the same tallies (see
         /// `docs/STREAMING-INFERENCE.md`, "Reading on several threads").
         ///
         /// [`JsonSample::Reader`]: crate::JsonSample::Reader
+        /// [`JsonSample::ReaderLines`]: crate::JsonSample::ReaderLines
         #[cfg(not(target_family = "wasm"))]
         pub fn open_sample(
             self,

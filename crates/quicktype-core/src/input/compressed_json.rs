@@ -164,7 +164,8 @@ pub enum JsonSample {
     /// values with the CLI's stream-json semantics, as
     /// [`Reader`](Self::Reader) reads a sample (see
     /// [`StringLines`](Self::StringLines)). The CLI reads `.jsonl` and
-    /// `.ndjson` files so.
+    /// `.ndjson` files so, large ones on several threads
+    /// ([`Readable::open_sample`](crate::Readable::open_sample)).
     ReaderLines(SampleReader),
 }
 
