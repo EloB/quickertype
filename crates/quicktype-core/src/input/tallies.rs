@@ -1558,13 +1558,20 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// Tallies the transformed string `index` at `node`, of the kind
-    /// `commitString` classified it as ([`transformed_kind`](Self::transformed_kind));
-    /// whether it has a kind with an attribute producer, as a reader's
-    /// always has. A `uri` is tallied by its parts, made each time: they
-    /// cost less than keeping them would.
+    /// `commitString` classified it as: a `uri` in a form a reader made
+    /// ([`CompressedJson::uris_classified`]), else as recognized from its
+    /// text ([`transformed_kind`](Self::transformed_kind)). Whether it has
+    /// a kind with an attribute producer, as a reader's always has. A `uri`
+    /// is tallied by its parts, made each time: they cost less than keeping
+    /// them would.
     fn transformed(&mut self, tallies: &mut Tallies, node: NodeId, index: u32) -> Result<bool> {
         let text = defined(self.cjson.string(index))?;
-        match self.transformed_kind(index, text) {
+        let kind = if self.cjson.uris_classified() {
+            Some(TypeKind::Uri)
+        } else {
+            self.transformed_kind(index, text)
+        };
+        match kind {
             Some(TypeKind::Uri) => tallies.add_uri(node, uri_inference_parts(text).as_ref())?,
             Some(kind) => match transformed_string_type_attributes_producer(kind) {
                 Some(producer) => tallies.add_transformed_string(node, kind, &producer(text))?,
