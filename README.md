@@ -256,7 +256,7 @@ includes, with the same results. Browser bundling and the details:
 
 ```toml
 [dependencies]
-quickertype-core = "0.1"
+quickertype-core = "0.2"
 ```
 
 The crate is imported as `quicktype_core`:

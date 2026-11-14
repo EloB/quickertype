@@ -7,7 +7,7 @@ default-members = ["crates/*"]
 # reports quicktype's version for parity instead (`QUICKTYPE_VERSION` in
 # crates/quicktype-cli/src/main.rs); see docs/RELEASING.md.
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 # The oldest Rust that builds every crate: let chains need 1.88
 # (`cargo +1.88 check --workspace`). Development and CI use
@@ -31,10 +31,10 @@ authors = ["quicktype contributors"]
 # can build without `fs`: Cargo before 1.99 rejects `default-features =
 # false` on an inherited dependency whose workspace entry does not set it.
 # Members that need `fs` or `http` ask for them.
-quickertype-core = { path = "crates/quicktype-core", version = "=0.1.0", default-features = false }
-quickertype-graphql-input = { path = "crates/quicktype-graphql-input", version = "=0.1.0" }
-quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.1.0" }
-quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.1.0" }
+quickertype-core = { path = "crates/quicktype-core", version = "=0.2.0", default-features = false }
+quickertype-graphql-input = { path = "crates/quicktype-graphql-input", version = "=0.2.0" }
+quickertype-js-compat = { path = "crates/quicktype-js-compat", version = "=0.2.0" }
+quickertype-typescript-input = { path = "crates/quicktype-typescript-input", version = "=0.2.0" }
 foldhash = "0.2"
 hashbrown = { version = "0.17", default-features = false }
 indexmap = "2"
