@@ -316,8 +316,22 @@ pub struct ParallelReads {
     pub again: usize,
 }
 
+/// Whether starting reading thread `i` is to fail, as when the system
+/// refuses another thread (for tests).
+#[cfg(test)]
+fn spawn_fails(i: usize) -> bool {
+    SPAWN_FAILS.with(Cell::get) == Some(i)
+}
+
+#[cfg(not(test))]
+fn spawn_fails(_: usize) -> bool {
+    false
+}
+
 #[cfg(test)]
 thread_local! {
+    /// The reading thread that fails to start (for tests).
+    static SPAWN_FAILS: Cell<Option<usize>> = const { Cell::new(None) };
     /// A part to read slowly, and how slowly (for tests): see
     /// `trees_waiting_for_a_slow_part_stay_within_the_budget`.
     static SLOW_PART: Cell<Option<(usize, std::time::Duration)>> = const { Cell::new(None) };
@@ -445,14 +459,24 @@ fn read(
     };
     let outcome = thread::scope(|scope| {
         let (sender, results) = mpsc::channel();
-        for config in configs {
-            let (reading, sender) = (&reading, sender.clone());
-            scope.spawn(move || reading.work(config.into_compressed_json(), &sender));
-        }
-        drop(sender);
         // The threads stop when the reading ends, however it ends (were
         // this thread to panic, the scope would wait for them).
         let mut close = Closing(&reading, true);
+        for (i, config) in configs.into_iter().enumerate() {
+            let (reading, sender) = (&reading, sender.clone());
+            let started = !spawn_fails(i)
+                && thread::Builder::new()
+                    .spawn_scoped(scope, move || {
+                        reading.work(config.into_compressed_json(), &sender);
+                    })
+                    .is_ok();
+            // The system would not start another thread: in one go (the
+            // threads started stop as the reading closes).
+            if !started {
+                return None;
+            }
+        }
+        drop(sender);
         let outcome = reading.coordinate(open, tallies, config, &results, options);
         // Whatever is under way is not needed any more.
         close.1 = !matches!(outcome, Some(Outcome::Whole(_)));
@@ -1300,6 +1324,27 @@ mod tests {
             "{peak} bytes held, over {} + {largest}",
             options.budget
         );
+    }
+
+    /// Where the system refuses a reading thread, the sample is read in one
+    /// go (and the threads started stop).
+    #[test]
+    fn a_thread_that_does_not_start_reads_in_one_go() {
+        let config = config(false);
+        let bytes = br#"[{"a":1},{"b":"x"},{"a":2.5},{"c":null},[1,2],"s"]"#;
+        let expected = in_one_go(&config, bytes);
+        for failing in [0, 1, 3] {
+            SPAWN_FAILS.with(|f| f.set(Some(failing)));
+            let (result, how) = read_with(&config, bytes, options(4, 4));
+            SPAWN_FAILS.with(|f| f.set(None));
+            assert_eq!(result, expected, "thread {failing}");
+            let again = ParallelReads {
+                again: 1,
+                ..ParallelReads::default()
+            };
+            assert_eq!(how, again, "thread {failing}");
+        }
+        assert_eq!(read_with(&config, bytes, options(4, 4)).1.whole, 1);
     }
 
     /// The fault is caught: merging the parts' trees out of order gives
