@@ -176,32 +176,37 @@ function isOneValue(text) {
 
 /**
  * The "jsonl" mode's two CLI invocations of a JSON case, `{ ours, ref }`
- * (each as `cliInvocation` returns one), or undefined if the case has none.
- * Each top-level's samples (those that are one JSON value) are grouped,
- * in order, into files: our binary reads a group as a JSON Lines file
- * (values on lines of their own, with LF or CRLF, blank lines, whitespace
- * before and after; named `.jsonl` or `.ndjson`, or anything with
- * `--src-lang jsonl`), the reference as a `.json` file of the JSON array
- * of the group's values (`[V1,…,Vn]`, `[]` for none). A group of one may
- * also stay a plain `.json` sample on both sides, so that one top-level
- * mixes the two. One top-level's files are the arguments (sometimes one
- * file named after the top-level, without `--top-level`); several
- * top-levels are a directory read with `--src-lang jsonl`. The choices
- * are a function of the case and its seed, so a saved case replays them.
+ * (each as `cliInvocation` returns one), or undefined if the mode cannot
+ * run the case (see `cliCompatible`). Each top-level's samples (those
+ * that are one JSON value) are grouped, in order, into files: our binary
+ * reads a group as a JSON Lines file (values on lines of their own, with
+ * LF or CRLF, blank lines, whitespace before and after, now and then a
+ * byte order mark first), the reference as a `.json` file of the JSON
+ * array of the group's values (`[V1,…,Vn]`, `[]` for none). A group of one
+ * may also stay a plain `.json` sample on both sides, so that one
+ * top-level mixes the two. One top-level's files are the arguments,
+ * named `.jsonl`, `.ndjson` or `.JSONL`, or anything with `--src-lang
+ * jsonl` (then all are JSON Lines); one file is sometimes named after the
+ * top-level, without `--top-level`. Several top-levels are a directory,
+ * where each file's name says what it holds whatever `--src-lang` says,
+ * which is none, `json` or `jsonl`. The choices are a function of the
+ * case and its seed, so a saved case replays them.
  */
 export function jsonlInvocations(kase) {
-    if (kase.src !== "json") return undefined;
+    if (kase.src !== "json" || !cliCompatible(kase)) return undefined;
     const rng = new Rng((kase.seed ?? 0) ^ 0x75e1);
     const separators = ["\n", "\r\n", "\n\n", "\n \t\n", " \r\n", "\r\n\r\n"];
     const arounds = ["", "\n", "\r\n", " \n", "\n\n"];
     const several = kase.topLevels.length > 1;
-    // `--src-lang jsonl` makes every JSON file JSON Lines; otherwise the
-    // names do (and a directory would not take them).
-    const forced = several || rng.chance(0.3);
+    // For arguments: `--src-lang jsonl` makes every file JSON Lines,
+    // otherwise their names do. A directory goes by the names either way.
+    const srcLang = several ? rng.pick([undefined, "json", "jsonl"]) : rng.chance(0.3) ? "jsonl" : undefined;
+    const byName = several || srcLang === undefined;
     const lineFiles = (values) => {
         const between = rng.sample(separators, rng.range(1, 3));
         const text = values.map((v, i) => (i === 0 ? "" : between[i % between.length]) + v).join("");
-        return { ours: rng.pick(arounds) + text + rng.pick(arounds), ref: `[${values.join(",")}]` };
+        const bom = rng.chance(0.1) ? "﻿" : "";
+        return { ours: bom + rng.pick(arounds) + text + rng.pick(arounds), ref: `[${values.join(",")}]` };
     };
     // Per top-level: its files, each { ours, ref, lines }.
     const groups = kase.topLevels.map((tl) => {
@@ -212,20 +217,18 @@ export function jsonlInvocations(kase) {
             const n = Math.min(values.length - i, rng.weighted([[3, 1], [3, 2], [2, values.length], [1, 0]]));
             const group = values.slice(i, i + Math.max(n, 0));
             i += group.length;
-            if (!forced && group.length === 1 && rng.chance(0.25)) files.push({ ours: group[0], ref: group[0], lines: false });
+            if (byName && group.length === 1 && rng.chance(0.25)) files.push({ ours: group[0], ref: group[0], lines: false });
             else files.push({ ...lineFiles(group), lines: true });
         } while (i < values.length);
         return files;
     });
-    // A directory takes `.json`, `.jsonl` and `.ndjson` files (with
-    // `--src-lang jsonl`); arguments may have any name.
-    const extension = () =>
-        !forced ? rng.pick(["jsonl", "jsonl", "ndjson", "JSONL"]) : rng.pick(several ? ["json", "jsonl", "ndjson"] : ["json", "jsonl", "txt", "ndjson"]);
+    const extension = (f) =>
+        !f.lines ? "json" : byName ? rng.pick(["jsonl", "jsonl", "ndjson", "JSONL"]) : rng.pick(["json", "jsonl", "txt", "ndjson"]);
     const ours = new Map();
     const ref = new Map();
     const oursArgs = ["--lang", kase.lang];
     const refArgs = ["--lang", kase.lang, "--src-lang", "json"];
-    if (forced) oursArgs.push("--src-lang", "jsonl");
+    if (srcLang !== undefined) oursArgs.push("--src-lang", srcLang);
     if (!several) {
         const [tl] = kase.topLevels;
         const [files] = groups;
@@ -238,7 +241,7 @@ export function jsonlInvocations(kase) {
 
         files.forEach((f, j) => {
             const base = named ? `in/${tl.name}` : `in/s0-${j}`;
-            const oursFile = `${base}.${f.lines ? extension() : "json"}`;
+            const oursFile = `${base}.${extension(f)}`;
             ours.set(oursFile, f.ours);
             ref.set(`${base}.json`, f.ref);
             oursArgs.push(oursFile);
@@ -246,19 +249,15 @@ export function jsonlInvocations(kase) {
         });
     } else {
         // A directory, read in the order of its (sorted) names: our names
-        // must sort as the reference's do, or they are all `.json`.
-        const place = (ext) => {
-            const names = [];
-            kase.topLevels.forEach((tl, t) => {
-                const files = groups[t];
-                if (files.length === 1) names.push([`in/${tl.name}`, files[0]]);
-                else files.forEach((f, j) => names.push([`in/${tl.name}/s${j}`, f]));
-            });
-            return names.map(([base, f]) => [`${base}.${ext()}`, `${base}.json`, f]);
-        };
-        let placed = place(extension);
+        // must sort as the reference's do.
+        const placed = [];
+        kase.topLevels.forEach((tl, t) => {
+            const files = groups[t];
+            const bases = files.length === 1 ? [`in/${tl.name}`] : files.map((_, j) => `in/${tl.name}/s${j}`);
+            files.forEach((f, j) => placed.push([`${bases[j]}.${extension(f)}`, `${bases[j]}.json`, f]));
+        });
         const order = (names) => names.map((n, i) => [Buffer.from(n), i]).sort(([a], [b]) => Buffer.compare(a, b)).map(([, i]) => i).join();
-        if (order(placed.map(([o]) => o)) !== order(placed.map(([, r]) => r))) placed = place(() => "json");
+        if (order(placed.map(([o]) => o)) !== order(placed.map(([, r]) => r))) return undefined;
         for (const [o, r, f] of placed) {
             ours.set(o, f.ours);
             ref.set(r, f.ref);
@@ -272,20 +271,13 @@ export function jsonlInvocations(kase) {
     oursArgs.push(...options);
     refArgs.push(...options);
     if ([...oursArgs, ...refArgs].some((a) => a.includes("\0"))) return undefined;
+    const written = [...ours.keys(), ...ref.keys()];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    if (unportablePaths(written).length > 0) return undefined;
+    // Two names that differ only in case would collide on Windows and macOS.
+    if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
     const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
     return { ours: { args: oursArgs, files: ours, dirs }, ref: { args: refArgs, files: ref, dirs } };
-}
-
-/** Whether the "jsonl" mode can run the case (see `cliCompatible`). */
-export function jsonlCompatible(kase) {
-    if (kase.src !== "json" || !cliCompatible(kase)) return false;
-    const invocations = jsonlInvocations(kase);
-    if (invocations === undefined) return false;
-    const written = [...invocations.ours.files.keys(), ...invocations.ref.files.keys()];
-    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
-    if (unportablePaths(written).length > 0) return false;
-    // Two names that differ only in case would collide on Windows and macOS.
-    return new Set(written.map((f) => f.toLowerCase())).size === new Set(written).size;
 }
 
 /**

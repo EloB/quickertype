@@ -1,7 +1,7 @@
 // Running one case in one mode on both sides and comparing the outcomes;
 // shared by the fuzzer, the minimizer and the replayer.
 
-import { cliCommands, cliCompatible, cliInvocation, jsonlCompatible, jsonlInvocations, loadCompare, loadSides, runCli } from "./engines.mjs";
+import { cliCommands, cliCompatible, cliInvocation, jsonlInvocations, loadCompare, loadSides, runCli } from "./engines.mjs";
 import { runInProcess } from "./run-case.mjs";
 
 const timeoutMs = 120_000;
@@ -61,8 +61,9 @@ export async function makeChecker({ reference, bin }) {
 
         if (mode === "jsonl") {
             // Ours on JSON Lines, the reference on the arrays of their values.
-            if (!jsonlCompatible(kase)) return { status: "skip" };
-            const { ours, ref } = jsonlInvocations(kase);
+            const invocations = jsonlInvocations(kase);
+            if (invocations === undefined) return { status: "skip" };
+            const { ours, ref } = invocations;
             const expected = await runCli(commands.ref, ref);
             const actual = await runCli(commands.ours, ours);
             if (typeof expected.exit === "string") return { status: "timeout", detail: `reference ${expected.exit}` };

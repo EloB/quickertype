@@ -109,11 +109,14 @@ Each case runs in some of these modes (`--modes`, chosen per seed):
   each group's values instead (`jsonlInvocations` in `engines.mjs`): the
   outcomes must be identical, since a JSON Lines file of `V1`…`Vn` must
   give what `[V1,…,Vn]` gives. The files have LF or CRLF line breaks,
-  blank and whitespace-only lines, whitespace before and after, values
-  that span lines (pretty-printed samples), no values at all, and plain
-  `.json` samples among them; they are named `.jsonl`, `.ndjson` or
-  `.JSONL`, or anything with `--src-lang jsonl` (which several top-levels,
-  a directory, always use). A divergence records our side's run with the
+  blank and whitespace-only lines, whitespace before and after, now and
+  then a byte order mark first, values that span lines (pretty-printed
+  samples), no values at all, and plain `.json` samples among them. One
+  top-level's files are the arguments, named `.jsonl`, `.ndjson` or
+  `.JSONL`, or anything with `--src-lang jsonl`; several top-levels are a
+  directory of `.jsonl`, `.ndjson` and `.json` files, run without
+  `--src-lang`, with `json` and with `jsonl` (a directory goes by the
+  files' names). A divergence records our side's run with the
   reference's outcome.
 - **chain** (JSON and Postman cases, `--chain-rate`, default 15%): the
   reference turns the case into a JSON Schema (target language `schema`),
