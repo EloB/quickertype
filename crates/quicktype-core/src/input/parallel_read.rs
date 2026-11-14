@@ -316,6 +316,16 @@ pub struct ParallelReads {
     pub again: usize,
 }
 
+#[cfg(test)]
+thread_local! {
+    /// A part to read slowly, and how slowly (for tests): see
+    /// `trees_waiting_for_a_slow_part_stay_within_the_budget`.
+    static SLOW_PART: Cell<Option<(usize, std::time::Duration)>> = const { Cell::new(None) };
+    /// The most bytes the parts given out held at once in the last reading
+    /// on this thread, and the largest part's tree (for tests).
+    static HELD: Cell<(u64, u64)> = const { Cell::new((0, 0)) };
+}
+
 thread_local! {
     static READS: Cell<ParallelReads> = const {
         Cell::new(ParallelReads { whole: 0, in_part: 0, again: 0 })
@@ -430,6 +440,8 @@ fn read(
         queue: Mutex::new(Queue::default()),
         ready: Condvar::new(),
         abort: AtomicBool::new(false),
+        #[cfg(test)]
+        slow_part: SLOW_PART.with(Cell::get),
     };
     let outcome = thread::scope(|scope| {
         let (sender, results) = mpsc::channel();
@@ -550,6 +562,8 @@ struct Reading<'s> {
     ready: Condvar,
     /// Set when the reading is given up: the jobs under way stop early.
     abort: AtomicBool,
+    #[cfg(test)]
+    slow_part: Option<(usize, std::time::Duration)>,
 }
 
 /// How many bytes a thread scans at a time (a multiple of 64): what the
@@ -626,7 +640,15 @@ impl Reading<'_> {
         match job {
             Job::Summarize(k) => Done::Summary(k, self.summarize(k, buffer)),
             Job::Split(k, state) => Done::Split(k, self.split(k, state, buffer)),
-            Job::Tally(i, part) => Done::Part(i, self.tally(part, config)),
+            Job::Tally(i, part) => {
+                #[cfg(test)]
+                if let Some((slow, delay)) = self.slow_part
+                    && slow == i
+                {
+                    thread::sleep(delay);
+                }
+                Done::Part(i, self.tally(part, config))
+            }
         }
     }
 
@@ -756,14 +778,18 @@ impl Reading<'_> {
     /// The parts being read elsewhere hold trees of their own, which take
     /// as much memory as the tallies of their text: for most samples a
     /// fraction of the text, but as much as all of a sample's tallies for
-    /// elements as large as a part with distinct keys or strings. So these
-    /// trees, estimated by the largest ratio of tree to text seen, may take
-    /// together at most [`ParallelOptions::budget`]. Where a part's alone
-    /// would take half of that, the rest is read in one go instead, which
-    /// shares the tallies. The first part, read here straight into the
-    /// tallies, is the first estimate. The ranges are summarized a few
-    /// ahead of the parts given out, so that their text is read again
-    /// while it is still cached.
+    /// elements as large as a part with distinct keys or strings. So the
+    /// parts given out and not appended yet, while they are read (their
+    /// trees estimated by the largest ratio of tree to text seen, and at
+    /// least the smallest tree seen) and once read (their trees, waiting
+    /// for the parts before them), may hold together at most
+    /// [`ParallelOptions::budget`], and there are at most a few per thread.
+    /// Where a part's tree alone would take half of the budget, the rest is
+    /// read in one go instead, which shares the tallies. The first part,
+    /// read here straight into the tallies, is the first estimate. The
+    /// ranges are summarized only a few ahead of the first part not
+    /// appended yet, so that their text is read again while it is still
+    /// cached.
     fn coordinate(
         &self,
         open: u64,
@@ -786,13 +812,18 @@ impl Reading<'_> {
         let mut parts: Vec<Part> = Vec::new();
         let mut all_formed = false;
         // Parts given to other threads (the first is read here), and
-        // appended; the trees waiting to be, and the estimated bytes of
-        // those under way.
+        // appended; the trees waiting to be, and the bytes each part given
+        // out holds until it is appended (estimated while it is read).
         let (mut dispatched, mut appended) = (1, 0);
         let mut waiting: BTreeMap<usize, PortableTree> = BTreeMap::new();
-        let mut estimates: BTreeMap<usize, u64> = BTreeMap::new();
-        // The largest ratio of tree to text seen (of parts long enough).
+        let mut held: BTreeMap<usize, u64> = BTreeMap::new();
+        // The largest ratio of tree to text seen (of parts long enough), and
+        // the smallest tree.
         let mut ratio: f64 = 1.0;
+        let mut smallest = 0u64;
+        let parts_ahead = 2 * threads + 2;
+        #[cfg(test)]
+        HELD.with(|h| h.set((0, 0)));
         let mut root: Option<NodeId> = None;
         let mut buffer = vec![0u8; SCAN_PIECE];
         // Jobs given out and not done yet.
@@ -815,10 +846,9 @@ impl Reading<'_> {
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
             // Summaries a few ranges past those formed into parts, and
-            // while parts wait to be given out, not much past the next.
-            let limit = parts.get(dispatched).map_or(u64::MAX, |next| {
-                next.from
-                    .saturating_add((2 * threads + 2) as u64 * self.range)
+            // while parts are not appended, not much past the first.
+            let limit = parts.get(appended).map_or(u64::MAX, |next| {
+                next.from.saturating_add(parts_ahead as u64 * self.range)
             });
             while summarized < n
                 && summarized < formed + 2 * threads + 2
@@ -880,8 +910,8 @@ impl Reading<'_> {
                 appended = 1;
             }
             // The others, elsewhere, as the budget allows.
-            while appended > 0 && dispatched < parts.len() {
-                let estimate = (ratio * part_len(&parts[dispatched]) as f64) as u64;
+            while appended > 0 && dispatched < parts.len() && dispatched < appended + parts_ahead {
+                let estimate = ((ratio * part_len(&parts[dispatched]) as f64) as u64).max(smallest);
                 if estimate.saturating_mul(2) > budget {
                     // Too large to read beside others: the rest in one go,
                     // once the parts before it are appended.
@@ -890,11 +920,11 @@ impl Reading<'_> {
                     }
                     break;
                 }
-                if estimates.values().sum::<u64>() + estimate > budget && !estimates.is_empty() {
+                if held.values().sum::<u64>() + estimate > budget && !held.is_empty() {
                     break;
                 }
                 self.push(Job::Tally(dispatched, parts[dispatched]));
-                estimates.insert(dispatched, estimate);
+                held.insert(dispatched, estimate);
                 pending += 1;
                 dispatched += 1;
             }
@@ -922,11 +952,30 @@ impl Reading<'_> {
                 Ok(Done::Summary(k, Ok(summary))) => summaries[k] = Some(summary),
                 Ok(Done::Split(k, Ok(found))) => splits[k] = Split::Found(found),
                 Ok(Done::Part(i, Some(tree))) => {
-                    estimates.remove(&i);
+                    // The tree holds its bytes until it is appended.
+                    let bytes = tree.heap_size() as u64;
+                    held.insert(i, bytes);
+                    smallest = if smallest == 0 {
+                        bytes
+                    } else {
+                        smallest.min(bytes)
+                    };
                     if part_len(&parts[i]) >= PROBE_LEN {
-                        ratio = ratio.max(tree.heap_size() as f64 / part_len(&parts[i]) as f64);
+                        ratio = ratio.max(bytes as f64 / part_len(&parts[i]) as f64);
                     }
                     waiting.insert(i, tree);
+                    // What the trees waiting hold, and the parts under way.
+                    #[cfg(test)]
+                    HELD.with(|h| {
+                        let parked: u64 = waiting.values().map(|t| t.heap_size() as u64).sum();
+                        let under_way: u64 = held
+                            .iter()
+                            .filter(|(k, _)| !waiting.contains_key(k))
+                            .map(|(_, b)| b)
+                            .sum();
+                        let (peak, largest) = h.get();
+                        h.set((peak.max(parked + under_way), largest.max(bytes)));
+                    });
                     // Append the trees in order.
                     while let Some(tree) = waiting.remove(&appended) {
                         let so_far = root?;
@@ -945,6 +994,7 @@ impl Reading<'_> {
                             return rest(running, Some(into), &parts, appended);
                         }
                         root = Some(into);
+                        held.remove(&appended);
                         appended += 1;
                     }
                 }
@@ -1217,6 +1267,35 @@ mod tests {
         let (result, how) = read_with(&config, bytes.as_bytes(), options);
         assert_eq!(result, expected);
         assert_eq!(how.in_part, 1, "{how:?}");
+    }
+
+    /// A part read slowly does not let the others' trees pile up behind it:
+    /// the parts given out and not appended yet (their trees, once read)
+    /// hold at most the budget, but for one part over it.
+    #[test]
+    fn trees_waiting_for_a_slow_part_stay_within_the_budget() {
+        let config = config(false);
+        // Parts of distinct keys and strings, whose trees take 64 KiB and
+        // more each (the first block of their string tables).
+        let elements: Vec<String> = (0..600)
+            .map(|i| format!(r#"{{"k{i}":"v{i}","n":{i}}}"#))
+            .collect();
+        let bytes = format!("[{}]", elements.join(","));
+        let mut options = options(4, 200);
+        options.budget = 1 << 20;
+        // The second part, the first read elsewhere, is read last.
+        SLOW_PART.with(|s| s.set(Some((1, std::time::Duration::from_millis(300)))));
+        let (result, how) = read_with(&config, bytes.as_bytes(), options);
+        SLOW_PART.with(|s| s.set(None));
+        assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
+        assert_eq!(how.whole, 1);
+        let (peak, largest) = HELD.with(Cell::get);
+        assert!(largest >= 64 << 10, "{largest}");
+        assert!(
+            peak <= options.budget + largest,
+            "{peak} bytes held, over {} + {largest}",
+            options.budget
+        );
     }
 
     /// The fault is caught: merging the parts' trees out of order gives
