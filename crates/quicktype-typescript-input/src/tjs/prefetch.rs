@@ -23,7 +23,9 @@ use crate::tsc::generated::{
     object_flags as of, symbol_flags as sf, syntax_kind as sk, type_flags as tf,
 };
 
-use super::{NO_TRUNCATION, USE_FULLY_QUALIFIED_TYPE};
+use super::{
+    NO_TRUNCATION, NODE_BUILDER_IN_TYPE_ALIAS, NODE_BUILDER_NO_TRUNCATION, USE_FULLY_QUALIFIED_TYPE,
+};
 
 /// Steps after which the walk stops (each is one pipelined batch or two);
 /// whatever it has not reached by then is asked for on demand.
@@ -79,6 +81,14 @@ pub fn warm(s: &Session, files: &[Node], types: &[Rc<Type>], symbols: &[Rc<Symbo
     Ok(())
 }
 
+/// The one index signature of a class or interface declaration, which the
+/// generator asks about: its parameter's name and its type node.
+struct IndexSignature {
+    owner: Node,
+    parameter: Option<Node>,
+    ty: Option<Node>,
+}
+
 struct Walk<'s> {
     s: &'s Session,
     seen_types: HashSet<u64>,
@@ -100,6 +110,31 @@ impl Walk<'_> {
             Some(d) => Ok(!self.s.is_default_library(&d.path)?),
             None => Ok(false),
         }
+    }
+
+    /// The index signature `get_class_definition` reads from the first
+    /// declaration of `sym`, when it has exactly one.
+    fn index_signature(&self, sym: &Symbol) -> Result<Option<IndexSignature>> {
+        let Some(d) = sym.declarations.first() else {
+            return Ok(None);
+        };
+        let owner = self.s.resolve(d)?;
+        let mut signatures = owner
+            .named_list("members")
+            .into_iter()
+            .filter(|m| m.kind() == sk::IndexSignature);
+        let (Some(sig), None) = (signatures.next(), signatures.next()) else {
+            return Ok(None);
+        };
+        let parameter = match sig.named_list("parameters").as_slice() {
+            [p] => p.named("name"),
+            _ => None,
+        };
+        Ok(Some(IndexSignature {
+            ty: sig.named("type"),
+            parameter,
+            owner,
+        }))
     }
 
     /// One step: everything about the newly reached types and symbols, then
@@ -150,10 +185,16 @@ impl Walk<'_> {
                 if t.object_flags & of::ClassOrInterface != 0 {
                     queries.push(Query::BaseTypes(t.id));
                 }
-                if t.object_flags & of::Reference != 0 && t.symbol.is_none() {
-                    // Tuples.
+                if t.object_flags & of::Reference != 0 && t.symbol.is_none()
+                    || t.object_flags & of::Tuple != 0
+                {
+                    // Tuples, whose labels come from the type printed as a node.
                     queries.push(Query::TargetOfType(t.id));
                     queries.push(Query::TypeArguments(t.id));
+                    queries.push(Query::TypeToTypeNode(
+                        t.id,
+                        NODE_BUILDER_NO_TRUNCATION | NODE_BUILDER_IN_TYPE_ALIAS,
+                    ));
                 }
             }
             visited.push(Rc::clone(t));
@@ -167,6 +208,7 @@ impl Walk<'_> {
         let mut next: Vec<Reached> = Vec::new();
         let mut next_symbols: Vec<Rc<Symbol>> = Vec::new();
         let mut with_properties = Vec::new();
+        let mut signatures = Vec::new();
         let mut queries = Vec::new();
         for t in &visited {
             let reach = |v: Vec<Rc<Type>>, member: bool, next: &mut Vec<Reached>| {
@@ -194,6 +236,15 @@ impl Walk<'_> {
             next_symbols.push(Rc::clone(&sym));
             if self.has_walked_properties(t, &sym)? {
                 queries.push(Query::PropertiesOfType(t.id));
+                if let Some(sig) = self.index_signature(&sym)? {
+                    if let Some(name) = &sig.parameter {
+                        queries.push(Query::SymbolAt(name.handle()));
+                    }
+                    if let Some(ty) = &sig.ty {
+                        queries.push(Query::TypeAt(ty.handle()));
+                    }
+                    signatures.push(sig);
+                }
                 if t.object_flags & of::Reference != 0 && t.object_flags & of::ClassOrInterface == 0
                 {
                     // An instantiated generic: its properties are ordered by
@@ -207,6 +258,21 @@ impl Walk<'_> {
 
         let mut queries = Vec::new();
         let mut properties = Vec::new();
+        let mut index_symbols = Vec::new();
+        for sig in &signatures {
+            if let Some(ty) = sig.ty.as_ref().and_then(|n| s.type_at(n).ok().flatten()) {
+                next.push(Reached {
+                    t: ty,
+                    member: false,
+                });
+            }
+            if let Some(name) = &sig.parameter {
+                if let Some(sym) = s.symbol_at(name)? {
+                    queries.push(Query::TypeOfSymbolAt(sym.id, sig.owner.handle()));
+                    index_symbols.push((sym, sig.owner.clone()));
+                }
+            }
+        }
         for t in &with_properties {
             if let Some(target) = s.target_of_type(t).ok().flatten() {
                 next.push(Reached {
@@ -227,6 +293,12 @@ impl Walk<'_> {
         for p in properties {
             if s.knows(&Query::TypeOfSymbol(p.id)) {
                 let t = s.type_of_symbol(&p)?;
+                next.push(Reached { t, member: false });
+            }
+        }
+        for (sym, owner) in index_symbols {
+            if s.knows(&Query::TypeOfSymbolAt(sym.id, owner.handle())) {
+                let t = s.type_of_symbol_at(&sym, &owner)?;
                 next.push(Reached { t, member: false });
             }
         }
@@ -251,7 +323,8 @@ impl Walk<'_> {
         if !from_lib {
             let mut undocumented = true;
             for d in &sym.declarations {
-                undocumented &= self.s.resolve(d)?.js_doc().is_empty();
+                let decl = self.s.resolve(d)?;
+                undocumented &= decl.js_doc().iter().all(|j| !j.has_comment());
             }
             if undocumented {
                 out.push(Query::DocumentationComment(sym.id));

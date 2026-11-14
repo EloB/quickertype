@@ -38,9 +38,9 @@ pub const NO_TRUNCATION: u32 = 1;
 /// `TypeFormatFlags.UseFullyQualifiedType`.
 pub const USE_FULLY_QUALIFIED_TYPE: u32 = 64;
 /// `NodeBuilderFlags.NoTruncation`.
-const NODE_BUILDER_NO_TRUNCATION: u32 = 1;
+pub(super) const NODE_BUILDER_NO_TRUNCATION: u32 = 1;
 /// `NodeBuilderFlags.InTypeAlias`: print the type itself, not its alias.
-const NODE_BUILDER_IN_TYPE_ALIAS: u32 = 8_388_608;
+pub(super) const NODE_BUILDER_IN_TYPE_ALIAS: u32 = 8_388_608;
 
 const NUMERIC_INDEX_PATTERN: &str = "^[0-9]+$";
 const VALIDATION_KEYWORDS: &[&str] = &[

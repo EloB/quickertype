@@ -228,6 +228,8 @@ pub enum Query {
     ConstantValue(String),
     /// `isDefaultLibrary` of a file's metadata, by canonical path.
     IsDefaultLibrary(String),
+    /// `typeToTypeNode(type, undefined, flags)`.
+    TypeToTypeNode(u64, u32),
 }
 
 /// What a [`Query`] returned.
@@ -242,6 +244,7 @@ enum Answer {
     Tags(Vec<JsDocTag>),
     Constant(Option<LiteralValue>),
     Bool(bool),
+    Node(Option<Node>),
 }
 
 /// Most queries a batch merges into one array request.
@@ -450,6 +453,10 @@ impl Session {
                 "getSourceFileMetadata",
                 self.payload(&format!("\"file\":{}", json_string(path))),
             ),
+            Query::TypeToTypeNode(id, f) => (
+                "typeToTypeNode",
+                self.payload(&format!("\"type\":{id},\"flags\":{f}")),
+            ),
         }
     }
 
@@ -526,6 +533,9 @@ impl Session {
                 Some(Json::Number(n)) => n.as_f64().map(LiteralValue::Number),
                 _ => None,
             }),
+            Query::TypeToTypeNode(..) => {
+                Answer::Node(SourceFile::parse(bytes.to_vec()).map(|sf| sf.root()))
+            }
             Query::IsDefaultLibrary(_) => {
                 let v: Option<Json> = parse_json(method, bytes)?;
                 Answer::Bool(
@@ -788,18 +798,29 @@ impl Session {
         Ok(true)
     }
 
-    /// Whether `getDocumentationComment` of `s` is certainly empty. For a
-    /// declaration without JSDoc of its own the compiler
-    /// (`getDocumentationFromDeclaration`, `getJSDocOrTag`) only looks
-    /// further for parameters, type parameters, variables, function-like
-    /// declarations and initializers, overloads, and members of classes or
-    /// interfaces with base types; none of those may be involved.
+    /// Whether `getDocumentationComment` of `s` is certainly empty. The
+    /// compiler (`getDocumentationFromDeclaration`, `getJSDocOrTag`) writes
+    /// the comment text of a declaration's last JSDoc, so a declaration
+    /// whose last JSDoc has no comment (only tags) adds nothing. For a
+    /// declaration without JSDoc of its own it only looks further for
+    /// parameters, type parameters, variables, function-like declarations
+    /// and initializers, overloads, and members of classes or interfaces
+    /// with base types; none of those may be involved.
     fn no_documentation(&self, s: &Symbol) -> Result<bool> {
         let Some(decls) = self.user_declarations(s)? else {
             return Ok(false);
         };
         for decl in decls {
-            if !decl.js_doc().is_empty() || decl.named("initializer").is_some() {
+            if decl.flags() & node_flags::Reparsed != 0 {
+                return Ok(false);
+            }
+            if let Some(last) = decl.js_doc().last() {
+                if last.has_comment() {
+                    return Ok(false);
+                }
+                continue;
+            }
+            if decl.named("initializer").is_some() {
                 return Ok(false);
             }
             match decl.kind() {
@@ -991,11 +1012,10 @@ impl Session {
 
     /// `typeToTypeNode(type, undefined, flags)` (`NodeBuilderFlags`), decoded.
     pub fn type_to_type_node(&self, t: &Type, flags: u32) -> Result<Option<Node>> {
-        let bytes = self.raw(
-            "typeToTypeNode",
-            &json!({ "snapshot": self.snapshot, "project": self.project, "type": t.id, "flags": flags }),
-        )?;
-        Ok(SourceFile::parse(bytes).map(|sf| sf.root()))
+        match self.answer(Query::TypeToTypeNode(t.id, flags))? {
+            Answer::Node(n) => Ok(n),
+            _ => Ok(None),
+        }
     }
 
     /// `getJsDocTags` of a symbol.
