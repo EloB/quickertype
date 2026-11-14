@@ -309,8 +309,40 @@ impl<T: Clone + Eq + Hash> Graph<T> {
     ) -> Result<()> {
         let mut visited = vec![false; self.size()];
         let root = *defined(self.index_by_node.get(root))?;
-        let mut frames: Vec<(usize, usize)> = Vec::new();
+        self.dfs_from(root, &mut visited, pre_order, &mut process)
+    }
 
+    /// `roots.forEach(r => dfsTraversal(r, preOrder, process))` for a
+    /// `process` that does nothing when it is called again for a node. A
+    /// node that an earlier root's traversal reached has been processed, and
+    /// so has every node it reaches (that traversal went through them before
+    /// it ended), so the later traversals stop there: the calls that have an
+    /// effect, and their order, are the same, without walking the shared
+    /// part of the graph once per root.
+    pub fn dfs_traversal_from_roots(
+        &self,
+        roots: &[T],
+        pre_order: bool,
+        mut process: impl FnMut(&T) -> Result<()>,
+    ) -> Result<()> {
+        let mut visited = vec![false; self.size()];
+        for root in roots {
+            let root = *defined(self.index_by_node.get(root))?;
+            if !visited[root] {
+                self.dfs_from(root, &mut visited, pre_order, &mut process)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn dfs_from(
+        &self,
+        root: usize,
+        visited: &mut [bool],
+        pre_order: bool,
+        process: &mut impl FnMut(&T) -> Result<()>,
+    ) -> Result<()> {
+        let mut frames: Vec<(usize, usize)> = Vec::new();
         visited[root] = true;
         if pre_order {
             process(&self.nodes[root])?;
@@ -516,6 +548,39 @@ mod tests {
         })
         .unwrap();
         assert_eq!(post, vec![3, 1, 2, 0]);
+    }
+
+    #[test]
+    fn traversals_from_several_roots_share_what_they_reach() {
+        // 0 and 4 are roots; both reach 2, and through it 3 and 5.
+        let g = Graph::with_edges(
+            vec![0, 1, 2, 3, 4, 5],
+            false,
+            vec![vec![1, 2], vec![3], vec![3, 5], vec![], vec![5, 2], vec![]],
+        )
+        .unwrap();
+        let roots = g.find_roots();
+        assert_eq!(roots, vec![0, 4]);
+        for pre_order in [true, false] {
+            // What one traversal per root does with an idempotent process.
+            let mut expected = Vec::new();
+            for root in &roots {
+                g.dfs_traversal(root, pre_order, |n| {
+                    if !expected.contains(n) {
+                        expected.push(*n);
+                    }
+                    Ok(())
+                })
+                .unwrap();
+            }
+            let mut calls = Vec::new();
+            g.dfs_traversal_from_roots(&roots, pre_order, |n| {
+                calls.push(*n);
+                Ok(())
+            })
+            .unwrap();
+            assert_eq!(calls, expected, "pre_order {pre_order}");
+        }
     }
 
     #[test]
