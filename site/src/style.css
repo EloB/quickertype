@@ -262,13 +262,16 @@ body[data-panel="inline"] .panes {
     grid-template-columns: minmax(0, 5fr) minmax(0, 8fr) var(--inspector);
 }
 
-/* A file too large for the editor has nothing to edit: the output takes more of the room. */
-body[data-input="large"] .panes {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-}
+/* A file too large for the editor has nothing to edit: the output takes more of the room
+   (beside the input: phones show one pane at a time, see below). */
+@media (min-width: 900px) {
+    body[data-input="large"] .panes {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
 
-body[data-input="large"][data-panel="inline"] .panes {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) var(--inspector);
+    body[data-input="large"][data-panel="inline"] .panes {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) var(--inspector);
+    }
 }
 
 /* Phones only (see below): which pane is shown. */

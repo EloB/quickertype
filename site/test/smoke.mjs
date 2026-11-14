@@ -48,7 +48,8 @@
 // an "i" open with Enter and close with Escape. Phones show one pane at a
 // time, the output first, its code in the first screen, the input a tap
 // away, and nothing scrolls sideways with the details, the options or the
-// input shown. And three things that once went wrong: the code
+// input shown; a file too large for the editor keeps one pane at a time
+// there, as wide as the page. And three things that once went wrong: the code
 // shown after a slow run during which the engine was switched; a
 // measurement asked for while a run is under way; and a worker failing
 // after it loaded.
@@ -2320,6 +2321,31 @@ try {
         if (width === 390) await page.screenshot("layout-390-input.png");
         console.log(`ok: ${width} px: the output first (its code from ${phone.code} px down), the input a tap away (from ${inputView.input} px); the options a modal drawer; nothing scrolls sideways`);
     }
+
+    // A file too large for the editor on a phone: still one pane at a time,
+    // as wide as the page, the output's and the input's; nothing scrolls sideways.
+    await upload(sampleFiles["big-senators.json"]);
+    for (const view of ["output", "input"]) {
+        await page.evaluate(`document.querySelector('input[name=view][value=${view}]').click()`);
+        const large = await page.evaluate(`(() => {
+            const panes = document.querySelector(".panes");
+            return {
+                input: document.body.dataset.input,
+                columns: getComputedStyle(panes).gridTemplateColumns.split(" ").length,
+                shown: Math.round(document.getElementById("${view}-pane").getBoundingClientRect().width),
+                panes: Math.round(panes.getBoundingClientRect().width),
+                other: document.getElementById("${view === "input" ? "output" : "input"}-pane").getClientRects().length,
+            };
+        })()`);
+        assert.deepEqual(
+            { ...large, shown: large.shown === large.panes },
+            { input: "large", columns: 1, shown: true, panes: 390, other: 0 },
+            `390 px, a large file: the ${view} (${large.shown} px wide)`,
+        );
+        await noSidewaysScroll(390, `390 px, a large file, the ${view}`);
+        await page.screenshot(`layout-390-large-${view}.png`);
+    }
+    console.log("ok: 390 px, a file too large for the editor: one pane at a time, the output's and the input's as wide as the page; nothing scrolls sideways");
 
     const missing = requests.filter(([status]) => status !== 200);
     assert.deepEqual(missing, [], "requests that failed");
