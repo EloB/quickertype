@@ -443,6 +443,88 @@ the DFAs saved 5.5 KB of the shipped module, 60 bytes gzipped, and
 loads them as fast; unminimized, the module was 5,445,167 bytes, gzip
 1,929,993.
 
+### The second phase: strings that change nothing, and keys by id
+
+After the tallies' follow-ups were merged, three more of the profile's
+items were done (PROFILE-RECORDS.md's [Status](PROFILE-RECORDS.md#status)
+has each one's gain and how it was checked):
+
+- a place whose string types are unrestricted with and without enum
+  inference counts no more cases, and the reader neither classifies nor
+  interns a string there that cannot be a URI (item 2), in the CLI and
+  in the walk over a compressed form alike;
+- a string's UTF-16 length is measured only where its UTF-8 length
+  leaves it open (item 3c);
+- reading text samples into running tallies counts the `JSON.parse`
+  reader's keys by their key-table id, not by their text (item 8; the
+  Rust API's path).
+
+Item 5 (comparing a string with its place's last case before hashing
+it) was tried and dropped: the follow-ups' case slots already count a
+recurring case without hashing it, and the comparison cost more on
+inputs whose places vary than it saved on the records.
+
+**The CLI**, interleaved with main (`397dbbbf2`, with the first phase
+and the follow-ups), `-l ts -o <file>`, medians of 21 runs (9 at 1M, 25
+for the generated input, 100 for pokedex), wall / CPU ms and peak RSS,
+load average 5:
+
+| Input | Main | This branch | Change |
+|---|---:|---:|---:|
+| 100k records (26.8 MB) | 33.7 / 32.5 ms, 9.7 MiB | 30.5 / 29.2 ms, 6.0 MiB | −10% |
+| 1M records (267 MB) | 294 / 293 ms, 43.1 MiB | 262 / 260 ms, 6.0 MiB | −11% |
+| 100k records, pretty-printed (30.3 MB) | 35.8 / 34.3 ms, 9.8 MiB | 32.7 / 31.3 ms, 6.0 MiB | −9% |
+| 20k generated articles (23.4 MB) | 69.2 / 67.7 ms, 19.5 MiB | 61.5 / 60.2 ms, 19.5 MiB | −11% |
+| generated (43.7 MB, `cargo xtask bench`'s) | 195 / 193 ms, 62.3 MiB | 191 / 189 ms, 62.2 MiB | −2% |
+| pokedex (82 KB) | 5.5 / 4.4 ms, 6.9 MiB | 5.6 / 4.4 ms, 6.9 MiB | 0 |
+
+The records' `comment` field and the articles' `body` are unrestricted
+from their first long string on, and most of what is left of reading
+them was counting and interning the short ones after it: at 1M records
+the peak RSS falls from 43 to 6 MiB, which no longer grows with the
+input. The generated input's places keep their cases, and gain only the
+UTF-16 bound (item 3c).
+
+**Text samples** (`JSON.parse` semantics) read into running tallies, as
+the Rust API reads `JsonSample::String`: the in-process benchmark's
+parse phase (112 runs of 14 inputs, `--parse-only -n 20`, medians of
+three interleaved rounds) 29.3 → 28.2 ms; a whole iteration 99.4 → 98.2
+ms. On the large inputs (a scratch benchmark of `add_source_sync`, fat
+LTO, mimalloc, medians of 9 in four interleaved rounds), item 8 alone:
+100k records 30.0 → 27.8 ms, generated 43.7 MB 177–181 → 170–176 ms,
+the text-heavy input 19.9–21.1 → 19.2–19.7 ms.
+
+**The WebAssembly engine.** Warm, headless Chrome (157), `compare.mjs
+--browser --again`, medians of 41, ms; reading + generating, then the
+second run's generating ("again", from the tallies kept with the form);
+the ranges are of three runs of the benchmark, each with the variants
+interleaved, load average 2 to 10 (the 2 MB input was in one of them):
+
+| Input | Main | This branch | TypeScript |
+|---|---:|---:|---:|
+| generated (2 MB) | 9.90 + 7.20 = 17.1; again 3.30 | 9.90 + 7.20 = 17.1; again 3.30 | 22.4 + 21.0 = 43.3; again 14.8 |
+| generated (20 MB) | 96.6–97.8 + 48.7–48.9 = 145–147; again 13.4–13.6 | 97.1–97.9 + 48.8–49.2 = 146–147; again 13.5 | 240–248 + 144–154 = 394–399; again 147–153 |
+| 100k records (27 MB) | 50.9–51.6 + 7.90–8.00 = 58.9–59.5; again 1.60 | 51.0–51.6 + 6.50 = 57.5–58.1; again 0.40 | 77.7–81.5 + 81.8–88.7 = 163–166; again 72.3–72.9 |
+
+Cold (a fresh browser after the page compiled the module, median of 7):
+generated 20 MB 130 + 89.4 = 219 on main, 131 + 88.9 = 220 on this
+branch (TypeScript 266 + 195 = 465); records 70.7 + 29.1 = 99.8 and
+71.2 + 26.5 = 98.0 (TypeScript 87.0 + 101 = 188).
+
+Reading is unchanged: the engine reads into compressed forms, which none
+of these items touch. Generating the records gains 1.3–1.5 ms, and a
+second run on them 1.2 ms: the `comment` field's 10,671 short comments
+are no longer counted, and so no longer replayed into the union
+accumulator. The tallies kept with the records' form shrink from 310,511
+to 1,052 bytes (what the engine holds after a run: 12,190,139 →
+11,880,680 bytes); the generated inputs' are unchanged. The generated 20
+MB input's first run takes what it took on main: neither item recovers
+the 1.4–2.6 ms the tallies' follow-ups added there. (Item 8's first
+version slowed it by 2 ms more: `add_key` got a second caller and was no
+longer inlined into the walk; it is now inlined always.) The module the
+package ships is 5,448,343 bytes against main's 5,448,313 (gzip
+1,934,872 against 1,934,855; brotli 1,271,716 against 1,271,948).
+
 To reproduce: build main in a second work tree (or copy its
 `target/release/quicktype`), then
 
