@@ -47,7 +47,7 @@
 //! which routes the engine's `console.log` output to the run that printed
 //! it.
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", test))]
 mod allocator;
 pub mod assemble;
 pub mod js;

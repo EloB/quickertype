@@ -1181,12 +1181,16 @@ and files the result in a bin (sorted trees from 256 bytes up), and the
 next allocation takes it apart again.
 
 The engine's allocator (`crates/quicktype-wasm/src/allocator.rs`) now
-takes blocks of up to 256 bytes from slabs. A slab is 64 KiB from dlmalloc,
-aligned to 64 KiB and cut into blocks of one size, a multiple of 8. A freed
+takes blocks of up to 256 bytes from slabs. A slab is 16 KiB from dlmalloc,
+aligned to 16 KiB and cut into blocks of one size, a multiple of 8. A freed
 block goes on its slab's free list, and the next allocation of that size
-takes it from there. An empty slab goes to a pool that every size takes
-from. The pool keeps the 32 lowest-addressed slabs and gives the rest back
-to dlmalloc. Larger blocks still go to dlmalloc.
+takes it from there. When a size's current slab fills up, the fullest of
+the next 8 on its list takes over. New blocks then go where blocks are
+already in use, and the emptier slabs can drain. An empty slab goes to a
+pool that every size takes from, unless it is its size's last slab. The
+pool keeps the 32 lowest-addressed slabs and gives the rest back to
+dlmalloc. Larger blocks still go to dlmalloc, and a reallocation between
+two sizes above 256 bytes is dlmalloc's own, so it can grow in place.
 
 Warm runs in Chrome, two builds (`--trace`) interleaved in one
 cross-origin isolated page. Each figure is a median of 61 runs (21 for 2
@@ -1194,45 +1198,43 @@ MB, 11 for 20 MB and the records), in ms, with the range over two pages:
 
 | Input | dlmalloc | Slabs | Change |
 |---|---:|---:|---:|
-| tiny, `{"a":1}` | 0.63–0.66 | 0.61–0.63 | −4 to −5% |
-| kitchen-sink (1 KB) | 1.36–1.37 | 1.22–1.25 | −8 to −10% |
-| spotify-album (3.5 KB) | 1.54–1.55 | 1.37–1.38 | −11% |
-| pokedex (82 KB) | 2.07–2.10 | 1.84–1.87 | −11% |
-| github-events (82 KB) | 5.28–5.39 | 4.42–4.45 | −16 to −18% |
-| reddit (133 KB) | 2.86–2.88 | 2.48–2.54 | −12 to −14% |
-| us-senators (155 KB) | 3.17–3.18 | 2.80–2.83 | −11 to −12% |
-| generated (2 MB) | 18.2–19.7 | 17.3–17.7 | −5 to −10% |
-| generated (20 MB) | 162.8 | 158.8–160.1 | −2% |
-| 27 MB records | 61.6–61.9 | 62.2–62.8 | +1% |
+| tiny, `{"a":1}` | 0.575–0.585 | 0.540–0.560 | −4 to −6% |
+| kitchen-sink (1 KB) | 1.31 | 1.15 | −12% |
+| spotify-album (3.5 KB) | 1.47 | 1.26–1.30 | −12 to −14% |
+| pokedex (82 KB) | 2.00–2.01 | 1.79 | −10 to −11% |
+| github-events (82 KB) | 5.23–5.24 | 4.30–4.32 | −17 to −18% |
+| reddit (133 KB) | 2.83–2.86 | 2.40–2.44 | −14 to −16% |
+| us-senators (155 KB) | 3.11–3.14 | 2.68–2.73 | −13 to −14% |
+| generated (2 MB) | 18.06 | 16.99–17.08 | −6% |
+| generated (20 MB) | 160.1–160.2 | 154.5–155.2 | −3% |
+| 27 MB records | 61.6–61.8 | 61.5–61.6 | 0% |
 
 The gain is in the passes after reading. Reading allocates little. Pokedex,
 phase by phase, in ms, against native code (mimalloc):
 
 | Phase | dlmalloc | Slabs | Native |
 |---|---:|---:|---:|
-| read: record + commit | 0.345–0.350 | 0.345 | 0.216 |
-| tally the form | 0.240–0.245 | 0.225 | 0.135 |
-| infer | 0.160–0.165 | 0.135 | 0.073 |
-| rewrites | 0.320–0.330 | 0.270–0.275 | 0.125 |
-| gather names | 0.075–0.080 | 0.070 | 0.023 |
-| render | 0.390–0.395 | 0.320 | 0.158 |
-| rest of the run (mostly dropping the type graph) | 0.045 | 0.020 | – |
+| read: record + commit | 0.345 | 0.340–0.345 | 0.216 |
+| tally the form | 0.235–0.240 | 0.215 | 0.135 |
+| infer | 0.155–0.160 | 0.130 | 0.073 |
+| rewrites | 0.310–0.315 | 0.265–0.270 | 0.125 |
+| gather names | 0.070–0.075 | 0.065 | 0.023 |
+| render | 0.385 | 0.310–0.315 | 0.158 |
+| rest of the run (mostly dropping the type graph) | 0.045 | 0.015 | – |
 
-On github-events, the rewrites took 1.35 ms against 1.155–1.165 ms,
-gather names 0.710–0.715 against 0.565, and render 1.485–1.500 against
-1.155–1.170. Reading the 27 MB records, which is most of their run, took
-about 1% longer in both pages (`read: commit`, 22.5–22.6 ms against 22.8
-ms).
+On github-events, the rewrites took 1.335 ms against 1.135–1.140 ms,
+gather names 0.705–0.710 against 0.565, and render 1.465–1.480 against
+1.145–1.150.
 
 Whole runs, release builds, TypeScript in the same page (`compare.mjs
 --browser`, whose timer has 100 µs steps; two pages):
 
 | Input | dlmalloc | Slabs | TypeScript |
 |---|---:|---:|---:|
-| pokedex | 2.30–2.40 | 2.00–2.20 | 4.90–5.60 |
-| generated (2 MB) | 17.8–18.4 | 17.0–17.5 | 47.8–49.8 |
-| generated (20 MB) | 157–163 | 153–158 | 435–454 |
-| 27 MB records | 59.8–61.6 | 60.0–61.4 | 174–183 |
+| pokedex | 2.30–2.40 | 2.10 | 5.30–5.40 |
+| generated (2 MB) | 17.8–18.0 | 16.8–17.1 | 47.9–49.7 |
+| generated (20 MB) | 156–160 | 151–155 | 433–451 |
+| 27 MB records | 60.2–60.7 | 59.9–60.5 | 179–182 |
 
 **Memory.** The engine keeps forms and tallies between runs, and its
 memory never shrinks. An allocator that holds on to memory, or scatters
@@ -1247,22 +1249,57 @@ instance in the same page.
 | Build | High-water against dlmalloc | Highest |
 |---|---|---:|
 | dlmalloc | 1 | 3,361 pages (210 MiB) |
-| Slabs (16 pairs) | 0.72–1.36, median 1.00 | 3,763 pages (235 MiB) |
+| Slabs (16 pairs) | 0.90–1.00, median 1.00 | 3,341 pages (209 MiB) |
+| The first slab allocator, 64 KiB slabs (16 pairs) | 0.72–1.36, median 1.00 | 3,763 pages (235 MiB) |
 | Free lists in front of dlmalloc (dropped, below; 8 pairs) | 1.00–1.69, median 1.5 | 4,041 pages (253 MiB) |
 
 The 16 pairs are 4 seeds, with no inputs or 4 kept, for builds with and
-without `--trace`. The figures jump because the memory grows by a quarter
-at a time (see [Large outputs](#large-outputs)), and a small change in
-layout decides whether one more step is taken. With dlmalloc alone, a build
-with `--heap-stats` ended 1.32 times as high as a build without it on one
-sequence. After a single small run, both allocators hold the same memory
-(509 and 512 pages). Blocks of 8 bytes take 8 bytes in a slab, against 16
-in dlmalloc. After the 20 MB input in the phase runs above, the slab build
-held 4,036 and 2,864 pages, against dlmalloc's 4,127 and 3,616.
+without `--trace`.
 
-The module grows by 14,262 bytes, from 5,448,495 to 5,462,757. Compressed,
-it shrinks: 1,935,299 to 1,934,803 bytes with `gzip -9`, and 1,272,256 to
-1,271,316 with `brotli -q 11`.
+The figures jump because the memory grows by a quarter at a time (see
+[Large outputs](#large-outputs)), and a small change in layout decides
+whether one more step is taken. With dlmalloc alone, a build with
+`--heap-stats` ended 1.32 times as high as a build without it on one
+sequence. Between runs, the slabs held 1.0–1.5 MiB (64–96 slabs). Blocks
+of 8 bytes take 8 bytes in a slab, against 16 in dlmalloc.
+
+After the first run, on `{"a":1}`, dlmalloc and the slabs both hold 509
+pages (the first slab allocator, with 64 KiB slabs, held 512). The run uses
+27 of the 32 sizes, and each size takes a slab the first time: 432 KiB of
+slabs for 1.6 KB of blocks still in use, against 1.7 MiB with 64 KiB slabs.
+
+The module grows by 14,950 bytes, from 5,448,495 to 5,463,445. Compressed,
+it is about the same size: 1,935,299 to 1,935,162 bytes with `gzip -9`, and
+1,272,256 to 1,273,210 with `brotli -q 11`.
+
+**Two patterns, measured alone.** These are loops built into test engines
+(not the shipped one), timed from JavaScript, medians of 9 rounds over two
+pages, in ms:
+
+| Loop | dlmalloc | First slabs | Slabs |
+|---|---:|---:|---:|
+| allocate and free one 232-byte block, 1,000,000 times | 6.9 | 14.9–18.7 | 4.0–4.1 |
+| the same, 248 bytes | 21.8 | 15.0–18.9 | 4.2 |
+| the same, 40 bytes | 10.2–10.3 | 4.0–18.7 | 4.0 |
+| grow a `String` to 4,096 bytes and a `Vec<u32>` to 1,024, 2,000 times | 6.8–6.9 | 7.2–7.4 | 7.1–7.2 |
+| the same to 256 bytes, 20,000 times | 6.8 | 7.4–7.9 | 6.6 |
+| the same to 32 bytes, 50,000 times | 4.6 | 3.9 | 3.8–3.9 |
+
+The first slab allocator (the one measured at first, with 64 KiB slabs)
+gave a size's last slab to the pool as soon as it was empty. Allocating
+and freeing one block over and over then took both slow paths every time:
+the slab went to the pool and came back with a new header. A size now
+keeps its last slab. Growing a string reallocates it at every doubling:
+up to 256 bytes each step is a new block and a copy, and the step past
+256 bytes moves it to dlmalloc. That costs about 4% when a string grows to
+4 KB, and saves 3% when it grows to 256 bytes and 17% when it grows to
+32.
+
+The slab logic also builds for the host, where its tests run over the
+host's allocator (`cargo test -p quicktype-wasm`). The tests cover pool
+overflow, reallocation across sizes and to and from dlmalloc, an empty
+slab serving another size, the fullest slab becoming current, and 30,000
+random allocations, frees and reallocations checked against a model.
 
 Tried and dropped:
 
@@ -1270,11 +1307,12 @@ Tried and dropped:
   carved from 64 KiB blocks and never given back. This was as fast as the
   slabs, but a block freed at one size could serve no other, and over 200
   mixed runs the memory grew up to 1.69 times as far.
+- **64 KiB slabs**, as at first. They were as fast, but held 1.7 MiB after
+  a tiny run, and over 200 runs ended 0.84–1.37 times as high as dlmalloc.
 - **Other limits for small blocks**: 128, 512 and 1,024 bytes were within
   1–2% of 256.
-- **Other pools**: keeping each size's last empty slab plus 16 more, or
-  giving every empty slab back to dlmalloc at once. They were as fast, and
-  no better on memory.
+- **Other pools**: no pool at all, or 16 empty slabs taken last in, first
+  out. They were as fast, and no better on memory.
 - **talc 5.1** (`WasmDynamicTalc`, under the same growing ahead). It was
   no faster on small inputs, as it had been no faster on large ones: pokedex
   2.21 ms against dlmalloc's 2.20, github-events 5.55 against 5.47.
