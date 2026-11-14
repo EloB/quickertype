@@ -805,6 +805,100 @@ case sets) could save at most 2.1% on the generated input and nothing on
 the records, less than the spread of these measurements, so the hasher
 was left as it is.
 
+### The tallies review's fixes
+
+A review of inference from tallies in the engine found that errors in
+the walk over a compressed form were taken for forms it declines (and
+lost), that nothing showed the walk was taken at all, that the walk
+repeated the `TallyBuilder`'s handlers and only it skipped absorbed string
+attributes by bit, that every run walked the form again though it had not
+changed, that the walk allocated arrays sized to the whole form, and that
+it recognized the same URI again at every occurrence. All of that is
+fixed (STREAMING-INFERENCE.md, "Tallies of a compressed form"); output is
+byte-identical: `cargo xtask parity` (11,177 of 11,177), the streaming
+harness on every path (300,000 seeds, 0 differences, the walk's tallies
+checked to be used), the differential suite (19,078 scenarios, 0
+different), and every benchmark below checks that the outputs are the
+same.
+
+**Machine and method.** As above (M2 Max, Chrome 157 headless, Node.js
+24.16.0), "before" being main at `84e0f4e0a`, "after" this branch, in one
+page or process, interleaved; the machine was shared with other work (load
+average 4 to 30), so differences of a millisecond or two are within the
+spread. `compare.mjs --again` also runs each input a second time.
+
+**A second run on the same input** (another language, other options:
+what the playground does on every change) uses the tallies the first run
+kept with the form instead of walking it again. Warm, headless Chrome,
+medians of 31, ms; reading + generating = total, then the second run's
+generating:
+
+| Input | Before | After | TypeScript |
+|---|---:|---:|---:|
+| generated (20 MB) | 99.2 + 47.5 = 147; again 46.9 | 99.4 + 49.6 = 149; again **13.9** | 258 + 148 = 407; again 157 |
+| 100k records (27 MB) | 56.2 + 8.30 = 64.5; again 8.00 | 55.9 + 7.90 = 63.8; again **1.60** | 81.0 + 88.3 = 170; again 74.1 |
+
+First runs are as before. The generated input's first run takes about
+1.5 ms more to generate (3%; the first rounds of the change put it at 1.3
+to 2.2 ms, measured at each commit of the branch: it comes with the
+handlers that reading and the walk now share, and no layout of the case
+slots tried, from 1,024 slots to a position per string, removed it), and
+the records' about 0.5 ms less. Cold (a fresh browser after the page
+compiled the module, median of 7): generated 133 + 89.4 = 222 before,
+131 + 89.6 = 220 after (TypeScript 263 + 192 = 453); records 73.7 + 37.9
+= 112 before, 73.4 + 36.4 = 110 after (TypeScript 85.2 + 101 = 188).
+
+Natively (inference over the compressed form of one text sample,
+`add_types_sync` repeated, thin LTO, median of 20), the second inference
+from kept tallies against walking again: 27 MB records 5.16 -> 1.12 ms,
+generated 20 MB 34.3 -> 5.1 ms. The walk is most of inference from a
+compressed form.
+
+**Memory.** What the engine holds for an input (`jsonHeld`), after
+`addSource` and after a run, which keeps its tallies with the form (the
+limit on what the forms hold counts them, and evicting a form frees
+them):
+
+| Input | After `addSource`, before / after | After a run, before / after |
+|---|---:|---:|
+| pokedex (82 KB) | 1,676,020 / 1,676,028 | 1,676,020 / 1,713,100 (+2.2%) |
+| generated (2 MB) | 4,064,024 / 4,064,032 | 4,064,024 / 5,305,629 (+31%) |
+| generated (20 MB) | 29,165,128 / 29,165,136 | 29,165,128 / 38,323,341 (+31%) |
+| 100k records (27 MB) | 11,879,620 / 11,879,628 | 11,879,620 / 12,296,597 (+3.5%) |
+
+A form is 8 bytes larger (the cell for the kept tallies). The generated
+inputs keep the most: a place per key of a map of random keys, and many
+distinct strings. Under a 16 MiB limit, 96 inputs of a 1 MB sample, each
+run once, leave the engine's memory where they left it before (874
+pages), with fewer forms kept (2.86 MiB each with their tallies, 2.19
+without).
+
+The walk's own allocations no longer follow the size of the form: it
+allocated a class (`__proto__` or not) and a case position per string
+of the form and a bit per container on every run; now a flag of the
+string table answers the first, 1,024 case slots in the tallies the
+second, and the bits grow to the largest index reached. Generated 20 MB
+(181,627 strings, 222,715 containers): 1.59 MiB -> 39 KiB; records
+(10,681 strings): 108 KiB -> 24 KiB. The peak of a run is unchanged: it
+is reached while the types are inferred, after the walk.
+
+**URIs that recur** are recognized once while the walk keeps their kind
+and attributes (256 slots by string index); natively, inference over
+100k records with two URIs each, from 53 distinct (11.6 MB): 108.6 ->
+6.8 ms. The generated inputs' URIs are all distinct, and gain nothing.
+
+**The CLI** shares the handlers, and with them the bits that skip
+absorbed string attributes and the case slots (it hashed every case).
+`-l ts -o /dev/null`, CPU time (user + system) medians, interleaved,
+output identical, at the commit that shares them (load average about
+7): the 27 MB records 50.2 -> 46.6 ms (31 runs each), generated 40 MB
+206.8 -> 200.8 ms (21 runs each); peak RSS the same (10.5 -> 10.6 MiB,
+62.2 -> 61.0 MiB). The branch's last build, at a load of 20 to 30: 59.8
+-> 55.9 ms and 214.0 -> 203.5 ms.
+
+The module is 5,264,813 bytes (1,913,611 gzipped with `-9`), 5.7 KB
+more.
+
 ### Large outputs
 
 An 8-million-line PHP file from the differential fuzzer took 726 s on
@@ -856,6 +950,7 @@ cargo xtask bench --baseline ../qt-before/target/release/quicktype --corpus
 node --expose-gc npm/quicktype-core/test/bench/compare.mjs             # Node, warm
 node npm/quicktype-core/test/bench/compare.mjs --browser               # headless Chrome
 node npm/quicktype-core/test/bench/compare.mjs --browser --cold 5      # first runs
+node npm/quicktype-core/test/bench/compare.mjs --browser --again       # + a second run on each input
 node npm/quicktype-core/test/bench/compare.mjs --variant main=../main-pkg --variant new=npm/quicktype-core
 (cd npm/quicktype-core && node script/build.mjs --heap-stats)        # + __heapBytes, __heapPeak
 

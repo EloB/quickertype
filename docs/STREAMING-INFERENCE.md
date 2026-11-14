@@ -614,3 +614,12 @@ identically, 77 skipped for a `$ref` cycle through a union), with
 159,927 sources failing identically; 544 s on 12 threads. (The harness
 then counted a whole run once per way, and reported 199,846 runs and
 16,270 failures; it counts each run once now.)
+
+After the follow-up review's fixes (errors in the walk raised, the walk
+checked to be taken, one set of handlers for reading and the walk, kept
+tallies): seeds 0 to 299,999 with `--path all` found 0 differences in
+1,800,000 graphs (two flag combinations per seed, each for the three
+ways; on the engine's path the second from the kept tallies) and 29,966
+whole runs, each on the three ways (2,413 failed identically, 34 skipped
+for a `$ref` cycle through a union), with 48,050 sources failing
+identically; 222 s on 10 threads.
