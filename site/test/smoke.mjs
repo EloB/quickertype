@@ -127,20 +127,27 @@ import {
     benchmarkWarnings,
     benchmarksFile,
     benchmarksPageHtml,
+    bigCells,
     bigInputsFile,
+    browserFile,
     checkBenchmarks,
+    checkBigInputs,
+    checkBrowser,
     formatMiB,
     formatMs as formatBenchMs,
+    inputSize,
     isTypical,
     links as benchLinks,
+    measures,
     named as benchNamed,
     readBenchmarks,
+    seconds as bigSeconds,
     speedFacts,
     speedupText,
     times as speedup,
 } from "../benchmarks.mjs";
 import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
-import { chartProblems, chartUrl, readmeFile } from "../readme-charts.mjs";
+import { chartProblems, chartUrl, readmeFile, readmeRows } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
 
@@ -396,6 +403,7 @@ const speedNow = speedFacts(benchmarkData.bench);
     broken("no corpus run", (d) => (d.corpus = null));
     broken("a short commit", (d) => (d.commits.quicktype = "c39af7d"));
     broken("a benchmark the page names, missing", (d) => (d.cli = d.cli.filter((r) => r.name !== benchNamed.pokedex)));
+    broken("a benchmark the landing page shows, missing", (d) => (d.cli = d.cli.filter((r) => r.name !== benchNamed.githubEvents)), /github-events/);
     broken("no CPU (the page names it)", (d) => delete d.machine.cpu, /machine\.cpu/);
     broken(
         "an unknown quickertype commit without a reason",
@@ -422,7 +430,38 @@ const speedNow = speedFacts(benchmarkData.bench);
     );
     broken("quickertype slower on the corpus", (d) => (d.corpus.results.rust.wall_s = d.corpus.results.typescript.wall_s * 1.1), /whole corpus/);
     broken("quickertype's engine slower natively", (d) => (d.in_process.results.rust.total_ms = d.in_process.results.typescript.total_ms * 1.1), /natively/);
-    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused`);
+    // The other two files: refused with a message, never a TypeError.
+    const refused = (what, check, file, data, why = /./) =>
+        assert.throws(
+            () => check(data),
+            (e) => !(e instanceof TypeError) && e.message.startsWith(`site/data/${file}: `) && why.test(e.message),
+            `the build accepted ${what}`,
+        );
+    const big = (change) => {
+        const data = structuredClone(benchmarkData.big);
+        change(data);
+        return data;
+    };
+    refused("a big input that is not an object", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0] = null)));
+    refused("a big input without bytes", checkBigInputs, "big-inputs.json", big((d) => delete d.measured.inputs[0].bytes), /bytes/);
+    refused("a big input with a size of its own", checkBigInputs, "big-inputs.json", big((d) => (d.measured.inputs[0].size = "40 MB")), /derive it from bytes/);
+    const browserData = (change) => {
+        const data = structuredClone(benchmarkData.browser);
+        change(data);
+        return data;
+    };
+    refused("a browser row that is not an object", checkBrowser, "browser.json", browserData((d) => (d.warm = [null])), /warm\[0\]/);
+    refused("a cold row that is not an object", checkBrowser, "browser.json", browserData((d) => (d.cold_node.inputs = [null])), /cold_node\.inputs\[0\]/);
+    refused(
+        "quickertype slower in the browser",
+        checkBrowser,
+        "browser.json",
+        browserData((d) => (d.warm[0].quickertype.total_ms = d.warm[0].quicktype.total_ms * 1.1)),
+        /says it is faster/,
+    );
+    assert.equal(inputSize(43_688_373), "43.7 MB");
+    assert.equal(inputSize(3_010_396_357), "3.01 GB");
+    console.log(`ok: benchmark data checked (${benchmarkData.bench.cli.length} CLI benchmarks, ${benchmarkData.bench.date}); broken data, and data that makes a summary claim false, is refused (big-inputs.json and browser.json too)`);
 
     // Test data the page must show truthfully, derived from the real file:
     // the page's text for it (rendered as the build does), and what the
@@ -453,11 +492,23 @@ const speedNow = speedFacts(benchmarkData.bench);
     const real = pageFor(() => {});
     assert.equal(real.h2, `Every CLI run, ${speedNow.upTo}× to ${speedup(speedNow.lowest)} faster`);
     assert.deepEqual([real.slower, real.warnings], [[], []], "the real data: slower benchmarks, warnings");
-    assert.match(real.tile, /^faster per CLI run at most \(--version, start-up alone\); about \d+× on typical files$/);
+    // The tile names the benchmark with the largest speed-up, and what it measures.
+    assert.equal(real.tile, `faster per CLI run at most (${speedNow.upToRow.name}, ${measures(speedNow.upToRow)}); about ${speedNow.typical}× on typical files`);
+    const measured = { "--version": "start-up alone", "tiny JSON (77 B) → TypeScript": "mostly start-up", [benchNamed.pokedex]: "a JSON input", [benchNamed.githubEvents]: "JSON to one of several languages" };
+    for (const [name, what] of Object.entries(measured)) assert.equal(measures(benchmarkData.bench.cli.find((r) => r.name === name)), what, name);
     assert.equal(real.caption, `CLI wall time per run, median of ${benchmarkData.bench.iterations} runs after one warm-up`);
     const rustCorpus = benchmarkData.bench.corpus.results.rust;
-    assert.deepEqual(real.exits, [`${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. ${rustCorpus.unexpected_exits_note}`]);
+    assert.deepEqual(
+        real.exits,
+        rustCorpus.unexpected_exits === 0
+            ? []
+            : [`${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. ${rustCorpus.unexpected_exits_note}`],
+    );
     assert.deepEqual(real.warn, []);
+    // Unexpected exits with a note: the number and the note.
+    const explained = pageFor((d) => Object.assign(d.corpus.results.rust, { unexpected_exits: 381, unexpected_exits_note: "They are the cases outside the parity baseline." }));
+    assert.deepEqual(explained.exits, [`381 of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly. They are the cases outside the parity baseline.`]);
+    assert.deepEqual(explained.warnings, []);
 
     // A benchmark below 1×: shown as slower (heading, bar, label, table), and pointed out.
     const senators = "us-senators (155 KB) → TypeScript";
@@ -484,15 +535,31 @@ const speedNow = speedFacts(benchmarkData.bench);
         const r = d.cli.find((row) => row.name === "generated (40 MB) → TypeScript").results;
         r.rust.median_ms = r.rust.min_ms = r.typescript.median_ms / 500;
     });
-    assert.match(big40.tile, /^faster per CLI run at most \(generated \(40 MB\) → TypeScript, a JSON input\); /);
+    assert.equal(big40.tile, `faster per CLI run at most (generated (40 MB) → TypeScript, a JSON input); about ${speedNow.typical}× on typical files`);
+    // The 40 MB input measured again for big-inputs.json after the run: said as measured, more or less.
+    const memoryText = (bigData) => {
+        const html = benchmarksPageHtml({ bench: benchmarkData.bench, big: bigData });
+        return /<section id="memory"[^>]*>\s*<h2[^>]*>.*?<\/h2>\s*<p>(.*?)<\/p>/s.exec(html)[1].replace(/<[^>]+>/g, "");
+    };
+    const later = (peak) =>
+        big((d) => {
+            d.measured.date = "2099-01-01";
+            d.measured.inputs.find((i) => i.name === "generated (40 MB)").peak_rss_mib = peak;
+        });
+    assert.match(memoryText(later(30)), /; measured again on January 1, 2099, quickertype took 30\.0 MiB there \(see big files\)\.$/);
+    assert.match(memoryText(later(900)), /; measured again on January 1, 2099, quickertype took 900 MiB there \(see big files\)\.$/);
+    assert.doesNotMatch(memoryText(benchmarkData.big), /measured again|brought/);
     // Another number of runs: the caption and the text say it.
     const sevenRuns = pageFor((d) => (d.iterations = 7));
     assert.equal(sevenRuns.caption, "CLI wall time per run, median of 7 runs after one warm-up");
     assert.match(sevenRuns.cli, /medians of 7 runs\)/);
     // Unexpected exits without a note: the number, plainly, as a warning; none: nothing.
-    const unexplained = pageFor((d) => delete d.corpus.results.rust.unexpected_exits_note);
-    assert.deepEqual(unexplained.warn, [`Warning: ${rustCorpus.unexpected_exits.toLocaleString("en-US")} of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly.`]);
-    assert.deepEqual(unexplained.warnings, [`site/data/benchmarks.json: corpus.results.rust: ${rustCorpus.unexpected_exits} unexpected exits, and no unexpected_exits_note saying why`]);
+    const unexplained = pageFor((d) => {
+        d.corpus.results.rust.unexpected_exits = 381;
+        delete d.corpus.results.rust.unexpected_exits_note;
+    });
+    assert.deepEqual(unexplained.warn, [`Warning: 381 of quickertype's ${rustCorpus.steps.toLocaleString("en-US")} runs exited unexpectedly.`]);
+    assert.deepEqual(unexplained.warnings, ["site/data/benchmarks.json: corpus.results.rust: 381 unexpected exits, and no unexpected_exits_note saying why"]);
     assert.deepEqual(pageFor((d) => (d.corpus.results.rust.unexpected_exits = 0)).exits, []);
     // A Linux machine as `cargo xtask bench --json` describes one, without its memory.
     const linux = pageFor((d) => (d.machine = { cpu: "aarch64, CPU part 0xd0c", cores: "64", os: "Linux 6.1.0-18-arm64" }));
@@ -501,7 +568,9 @@ const speedNow = speedFacts(benchmarkData.bench);
     const why = "--bin runs /usr/local/bin/quickertype, which is not in the target directory of a git work tree";
     const unknownCommit = pageFor((d) => Object.assign(d.commits, { quickertype: null, quickertype_modified: null, quickertype_source: why }));
     assert.equal(unknownCommit.quickertype, `not known: ${why}`);
-    assert.ok(!unknownCommit.html.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
+    // (big-inputs.json may name the same commit, in its own section.)
+    const method = unknownCommit.html.slice(unknownCommit.html.indexOf('<section id="method"'));
+    assert.ok(!method.includes(benchmarkData.bench.commits.quickertype), "the unknown commit is linked");
     console.log("ok: the page says what the data holds: the tile's benchmark, the number of runs, unexpected exits (with the note, or as a warning), a machine as far as it was recorded, an unknown commit");
 }
 
@@ -517,12 +586,17 @@ const speedNow = speedFacts(benchmarkData.bench);
         return readme.replace(from, to);
     };
     const stale = (chart) => [`docs/assets/charts/${chart}-light.svg does not show the README's numbers`, `docs/assets/charts/${chart}-dark.svg does not show the README's numbers`];
-    assert.deepEqual(chartProblems(edited("| 2.3 ms | 96× |", "| 2.3 ms | 97× |")), stale("cli-speed"));
-    assert.deepEqual(chartProblems(edited("| 62 MiB | 10× less |", "| 31 MiB | 20× less |")), stale("cli-memory"));
-    assert.deepEqual(chartProblems(edited("| 2.3 ms | 2.2× |", "| 2.3 ms | 2.3× |")), stale("browser-speed"));
+    // The README's own cells, edited: the first CLI row's ratio, the memory row (the CLI table's last) and the first browser row's ratio.
+    const rows = readmeRows(readme);
+    const [firstRun, memoryRow, firstBrowser] = [rows.cli[0], rows.cli.at(-1), rows.browser[0]];
+    const cells = (row) => `| ${row.ours} | ${row.ratio.text}${row.ratio.less ? " less" : ""} |`;
+    assert.ok(memoryRow.ratio.less, "the CLI table's last row is the memory row");
+    assert.deepEqual(chartProblems(edited(cells(firstRun), `| ${firstRun.ours} | ${firstRun.ratio.low + 1}× |`)), stale("cli-speed"));
+    assert.deepEqual(chartProblems(edited(cells(memoryRow), `| ${memoryRow.ours} | ${memoryRow.ratio.low * 2}× less |`)), stale("cli-memory"));
+    assert.deepEqual(chartProblems(edited(cells(firstBrowser), `| ${firstBrowser.ours} | ${(firstBrowser.ratio.low + 0.1).toFixed(1)}× |`)), stale("browser-speed"));
     assert.deepEqual(chartProblems(edited(` srcset="${chartUrl("browser-speed-dark.svg")}"`, "")), [`README.md does not show browser-speed's dark chart (srcset="${chartUrl("browser-speed-dark.svg")}")`]);
     assert.throws(() => chartProblems(edited("| Run | quicktype | quickertype | Faster |", "| Run | quicktype | quickertype | Speed-up |")), /^Error: README\.md, the CLI's table: the header is /);
-    assert.throws(() => chartProblems(edited("| 10× less |", "| a tenth |")), /"a tenth" is not a ratio/);
+    assert.throws(() => chartProblems(edited(cells(memoryRow), `| ${memoryRow.ours} | a tenth |`)), /"a tenth" is not a ratio/);
     console.log("ok: the README's charts show its tables' numbers; a number changed without them, a chart it does not show and a table in another shape are caught");
 }
 
@@ -2538,8 +2612,13 @@ try {
         assert.deepEqual(pageNow.corpus, [`${data.corpus.results.typescript.wall_s} s`, `${data.corpus.results.rust.wall_s} s`], "the corpus chart");
         assert.deepEqual(
             pageNow.big.map((cells) => cells.slice(1)),
-            big.measured.inputs.map((i) => [i.seconds >= 1 ? `${i.seconds} s` : formatBenchMs(i.seconds * 1000), formatMiB(i.peak_rss_mib)]),
+            big.measured.inputs.map((i) => bigCells(i, big.measured.inputs.some((x) => x.one_thread !== undefined))),
             "the big inputs",
+        );
+        assert.deepEqual(
+            pageNow.big.map((cells) => cells[0].split(":")[0]),
+            big.measured.inputs.map((i) => inputSize(i.bytes)),
+            "the big inputs' sizes",
         );
         assert.deepEqual(pageNow.report, [big.reports[0].quicktype, big.reports[0].quickertype], "the user's report");
         const version = data.cli.find((r) => r.name === benchNamed.startup).results;
@@ -2607,7 +2686,8 @@ try {
                 const response = await fetch(target);
                 assert.equal(response.status, 200, `${href}: ${response.status}`);
                 if (href.startsWith("./data/")) {
-                    const source = href.endsWith("benchmarks.json") ? benchmarksFile : bigInputsFile;
+                    const source = [benchmarksFile, bigInputsFile, browserFile].find((file) => href === `./data/${path.basename(file)}`);
+                    assert.ok(source !== undefined, `${href}: not a data file`);
                     assert.deepEqual(await response.json(), JSON.parse(fs.readFileSync(source, "utf8")), `${href} is not ${path.basename(source)}`);
                 }
                 // An anchor (a playground link's hash is its state, as tested above).
@@ -2637,6 +2717,13 @@ try {
         // The playground's links to this page resolve too.
         assert.equal((await fetch(new URL("../benchmarks.html", url))).status, 200);
         console.log(`ok: ${checked.length} links on the benchmarks page resolve (pages, data, anchors, repository files, commits)`);
+        // Every data file the pages are made from is published beside them, as it is in site/data.
+        for (const file of [benchmarksFile, bigInputsFile, browserFile]) {
+            const response = await fetch(new URL(`data/${path.basename(file)}`, siteUrl));
+            assert.equal(response.status, 200, `data/${path.basename(file)} is not published`);
+            assert.deepEqual(await response.json(), JSON.parse(fs.readFileSync(file, "utf8")), `data/${path.basename(file)} is not site/data's`);
+        }
+        console.log("ok: data/benchmarks.json, big-inputs.json and browser.json are published as they are in site/data");
 
         // Phones: no sideways scrolling, at 360 and 390 px.
         for (const width of [360, 390]) {
@@ -2724,7 +2811,9 @@ try {
         const cliRow = (name) => bench.cli.find((r) => r.name === name).results;
         const version = cliRow(benchNamed.startup);
         const pokedexRun = cliRow(benchNamed.pokedex);
-        const largest = benchmarkData.big.measured.inputs.reduce((a, b) => (b.peak_rss_mib > a.peak_rss_mib ? b : a));
+        const bigInputs = benchmarkData.big.measured.inputs;
+        const largest = bigInputs.reduce((a, b) => (b.bytes > a.bytes ? b : a));
+        const timedBoth = bigInputs.filter((i) => i.quicktype !== undefined).sort((a, b) => b.bytes - a.bytes)[0];
         const n = (v) => [String(v), v.toLocaleString("en-US")];
         const spaced = (v, text) => [String(v), text.replaceAll(" ", " ")];
         const expected = {
@@ -2754,9 +2843,18 @@ try {
             "startup-quickertype": spaced(version.rust.median_ms, formatBenchMs(version.rust.median_ms)),
             "corpus-quicktype": spaced(bench.corpus.results.typescript.wall_s, `${bench.corpus.results.typescript.wall_s} s`),
             "corpus-quickertype": spaced(bench.corpus.results.rust.wall_s, `${bench.corpus.results.rust.wall_s} s`),
-            "big-size": spaced(largest.size, largest.size),
-            "big-seconds": spaced(largest.seconds, `${largest.seconds} s`),
+            "big-size": spaced(largest.bytes, inputSize(largest.bytes)),
+            "big-seconds": spaced(largest.seconds, bigSeconds(largest.seconds)),
             "big-memory": spaced(largest.peak_rss_mib, formatMiB(largest.peak_rss_mib)),
+            ...(timedBoth === undefined
+                ? {}
+                : {
+                      "against-size": spaced(timedBoth.bytes, inputSize(timedBoth.bytes)),
+                      "against-quicktype-seconds": spaced(timedBoth.quicktype.seconds, bigSeconds(timedBoth.quicktype.seconds)),
+                      "against-quicktype-memory": spaced(timedBoth.quicktype.peak_rss_mib, formatMiB(timedBoth.quicktype.peak_rss_mib)),
+                      "against-seconds": spaced(timedBoth.seconds, bigSeconds(timedBoth.seconds)),
+                      "against-memory": spaced(timedBoth.peak_rss_mib, formatMiB(timedBoth.peak_rss_mib)),
+                  }),
         };
         assert.equal(workflows.ci.os.join(), "Linux,macOS,Windows", "CI's operating systems");
 

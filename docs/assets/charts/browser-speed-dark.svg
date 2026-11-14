@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="520" height="295" viewBox="0 0 520 295" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
 <title id="title">In the browser: how many times faster</title>
-<desc id="desc">quickertype's WebAssembly engine against quicktype's TypeScript engine, warm, in the same page. pokedex.json (82 KB): 2.2× faster (quicktype 5.1 ms, quickertype 2.3 ms); Generated JSON (20 MB): 2.8× faster (quicktype 404 ms, quickertype 145 ms); Array of 100k small records (27 MB): 2.7× faster (quicktype 179 ms, quickertype 66 ms); The same, generating the code only: 11× faster (quicktype 96 ms, quickertype 8.6 ms).</desc>
+<desc id="desc">quickertype's WebAssembly engine against quicktype's TypeScript engine, warm, in the same page. pokedex.json (82 KB): 2.9× faster (quicktype 4.7 ms, quickertype 1.6 ms); Generated JSON (20 MB): 3.3× faster (quicktype 406 ms, quickertype 122 ms); Array of 100k small records (27 MB): 2.9× faster (quicktype 156 ms, quickertype 53 ms); The same, generating the code only: 12× faster (quicktype 76 ms, quickertype 6.6 ms).</desc>
 <rect x="0.5" y="0.5" width="519" height="294" rx="10" fill="#1a1c23" stroke="#2d303a"/>
 <text x="20" y="35" font-size="15" font-weight="600" fill="#e5e6ec">In the browser: how many times faster</text>
 <text x="20" y="53.5" font-size="12.5" fill="#9a9dab">quickertype's WebAssembly engine against quicktype's TypeScript engine,</text>
 <text x="20" y="70.5" font-size="12.5" fill="#9a9dab">warm, in the same page</text>
 <text x="20" y="102.5" font-size="13.5" fill="#e5e6ec"><tspan font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="12.5">pokedex.json</tspan> (82 KB)</text>
-<path d="M20 109.5H104.07A4 4 0 0 1 108.07 113.5V117.5A4 4 0 0 1 104.07 121.5H20Z" fill="#9085e9"/>
-<text x="115.07" y="120.23" font-size="13.5" font-weight="600" fill="#e5e6ec">2.2×</text>
+<path d="M20 109.5H122.42A4 4 0 0 1 126.42 113.5V117.5A4 4 0 0 1 122.42 121.5H20Z" fill="#9085e9"/>
+<text x="133.42" y="120.23" font-size="13.5" font-weight="600" fill="#e5e6ec">2.9×</text>
 <text x="20" y="153" font-size="13.5" fill="#e5e6ec">Generated JSON (20 MB)</text>
-<path d="M20 160H128.09A4 4 0 0 1 132.09 164V168A4 4 0 0 1 128.09 172H20Z" fill="#9085e9"/>
-<text x="139.09" y="170.73" font-size="13.5" font-weight="600" fill="#e5e6ec">2.8×</text>
+<path d="M20 160H137.09A4 4 0 0 1 141.09 164V168A4 4 0 0 1 137.09 172H20Z" fill="#9085e9"/>
+<text x="148.09" y="170.73" font-size="13.5" font-weight="600" fill="#e5e6ec">3.3×</text>
 <text x="20" y="203.5" font-size="13.5" fill="#e5e6ec">Array of 100k small records (27 MB)</text>
-<path d="M20 210.5H124.08A4 4 0 0 1 128.08 214.5V218.5A4 4 0 0 1 124.08 222.5H20Z" fill="#9085e9"/>
-<text x="135.08" y="221.23" font-size="13.5" font-weight="600" fill="#e5e6ec">2.7×</text>
+<path d="M20 210.5H122.42A4 4 0 0 1 126.42 214.5V218.5A4 4 0 0 1 122.42 222.5H20Z" fill="#9085e9"/>
+<text x="133.42" y="221.23" font-size="13.5" font-weight="600" fill="#e5e6ec">2.9×</text>
 <text x="20" y="254" font-size="13.5" fill="#e5e6ec">The same, generating the code only</text>
 <path d="M20 261H456.34A4 4 0 0 1 460.34 265V269A4 4 0 0 1 456.34 273H20Z" fill="#9085e9"/>
-<text x="467.34" y="271.73" font-size="13.5" font-weight="600" fill="#e5e6ec">11×</text>
+<text x="467.34" y="271.73" font-size="13.5" font-weight="600" fill="#e5e6ec">12×</text>
 </svg>

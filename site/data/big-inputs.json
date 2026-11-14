@@ -1,31 +1,76 @@
 {
   "format": 1,
   "measured": {
-    "date": "2026-11-13",
+    "date": "2026-11-14",
     "machine": "Apple M2 Max, 12 cores, 64 GiB, macOS 26.6.2",
-    "commit": "3be1feb2e3a9114eba192e4898c96084563a845d",
-    "how": "target/release/quicktype <input> -l ts -o out.ts under /usr/bin/time -l; the inputs are built from the benchmark's generated input (docs/BENCHMARKS.md, \"Memory on large inputs\").",
+    "commit": "4cf135e28392f5185aed4faff225f7c4956a9b9d",
+    "how": "target/release/quickertype <input> -l ts -o <file> (the Scryfall cards with --just-types -t Cards), the runs of each command in turn, after one untimed run (none for quicktype on the 657 MB cards); wall time and peak RSS of each run from wait4, medians of 3 to 15 runs. Time and peak memory are on all cores, the default; on one thread, QUICKTYPE_READ_THREADS=1 reads every sample in one go. quicktype is its CLI on the same input, with the same options. Every command wrote the same output. How each input is made: docs/BENCHMARKS.md, \"Large inputs\".",
+    "load_average": "4.1 to 5.9",
     "inputs": [
       {
         "name": "generated (40 MB)",
-        "description": "the benchmark's generated records",
-        "size": "40 MB",
-        "seconds": 0.35,
-        "peak_rss_mib": 154.2
+        "description": "the benchmark's generated records, in an object (read in one go)",
+        "bytes": 43688373,
+        "runs": 15,
+        "seconds": 0.17,
+        "cpu_seconds": 0.168,
+        "peak_rss_mib": 60.6,
+        "one_thread": { "seconds": 0.171, "cpu_seconds": 0.169, "peak_rss_mib": 60.6 },
+        "quicktype": { "seconds": 2.67, "cpu_seconds": 3.48, "peak_rss_mib": 614 }
+      },
+      {
+        "name": "1M records (267 MB)",
+        "description": "an array of 1 million small records: a UUID, a two-value enum, a date and a comment each",
+        "bytes": 267295024,
+        "runs": 11,
+        "seconds": 0.0567,
+        "cpu_seconds": 0.453,
+        "peak_rss_mib": 21.5,
+        "one_thread": { "seconds": 0.262, "cpu_seconds": 0.26, "peak_rss_mib": 5.9 },
+        "quicktype": { "seconds": 5.44, "cpu_seconds": 7.1, "peak_rss_mib": 1478 }
       },
       {
         "name": "records (2.6 GB)",
         "description": "60 copies of the 40 MB input in one array",
-        "size": "2.6 GB",
-        "seconds": 18.8,
-        "peak_rss_mib": 5898.24
+        "bytes": 2621302440,
+        "runs": 3,
+        "seconds": 8.38,
+        "cpu_seconds": 8.37,
+        "peak_rss_mib": 64.2,
+        "one_thread": { "seconds": 8.36, "cpu_seconds": 8.33, "peak_rss_mib": 63.0 }
       },
       {
-        "name": "text-heavy (2.6 GB)",
-        "description": "10.5 million objects with ~200-character strings",
-        "size": "2.6 GB",
-        "seconds": 6.0,
-        "peak_rss_mib": 3952.64
+        "name": "text-heavy (2.5 GB)",
+        "description": "10.5 million objects with ~210-character strings",
+        "bytes": 2528770412,
+        "runs": 3,
+        "seconds": 0.308,
+        "cpu_seconds": 2.69,
+        "peak_rss_mib": 21.0,
+        "one_thread": { "seconds": 1.4, "cpu_seconds": 1.39, "peak_rss_mib": 6.0 }
+      },
+      {
+        "name": "Scryfall cards (real data)",
+        "description": "Scryfall's card data, 120,095 cards in one array",
+        "bytes": 656501037,
+        "args": "-l ts --just-types -t Cards",
+        "runs": 5,
+        "seconds": 0.284,
+        "cpu_seconds": 1.74,
+        "peak_rss_mib": 50.1,
+        "one_thread": { "seconds": 1.43, "cpu_seconds": 1.43, "peak_rss_mib": 20.2 },
+        "quicktype": { "seconds": 29.9, "cpu_seconds": 38.6, "peak_rss_mib": 3280 }
+      },
+      {
+        "name": "Scryfall cards (real data), every language",
+        "description": "Scryfall's card data in every language, 551,910 cards in one array",
+        "bytes": 3010396357,
+        "args": "-l ts --just-types -t Cards",
+        "runs": 3,
+        "seconds": 1.35,
+        "cpu_seconds": 8.15,
+        "peak_rss_mib": 148,
+        "one_thread": { "seconds": 6.65, "cpu_seconds": 6.64, "peak_rss_mib": 96.2 }
       }
     ]
   },

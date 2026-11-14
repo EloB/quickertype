@@ -6,14 +6,14 @@
       "name": "--version",
       "results": {
         "rust": {
-          "median_ms": 2.26,
-          "min_ms": 2.16,
-          "peak_rss_mib": 3.4
+          "median_ms": 2.923,
+          "min_ms": 2.607,
+          "peak_rss_mib": 3.5
         },
         "typescript": {
-          "median_ms": 217,
-          "min_ms": 214,
-          "peak_rss_mib": 151.4
+          "median_ms": 226.36,
+          "min_ms": 221.941,
+          "peak_rss_mib": 149.7
         }
       }
     },
@@ -23,14 +23,14 @@
       "name": "tiny JSON (77 B) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 2.83,
-          "min_ms": 2.53,
-          "peak_rss_mib": 5.5
+          "median_ms": 2.848,
+          "min_ms": 2.75,
+          "peak_rss_mib": 5.3
         },
         "typescript": {
-          "median_ms": 241,
-          "min_ms": 231,
-          "peak_rss_mib": 150.3
+          "median_ms": 244.418,
+          "min_ms": 242.631,
+          "peak_rss_mib": 150.7
         }
       }
     },
@@ -40,14 +40,14 @@
       "name": "pokedex (82 KB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 4.78,
-          "min_ms": 4.58,
-          "peak_rss_mib": 8.1
+          "median_ms": 3.952,
+          "min_ms": 3.77,
+          "peak_rss_mib": 6.9
         },
         "typescript": {
-          "median_ms": 257,
-          "min_ms": 253,
-          "peak_rss_mib": 157.7
+          "median_ms": 265.916,
+          "min_ms": 261.435,
+          "peak_rss_mib": 157.1
         }
       }
     },
@@ -57,14 +57,14 @@
       "name": "us-senators (155 KB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 5.42,
-          "min_ms": 5.19,
-          "peak_rss_mib": 8.2
+          "median_ms": 4.381,
+          "min_ms": 4.17,
+          "peak_rss_mib": 6.7
         },
         "typescript": {
-          "median_ms": 263,
-          "min_ms": 259,
-          "peak_rss_mib": 163.0
+          "median_ms": 272.202,
+          "min_ms": 268.204,
+          "peak_rss_mib": 160.8
         }
       }
     },
@@ -74,14 +74,14 @@
       "name": "misc/1b409 (606 KB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 7.94,
-          "min_ms": 7.75,
-          "peak_rss_mib": 9.9
+          "median_ms": 6.27,
+          "min_ms": 5.862,
+          "peak_rss_mib": 7.9
         },
         "typescript": {
-          "median_ms": 292,
-          "min_ms": 289,
-          "peak_rss_mib": 172.0
+          "median_ms": 302.304,
+          "min_ms": 298.031,
+          "peak_rss_mib": 175.2
         }
       }
     },
@@ -91,14 +91,14 @@
       "name": "all 13 samples as one top-level (multi-source) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 14.5,
-          "min_ms": 14.1,
-          "peak_rss_mib": 10.8
+          "median_ms": 12.248,
+          "min_ms": 11.71,
+          "peak_rss_mib": 10.5
         },
         "typescript": {
-          "median_ms": 341,
-          "min_ms": 334,
-          "peak_rss_mib": 181.6
+          "median_ms": 351.706,
+          "min_ms": 348.502,
+          "peak_rss_mib": 184.6
         }
       }
     },
@@ -108,14 +108,14 @@
       "name": "generated (4 MB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 36.5,
-          "min_ms": 35.3,
-          "peak_rss_mib": 27.8
+          "median_ms": 20.093,
+          "min_ms": 19.438,
+          "peak_rss_mib": 15.8
         },
         "typescript": {
-          "median_ms": 507,
-          "min_ms": 500,
-          "peak_rss_mib": 237.8
+          "median_ms": 542.604,
+          "min_ms": 524.56,
+          "peak_rss_mib": 232.3
         }
       }
     },
@@ -125,14 +125,14 @@
       "name": "generated (40 MB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 319,
-          "min_ms": 314,
-          "peak_rss_mib": 177.5
+          "median_ms": 155.374,
+          "min_ms": 154.183,
+          "peak_rss_mib": 60.6
         },
         "typescript": {
-          "median_ms": 2621,
-          "min_ms": 2588,
-          "peak_rss_mib": 624.7
+          "median_ms": 2675.67,
+          "min_ms": 2643.781,
+          "peak_rss_mib": 653.1
         }
       }
     },
@@ -142,14 +142,14 @@
       "name": "generated (40 MB) → Rust",
       "results": {
         "rust": {
-          "median_ms": 321,
-          "min_ms": 319,
-          "peak_rss_mib": 177.4
+          "median_ms": 171.242,
+          "min_ms": 161.264,
+          "peak_rss_mib": 60.8
         },
         "typescript": {
-          "median_ms": 2600,
-          "min_ms": 2551,
-          "peak_rss_mib": 681.8
+          "median_ms": 2733.253,
+          "min_ms": 2682.237,
+          "peak_rss_mib": 638.3
         }
       }
     },
@@ -159,14 +159,14 @@
       "name": "github-events (82 KB) → ts",
       "results": {
         "rust": {
-          "median_ms": 6.42,
-          "min_ms": 6.35,
-          "peak_rss_mib": 8.4
+          "median_ms": 5.933,
+          "min_ms": 5.682,
+          "peak_rss_mib": 7.5
         },
         "typescript": {
-          "median_ms": 271,
-          "min_ms": 268,
-          "peak_rss_mib": 172.0
+          "median_ms": 287.982,
+          "min_ms": 284.608,
+          "peak_rss_mib": 174.0
         }
       }
     },
@@ -176,14 +176,14 @@
       "name": "github-events (82 KB) → rust",
       "results": {
         "rust": {
-          "median_ms": 6.64,
-          "min_ms": 6.51,
-          "peak_rss_mib": 8.2
+          "median_ms": 6.442,
+          "min_ms": 6.22,
+          "peak_rss_mib": 7.3
         },
         "typescript": {
-          "median_ms": 273,
-          "min_ms": 271,
-          "peak_rss_mib": 172.8
+          "median_ms": 293.277,
+          "min_ms": 284.915,
+          "peak_rss_mib": 173.4
         }
       }
     },
@@ -193,14 +193,14 @@
       "name": "github-events (82 KB) → go",
       "results": {
         "rust": {
-          "median_ms": 6.35,
-          "min_ms": 6.17,
-          "peak_rss_mib": 8.2
+          "median_ms": 6.948,
+          "min_ms": 5.623,
+          "peak_rss_mib": 7.3
         },
         "typescript": {
-          "median_ms": 273,
-          "min_ms": 269,
-          "peak_rss_mib": 172.4
+          "median_ms": 300.068,
+          "min_ms": 292.459,
+          "peak_rss_mib": 176.6
         }
       }
     },
@@ -210,14 +210,14 @@
       "name": "github-events (82 KB) → cs",
       "results": {
         "rust": {
-          "median_ms": 6.52,
-          "min_ms": 6.33,
-          "peak_rss_mib": 8.5
+          "median_ms": 5.987,
+          "min_ms": 5.771,
+          "peak_rss_mib": 7.5
         },
         "typescript": {
-          "median_ms": 277,
-          "min_ms": 274,
-          "peak_rss_mib": 174.3
+          "median_ms": 293.932,
+          "min_ms": 287.651,
+          "peak_rss_mib": 177.3
         }
       }
     },
@@ -227,14 +227,14 @@
       "name": "github-events (82 KB) → java",
       "results": {
         "rust": {
-          "median_ms": 9.02,
-          "min_ms": 8.85,
-          "peak_rss_mib": 9.6
+          "median_ms": 8.496,
+          "min_ms": 8.198,
+          "peak_rss_mib": 9.2
         },
         "typescript": {
-          "median_ms": 289,
-          "min_ms": 284,
-          "peak_rss_mib": 174.3
+          "median_ms": 312.488,
+          "min_ms": 301.546,
+          "peak_rss_mib": 175.8
         }
       }
     },
@@ -244,14 +244,14 @@
       "name": "github-events (82 KB) → py",
       "results": {
         "rust": {
-          "median_ms": 7.13,
-          "min_ms": 6.97,
-          "peak_rss_mib": 9.1
+          "median_ms": 6.532,
+          "min_ms": 6.344,
+          "peak_rss_mib": 8.4
         },
         "typescript": {
-          "median_ms": 279,
-          "min_ms": 276,
-          "peak_rss_mib": 173.1
+          "median_ms": 296.632,
+          "min_ms": 291.991,
+          "peak_rss_mib": 175.3
         }
       }
     },
@@ -261,14 +261,14 @@
       "name": "github-events (82 KB) → swift",
       "results": {
         "rust": {
-          "median_ms": 7.06,
-          "min_ms": 6.94,
-          "peak_rss_mib": 9.1
+          "median_ms": 6.314,
+          "min_ms": 6.168,
+          "peak_rss_mib": 8.5
         },
         "typescript": {
-          "median_ms": 277,
-          "min_ms": 272,
-          "peak_rss_mib": 172.3
+          "median_ms": 284.194,
+          "min_ms": 279.394,
+          "peak_rss_mib": 175.1
         }
       }
     },
@@ -278,14 +278,14 @@
       "name": "github-events (82 KB) → c++",
       "results": {
         "rust": {
-          "median_ms": 9.03,
-          "min_ms": 8.82,
-          "peak_rss_mib": 9.8
+          "median_ms": 7.806,
+          "min_ms": 7.546,
+          "peak_rss_mib": 9.3
         },
         "typescript": {
-          "median_ms": 289,
-          "min_ms": 284,
-          "peak_rss_mib": 173.9
+          "median_ms": 303.27,
+          "min_ms": 294.24,
+          "peak_rss_mib": 175.1
         }
       }
     },
@@ -295,14 +295,14 @@
       "name": "vega-lite.schema (306 KB) → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 37.4,
-          "min_ms": 36.9,
-          "peak_rss_mib": 17.0
+          "median_ms": 38.72,
+          "min_ms": 38.053,
+          "peak_rss_mib": 16.0
         },
         "typescript": {
-          "median_ms": 418,
-          "min_ms": 414,
-          "peak_rss_mib": 224.2
+          "median_ms": 438.791,
+          "min_ms": 431.11,
+          "peak_rss_mib": 223.7
         }
       }
     },
@@ -312,14 +312,14 @@
       "name": "vega-lite.schema (306 KB) → C#",
       "results": {
         "rust": {
-          "median_ms": 41.2,
-          "min_ms": 39.9,
-          "peak_rss_mib": 19.0
+          "median_ms": 43.021,
+          "min_ms": 42.367,
+          "peak_rss_mib": 18.5
         },
         "typescript": {
-          "median_ms": 431,
-          "min_ms": 421,
-          "peak_rss_mib": 226.3
+          "median_ms": 462.733,
+          "min_ms": 450.055,
+          "peak_rss_mib": 226.8
         }
       }
     },
@@ -329,14 +329,14 @@
       "name": "github.gqlschema (1.2 MB) + query → TypeScript",
       "results": {
         "rust": {
-          "median_ms": 9.28,
-          "min_ms": 9.12,
-          "peak_rss_mib": 13.4
+          "median_ms": 9.156,
+          "min_ms": 8.897,
+          "peak_rss_mib": 12.5
         },
         "typescript": {
-          "median_ms": 245,
-          "min_ms": 242,
-          "peak_rss_mib": 153.2
+          "median_ms": 268.912,
+          "min_ms": 254.807,
+          "peak_rss_mib": 152.6
         }
       }
     },
@@ -346,14 +346,14 @@
       "name": "vega-lite.schema → Java (one file per class)",
       "results": {
         "rust": {
-          "median_ms": 54.5,
-          "min_ms": 52.6,
-          "peak_rss_mib": 21.8
+          "median_ms": 55.807,
+          "min_ms": 54.695,
+          "peak_rss_mib": 21.1
         },
         "typescript": {
-          "median_ms": 489,
-          "min_ms": 479,
-          "peak_rss_mib": 236.3
+          "median_ms": 504.182,
+          "min_ms": 498.204,
+          "peak_rss_mib": 236.0
         }
       }
     },
@@ -363,67 +363,71 @@
       "name": "pokedex → C++ (multi-source)",
       "results": {
         "rust": {
-          "median_ms": 5.3,
-          "min_ms": 5.05,
-          "peak_rss_mib": 8.3
+          "median_ms": 4.523,
+          "min_ms": 4.37,
+          "peak_rss_mib": 7.2
         },
         "typescript": {
-          "median_ms": 264,
-          "min_ms": 258,
-          "peak_rss_mib": 160.4
+          "median_ms": 274.747,
+          "min_ms": 264.201,
+          "peak_rss_mib": 159.6
         }
       }
     }
   ],
-  "command": "cargo xtask bench --corpus --in-process",
+  "command": "cargo xtask bench --corpus --in-process --json site/data/benchmarks.json",
   "commits": {
-    "quickertype": "54611ae413d7f754d0ccc7605a416c265d146fb9",
+    "quickertype": "4cf135e28392f5185aed4faff225f7c4956a9b9d",
     "quickertype_modified": false,
+    "quickertype_source": "this checkout, built by cargo xtask bench",
     "quicktype": "c39af7d303b025280e2668a1b2d29913093593c9"
   },
   "corpus": {
     "jobs": 12,
     "results": {
       "rust": {
-        "cli_time_s": 133.7,
-        "steps": 11178,
-        "unexpected_exits": 381,
-        "unexpected_exits_note": "They are the cases outside its parity baseline when this was measured: C with cJSON, which was being ported (it has been since).",
-        "wall_s": 12.5
-      },
-      "typescript": {
-        "cli_time_s": 6846.5,
+        "cli_time_s": 95.45,
         "steps": 11178,
         "unexpected_exits": 0,
-        "wall_s": 571.7
+        "wall_s": 9.03
+      },
+      "typescript": {
+        "cli_time_s": 5672.53,
+        "steps": 11178,
+        "unexpected_exits": 0,
+        "wall_s": 473.76
       }
     }
   },
-  "date": "2026-11-13",
+  "date": "2026-11-14",
   "format": 1,
   "in_process": {
+    "commits": {
+      "quickertype": "4cf135e28392f5185aed4faff225f7c4956a9b9d",
+      "quickertype_modified": false
+    },
     "iterations": 10,
     "results": {
       "rust": {
-        "engine_ms": 102,
+        "engine_ms": 70.34,
         "label": "Rust (native, mimalloc)",
-        "parse_ms": 51.4,
-        "total_min_ms": 145,
-        "total_ms": 153
+        "parse_ms": 22.48,
+        "total_min_ms": 91.65,
+        "total_ms": 92.84
       },
       "rust-system-allocator": {
-        "engine_ms": 138,
+        "engine_ms": 95.56,
         "label": "Rust (native, system allocator)",
-        "parse_ms": 60.1,
-        "total_min_ms": 190,
-        "total_ms": 199
+        "parse_ms": 22.87,
+        "total_min_ms": 116.72,
+        "total_ms": 118.45
       },
       "typescript": {
-        "engine_ms": 298,
+        "engine_ms": 273.8,
         "label": "TypeScript (warm Node)",
-        "parse_ms": 72.5,
-        "total_min_ms": 340,
-        "total_ms": 369
+        "parse_ms": 69.25,
+        "total_min_ms": 330.96,
+        "total_ms": 341.58
       }
     },
     "runs": 112
@@ -432,12 +436,13 @@
   "machine": {
     "cores": "12",
     "cpu": "Apple M2 Max",
+    "load_average": "3.62",
     "memory": "64 GiB",
     "node": "v24.16.0",
     "os": "macOS 26.6.2",
-    "rustc": "rustc 1.99.1"
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
   },
-  "note": "Converted by hand from docs/BENCHMARKS.md (Phase 7, after; measured with --baseline, which this file leaves out), not written by --json. The machine was shared with other work while the numbers were taken (load average around 10); the CLI numbers agree with quieter earlier runs within a few percent. The in-process numbers are medians of three interleaved rounds of 10 iterations.",
+  "note": "Written by cargo xtask bench --json; this note was added by hand. The load average was 3.6 when the run started and 3.6 to 8.1 while the CLI benchmarks ran; the corpus's TypeScript runs (12 at a time) and other work on the machine took it to 10 to 67 while the corpus ran, and to 66 to 73 for the in-process benchmark. Three later interleaved rounds of the in-process benchmark, at a load average of 4.4 to 5.5, gave 334 to 350 ms for TypeScript, 116 to 124 ms with the system allocator and 92 to 98 ms with mimalloc.",
   "tools": {
     "rust": {
       "label": "Rust"
