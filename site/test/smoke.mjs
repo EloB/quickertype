@@ -32,9 +32,10 @@
 // including a switch during a run and during a measurement; that a worker
 // failure is shown but not kept, so a switch back tries again, and stops a
 // measurement with a message; that after a sample fails to load, switching
-// engine runs nothing; that invalid JSON shows quicktype's error; that the
-// input survives a reload (localStorage); and that 360 px and 390 px widths
-// do not scroll sideways.
+// engine runs nothing; that no input says where to put one (on phones, a
+// switch away, which its "Input" makes); that invalid JSON shows
+// quicktype's error; that the input survives a reload (localStorage); and
+// that 360 px and 390 px widths do not scroll sideways.
 //
 // The layout: at 1440×900 the generated code has at least 55% of the
 // window's height, the masthead and the footer one line each, the options
@@ -1687,13 +1688,20 @@ try {
     // Invalid JSON: quicktype's error, in the output pane.
     await select("lang", "rust");
     await andRun("document.querySelector('input[name=kind][value=json]').click()", "a run as JSON");
+    // Before it, no input: the output pane says where to put one (not "on
+    // the left": phones show one pane at a time, and say so; see below).
+    const typeInput = (text) => `(() => {
+        const input = document.getElementById("input");
+        input.value = ${JSON.stringify(text)};
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+    })()`;
+    await andRun(typeInput(""), "no input", `${settled} && document.body.dataset.status === "empty"`);
+    const emptyWide = await page.evaluate("document.getElementById('error').innerText.trim()");
+    assert.equal(emptyWide, "Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.", "no input, at 1440 px");
+    console.log(`ok: no input: "${emptyWide}"`);
     const invalid = '{\n  "name": "Ann",\n  "age": 7,\n}';
     await andRun(
-        `(() => {
-            const input = document.getElementById("input");
-            input.value = ${JSON.stringify(invalid)};
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-        })()`,
+        typeInput(invalid),
         "the error",
         `${settled} && document.body.dataset.status === "error"`,
     );
@@ -2476,6 +2484,24 @@ try {
         if (width === 390) await page.screenshot("layout-390-input.png");
         console.log(`ok: ${width} px: the output first (its code from ${phone.code} px down), the input a tap away (from ${inputView.input} px); the options a modal drawer; nothing scrolls sideways`);
     }
+
+    // No input on a phone: the output says where the input is, a switch
+    // away, and its "Input" switches to it, the focus on the switch.
+    await andRun(typeInput(""), "no input at 390 px", `${settled} && document.body.dataset.status === "empty"`);
+    await page.evaluate("document.querySelector('input[name=view][value=output]').click()");
+    const emptyPhone = await page.evaluate("document.getElementById('error').innerText.trim()");
+    assert.equal(emptyPhone, "Switch to Input to paste JSON or a JSON Schema, load a sample, or open a file.", "no input, at 390 px");
+    await noSidewaysScroll(390, "390 px, no input");
+    await page.screenshot("layout-390-empty.png");
+    await page.evaluate("document.querySelector('#error .show-input').click()");
+    assert.deepEqual(
+        await page.evaluate(
+            "({ view: document.body.dataset.view, checked: document.querySelector('input[name=view]:checked').value, focus: document.activeElement === document.querySelector('input[name=view][value=input]') })",
+        ),
+        { view: "input", checked: "input", focus: true },
+        "390 px: Input, where the output says there is no input",
+    );
+    console.log(`ok: no input at 390 px: "${emptyPhone}", its Input shows the input`);
 
     // A file too large for the editor on a phone: still one pane at a time,
     // as wide as the page, the output's and the input's; nothing scrolls sideways.

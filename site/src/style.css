@@ -1119,6 +1119,17 @@ pre#output:focus-visible {
     color: var(--muted);
 }
 
+/* Phones say where the input is (a switch away), not where it is beside the output. */
+.empty .alone {
+    display: none;
+}
+
+.empty button.quiet {
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+}
+
 .pane-foot {
     display: flex;
     align-items: baseline;
@@ -1435,8 +1446,13 @@ button.close::before {
     }
 
     body[data-view="output"] #input-pane,
-    body[data-view="input"] #output-pane {
+    body[data-view="input"] #output-pane,
+    .empty .beside {
         display: none;
+    }
+
+    .empty .alone {
+        display: block;
     }
 
     .pane-head {

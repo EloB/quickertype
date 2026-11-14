@@ -769,7 +769,10 @@ function renderCode() {
     els.error.setAttribute("role", showError ? "alert" : "note");
     if (view.status === "empty") {
         els.error.className = "empty";
-        els.error.innerHTML = `<p>Paste JSON or a JSON Schema on the left, load a sample, or drop a file there.</p>`;
+        // Beside the input, or (phones) with the input a switch away; the stylesheet shows one.
+        els.error.innerHTML =
+            `<p class="beside">Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.</p>` +
+            `<p class="alone">Switch to <button type="button" class="quiet show-input">Input</button> to paste JSON or a JSON Schema, load a sample, or open a file.</p>`;
     } else if (showError) {
         els.error.className = "error";
         const { title, message, link } = result.error;
@@ -1291,6 +1294,15 @@ function bindViewSwitch() {
             if (radio.checked) document.body.dataset.view = radio.value;
         });
     }
+
+    // "Switch to Input", where the output says there is no input: as the switch does, the focus on it.
+    els.error.addEventListener("click", (event) => {
+        if (event.target.closest(".show-input") === null) return;
+        const radio = document.querySelector('input[name="view"][value="input"]');
+        radio.checked = true;
+        document.body.dataset.view = "input";
+        radio.focus();
+    });
 }
 
 /**
