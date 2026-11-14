@@ -38,8 +38,9 @@
 // that 360 px and 390 px widths do not scroll sideways.
 //
 // The layout: at 1440×900 the generated code has at least 55% of the
-// window's height, the masthead and the footer one line each (the footer
-// with the samples' license), the options
+// window's height, the masthead as tall as the name and tagline (the
+// headline beside them one line or two, by the fonts installed), the
+// footer one line (with the samples' license), the options
 // open beside the output and the comparison one line (its details closed).
 // The options open and close from the keyboard (Enter, Escape, their close
 // button): opened, the focus moves to their first control; closed, back to
@@ -1090,7 +1091,9 @@ try {
     console.log(`ok: the speed headline: "${headline.text}" (the panes start at ${Math.round(panesTop)} px)`);
 
     // The layout at 1440×900: the generated code has most of the window's
-    // height; the masthead and the footer are one line each; the options
+    // height; the masthead is as tall as the name and tagline (the speed
+    // headline beside them takes one line or two, as the fonts installed
+    // make it: two on Linux's, one on macOS's) and the footer one line; the options
     // are open beside the output (a dialog, not modal: the page stays
     // usable), and opening them took no focus; the comparison is one line,
     // its details closed; the page does not scroll.
@@ -1100,6 +1103,7 @@ try {
         return {
             code: box("#output").height / innerHeight,
             headline: lines("#speed"),
+            panes: box(".panes").top,
             footer: box(".credits").height,
             license: document.getElementById("license").textContent,
             line: box("#meter .meter-line").height,
@@ -1111,10 +1115,11 @@ try {
     })()`);
     assert.ok(layout.code >= 0.55, `the code takes ${(layout.code * 100).toFixed(0)}% of the window's height`);
     assert.deepEqual(
-        { ...layout, code: undefined, footer: layout.footer <= 40, line: layout.line <= 44 },
+        { ...layout, code: undefined, headline: layout.headline <= 2, panes: layout.panes <= 56, footer: layout.footer <= 40, line: layout.line <= 44 },
         {
             code: undefined,
-            headline: 1,
+            headline: true,
+            panes: true,
             footer: true,
             // The samples' credit, in the footer, always visible.
             license: "A Rust/WebAssembly port of quicktype, with samples from its test suite; all Apache-2.0. Not affiliated with quicktype or Glide.",
