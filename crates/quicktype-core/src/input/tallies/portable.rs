@@ -356,6 +356,25 @@ mod tests {
         r##"{"$ref":"#/z","$ref":"2020-01-01","a":{"$ref":"https://h/r"},"c":"false","t":"12:00:00Z"}"##,
     ];
 
+    /// Samples with places whose strings come to absorb every string
+    /// partway (as `tallies.rs`' own tests have them): `s` and `t`'s
+    /// elements get a string of more than 64 units after cases and before
+    /// more of them (and URIs), the top-level in the eighth sample, `u`
+    /// only in the last.
+    const ABSORBING: [&str; 11] = [
+        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01","s":"a"}"#,
+        r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]}]"#,
+        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg","t":["a","b"]}"#,
+        r#"{"s":"b","t":["c","long text long text long text long text long text long text long text","d","a"]}"#,
+        r#"{"s":"long text long text long text long text long text long text long text","t":["e"],"u":"a"}"#,
+        r#"{"s":"c","t":["ftp://h/z.gz","f"],"u":"b","d":"2020-01-02"}"#,
+        r#""short""#,
+        r#""long string, long string, long string, long string, long string, too""#,
+        r#""after""#,
+        r#"{"s":"https://h/w.png","t":["a"],"u":"c"}"#,
+        r#"{"s":"d","u":"long text long text long text long text long text long text long text"}"#,
+    ];
+
     /// A tree's portable size is about that of its portable tree, and the
     /// same whatever the tallies it is in held before.
     #[test]
@@ -366,7 +385,12 @@ mod tests {
             .collect();
         let sample = format!("[{}]", sample.join(","));
         let read = |tallies: &mut RunningTallies| {
-            parse_stream_into(&mut TallyBuilder::new(tallies, &config), sample.as_bytes()).unwrap()
+            parse_stream_into(
+                &mut TallyBuilder::new(tallies, &config),
+                sample.as_bytes(),
+                Framing::Value,
+            )
+            .unwrap()
         };
         let mut tallies = RunningTallies::new();
         let grown = |t: &RunningTallies| t.tallies.heap_size() + t.strings.heap_size();
@@ -410,6 +434,7 @@ mod tests {
         let existing = parse_stream_into(
             &mut TallyBuilder::new(&mut into, &config),
             SAMPLES[0].as_bytes(),
+            Framing::Value,
         )
         .unwrap();
         let before = (into.dump(existing), into.tallies.live_nodes());
@@ -425,6 +450,7 @@ mod tests {
         let tree = parse_stream_into(
             &mut TallyBuilder::new(&mut read, &config),
             SAMPLES[1].as_bytes(),
+            Framing::Value,
         )
         .unwrap();
         assert_eq!(into.dump(root), read.dump(tree));
@@ -474,9 +500,19 @@ mod tests {
     /// are grouped.
     #[test]
     fn merging_imported_trees_is_reading_on() {
-        let config = config(true);
+        for samples in [&SAMPLES[..], &ABSORBING[..]] {
+            for handle_refs in [false, true] {
+                merging_imported_trees_of(samples, handle_refs);
+            }
+        }
+    }
+
+    /// [`merging_imported_trees_is_reading_on`] for `samples`, split in
+    /// three groups every way.
+    fn merging_imported_trees_of(samples: &[&str], handle_refs: bool) {
+        let config = config(handle_refs);
         let mut one = RunningTallies::new();
-        let all = format!("[{}]", SAMPLES.join(","));
+        let all = format!("[{}]", samples.join(","));
         let root = parse_stream_into(
             &mut TallyBuilder::new(&mut one, &config),
             all.as_bytes(),
@@ -484,12 +520,12 @@ mod tests {
         )
         .unwrap();
         let expected = one.dump(root);
-        for split in 1..SAMPLES.len() {
-            for second in split + 1..=SAMPLES.len() {
+        for split in 1..samples.len() {
+            for second in split + 1..=samples.len() {
                 let groups = [
-                    &SAMPLES[..split],
-                    &SAMPLES[split..second],
-                    &SAMPLES[second..],
+                    &samples[..split],
+                    &samples[split..second],
+                    &samples[second..],
                 ];
                 let mut merged = RunningTallies::new();
                 let mut root = None;

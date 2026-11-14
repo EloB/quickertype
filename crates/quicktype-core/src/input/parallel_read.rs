@@ -1242,13 +1242,17 @@ mod tests {
     #[test]
     fn every_split_point() {
         let config = config(false);
-        let documents: [&[u8]; 6] = [
+        let documents: [&[u8]; 7] = [
             br#"[1,"a,]","b\"],[",{"c":[1,2,{"d":"]}"}]},[],{},null,true,-1.5e3,"\\",["x",["y"]]]"#,
             b" \n[ 1 , 2 ,\t3\r\n, \"x\" ] \n ",
             br##"[{"a":1},{"a":"x","b":[1,{"__proto__":2}]},{"$ref":"#/a"}]"##,
             b"[[],[[]],[[],[]]]",
             b"[\"\\u00e9\\ud83d\\ude00\", \"caf\xc3\xa9\", \"2020-01-01\", \"http://h/x.png\"]",
             b"[\"\\\\\\\"\",\"\\\\\",\"\\\"\"]",
+            // Places whose strings come to absorb every string partway,
+            // across parts: cases, then a string of more than 64 units,
+            // then cases, URIs and dates again.
+            br#"[{"s":"a","t":["b"]},{"s":"c"},{"s":"long text long text long text long text long text long text long text","t":["d"]},{"s":"e","t":["long text long text long text long text long text long text long text","f"]},{"s":"https://h/x.png"},{"s":"g","t":["2020-01-01","h"]}]"#,
         ];
         for bytes in documents {
             let expected = in_one_go(&config, bytes);

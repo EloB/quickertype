@@ -518,7 +518,7 @@ pub(crate) mod tests {
                 1 => {
                     out.push(b'"');
                     for _ in 0..rng.below(12) {
-                        let pieces: [&[u8]; 13] = [
+                        let pieces: [&[u8]; 14] = [
                             b"a",
                             b"\\\"",
                             b"\\\\",
@@ -531,6 +531,8 @@ pub(crate) mod tests {
                             b"\\\\\\\"",
                             b" ",
                             b"Yy_\x7f",
+                            // Past 64 units: a place that absorbs strings.
+                            b"long text long text long text long text long text long text long ",
                             "\u{e9}".as_bytes(),
                         ];
                         out.extend_from_slice(pieces[rng.below(pieces.len())]);
