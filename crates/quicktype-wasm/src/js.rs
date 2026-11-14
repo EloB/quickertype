@@ -303,9 +303,10 @@ fn decode_input(input: &InputObject) -> Result<InputRequest> {
             })
         }
         "jsonShared" => {
-            let compressed_json = crate::samples::take_lease(input.lease())
+            let (form, compressed_json) = crate::samples::take_lease(input.lease())
                 .ok_or_else(|| wire(WireError::new("unknown JSON samples lease")))?;
             Ok(InputRequest::JsonShared {
+                form,
                 compressed_json,
                 top_levels: decode_top_levels(input)?,
             })

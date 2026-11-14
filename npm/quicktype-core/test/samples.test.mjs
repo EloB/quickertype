@@ -712,6 +712,57 @@ test("the engine drops the samples of inputs that are gone", () => {
     assert.deepEqual(JSON.parse(out), [30, 3, 2]);
 });
 
+// A run keeps the tallies it made of an input's form with the form, for the
+// next run over the same samples; the engine counts them in the form's
+// bytes, which the facade takes up after the run, and the next sample read
+// into the form drops them. Every run gives what TypeScript gives.
+test("a run's tallies are kept with the form, counted, and dropped by the next sample", async () => {
+    const glue = engine.engineSync();
+    const text = generateJson(300, 4_242);
+    const more = generateJson(30, 4_243);
+    const runSync = (input, lang) => {
+        const inputData = new qt.InputData();
+        inputData.addInput(input);
+        return [...qt.quicktypeMultiFileSync({ lang, inputData })];
+    };
+    const expected = await inMode("ts", async () => {
+        const input = await addAll("go", [["Big", [text]]]);
+        const first = [...(await run(input, "go"))];
+        const rust = [...(await run(input, "rust"))];
+        await input.addSource({ name: "Big", samples: [more] });
+        return { first, rust, after: runSync(input, "go"), again: runSync(input, "swift") };
+    });
+    const input = await addAll("go", [["Big", [text]]]);
+    const cjson = input._compressedJSON;
+    const read = nativeSamples.formBytes(cjson);
+    assert.deepEqual([...(await run(input, "go"))], expected.first);
+    const kept = nativeSamples.formBytes(cjson);
+    assert.ok(kept > read, `${kept} against ${read}`);
+    // Another language, from the kept tallies: nothing more is held.
+    assert.deepEqual([...(await run(input, "rust"))], expected.rust);
+    assert.equal(nativeSamples.formBytes(cjson), kept);
+    // A sample read into the form drops them.
+    await input.addSource({ name: "Big", samples: [more] });
+    const after = nativeSamples.formBytes(cjson);
+    assert.ok(after < kept, `${after} against ${kept}`);
+    // What the engine holds grows by the tallies a run keeps, as the facade
+    // counts them (synchronous, so no finalizer drops another form between).
+    let held = glue.jsonHeld();
+    assert.deepEqual(runSync(input, "go"), expected.after);
+    const keptAfter = nativeSamples.formBytes(cjson);
+    assert.ok(keptAfter > after, `${keptAfter} against ${after}`);
+    assert.equal(glue.jsonHeld() - held, keptAfter - after);
+    held = glue.jsonHeld();
+    assert.deepEqual(runSync(input, "swift"), expected.again);
+    assert.equal(glue.jsonHeld(), held);
+    assert.equal(nativeSamples.formBytes(cjson), keptAfter);
+    // Filling the tables drops the form in the engine, tallies and all.
+    assert.equal(cjson._strings.length > 0, true);
+    assert.equal(nativeSamples.formBytes(cjson), undefined);
+    assert.equal(held - glue.jsonHeld(), keptAfter);
+    noLeases();
+});
+
 // ---- Memory and limits (the second code review) ------------------------------
 
 // The garbage collector does not see the engine's memory, which never

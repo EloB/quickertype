@@ -38,12 +38,13 @@
 #[cfg(test)]
 use std::cell::Cell;
 use std::fmt;
+use std::mem::size_of;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
 
 use super::compressed_json::{
-    CompressedJson, JsonSink, StringReaderState, Strings, TableCounts, Value,
+    CompressedJson, JsonSink, StringReaderState, Strings, TableCounts, Value, vec_size,
 };
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
@@ -643,6 +644,88 @@ impl fmt::Debug for Tallies {
     }
 }
 
+/// About how many bytes `map`'s buffers take: its entries (each with its
+/// hash) and its index table (an index and a control byte per bucket).
+fn map_size<K, V, S>(map: &IndexMap<K, V, S>) -> usize {
+    map.capacity() * (size_of::<(u64, K, V)>() + size_of::<usize>() + 1)
+}
+
+fn string_tally_size(tally: &StringTally) -> usize {
+    size_of::<StringTally>() + map_size(&tally.cases)
+}
+
+fn object_tally_size(tally: &ObjectTally) -> usize {
+    size_of::<ObjectTally>() + map_size(&tally.keys) + vec_size(&tally.proto_runs)
+}
+
+/// The tallies of a compressed form's samples, kept with the form
+/// ([`CompressedJson::kept_tallies`]) for the next inference over the same
+/// samples (`JsonInput::set_keep_tallies`): a form only ever grows, and
+/// what is in it never changes, so the tallies of the same samples are
+/// these. Adding a sample drops them, since the next inference will most
+/// likely be over more samples.
+pub(crate) struct KeptTallies {
+    /// Each top-level's samples, as they were tallied.
+    samples: Vec<Vec<Value>>,
+    pub(crate) tallies: Tallies,
+    /// Each top-level's tree.
+    pub(crate) roots: Vec<NodeId>,
+    /// About how many bytes this holds.
+    bytes: usize,
+}
+
+impl KeptTallies {
+    /// `tallies`, with each top-level's tree `roots`, for one inference:
+    /// not kept, and of no samples in particular.
+    pub(crate) fn unkept(tallies: Tallies, roots: Vec<NodeId>) -> Self {
+        KeptTallies {
+            samples: Vec::new(),
+            tallies,
+            roots,
+            bytes: 0,
+        }
+    }
+
+    /// `tallies`, with each top-level's tree `roots`, of the samples
+    /// `top_levels`, to keep.
+    pub(crate) fn new<'c>(
+        mut tallies: Tallies,
+        roots: Vec<NodeId>,
+        top_levels: impl IntoIterator<Item = &'c [Value]>,
+    ) -> Self {
+        tallies.trim();
+        let samples: Vec<Vec<Value>> = top_levels.into_iter().map(<[Value]>::to_vec).collect();
+        let bytes = size_of::<Self>()
+            + tallies.heap_size()
+            + vec_size(&roots)
+            + vec_size(&samples)
+            + samples.iter().map(vec_size).sum::<usize>();
+        KeptTallies {
+            samples,
+            tallies,
+            roots,
+            bytes,
+        }
+    }
+
+    /// Whether these are the tallies of `top_levels`' samples.
+    pub(crate) fn of<'c>(&self, top_levels: impl IntoIterator<Item = &'c [Value]>) -> bool {
+        let mut count = 0;
+        for (i, samples) in top_levels.into_iter().enumerate() {
+            if self.samples.get(i).map(Vec::as_slice) != Some(samples) {
+                return false;
+            }
+            count += 1;
+        }
+        count == self.samples.len()
+    }
+
+    /// About how many bytes these tallies hold.
+    pub(crate) fn heap_size(&self) -> usize {
+        self.bytes
+    }
+}
+
 /// Allocates an empty node.
 fn alloc(nodes: &mut Vec<Node>, free: &mut Vec<NodeId>) -> Result<NodeId> {
     if let Some(id) = free.pop() {
@@ -712,6 +795,41 @@ impl Tallies {
             out += &format!(" items [{}]", self.dump(strings, items));
         }
         out
+    }
+
+    /// About how many bytes the tallies hold: their buffers and what
+    /// their nodes own (not what the allocator adds, nor the few attribute
+    /// sets of each place's strings).
+    pub(crate) fn heap_size(&self) -> usize {
+        let nodes: usize = self
+            .nodes
+            .iter()
+            .map(|n| {
+                n.strings.as_deref().map_or(0, string_tally_size)
+                    + n.object.as_deref().map_or(0, object_tally_size)
+            })
+            .sum();
+        let spares: usize = self
+            .spare_strings
+            .iter()
+            .map(|s| string_tally_size(s))
+            .chain(self.spare_objects.iter().map(|o| object_tally_size(o)))
+            .sum();
+        vec_size(&self.nodes)
+            + vec_size(&self.free)
+            + vec_size(&self.spare_strings)
+            + vec_size(&self.spare_objects)
+            + vec_size(&self.case_slots)
+            + nodes
+            + spares
+    }
+
+    /// Drops what only adding to the tallies needs (the spare tallies and
+    /// the case slots), for tallies that are kept as they are.
+    fn trim(&mut self) {
+        self.spare_strings = Vec::new();
+        self.spare_objects = Vec::new();
+        self.case_slots = Vec::new();
     }
 
     /// A new, empty tree; returns its root.

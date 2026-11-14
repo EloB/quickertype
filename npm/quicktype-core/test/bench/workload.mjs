@@ -3,6 +3,8 @@
 // on its WebAssembly engine, or on the TypeScript engine with
 // `Symbol.for("quicktype-core.engine")` = "ts"), in an order that rotates
 // from round to round, after warm-up runs; the medians of the warm runs.
+// With `again`, each round also runs the same input a second time (as a
+// program that generates code for an input it has run already does).
 
 const engineKey = Symbol.for("quicktype-core.engine");
 
@@ -26,13 +28,14 @@ export function defaultRounds(length) {
  * `inputs` are `{ name, text }`; `gc` collects garbage between runs if the
  * host lets it (and every run starts in a task of its own, after the
  * finalizers of what was collected); `cpu`, if given, reads the process's
- * CPU time (ms), which is also reported.
+ * CPU time (ms), which is also reported; `again` also times a second run
+ * on the same input.
  */
-export async function measure(sides, inputs, { lang = "typescript", warmup = 3, rounds = defaultRounds, gc, cpu, onProgress } = {}) {
+export async function measure(sides, inputs, { lang = "typescript", warmup = 3, rounds = defaultRounds, gc, cpu, onProgress, again = false } = {}) {
     const results = [];
     for (const { name, text } of inputs) {
         const n = rounds(text.length);
-        const times = sides.map(() => ({ read: [], generate: [], total: [], cpu: [] }));
+        const times = sides.map(() => ({ read: [], generate: [], total: [], cpu: [], again: [] }));
         const outputs = [];
         const before = sides.map((s) => ({ wasm: s.stats.wasm, samplesRead: s.stats.samplesRead }));
         for (let i = 0; i < warmup + n; i++) {
@@ -68,6 +71,14 @@ export async function measure(sides, inputs, { lang = "typescript", warmup = 3, 
                     if (i === 0) {
                         outputs[index] = [...result].map(([file, { lines }]) => `${file}\n${lines.join("\n")}`).join("\n");
                     }
+
+                    if (again) {
+                        const startAgain = performance.now();
+                        const inputDataAgain = new side.qt.InputData();
+                        inputDataAgain.addInput(input);
+                        await side.qt.quicktypeMultiFile({ inputData: inputDataAgain, lang });
+                        if (i >= warmup) t.again.push(performance.now() - startAgain);
+                    }
                 } finally {
                     delete globalThis[engineKey];
                 }
@@ -81,7 +92,7 @@ export async function measure(sides, inputs, { lang = "typescript", warmup = 3, 
             if (side.ts) return;
             // (Builds from before the engine read JSON samples count none.)
             const samplesRead = side.stats.samplesRead === undefined ? runs : side.stats.samplesRead - before[k].samplesRead;
-            if (side.stats.wasm - before[k].wasm !== runs || samplesRead !== runs) {
+            if (side.stats.wasm - before[k].wasm !== runs * (again ? 2 : 1) || samplesRead !== runs) {
                 throw new Error(`${name}: not every run of ${side.name} read its sample and ran on WebAssembly`);
             }
         });
@@ -91,6 +102,7 @@ export async function measure(sides, inputs, { lang = "typescript", warmup = 3, 
             generate: median(t.generate),
             total: median(t.total),
             ...(t.cpu.length > 0 ? { cpu: median(t.cpu) } : {}),
+            ...(t.again.length > 0 ? { again: median(t.again) } : {}),
         });
         results.push({
             name,

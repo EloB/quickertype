@@ -130,6 +130,7 @@ const glueExports = [
     "jsonRead",
     "jsonDrop",
     "jsonHeld",
+    "jsonBytes",
     "jsonExport",
     "jsonAcquire",
     "jsonRelease",

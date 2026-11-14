@@ -87,7 +87,8 @@ interface NativeSamples {
     textLength: number;
     /**
      * The bytes of its form, as `jsonHeld` counts them: what it added to
-     * that count when it was created and with each read (`evict`).
+     * that count when it was created and with each read (`evict`), and
+     * after each run (`afterRun`).
      */
     bytes: number;
     /** The table fields as they were (empty), restored by `materialize`. */
@@ -116,7 +117,8 @@ export function setKeptTexts(codeUnits: number): number {
 
 /**
  * The most bytes the compressed forms in an engine instance may hold
- * together (`jsonHeld`, the capacities of their tables), but for the one
+ * together (`jsonHeld`, the capacities of their tables and the tallies
+ * runs kept with them, see `afterRun`), but for the one
  * a sample was just read into, before the least recently used are evicted
  * (`evict`): 256 MiB. That is the form of about 190 MB of JSON samples (a
  * 104 MB sample takes 138 MiB), more than the inputs of nearly any
@@ -719,6 +721,30 @@ export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: numb
 
     if (lease === undefined) materialize(cjson);
     return lease;
+}
+
+/**
+ * After a run on `glue` that used the forms of `cjsons` (`leaseSamples`):
+ * their bytes as the engine counts them now, and the other forms kept
+ * within `heldLimit` with these the ones in use. A run keeps the tallies
+ * it inferred the types from with the form, for the next run on the same
+ * samples (the next sample read into it drops them), and the engine
+ * counts them in the form's bytes when the run ends (`jsonBytes`).
+ */
+export function afterRun(glue: WasmGlue, cjsons: object[]): void {
+    for (const cjson of cjsons) {
+        const state = states.get(cjson);
+        if (state === undefined || state.glue !== glue || state.exported !== undefined || isDiscarded(glue)) continue;
+        try {
+            const bytes = glue.jsonBytes(state.id);
+            if (bytes === undefined) continue;
+            state.bytes = bytes;
+            evict(state, glue.jsonHeld());
+        } catch (e) {
+            engineFailed(glue, e);
+            return;
+        }
+    }
 }
 
 /**

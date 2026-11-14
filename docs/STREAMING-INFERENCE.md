@@ -346,9 +346,20 @@ ask for a `CompressedJSON`'s tables at any time, and the npm facade then
 fills them from it (`npm/quicktype-core/README.md`, "JSON samples"). Such
 an input infers from tallies made of the form when its types are
 inferred (`tally_compressed` in `input/tallies.rs`): one walk over it,
-then the inference from tallies of the sections above. The tallies of a
-run are freed when its inference ends, so what the engine holds between
-runs, and what its memory limit counts, are as before.
+then the inference from tallies of the sections above. An input over a
+form the engine keeps (`from_shared`) keeps the tallies with the form
+(`KeptTallies`, `JsonInput::set_keep_tallies`), and the next inference
+over the same samples, by any input over the form, uses them instead of
+walking again. That is exact: a form only grows, and what is in it never
+changes, so the tallies of the same samples (each top-level's, compared
+when they are used) are the same, whatever the inference flags, which
+the tallies do not depend on. Reading a sample into the form drops them,
+since the next inference is most likely over more samples. The form
+counts them in its `heap_size`, so the engine's memory limit counts them
+(`jsonHeld`, brought up to date when a run ends), and evicting the form
+frees them with it. Inputs over a form made for one run
+(`from_compressed`) do not keep them: their tallies are freed when
+inference ends.
 
 The walk starts at each sample's root, top-level by top-level and sample
 by sample in the order the top-level lists them, and goes depth first,
@@ -465,7 +476,9 @@ memory, and is the one `to_compressed` needs. An input that keeps the
 compressed form infers from its values one by one, or from tallies of it
 with `JsonInput::set_tally_compressed(true)`, which `from_shared` and
 `from_compressed` set (and `QUICKTYPE_INFERENCE=compressed-json` does
-not).
+not), and keeps those with the form with
+`JsonInput::set_keep_tallies(true)`, which `from_shared` sets.
+`JsonInput::inferred_from` tells which it did last.
 
 ## Memory
 
@@ -580,11 +593,14 @@ compares two more ways with the reference, for every seed: the
 compressed form the readers made, tallied (the engine's path for the
 samples it read, `jsonShared`), and its tables exported and imported
 again with `JsonInput::from_compressed` (its path for tables a
-JavaScript `CompressedJSON` built, `json`). After every graph it also
-checks where each way inferred from (`JsonInput::inferred_from`): forms
-the readers made, and their tables, must be tallied, never declined, so
-a walk that declined them fails the comparison instead of comparing the
-reference with itself (forcing `tally_compressed` to decline fails it on
+JavaScript `CompressedJSON` built, `json`). The first keeps its
+tallies with the form, as the engine does, so that each seed's second
+and later graphs (other inference flags) come from the kept tallies.
+After every graph the harness also checks where each way inferred from
+(`JsonInput::inferred_from`): forms the readers made, and their tables,
+must be tallied, never declined (and the kept tallies used from the
+second graph on), so a walk that declined them fails the comparison
+instead of comparing the reference with itself (forcing `tally_compressed` to decline fails it on
 the first seeds and on every hand-written case). `cargo test`'s 3,000
 seeds and the hand-written cases above run every way (`Path::All`).
 

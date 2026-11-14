@@ -93,8 +93,9 @@ pub enum Inference {
     /// CLI's).
     RunningTallies,
     /// From tallies of the compressed form the readers made, made when the
-    /// types are inferred: the WebAssembly engine's, for the samples it
-    /// read (`JsonInput::from_shared`).
+    /// types are inferred and kept with the form for the next inference:
+    /// the WebAssembly engine's, for the samples it read
+    /// (`JsonInput::from_shared`).
     CompressedTallies,
     /// The same of that form's tables, exported and imported again: the
     /// WebAssembly engine's, for the tables of a JavaScript
@@ -115,13 +116,15 @@ pub enum Path {
 }
 
 impl Inference {
-    /// Where an input made for this way infers its types from: the forms
-    /// the readers made, and their tables, are always tallied (never
-    /// declined for values no reader makes).
-    fn inferred_from(self) -> JsonInference {
+    /// Where an input made for this way infers its types from, the first
+    /// time or later: the forms the readers made, and their tables, are
+    /// always tallied (never declined for values no reader makes), and the
+    /// tallies kept with a form are used from the second time on.
+    fn inferred_from(self, first: bool) -> JsonInference {
         match self {
             Inference::Reference => JsonInference::CompressedValues,
             Inference::RunningTallies => JsonInference::RunningTallies,
+            Inference::CompressedTallies if !first => JsonInference::KeptTallies,
             Inference::CompressedTallies | Inference::ImportedTables => {
                 JsonInference::CompressedTallies
             }
@@ -186,7 +189,10 @@ fn input(
     }
     match inference {
         Some(Inference::Reference) => input.set_tally_compressed(false),
-        Some(Inference::CompressedTallies) => input.set_tally_compressed(true),
+        Some(Inference::CompressedTallies) => {
+            input.set_tally_compressed(true);
+            input.set_keep_tallies(true);
+        }
         Some(Inference::ImportedTables) => {
             let (tables, top_levels) = input.to_compressed().expect("the compressed form");
             input = JsonInput::from_compressed(
@@ -389,8 +395,8 @@ fn compare_graphs(
         .count() as u64;
     // Each way must have inferred as it says, not fallen back to the
     // values (which would compare the reference with itself).
-    let check_path = |inference: Inference, input: &JsonInput| {
-        let expected = inference.inferred_from();
+    let check_path = |inference: Inference, input: &JsonInput, first: bool| {
+        let expected = inference.inferred_from(first);
         match input.inferred_from() {
             Some(actual) if actual == expected => Ok(()),
             actual => Err(format!(
@@ -399,15 +405,15 @@ fn compare_graphs(
             )),
         }
     };
-    for &flags in flags {
+    for (i, &flags) in flags.iter().enumerate() {
         if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
             eprintln!("  graph {} {flags:?}", lang.name());
         }
         let b = graph(lang, &mut reference, flags);
-        check_path(Inference::Reference, &reference)?;
+        check_path(Inference::Reference, &reference, i == 0)?;
         for (inference, input) in &mut tested {
             let a = graph(lang, input, flags);
-            check_path(*inference, input)?;
+            check_path(*inference, input, i == 0)?;
             if a != b {
                 return Err(format!(
                     "graphs differ ({}, {flags:?})\n  {inference:?}: {a}\n  reference: {b}",
