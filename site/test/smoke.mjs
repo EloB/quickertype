@@ -2226,6 +2226,25 @@ try {
     console.log(`ok: the 26 MB file is posted as a File and read in the workers; the longest main-thread task: ${longTasks.length === 0 ? "none over 50 ms" : `${longest} ms`}`);
     ran = await switchEngine("wasm", "back to quickertype on the 26 MB file");
     assert.deepEqual(ran, { wasm: 0, ts: 0 });
+    // A change of a reading option on the large file reads it again, and
+    // the input read before is let go first (its samples freed in the
+    // engine), so nothing is evicted, even with the engine's limit on what
+    // its inputs hold together (256 MiB) set far below the file's form
+    // (12 MB) here: an input that is gone but not finalized yet would
+    // otherwise have its tables copied out first.
+    const limited = await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, heldLimit: 1 << 20 }).then((r) => ({ ok: r.ok, reused: r.reused, evicted: r.evicted }))`);
+    assert.deepEqual(limited, { ok: true, reused: true, evicted: 0 }, "a run on the input read before, with a 1 MiB limit");
+    const largeReading = () =>
+        page.evaluate(`(() => {
+            const result = playground.view.results.wasm?.result;
+            return { ok: result?.ok, reused: result?.reused, evicted: result?.evicted };
+        })()`);
+    for (const state of ["on", "off"]) {
+        await click("general-no-ignore-json-refs");
+        assert.deepEqual(await largeReading(), { ok: true, reused: false, evicted: 0 }, `--no-ignore-json-refs ${state} on the 26 MB file`);
+    }
+    await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, heldLimit: 256 * 1024 * 1024 })`);
+    console.log("ok: a reading option changed on the 26 MB file reads it again and evicts nothing (the input before is let go)");
 
     // Files that cannot be read as text: one larger than a browser's
     // longest string (its size faked: no multi-GB file is written), and one

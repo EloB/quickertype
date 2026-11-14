@@ -193,6 +193,33 @@ const notUtf8 = -2;
 /** The fields a sample changes when TypeScript reads it. */
 const tableFields = ["_strings", "_stringIndexes", "_objects", "_arrays"];
 
+/**
+ * Not public (the playground's workers use it): frees the engine's
+ * compressed form of `input`'s `CompressedJSON` now, instead of when the
+ * garbage collector has finalized the input, so that it no longer counts
+ * toward `heldLimit` (an input that is gone but not finalized yet would be
+ * evicted, its tables exported, when the next one is read). The input must
+ * not be used afterwards: its samples are gone, and reading its tables, or
+ * a run on it, throws. A run that holds the form keeps it until it ends.
+ */
+export function releaseJSONInput(input: any): void {
+    const cjson = input?._compressedJSON;
+    const state = cjson === undefined || cjson === null ? undefined : states.get(cjson);
+    if (state === undefined) return;
+    states.delete(cjson);
+    recent.delete(state);
+    registry.unregister(state);
+    const released = new Error("quicktype-core: the JSON samples of this input were released");
+    for (const [name, descriptor] of state.fields) {
+        const fail = (): never => {
+            throw released;
+        };
+        Object.defineProperty(cjson, name, { configurable: true, enumerable: descriptor.enumerable, get: fail, set: fail });
+    }
+
+    if (state.exported === undefined) drop(state.glue, state.id);
+}
+
 /** Engine compressed forms whose `CompressedJSON` was collected. */
 const registry: any = (() => {
     const Registry = (globalThis as any).FinalizationRegistry;

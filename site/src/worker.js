@@ -4,10 +4,15 @@
 // each starts when the page first needs it.
 //
 // Request:  { id, kind: "json" | "schema", lang, name, text | file, rendererOptions,
-//             options, warmup?, repeat? }
+//             options, warmup?, repeat?, heldLimit? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
-//           { type: "result", id, ok, files | error, ms, times, inputTimes, reused, ran, reason,
-//             first, workerFailure (a failure that is not quicktype's) }
+//           { type: "result", id, ok, files | error, ms, times, inputTimes, reused, evicted,
+//             ran, reason, first, workerFailure (a failure that is not quicktype's) }
+//
+// `heldLimit` (for the smoke test) sets quickertype-core's limit on the
+// bytes its engine's inputs hold together, past which it copies the
+// tables of the least recently used out (`evicted`: how many it did during
+// the request).
 //
 // `options` are `quicktype()` options from the page's general options
 // (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
@@ -53,9 +58,23 @@ import {
     quicktypeMultiFile,
 } from "../../npm/quicktype-core/dist/esm/index.js";
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
+import { releaseJSONInput, setHeldLimit } from "../../npm/quicktype-core/dist/esm/native/samples.js";
 
 /** The JSON input read last, for the next run that reads it the same way: { sample, key, input }. */
 let lastRead;
+
+/**
+ * Lets go of the input read last. Its samples in the engine are freed
+ * right away (not when the garbage collector gets to the input): otherwise
+ * the next input read, while this one is gone but not finalized, would
+ * find the engine past its limit on what inputs hold together and copy
+ * this one's tables out, which takes a quarter of a second for a 450 MB
+ * file.
+ */
+function forgetLastRead() {
+    if (lastRead !== undefined) releaseJSONInput(lastRead.input);
+    lastRead = undefined;
+}
 
 /** A number for each date/time recognizer class, for `readKey`. */
 const recognizerIds = new Map();
@@ -97,15 +116,27 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
             // integers (Rust's `integer-type`, cJSON's `integer-size`).
             const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
             // A failed read keeps nothing.
-            if (reuse) lastRead = undefined;
-            await input.addSource({ name, samples: [sample] });
+            if (reuse) forgetLastRead();
+            try {
+                await input.addSource({ name, samples: [sample] });
+            } catch (e) {
+                releaseJSONInput(input);
+                throw e;
+            }
+
             inputData.addInput(input);
             if (reuse) lastRead = { sample, key, input };
+            // An input not kept for the next run is let go when this one ends.
+            else phases.release = input;
         }
     }
 
     phases.input = phases.reused ? 0 : performance.now() - start;
-    return quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
+    try {
+        return await quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
+    } finally {
+        if (phases.release !== undefined) releaseJSONInput(phases.release);
+    }
 }
 
 function snapshot() {
@@ -157,7 +188,7 @@ async function inputSample({ kind, text, file }) {
     const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, bytes]);
     // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
-    if (lastRead !== undefined && lastRead.sample !== (file === undefined ? text : lastFile?.sample)) lastRead = undefined;
+    if (lastRead !== undefined && lastRead.sample !== (file === undefined ? text : lastFile?.sample)) forgetLastRead();
     if (file === undefined) return text;
     if (lastFile !== undefined) return lastFile.sample;
     const large = tooLarge(file.name, file.size);
@@ -197,6 +228,8 @@ async function timedRuns(request, sample, first) {
     const warmup = request.warmup ?? 0;
     const repeat = Math.max(1, request.repeat ?? 1);
     const reuse = warmup === 0 && repeat === 1;
+    if (request.heldLimit !== undefined) setHeldLimit(request.heldLimit);
+    const evicted = engineStats.evicted;
     const times = [];
     const inputTimes = [];
     let reply;
@@ -229,7 +262,17 @@ async function timedRuns(request, sample, first) {
         }
     }
 
-    return { type: "result", id: request.id, ms: times[times.length - 1], times, inputTimes, reused, first, ...reply };
+    return {
+        type: "result",
+        id: request.id,
+        ms: times[times.length - 1],
+        times,
+        inputTimes,
+        reused,
+        evicted: engineStats.evicted - evicted,
+        first,
+        ...reply,
+    };
 }
 
 /** A result for a request the worker could not handle at all: not quicktype's (the page does not keep it). */

@@ -253,6 +253,19 @@ long-running process stays at about the limit plus the largest of those.
 leave the engine at 54.6 MiB of memory, as after the first 50; without a
 limit it grew by 2.2 MiB per input, to 539 MiB.)
 
+A long-running program that makes many large inputs one after the other
+can therefore pay for eviction until the garbage collector has finalized
+the old ones: their forms still count toward the limit, and their tables
+are copied out when the next input is read. That is expected, and it only
+matters for inputs whose forms come near the limit on their own. In
+Chrome, the form of a 450 MB sample takes 230–250 ms to evict, and that of
+a 656 MB sample about 340 ms; in a loop that read one such input per
+iteration, 5 of 8 were evicted even with `gc()` between iterations. The
+playground's workers avoid it with `releaseJSONInput(input)` in
+`dist/native/samples.js`, which frees the form of an input they will not
+use again right away. That function is not part of the public API: the
+input must not be used afterwards, and using it throws.
+
 **Why this cannot be told apart from TypeScript reading the samples:**
 
 - *Errors surface where they did.* `addSource`/`addSourceSync` still call

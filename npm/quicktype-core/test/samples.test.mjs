@@ -1142,3 +1142,41 @@ test("bytes changed after addSource change nothing", async () => {
     assert.deepEqual(inside(input2), await inMode("ts", async () => inside(await addAll("typescript", [["T", ['{"x": true, "y": "\u00e9"}']]]))));
     assert.equal(engineStats.tablesFilled, before + 1);
 });
+
+// The playground's workers let go of an input they will not use again
+// (`releaseJSONInput`, not public): its form is freed in the engine at once,
+// so that reading the next input does not find the engine past its limit
+// and evict it, as it would an input that is gone but not finalized yet.
+test("an input released is freed in the engine at once, and is not evicted", async () => {
+    const glue = engine.engineSync();
+    const count = glue.__jsonCount();
+    const held = glue.jsonHeld();
+    const make = () => addAll("rust", plainGroups);
+    const first = await make();
+    assert.equal(glue.__jsonCount(), count + 1);
+    assert.ok(glue.jsonHeld() > held);
+    const old = nativeSamples.setHeldLimit(1);
+    try {
+        const before = { ...engineStats };
+        nativeSamples.releaseJSONInput(first);
+        assert.equal(glue.__jsonCount(), count);
+        assert.equal(glue.jsonHeld(), held);
+        const second = await make();
+        assert.equal(engineStats.evicted, before.evicted);
+        assert.equal(engineStats.tablesFilled, before.tablesFilled);
+        // The input released can no longer be used.
+        assert.throws(() => first._compressedJSON._strings, /samples of this input were released/);
+        await assert.rejects(run(first, "rust"), /samples of this input were released/);
+        // Without releasing it, the next input read evicts it.
+        await make();
+        assert.equal(engineStats.evicted, before.evicted + 1);
+        assert.deepEqual([...(await run(second, "rust"))], await inMode("ts", async () => [...(await run(await make(), "rust"))]));
+        // Releasing an input the engine does not hold does nothing.
+        nativeSamples.releaseJSONInput(await inMode("ts", make));
+        nativeSamples.releaseJSONInput(first);
+    } finally {
+        nativeSamples.setHeldLimit(old);
+    }
+
+    noLeases();
+});
