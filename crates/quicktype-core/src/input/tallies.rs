@@ -783,27 +783,32 @@ const PROTO: u8 = 2;
 /// (the WebAssembly engine keeps its inputs in that form, which quicktype's
 /// API can ask for at any time), made in one walk over it when their types
 /// are inferred. Returns the tallies, whose keys and cases are the
-/// compressed form's strings, and each top-level's tree; `None` if the
-/// values are not as a reader makes them, where only inference from the
-/// values themselves is exact. See `docs/STREAMING-INFERENCE.md`, "Tallies
-/// of a compressed form".
+/// compressed form's strings, and each top-level's tree; `Ok(None)` if the
+/// values are not as a reader makes them (see [`CompressedTally`]), where
+/// only inference from the values themselves is exact. An error is one
+/// tallying raises (as reading the samples would have), not a decline:
+/// it is the run's. See `docs/STREAMING-INFERENCE.md`, "Tallies of a
+/// compressed form".
 pub(crate) fn tally_compressed<'c>(
     cjson: &Rc<CompressedJson>,
     top_levels: impl IntoIterator<Item = &'c [Value]>,
-) -> Option<(Tallies, Vec<NodeId>)> {
+) -> Result<Option<(Tallies, Vec<NodeId>)>> {
     // A string is known by its index, but for `"__proto__"`, which is
     // interned anew each time and so is known by its text.
     if !cjson.unique_strings() {
-        return None;
+        return Ok(None);
     }
     let mut tallies = Tallies::new();
     tallies.texts = Some(Rc::clone(cjson));
     let mut walk = CompressedTally::new(cjson);
     let mut roots = Vec::new();
     for samples in top_levels {
-        roots.push(walk.tally(&mut tallies, samples)?);
+        match walk.tally(&mut tallies, samples)? {
+            Some(root) => roots.push(root),
+            None => return Ok(None),
+        }
     }
-    Some((tallies, roots))
+    Ok(Some((tallies, roots)))
 }
 
 /// The walk of [`tally_compressed`].
@@ -812,7 +817,11 @@ pub(crate) fn tally_compressed<'c>(
 /// object and array is the value of exactly one key, element or root. A
 /// compressed form from elsewhere (the tables of a JavaScript
 /// `CompressedJSON`) could hold one that is reached twice, or a cycle; the
-/// walk then declines.
+/// walk then declines. So it does for the other values no reader makes: an
+/// object key that is not an interned string, a transformed string whose
+/// text has no kind or no attribute producer (`Inference.ts` fails on it),
+/// and a string table that holds a text twice. Nothing else declines: an
+/// error tallying a value (a lookup that fails, too many places) is raised.
 struct CompressedTally<'c> {
     cjson: &'c CompressedJson,
     /// By string index: [`UNKNOWN`], [`PLAIN`] or [`PROTO`].
@@ -855,16 +864,14 @@ enum WalkFrame<'c> {
     },
 }
 
-/// Marks bit `index` of `bits`; whether it was clear.
-fn first_visit(bits: &mut [u64], index: u32) -> bool {
+/// Marks bit `index` of `bits`; whether it was clear. An index past the
+/// bits is a value that is not there, as looking it up finds.
+fn first_visit(bits: &mut [u64], index: u32) -> Result<bool> {
     let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
-    match bits.get_mut(word) {
-        Some(w) if *w & bit == 0 => {
-            *w |= bit;
-            true
-        }
-        _ => false,
-    }
+    let w = defined(bits.get_mut(word))?;
+    let first = *w & bit == 0;
+    *w |= bit;
+    Ok(first)
 }
 
 impl<'c> CompressedTally<'c> {
@@ -899,20 +906,19 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
-    /// `None` if a value is not one a reader makes (see the type), or
-    /// tallying it fails.
-    fn tally(&mut self, tallies: &mut Tallies, samples: &[Value]) -> Option<NodeId> {
-        let root = tallies.new_tree().ok()?;
+    /// `Ok(None)` if a value is not one a reader makes (see the type).
+    fn tally(&mut self, tallies: &mut Tallies, samples: &[Value]) -> Result<Option<NodeId>> {
+        let root = tallies.new_tree()?;
         for &sample in samples {
-            if !self.walk(tallies, root, sample).unwrap_or(false) {
-                return None;
+            if !self.walk(tallies, root, sample)? {
+                return Ok(None);
             }
         }
-        Some(root)
+        Ok(Some(root))
     }
 
     /// Tallies `value` and everything in it at `node`; whether it is a
-    /// tree as a reader makes it.
+    /// tree as a reader makes it (`Ok(false)` declines it).
     fn walk(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
         if !self.visit(tallies, node, value)? {
             return Ok(false);
@@ -1104,7 +1110,7 @@ impl<'c> CompressedTally<'c> {
                 return Ok(true);
             }
             Value::Object(index) => {
-                if !first_visit(&mut self.objects_seen, index) {
+                if !first_visit(&mut self.objects_seen, index)? {
                     return Ok(false);
                 }
                 // `push_object_context`.
@@ -1127,7 +1133,7 @@ impl<'c> CompressedTally<'c> {
                 return Ok(true);
             }
             Value::Array(index) => {
-                if !first_visit(&mut self.arrays_seen, index) {
+                if !first_visit(&mut self.arrays_seen, index)? {
                     return Ok(false);
                 }
                 // `push_array_context`.
@@ -1835,11 +1841,13 @@ mod tests {
             }
             // The stream reader keeps what the tallies were read with.
             let streamed = Rc::new(streamed);
-            let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()]).unwrap();
+            let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()])
+                .unwrap()
+                .unwrap();
             assert_eq!(dump(&tallies, roots[0]), expected, "refs {handle_refs}");
             // Split into top-levels: each its own tree.
             let (first, rest) = stream_roots.split_at(3);
-            let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap();
+            let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap().unwrap();
             let mut one = Tallies::new();
             let a = read(&mut one, &config, &WALKED[..3]);
             let b = read(&mut one, &config, &WALKED[3..]);
@@ -1858,7 +1866,9 @@ mod tests {
                 text_tallies.merge(trees[0], tree).unwrap();
             }
             let parsed = Rc::new(parsed);
-            let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()]).unwrap();
+            let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()])
+                .unwrap()
+                .unwrap();
             assert_eq!(
                 dump(&tallies, roots[0]),
                 dump(&text_tallies, trees[0]),
@@ -1903,7 +1913,9 @@ mod tests {
             let (objects, arrays) = cjson.counts();
             let root = cjson.decode_value(root, objects, arrays).unwrap();
             assert!(
-                tally_compressed(&Rc::new(cjson), [[root].as_slice()]).is_none(),
+                tally_compressed(&Rc::new(cjson), [[root].as_slice()])
+                    .unwrap()
+                    .is_none(),
                 "{tables:?}"
             );
         }
@@ -1913,11 +1925,37 @@ mod tests {
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &good).unwrap();
         let (objects, arrays) = cjson.counts();
         let root = cjson.decode_value(array, objects, arrays).unwrap();
-        let (tallies, roots) = tally_compressed(&Rc::new(cjson), [[root].as_slice()]).unwrap();
+        let (tallies, roots) = tally_compressed(&Rc::new(cjson), [[root].as_slice()])
+            .unwrap()
+            .unwrap();
         assert_eq!(
             dump(&tallies, roots[0]),
             "[array] items [[object] objects 1 [] {\"a\"×1: [integer], }]"
         );
+    }
+
+    /// A value that is not there is an error, as it is for the values'
+    /// inference, which looks it up: not a form the walk declines.
+    #[test]
+    fn values_that_are_not_there_are_errors() {
+        let mut cjson = config(false);
+        let root = cjson.parse_stream(br#"[{"a":"x"}]"#).unwrap();
+        let cjson = Rc::new(cjson);
+        let (objects, arrays) = cjson.counts();
+        let strings = cjson.table_counts().strings as u32;
+        for missing in [
+            Value::Object(objects as u32),
+            Value::Array(arrays as u32),
+            Value::InternedString(strings),
+            Value::TransformedString(strings),
+        ] {
+            let error = tally_compressed(&cjson, [[root, missing].as_slice()]).unwrap_err();
+            assert_eq!(
+                error.user_message(),
+                "Internal error: Defined value expected, but got undefined",
+                "{missing:?}"
+            );
+        }
     }
 
     #[test]

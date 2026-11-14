@@ -385,11 +385,17 @@ would skip, without looking.
 The walk declines what no reader makes: an object or array reached a
 second time (shared, or a cycle), an object key that is not an interned
 string, a transformed string whose text has no kind or no attribute
-producer, a string table that holds a text twice, a value that is not
-there. Then the input infers from the values one by one, which is the
-reference, so the types are quicktype's either way. Forms the engine
-read, and tables of quicktype's own `CompressedJSON` (which the facade
-requires), have none of these; checking costs a bit per container.
+producer, a string table that holds a text twice. Then the input infers
+from the values one by one, which is the reference, so the types are
+quicktype's either way (for a transformed string without a kind or
+producer, that is `Inference.ts`'s error). Forms the engine read, and
+tables of quicktype's own `CompressedJSON` (which the facade requires),
+have none of these; checking costs a bit per container. Nothing else
+declines: an error while tallying is the run's, raised as reading the
+samples raises it. A value that is not there (which imported tables
+cannot have: importing checks every value) fails the walk with the
+error the values' inference fails with when it looks the value up, and
+more places than a node id counts fails as reading fails.
 
 ## TypeBuilder calls
 

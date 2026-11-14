@@ -738,7 +738,7 @@ impl JsonInput {
             tally_compressed(
                 &self.compressed_json,
                 self.top_levels.values().map(|t| t.samples.as_slice()),
-            )
+            )?
         } else {
             None
         };
@@ -998,6 +998,39 @@ mod tests {
         let tallied = graph(&mut reference);
         reference.set_tally_compressed(false);
         assert_eq!(tallied, graph(&mut reference));
+    }
+
+    /// An error tallying a compressed form is raised, not taken for a form
+    /// the walk declines (which would infer from the values instead): here
+    /// a value that is not there, which the values' inference raises too.
+    #[test]
+    fn errors_tallying_a_compressed_form_are_raised() {
+        let mut input = JsonInput::new(CompressedJson::with_int64_range(
+            Box::new(DefaultDateTimeRecognizer),
+            false,
+        ));
+        input.set_tally_inference(false).unwrap();
+        input.add_source_sync(source("T", &[A, B])).unwrap();
+        let (objects, arrays) = input.compressed_json.counts();
+        let strings = input.compressed_json.table_counts().strings as u32;
+        for missing in [
+            Value::Object(objects as u32),
+            Value::Array(arrays as u32),
+            Value::InternedString(strings),
+            Value::TransformedString(strings),
+        ] {
+            let samples = &mut input.top_levels[0].samples;
+            samples.truncate(2);
+            samples.push(missing);
+            input.set_tally_compressed(false);
+            let expected = graph(&mut input);
+            assert!(
+                expected.starts_with("error") && expected.contains("undefined"),
+                "{expected}"
+            );
+            input.set_tally_compressed(true);
+            assert_eq!(graph(&mut input), expected, "{missing:?}");
+        }
     }
 
     const A: &str = r#"{"a":[1,{"b":"x"}],"c":{"d":"2020-01-01"},"__proto__":{"p":1}}"#;
