@@ -533,7 +533,7 @@ fn strings_longer_than_a_node_holds() {
         let mut tape = reader(None, false);
         let mut whole = reader(None, false);
         let read = tape.read_string_sample(&text, limits).unwrap();
-        let parsed = parse_string_value_into(&mut whole, &text).unwrap();
+        let parsed = parse_string_value_into(&mut whole, &text, Framing::Value).unwrap();
         assert_eq!(dump(&tape, read), dump(&whole, parsed));
         assert_eq!(tape.to_tables(&[]), whole.to_tables(&[]));
     }
