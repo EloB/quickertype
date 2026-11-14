@@ -365,6 +365,9 @@ thread_local! {
     /// How many bytes of ranges the last reading on this thread had
     /// summarized (for tests).
     static SCANNED: Cell<u64> = const { Cell::new(0) };
+    /// The most parts given out and not appended yet at once in the last
+    /// reading on this thread (for tests).
+    static AHEAD: Cell<usize> = const { Cell::new(0) };
 }
 
 thread_local! {
@@ -838,8 +841,9 @@ impl Reading<'_> {
     /// Where a part's tree alone would take half of the budget, the rest is
     /// read in one go instead, which shares the tallies. The first part,
     /// read here straight into the tallies, is the first estimate. The
-    /// ranges are summarized only a few ahead of the first part not
-    /// appended yet, so that their text is read again while it is still
+    /// ranges are summarized only a few ahead of the next part to give out
+    /// (so at most a few parts and ranges ahead of the first part not
+    /// appended yet), so that their text is read again while it is still
     /// cached, and where they hold no split for as long as such a part,
     /// not at all: the rest is read in one go.
     fn coordinate(
@@ -875,7 +879,10 @@ impl Reading<'_> {
         let mut smallest = 0u64;
         let parts_ahead = 2 * threads + 2;
         #[cfg(test)]
-        HELD.with(|h| h.set((0, 0)));
+        {
+            HELD.with(|h| h.set((0, 0)));
+            AHEAD.with(|a| a.set(0));
+        }
         let mut root: Option<NodeId> = None;
         let mut buffer = vec![0u8; SCAN_PIECE];
         // Jobs given out and not done yet.
@@ -898,10 +905,11 @@ impl Reading<'_> {
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
             // Summaries a few ranges past those formed into parts; while
-            // parts are not appended, not much past the first; and not past
-            // where a stretch without a split ends the reading (below).
+            // parts wait to be given out (whose number the budget bounds),
+            // not much past the next; and not past where a stretch without
+            // a split ends the reading (below).
             let limit = parts
-                .get(appended)
+                .get(dispatched)
                 .map_or(u64::MAX, |next| {
                     next.from.saturating_add(parts_ahead as u64 * self.range)
                 })
@@ -1012,6 +1020,8 @@ impl Reading<'_> {
                 held.insert(dispatched, estimate);
                 pending += 1;
                 dispatched += 1;
+                #[cfg(test)]
+                AHEAD.with(|a| a.set(a.get().max(dispatched - appended)));
             }
             if all_formed && appended == parts.len() {
                 return root.map(Outcome::Whole);
@@ -1413,6 +1423,29 @@ mod tests {
             "{peak} bytes held, over {} + {largest}",
             options.budget
         );
+    }
+
+    /// Parts longer than the ranges summarized ahead of the next part to
+    /// give out are still read beside each other: behind a part read
+    /// slowly, the parts after it are given out as the budget allows (with
+    /// the ranges summarized ahead of the first part not appended, they
+    /// were read one at a time).
+    #[test]
+    fn long_parts_are_read_beside_each_other() {
+        let config = config(false);
+        // Elements of 2 KB, ranges of 64 bytes: 6 ranges (2 x 2 + 2) are
+        // less than a part.
+        let elements: Vec<String> = (0..12)
+            .map(|i| format!(r#"{{"text":"{}","n":{i}}}"#, "x".repeat(2000)))
+            .collect();
+        let bytes = format!("[{}]", elements.join(","));
+        SLOW_PART.with(|s| s.set(Some((1, std::time::Duration::from_millis(200)))));
+        let (result, how) = read_with(&config, bytes.as_bytes(), options(2, 64));
+        SLOW_PART.with(|s| s.set(None));
+        assert_eq!(result, in_one_go(&config, bytes.as_bytes()));
+        assert_eq!(how.whole, 1);
+        let ahead = AHEAD.with(Cell::get);
+        assert!(ahead >= 4, "{ahead} parts given out at once");
     }
 
     /// Where the system refuses a reading thread, the sample is read in one
