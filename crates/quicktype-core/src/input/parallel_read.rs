@@ -46,6 +46,7 @@ use super::compressed_json_from_stream::{
 use super::json_split::{BLOCK, ScanState, Summarizer, Summary, blocks, escaped_after};
 use super::tallies::{NodeId, PortableTree, RunningTallies, TallyBuilder};
 use crate::date_time::DateTimeRecognizer;
+use crate::input::io::node_io::stream_read_error;
 
 /// The bytes of a sample that can be read at any offset, from several
 /// threads at once.
@@ -108,20 +109,16 @@ pub(crate) struct PositionalSample {
     /// The options to read with; `None` for those of the environment
     /// ([`ParallelOptions::from_env`]).
     options: Option<ParallelOptions>,
-    /// The error a failed read of the stream is reported as.
-    read_error: fn(&io::Error) -> io::Error,
 }
 
 impl PositionalSample {
-    /// The regular file `file`, from its start; a failed read is reported
-    /// as `read_error` makes it.
+    /// The regular file `file`, from its start.
     #[cfg(all(unix, feature = "fs"))]
-    pub(crate) fn file(file: std::fs::File, read_error: fn(&io::Error) -> io::Error) -> Self {
+    pub(crate) fn file(file: std::fs::File) -> Self {
         PositionalSample {
             source: Positional::File(file),
             start: 0,
             options: None,
-            read_error,
         }
     }
 
@@ -130,16 +127,12 @@ impl PositionalSample {
     /// as reading it in one go leaves it. `None` if where it is cannot be
     /// told.
     #[cfg(all(unix, feature = "fs"))]
-    pub(crate) fn stdin(
-        mut file: std::fs::File,
-        read_error: fn(&io::Error) -> io::Error,
-    ) -> Option<Self> {
+    pub(crate) fn stdin(mut file: std::fs::File) -> Option<Self> {
         let start = io::Seek::stream_position(&mut file).ok()?;
         Some(PositionalSample {
             source: Positional::File(file),
             start,
             options: None,
-            read_error,
         })
     }
 
@@ -158,7 +151,6 @@ impl PositionalSample {
             source: Positional::Memory(bytes),
             start: 0,
             options: Some(options),
-            read_error: |e| io::Error::new(e.kind(), e.to_string()),
         }
     }
 
@@ -171,33 +163,30 @@ impl PositionalSample {
     /// The sample as a byte stream from `from`. (Reading on several threads
     /// reads at offsets, which leaves a file's position where it was.)
     fn into_reader_from(self, from: u64) -> Box<dyn Read> {
-        let read_error = self.read_error;
         match self.source {
             #[cfg(all(unix, feature = "fs"))]
-            Positional::File(file) => Box::new(MappedErrors {
+            Positional::File(file) => Box::new(StreamFrom {
                 inner: file,
                 seek_to: Some(from),
-                read_error,
             }),
-            Positional::Memory(bytes) => Box::new(MappedErrors {
+            Positional::Memory(bytes) => Box::new(StreamFrom {
                 inner: io::Cursor::new(bytes),
                 seek_to: Some(from),
-                read_error,
             }),
         }
     }
 }
 
-/// A reader from `seek_to`, whose failed reads are reported as
-/// `read_error` makes them.
-struct MappedErrors<R> {
+/// A reader from `seek_to`, whose failed reads are reported as Node
+/// reports them, as the CLI's other streams' are
+/// ([`stream_read_error`]).
+struct StreamFrom<R> {
     inner: R,
     /// Where to read from, before the first read.
     seek_to: Option<u64>,
-    read_error: fn(&io::Error) -> io::Error,
 }
 
-impl<R: Read + io::Seek> Read for MappedErrors<R> {
+impl<R: Read + io::Seek> Read for StreamFrom<R> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut read = || {
             if let Some(at) = self.seek_to.take() {
@@ -205,13 +194,7 @@ impl<R: Read + io::Seek> Read for MappedErrors<R> {
             }
             self.inner.read(buf)
         };
-        read().map_err(|e| {
-            if e.kind() == io::ErrorKind::Interrupted {
-                e
-            } else {
-                (self.read_error)(&e)
-            }
-        })
+        read().map_err(stream_read_error)
     }
 }
 
