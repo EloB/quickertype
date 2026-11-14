@@ -197,11 +197,35 @@ fn json_lines_urls_are_the_array_of_their_values() {
     }
     // A `.url` file in a directory, by its URL's name: JSON Lines without
     // `--src-lang` or with `--src-lang jsonl`; with `--src-lang json`, JSON,
-    // as quicktype reads it (two values: a syntax error).
+    // as quicktype reads it (two values: a syntax error). Its name is in
+    // lower case: like quicktype, the CLI reads a `.url` file under its
+    // lower-cased path, which a case-sensitive file system (Linux) would not
+    // find for `TopLevel.url`. The array's types are then named `top_level`.
+    let expected = {
+        let dir = work_dir("array-top_level");
+        let array = format!("{base}/array.json");
+        let output = run_in(
+            &dir,
+            &[
+                "--src-lang",
+                "json",
+                "--src",
+                &array,
+                "--lang",
+                "rust",
+                "--out",
+                "out.rs",
+                "--top-level",
+                "top_level",
+            ],
+        );
+        assert_eq!(output.status.code(), Some(0));
+        std::fs::read_to_string(dir.join("out.rs")).unwrap()
+    };
     for (name, url) in [("jsonl", "lines.jsonl"), ("ndjson", "lines.ndjson")] {
         let dir = work_dir(&format!("url-file-{name}"));
         std::fs::create_dir_all(dir.join("data")).unwrap();
-        std::fs::write(dir.join("data/TopLevel.url"), format!("{base}/{url}\n")).unwrap();
+        std::fs::write(dir.join("data/top_level.url"), format!("{base}/{url}\n")).unwrap();
         for src_lang in [&[][..], &["--src-lang", "jsonl"]] {
             let mut args = vec!["--lang", "rust", "--out", "out.rs"];
             args.extend_from_slice(src_lang);
@@ -222,7 +246,7 @@ fn json_lines_urls_are_the_array_of_their_values() {
         assert_eq!(output.status.code(), Some(1));
         assert_eq!(
             String::from_utf8_lossy(&output.stderr),
-            "Error: Syntax error in input JSON TopLevel: Parser cannot parse input: unexpected characters.\n"
+            "Error: Syntax error in input JSON top_level: Parser cannot parse input: unexpected characters.\n"
         );
     }
 }
