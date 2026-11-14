@@ -244,6 +244,10 @@ pub struct CliOptions {
     pub src_urls: Option<String>,
     /// The source language: `json` unless given or inferred.
     pub src_lang: String,
+    /// Whether `--src-lang` was given. Not in TypeScript: without it,
+    /// `json` reads files and URLs named `*.jsonl` or `*.ndjson` as JSON
+    /// Lines; with `--src-lang json`, nothing is.
+    pub src_lang_given: bool,
     /// The target language.
     pub lang: &'static dyn TargetLanguage,
     /// The top-level type name.
@@ -480,6 +484,7 @@ fn infer_cli_options(
         src: options.src.unwrap_or_default(),
         src_urls: options.src_urls,
         src_lang,
+        src_lang_given: options.src_lang.is_some(),
         lang: language,
         top_level,
         no_render: options.no_render.unwrap_or(false),
@@ -614,6 +619,22 @@ mod tests {
 
     #[test]
     fn source_language() {
+        let json = parse(&["a.jsonl"]).unwrap();
+        assert_eq!(
+            (json.src_lang.as_str(), json.src_lang_given),
+            ("json", false)
+        );
+        let given = parse(&["-s", "json", "a.jsonl"]).unwrap();
+        assert_eq!(
+            (given.src_lang.as_str(), given.src_lang_given),
+            ("json", true)
+        );
+        let lines = parse(&["--src-lang", "jsonl"]).unwrap();
+        assert_eq!(
+            (lines.src_lang.as_str(), lines.top_level.as_str()),
+            ("jsonl", "TopLevel")
+        );
+        assert_eq!(parse(&["cards.jsonl"]).unwrap().top_level, "cards");
         assert_eq!(parse(&["a.ts", "b.ts"]).unwrap().src_lang, "typescript");
         assert_eq!(
             parse(&["--src-lang", "schema", "a"]).unwrap().src_lang,

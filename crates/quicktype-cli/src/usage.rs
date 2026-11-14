@@ -2,9 +2,10 @@
 //! `sectionsAfterRenderers`, `makeLangTypeLabel` and
 //! `tableOptionsForOptions` in `src/index.ts`.
 //!
-//! The one difference is the command in the synopsis and the examples
-//! ([`COMMAND`]: `$ quickertype ...`, not `$ quicktype ...`), which
-//! `cargo xtask parity` turns back into quicktype's before comparing.
+//! The differences are the command in the synopsis and the examples
+//! ([`COMMAND`]: `$ quickertype ...`, not `$ quicktype ...`), and `jsonl`
+//! (JSON Lines) among the source languages of the synopsis, which `cargo
+//! xtask parity` turns back into quicktype's before comparing.
 
 use quicktype_core::TargetLanguage;
 
@@ -79,7 +80,7 @@ fn make_sections_before_renderers(
                 String::new(),
                 format!("  LANG ... {}", make_lang_type_label(target_languages)),
                 String::new(),
-                "SRC_LANG ... json|schema|graphql|postman|typescript".to_owned(),
+                "SRC_LANG ... json|jsonl|schema|graphql|postman|typescript".to_owned(),
             ])),
         },
         Section::Content {

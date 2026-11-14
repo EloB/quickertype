@@ -46,7 +46,7 @@ use quicktype_js_compat::wordwrap::WordWrap;
 use crate::chalk::Chalk;
 use crate::cli_options::{CliOptions, parse_cli_options};
 use crate::messages::{CliError, message_error};
-use crate::type_source::{JsonTypeSource, TypeSource};
+use crate::type_source::{JsonSampleSource, JsonTypeSource, TypeSource};
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -200,10 +200,15 @@ async fn add_json_source(
     for sample in samples {
         // Read chunk by chunk as it is parsed, like TypeScript's stream:
         // a large file is never held whole.
-        let reader = sample.open_std().map_err(CliError::Io)?;
+        let reader = SampleReader::new(sample.readable.open_std().map_err(CliError::Io)?);
+        let sample = if sample.json_lines {
+            JsonSample::ReaderLines(reader)
+        } else {
+            JsonSample::Reader(reader)
+        };
         let one = JsonSourceData {
             name: name.clone(),
-            samples: vec![JsonSample::Reader(SampleReader::new(reader))],
+            samples: vec![sample],
             description: description.clone(),
         };
         input_data.add_source("json", one, make_input).await?;
@@ -308,7 +313,11 @@ fn postman_sources(collection_files: &[String]) -> Result<PostmanInputs, CliErro
         for source in postman.sources {
             inputs.sources.push(TypeSource::Json(JsonTypeSource {
                 name: source.name,
-                samples: source.samples.into_iter().map(Readable::Text).collect(),
+                samples: source
+                    .samples
+                    .into_iter()
+                    .map(|sample| JsonSampleSource::json(Readable::Text(sample)))
+                    .collect(),
                 description: source.description,
             }));
         }
@@ -430,7 +439,8 @@ async fn make_quicktype_options(
             Some(sources) => sources,
             None => return Ok(None),
         },
-        "json" | "schema" => sources::get_sources(options).await?,
+        // `jsonl` is not in TypeScript: JSON samples read as JSON Lines.
+        "json" | "jsonl" | "schema" => sources::get_sources(options).await?,
         "typescript" => vec![TypeSource::Schema(make_typescript_source(
             &options.src,
             console,
