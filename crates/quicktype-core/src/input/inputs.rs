@@ -586,14 +586,15 @@ impl JsonInput {
 
     /// For an input that infers from tallies of its compressed form (see
     /// [`set_tally_compressed`](Self::set_tally_compressed)): whether it
-    /// keeps them with the form, for the next inference over the same
-    /// samples, which then uses them instead of walking the form again (as
-    /// does any input over the same form and samples). The form holds them
-    /// until a sample is added to it, and counts them in its
+    /// keeps the tallies it makes with the form, for the next inference
+    /// over the same samples. Any input over the form (keeping its own or
+    /// not) uses tallies kept with it that are of its samples, instead of
+    /// walking the form again. The form holds them until a sample is added
+    /// to it, and counts them in its
     /// [`heap_size`](CompressedJson::heap_size). The default of
     /// [`from_shared`](Self::from_shared), whose form the WebAssembly
     /// engine keeps for every run that uses the input; otherwise the
-    /// tallies are freed when inference ends.
+    /// tallies an input makes are freed when inference ends.
     pub fn set_keep_tallies(&mut self, keep: bool) {
         self.keep_tallies = keep;
     }
@@ -887,16 +888,15 @@ impl JsonInput {
     /// from, with the tallies of the compressed form if they are tallied
     /// (`Ok(None)` if they are inferred from its values one by one, as
     /// asked or because the walk declines the form). The tallies are those
-    /// kept with the form if they are of these samples and this input uses
-    /// kept tallies, else made in a walk over it (and kept if this input
-    /// keeps them). An error is the walk's.
+    /// kept with the form if they are of these samples (whoever made them),
+    /// else made in a walk over it (and kept if this input keeps them). An
+    /// error is the walk's.
     fn compressed_tallies(&self) -> (JsonInference, Result<Option<CompressedTallies>>) {
         if !self.tally_compressed {
             return (JsonInference::CompressedValues, Ok(None));
         }
         let samples = || self.top_levels.values().map(|t| t.samples.as_slice());
-        if self.keep_tallies
-            && let Some(kept) = self.compressed_json.kept_tallies()
+        if let Some(kept) = self.compressed_json.kept_tallies()
             && kept.of(samples())
         {
             return (
@@ -1253,14 +1253,23 @@ mod tests {
         let mut other = shared(&cjson, &roots[..2]);
         assert_eq!(graph(&mut other), expected);
         assert_eq!(other.inferred_from(), Some(JsonInference::KeptTallies));
-        // One that does not keep them makes its own, and leaves those.
+        // So does one that would not keep its own.
         other.set_keep_tallies(false);
         assert_eq!(graph(&mut other), expected);
+        assert_eq!(other.inferred_from(), Some(JsonInference::KeptTallies));
+        // Over other samples, such an input makes its own, and leaves those.
+        let mut unkept = shared(&cjson, &roots[..1]);
+        unkept.set_keep_tallies(false);
+        let mut unkept_reference = shared(&cjson, &roots[..1]);
+        unkept_reference.set_tally_compressed(false);
+        assert_eq!(graph(&mut unkept), graph(&mut unkept_reference));
         assert_eq!(
-            other.inferred_from(),
+            unkept.inferred_from(),
             Some(JsonInference::CompressedTallies)
         );
         assert_eq!(cjson.heap_size(), kept);
+        assert_eq!(graph(&mut input), expected);
+        assert_eq!(input.inferred_from(), Some(JsonInference::KeptTallies));
         // Other samples: other tallies, kept instead.
         let mut fewer = shared(&cjson, &roots[..1]);
         let mut fewer_reference = shared(&cjson, &roots[..1]);
@@ -1276,7 +1285,15 @@ mod tests {
             Some(JsonInference::CompressedTallies)
         );
         // A sample added drops them.
-        drop((reference, input, other, fewer, fewer_reference));
+        drop((
+            reference,
+            input,
+            other,
+            fewer,
+            fewer_reference,
+            unkept,
+            unkept_reference,
+        ));
         let form = Rc::get_mut(&mut cjson).unwrap();
         form.parse_stream(b"[1]").unwrap();
         assert!(form.kept_tallies().is_none());
