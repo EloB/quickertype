@@ -10,13 +10,15 @@
 //! that overlap by at least three quarters are merged first, and smaller
 //! sets with at least 5 values join a merged set they overlap with.
 
+use std::hash::BuildHasher as _;
+
 use indexmap::{IndexMap, IndexSet};
 
 use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeKind, TypeAttributes};
 use crate::graph_rewriting::make_replacer;
 use crate::messages::Result;
-use crate::support::fast_hash::{HashMap, HashSet};
+use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
 use crate::support::support::{assert, assert_default, defined};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -196,22 +198,32 @@ fn find_enum_sets(
 }
 
 /// The enum case sets, and for `EnumInference::All` (where a string type's
-/// enum is the first set equal to its cases) the first set of each distinct
-/// case set, keyed by its sorted cases.
+/// enum is the first set equal to its cases) the sets by a hash of their
+/// cases that does not depend on their order, so that finding the first
+/// equal set compares only the sets with that hash and copies nothing.
 struct EnumSets {
     sets: Vec<IndexSet<String>>,
-    first_equal: HashMap<Vec<String>, usize>,
+    by_hash: HashMap<u64, Vec<usize>>,
+    hasher: BuildHasher,
 }
 
 impl EnumSets {
     fn new(sets: Vec<IndexSet<String>>, inference: EnumInference) -> EnumSets {
-        let mut first_equal = HashMap::default();
+        let hasher = BuildHasher::default();
+        let mut by_hash: HashMap<u64, Vec<usize>> = HashMap::default();
         if inference == EnumInference::All {
             for (i, s) in sets.iter().enumerate() {
-                first_equal.entry(sorted_cases(s.iter())).or_insert(i);
+                by_hash
+                    .entry(set_hash(&hasher, s.iter()))
+                    .or_default()
+                    .push(i);
             }
         }
-        EnumSets { sets, first_equal }
+        EnumSets {
+            sets,
+            by_hash,
+            hasher,
+        }
     }
 
     /// `enumSets.find(s => setEquals(s, set))` for `EnumInference::All`, else
@@ -222,8 +234,13 @@ impl EnumSets {
         inference: EnumInference,
     ) -> Option<&IndexSet<String>> {
         if inference == EnumInference::All {
-            let i = *self.first_equal.get(&sorted_cases(cases.keys()))?;
-            return self.sets.get(i);
+            // `setEquals`, among the sets with the same hash, in order.
+            return self
+                .by_hash
+                .get(&set_hash(&self.hasher, cases.keys()))?
+                .iter()
+                .map(|&i| &self.sets[i])
+                .find(|s| s.len() == cases.len() && s.iter().all(|x| cases.contains_key(x)));
         }
         self.sets
             .iter()
@@ -231,10 +248,10 @@ impl EnumSets {
     }
 }
 
-fn sorted_cases<'a>(cases: impl Iterator<Item = &'a String>) -> Vec<String> {
-    let mut v: Vec<String> = cases.cloned().collect();
-    v.sort_unstable();
-    v
+/// A hash of a set of distinct strings that does not depend on their order:
+/// the sum of their hashes.
+fn set_hash<'a>(hasher: &BuildHasher, cases: impl Iterator<Item = &'a String>) -> u64 {
+    cases.fold(0u64, |sum, c| sum.wrapping_add(hasher.hash_one(c.as_str())))
 }
 
 /// `replaceString(group, builder, forwardingRef)`.
