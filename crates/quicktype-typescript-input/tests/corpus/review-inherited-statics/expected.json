@@ -1,0 +1,7 @@
+{
+  "schema": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"definitions\":{\"A\":{\"title\":\"A\",\"type\":\"object\",\"properties\":{\"s\":{\"description\":\"The instance s of A.\",\"type\":\"number\",\"title\":\"s\",\"default\":1}},\"additionalProperties\":false,\"propertyOrder\":[\"s\"],\"required\":[\"s\"],\"quicktypePropertyOrder\":[\"s\"]},\"B\":{\"title\":\"B\",\"type\":\"object\",\"properties\":{\"s\":{\"description\":\"The instance s of A.\",\"type\":\"number\",\"title\":\"s\",\"default\":2}},\"additionalProperties\":false,\"propertyOrder\":[\"s\"],\"required\":[\"s\"],\"quicktypePropertyOrder\":[\"s\"]},\"Holder\":{\"title\":\"Holder\",\"type\":\"object\",\"properties\":{\"b\":{\"$ref\":\"#/definitions/B\",\"title\":\"b\"},\"k\":{\"type\":\"object\",\"properties\":{\"prototype\":{\"$ref\":\"#/definitions/B\",\"title\":\"prototype\"},\"s\":{\"description\":\"The static s of A.\",\"type\":\"number\",\"title\":\"s\",\"default\":2},\"t\":{\"description\":\"The static t of A.\",\"type\":\"string\",\"title\":\"t\",\"default\":\"b\"}},\"additionalProperties\":false,\"propertyOrder\":[\"prototype\",\"s\",\"t\"],\"required\":[\"prototype\",\"s\",\"t\"],\"title\":\"k\"}},\"additionalProperties\":false,\"propertyOrder\":[\"b\",\"k\"],\"required\":[\"b\",\"k\"],\"quicktypePropertyOrder\":[\"b\",\"k\"]}}}",
+  "name": "",
+  "uris": [
+    "#/definitions/"
+  ]
+}
