@@ -15,6 +15,10 @@
 //   wrote, as the reference CLI produced them (the work directory replaced
 //   by {CWD}).
 //
+// A case found in the "jsonl" mode records our side's step (JSON Lines
+// files, not in quicktype) with what the reference CLI produced from the
+// arrays of their values (engines.mjs, `jsonlInvocations`).
+//
 // crates/quicktype-cli/tests/fuzz_regressions.rs replays the CLI step with
 // our binary; the npm differential suite's `fuzz` scenarios run the case
 // through the JavaScript API against the reference quicktype-core.
@@ -26,7 +30,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { cliCommands, cliCompatible, cliInvocation, findReference, repoRoot, runCli } from "./engines.mjs";
+import { cliCommands, cliCompatible, cliInvocation, findReference, jsonlInvocations, repoRoot, runCli } from "./engines.mjs";
 import { unportablePaths } from "./file-names.mjs";
 
 const args = process.argv.slice(2);
@@ -53,9 +57,11 @@ const dir = path.join(casesDir, name);
 const record = { description, seed: saved.seed, foundIn: saved.mode ?? saved.foundIn, case: kase };
 /** What goes into the case directory besides case.json: relative path → bytes. */
 const files = new Map();
-if (cliCompatible(kase)) {
-    const invocation = cliInvocation(kase);
-    const result = await runCli(cliCommands(reference).ref, invocation);
+// In the "jsonl" mode, our step with the reference's outcome of its own.
+const jsonl = record.foundIn === "jsonl" ? jsonlInvocations(kase) : undefined;
+if (jsonl !== undefined || (record.foundIn !== "jsonl" && cliCompatible(kase))) {
+    const invocation = jsonl?.ours ?? cliInvocation(kase);
+    const result = await runCli(cliCommands(reference).ref, jsonl?.ref ?? invocation);
     if (typeof result.exit !== "number") throw new Error(`reference CLI: ${result.exit}`);
     for (const [f, text] of invocation.files) files.set(f, Buffer.from(text, "utf8"));
     record.cli = { args: invocation.args, dirs: invocation.dirs, exit: result.exit };

@@ -17,6 +17,36 @@ section are absolute.
 
 ### Added
 
+- **JSON Lines input** (not in quicktype): one JSON value per line, read
+  as the JSON array of those values, so a file of values `V1`…`Vn` gives
+  exactly the code quicktype gives for `[V1,…,Vn]`, in every language and
+  with every option.
+  - The CLI reads files and URLs named `*.jsonl` or `*.ndjson` so (a
+    URL by its path, without the query), and so does a directory: its
+    `*.jsonl` and `*.ndjson` files as JSON Lines, its `.json` files as
+    JSON, and a `.url` file by its URL's name. `--src-lang jsonl` reads
+    every JSON input named on the command line so, standard input
+    included, and directories by the names as without it. `--help`
+    lists `jsonl` among the source languages.
+  - With an explicit `--src-lang` other than `jsonl` (`json`, `schema`,
+    ...), quickertype behaves exactly as quicktype: no input is JSON
+    Lines, and directories ignore `.jsonl` and `.ndjson` files.
+  - **This changes what `.jsonl` and `.ndjson` files give without
+    `--src-lang`:** quicktype reads such a file as one JSON value, so a
+    file with one line gave that value's type (say, an object) and now
+    gives an array of it; a file with more lines was a syntax error and
+    now works; and a directory, which ignored them, now reads them. Pass
+    `--src-lang json` for quicktype's behavior.
+  - Values are separated by line breaks (`\n` or `\r\n`); blank lines
+    are skipped, the last line break is optional, a value may span lines
+    (a pretty-printed one), a byte order mark may come first, and two
+    values on one line are an error. A file without values is `[]`. A
+    syntax error names the line its value starts on (`Syntax error in
+    input JSON cards: line 3: …`).
+  - quickertype-core: `JsonSample::StringLines`, `StreamLines` and
+    `ReaderLines`, the JSON Lines forms of `String`, `Stream` and
+    `Reader`.
+  - Reading JSON Lines is as fast as reading the same values as an array.
 - quickertype-core (npm): the JSON inputs of `jsonInputForTargetLanguage`
   take a sample as its UTF-8 bytes too (a `Uint8Array` or a Node.js
   `Buffer`, e.g. `fs.readFileSync(path)`), read as the text

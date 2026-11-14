@@ -19,12 +19,17 @@ findings per area, with file and line references.
   stdin, multiple sources, `--out` inference and error paths. A step may
   pipe a `stdin` file and a case may set `env` (e.g. `FORCE_COLOR`); paths
   in the captured streams are normalized to `{INPUTS}` and `{CWD}`. The
-  one intended difference is the command's name in `--help`'s synopsis and
-  examples (`$ quickertype ...`, where quicktype's says `$ quicktype ...`).
-  In `--help`'s stdout, `parity` and `diff` require each such line in the
-  Synopsis and Examples sections to be quicktype's with the name swapped
-  and two fewer spaces of padding (an error says so otherwise), turn it
-  into quicktype's, and compare everything else byte for byte.
+  intended differences are two lines of `--help`: the command's name in
+  its synopsis and examples (`$ quickertype ...`, where quicktype's says
+  `$ quicktype ...`), and `jsonl` among the source languages of its
+  synopsis (`SRC_LANG ... json|jsonl|schema|...`, see [JSON
+  Lines](#json-lines)). In `--help`'s stdout, `parity` and `diff` require
+  each command line in the Synopsis and Examples sections to be
+  quicktype's with the name swapped and two fewer spaces of padding, and
+  the Synopsis's line that starts `  SRC_LANG ... json|jsonl|` to be
+  quicktype's with `jsonl|` added and six fewer spaces of padding (an
+  error says so otherwise); they turn those lines into quicktype's and
+  compare everything else byte for byte.
 - **Recording** (`xtask/golden/`): a preload hook intercepts the reference test
   harness's in-process CLI calls, converts each options object into the
   equivalent argv, runs the *real* CLI code path with that argv, and stores
@@ -86,7 +91,9 @@ findings per area, with file and line references.
   random renderer, general and `--debug` options for every language, and
   compares the reference with the port in-process (quicktype-core against
   our package on WebAssembly, with `JSON.parse` and with the CLI's stream
-  reader) and through both CLIs. Divergences are
+  reader) and through both CLIs; its `jsonl` mode gives our CLI the JSON
+  samples as JSON Lines files and quicktype's the arrays of their values
+  ([JSON Lines](#json-lines)). Divergences are
   minimized and kept in `tests/fuzz-regressions/`, which
   `quicktype-cli/tests/fuzz_regressions.rs` and the differential suite's
   `fuzz` scenarios replay. See `xtask/fuzz/README.md`.
@@ -217,6 +224,114 @@ semantics were verified.
 | `JSON.parse` followed by `CompressedJSONFromString.process` | `compressed_json::parse_string_into` and `CompressedJson::read_string_sample` (`input/compressed_json/from_string.rs`): V8's grammar checked in one pass that records a tape, emitted in own-property order into a `JsonSink` (the compressed form or the running tallies), keys interned when their values are committed; errors from the port above | the same 5,017 vectors read into one compressed form, 300 rounds of seeded random documents (duplicate, array-index and `__proto__` keys, escapes, lone surrogates, numbers at the integer ranges' edges) and mutations of them, compared to reading the value whole with the port above: the same root values, objects and arrays in the same order, the same string table and errors; string tables recorded from TypeScript; through the WebAssembly facade, the `samples` category of `npm run test:differential` compares with the reference quicktype-core |
 | `graphql` 16.14.2 (`parse`, `getIntrospectionQuery`) | hand port of `language/lexer.js` and `language/parser.js` (the whole grammar, type system definitions included; only the AST quicktype reads is built) in `quicktype_graphql_input::graphql`, and the introspection query embedded byte for byte. `graphql-parser` and `apollo-parser` were not used: quicktype shows graphql-js's syntax errors verbatim, and neither has graphql-js's messages nor exactly its 16.14 grammar (e.g. descriptions on operations and variable definitions) | `xtask/graphql-input/run-graphql-inputs.mjs`: 2,510 seeded mutations of valid documents (the GitHub queries, a kitchen-sink document with every construct, SDL) are accepted or rejected exactly as graphql-js does, with the same message and position; 228 GraphQL input cases give the same type graph or error; the query text equals `getIntrospectionQuery()`; the depths at which the reference CLI's parser overflows Node's stack, per construct, are modeled (see "GraphQL input" in Known gaps) |
 | Node's `path` (`path.posix`, and `path.win32` on Windows; Node 24.16: `isAbsolute`, `dirname`, `basename`, `extname`, `normalize`, `join`) | `quicktype_js_compat::path_posix` and `path_win32`, ports of `lib/path.js`; `quicktype_js_compat::path` is one or the other by platform, as `require("path")` is, for the CLI (file names, `--out`) and `NodeIO` (symbolic links) | `xtask/js-compat/gen-path-vectors.mjs`: 437 drive, UNC, device, relative and reserved-name paths through the five `path.win32` functions and 120 joins, and 643 paths and 120 joins through `path.posix`, identical to Node (`tests/path.rs`) |
+
+## JSON Lines
+
+quickertype reads [JSON Lines](https://jsonlines.org), which quicktype
+does not. It is an addition: on every input quicktype accepts, quickertype
+does what quicktype does, except for the files and URLs named `*.jsonl`
+or `*.ndjson`, which the CLI now reads as JSON Lines without `--src-lang`
+(below). With an explicit `--src-lang` other than `jsonl`, quickertype
+behaves exactly as quicktype.
+
+- **The rule.** A JSON Lines sample with the values `V1`…`Vn` is read as
+  the JSON array `[V1,…,Vn]`: every output (all languages, options and
+  renderers) is byte-identical to quicktype's for that array, with the
+  same name and options. The readers emit exactly the events they emit
+  for the array (an array that the text does not spell, the values its
+  elements), so the array counts as a level of nesting, as `[...]` does.
+  Each value is read with the sample's reader's semantics: the CLI's
+  stream-json reader, or `JSON.parse`'s for `JsonSample::StringLines`.
+- **Lines.** Values are separated by JSON whitespace that holds a line
+  feed: `\n`, so also `\r\n` (a carriage return alone does not end a
+  line). Blank and whitespace-only lines are skipped, whitespace before
+  the first value and after the last too, and the last line break is
+  optional. A value may span lines (whitespace inside it is JSON
+  whitespace), so a `.jsonl` file holding one pretty-printed object is an
+  array of one. Two values on one line are an error.
+- **Edge cases.** A sample without values (an empty file, or blank lines
+  only) is `[]`, which quicktype types as an array of `any`
+  (`unknown[]` in TypeScript); one value is an array of one, not the
+  value. A UTF-8 byte order mark may come first (Windows tools write
+  one): it is skipped, and the values are the same, so the rule holds.
+  Anywhere else it is an error, and in a JSON sample it stays the error
+  it is in quicktype.
+- **Errors.** A syntax error is quicktype's `MiscJSONParseError` for JSON,
+  `Syntax error in input JSON <name>: <message>`, with the message
+  starting with the line the bad value starts on: `line 3: Parser cannot
+  parse input: expected ','` (the CLI's reader, whose messages have no
+  position). With `JSON.parse`'s reader, `line 3:` comes before V8's
+  message, whose position counts in the whole text (after a byte order
+  mark), without V8's `(line L column C)`: V8 ends a line at a carriage
+  return too, JSON Lines only at a line feed, and one count of lines is
+  less confusing than two (`1\r2` is `line 1: Unexpected non-whitespace
+  character after JSON at position 2`). Lines are counted in line feeds
+  for both readers. A value that does not end before the next line
+  starts is reported on its own line (`{"a": 1` then `{"b": 2}`: line 1,
+  `expected ','`). The CLI exits with code 1, as for any JSON error. Read
+  errors, and errors past the syntax (`Maximum call stack size exceeded`,
+  which the equivalent array gives too), are reported as they are.
+- **CLI: which inputs.** It depends on `--src-lang` alone:
+  - *None:* the inputs named on the command line (files, URLs,
+    `--src-urls`) whose name ends in `.jsonl` or `.ndjson`, in any case,
+    are JSON Lines; a URL's name is its path, without the query and the
+    fragment (`https://example.com/cards.jsonl?page=2`). Standard input is
+    JSON. A directory reads each file as its name says: `.json` files as
+    JSON, `*.jsonl` and `*.ndjson` files as JSON Lines, a `.url` file by
+    its URL's name, and `.schema`, `.gqlschema` and `.graphql` files as
+    in quicktype. So a directory that mixes JSON and JSON Lines files
+    gives each its types.
+  - *`jsonl`:* every input named on the command line is JSON Lines,
+    whatever its name, standard input included; directories as without
+    `--src-lang`.
+  - *Any other* (`json`, `schema`, ...): quickertype behaves exactly as
+    quicktype. No input is JSON Lines, and a directory takes the files
+    quicktype takes, ignoring `.jsonl` and `.ndjson` files (a stray one
+    beside a `.schema` file in a subdirectory changes nothing) and
+    reading a `.url` file's URL as JSON. `--src-lang json` is how to get
+    quicktype's behavior for every input.
+
+  The CLI keeps quicktype's top-level names (`cards.jsonl` names `Cards`,
+  as `cards.json` does).
+- **CLI: several inputs.** Each file is one sample, so a JSON Lines file
+  is one array sample beside the others of its top-level (`a.json
+  b.jsonl` gives what `a.json` and the array of `b.jsonl`'s values give).
+- **The change for existing inputs.** quicktype reads a `.jsonl` or
+  `.ndjson` file named on the command line as one JSON value, and a
+  directory ignores such files. Without `--src-lang` (or with `jsonl`),
+  quickertype reads them as JSON Lines: a one-line file that gave its
+  value's type (an object) now gives an array of it, a file with more
+  lines, which was a syntax error, now works, and a directory's `.jsonl`
+  files now give top-levels. With any other `--src-lang`, nothing
+  changes.
+- **`--help`** lists `jsonl` among the source languages, its second
+  difference from quicktype's (see [How parity is
+  tested](#how-parity-is-tested)).
+- **Rust API.** `JsonSample::StringLines`, `StreamLines` and
+  `ReaderLines` are `String`, `Stream` and `Reader` for JSON Lines.
+- **Speed.** JSON Lines have a parser loop of their own
+  (`Tokenizer::run_lines`), whose whitespace loop also counts the line
+  feeds; JSON's (`run`) is the one it was, expanded from the same macro
+  of the parser's states, and the helpers both call are inlined into
+  both, as they were into JSON's. So reading JSON costs exactly what it
+  did: on a 656 MB array of 120,000 records, the CLI retires the
+  instructions it did before JSON Lines (within the run-to-run noise,
+  0.03%), and on the same records as JSON Lines 0.7% fewer, holding as
+  little memory (it reads a stream, never the whole file).
+- **How it is tested.** The readers' unit tests compare JSON Lines with
+  their array (the same compressed values and tables, in memory and in
+  chunks of 1 byte up), and their errors and lines;
+  `crates/quicktype-core/tests/json_lines.rs` runs generated JSON Lines
+  and their arrays through every language with several options and
+  requires identical output; `crates/quicktype-cli/tests/json_lines.rs`
+  and `url_input.rs` pin the CLI's choices (mixed directories, stray
+  JSON Lines files beside schemas and GraphQL under an explicit
+  `--src-lang`, `.url` files) and errors; the differential fuzzer's
+  `jsonl` mode compares our CLI on JSON Lines with quicktype's on the
+  arrays, and directories with stray JSON Lines files under an explicit
+  `--src-lang` with quicktype on the same directories; and
+  the `json_stream` and `json_parse` cargo-fuzz targets read arbitrary
+  bytes as JSON Lines too.
 
 ## Known gaps
 

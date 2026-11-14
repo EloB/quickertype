@@ -28,13 +28,24 @@
 //! ([`quicktype_js_compat::utf8::Decoder`]: invalid sequences become
 //! U+FFFD, also when a sequence is split between chunks); a byte order mark
 //! is not stripped and is a syntax error, as in the CLI.
+//!
+//! Not in quicktype: the reader also reads JSON Lines
+//! (`Framing::Lines`), as the array of the values on their lines
+//! (`Tokenizer::run_lines`). It emits the array's events
+//! (`pushArrayContext` first, `finishArray` at the end) around the values,
+//! which it reads as whole samples, and between them expects whitespace
+//! with a line feed. A byte order mark before the first value is skipped.
+//! Its whitespace loop also counts the line feeds, for errors (`line 3:
+//! …`). The parser's states are one macro (`states!`) for JSON and for
+//! JSON Lines, so that the tokenizer of JSON compiles as it did before
+//! JSON Lines, and reading JSON costs exactly what it did.
 
 use std::borrow::Cow;
 use std::io::Read;
 
 use quicktype_js_compat::utf8;
 
-use super::compressed_json::{CompressedJson, JsonSink, ParseError, Value};
+use super::compressed_json::{CompressedJson, Framing, JsonSink, ParseError, Value, line_error};
 use super::json_scan::plain_run;
 use crate::input::io::node_io::IoError;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
@@ -64,7 +75,7 @@ impl CompressedJson {
     /// );
     /// ```
     pub fn parse_stream(&mut self, sample: &[u8]) -> Result<Value, ParseError> {
-        parse_stream_into(self, sample)
+        parse_stream_into(self, sample, Framing::Value)
     }
 
     /// [`parse_stream`](Self::parse_stream) on a byte stream, read chunk
@@ -73,7 +84,7 @@ impl CompressedJson {
     /// error wraps an [`IoError`], that is the exception reported (its
     /// name and message), otherwise an `Error` with the error's text.
     pub fn parse_stream_reader(&mut self, reader: &mut dyn Read) -> Result<Value, ParseError> {
-        parse_stream_reader_into(self, reader)
+        parse_stream_reader_into(self, reader, Framing::Value)
     }
 
     #[cfg(test)]
@@ -82,29 +93,34 @@ impl CompressedJson {
         reader: &mut dyn Read,
         chunk_size: usize,
     ) -> Result<Value, ParseError> {
-        parse_stream_chunked_into(self, reader, chunk_size)
+        parse_stream_chunked_into(self, reader, chunk_size, Framing::Value)
     }
 }
 
-/// [`CompressedJson::parse_stream`] into any [`JsonSink`].
+/// [`CompressedJson::parse_stream`] into any [`JsonSink`], framed as
+/// `framing` says: with [`Framing::Lines`], the array of the JSON Lines
+/// sample's values.
 pub(crate) fn parse_stream_into<S: JsonSink>(
     sink: &mut S,
     sample: &[u8],
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
     // In memory: decode once (borrowing valid UTF-8) and tokenize it
     // as one window.
     match utf8::decode(sample) {
-        Cow::Borrowed(text) => tokenize(sink, Tokenizer::in_memory(text)),
-        Cow::Owned(text) => tokenize(sink, Tokenizer::in_memory(text)),
+        Cow::Borrowed(text) => tokenize_framed(sink, Tokenizer::in_memory(text), framing),
+        Cow::Owned(text) => tokenize_framed(sink, Tokenizer::in_memory(text), framing),
     }
 }
 
-/// [`CompressedJson::parse_stream_reader`] into any [`JsonSink`].
+/// [`CompressedJson::parse_stream_reader`] into any [`JsonSink`], framed
+/// as `framing` says.
 pub(crate) fn parse_stream_reader_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    parse_stream_chunked_into(sink, reader, CHUNK_SIZE)
+    parse_stream_chunked_into(sink, reader, CHUNK_SIZE, framing)
 }
 
 /// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
@@ -112,8 +128,21 @@ pub(crate) fn parse_stream_chunked_into<S: JsonSink>(
     sink: &mut S,
     reader: &mut dyn Read,
     chunk_size: usize,
+    framing: Framing,
 ) -> Result<S::Root, ParseError> {
-    tokenize(sink, Tokenizer::streaming(reader, chunk_size))
+    tokenize_framed(sink, Tokenizer::streaming(reader, chunk_size), framing)
+}
+
+/// [`tokenize`] or [`tokenize_lines`], as `framing` says.
+fn tokenize_framed<S: JsonSink, W: Window>(
+    sink: &mut S,
+    tokenizer: Tokenizer<'_, W>,
+    framing: Framing,
+) -> Result<S::Root, ParseError> {
+    match framing {
+        Framing::Value => tokenize(sink, tokenizer),
+        Framing::Lines => tokenize_lines(sink, tokenizer),
+    }
 }
 
 fn tokenize<S: JsonSink, W: Window>(
@@ -125,6 +154,29 @@ fn tokenize<S: JsonSink, W: Window>(
     // A failed read looks like the end of the input to the parser; the
     // read error is what is reported.
     let result = match read_error {
+        Some(e) => Err(e),
+        None => result,
+    };
+    if result.is_err() {
+        sink.reset_partial_sample();
+    }
+    result
+}
+
+/// [`tokenize`] for JSON Lines ([`Tokenizer::run_lines`]): a syntax
+/// error's message starts with the line of the value it is in. (A
+/// function of its own, as `run_lines` is, so that `tokenize` and `run`
+/// compile as they did before JSON Lines.)
+fn tokenize_lines<S: JsonSink, W: Window>(
+    sink: &mut S,
+    mut tokenizer: Tokenizer<'_, W>,
+) -> Result<S::Root, ParseError> {
+    let mut lines = Lines::default();
+    let result = match tokenizer.run_lines(sink, &mut lines) {
+        Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
+        result => result,
+    };
+    let result = match tokenizer.read_error.take() {
         Some(e) => Err(e),
         None => result,
     };
@@ -195,6 +247,30 @@ struct Tokenizer<'r, W> {
     read_error: Option<ParseError>,
     text: W,
     index: usize,
+}
+
+/// Where the reading of JSON Lines is ([`Tokenizer::run_lines`]). A raw
+/// line feed can only be whitespace (in a string it is an error), so the
+/// line feeds are counted as whitespace is skipped
+/// ([`skip_line_whitespace`](Tokenizer::skip_line_whitespace)).
+#[derive(Debug)]
+struct Lines {
+    /// The line feeds skipped so far.
+    feeds: usize,
+    /// The line the current value starts on, from 1.
+    value_line: usize,
+    /// Whether a value has started.
+    started: bool,
+}
+
+impl Default for Lines {
+    fn default() -> Self {
+        Lines {
+            feeds: 0,
+            value_line: 1,
+            started: false,
+        }
+    }
 }
 
 /// The tokenizer's text: a sample in memory (`&str`, or the `String` it
@@ -284,6 +360,143 @@ impl<'r> Tokenizer<'r, String> {
     }
 }
 
+/// The parser's states, as a loop: [`Tokenizer::run`]'s for JSON and
+/// [`Tokenizer::run_lines`]'s for JSON Lines, which differ only in how
+/// whitespace is skipped (`skip`) and in what happens after a top-level
+/// value (`done`, the `Expect::Done` state). A macro, not a function with
+/// a parameter: even a parameter known at compile time changes how the
+/// loop is optimized, and the JSON tokenizer is to compile as it did
+/// before JSON Lines.
+macro_rules! states {
+    ($self:ident, $sink:ident, $expect:ident, $stack:ident, skip: $skip:expr, done: $done:block) => {
+        loop {
+            $self.discard_consumed();
+            match $expect {
+                Expect::Value | Expect::Value1 => {
+                    $skip;
+                    let Some(b) = $self.peek() else {
+                        return Err(syntax("Parser has expected a value"));
+                    };
+                    match b {
+                        b'"' => {
+                            $self.index += 1;
+                            match $self.string()? {
+                                Token::Range(start, end) => {
+                                    $sink.commit_string(&$self.text()[start..end])?;
+                                }
+                                Token::Owned(s) => $sink.commit_string(&s)?,
+                            }
+                            $expect = Self::after_value(&$stack);
+                        }
+                        b'{' => {
+                            $self.index += 1;
+                            $sink.push_object_context()?;
+                            $stack.push(Parent::Object);
+                            $expect = Expect::Key1;
+                        }
+                        b'[' => {
+                            $self.index += 1;
+                            $sink.push_array_context()?;
+                            $stack.push(Parent::Array);
+                            $expect = Expect::Value1;
+                        }
+                        b']' => {
+                            if $expect != Expect::Value1 {
+                                return Err(syntax(
+                                    "Parser cannot parse input: unexpected token ']'",
+                                ));
+                            }
+                            $self.index += 1;
+                            $sink.finish_array()?;
+                            $stack.pop();
+                            $expect = Self::after_value(&$stack);
+                        }
+                        b'-' | b'0'..=b'9' => {
+                            $self.number($sink)?;
+                            $expect = Self::after_value(&$stack);
+                        }
+                        b't' | b'f' | b'n' => {
+                            $self.literal($sink)?;
+                            $expect = Self::after_value(&$stack);
+                        }
+                        _ => return Err(syntax("Parser cannot parse input: expected a value")),
+                    }
+                }
+                Expect::Key | Expect::Key1 => {
+                    $skip;
+                    match $self.peek() {
+                        Some(b'"') => {
+                            $self.index += 1;
+                            match $self.string()? {
+                                Token::Range(start, end) => {
+                                    $sink.set_property_key(&$self.text()[start..end])?;
+                                }
+                                Token::Owned(key) => $sink.set_property_key(&key)?,
+                            }
+                            $expect = Expect::Colon;
+                        }
+                        Some(b'}') => {
+                            if $expect != Expect::Key1 {
+                                return Err(syntax(
+                                    "Parser cannot parse input: unexpected token '}'",
+                                ));
+                            }
+                            $self.index += 1;
+                            $sink.finish_object()?;
+                            $stack.pop();
+                            $expect = Self::after_value(&$stack);
+                        }
+                        _ => {
+                            return Err(syntax(
+                                "Parser cannot parse input: expected an object key",
+                            ));
+                        }
+                    }
+                }
+                Expect::Colon => {
+                    $skip;
+                    if $self.peek() != Some(b':') {
+                        return Err(syntax("Parser cannot parse input: expected ':'"));
+                    }
+                    $self.index += 1;
+                    $expect = Expect::Value;
+                }
+                Expect::ArrayStop | Expect::ObjectStop => {
+                    $skip;
+                    let in_array = $expect == Expect::ArrayStop;
+                    match $self.peek() {
+                        Some(b',') => {
+                            $self.index += 1;
+                            $expect = if in_array { Expect::Value } else { Expect::Key };
+                        }
+                        Some(b']') if in_array => {
+                            $self.index += 1;
+                            $sink.finish_array()?;
+                            $stack.pop();
+                            $expect = Self::after_value(&$stack);
+                        }
+                        Some(b'}') if !in_array => {
+                            $self.index += 1;
+                            $sink.finish_object()?;
+                            $stack.pop();
+                            $expect = Self::after_value(&$stack);
+                        }
+                        Some(b']' | b'}') => {
+                            return Err(syntax(if in_array {
+                                "Parser cannot parse input: expected ']'"
+                            } else {
+                                "Parser cannot parse input: expected '}'"
+                            }));
+                        }
+                        _ => return Err(syntax("Parser cannot parse input: expected ','")),
+                    }
+                }
+                Expect::Done => $done,
+            }
+        }
+    };
+}
+
 impl<W: Window> Tokenizer<'_, W> {
     /// Reads and decodes input until the window grows or the input ends.
     /// Returns whether it grew. A failed read ends the input and is kept
@@ -353,7 +566,7 @@ impl<W: Window> Tokenizer<'_, W> {
     /// Advances to the end of a run: `run_end(window, index)` says where
     /// the run that starts at `index` ends in the window. Where the window
     /// ends first, it reads more and goes on from there.
-    #[inline]
+    #[inline(always)]
     fn skip_run(&mut self, run_end: impl Fn(&[u8], usize) -> usize) {
         loop {
             self.index = run_end(self.text().as_bytes(), self.index);
@@ -364,12 +577,15 @@ impl<W: Window> Tokenizer<'_, W> {
     }
 
     /// Advances past the bytes for which `p` holds.
-    #[inline]
+    #[inline(always)]
     fn skip(&mut self, p: impl Fn(u8) -> bool) {
-        self.skip_run(|bytes, start| {
-            let rest = &bytes[start..];
-            start + rest.iter().position(|&b| !p(b)).unwrap_or(rest.len())
-        });
+        self.skip_run(
+            #[inline(always)]
+            |bytes, start| {
+                let rest = &bytes[start..];
+                start + rest.iter().position(|&b| !p(b)).unwrap_or(rest.len())
+            },
+        );
     }
 
     /// Drops the text before the current position, between tokens, once
@@ -388,6 +604,36 @@ impl<W: Window> Tokenizer<'_, W> {
             if let Some(text) = self.text.as_string() {
                 text.drain(..self.index);
                 self.index = 0;
+            }
+        }
+    }
+
+    /// [`skip_whitespace`](Self::skip_whitespace) for JSON Lines, which
+    /// counts the line feeds it skips, in `feeds`, in the same pass.
+    fn skip_line_whitespace(&mut self, feeds: &mut usize) {
+        loop {
+            let rest = &self.text().as_bytes()[self.index..];
+            let mut n = 0;
+            while let Some(&b) = rest.get(n) {
+                match b {
+                    b'\n' => *feeds += 1,
+                    b' ' | b'\t' | b'\r' => {}
+                    _ => break,
+                }
+                n += 1;
+            }
+            self.index += n;
+            if self.index < self.text().len() {
+                return;
+            }
+            if self.reader.is_some() {
+                if let Some(text) = self.text.as_string() {
+                    text.clear();
+                    self.index = 0;
+                }
+            }
+            if !self.fill() {
+                return;
             }
         }
     }
@@ -430,138 +676,47 @@ impl<W: Window> Tokenizer<'_, W> {
     fn run<S: JsonSink>(&mut self, sink: &mut S) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Value;
         let mut stack: Vec<Parent> = Vec::new();
-        loop {
-            self.discard_consumed();
-            match expect {
-                Expect::Value | Expect::Value1 => {
-                    self.skip_whitespace();
-                    let Some(b) = self.peek() else {
-                        return Err(syntax("Parser has expected a value"));
-                    };
-                    match b {
-                        b'"' => {
-                            self.index += 1;
-                            match self.string()? {
-                                Token::Range(start, end) => {
-                                    sink.commit_string(&self.text()[start..end])?;
-                                }
-                                Token::Owned(s) => sink.commit_string(&s)?,
-                            }
-                            expect = Self::after_value(&stack);
-                        }
-                        b'{' => {
-                            self.index += 1;
-                            sink.push_object_context()?;
-                            stack.push(Parent::Object);
-                            expect = Expect::Key1;
-                        }
-                        b'[' => {
-                            self.index += 1;
-                            sink.push_array_context()?;
-                            stack.push(Parent::Array);
-                            expect = Expect::Value1;
-                        }
-                        b']' => {
-                            if expect != Expect::Value1 {
-                                return Err(syntax(
-                                    "Parser cannot parse input: unexpected token ']'",
-                                ));
-                            }
-                            self.index += 1;
-                            sink.finish_array()?;
-                            stack.pop();
-                            expect = Self::after_value(&stack);
-                        }
-                        b'-' | b'0'..=b'9' => {
-                            self.number(sink)?;
-                            expect = Self::after_value(&stack);
-                        }
-                        b't' | b'f' | b'n' => {
-                            self.literal(sink)?;
-                            expect = Self::after_value(&stack);
-                        }
-                        _ => return Err(syntax("Parser cannot parse input: expected a value")),
-                    }
-                }
-                Expect::Key | Expect::Key1 => {
-                    self.skip_whitespace();
-                    match self.peek() {
-                        Some(b'"') => {
-                            self.index += 1;
-                            match self.string()? {
-                                Token::Range(start, end) => {
-                                    sink.set_property_key(&self.text()[start..end])?;
-                                }
-                                Token::Owned(key) => sink.set_property_key(&key)?,
-                            }
-                            expect = Expect::Colon;
-                        }
-                        Some(b'}') => {
-                            if expect != Expect::Key1 {
-                                return Err(syntax(
-                                    "Parser cannot parse input: unexpected token '}'",
-                                ));
-                            }
-                            self.index += 1;
-                            sink.finish_object()?;
-                            stack.pop();
-                            expect = Self::after_value(&stack);
-                        }
-                        _ => {
-                            return Err(syntax(
-                                "Parser cannot parse input: expected an object key",
-                            ));
-                        }
-                    }
-                }
-                Expect::Colon => {
-                    self.skip_whitespace();
-                    if self.peek() != Some(b':') {
-                        return Err(syntax("Parser cannot parse input: expected ':'"));
-                    }
-                    self.index += 1;
-                    expect = Expect::Value;
-                }
-                Expect::ArrayStop | Expect::ObjectStop => {
-                    self.skip_whitespace();
-                    let in_array = expect == Expect::ArrayStop;
-                    match self.peek() {
-                        Some(b',') => {
-                            self.index += 1;
-                            expect = if in_array { Expect::Value } else { Expect::Key };
-                        }
-                        Some(b']') if in_array => {
-                            self.index += 1;
-                            sink.finish_array()?;
-                            stack.pop();
-                            expect = Self::after_value(&stack);
-                        }
-                        Some(b'}') if !in_array => {
-                            self.index += 1;
-                            sink.finish_object()?;
-                            stack.pop();
-                            expect = Self::after_value(&stack);
-                        }
-                        Some(b']' | b'}') => {
-                            return Err(syntax(if in_array {
-                                "Parser cannot parse input: expected ']'"
-                            } else {
-                                "Parser cannot parse input: expected '}'"
-                            }));
-                        }
-                        _ => return Err(syntax("Parser cannot parse input: expected ','")),
-                    }
-                }
-                Expect::Done => {
-                    self.skip_whitespace();
-                    if self.peek().is_some() {
-                        return Err(syntax("Parser cannot parse input: unexpected characters"));
-                    }
-                    // The `end` event.
-                    return Ok(sink.finish()?);
-                }
+        states!(self, sink, expect, stack, skip: self.skip_whitespace(), done: {
+            self.skip_whitespace();
+            if self.peek().is_some() {
+                return Err(syntax("Parser cannot parse input: unexpected characters"));
             }
+            // The `end` event.
+            return Ok(sink.finish()?);
+        })
+    }
+
+    /// [`run`](Self::run) for JSON Lines: the array of the values, each
+    /// read as a whole sample, which must start on a line after the last
+    /// one ends (`Expect::Done` is between values, and the stack is empty
+    /// there). A byte order mark may come first. `lines` says where the
+    /// reading is, for the line of an error.
+    fn run_lines<S: JsonSink>(
+        &mut self,
+        sink: &mut S,
+        lines: &mut Lines,
+    ) -> Result<S::Root, ParseError> {
+        let mut expect = Expect::Done;
+        let mut stack: Vec<Parent> = Vec::new();
+        sink.push_array_context()?;
+        if self.byte(0) == Some(0xEF) && self.byte(1) == Some(0xBB) && self.byte(2) == Some(0xBF) {
+            self.index += 3;
         }
+        states!(self, sink, expect, stack, skip: self.skip_line_whitespace(&mut lines.feeds), done: {
+            let feeds = lines.feeds;
+            self.skip_line_whitespace(&mut lines.feeds);
+            if self.peek().is_none() {
+                sink.finish_array()?;
+                // The `end` event.
+                return Ok(sink.finish()?);
+            }
+            lines.value_line = lines.feeds + 1;
+            if lines.started && lines.feeds == feeds {
+                return Err(syntax("Parser cannot parse input: unexpected characters"));
+            }
+            lines.started = true;
+            expect = Expect::Value;
+        })
     }
 
     /// A string or key body; the index is past the opening quote. Decodes
@@ -645,6 +800,10 @@ impl<W: Window> Tokenizer<'_, W> {
     }
 
     /// `true`, `false` or `null`: `true\b|false\b|null\b` must match.
+    // Always inlined, as into `run` before `run_lines` was a second caller
+    // (so are `number`, `skip`, `skip_run` and the sinks' `finish_array`
+    // and `finish`): reading JSON costs what it did.
+    #[inline(always)]
     fn literal<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), ParseError> {
         let (word, value): (&[u8], Option<bool>) = match self.peek() {
             Some(b't') => (b"true", Some(true)),
@@ -674,6 +833,7 @@ impl<W: Window> Tokenizer<'_, W> {
     /// `handleStartNumber` / `handleNumberChunk` / `handleEndNumber`. The
     /// number is a double iff a chunk contains `.`, `e` or `E`, or the
     /// integer literal does not fit the target's integer range.
+    #[inline(always)]
     fn number<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), ParseError> {
         let start = self.index;
         if self.peek() == Some(b'-') {
@@ -1035,6 +1195,259 @@ mod tests {
         );
         // The instance can read the next sample.
         assert_eq!(r.parse_stream(b"[]"), Ok(Value::Array(0)));
+    }
+
+    /// The documents of `tests/inputs/json/samples` that read as JSON,
+    /// pretty-printed ones (values that span lines) among them.
+    fn sample_documents() -> Vec<String> {
+        let samples = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/inputs/json/samples");
+        let mut documents: Vec<String> = std::fs::read_dir(samples)
+            .unwrap()
+            .map(|entry| std::fs::read_to_string(entry.unwrap().path()).unwrap())
+            .filter(|text| read(text).is_ok())
+            .collect();
+        documents.sort();
+        documents.extend(
+            [
+                "1",
+                "-0",
+                "1.0",
+                "\"x\"",
+                "null",
+                "true",
+                "[]",
+                "{}",
+                "[[]]",
+                "{\"a\": [1, 2.5]}",
+            ]
+            .map(str::to_owned),
+        );
+        documents
+    }
+
+    /// `values` as JSON Lines, with `separators` between them in turn and
+    /// `around` before the first and after the last; and as the array of
+    /// them.
+    fn lines_and_array(values: &[String], separators: &[&str], around: &str) -> (String, String) {
+        let mut lines = around.to_owned();
+        for (i, value) in values.iter().enumerate() {
+            if i > 0 {
+                lines.push_str(separators[i % separators.len()]);
+            }
+            lines.push_str(value);
+        }
+        lines.push_str(around);
+        (lines, format!("[{}]", values.join(",")))
+    }
+
+    fn read_lines_chunked(
+        bytes: &[u8],
+        size: usize,
+    ) -> Result<(Value, crate::input::compressed_json::CompressedJsonTables), ParseError> {
+        let mut r = reader(Some(INT64_RANGE.clone()));
+        let value = parse_stream_chunked_into(&mut r, &mut &*bytes, size, Framing::Lines)?;
+        Ok((value, r.to_tables(&[value]).0))
+    }
+
+    /// JSON Lines read as the array of their values: the same root, the
+    /// same tables, in memory and in chunks of any size, whatever the
+    /// separators (line feeds, CRLF, blank and whitespace-only lines).
+    #[test]
+    fn json_lines_read_as_the_array_of_their_values() {
+        let documents = sample_documents();
+        let separators: &[&[&str]] = &[&["\n"], &["\r\n"], &["\n\n", " \n\t", "\r\n \r\n"]];
+        let arounds = ["", "\n", "\r\n\r\n", " \n \n"];
+        for n in [0, 1, 2, documents.len()] {
+            for start in [0, documents.len() / 2] {
+                let values: Vec<String> = documents
+                    .iter()
+                    .cycle()
+                    .skip(start)
+                    .take(n)
+                    .cloned()
+                    .collect();
+                for (i, separators) in separators.iter().enumerate() {
+                    let (lines, array) =
+                        lines_and_array(&values, separators, arounds[(n + i) % arounds.len()]);
+                    let mut r = reader(Some(INT64_RANGE.clone()));
+                    let expected = r
+                        .parse_stream(array.as_bytes())
+                        .map(|v| (v, r.to_tables(&[v]).0));
+                    assert!(expected.is_ok());
+                    let mut r = reader(Some(INT64_RANGE.clone()));
+                    let whole = parse_stream_into(&mut r, lines.as_bytes(), Framing::Lines)
+                        .map(|v| (v, r.to_tables(&[v]).0));
+                    assert_eq!(whole, expected, "{n} values");
+                    for size in [1, 2, 7, 64, 8 * 1024] {
+                        assert_eq!(
+                            read_lines_chunked(lines.as_bytes(), size),
+                            expected,
+                            "chunks of {size}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// Errors name the line the bad value starts on, in memory and in
+    /// chunks of any size, however much was dropped from the window.
+    #[test]
+    fn json_lines_errors_name_the_line() {
+        let cases: &[(&str, Option<&str>)] = &[
+            ("", None),
+            (" \n\r\n\t\n", None),
+            (
+                "1 2",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "1\n2 3\n4",
+                Some("line 2: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "1\r2",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "{}{}",
+                Some("line 1: Parser cannot parse input: unexpected characters"),
+            ),
+            (
+                "{\"a\":1}\n{\"a\":\n",
+                Some("line 2: Parser has expected a value"),
+            ),
+            (
+                "[1,\n2\n{\"b\":2}\n",
+                Some("line 1: Parser cannot parse input: expected ','"),
+            ),
+            // A byte order mark is skipped at the start, and only there.
+            ("\u{feff}", None),
+            ("\u{feff}\n", None),
+            (
+                "\u{feff}\u{feff}{}",
+                Some("line 1: Parser cannot parse input: expected a value"),
+            ),
+            (
+                "{}\n\u{feff}{}",
+                Some("line 2: Parser cannot parse input: expected a value"),
+            ),
+            (
+                "1\n\n\r\n x",
+                Some("line 4: Parser cannot parse input: expected a value"),
+            ),
+            (
+                "1\n\"a\nb\"",
+                Some("line 2: Parser cannot parse input: escaped characters"),
+            ),
+            (
+                "{\n\"a\": 1\n}\n[\n\n2,\n]",
+                Some("line 4: Parser cannot parse input: unexpected token ']'"),
+            ),
+            (
+                "1\n\"abc",
+                Some("line 2: Parser has expected a string value"),
+            ),
+        ];
+        for &(input, message) in cases {
+            let mut r = reader(Some(INT64_RANGE.clone()));
+            let whole = parse_stream_into(&mut r, input.as_bytes(), Framing::Lines);
+            assert_eq!(
+                whole.as_ref().err().map(ParseError::message),
+                message,
+                "{input:?}"
+            );
+            if message.is_none() {
+                assert_eq!(r.get_array_for_value(whole.unwrap()).unwrap().len(), 0);
+            }
+            for size in 1..=17 {
+                let chunked = read_lines_chunked(input.as_bytes(), size);
+                assert_eq!(
+                    chunked.err().as_ref().map(ParseError::message),
+                    message,
+                    "{input:?} in {size}"
+                );
+            }
+        }
+        // Far into a large input, past many windows.
+        let mut input = "{\"a\": [1, 2, 3]}\n\n  \r\n".repeat(3_000);
+        input.push_str("{\"a\": [1, 2, 3]\n{\"a\": []}\n");
+        for size in [3, 64, 4096, 1 << 20] {
+            assert_eq!(
+                read_lines_chunked(input.as_bytes(), size)
+                    .unwrap_err()
+                    .message(),
+                "line 9001: Parser cannot parse input: expected ','",
+                "chunks of {size}"
+            );
+        }
+        // A read error is reported as it is, without a line.
+        struct Failing;
+        impl Read for Failing {
+            fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::other("broken"))
+            }
+        }
+        assert_eq!(
+            parse_stream_reader_into(&mut reader(None), &mut Failing, Framing::Lines),
+            Err(ParseError::Read(QuickTypeError::js_exception(
+                JsErrorName::Error,
+                "broken"
+            )))
+        );
+    }
+
+    /// A byte order mark before JSON Lines is skipped: the values are those
+    /// without it, in memory and in chunks of any size.
+    #[test]
+    fn json_lines_may_start_with_a_byte_order_mark() {
+        let lines = "\u{feff}{\"a\": 1}\r\n{\"a\": [2.5]}\n";
+        let mut r = reader(Some(INT64_RANGE.clone()));
+        let expected = r
+            .parse_stream(br#"[{"a": 1},{"a": [2.5]}]"#)
+            .map(|v| (v, r.to_tables(&[v]).0));
+        for size in [1, 2, 3, 4, 64] {
+            assert_eq!(
+                read_lines_chunked(lines.as_bytes(), size),
+                expected,
+                "chunks of {size}"
+            );
+        }
+        let mut r = reader(Some(INT64_RANGE.clone()));
+        let whole = parse_stream_into(&mut r, lines.as_bytes(), Framing::Lines)
+            .map(|v| (v, r.to_tables(&[v]).0));
+        assert_eq!(whole, expected);
+        // JSON keeps it an error, as quicktype's CLI does.
+        assert_eq!(
+            error("\u{feff}{}"),
+            "Parser cannot parse input: expected a value"
+        );
+    }
+
+    /// The tokenizer for JSON Lines drops whitespace as it skips it, as
+    /// the JSON one does, and counts the line feeds across windows.
+    #[test]
+    fn line_whitespace_does_not_accumulate() {
+        let input = format!("{}1", " \r\n".repeat(1 << 19));
+        let mut bytes = input.as_bytes();
+        let mut t = Tokenizer::streaming(&mut bytes, 4096);
+        let mut feeds = 0;
+        t.skip_line_whitespace(&mut feeds);
+        assert_eq!(t.peek(), Some(b'1'));
+        assert!(t.text.len() <= 4096, "window of {} bytes", t.text.len());
+        assert_eq!(feeds, 1 << 19);
+    }
+
+    /// The array of JSON Lines is one level of nesting, as `[...]` is.
+    #[test]
+    fn json_lines_nest_one_level_deeper() {
+        let n = 100_000;
+        let deep = format!("{}{}", "[".repeat(n), "]".repeat(n));
+        let mut r = reader(None);
+        let value = parse_stream_into(&mut r, format!("{deep}\n{deep}").as_bytes(), Framing::Lines)
+            .unwrap();
+        assert_eq!(r.get_array_for_value(value).unwrap().len(), 2);
     }
 
     #[test]

@@ -15,7 +15,8 @@ Postman collections and TypeScript. It is a drop-in replacement:
 
 - **The `quicktype` CLI,** as the `quickertype` command: the same flags,
   help text, messages, exit codes and output files, byte for byte, except
-  the command's name in `--help`'s synopsis and examples.
+  the command's name in `--help`'s synopsis and examples, and one
+  addition: [JSON Lines](#json-lines) input.
 - **The `quicktype-core` JavaScript API** as
   [`quickertype-core`](npm/quicktype-core/README.md) on npm: quicktype's own
   TypeScript API and `.d.ts` files, with the engine compiled to WebAssembly,
@@ -152,6 +153,10 @@ quickertype -s graphql --graphql-schema github.gqlschema query.graphql -o Query.
 # TypeScript input
 quickertype person.ts -o Person.swift
 
+# JSON Lines: one value per line, typed as the array of the values
+quickertype cards.jsonl -o Cards.ts
+cat events.log | quickertype -s jsonl -l go -t Events
+
 # Every language, option and renderer option
 quickertype --help
 ```
@@ -159,6 +164,36 @@ quickertype --help
 TypeScript input runs the TypeScript 7 native compiler, where quicktype runs
 TypeScript 5.9. Install it with `npm install -g typescript@7.0.2` (a local
 `node_modules` works too), or set `QUICKTYPE_TSC` to its `tsc`.
+
+### JSON Lines
+
+quickertype also reads [JSON Lines](https://jsonlines.org) (NDJSON), which
+quicktype does not: one JSON value per line, read as the JSON array of
+those values. The output is what quicktype gives for that array, byte for
+byte, in every language and with every option.
+
+- Files and URLs named `*.jsonl` or `*.ndjson` are JSON Lines (a URL by
+  its path, without the query), in directories too, where `.json` files
+  stay JSON. `--src-lang jsonl` (`-s jsonl`) makes every JSON input named
+  on the command line JSON Lines, standard input too.
+- With an explicit `--src-lang` other than `jsonl` (`-s json`, ...),
+  quickertype behaves exactly as quicktype: nothing is JSON Lines, and
+  directories ignore `.jsonl` files.
+- Line breaks are `\n` or `\r\n`; blank lines are skipped, a value may span
+  lines, a byte order mark may come first, and two values on one line are
+  an error. A file without values gives `[]`, and a file with one value an
+  array of one.
+- A syntax error names the line its value starts on: `Error: Syntax error
+  in input JSON cards: line 3: Parser cannot parse input: expected ','.`
+- Reading JSON Lines is as fast as reading the array, and as frugal: a
+  file is read as a stream, never held whole.
+
+Because files named `.jsonl` were JSON to quicktype, a one-line `.jsonl`
+file that gave an object now gives an array of that object, and a
+directory now reads the `.jsonl` files it ignored, unless `-s json` is
+given ([docs/PARITY.md](docs/PARITY.md#json-lines) has the details). In the Rust
+API, JSON Lines samples are `JsonSample::StringLines`, `StreamLines` and
+`ReaderLines`.
 
 ### The JavaScript API
 
@@ -231,10 +266,10 @@ TypeScript input are the `quickertype-graphql-input` and
 
 | Check | What it compares |
 |---|---|
-| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 match, except the command's name in `--help`'s synopsis and examples, which must be the only difference ([docs/PARITY.md](docs/PARITY.md#how-parity-is-tested)). |
+| **Golden corpus** (`cargo xtask parity`, in CI) | 11,177 recorded runs of quicktype's CLI, replayed and compared byte for byte: every fixture of quicktype's test suite in every language and renderer-option variant, plus cases that pin `--help`, errors, stdout, stderr and exit codes. All 11,177 match, except the command's name in `--help`'s synopsis and examples and `jsonl` among its source languages, which must be the only differences ([docs/PARITY.md](docs/PARITY.md#how-parity-is-tested)). |
 | **JS API differential suite** (`npm run test:differential`, in CI) | About 19,000 API calls, made on quicktype's `quicktype-core` and on `quickertype-core`: every file, line, annotation, error and console message. |
 | **Round trip** ([`xtask/roundtrip`](xtask/roundtrip/README.md), weekly) | quicktype's own end-to-end fixtures, run with this binary: the generated code is compiled and must round-trip the samples, in the 26 languages quicktype has fixtures for. |
-| **Differential fuzzing** ([`xtask/fuzz`](xtask/fuzz/README.md)) | Seeded random JSON, JSON Schema, Postman and GraphQL inputs with random options, in every language, against quicktype in process and through both CLIs. Divergences are minimized into regression tests. |
+| **Differential fuzzing** ([`xtask/fuzz`](xtask/fuzz/README.md)) | Seeded random JSON, JSON Schema, Postman and GraphQL inputs with random options, in every language, against quicktype in process and through both CLIs; and JSON Lines against quicktype on the arrays of their values. Divergences are minimized into regression tests. |
 | **Crash fuzzing** ([`fuzz/`](CONTRIBUTING.md#fuzzing), weekly) | cargo-fuzz targets for the parsers, the CLI's options and the whole pipeline. |
 
 [docs/PARITY.md](docs/PARITY.md) has the rules that keep the output

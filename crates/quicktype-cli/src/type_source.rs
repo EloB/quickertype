@@ -12,9 +12,29 @@ pub struct JsonTypeSource {
     /// The top-level's name.
     pub name: String,
     /// The samples.
-    pub samples: Vec<Readable>,
+    pub samples: Vec<JsonSampleSource>,
     /// A description of the top-level (Postman collections).
     pub description: Option<String>,
+}
+
+/// One JSON sample of a [`JsonTypeSource`] (TS: a `Readable`).
+#[derive(Debug)]
+pub struct JsonSampleSource {
+    /// Where it is read from.
+    pub readable: Readable,
+    /// Whether it is JSON Lines, read as the array of its values (not in
+    /// TypeScript).
+    pub json_lines: bool,
+}
+
+impl JsonSampleSource {
+    /// A sample that is one JSON value, as quicktype reads every sample.
+    pub fn json(readable: Readable) -> Self {
+        JsonSampleSource {
+            readable,
+            json_lines: false,
+        }
+    }
 }
 
 /// TS `TypeSource`.

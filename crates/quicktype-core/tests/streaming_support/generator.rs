@@ -893,3 +893,27 @@ pub fn document(seed: u64) -> String {
     }
     sample_text(&mut rng, &shape, limits)
 }
+
+/// The values of a JSON Lines sample, to compare it with the array of
+/// them: one shape (mostly records, now and then varied) written 0 to 40
+/// times, each a valid JSON text whose whitespace may hold line feeds (a
+/// value that spans lines). For `tests/json_lines.rs`.
+#[allow(dead_code)]
+pub fn line_values(seed: u64, limits: Limits) -> Vec<String> {
+    let mut rng = Rng::new(seed ^ 0x115E_5EED);
+    let mut shape = Shape::random(&mut rng, 0, &limits);
+    while !matches!(shape, Shape::Object { .. }) && rng.chance(70) {
+        shape = Shape::random(&mut rng, 0, &limits);
+    }
+    let count = *rng.pick(&[0, 1, 1, 2, 3, 5, 10, 40]);
+    (0..count)
+        .map(|_| {
+            let shape = if rng.chance(20) {
+                shape.vary(&mut rng, &limits)
+            } else {
+                shape.clone()
+            };
+            sample_text(&mut rng, &shape, limits)
+        })
+        .collect()
+}

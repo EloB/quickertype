@@ -242,8 +242,11 @@ pub struct CliOptions {
     pub src: Vec<String>,
     /// `--src-urls`: a URL grammar file.
     pub src_urls: Option<String>,
-    /// The source language: `json` unless given or inferred.
+    /// The source language: `json` unless given or inferred. `jsonl` (not
+    /// in TypeScript) is `json` here, with [`JsonLines::Always`].
     pub src_lang: String,
+    /// Which JSON samples are JSON Lines (not in TypeScript).
+    pub json_lines: JsonLines,
     /// The target language.
     pub lang: &'static dyn TargetLanguage,
     /// The top-level type name.
@@ -285,6 +288,26 @@ pub struct CliOptions {
     /// `--no-integer-strings`, `--no-boolean-strings`,
     /// `--no-combine-classes`, `--no-ignore-json-refs`.
     pub negated_inference_flags: [bool; 8],
+}
+
+/// Which JSON samples are JSON Lines, read as the array of their values.
+/// Not in TypeScript, which reads every sample as one JSON value: with a
+/// `--src-lang` other than `jsonl`, quickertype behaves exactly as
+/// quicktype.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JsonLines {
+    /// No `--src-lang`: the inputs named on the command line (files, URLs,
+    /// `--src-urls`) and the files in directories that are named `*.jsonl`
+    /// or `*.ndjson` (a directory also takes those files, and a `.url`
+    /// file goes by its URL's name).
+    ByName,
+    /// A `--src-lang` other than `jsonl`: none, and directories take the
+    /// files quicktype takes, as quicktype does.
+    Never,
+    /// `--src-lang jsonl`: all inputs named on the command line, standard
+    /// input included; the files in directories by their names, as for
+    /// [`ByName`](Self::ByName).
+    Always,
 }
 
 /// The result of one parse (TS `Partial<CLIOptions>`).
@@ -476,10 +499,22 @@ fn infer_cli_options(
         .top_level
         .clone()
         .unwrap_or_else(|| infer_top_level(&options));
+    let json_lines = match options.src_lang.as_deref() {
+        None => JsonLines::ByName,
+        Some("jsonl") => JsonLines::Always,
+        Some(_) => JsonLines::Never,
+    };
+    // From here on, `jsonl` is `json` read as `json_lines` says.
+    let src_lang = if src_lang == "jsonl" {
+        "json".to_owned()
+    } else {
+        src_lang
+    };
     Ok(CliOptions {
         src: options.src.unwrap_or_default(),
         src_urls: options.src_urls,
         src_lang,
+        json_lines,
         lang: language,
         top_level,
         no_render: options.no_render.unwrap_or(false),
@@ -614,6 +649,26 @@ mod tests {
 
     #[test]
     fn source_language() {
+        let json = parse(&["a.jsonl"]).unwrap();
+        assert_eq!(
+            (json.src_lang.as_str(), json.json_lines),
+            ("json", JsonLines::ByName)
+        );
+        let given = parse(&["-s", "json", "a.jsonl"]).unwrap();
+        assert_eq!(
+            (given.src_lang.as_str(), given.json_lines),
+            ("json", JsonLines::Never)
+        );
+        let lines = parse(&["--src-lang", "jsonl"]).unwrap();
+        assert_eq!(
+            (
+                lines.src_lang.as_str(),
+                lines.json_lines,
+                lines.top_level.as_str()
+            ),
+            ("json", JsonLines::Always, "TopLevel")
+        );
+        assert_eq!(parse(&["cards.jsonl"]).unwrap().top_level, "cards");
         assert_eq!(parse(&["a.ts", "b.ts"]).unwrap().src_lang, "typescript");
         assert_eq!(
             parse(&["--src-lang", "schema", "a"]).unwrap().src_lang,

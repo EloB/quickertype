@@ -18,7 +18,9 @@
 //! - **Inputs:** an [`InputData`] holds one [`Input`] per source language.
 //!   [`JsonInput`] reads JSON samples ([`JsonSourceData`], each sample a
 //!   [`JsonSample`] read with `JSON.parse` semantics as the JavaScript API
-//!   does, or with stream-json semantics as the CLI does);
+//!   does, or with stream-json semantics as the CLI does; or, not in
+//!   quicktype, [JSON Lines](https://jsonlines.org) read as the array of
+//!   their values, [`JsonSample::StreamLines`] and the like);
 //!   [`json_input_for_target_language`] makes one that suits a language.
 //!   [`JsonSchemaInput`] reads JSON Schema ([`JsonSchemaSourceData`]),
 //!   fetching documents through a [`JsonSchemaStore`] such as

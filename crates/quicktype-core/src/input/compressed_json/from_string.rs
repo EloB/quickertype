@@ -61,13 +61,20 @@
 //! After a sample, the tape and the key table are kept for the next one
 //! only while they are small ([`KEEP_NODES`], [`KEEP_KEYS`]); a large
 //! sample's are freed.
+//!
+//! JSON Lines ([`Framing::Lines`], not in quicktype) are recorded as the
+//! array of their values: an array node that the text does not spell,
+//! whose elements are the values, which must be separated by whitespace
+//! with a line feed. A byte order mark before them is dropped first. The
+//! port of V8's parser reads them for the error message too
+//! ([`parse_lines`](quicktype_js_compat::json::parse::parse_lines)).
 
 use hashbrown::HashTable;
 use quicktype_js_compat::json::is_array_index;
 
 use super::{
-    CompressedJson, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
-    parse_string_value_into, syntax_error, vec_size,
+    CompressedJson, Framing, JsonSink, NO_INDEX, PROCESS_MAX_DEPTH, ParseError, Strings, Value,
+    parse_string_value, parse_string_value_into, vec_size,
 };
 use crate::input::json_scan::plain_run;
 use crate::messages::{QuickTypeError, Result};
@@ -403,6 +410,9 @@ struct OpenObject {
 enum Open {
     Array(usize),
     Object(OpenObject),
+    /// The array of JSON Lines' values ([`Framing::Lines`]), which the text
+    /// does not spell.
+    Lines(usize),
 }
 
 /// The first pass over one sample.
@@ -416,6 +426,7 @@ struct Recorder<'t> {
     /// The current key, if it has escapes.
     key: String,
     limits: StringSampleLimits,
+    framing: Framing,
     /// Whether every integer of at most 15 digits fits the integer range,
     /// so that their literals need not be compared to it.
     small_integers_fit: bool,
@@ -431,7 +442,12 @@ fn array_index(key: &str) -> Option<u32> {
 }
 
 impl<'t> Recorder<'t> {
-    fn new<S: JsonSink>(sink: &mut S, text: &'t str, limits: StringSampleLimits) -> Self {
+    fn new<S: JsonSink>(
+        sink: &mut S,
+        text: &'t str,
+        limits: StringSampleLimits,
+        framing: Framing,
+    ) -> Self {
         let small_integers_fit = sink.small_integers_fit();
         Recorder {
             text,
@@ -441,6 +457,7 @@ impl<'t> Recorder<'t> {
             decoded: String::new(),
             key: String::new(),
             limits,
+            framing,
             small_integers_fit,
         }
     }
@@ -480,6 +497,16 @@ impl<'t> Recorder<'t> {
     /// Records the sample.
     fn record<S: JsonSink>(&mut self, sink: &mut S) -> Result<(), Stop> {
         let mut stack: Vec<Open> = Vec::new();
+        if self.framing == Framing::Lines {
+            // JSON Lines are the array of their values.
+            self.deeper(0)?;
+            let node = self.push(Kind::Array, 0, 0);
+            if self.next_token().is_none() {
+                self.close(node, false);
+                return Ok(());
+            }
+            stack.push(Open::Lines(node));
+        }
         'value: loop {
             match self.next_token() {
                 Some(b'{') => {
@@ -576,6 +603,20 @@ impl<'t> Recorder<'t> {
                         }
                         _ => return Err(Stop::Syntax),
                     },
+                    Some(Open::Lines(node)) => {
+                        let (node, end) = (*node, self.pos);
+                        match self.next_token() {
+                            None => {
+                                stack.pop();
+                                self.close(node, false);
+                            }
+                            // The next value is on a line of its own.
+                            Some(_) if self.bytes[end..self.pos].contains(&b'\n') => {
+                                continue 'value;
+                            }
+                            Some(_) => return Err(Stop::Syntax),
+                        }
+                    }
                 }
             }
         }
@@ -1084,22 +1125,30 @@ impl CompressedJson {
         text: &str,
         limits: StringSampleLimits,
     ) -> Result<Value, ReadStringError> {
-        read_string_sample_into(self, text, limits)
+        read_string_sample_into(self, text, limits, Framing::Value)
     }
 }
 
-/// [`CompressedJson::read_string_sample`] into any [`JsonSink`].
+/// [`CompressedJson::read_string_sample`] into any [`JsonSink`]; with
+/// [`Framing::Lines`], the JSON Lines `text` as the array of its values.
 pub(crate) fn read_string_sample_into<S: JsonSink>(
     sink: &mut S,
     text: &str,
     limits: StringSampleLimits,
+    framing: Framing,
 ) -> Result<S::Root, ReadStringError> {
+    // JSON Lines may start with a byte order mark, which is not part of
+    // the text (nor of its positions).
+    let text = match framing {
+        Framing::Value => text,
+        Framing::Lines => text.strip_prefix('\u{feff}').unwrap_or(text),
+    };
     if u32::try_from(text.len()).is_err() {
         // Too long for the tape's offsets: read the value whole.
-        return read_whole(sink, text, limits);
+        return read_whole(sink, text, limits, framing);
     }
     sink.string_reader().reserve_serials(text.len());
-    let mut recorder = Recorder::new(sink, text, limits);
+    let mut recorder = Recorder::new(sink, text, limits, framing);
     let span = crate::trace::span("read: record");
     let recorded = recorder.record(sink);
     drop(span);
@@ -1121,7 +1170,7 @@ pub(crate) fn read_string_sample_into<S: JsonSink>(
         }
         Err(Stop::Declined(decline)) => Err(ReadStringError::Declined(decline)),
         // V8's message, from the port of its parser.
-        Err(Stop::Syntax) => read_whole(sink, text, limits),
+        Err(Stop::Syntax) => read_whole(sink, text, limits, framing),
     };
     sink.string_reader().finish_sample(nodes);
     result
@@ -1137,13 +1186,14 @@ fn read_whole<S: JsonSink>(
     sink: &mut S,
     text: &str,
     limits: StringSampleLimits,
+    framing: Framing,
 ) -> Result<S::Root, ReadStringError> {
     if limits.is_none() {
-        return parse_string_value_into(sink, text).map_err(ReadStringError::Parse);
+        return parse_string_value_into(sink, text, framing).map_err(ReadStringError::Parse);
     }
-    match quicktype_js_compat::json::parse(text) {
+    match parse_string_value(text, framing) {
         Ok(_) => Err(ReadStringError::Declined(Decline::Unchecked)),
-        Err(e) => Err(ReadStringError::Parse(syntax_error(&e))),
+        Err(e) => Err(ReadStringError::Parse(e)),
     }
 }
 

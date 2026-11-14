@@ -1,7 +1,7 @@
 // Running one case in one mode on both sides and comparing the outcomes;
 // shared by the fuzzer, the minimizer and the replayer.
 
-import { cliCommands, cliCompatible, cliInvocation, loadCompare, loadSides, runCli } from "./engines.mjs";
+import { cliCommands, cliCompatible, cliInvocation, jsonlInvocations, loadCompare, loadSides, runCli } from "./engines.mjs";
 import { runInProcess } from "./run-case.mjs";
 
 const timeoutMs = 120_000;
@@ -37,7 +37,7 @@ export async function makeChecker({ reference, bin }) {
     }
 
     /**
-     * Runs `kase` in `mode` ("api", "stream" or "cli") on both sides:
+     * Runs `kase` in `mode` ("api", "stream", "cli" or "jsonl") on both sides:
      * { status, engine?, detail?, expected?, actual? }, where status is
      * "same", "diff", "skip" (the mode does not apply) or "timeout".
      * `engine` says where our in-process run went: "wasm", "fallback" (the
@@ -48,13 +48,24 @@ export async function makeChecker({ reference, bin }) {
     async function check(kase, mode) {
         if (mode === "stream" && kase.src !== "json" && kase.src !== "postman" && kase.src !== "mixed") return { status: "skip" };
         // The WebAssembly engine has no GraphQL input: GraphQL runs only through the CLIs.
-        if (kase.src === "graphql" && mode !== "cli") return { status: "skip" };
+        if (kase.src === "graphql" && mode !== "cli" && mode !== "jsonl") return { status: "skip" };
         if (mode === "cli") {
             if (!cliCompatible(kase)) return { status: "skip" };
             const invocation = cliInvocation(kase);
             // One after the other: a worker is one busy process at a time.
             const expected = await runCli(commands.ref, invocation);
             const actual = await runCli(commands.ours, invocation);
+            if (typeof expected.exit === "string") return { status: "timeout", detail: `reference ${expected.exit}` };
+            return compareOutcomes(expected, actual);
+        }
+
+        if (mode === "jsonl") {
+            // Ours on JSON Lines, the reference on the arrays of their values.
+            const invocations = jsonlInvocations(kase);
+            if (invocations === undefined) return { status: "skip" };
+            const { ours, ref } = invocations;
+            const expected = await runCli(commands.ref, ref);
+            const actual = await runCli(commands.ours, ours);
             if (typeof expected.exit === "string") return { status: "timeout", detail: `reference ${expected.exit}` };
             return compareOutcomes(expected, actual);
         }

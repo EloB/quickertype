@@ -12,6 +12,9 @@
 // * "cli": `node <reference>/dist/index.js` and our native binary, each in a
 //   fresh directory holding the same input files; exit code, stdout, stderr
 //   and written files are compared (the directory is normalized to {CWD}).
+// * "jsonl": the same, but our binary reads JSON Lines files (not in
+//   quicktype) where the reference reads the JSON arrays of their values
+//   (`jsonlInvocations`): the outcomes must be identical.
 //
 // How a case runs in-process ("api", "stream") is in run-case.mjs, which the
 // npm differential suite replays recorded cases with.
@@ -24,6 +27,7 @@ import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { unportablePaths } from "./file-names.mjs";
+import { Rng } from "./rng.mjs";
 import { cliWordWrap, INFERENCE_FLAGS, streamClassFor } from "./run-case.mjs";
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -138,6 +142,14 @@ export function cliInvocation(kase) {
         args.push(file);
     }
 
+    args.push(...optionArgs(kase));
+    if (args.some((a) => a.includes("\0"))) return undefined;
+    return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
+}
+
+/** The CLI arguments for a case's options (after its inputs). */
+function optionArgs(kase) {
+    const args = [];
     for (const [name, value] of Object.entries(kase.rendererOptions)) {
         if (value === true) args.push(`--${name}`);
         else args.push(`--${name}`, String(value));
@@ -149,8 +161,168 @@ export function cliInvocation(kase) {
     if (kase.cli?.quiet) args.push("--quiet");
     if (kase.debug !== undefined && kase.debug.length > 0) args.push("--debug", kase.debug.join(","));
     if (kase.cli?.out !== undefined) args.push("--out", kase.cli.out);
+    return args;
+}
+
+/** Whether `text` is one JSON value (with whitespace around it). */
+function isOneValue(text) {
+    try {
+        JSON.parse(text);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The "jsonl" mode's two CLI invocations of a JSON case, `{ ours, ref }`
+ * (each as `cliInvocation` returns one), or undefined if the mode cannot
+ * run the case (see `cliCompatible`). Each top-level's samples (those
+ * that are one JSON value) are grouped, in order, into files: our binary
+ * reads a group as a JSON Lines file (values on lines of their own, with
+ * LF or CRLF, blank lines, whitespace before and after, now and then a
+ * byte order mark first), the reference as a `.json` file of the JSON
+ * array of the group's values (`[V1,…,Vn]`, `[]` for none). A group of one
+ * may also stay a plain `.json` sample on both sides, so that one
+ * top-level mixes the two. One top-level's files are the arguments,
+ * named `.jsonl`, `.ndjson` or `.JSONL`, or anything with `--src-lang
+ * jsonl` (then all are JSON Lines); one file is sometimes named after the
+ * top-level, without `--top-level`. Several top-levels are a directory,
+ * where each file's name says what it holds whatever `--src-lang` says,
+ * which is none, `json` or `jsonl`. The choices are a function of the
+ * case and its seed, so a saved case replays them.
+ */
+export function jsonlInvocations(kase) {
+    if (!cliCompatible(kase)) return undefined;
+    if (kase.src !== "json") return strayInvocation(kase);
+    const rng = new Rng((kase.seed ?? 0) ^ 0x75e1);
+    const separators = ["\n", "\r\n", "\n\n", "\n \t\n", " \r\n", "\r\n\r\n"];
+    const arounds = ["", "\n", "\r\n", " \n", "\n\n"];
+    const several = kase.topLevels.length > 1;
+    // For arguments: `--src-lang jsonl` makes every file JSON Lines,
+    // otherwise their names do. A directory goes by the names either way
+    // (with another `--src-lang`, it would be quicktype's and ignore them).
+    const srcLang = several ? rng.pick([undefined, "jsonl"]) : rng.chance(0.3) ? "jsonl" : undefined;
+    const byName = several || srcLang === undefined;
+    const lineFiles = (values) => {
+        const between = rng.sample(separators, rng.range(1, 3));
+        const text = values.map((v, i) => (i === 0 ? "" : between[i % between.length]) + v).join("");
+        const bom = rng.chance(0.1) ? "﻿" : "";
+        return { ours: bom + rng.pick(arounds) + text + rng.pick(arounds), ref: `[${values.join(",")}]` };
+    };
+    // Per top-level: its files, each { ours, ref, lines }.
+    const groups = kase.topLevels.map((tl) => {
+        const values = tl.samples.filter(isOneValue);
+        const files = [];
+        let i = 0;
+        do {
+            const n = Math.min(values.length - i, rng.weighted([[3, 1], [3, 2], [2, values.length], [1, 0]]));
+            const group = values.slice(i, i + Math.max(n, 0));
+            i += group.length;
+            if (byName && group.length === 1 && rng.chance(0.25)) files.push({ ours: group[0], ref: group[0], lines: false });
+            else files.push({ ...lineFiles(group), lines: true });
+        } while (i < values.length);
+        return files;
+    });
+    const extension = (f) =>
+        !f.lines ? "json" : byName ? rng.pick(["jsonl", "jsonl", "ndjson", "JSONL"]) : rng.pick(["json", "jsonl", "txt", "ndjson"]);
+    const ours = new Map();
+    const ref = new Map();
+    const oursArgs = ["--lang", kase.lang];
+    const refArgs = ["--lang", kase.lang, "--src-lang", "json"];
+    if (srcLang !== undefined) oursArgs.push("--src-lang", srcLang);
+    if (!several) {
+        const [tl] = kase.topLevels;
+        const [files] = groups;
+        // One file named after the top-level, which names it.
+        const named = files.length === 1 && files[0].lines && /^[A-Za-z][A-Za-z0-9_-]{0,30}$/.test(tl.name) && rng.chance(0.3);
+        if (!named) {
+            oursArgs.push("--top-level", tl.name);
+            refArgs.push("--top-level", tl.name);
+        }
+
+        files.forEach((f, j) => {
+            const base = named ? `in/${tl.name}` : `in/s0-${j}`;
+            const oursFile = `${base}.${extension(f)}`;
+            ours.set(oursFile, f.ours);
+            ref.set(`${base}.json`, f.ref);
+            oursArgs.push(oursFile);
+            refArgs.push(`${base}.json`);
+        });
+    } else {
+        // A directory, read in the order of its (sorted) names: our names
+        // must sort as the reference's do.
+        const placed = [];
+        kase.topLevels.forEach((tl, t) => {
+            const files = groups[t];
+            const bases = files.length === 1 ? [`in/${tl.name}`] : files.map((_, j) => `in/${tl.name}/s${j}`);
+            files.forEach((f, j) => placed.push([`${bases[j]}.${extension(f)}`, `${bases[j]}.json`, f]));
+        });
+        const order = (names) => names.map((n, i) => [Buffer.from(n), i]).sort(([a], [b]) => Buffer.compare(a, b)).map(([, i]) => i).join();
+        if (order(placed.map(([o]) => o)) !== order(placed.map(([, r]) => r))) return undefined;
+        for (const [o, r, f] of placed) {
+            ours.set(o, f.ours);
+            ref.set(r, f.ref);
+        }
+
+        oursArgs.push("in");
+        refArgs.push("in");
+    }
+
+    const options = optionArgs(kase);
+    oursArgs.push(...options);
+    refArgs.push(...options);
+    if ([...oursArgs, ...refArgs].some((a) => a.includes("\0"))) return undefined;
+    const written = [...ours.keys(), ...ref.keys()];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    if (unportablePaths(written).length > 0) return undefined;
+    // Two names that differ only in case would collide on Windows and macOS.
+    if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
+    const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
+    return { ours: { args: oursArgs, files: ours, dirs }, ref: { args: refArgs, files: ref, dirs } };
+}
+
+/**
+ * The "jsonl" mode's invocations of a JSON Schema, GraphQL or mixed case:
+ * a directory read with an explicit `--src-lang` other than `jsonl`
+ * (`schema` for a schema, `json` otherwise), which holds stray JSON Lines
+ * files besides the case's own, the same on both sides. With such a
+ * `--src-lang` quickertype is quicktype, whose directories ignore
+ * `.jsonl` and `.ndjson` files: the outcomes must be identical. The schema
+ * sits in a subdirectory beside a stray file, where reading it would mix
+ * JSON with JSON Schema.
+ */
+function strayInvocation(kase) {
+    const files = new Map();
+    let args;
+    if (kase.src === "mixed") {
+        const invocation = cliInvocation(kase);
+        if (invocation === undefined) return undefined;
+        for (const [f, text] of invocation.files) files.set(f, text);
+        args = invocation.args;
+    } else if (kase.src === "schema") {
+        if (kase.schemas[0].uris !== undefined) return undefined;
+        files.set("in/sub/TopLevel.schema", kase.schemas[0].text);
+        args = ["--lang", kase.lang, "--src-lang", "schema", "in", ...optionArgs(kase)];
+    } else if (kase.src === "graphql") {
+        files.set("in/schema.gqlschema", kase.graphql.schema);
+        for (const q of kase.graphql.queries) files.set(kase.graphql.queries.length === 1 ? "in/query.graphql" : `in/${q.name}.graphql`, q.query);
+        args = ["--lang", kase.lang, "--src-lang", "json", "in", ...optionArgs(kase)];
+    } else {
+        return undefined;
+    }
+
+    const lines = '{"a": 1, "b": "x"}\n{"a": 2.5}\n';
+    files.set(kase.src === "schema" ? "in/sub/data.jsonl" : "in/stray.jsonl", lines);
+    files.set("in/zz/more.NDJSON", lines);
     if (args.some((a) => a.includes("\0"))) return undefined;
-    return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
+    const written = [...files.keys()];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    if (unportablePaths(written).length > 0) return undefined;
+    if (new Set(written.map((f) => f.toLowerCase())).size !== new Set(written).size) return undefined;
+    const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
+    const invocation = { args, files, dirs };
+    return { ours: invocation, ref: invocation };
 }
 
 /**
