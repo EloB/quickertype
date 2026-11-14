@@ -758,10 +758,8 @@ const SCAN_PIECE: usize = 64 << 10;
 /// What a range's split search found.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Split {
-    /// Not known yet.
+    /// Not known yet (or being searched).
     Unknown,
-    /// Being searched.
-    Searching,
     /// Its first comma at depth 1, or none.
     Found(Option<u64>),
 }
@@ -1120,7 +1118,6 @@ impl Reading<'_> {
                     break;
                 };
                 if state.may_split(&summary) {
-                    splits[resolved] = Split::Searching;
                     self.push(Job::Split(resolved, state));
                     pending += 1;
                 } else {
