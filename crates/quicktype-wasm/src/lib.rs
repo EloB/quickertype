@@ -182,9 +182,12 @@ pub fn run_sync(request: JsValue, host: JsValue) -> JsValue {
     with_active(&host, || {
         let result = js::decode_request(&request).and_then(|request| {
             let _forms = SharedForms::of(&request);
+            let span = trace::span("assemble");
             let options = assemble::assemble(request, Rc::new(Rc::clone(&host)))?;
+            drop(span);
             quicktype_core::quicktype_multi_file_sync(options)
         });
+        let _span = trace::span("outcome to JavaScript");
         host.finish(result)
     })
 }
@@ -375,8 +378,10 @@ extern "C" {
 
 /// Gives the trace `performance.now` as its clock (`trace` builds for
 /// WebAssembly only: natively the trace reads `Instant`, and the import
-/// cannot be called).
-fn install_clock() {
+/// cannot be called). Called on every entry that can record a span (the
+/// reads, the runs, `__trace`), so that none is recorded without a clock;
+/// setting it again changes nothing.
+pub(crate) fn install_clock() {
     #[cfg(all(feature = "trace", target_arch = "wasm32"))]
     trace::set_clock(performance_now);
 }

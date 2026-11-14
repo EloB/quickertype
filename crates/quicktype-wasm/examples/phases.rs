@@ -21,7 +21,9 @@ use quicktype_core::input::inputs::{CompressedTopLevel, JsonInput};
 use quicktype_core::{InputData, Options, get_target_language, quicktype_multi_file_sync, trace};
 use quicktype_wasm::samples::{json_acquire, json_create, json_drop, json_read, take_lease};
 
-/// The CLI's allocator.
+/// The CLI's allocator (a native dev-dependency: the example is only built,
+/// not run, for WebAssembly).
+#[cfg(not(target_arch = "wasm32"))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 

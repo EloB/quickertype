@@ -149,6 +149,7 @@ pub fn json_create(
 /// [`DECLINED`].
 #[wasm_bindgen(js_name = jsonRead)]
 pub fn json_read(id: f64, text: &str) -> i32 {
+    crate::install_clock();
     let _span = quicktype_core::trace::span("jsonRead");
     read_with(id, |cjson| cjson.read_string_sample(text, LIMITS))
 }
@@ -161,6 +162,7 @@ pub fn json_read(id: f64, text: &str) -> i32 {
 /// replace what is not UTF-8 with U+FFFD, and the facade does that.
 #[wasm_bindgen(js_name = jsonReadBytes)]
 pub fn json_read_bytes(id: f64, bytes: &[u8]) -> i32 {
+    crate::install_clock();
     let _span = quicktype_core::trace::span("jsonRead");
     let bytes = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
     let span = quicktype_core::trace::span("read: check UTF-8");

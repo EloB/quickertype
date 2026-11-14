@@ -135,9 +135,14 @@ jobs:
         with:
           toolchain: "1.99"
           targets: wasm32-unknown-unknown
+          components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --package quicktype-wasm --target wasm32-unknown-unknown --release
       - run: cargo build --package quicktype-wasm --target wasm32-unknown-unknown --release --features trace
+      # Every target of the engine's crate (its tests and the `phases`
+      # example too) as WebAssembly, with and without `trace`.
+      - run: cargo clippy --package quicktype-wasm --target wasm32-unknown-unknown --all-targets
+      - run: cargo clippy --package quicktype-wasm --target wasm32-unknown-unknown --all-targets --features trace
 
   # npm/quicktype-core: the WebAssembly engine behind quicktype's own
   # TypeScript API. Without a quicktype checkout, the differential suite
