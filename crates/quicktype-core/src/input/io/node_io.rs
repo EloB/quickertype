@@ -589,7 +589,11 @@ mod std_io {
             if let super::Readable::File(path) = &self {
                 let file = open_file(path)?;
                 if file.metadata().is_ok_and(|m| m.is_file()) {
-                    let sample = crate::input::parallel_read::PositionalSample::file(file, options);
+                    let sample = crate::input::parallel_read::PositionalSample::file(
+                        file,
+                        std::path::Path::new(path),
+                        options,
+                    );
                     return Ok(crate::SampleReader::positional(sample));
                 }
                 return Ok(crate::SampleReader::new(NodeReader(file)));

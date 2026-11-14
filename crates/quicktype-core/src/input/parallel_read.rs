@@ -55,7 +55,7 @@ use crate::input::io::node_io::stream_read_error;
 pub(crate) enum Positional {
     /// A regular file.
     #[cfg(all(any(unix, windows), feature = "fs"))]
-    File(std::fs::File),
+    File(SharedFile),
     /// Bytes in memory (for tests and fuzzing).
     Memory(Vec<u8>),
 }
@@ -64,7 +64,7 @@ impl Positional {
     fn len(&self) -> io::Result<u64> {
         match self {
             #[cfg(all(any(unix, windows), feature = "fs"))]
-            Positional::File(file) => Ok(file.metadata()?.len()),
+            Positional::File(shared) => Ok(shared.file.metadata()?.len()),
             Positional::Memory(bytes) => Ok(bytes.len() as u64),
         }
     }
@@ -75,7 +75,7 @@ impl Positional {
         while !buf.is_empty() {
             let n = match self {
                 #[cfg(all(any(unix, windows), feature = "fs"))]
-                Positional::File(file) => match read_file_at(file, buf, offset) {
+                Positional::File(shared) => match shared.read_at(buf, offset) {
                     Ok(n) => n,
                     Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
                     Err(e) => return Err(e),
@@ -95,6 +95,79 @@ impl Positional {
             buf = &mut buf[n..];
         }
         Ok(total)
+    }
+}
+
+/// A regular file, read at offsets from several threads at once. Windows
+/// serializes the reads of a handle opened for synchronous reads (as std
+/// opens files), so there each read takes a handle of its own: the file
+/// opened again from its path, while that still holds the same file.
+#[cfg(all(any(unix, windows), feature = "fs"))]
+pub(crate) struct SharedFile {
+    file: std::fs::File,
+    /// Its path, to open it again; `None` not to (on Unix, where reads at
+    /// offsets of one handle run at once, and for standard input).
+    path: Option<std::path::PathBuf>,
+    /// Handles opened again, not in use.
+    spares: Mutex<Vec<std::fs::File>>,
+    /// Set once the path gave another file, or none.
+    no_more: AtomicBool,
+}
+
+#[cfg(all(any(unix, windows), feature = "fs"))]
+impl SharedFile {
+    fn new(file: std::fs::File, path: Option<std::path::PathBuf>) -> Self {
+        SharedFile {
+            file,
+            path,
+            spares: Mutex::new(Vec::new()),
+            no_more: AtomicBool::new(false),
+        }
+    }
+
+    /// Reads into `buf` from `offset`: with a handle of its own while it
+    /// reads, where it can have one.
+    fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+        if self.path.is_none() {
+            return read_file_at(&self.file, buf, offset);
+        }
+        let spare = self.spares().pop().or_else(|| self.open_again());
+        let read = read_file_at(spare.as_ref().unwrap_or(&self.file), buf, offset);
+        if let Some(spare) = spare {
+            self.spares().push(spare);
+        }
+        read
+    }
+
+    fn spares(&self) -> std::sync::MutexGuard<'_, Vec<std::fs::File>> {
+        self.spares.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The file opened again from its path, if that still holds it: a
+    /// regular file of the same size, last changed and created at the same
+    /// times. (A file put in its place with all of those the same is not
+    /// told apart, as a file changed in place is not: see [`read`].)
+    fn open_again(&self) -> Option<std::fs::File> {
+        if self.no_more.load(Ordering::Relaxed) {
+            return None;
+        }
+        let same = |again: &std::fs::File| match (self.file.metadata(), again.metadata()) {
+            (Ok(a), Ok(b)) => {
+                a.is_file()
+                    && b.is_file()
+                    && a.len() == b.len()
+                    && a.modified().ok() == b.modified().ok()
+                    && a.created().ok() == b.created().ok()
+            }
+            _ => false,
+        };
+        let again = (self.path.as_ref())
+            .and_then(|path| std::fs::File::open(path).ok())
+            .filter(same);
+        if again.is_none() {
+            self.no_more.store(true, Ordering::Relaxed);
+        }
+        again
     }
 }
 
@@ -125,11 +198,18 @@ pub(crate) struct PositionalSample {
 }
 
 impl PositionalSample {
-    /// The regular file `file`, from its start, read with `options`.
+    /// The regular file `file`, opened from `path`, from its start, read
+    /// with `options`. (On Windows, the threads that read it open it again
+    /// from `path`, see [`SharedFile`].)
     #[cfg(all(any(unix, windows), feature = "fs"))]
-    pub(crate) fn file(file: std::fs::File, options: ParallelOptions) -> Self {
+    pub(crate) fn file(
+        file: std::fs::File,
+        path: &std::path::Path,
+        options: ParallelOptions,
+    ) -> Self {
+        let path = cfg!(windows).then(|| path.to_owned());
         PositionalSample {
-            source: Positional::File(file),
+            source: Positional::File(SharedFile::new(file, path)),
             start: 0,
             options,
         }
@@ -143,7 +223,7 @@ impl PositionalSample {
     pub(crate) fn stdin(mut file: std::fs::File, options: ParallelOptions) -> Option<Self> {
         let start = io::Seek::stream_position(&mut file).ok()?;
         Some(PositionalSample {
-            source: Positional::File(file),
+            source: Positional::File(SharedFile::new(file, None)),
             start,
             options,
         })
@@ -153,8 +233,8 @@ impl PositionalSample {
     /// standard input, which another sample may read again).
     fn seek_to_end(&self) {
         #[cfg(all(any(unix, windows), feature = "fs"))]
-        if let Positional::File(file) = &self.source {
-            let _ = io::Seek::seek(&mut &*file, io::SeekFrom::End(0));
+        if let Positional::File(shared) = &self.source {
+            let _ = io::Seek::seek(&mut &shared.file, io::SeekFrom::End(0));
         }
     }
 
@@ -178,8 +258,8 @@ impl PositionalSample {
     fn into_reader_from(self, from: u64) -> Box<dyn Read> {
         match self.source {
             #[cfg(all(any(unix, windows), feature = "fs"))]
-            Positional::File(file) => Box::new(StreamFrom {
-                inner: file,
+            Positional::File(shared) => Box::new(StreamFrom {
+                inner: shared.file,
                 seek_to: Some(from),
             }),
             Positional::Memory(bytes) => Box::new(StreamFrom {
@@ -301,16 +381,18 @@ pub fn parallel_sample(bytes: Vec<u8>, options: ParallelOptions) -> crate::Sampl
     crate::SampleReader::positional(PositionalSample::memory(bytes, options))
 }
 
-/// A sample of the regular file `file` (a
+/// A sample of the regular file at `path` (a
 /// [`JsonSample::Reader`](crate::JsonSample::Reader)), read with `options`
-/// (for tests).
+/// as the CLI reads it (for tests).
 #[cfg(all(any(unix, windows), feature = "fs"))]
-pub fn parallel_file_sample(file: std::fs::File, options: ParallelOptions) -> crate::SampleReader {
-    crate::SampleReader::positional(PositionalSample {
-        source: Positional::File(file),
-        start: 0,
-        options,
-    })
+pub fn parallel_file_sample(
+    path: &std::path::Path,
+    options: ParallelOptions,
+) -> io::Result<crate::SampleReader> {
+    let file = std::fs::File::open(path)?;
+    Ok(crate::SampleReader::positional(PositionalSample::file(
+        file, path, options,
+    )))
 }
 
 /// How samples were read on several threads.
@@ -1572,6 +1654,58 @@ mod tests {
                 assert_eq!(how.whole, 1, "ranges of {range}, {threads} threads");
             }
         }
+    }
+
+    /// Where reads take handles of their own (on Windows), the file is
+    /// opened again from its path and read as in one go; a file put in its
+    /// place is not opened, and the file opened first is read.
+    #[cfg(all(any(unix, windows), feature = "fs"))]
+    #[test]
+    fn files_opened_again_read_as_in_one_go() {
+        let config = config(false);
+        let dir = std::env::temp_dir().join(format!("quicktype-again-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("again.json");
+        let elements: Vec<String> = (0..3_000)
+            .map(|i| format!(r#"{{"a":{i},"b":"s{}"}}"#, i % 7))
+            .collect();
+        let bytes = format!("[{}]", elements.join(","));
+        std::fs::write(&path, &bytes).unwrap();
+        let expected = in_one_go(&config, bytes.as_bytes());
+        let open = || PositionalSample {
+            source: Positional::File(SharedFile::new(
+                std::fs::File::open(&path).unwrap(),
+                Some(path.clone()),
+            )),
+            start: 0,
+            options: options(4, 4_096),
+        };
+        let read_whole = |sample: &PositionalSample| {
+            let mut tallies = RunningTallies::new();
+            match read(sample, &mut tallies, &config) {
+                Some(Outcome::Whole(tree)) => Ok(tallies.dump(tree)),
+                _ => Err("not read whole".to_owned()),
+            }
+        };
+        let spares = |sample: &PositionalSample| match &sample.source {
+            Positional::File(shared) => shared.spares().len(),
+            Positional::Memory(_) => 0,
+        };
+        let sample = open();
+        assert_eq!(read_whole(&sample), expected);
+        assert!(spares(&sample) > 0);
+        // Another file in its place (renamed over it, which Unix allows
+        // while it is open).
+        #[cfg(unix)]
+        {
+            let sample = open();
+            let other = dir.join("other.json");
+            std::fs::write(&other, r#"[{"other":true},{"other":false}]"#).unwrap();
+            std::fs::rename(&other, &path).unwrap();
+            assert_eq!(read_whole(&sample), expected);
+            assert_eq!(spares(&sample), 0);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A reading thread that panics makes the reading panic with its

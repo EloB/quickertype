@@ -1,12 +1,12 @@
 //! Large top-level arrays in files are read on several threads (the CLI's
 //! regular files, `input/parallel_read.rs`), at offsets of the file:
-//! `pread` on Unix, `seek_read` on Windows. Files written here, read with
+//! `pread` on Unix, `seek_read` on Windows (each reading thread with a
+//! handle of its own, the file opened again). Files written here, read with
 //! forced threads and range sizes, must read as their bytes do in one go:
 //! the same type graph, or the same error.
 
 #![cfg(any(unix, windows))]
 
-use std::fs::File;
 use std::path::PathBuf;
 
 use quicktype_core::ParallelOptions;
@@ -79,7 +79,7 @@ fn files_read_on_several_threads_read_as_in_one_go() {
                     fault: None,
                 };
                 let before = parallel_reads();
-                let sample = parallel_file_sample(File::open(&path).unwrap(), options);
+                let sample = parallel_file_sample(&path, options).unwrap();
                 let got = read(JsonSample::Reader(sample));
                 let after = parallel_reads();
                 assert_eq!(

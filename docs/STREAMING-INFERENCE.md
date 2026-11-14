@@ -450,7 +450,11 @@ out, so the second read of a range finds it cached.
 
 Files are read at offsets with `pread` on Unix and `seek_read` on
 Windows, which also moves the file's position: every reading in one go
-that follows seeks first. Read in one go, as before: samples under 8 MiB,
+that follows seeks first. Windows serializes the reads of one handle
+opened for synchronous reads (as std opens files), so there each read
+takes a handle of its own: the file opened again from its path, as long
+as that holds a regular file of the same size and times (otherwise the
+first handle, shared). Read in one go, as before: samples under 8 MiB,
 top-levels that are not arrays, arrays whose first element is longer than
 a part the budget would read beside others, standard input from a pipe or
 a terminal (it cannot be read at offsets, and reading it ahead would hold
