@@ -121,9 +121,11 @@ load the engine an error instead of a fallback. `engineStats` in
 the runs the engine declined (`unsupported`, by feature in
 `unsupportedBy`) or that were redone after it failed (`rerun`), the JSON
 samples the engine read (`samplesRead`), the `CompressedJSON`s whose
-TypeScript tables were filled after all (`tablesFilled`), and the
+TypeScript tables were filled after all (`tablesFilled`), the
 compressed forms the engine exported and let go of to stay within its
-memory limit (`evicted`; see [JSON samples](#json-samples)).
+memory limit (`evicted`; see [JSON samples](#json-samples)), and those
+it freed without exporting them because nothing could reach them any
+more (`dropped`).
 
 ### JSON samples
 
@@ -235,11 +237,14 @@ tables are exported to JavaScript, where the garbage collector sees them,
 and the form is freed in the engine: the input's `CompressedJSON` gets those
 tables when anything first uses it, and from then on it is an ordinary
 `CompressedJSON`, whose further samples TypeScript reads and whose runs
-send its tables. Whether that `CompressedJSON` is still in use cannot be
-told (a `WeakRef` would keep it alive until the current job ends, which in
-a loop of `await`s is the whole loop), so the tables of one that is gone
-but not finalized yet are exported too, and collected with it. A run that
-holds an evicted form keeps it until it ends. The limit is the form of
+send its tables. A form whose `CompressedJSON` the garbage collector has
+collected already, though its finalizer has not run yet (its `WeakRef` no
+longer dereferences), is not exported but dropped, first: nothing can reach
+it. One that is gone but not collected yet cannot be told from one in use
+(a `WeakRef` also keeps its target alive until the job that made or read
+it ends, which in a loop of `await`s is the whole loop), so its tables are
+exported, and collected with it. A run that holds an evicted form keeps it
+until it ends. The limit is the form of
 about 190 MB of JSON (a 104 MB sample takes 138 MiB), more than nearly any
 program has in its inputs at once, so that eviction is a backstop for
 inputs the garbage collector has not got to, not something runs normally
@@ -254,17 +259,21 @@ leave the engine at 54.6 MiB of memory, as after the first 50; without a
 limit it grew by 2.2 MiB per input, to 539 MiB.)
 
 A long-running program that makes many large inputs one after the other
-can therefore pay for eviction until the garbage collector has finalized
+can therefore pay for eviction until the garbage collector has collected
 the old ones: their forms still count toward the limit, and their tables
 are copied out when the next input is read. That is expected, and it only
 matters for inputs whose forms come near the limit on their own. In
 Chrome, the form of a 450 MB sample takes 230–250 ms to evict, and that of
-a 656 MB sample about 340 ms; in a loop that read one such input per
-iteration, 5 of 8 were evicted even with `gc()` between iterations. The
-playground's workers avoid it with `releaseJSONInput(input)` in
-`dist/native/samples.js`, which frees the form of an input they will not
-use again right away. That function is not part of the public API: the
-input must not be used afterwards, and using it throws.
+a 656 MB sample about 340 ms. In a benchmark loop that read one 450 MB
+input per round, 7 of 8 were evicted while an old input was still
+reachable from the loop's own frame (the previous round's variables), even
+with `gc()` between rounds. With each round in a function of its own and
+`gc()` after a task boundary, all 7 were dropped instead, and reading took
+2,212 instead of 2,482 ms. The playground's workers avoid eviction
+altogether with `releaseJSONInput(input)` in `dist/native/samples.js`,
+which frees the form of an input they will not use again right away. That
+function is not part of the public API: the input must not be used
+afterwards, and using it throws.
 
 **Why this cannot be told apart from TypeScript reading the samples:**
 

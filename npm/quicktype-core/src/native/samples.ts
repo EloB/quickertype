@@ -103,6 +103,12 @@ interface NativeSamples {
      * longer has it, and `materialize` fills the fields from these.
      */
     exported?: ExportedTables;
+    /**
+     * The `CompressedJSON`, weakly (where the host has `WeakRef`): once it
+     * no longer dereferences, nothing can reach the form, which `evict`
+     * then drops instead of exporting its tables.
+     */
+    readonly owner: { deref(): object | undefined } | undefined;
 }
 
 /**
@@ -217,8 +223,17 @@ export function releaseJSONInput(input: any): void {
         Object.defineProperty(cjson, name, { configurable: true, enumerable: descriptor.enumerable, get: fail, set: fail });
     }
 
-    if (state.exported === undefined) drop(state.glue, state.id);
+    if (state.exported === undefined) {
+        drop(state.glue, state.id);
+        engineStats.dropped++;
+    }
 }
+
+/** `WeakRef`, where the host has it. */
+const WeakRefClass: (new (target: object) => { deref(): object | undefined }) | undefined = (() => {
+    const WeakRefConstructor = (globalThis as any).WeakRef;
+    return typeof WeakRefConstructor === "function" ? WeakRefConstructor : undefined;
+})();
 
 /** Engine compressed forms whose `CompressedJSON` was collected. */
 const registry: any = (() => {
@@ -502,6 +517,7 @@ function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined
         textLength: 0,
         bytes,
         fields,
+        owner: WeakRefClass === undefined ? undefined : new WeakRefClass(cjson),
     };
     internArrays.set(cjson, cjson.internArray);
     for (const name of tableFields) {
@@ -543,11 +559,14 @@ function start(cjson: any, text: string | Uint8Array): NativeSamples | undefined
  * An evicted form's tables are exported to JavaScript
  * (`NativeSamples.exported`) and the form is freed in the engine; its
  * `CompressedJSON` gets those tables when anything first uses it
- * (`materialize`), and is an ordinary one from then on. Whether that
- * `CompressedJSON` is still used cannot be told: a `WeakRef` to it would
- * keep it alive until the current job ends, which in a loop of `await`s
- * is the whole loop. So the tables of one that is gone are exported too,
- * where the garbage collector sees them, and collected with it.
+ * (`materialize`), and is an ordinary one from then on. A form whose
+ * `CompressedJSON` was collected already (its `WeakRef` no longer
+ * dereferences, though its finalizer has not run yet) is dropped first,
+ * without exporting anything: nothing can reach it. One that is gone but
+ * not collected yet cannot be told from one in use (a `WeakRef` keeps its
+ * target alive until the job that made or read it ends, which in a loop of
+ * `await`s is the whole loop), so its tables are exported, where the
+ * garbage collector sees them, and collected with it.
  */
 function evict(current: NativeSamples[], held: number): void {
     if (current.length === 0) return;
@@ -557,6 +576,18 @@ function evict(current: NativeSamples[], held: number): void {
     let kept = 0;
     if (rest <= heldLimit) return;
     try {
+        // Forms nothing can reach any more (their `CompressedJSON` was
+        // collected, and is not finalized yet) are dropped first: no use
+        // of them is left to give their tables to.
+        for (const state of [...recent]) {
+            if (current.includes(state) || state.glue !== glue || state.owner === undefined || state.owner.deref() !== undefined) continue;
+            rest -= state.bytes;
+            recent.delete(state);
+            registry.unregister(state);
+            drop(glue, state.id);
+            engineStats.dropped++;
+        }
+
         for (const state of [...recent].reverse()) {
             if (current.includes(state) || state.glue !== glue) continue;
             if (kept + rest <= heldLimit) return;

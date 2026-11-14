@@ -887,16 +887,89 @@ test("inputs that are gone but not finalized are evicted too, and nothing is fil
                 await new Promise((resolve) => setImmediate(resolve));
                 global.gc();
             }
-            console.log(JSON.stringify({ max: Math.max(...held), count: glue.__jsonCount(), evicted: engineStats.evicted, filled: engineStats.tablesFilled }));
+            console.log(JSON.stringify({ max: Math.max(...held), count: glue.__jsonCount(), evicted: engineStats.evicted, dropped: engineStats.dropped, filled: engineStats.tablesFilled }));
         })();
     `;
     const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
     assert.ok(out.max <= 2 << 20, JSON.stringify(out));
     // Each read came before the finalizers of the inputs collected just
-    // before it had run: those were evicted (their tables exported, and
-    // collected), the others freed by their finalizers. None was filled.
-    assert.ok(out.evicted > 0, JSON.stringify(out));
+    // before it had run: those were dropped (their owners no longer
+    // dereference: nothing can reach them), not exported, and the others
+    // freed by their finalizers. None was evicted or filled.
+    assert.ok(out.dropped > 0, JSON.stringify(out));
+    assert.equal(out.evicted, 0, JSON.stringify(out));
     assert.equal(out.filled, 0, JSON.stringify(out));
+});
+
+// An input still in use when the forms are past their limit is evicted:
+// its tables are exported, and it works as before. One that is gone but
+// kept alive for the rest of the job its weak reference was made or read
+// in (KeepDuringJob: a `WeakRef` keeps its target until the job ends) is
+// evicted too, as one in use, and collected with its tables afterwards.
+test("a live input past the limit is exported, also one kept alive by its weak reference", () => {
+    const script = `
+        const qt = require(${JSON.stringify(packageRoot)});
+        const engine = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "engine.js"))});
+        const nativeSamples = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "samples.js"))});
+        const { engineStats } = require(${JSON.stringify(path.join(packageRoot, "dist", "native", "bridge.js"))});
+        nativeSamples.setHeldLimit(1);
+        const glue = engine.engineSync();
+        const text = JSON.stringify(Array.from({ length: 2000 }, (_, i) => ({ id: i, name: "n" + (i % 50), when: "2020-01-0" + (1 + (i % 9)) })));
+        const read = () => {
+            const input = qt.jsonInputForTargetLanguage("rust");
+            input.addSourceSync({ name: "A", samples: [text] });
+            return input;
+        };
+        const generate = (input) => {
+            const inputData = new qt.InputData();
+            inputData.addInput(input);
+            return qt.quicktypeMultiFileSync({ lang: "rust", inputData }).get("stdout").lines.join("\\n");
+        };
+        const stats = () => ({ evicted: engineStats.evicted, dropped: engineStats.dropped, filled: engineStats.tablesFilled });
+        (async () => {
+            const out = {};
+            // A live input: exported, and it works afterwards.
+            const live = read();
+            const expected = generate(live);
+            await new Promise((resolve) => setImmediate(resolve));
+            global.gc();
+            let before = stats();
+            read();
+            out.live = { evicted: engineStats.evicted - before.evicted, dropped: engineStats.dropped - before.dropped };
+            out.same = generate(live) === expected;
+            out.filled = engineStats.tablesFilled - before.filled;
+            // Every input gone by now finalized and freed.
+            for (let i = 0, last = -1; i < 50 && glue.__jsonCount() !== last; i++) {
+                last = glue.__jsonCount();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                global.gc();
+                await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+            // Gone, but its weak reference was made in this very job: still
+            // alive after a collection, so exported, not dropped.
+            before = stats();
+            (() => read())();
+            global.gc();
+            read();
+            out.keptForTheJob = { evicted: engineStats.evicted - before.evicted, dropped: engineStats.dropped - before.dropped };
+            // In a later job it is collected, with the tables exported for it.
+            const count = glue.__jsonCount();
+            for (let i = 0; i < 50 && glue.__jsonCount() >= count; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                global.gc();
+            }
+            out.collected = glue.__jsonCount() < count;
+            out.filledAfter = engineStats.tablesFilled - before.filled;
+            console.log(JSON.stringify(out));
+        })();
+    `;
+    const out = JSON.parse(execFileSync(process.execPath, ["--expose-gc", "-e", script], { encoding: "utf8" }));
+    assert.deepEqual(out.live, { evicted: 1, dropped: 0 }, JSON.stringify(out));
+    assert.equal(out.same, true);
+    assert.equal(out.filled, 1, "the live input's tables were filled from what was exported");
+    assert.deepEqual(out.keptForTheJob, { evicted: 1, dropped: 0 }, JSON.stringify(out));
+    assert.equal(out.collected, true, JSON.stringify(out));
+    assert.equal(out.filledAfter, 0, JSON.stringify(out));
 });
 
 // The limit is on the forms other than the one just read into, and those
@@ -1155,7 +1228,9 @@ test("an input released is freed in the engine at once, and is not evicted", asy
     const first = await make();
     assert.equal(glue.__jsonCount(), count + 1);
     assert.ok(glue.jsonHeld() > held);
-    const old = nativeSamples.setHeldLimit(1);
+    // What the inputs of earlier tests hold fits, and no more: another
+    // input kept would be evicted.
+    const old = nativeSamples.setHeldLimit(held + 1);
     try {
         const before = { ...engineStats };
         nativeSamples.releaseJSONInput(first);
@@ -1167,9 +1242,9 @@ test("an input released is freed in the engine at once, and is not evicted", asy
         // The input released can no longer be used.
         assert.throws(() => first._compressedJSON._strings, /samples of this input were released/);
         await assert.rejects(run(first, "rust"), /samples of this input were released/);
-        // Without releasing it, the next input read evicts it.
+        // Without releasing it, the next input read evicts one.
         await make();
-        assert.equal(engineStats.evicted, before.evicted + 1);
+        assert.ok(engineStats.evicted > before.evicted);
         assert.deepEqual([...(await run(second, "rust"))], await inMode("ts", async () => [...(await run(await make(), "rust"))]));
         // Releasing an input the engine does not hold does nothing.
         nativeSamples.releaseJSONInput(await inMode("ts", make));

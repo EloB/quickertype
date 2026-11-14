@@ -62,6 +62,13 @@ export const engineStats = {
      */
     evicted: 0,
     /**
+     * Compressed forms freed before their `CompressedJSON` was finalized,
+     * without exporting their tables: released (samples.ts,
+     * `releaseJSONInput`), or found collected already (a `WeakRef`) when
+     * the forms were past their limit.
+     */
+    dropped: 0,
+    /**
      * `CompressedJSON`s whose samples the engine read and whose TypeScript
      * tables were then filled after all (something read them, or a sample
      * or run the engine does not take came along).
