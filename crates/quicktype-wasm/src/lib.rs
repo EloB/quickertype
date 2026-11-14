@@ -421,6 +421,22 @@ pub fn take_trace() -> String {
     out
 }
 
+/// The hash of `key` in a new map of a class's properties (the
+/// `IndexMap<String, ClassProperty>` that inference fills with names from
+/// the input), in hex, for the facade's test that each instance seeds its
+/// maps from `crypto.getRandomValues` (`test/seed.test.mjs`): two fresh
+/// instances that do the same give different hashes.
+#[doc(hidden)]
+#[wasm_bindgen(js_name = __hashForTests)]
+pub fn hash_for_tests(key: &str) -> String {
+    use std::hash::BuildHasher as _;
+    let properties: quicktype_core::support::fast_hash::IndexMap<
+        String,
+        quicktype_core::ty::ty::ClassProperty,
+    > = Default::default();
+    format!("{:016x}", properties.hasher().hash_one(key))
+}
+
 /// Panics, for the facade's test of what happens when the engine traps
 /// (release builds abort on panic): the facade must discard the instance
 /// and use a fresh one.

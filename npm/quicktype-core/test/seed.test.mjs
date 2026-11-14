@@ -1,6 +1,7 @@
-// The engine seeds its hash maps from crypto.getRandomValues when an
-// instance starts (quickertype-core's `support::fast_hash`): without it the
-// engine does not load, and runs go to the TypeScript engine.
+// The engine seeds every hash map and set from crypto.getRandomValues when
+// an instance starts (quickertype-js-compat's `hash`, which quickertype-core
+// re-exports as `support::fast_hash`): without it the engine does not load,
+// and runs go to the TypeScript engine.
 //
 //   node --test test/seed.test.mjs   (after `npm run build`)
 //
@@ -100,4 +101,31 @@ test("each instance takes 16 bytes of crypto.getRandomValues as it starts, and o
     assert.deepEqual(afterRuns, [16]);
     assert.deepEqual(afterTrap, [16, 16]);
     assert.deepEqual(stats, [3, 0]);
+});
+
+test("each instance hashes the keys of the maps inference fills differently", () => {
+    // `__hashForTests` hashes a key in a new map of class properties (an
+    // IndexMap whose keys are property names from the input). Two fresh
+    // processes that do the same make that map at the same point of their
+    // maps' sequence, so with a fixed seed (as wasm32's `std` RandomState
+    // was) they would give the same hash.
+    const body = `const glue = engine.engineSync();
+        run();
+        return [glue.__hashForTests("name"), glue.__hashForTests("name")];`;
+    const [first, second] = inFreshNode("", body);
+    const [other] = inFreshNode("", body);
+    assert.match(first, /^[0-9a-f]{16}$/);
+    assert.notEqual(first, other);
+    // Each map has its own seed too.
+    assert.notEqual(first, second);
+
+    // And a fresh instance in the same process, after a trap, takes a new seed.
+    const [before, after] = inFreshNode(
+        "",
+        `const glue = engine.engineSync();
+         const before = glue.__hashForTests("name");
+         try { glue.__panicForTests(); } catch { engine.discardEngine(glue); }
+         return [before, engine.engineSync().__hashForTests("name")];`,
+    );
+    assert.notEqual(before, after);
 });

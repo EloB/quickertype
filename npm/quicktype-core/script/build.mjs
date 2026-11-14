@@ -143,6 +143,7 @@ const glueExports = [
     "engineVersion",
     "__pow",
     "__panicForTests",
+    "__hashForTests",
     "__pendingRuns",
     "__jsonCount",
     "__jsonLeases",
