@@ -133,7 +133,9 @@ next section), and forgets the cases it counted until then
 (`forget_absorbed_cases`, also when a merge makes it absorb them). The
 readers do not even classify or intern a string there that cannot be a
 URI (`may_have_attributes`: only `uri` has attributes of its own, and a
-URI starts with `h` or `f`). Nothing reads those cases:
+URI starts with one of `is_uri`'s prefixes, `http://`, `https://` or
+`ftp://`, case and all, so with the first byte of one of them). Nothing
+reads those cases:
 
 - With enum inference they are replayed as `addStringCase`, and
   `getMemberKinds` unites `StringTypes(cases)` with the combined string

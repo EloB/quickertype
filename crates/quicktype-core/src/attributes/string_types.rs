@@ -242,24 +242,30 @@ fn is_uuid(s: &str) -> bool {
         && hex(&b[24..])
 }
 
+/// What a `URI` (`/^(https?|ftp):\/\/[^{}]+$/`) starts with. The regex has
+/// no `i` flag, so they match as they are.
+const URI_PREFIXES: [&str; 3] = ["http://", "https://", "ftp://"];
+
 /// `URI` (`/^(https?|ftp):\/\/[^{}]+$/`).
 fn is_uri(s: &str) -> bool {
-    let rest = ["http://", "https://", "ftp://"]
-        .iter()
-        .find_map(|p| s.strip_prefix(p));
+    let rest = URI_PREFIXES.iter().find_map(|p| s.strip_prefix(p));
     rest.is_some_and(|r| !r.is_empty() && !r.contains(['{', '}']))
 }
 
 /// Whether [`infer_transformed_string_type_kind_for_string`] could classify
 /// `s` as a kind with attributes of its own
 /// ([`transformed_string_type_attributes_producer`]): `uri` is the only
-/// one, and a URI starts with `http://`, `https://` or `ftp://`. Every
-/// other string is a plain string or a transformed kind without
-/// attributes, whatever the date/time recognizer.
+/// one, and a URI starts with one of [`is_uri`]'s prefixes, so with its
+/// first byte. Every other string is a plain string or a transformed kind
+/// without attributes, whatever the date/time recognizer. (Testing the
+/// whole prefixes instead made the CLI 2–4% slower on an array of
+/// records, though it lets fewer strings through.)
 ///
 /// [`transformed_string_type_attributes_producer`]: crate::ty::transformed_string_type::transformed_string_type_attributes_producer
 pub(crate) fn may_have_attributes(s: &str) -> bool {
-    matches!(s.as_bytes().first(), Some(b'h' | b'f'))
+    s.as_bytes()
+        .first()
+        .is_some_and(|&b| URI_PREFIXES.iter().any(|p| p.as_bytes()[0] == b))
 }
 
 /// `inferTransformedStringTypeKindForString(s, recognizer)`: the
@@ -440,16 +446,27 @@ mod tests {
             "http://x",
             "https://x.org/a",
             "ftp://x",
+            "http://",
+            "http://{x}",
             "HTTP://x",
             "Https://x",
+            "FTP://x",
             " http://x",
             "xhttp://x",
             "http:/x",
+            "https:x",
             "fttp://x",
+            "ftp:/x",
+            "hello",
+            "for",
             "",
         ] {
             let uri = infer_transformed_string_type_kind_for_string(s, &r) == Some(TypeKind::Uri);
             assert!(!uri || may_have_attributes(s), "{s}");
+            // Every string that starts with a prefix of `is_uri`.
+            let prefixed =
+                s.starts_with("http://") || s.starts_with("https://") || s.starts_with("ftp://");
+            assert!(!prefixed || may_have_attributes(s), "{s}");
         }
         assert!(!may_have_attributes("2020-01-01") && !may_have_attributes("Http://x"));
     }
