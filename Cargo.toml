@@ -85,6 +85,16 @@ codegen-units = 1
 panic = "abort"
 strip = true
 
+# quickertype-js-compat's build script builds pluralize's rule DFAs with
+# regex-automata. Build scripts' dependencies get opt-level 0, where that
+# takes 1.6 s each time the script runs; at 3 it takes 0.1 s. This names
+# the package rather than raising `build-override`, which would apply to
+# every build script and proc macro. 3 is the release level, so the copy
+# linked into the binaries is built as before. (Dev builds get 2 from
+# `package."*"` below.)
+[profile.release.package.regex-automata]
+opt-level = 3
+
 [profile.dev.package."*"]
 opt-level = 2
 
