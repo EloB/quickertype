@@ -18,6 +18,7 @@
 mod comments;
 mod initializer;
 pub mod order;
+mod prefetch;
 pub mod text;
 
 use std::collections::HashMap;
@@ -246,6 +247,12 @@ impl<'s> Generator<'s> {
             .collect();
         let symbols = s.symbols_at(&name_nodes)?;
         let types = s.types_at(&decls)?;
+        prefetch::warm(
+            s,
+            user_files,
+            &types.iter().flatten().cloned().collect::<Vec<_>>(),
+            &symbols.iter().flatten().cloned().collect::<Vec<_>>(),
+        )?;
         for ((decl, symbol), node_type) in decls.iter().zip(symbols).zip(types) {
             let Some(node_type) = node_type else { continue };
             // A nameless `export default class {}` has no name to ask about;
