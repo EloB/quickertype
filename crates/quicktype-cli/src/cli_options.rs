@@ -244,10 +244,9 @@ pub struct CliOptions {
     pub src_urls: Option<String>,
     /// The source language: `json` unless given or inferred.
     pub src_lang: String,
-    /// Whether `--src-lang` was given. Not in TypeScript: without it,
-    /// `json` reads files and URLs named `*.jsonl` or `*.ndjson` as JSON
-    /// Lines; with `--src-lang json`, nothing is.
-    pub src_lang_given: bool,
+    /// Which of the JSON inputs named on the command line are JSON Lines
+    /// (not in TypeScript).
+    pub json_lines: JsonLines,
     /// The target language.
     pub lang: &'static dyn TargetLanguage,
     /// The top-level type name.
@@ -289,6 +288,20 @@ pub struct CliOptions {
     /// `--no-integer-strings`, `--no-boolean-strings`,
     /// `--no-combine-classes`, `--no-ignore-json-refs`.
     pub negated_inference_flags: [bool; 8],
+}
+
+/// Which of the JSON inputs named on the command line (files, URLs,
+/// standard input, `--src-urls`) are JSON Lines, read as the array of
+/// their values. Not in TypeScript, which reads every sample as one JSON
+/// value. Files in directories go by their names whatever this says.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JsonLines {
+    /// Those named `*.jsonl` or `*.ndjson`: no `--src-lang` was given.
+    ByName,
+    /// None: `--src-lang` was given and is not `jsonl`, as in TypeScript.
+    Never,
+    /// All of them: `--src-lang jsonl`.
+    Always,
 }
 
 /// The result of one parse (TS `Partial<CLIOptions>`).
@@ -480,11 +493,16 @@ fn infer_cli_options(
         .top_level
         .clone()
         .unwrap_or_else(|| infer_top_level(&options));
+    let json_lines = match options.src_lang.as_deref() {
+        None => JsonLines::ByName,
+        Some("jsonl") => JsonLines::Always,
+        Some(_) => JsonLines::Never,
+    };
     Ok(CliOptions {
         src: options.src.unwrap_or_default(),
         src_urls: options.src_urls,
         src_lang,
-        src_lang_given: options.src_lang.is_some(),
+        json_lines,
         lang: language,
         top_level,
         no_render: options.no_render.unwrap_or(false),
@@ -621,18 +639,22 @@ mod tests {
     fn source_language() {
         let json = parse(&["a.jsonl"]).unwrap();
         assert_eq!(
-            (json.src_lang.as_str(), json.src_lang_given),
-            ("json", false)
+            (json.src_lang.as_str(), json.json_lines),
+            ("json", JsonLines::ByName)
         );
         let given = parse(&["-s", "json", "a.jsonl"]).unwrap();
         assert_eq!(
-            (given.src_lang.as_str(), given.src_lang_given),
-            ("json", true)
+            (given.src_lang.as_str(), given.json_lines),
+            ("json", JsonLines::Never)
         );
         let lines = parse(&["--src-lang", "jsonl"]).unwrap();
         assert_eq!(
-            (lines.src_lang.as_str(), lines.top_level.as_str()),
-            ("jsonl", "TopLevel")
+            (
+                lines.src_lang.as_str(),
+                lines.json_lines,
+                lines.top_level.as_str()
+            ),
+            ("jsonl", JsonLines::Always, "TopLevel")
         );
         assert_eq!(parse(&["cards.jsonl"]).unwrap().top_level, "cards");
         assert_eq!(parse(&["a.ts", "b.ts"]).unwrap().src_lang, "typescript");

@@ -1,6 +1,7 @@
 //! JSON Lines input (not in quicktype): files and URLs named `*.jsonl` or
-//! `*.ndjson`, and every JSON sample with `--src-lang jsonl`, are read as
-//! the JSON array of their values. Each run here is compared with the run
+//! `*.ndjson`, in directories too, and every input named on the command
+//! line with `--src-lang jsonl`, are read as the JSON array of their
+//! values. Each run here is compared with the run
 //! on that array, whose output parity with quicktype is the golden
 //! corpus's business (`node xtask/fuzz/fuzz.mjs --modes jsonl` compares
 //! with quicktype itself).
@@ -150,6 +151,8 @@ fn edge_cases_are_arrays_too() {
                 "{\n  \"a\": [\n    1\n  ]\n}\n{\"a\": []}\n",
             ),
             ("pretty.json", "[{\"a\": [1]}, {\"a\": []}]"),
+            ("bom.jsonl", "\u{feff}{\"a\": 1}\r\n"),
+            ("bom.json", "\u{feff}{\"a\": 1}"),
         ],
     );
     // No values: `[]`, as quicktype gives for `[]`.
@@ -171,6 +174,19 @@ fn edge_cases_are_arrays_too() {
         &dir,
         &["-l", "ts", "pretty.jsonl"],
         &["-l", "ts", "pretty.json"],
+    );
+    // A byte order mark may come first (Windows tools write one); in a
+    // JSON file, it stays the error it is in quicktype.
+    same(
+        &dir,
+        &["-l", "ts", "-t", "One", "bom.jsonl"],
+        &["-l", "ts", "one.json"],
+    );
+    let (code, _, err) = outcome(&run(&dir, &["-l", "ts", "bom.json"], b""));
+    assert_eq!(code, Some(1));
+    assert_eq!(
+        err,
+        "Error: Syntax error in input JSON bom: Parser cannot parse input: expected a value.\n"
     );
 }
 
@@ -270,36 +286,48 @@ fn src_lang_decides() {
     assert_eq!(code, Some(1));
 }
 
+/// In a directory, each file's name says what it holds, whatever
+/// `--src-lang` says: `.jsonl` and `.ndjson` files are JSON Lines, `.json`
+/// files JSON, so a directory that mixes them gives the same types every
+/// way. `arrays` holds the same samples as `.json` files of the arrays.
 #[test]
-fn directories_take_jsonl_files_only_with_src_lang_jsonl() {
+fn directories_frame_each_file_by_its_name() {
     let dir = work_dir("directories");
     write(
         &dir,
         &[
             ("data/Alpha.json", r#"{"a": "x"}"#),
+            ("data/Bar.json", r#"{"y": 1}"#),
+            ("data/List.json", "[1, 2]"),
             ("data/Cards.jsonl", LINES),
-            ("data/More.ndjson", LINES),
+            ("data/More.NDJSON", LINES),
             ("data/Sub/one.jsonl", LINES),
             ("data/Sub/two.json", r#"{"id": 9}"#),
-            ("same/Alpha.json", r#"{"a": "x"}"#),
-            ("same/Sub/two.json", r#"{"id": 9}"#),
-            ("arrays/Alpha.json", r#"[{"a": "x"}]"#),
+            ("arrays/Alpha.json", r#"{"a": "x"}"#),
+            ("arrays/Bar.json", r#"{"y": 1}"#),
+            ("arrays/List.json", "[1, 2]"),
             ("arrays/Cards.json", ARRAY),
             ("arrays/More.json", ARRAY),
             ("arrays/Sub/one.json", ARRAY),
-            ("arrays/Sub/two.json", r#"[{"id": 9}]"#),
+            ("arrays/Sub/two.json", r#"{"id": 9}"#),
         ],
     );
-    // As in quicktype, a directory takes `.json` (and `.url`) files only.
-    let code = same(&dir, &["-l", "rust", "data"], &["-l", "rust", "same"]);
-    assert!(!code.contains("Cards"), "{code}");
-    // With `--src-lang jsonl`, its `.jsonl` and `.ndjson` files too, and
-    // every JSON sample is JSON Lines.
-    same(
-        &dir,
-        &["-l", "rust", "--src-lang", "jsonl", "data"],
-        &["-l", "rust", "arrays"],
-    );
+    for src_lang in [&[][..], &["--src-lang", "json"], &["--src-lang", "jsonl"]] {
+        let mut ours = vec!["-l", "rust"];
+        ours.extend_from_slice(src_lang);
+        ours.push("data");
+        let code = same(&dir, &ours, &["-l", "rust", "arrays"]);
+        // `Bar` stays an object and `List` an array of integers.
+        assert!(code.contains("pub struct Bar {"), "{src_lang:?}: {code}");
+        assert!(
+            code.contains("pub type List = Vec<i64>;"),
+            "{src_lang:?}: {code}"
+        );
+        assert!(
+            code.contains("pub type Cards = Vec<Card>;"),
+            "{src_lang:?}: {code}"
+        );
+    }
 }
 
 #[test]
@@ -311,7 +339,7 @@ fn errors_name_the_line_of_the_bad_value() {
             ("two.jsonl", "{\"a\": 1}\n{\"a\": 2} {\"a\": 3}\n"),
             ("open.jsonl", "{\"a\": 1}\n\n{\"a\": [1, 2\n{\"a\": 4}\n"),
             ("cut.jsonl", "{\"a\": 1}\n{\"a\": \"x"),
-            ("bom.jsonl", "\u{feff}{\"a\": 1}\n"),
+            ("bom.jsonl", "{\"a\": 1}\n\u{feff}{\"a\": 2}\n"),
             ("crlf.jsonl", "1\r\n2\r\n3 4\r\n"),
         ],
     );
@@ -328,10 +356,10 @@ fn errors_name_the_line_of_the_bad_value() {
             "cut.jsonl",
             "cut: line 2: Parser has expected a string value",
         ),
-        // A byte order mark is an error, as it is in a JSON file.
+        // A byte order mark is an error but at the start.
         (
             "bom.jsonl",
-            "bom: line 1: Parser cannot parse input: expected a value",
+            "bom: line 2: Parser cannot parse input: expected a value",
         ),
         (
             "crlf.jsonl",

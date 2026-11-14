@@ -6,48 +6,25 @@
 //! Sources are opened here (missing files fail now) and read later, when
 //! the input parses them.
 //!
-//! Not in TypeScript: JSON samples may be JSON Lines ([`JsonLines`]).
+//! Not in TypeScript: JSON samples may be JSON Lines, the inputs named on
+//! the command line as [`JsonLines`] says, the files in directories by
+//! their names ([`is_json_lines_name`]).
 
 use quicktype_core::{
     ErrorKind, JsonSchemaSourceData, QuickTypeError, Readable, is_url, parse_json,
 };
 use quicktype_graphql_input::GraphQlSourceData;
 
-use crate::cli_options::CliOptions;
+use crate::cli_options::{CliOptions, JsonLines};
 use crate::js;
 use crate::messages::{CliError, message_error};
 use crate::node_fs;
 use crate::type_source::{JsonSampleSource, JsonTypeSource, TypeSource};
 use crate::url_grammar::urls_from_url_grammar;
 
-/// Which JSON samples are JSON Lines, read as the array of their values
-/// (not in TypeScript, which reads every sample as one JSON value).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum JsonLines {
-    /// Files and URLs named `*.jsonl` or `*.ndjson` ([`is_json_lines_name`]):
-    /// no `--src-lang` was given.
-    ByName,
-    /// None: `--src-lang` was given (`json`, `schema`), as in TypeScript.
-    Never,
-    /// All of them, from files, URLs and standard input alike, and
-    /// directories also take `*.jsonl` and `*.ndjson` files:
-    /// `--src-lang jsonl`.
-    Always,
-}
-
 impl JsonLines {
-    /// Which JSON samples `options` makes JSON Lines.
-    pub fn of(options: &CliOptions) -> Self {
-        if options.src_lang == "jsonl" {
-            JsonLines::Always
-        } else if options.src_lang_given {
-            JsonLines::Never
-        } else {
-            JsonLines::ByName
-        }
-    }
-
-    /// Whether the sample from `file_or_url` is JSON Lines.
+    /// Whether the sample from `file_or_url`, named on the command line,
+    /// is JSON Lines.
     fn sample(self, file_or_url: &str) -> bool {
         match self {
             JsonLines::ByName => is_json_lines_name(file_or_url),
@@ -59,7 +36,8 @@ impl JsonLines {
 
 /// Whether `file_or_url` names JSON Lines: its extension is `.jsonl` or
 /// `.ndjson`, in any case. A URL's is that of its path, without the query
-/// or the fragment.
+/// or the fragment. The one test of names, for the inputs named on the
+/// command line (without `--src-lang`) and for the files in directories.
 pub fn is_json_lines_name(file_or_url: &str) -> bool {
     let name = if is_url(file_or_url) {
         let end = file_or_url.find(['?', '#']).unwrap_or(file_or_url.len());
@@ -115,13 +93,14 @@ struct GraphQlSchemaFile {
 
 /// `readFilesOrURLsInDirectory(d)` of `samplesFromDirectory(dataDir)`: one
 /// source per file in `d`. `data_dir` is the directory given on the
-/// command line, which the errors name. With [`JsonLines::Always`],
-/// `*.jsonl` and `*.ndjson` files are JSON samples too.
+/// command line, which the errors name. Not in TypeScript: `*.jsonl` and
+/// `*.ndjson` files are JSON samples too, read as JSON Lines, and so is a
+/// `.url` file's URL that is named so ([`is_json_lines_name`]), whatever
+/// `--src-lang` says: a file's name says what it holds.
 async fn read_files_or_urls_in_directory(
     d: &str,
     data_dir: &str,
     http_headers: &[String],
-    json_lines: JsonLines,
 ) -> Result<Vec<TypeSource>, CliError> {
     let mut files = Vec::new();
     for entry in node_fs::readdir_sync(d)? {
@@ -146,15 +125,13 @@ async fn read_files_or_urls_in_directory(
             file_or_url = js::trim(&node_fs::read_file_sync_utf8(&file)?).to_owned();
         }
 
-        let json_lines_file = json_lines == JsonLines::Always
-            && (file.ends_with(".jsonl") || file.ends_with(".ndjson"));
-        if file.ends_with(".url") || file.ends_with(".json") || json_lines_file {
+        if file.ends_with(".url") || file.ends_with(".json") || is_json_lines_name(&file) {
             sources_in_dir.push(TypeSource::Json(JsonTypeSource {
                 name,
                 samples: vec![JsonSampleSource {
                     readable: node_fs::readable_from_file_or_url(&file_or_url, http_headers)
                         .await?,
-                    json_lines: json_lines.sample(&file_or_url),
+                    json_lines: is_json_lines_name(&file_or_url),
                 }],
                 description: None,
             }));
@@ -215,7 +192,6 @@ async fn read_files_or_urls_in_directory(
 async fn samples_from_directory(
     data_dir: &str,
     http_headers: &[String],
-    json_lines: JsonLines,
 ) -> Result<Vec<TypeSource>, CliError> {
     let mut directories = Vec::new();
     for entry in node_fs::readdir_sync(data_dir)? {
@@ -225,17 +201,14 @@ async fn samples_from_directory(
         }
     }
 
-    let mut sources =
-        read_files_or_urls_in_directory(data_dir, data_dir, http_headers, json_lines).await?;
+    let mut sources = read_files_or_urls_in_directory(data_dir, data_dir, http_headers).await?;
 
     for dir in directories {
         let mut json_samples = Vec::new();
         let mut schema_sources = Vec::new();
         let mut graphql_sources = Vec::new();
 
-        for source in
-            read_files_or_urls_in_directory(&dir, data_dir, http_headers, json_lines).await?
-        {
+        for source in read_files_or_urls_in_directory(&dir, data_dir, http_headers).await? {
             match source {
                 TypeSource::Json(json) => json_samples.extend(json.samples),
                 TypeSource::Schema(schema) => schema_sources.push(TypeSource::Schema(schema)),
@@ -303,7 +276,7 @@ async fn type_sources_for_uris(
                 name,
                 uris,
                 options.http_header.as_deref().unwrap_or_default(),
-                JsonLines::of(options),
+                options.json_lines,
             )
             .await?,
         )]),
@@ -343,8 +316,7 @@ pub async fn get_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliErr
     }
 
     for data_dir in &directories {
-        sources
-            .extend(samples_from_directory(data_dir, http_headers, JsonLines::of(options)).await?);
+        sources.extend(samples_from_directory(data_dir, http_headers).await?);
     }
 
     // Every source that is not a directory is a file or URL.
