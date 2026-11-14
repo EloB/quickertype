@@ -838,12 +838,27 @@ impl Tallies {
             + spares
     }
 
-    /// Drops what only adding to the tallies needs (the spare tallies and
-    /// the case slots), for tallies that are kept as they are.
+    /// Drops what only adding to the tallies needs (the spare tallies, the
+    /// case slots, the free list) and the room the buffers grew for (of the
+    /// nodes, and of each place's cases and keys: up to half of what they
+    /// hold), for tallies that are kept as they are. (The nodes freed for
+    /// a `__proto__` stay, empty: compacting would renumber every node,
+    /// and only a repeated `__proto__` key frees one.)
     fn trim(&mut self) {
         self.spare_strings = Vec::new();
         self.spare_objects = Vec::new();
         self.case_slots = Vec::new();
+        self.free = Vec::new();
+        self.nodes.shrink_to_fit();
+        for node in &mut self.nodes {
+            if let Some(strings) = &mut node.strings {
+                strings.cases.shrink_to_fit();
+            }
+            if let Some(object) = &mut node.object {
+                object.keys.shrink_to_fit();
+                object.proto_runs.shrink_to_fit();
+            }
+        }
     }
 
     /// A new, empty tree; returns its root.
