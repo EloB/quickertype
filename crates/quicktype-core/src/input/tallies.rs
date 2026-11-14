@@ -2152,6 +2152,53 @@ mod tests {
         );
     }
 
+    /// Cases are counted right however many there are, many more than the
+    /// slots that remember where they were counted, which they share.
+    #[test]
+    fn many_cases_are_counted() {
+        let distinct = 3 * CASE_SLOTS + 7;
+        let mut values: Vec<String> = Vec::new();
+        for round in 0..3 {
+            for i in 0..distinct {
+                values.push(format!(r#""c{i}""#));
+                // A few that recur all along, between the others.
+                values.push(format!(r#""r{}""#, (i + round) % 5));
+            }
+        }
+        let sample = format!("[{}]", values.join(","));
+        let config = config(false);
+        let mut tallies = RunningTallies::new();
+        let tree = read(&mut tallies, &config, &[&sample]);
+        let items = tallies.tallies.node(tree).unwrap().items.unwrap();
+        let strings = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .strings
+            .as_deref()
+            .unwrap();
+        assert_eq!(strings.cases.len(), distinct + 5);
+        let count = |text: &str| {
+            let id = (0..tallies.strings.len())
+                .find(|&i| tallies.strings.get(i) == Some(text))
+                .unwrap();
+            strings.cases[&(id as u32)]
+        };
+        assert_eq!(count("c0"), 3);
+        assert_eq!(count(&format!("c{}", distinct - 1)), 3);
+        assert_eq!(
+            (0..5).map(|r| count(&format!("r{r}"))).sum::<u64>(),
+            3 * distinct as u64
+        );
+        // The compressed form's walk counts the same.
+        let mut cjson = self::config(false);
+        let root = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (walked, roots) = tally_compressed(&cjson, [[root].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(walked.dump(cjson.strings(), roots[0]), dump(&tallies, tree));
+    }
+
     /// Tables no reader makes: the walk declines them.
     #[test]
     fn tables_no_reader_makes_are_declined() {
