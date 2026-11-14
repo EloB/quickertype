@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-panel="closed">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,51 +7,31 @@
 <title>quickertype — quicktype on WebAssembly</title>
 <meta name="description" content="Generate types and converters from JSON or JSON Schema in your browser, with quicktype's own API running on a Rust/WebAssembly engine.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23201d33'/%3E%3Crect x='6' y='9' width='9' height='5' rx='2.5' fill='%23a08cff'/%3E%3Crect x='6' y='18' width='20' height='5' rx='2.5' fill='%236ea8ea'/%3E%3C/svg%3E">
+<!-- Where the options go, before the first paint (src/head.js, inlined by the build). -->
+<script>%HEAD_SCRIPT%</script>
 <link rel="stylesheet" href="%STYLE%">
 <script type="module" src="%MAIN%"></script>
 </head>
-<body>
+<body data-view="output">
 <header class="masthead">
   <a class="brand" href="./" aria-label="quickertype, reload with defaults">
     <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="7" width="12" height="7" rx="3.5" class="mark-wasm"/><rect x="2" y="18" width="28" height="7" rx="3.5" class="mark-ts"/></svg>
     <span class="wordmark">quickertype</span>
   </a>
   <p class="tagline">quicktype on WebAssembly</p>
-  <a class="source" href="https://github.com/EloB/quickertype">Source on GitHub</a>
   <p class="speed" id="speed">%SPEED_HEADLINE%</p>
+  <a class="source" href="https://github.com/EloB/quickertype" title="Source on GitHub"><svg class="github" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg><span class="source-label">Source on GitHub</span></a>
 </header>
 
-<section class="settings" aria-label="Output settings">
-  <div class="settings-row">
-    <label class="field">
-      <span class="field-label">Language</span>
-      <select id="lang"></select>
-    </label>
-    <label class="field">
-      <span class="field-label">Top-level type</span>
-      <input id="name" type="text" spellcheck="false" autocomplete="off" placeholder="TopLevel">
-    </label>
-    <div class="field engine-field">
-      <span class="field-label" id="engine-label">Engine</span>
-      <div id="engine" class="segmented engines" role="radiogroup" aria-labelledby="engine-label" aria-describedby="engine-note">
-        <label><input type="radio" name="engine" value="ts"><span>quicktype</span></label>
-        <label><input type="radio" name="engine" value="wasm" checked><span>quickertype</span></label>
-      </div>
-      <p id="engine-note" class="engine-note">Both run in your browser: <b>quicktype</b> is quicktype's original TypeScript engine, <b>quickertype</b> its Rust port, compiled to WebAssembly. Switch between them to compare; warm runs are the runs after the first, with the engine loaded and compiled.</p>
-    </div>
-  </div>
-  <div id="options" class="options"></div>
-  <details id="general" class="more general">
-    <summary>General options <span id="general-count" class="count"></span></summary>
-    <p class="general-note">quicktype's run-level options, for every language, as on its command line.</p>
-    <div id="general-options" class="option-grid"></div>
-  </details>
-</section>
-
 <main class="panes">
+  <!-- Phones show one pane at a time. -->
+  <div class="view-switch segmented" role="radiogroup" aria-label="Show">
+    <label><input type="radio" name="view" value="input"><span>Input</span></label>
+    <label><input type="radio" name="view" value="output" checked><span>Output</span></label>
+  </div>
+
   <section class="pane" id="input-pane" aria-labelledby="input-heading">
     <div class="pane-head">
-      <h2 id="input-heading">Input</h2>
       <div class="segmented" role="radiogroup" aria-label="Input kind">
         <label><input type="radio" name="kind" value="json" checked><span>JSON</span></label>
         <label><input type="radio" name="kind" value="schema"><span>JSON Schema</span></label>
@@ -62,24 +42,53 @@
         <input id="file" type="file" accept=".json,.schema,application/json,text/plain" hidden>
       </div>
     </div>
+    <div class="pane-sub">
+      <h2 id="input-heading">Input</h2>
+      <span id="input-info"></span>
+      <span class="drop-hint">Drop a file anywhere on this side</span>
+      <span class="tip-wrap">
+        <button type="button" class="tip-button" aria-expanded="false" aria-controls="input-note" aria-label="About the input"></button>
+        <span id="input-note" class="tip" role="note" hidden>Paste JSON or a JSON Schema, load a sample, or open a file; drop one anywhere on this side. TypeScript input needs the TypeScript compiler, which doesn't run in the browser; the CLI has it. Samples are from quicktype's test suite (Apache-2.0).</span>
+      </span>
+    </div>
     <div class="editor">
       <textarea id="input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-labelledby="input-heading"></textarea>
       <div id="large" class="large" hidden>
-        <p><strong id="large-name"></strong> <span id="large-size"></span></p>
-        <p id="large-status" class="large-status" role="status"></p>
-        <p id="large-note">Not shown in the editor, which would slow the page down; it runs all the same.</p>
-        <button id="large-edit" type="button">Show in the editor</button>
+        <div class="large-card">
+          <p><strong id="large-name"></strong> <span id="large-size"></span></p>
+          <p id="large-status" class="large-status"></p>
+          <p id="large-note">Not shown in the editor, which would slow the page down; it runs all the same.</p>
+          <button id="large-edit" type="button">Show in the editor</button>
+        </div>
       </div>
       <div class="drop" aria-hidden="true"><span>Drop a JSON or JSON Schema file</span></div>
-    </div>
-    <div class="pane-foot">
-      <span id="input-info"></span>
-      <span class="note">Drop a file anywhere on this side. TypeScript input needs the TypeScript compiler, which doesn't run in the browser; the CLI has it.</span>
     </div>
   </section>
 
   <section class="pane" id="output-pane" aria-labelledby="output-heading">
-    <div class="pane-head">
+    <div class="pane-head toolbar">
+      <label class="field">
+        <span class="field-label sr-only">Language</span>
+        <select id="lang"></select>
+      </label>
+      <label class="field prefixed">
+        <span class="field-label">Top-level</span>
+        <input id="name" type="text" spellcheck="false" autocomplete="off" placeholder="TopLevel" aria-label="Top-level type">
+      </label>
+      <div class="engine-field">
+        <span class="sr-only" id="engine-label">Engine</span>
+        <div id="engine" class="segmented engines" role="radiogroup" aria-labelledby="engine-label" aria-describedby="engine-note">
+          <label><input type="radio" name="engine" value="ts"><span>quicktype</span></label>
+          <label><input type="radio" name="engine" value="wasm" checked><span>quickertype</span></label>
+        </div>
+        <span class="tip-wrap">
+          <button type="button" class="tip-button" aria-expanded="false" aria-controls="engine-note" aria-label="About the engines"></button>
+          <span id="engine-note" class="tip" role="note" hidden>Both run in your browser: <b>quicktype</b> is quicktype's original TypeScript engine, <b>quickertype</b> its Rust port, compiled to WebAssembly. Switch between them to compare; warm runs are the runs after the first, with the engine loaded and compiled.</span>
+        </span>
+      </div>
+      <button id="options-toggle" class="options-toggle" type="button" aria-expanded="false" aria-controls="options-panel">Options<span id="options-count" class="count" hidden></span></button>
+    </div>
+    <div class="pane-sub">
       <h2 id="output-heading">Output</h2>
       <div id="tabs" class="tabs" role="tablist" aria-label="Generated files"></div>
       <div class="head-actions">
@@ -95,15 +104,39 @@
     </div>
     <div class="pane-foot cli">
       <span class="cli-label">Same as</span>
+      <span class="tip-wrap">
+        <button type="button" class="tip-button" aria-expanded="false" aria-controls="install-note" aria-label="Get the CLI"></button>
+        <span id="install-note" class="tip up" role="note" hidden><b>Get the CLI.</b> Its command is <code>quicktype</code>, as quicktype's is, so install one or the other:<code class="command">brew install elob/tap/quickertype</code><code class="command">npm install -g quickertype</code><code class="command">cargo install quickertype</code>Or an installer for macOS, Linux or Windows: <a href="https://github.com/EloB/quickertype#install">see Install</a>.</span>
+      </span>
       <code id="cli"></code>
       <button id="copy-cli" type="button" class="quiet">Copy</button>
     </div>
   </section>
+
+  <!-- The page's one live region: each finished result, said once (main.js, announce()). -->
+  <p id="announce" class="sr-only" role="status"></p>
+
+  <!-- Beside the output on wide screens; a drawer over the page on narrower ones. -->
+  <dialog id="options-panel" class="inspector" aria-labelledby="options-heading">
+    <div class="inspector-head">
+      <h2 id="options-heading">Options <span id="options-lang" class="inspector-lang"></span></h2>
+      <button id="options-close" type="button" class="close" aria-label="Close options"></button>
+    </div>
+    <div class="inspector-body">
+      <div id="options" class="options"></div>
+      <details id="general" class="more general">
+        <summary>General options <span id="general-count" class="count"></span></summary>
+        <p class="general-note">quicktype's run-level options, for every language, as on its command line.</p>
+        <div id="general-options" class="option-grid"></div>
+      </details>
+    </div>
+  </dialog>
 </main>
 
 <footer class="credits">
-  <p>A Rust/WebAssembly port of <a href="https://github.com/glideapps/quicktype">quicktype</a>, under the Apache-2.0 license. Not affiliated with quicktype or Glide. Samples are from quicktype's test suite (Apache-2.0). <a href="https://github.com/EloB/quickertype">github.com/EloB/quickertype</a></p>
-  <p id="version">Output matches quicktype at commit <a href="https://github.com/glideapps/quicktype/commit/%QUICKTYPE_COMMIT%"><code>%QUICKTYPE_SHORT%</code></a> (<time datetime="%QUICKTYPE_DATE%">%QUICKTYPE_DATE_LONG%</time>), which is newer than the v26.0.0 release behind <code>npx quicktype</code> and app.quicktype.io, so some output differs from those.</p>
+  <p id="license">A Rust/WebAssembly port of <a href="https://github.com/glideapps/quicktype">quicktype</a>, with samples from its test suite; all Apache-2.0. Not affiliated with quicktype or Glide.</p>
+  <p id="version">Output matches quicktype at commit <a href="https://github.com/glideapps/quicktype/commit/%QUICKTYPE_COMMIT%"><code>%QUICKTYPE_SHORT%</code></a> (<time datetime="%QUICKTYPE_DATE%">%QUICKTYPE_DATE_LONG%</time>). <span class="tip-wrap"><button type="button" class="tip-button" aria-expanded="false" aria-controls="version-note" aria-label="About this version"></button><span id="version-note" class="tip up" role="note" hidden>This is newer than the v26.0.0 release behind <code>npx quicktype</code> and app.quicktype.io, so some output differs from those.</span></span></p>
+  <a class="repo" href="https://github.com/EloB/quickertype">github.com/EloB/quickertype</a>
 </footer>
 </body>
 </html>

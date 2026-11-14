@@ -6,7 +6,8 @@
 // esbuild comes from that package's devDependencies.
 //
 // * worker.js: quicktype-core (its ES module build) in a Web Worker;
-// * main.js and style.css: the page;
+// * main.js and style.css: the page; head.js, inlined in its head (it
+//   decides where the options go before the first paint);
 // * quicktype.wasm: the engine, compiled by the worker and handed to
 //   quicktype-core (see src/worker-boot.js);
 // * samples/: inputs from quicktype's test suite (tests/inputs);
@@ -229,11 +230,11 @@ function writeHashed(name, extension, content) {
     return file;
 }
 
-async function bundle(entry, define) {
+async function bundle(entry, define, format = "esm") {
     const result = await esbuild.build({
         entryPoints: [path.join(src, entry)],
         bundle: true,
-        format: "esm",
+        format,
         platform: "browser",
         target: ["es2022", "chrome100", "firefox115", "safari16"],
         minify: !dev,
@@ -248,6 +249,16 @@ async function bundle(entry, define) {
         logOverride: { "import-is-undefined": "silent" },
     });
     return result.outputFiles[0].contents;
+}
+
+/**
+ * A classic script for index.html's head (in its own scope), and the hash a
+ * Content-Security-Policy would allow it by (`script-src 'sha256-…'`).
+ */
+async function inlineScript(entry) {
+    const code = new TextDecoder().decode(await bundle(entry, undefined, "iife")).trim();
+    if (/<\/script|<!--/i.test(code)) throw new Error(`${entry} cannot be inlined: it has "</script" or "<!--"`);
+    return { code, csp: `'sha256-${createHash("sha256").update(code).digest("base64")}'` };
 }
 
 const languageList = languages();
@@ -282,6 +293,7 @@ const mainFile = writeHashed(
         ),
     }),
 );
+const headScript = await inlineScript("head.js");
 const css = async (entry) =>
     (
         await esbuild.build({
@@ -300,7 +312,7 @@ for (const { file } of samples) {
 }
 
 const { commit, short, date, long } = upstream();
-const html = fs
+let html = fs
     .readFileSync(path.join(src, "index.html"), "utf8")
     .replace("%STYLE%", `./${styleFile}`)
     .replace("%MAIN%", `./${mainFile}`)
@@ -309,7 +321,11 @@ const html = fs
     .replaceAll("%QUICKTYPE_DATE%", date)
     .replaceAll("%QUICKTYPE_DATE_LONG%", long)
     .replace("%SPEED_HEADLINE%", headlineHtml(speed));
-if (/%[A-Z_]+%/.test(html)) throw new Error(`a placeholder is left in index.html: ${/%[A-Z_]+%/.exec(html)[0]}`);
+const left = /%(?!HEAD_SCRIPT%)[A-Z_]+%/.exec(html);
+if (left !== null) throw new Error(`a placeholder is left in index.html: ${left[0]}`);
+if (html.split("%HEAD_SCRIPT%").length !== 2) throw new Error("index.html needs %HEAD_SCRIPT% once");
+// Last, and as it is (a function: no `$&` in it is a replacement pattern).
+html = html.replace("%HEAD_SCRIPT%", () => headScript.code);
 fs.writeFileSync(path.join(dist, "index.html"), html);
 
 const benchmarksHtml = fs
@@ -333,3 +349,4 @@ for (const file of [mainFile, styleFile, "index.html", benchmarksStyleFile, "ben
     const content = fs.readFileSync(path.join(dist, file));
     console.log(`  ${file.padEnd(34)} ${kib(content.length).padStart(12)}  ${kib(gzipSync(content, { level: 9 }).length).padStart(11)} gzipped`);
 }
+console.log(`  index.html's inline script: ${headScript.code.length} bytes; a Content-Security-Policy allows it by script-src ${headScript.csp}`);

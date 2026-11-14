@@ -36,6 +36,9 @@ const repository = "https://github.com/EloB/quickertype";
 export const links = {
     benchmarksDoc: `${repository}/blob/main/docs/BENCHMARKS.md`,
     readme: `${repository}#readme`,
+    install: `${repository}#install`,
+    releases: `${repository}/releases/latest`,
+    npmCore: "https://www.npmjs.com/package/quickertype-core",
     commit: (sha) => `${repository}/commit/${sha}`,
     quicktypeCommit: (sha) => `https://github.com/glideapps/quicktype/commit/${sha}`,
 };
@@ -295,7 +298,7 @@ export function headlineHtml(facts) {
     return (
         `quicktype rewritten in Rust: the same output, byte for byte. ` +
         `The CLI is up to <b>${facts.upTo}×</b> faster (about ${facts.typical}× on typical files) and uses a fraction of the memory. ` +
-        `<a href="./benchmarks.html">Benchmarks</a><span class="sep" aria-hidden="true"> · </span><a href="${links.readme}">Install the CLI</a>`
+        `<a href="./benchmarks.html">Benchmarks</a><span class="sep" aria-hidden="true"> · </span><a href="${links.install}">Install the CLI</a>`
     );
 }
 
@@ -738,7 +741,11 @@ ${bench.note ? `<p class="fineprint">${e(bench.note)}</p>` : ""}
 
     sections.push(`<section id="get-the-cli" aria-labelledby="get-title">
 <h2 id="get-title">Get the CLI</h2>
-<p>There are no releases yet. Build it from a clone of the repository with <code>cargo build --release -p quickertype</code>; the binary is <code>target/release/quicktype</code>, with quicktype's flags and quicktype's output. See the <a href="${links.readme}">README</a>.</p>
+<p>Its command is <code>quicktype</code>, with quicktype's flags and quicktype's output, so install it instead of quicktype, not beside it. With Homebrew (macOS, Linux), npm, or Cargo:</p>
+<pre class="commands"><code>brew install elob/tap/quickertype
+npm install -g quickertype
+cargo install quickertype</code></pre>
+<p>Or the shell installer (macOS, Linux), the PowerShell installer or an MSI (Windows), or an archive from the <a href="${links.releases}">releases</a>; the <a href="${links.install}">README</a> has each one. To use it from JavaScript, the npm package <a href="${links.npmCore}"><code>quickertype-core</code></a> is quicktype-core's API on WebAssembly.</p>
 </section>`);
 
     return sections.join("\n");

@@ -32,9 +32,33 @@
 // including a switch during a run and during a measurement; that a worker
 // failure is shown but not kept, so a switch back tries again, and stops a
 // measurement with a message; that after a sample fails to load, switching
-// engine runs nothing; that invalid JSON shows quicktype's error; that the
-// input survives a reload (localStorage); and that 360 px and 390 px widths
-// do not scroll sideways. And three things that once went wrong: the code
+// engine runs nothing; that no input says where to put one (on phones, a
+// switch away, which its "Input" makes); that invalid JSON shows
+// quicktype's error; that the input survives a reload (localStorage); and
+// that 360 px and 390 px widths do not scroll sideways.
+//
+// The layout: at 1440×900 the generated code has at least 55% of the
+// window's height, the masthead and the footer one line each (the footer
+// with the samples' license), the options
+// open beside the output and the comparison one line (its details closed).
+// The options open and close from the keyboard (Enter, Escape, their close
+// button): opened, the focus moves to their first control; closed, back to
+// the Options button; the viewer's choice is kept for the next visit. In a
+// narrower window they are a modal drawer (the page behind inert, closed by
+// Escape or a click on its backdrop, not by a drag from or to it); closed by
+// the browser itself, the choice is kept too, while the window's width
+// moving them saves nothing. Their column is there from the first paint,
+// before main.js runs (the script in the head decides it: nothing moves when
+// main.js opens them), and the page runs under a Content-Security-Policy
+// that allows that script by its hash. The comparison's details open with Enter, and stay
+// open, with the focus, as the comparison is drawn again; the page's one
+// live region, outside all that is drawn again, says each finished result
+// once, in a few words (a run, the comparison, warm runs); the notes behind
+// an "i" open with Enter and close with Escape. Phones show one pane at a
+// time, the output first, its code in the first screen, the input a tap
+// away, and nothing scrolls sideways with the details, the options or the
+// input shown; a file too large for the editor keeps one pane at a time
+// there, as wide as the page. And three things that once went wrong: the code
 // shown after a slow run during which the engine was switched; a
 // measurement asked for while a run is under way; and a worker failing
 // after it loaded.
@@ -78,6 +102,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -573,11 +598,132 @@ async function switchEngine(engine, what, action) {
     return { wasm: after.wasm - before.wasm, ts: after.ts - before.ts };
 }
 
-/** Presses a key in the page (as the keyboard does: trusted events, default actions). */
-async function press(key, keyCode) {
+/**
+ * Presses a key in the page (as the keyboard does: trusted events, default
+ * actions); `text` for a key that types (Enter: "\r", which activates a button).
+ */
+async function press(key, keyCode, text) {
     for (const type of ["keyDown", "keyUp"]) {
-        await page.send("Input.dispatchKeyEvent", { type, key, code: key, windowsVirtualKeyCode: keyCode });
+        await page.send("Input.dispatchKeyEvent", { type, key, code: key, windowsVirtualKeyCode: keyCode, ...(type === "keyDown" && text ? { text } : {}) });
     }
+}
+
+const pressEnter = () => press("Enter", 13, "\r");
+const pressEscape = () => press("Escape", 27);
+
+/**
+ * The options panel as the page shows it: open or not, modal (a drawer) or
+ * not, the column it takes, the Options button's aria-expanded, where the
+ * keyboard focus is ("toggle", "first" (the panel's first control), another
+ * control in the panel, or elsewhere), and the code's width.
+ */
+const panelNow = () =>
+    page.evaluate(`(() => {
+        const panel = document.getElementById("options-panel");
+        const active = document.activeElement;
+        const first = panel.querySelector(".inspector-body :is(input, select, summary)");
+        const name = (e) => e.id || e.tagName.toLowerCase();
+        return {
+            open: panel.open,
+            modal: panel.matches(":modal"),
+            layout: document.documentElement.dataset.panel,
+            expanded: document.getElementById("options-toggle").getAttribute("aria-expanded"),
+            focus: active.id === "options-toggle" ? "toggle" : active === first ? "first" : panel.contains(active) ? "panel " + name(active) : name(active),
+            codeWidth: Math.round(document.getElementById("output").getBoundingClientRect().width),
+        };
+    })()`);
+
+/** Waits for what slides or fades in (not what loops, as a running engine's bar) to be in place. */
+const settledMotion = () =>
+    page.evaluate("Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished))");
+
+/**
+ * Watches the page's live region (#announce) from now on: what it says, and
+ * how often the comparison is drawn meanwhile. See liveSaid.
+ */
+const watchLive = () =>
+    page.evaluate(`(() => {
+        globalThis.announcer = document.getElementById("announce");
+        globalThis.said = [];
+        globalThis.meterDrawn = 0;
+        new MutationObserver(() => announcer.textContent !== "" && said.push(announcer.textContent.trim())).observe(announcer, { childList: true, characterData: true, subtree: true });
+        new MutationObserver(() => meterDrawn++).observe(document.getElementById("meter"), { childList: true });
+    })()`);
+
+/**
+ * Since watchLive: the page has one live region, outside the comparison and
+ * the panes (drawn again and again meanwhile), the same element all along,
+ * and it said `expected` (each "generated", "compared" or "warm") once each,
+ * in a few words, and nothing else: never what was running.
+ */
+async function liveSaid(expected, what) {
+    const live = await page.evaluate(`({
+        regions: [...document.querySelectorAll("[role=status], [aria-live]")].map((e) => e.id),
+        same: document.getElementById("announce") === announcer,
+        outside: announcer.closest("#meter, .pane") === null,
+        said,
+        drawn: meterDrawn,
+    })`);
+    assert.deepEqual(
+        { ...live, said: live.said.length, drawn: live.drawn > live.said.length },
+        { regions: ["announce"], same: true, outside: true, said: expected.length, drawn: true },
+        `${what}: ${JSON.stringify(live)}`,
+    );
+    const pace = String.raw`(?:(?:quickertype|quicktype) \d+(?:\.\d)?× faster|quickertype and quicktype about as fast)`;
+    const patterns = {
+        generated: /^Generated by quickertype in \d[\d.]* m?s\.$/,
+        compared: new RegExp(`^${pace}; identical output\\.$`),
+        warm: new RegExp(`^Warm runs: ${pace}; identical output\\.$`),
+    };
+    expected.forEach((kind, i) => assert.match(live.said[i], patterns[kind], `${what}: ${kind}`));
+    return live;
+}
+
+/**
+ * Loads the playground with main.js held back until the page has painted:
+ * the options' column (html[data-panel]) and the panes' widths at the first
+ * paint, with only the HTML, the stylesheet and the script in the head, and
+ * again once main.js has run and the first run settled (`screenshot`: of the first paint).
+ */
+async function firstPaint(what, screenshot) {
+    const panes = `({
+        panel: document.documentElement.dataset.panel,
+        input: Math.round(document.getElementById("input-pane").getBoundingClientRect().width),
+        output: Math.round(document.getElementById("output-pane").getBoundingClientRect().width),
+    })`;
+    await page.navigate("about:blank", { playground: false });
+    await page.send("Fetch.enable", { patterns: [{ urlPattern: "*/main-*.js" }] });
+    const paused = page.next("Fetch.requestPaused");
+    await page.send("Page.navigate", { url });
+    const { requestId } = await paused;
+    let before;
+    try {
+        await page.waitFor("document.readyState === 'interactive' && performance.getEntriesByName('first-paint').length > 0", `${what}: the first paint`);
+        before = await page.evaluate(`({ ...${panes}, main: "playground" in globalThis })`);
+        if (screenshot !== undefined) await page.screenshot(screenshot);
+    } finally {
+        await page.send("Fetch.continueRequest", { requestId });
+        await page.send("Fetch.disable");
+    }
+    const { main, ...painted } = before;
+    assert.equal(main, false, `${what}: main.js ran before the first paint`);
+    await page.waitFor(`document.readyState === 'complete' && globalThis.playground && ${settled}`, `${what}: the page`);
+    return { before: painted, after: await page.evaluate(panes) };
+}
+
+/** The page is no wider than the window (`what` says where), nothing past its right edge. */
+async function noSidewaysScroll(width, what) {
+    await settledMotion();
+    const sizes = await page.evaluate(`({
+        scroll: document.documentElement.scrollWidth,
+        overflowing: [...document.querySelectorAll("body *")]
+            .filter((n) => n.getClientRects().length > 0 && n.closest("pre, textarea, .tabs, .inspector-body, .meter-details, [hidden]") === null)
+            .filter((n) => n.getBoundingClientRect().right > ${width} + 0.5)
+            .map((n) => n.tagName + "." + n.getAttribute("class") + "#" + n.id)
+            .slice(0, 5),
+    })`);
+    assert.ok(sizes.scroll <= width, `${what}: the page is ${sizes.scroll} px wide`);
+    assert.deepEqual(sizes.overflowing, [], `${what}: past the right edge`);
 }
 
 /**
@@ -624,6 +770,27 @@ async function comparedIdentical(what, measured = false) {
     };
     assert.match(shownNow.text, new RegExp(`${pace(measured ? "Warm medians: " : "").source} · identical output ✓$`), what);
     named(pace(measured ? "Warm medians: " : "").exec(shownNow.text), `"${shownNow.text}"`);
+    // The line at a glance (the button that opens those details): each
+    // engine's time as on its bar, the verdict, whether the runs were warm,
+    // and which engine was faster as the sentence says it.
+    const glance = await page.evaluate(`(() => {
+        const line = document.getElementById("meter-toggle");
+        return {
+            chips: [...line.querySelectorAll(".chip")].map((c) => [c.querySelector(".engine").textContent, c.querySelector(".time").textContent]),
+            verdict: line.querySelector(".verdict")?.textContent,
+            qualifiers: [...line.querySelectorAll(".qualifier")].map((q) => q.textContent),
+            pace: line.querySelector(".pace")?.textContent,
+            name: line.textContent.startsWith("Details: "),
+            controls: line.getAttribute("aria-controls"),
+        };
+    })()`);
+    assert.deepEqual(glance.chips, shownNow.lanes, `${what}: the times at a glance`);
+    assert.equal(glance.verdict, "identical output ✓", `${what}: the verdict at a glance`);
+    assert.deepEqual([glance.name, glance.controls], [true, "meter-details"], `${what}: the line at a glance opens the details`);
+    if (measured) assert.deepEqual(glance.qualifiers, ["warm runs"], `${what}: warm runs, at a glance`);
+    else assert.ok(!glance.qualifiers.includes("warm runs"), `${what}: first runs said to be warm`);
+    const sentence = pace(measured ? "Warm medians: " : "").exec(shownNow.text);
+    assert.equal(glance.pace, sentence[1] === undefined ? "about as fast" : `${sentence[1]} ${/was (\d[\d.]*×) faster/.exec(shownNow.text)[1]} faster`, `${what}: the pace at a glance`);
     // The fine print may say which was faster at generating the code alone, as plainly.
     const generating = /At generating the code alone, (.*?\))\./.exec(shownNow.fine);
     if (generating !== null) assert.match(generating[1], pace(""), `${what}: "${generating[0]}"`);
@@ -788,7 +955,7 @@ async function openFailed(what, { title, message, before, cli: withCli = false }
     else assert.equal(shownNow.message, message, `${what}: the message`);
     assert.deepEqual(
         { ...shownNow, title: undefined, message: undefined },
-        { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#readme" : null, request: true, busy: false, stale: false, running: false },
+        { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#install" : null, request: true, busy: false, stale: false, running: false },
         `${what}: the page after it`,
     );
     const expected = before.large === null ? before : { ...before, large: { ...before.large, status: "" } };
@@ -916,11 +1083,278 @@ try {
         headline.text,
         `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
     );
-    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.readme]]);
+    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.install]]);
     // It leaves the playground in view: the panes start in the first screen.
     const panesTop = await page.evaluate("document.querySelector('.panes').getBoundingClientRect().top");
     assert.ok(panesTop < 900 * 0.6, `the panes start at ${panesTop} px`);
     console.log(`ok: the speed headline: "${headline.text}" (the panes start at ${Math.round(panesTop)} px)`);
+
+    // The layout at 1440×900: the generated code has most of the window's
+    // height; the masthead and the footer are one line each; the options
+    // are open beside the output (a dialog, not modal: the page stays
+    // usable), and opening them took no focus; the comparison is one line,
+    // its details closed; the page does not scroll.
+    const layout = await page.evaluate(`(() => {
+        const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+        const lines = (selector) => Math.round(box(selector).height / parseFloat(getComputedStyle(document.querySelector(selector)).lineHeight));
+        return {
+            code: box("#output").height / innerHeight,
+            headline: lines("#speed"),
+            footer: box(".credits").height,
+            license: document.getElementById("license").textContent,
+            line: box("#meter .meter-line").height,
+            details: document.getElementById("meter-details").hidden,
+            panel: document.documentElement.dataset.panel,
+            panelBeside: box("#options-panel").left >= box("#output-pane").right - 1,
+            scrolls: document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth,
+        };
+    })()`);
+    assert.ok(layout.code >= 0.55, `the code takes ${(layout.code * 100).toFixed(0)}% of the window's height`);
+    assert.deepEqual(
+        { ...layout, code: undefined, footer: layout.footer <= 40, line: layout.line <= 44 },
+        {
+            code: undefined,
+            headline: 1,
+            footer: true,
+            // The samples' credit, in the footer, always visible.
+            license: "A Rust/WebAssembly port of quicktype, with samples from its test suite; all Apache-2.0. Not affiliated with quicktype or Glide.",
+            line: true,
+            details: true,
+            panel: "inline",
+            panelBeside: true,
+            scrolls: false,
+        },
+        "the layout at 1440×900",
+    );
+    const panelAtLoad = await panelNow();
+    assert.deepEqual(
+        { ...panelAtLoad, codeWidth: undefined },
+        { open: true, modal: false, layout: "inline", expanded: "true", focus: "body", codeWidth: undefined },
+        "the options at load",
+    );
+    console.log(`ok: at 1440×900 the code has ${(layout.code * 100).toFixed(0)}% of the window's height; the options are open beside it, the comparison one line`);
+
+    // The options open and close from the keyboard: Enter on the Options
+    // button, Escape in them, or their close button. Opened, the focus moves
+    // to their first control; closed, it is back on the Options button, and
+    // the code takes their room. The viewer's choice is kept for the next visit.
+    await page.evaluate("document.getElementById('options-toggle').focus()");
+    await pressEnter();
+    const closedPanel = await panelNow();
+    assert.deepEqual(
+        { ...closedPanel, codeWidth: undefined },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined },
+        "Enter on Options, to close them",
+    );
+    assert.ok(closedPanel.codeWidth > panelAtLoad.codeWidth + 120, `the code is ${closedPanel.codeWidth} px wide without the options (${panelAtLoad.codeWidth} px with them)`);
+    await page.screenshot("layout-options-closed.png");
+    await pressEnter();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined },
+        { open: true, modal: false, layout: "inline", expanded: "true", focus: "first", codeWidth: undefined },
+        "Enter on Options, to open them",
+    );
+    await pressEscape();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined },
+        "Escape in the options",
+    );
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run, after closing the options");
+    assert.equal((await panelNow()).layout, "closed", "closed options, after a reload");
+    await page.evaluate("document.getElementById('options-toggle').focus()");
+    await pressEnter();
+    await page.evaluate("document.getElementById('options-close').focus()");
+    await pressEnter();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined },
+        "Enter on the options' close button",
+    );
+    await page.evaluate("document.getElementById('options-toggle').click()");
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run, after opening the options");
+    assert.deepEqual(await panelNow(), panelAtLoad, "opened options, after a reload");
+    console.log("ok: the options open (focus on their first control) and close (focus back on Options) with Enter and Escape, and stay as the viewer left them");
+
+    // A narrower window: the options are a modal drawer over the page. Opened,
+    // the focus is in it and the page behind is inert; Escape closes it, as
+    // does a click on its backdrop, and the focus goes back to Options. Open
+    // beside the output as the window narrows, they close.
+    await page.viewport(1024, 768);
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options closing as the window narrows");
+    await page.evaluate("document.getElementById('options-toggle').focus()");
+    await pressEnter();
+    // Measured once it has slid in.
+    await settledMotion();
+    const drawer = await page.evaluate(`(() => {
+        const panel = document.getElementById("options-panel");
+        const before = document.activeElement;
+        document.getElementById("copy").focus();
+        const inert = document.activeElement === before;
+        const box = panel.getBoundingClientRect();
+        return { inert, right: Math.round(box.right), height: Math.round(box.height) };
+    })()`);
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined, ...drawer },
+        { open: true, modal: true, layout: "drawer", expanded: "true", focus: "first", codeWidth: undefined, inert: true, right: 1024, height: 768 },
+        "the drawer at 1024 px",
+    );
+    await page.screenshot("layout-options-drawer-1024.png");
+    await pressEscape();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined },
+        "Escape in the drawer",
+    );
+    // A drag from the drawer to its backdrop, or the other way, is no click
+    // on the backdrop: the drawer stays open. A click on the backdrop closes it.
+    await page.evaluate("document.getElementById('options-toggle').click()");
+    await settledMotion();
+    const inDrawer = await page.evaluate(
+        `(() => { const r = document.getElementById("options-heading").getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+    );
+    const onBackdrop = { x: 40, y: 400 };
+    for (const [from, to, what] of [[inDrawer, onBackdrop, "from the drawer to its backdrop"], [onBackdrop, inDrawer, "from the backdrop into the drawer"]]) {
+        await page.send("Input.dispatchMouseEvent", { type: "mousePressed", ...from, button: "left", buttons: 1, clickCount: 1 });
+        await page.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...to, button: "left", buttons: 1 });
+        await page.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
+        assert.equal((await panelNow()).layout, "drawer", `a drag ${what}`);
+    }
+    for (const type of ["mousePressed", "mouseReleased"]) {
+        await page.send("Input.dispatchMouseEvent", { type, ...onBackdrop, button: "left", clickCount: 1 });
+    }
+    assert.equal((await panelNow()).layout, "closed", "a click on the drawer's backdrop");
+    const savedPanel = () => page.evaluate("localStorage.getItem('quickertype.options')");
+    assert.equal(await savedPanel(), "closed", "closed by a click on the backdrop: kept");
+
+    // Closed by the browser itself (a drawer's Escape without user
+    // activation, which the page cannot cancel; or close() from outside the
+    // page's code): the choice is kept all the same, the focus back on Options.
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run at 1024 px");
+    for (const how of ["Escape", "close()"]) {
+        // Opened by a script (no user activation).
+        await page.evaluate("document.getElementById('options-toggle').click()");
+        await settledMotion();
+        assert.equal(await savedPanel(), "open", `opened, before ${how}`);
+        if (how === "Escape") await pressEscape();
+        else await page.evaluate("document.getElementById('options-panel').close()");
+        await page.waitFor("document.documentElement.dataset.panel === 'closed'", `the drawer closed by ${how}`);
+        assert.deepEqual(
+            { saved: await savedPanel(), focus: (await panelNow()).focus },
+            { saved: "closed", focus: "toggle" },
+            `the drawer closed by the browser (${how})`,
+        );
+    }
+
+    // Open as the window widens past where the options fit beside the
+    // output, or narrows below it: not the viewer's choice, so nothing is
+    // saved. Widened, they move beside the output with the focus; narrowed,
+    // they close, the focus back on Options.
+    await page.evaluate("document.getElementById('options-toggle').focus()");
+    await pressEnter();
+    await page.viewport(1440, 900);
+    await page.waitFor("document.documentElement.dataset.panel === 'inline'", "the drawer moving beside the output as the window widens");
+    await settledMotion();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
+        { open: true, modal: false, layout: "inline", expanded: "true", focus: "first", codeWidth: undefined, saved: "open" },
+        "the drawer, as the window widens",
+    );
+    await page.viewport(1024, 768);
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options closing as the window narrows");
+    await settledMotion();
+    assert.deepEqual(
+        { ...(await panelNow()), codeWidth: undefined, saved: await savedPanel() },
+        { open: false, modal: false, layout: "closed", expanded: "false", focus: "toggle", codeWidth: undefined, saved: "open" },
+        "the options beside the output, as the window narrows",
+    );
+    await page.viewport(1440, 900);
+    await page.waitFor("document.documentElement.dataset.panel === 'closed'", "the options staying closed as the window widens");
+    await page.evaluate("document.getElementById('options-toggle').click()");
+    assert.equal((await panelNow()).layout, "inline", "the options opened again beside the output");
+    console.log("ok: at 1024 px the options are a modal drawer: focus in it, the page behind inert; Escape or the backdrop closes it, not a drag from or to it, the focus back on Options; closed by the browser, the choice is kept; the window's width saves nothing");
+
+    // The options' column is decided before the first paint, by the script
+    // in the head, so nothing moves when main.js opens them: the same column
+    // and the same widths at the first paint and after the first run.
+    const setSaved = (value) =>
+        page.evaluate(value === null ? "localStorage.removeItem('quickertype.options')" : `localStorage.setItem('quickertype.options', '${value}')`);
+    const painted = [];
+    for (const [width, height, saved, panel] of [
+        [1440, 900, null, "inline"],
+        [1440, 900, "closed", "closed"],
+        [1240, 800, null, "closed"],
+        [1240, 800, "open", "inline"],
+        [1024, 768, "open", "closed"],
+    ]) {
+        await page.viewport(width, height);
+        await setSaved(saved);
+        const what = `at ${width} px, ${saved === null ? "nothing saved" : `saved ${saved}`}`;
+        const { before, after } = await firstPaint(what, width === 1440 && saved === null ? "layout-first-paint.png" : undefined);
+        assert.deepEqual(before, after, `${what}: the panes at the first paint, and after the first run`);
+        assert.equal(after.panel, panel, `${what}: the options`);
+        painted.push(`${width} px, ${saved ?? "nothing"} saved: ${panel}`);
+    }
+    await page.viewport(1440, 900);
+    await setSaved("open");
+    console.log(`ok: the options' column is there from the first paint, before main.js runs, and nothing moves when it does (${painted.join("; ")})`);
+
+    // The script in the head keeps the page CSP-friendly: under a policy
+    // that allows the site's scripts and that one by its hash (no
+    // 'unsafe-inline'), the page runs as it does without one.
+    const inline = [...(await (await fetch(url)).text()).matchAll(/<script>([^<]*)<\/script>/g)].map((m) => m[1]);
+    assert.equal(inline.length, 1, "inline scripts in index.html");
+    const policy = `script-src 'self' 'sha256-${createHash("sha256").update(inline[0]).digest("base64")}'`;
+    const { identifier: watch } = await page.send("Page.addScriptToEvaluateOnNewDocument", {
+        source: "globalThis.violations = []; addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective + ' ' + e.blockedURI));",
+    });
+    await page.navigate("about:blank", { playground: false });
+    await page.send("Fetch.enable", { patterns: [{ urlPattern: url, requestStage: "Response" }] });
+    const pausedPage = page.next("Fetch.requestPaused");
+    const navigated = page.send("Page.navigate", { url });
+    const { requestId, responseHeaders } = await pausedPage;
+    const { body, base64Encoded } = await page.send("Fetch.getResponseBody", { requestId });
+    await page.send("Fetch.fulfillRequest", {
+        requestId,
+        responseCode: 200,
+        responseHeaders: [...responseHeaders, { name: "Content-Security-Policy", value: policy }],
+        body: base64Encoded ? body : Buffer.from(body).toString("base64"),
+    });
+    await navigated;
+    await page.send("Fetch.disable");
+    await page.waitFor(`document.readyState === 'complete' && globalThis.playground && ${settled}`, "the page under a Content-Security-Policy");
+    const underPolicy = await page.evaluate(
+        "({ violations, panel: document.documentElement.dataset.panel, status: document.body.dataset.status, wasm: playground.engines.wasm.boot.loadError ?? null })",
+    );
+    await page.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: watch });
+    assert.deepEqual(underPolicy, { violations: [], panel: "inline", status: "done", wasm: null }, `the page under "${policy}"`);
+    console.log(`ok: under "${policy}" (the script in the head by its hash) the page runs, nothing blocked`);
+    await page.navigate(url);
+    await page.waitFor(settled, "the first run, the options open again");
+
+    // The notes behind an "i": Enter opens one, inside the window; Escape
+    // closes it, the focus back on its button.
+    for (const [note, text] of [["engine-note", /^Both run in your browser: /], ["version-note", /^This is newer than the v26\.0\.0 release/], ["input-note", /^Paste JSON or a JSON Schema, /], ["install-note", /^Get the CLI\. .*brew install elob\/tap\/quickertype.*npm install -g quickertype.*cargo install quickertype/]]) {
+        const button = `document.querySelector('[aria-controls=${note}]')`;
+        await page.evaluate(`${button}.focus()`);
+        await pressEnter();
+        const tip = await page.evaluate(`(() => {
+            const tip = document.getElementById("${note}");
+            const box = tip.getBoundingClientRect();
+            return { shown: !tip.hidden, expanded: ${button}.getAttribute("aria-expanded"), inside: box.left >= 0 && box.top >= 0 && box.right <= innerWidth && box.bottom <= innerHeight, text: tip.textContent };
+        })()`);
+        assert.deepEqual({ ...tip, text: text.test(tip.text) }, { shown: true, expanded: "true", inside: true, text: true }, `the note ${note}`);
+        await pressEscape();
+        assert.deepEqual(
+            await page.evaluate(`({ shown: !document.getElementById("${note}").hidden, focused: document.activeElement === ${button} })`),
+            { shown: false, focused: true },
+            `Escape on the note ${note}`,
+        );
+    }
+    console.log("ok: the notes behind an \"i\" open with Enter, inside the window, and close with Escape");
 
     // just-types on: types only, as `quicktype --just-types`; the hash says
     // so and brings it back; off again, the converters are back.
@@ -1096,6 +1530,22 @@ try {
         "quicktype --lang typescript --top-level KitchenSink --all-properties-optional --no-maps --no-enums kitchen-sink.json",
     );
     console.log("ok: a link with general options opens General; closed by the user, it stays closed");
+    // The Options button counts the options changed, general and the
+    // language's, however they change: a general option, a renderer
+    // option, another language (whose options start from its defaults).
+    const badge = () =>
+        page.evaluate("(() => { const c = document.getElementById('options-count'); return c.hidden ? 0 : Number(/\\d+/.exec(c.textContent)[0]); })()");
+    const badges = [await badge()];
+    await click("opt-just-types");
+    badges.push(await badge());
+    await select("lang", "rust");
+    badges.push(await badge());
+    for (const flag of ["all-properties-optional", "no-maps", "no-enums"]) {
+        await click(`general-${flag}`);
+        badges.push(await badge());
+    }
+    assert.deepEqual(badges, [3, 4, 3, 2, 1, 0], "the Options button's count");
+    console.log(`ok: the Options button counts the options changed: ${badges.join(", ")}`);
     await page.navigate(`${url}#v=2&l=rust&s=github-events&alphabetize-properties=true&no-date-times=true`);
     await page.waitFor(settled, "the run on Rust with two general options");
     await sameAsCli(
@@ -1154,6 +1604,8 @@ try {
 
     await page.navigate(`${url}#v=2&l=rust&s=pokedex`);
     await page.waitFor(settled, "the run on Rust");
+    // What the live region says from here on (checked after the warm runs).
+    await watchLive();
     await select("lang", "typescript");
     await sameAsCli("pokedex.json → TypeScript", "quicktype --lang typescript --top-level Pokedex pokedex.json");
     await page.screenshot("desktop-light.png");
@@ -1176,8 +1628,27 @@ try {
         href: "./benchmarks.html#browser",
     });
     console.log(`ok: the note at the comparison: "${note.text}"`);
+    // Its details open and close from the keyboard (Enter on the line at a
+    // glance); the focus stays there while the page draws the comparison
+    // again (here, for a switch of engine), and so do the details.
+    const details = () =>
+        page.evaluate(`({
+            expanded: document.getElementById("meter-toggle").getAttribute("aria-expanded"),
+            shown: !document.getElementById("meter-details").hidden && document.getElementById("meter-details").getBoundingClientRect().height > 100,
+            focused: document.activeElement.id,
+        })`);
+    const atFirst = await details();
+    assert.deepEqual([atFirst.expanded, atFirst.shown], ["false", false], "the comparison's details, closed at first");
+    await page.evaluate("document.getElementById('meter-toggle').focus()");
+    await pressEnter();
+    assert.deepEqual(await details(), { expanded: "true", shown: true, focused: "meter-toggle" }, "Enter on the comparison");
+    await page.screenshot("layout-comparison-expanded.png");
     ran = await switchEngine("wasm", "the switch back to quickertype");
     assert.deepEqual(ran, { wasm: 0, ts: 0 }, "the switch back to quickertype ran");
+    assert.deepEqual(await details(), { expanded: "true", shown: true, focused: "meter-toggle" }, "the comparison drawn again");
+    await pressEnter();
+    assert.deepEqual(await details(), { expanded: "false", shown: false, focused: "meter-toggle" }, "Enter on the comparison, to close it");
+    console.log("ok: the comparison's details open and close with Enter, and keep the focus and stay open while it is drawn again");
     await sameAsCli("pokedex.json → TypeScript on quickertype again", "quicktype --lang typescript --top-level Pokedex pokedex.json");
     assert.equal(await hashNow(), "#v=2&l=typescript&s=pokedex");
     await comparedIdentical("quickertype after quicktype");
@@ -1222,10 +1693,20 @@ try {
     );
     console.log(`ok: "${measureControl.label}": ${measureControl.how}; it sent one request per engine, { warmup: 1, repeat: 5 }, one after the other`);
     console.log(`ok: warm runs: ${compare}\n    quickertype ${medians(bench.wasm)}\n    quicktype   ${medians(bench.ts)}`);
+
+    // The live region: one, outside the comparison (which was drawn again
+    // and again meanwhile) and the panes, the same element all along; it
+    // said each finished result once, in a few words: the run on TypeScript,
+    // the comparison once quicktype had run too (not again on the switch
+    // back), and the warm runs; never what was running.
+    const live = await liveSaid(["generated", "compared", "warm"], "the live region");
+    console.log(`ok: one live region, outside what is drawn again (the comparison, ${live.drawn} times): ${live.said.map((s) => `"${s}"`).join(", ")}`);
     await page.screenshot("compare.png");
     await page.screenshot("speed-playground-light.png");
+    await page.screenshot("layout-desktop-light.png");
     await page.viewport(1440, 900, { dark: true });
     await page.screenshot("speed-playground-dark.png");
+    await page.screenshot("layout-desktop-dark.png");
     await page.viewport(1440, 900);
 
     // A switch while warm runs are measured: its run waits its turn, after
@@ -1290,13 +1771,20 @@ try {
     // Invalid JSON: quicktype's error, in the output pane.
     await select("lang", "rust");
     await andRun("document.querySelector('input[name=kind][value=json]').click()", "a run as JSON");
+    // Before it, no input: the output pane says where to put one (not "on
+    // the left": phones show one pane at a time, and say so; see below).
+    const typeInput = (text) => `(() => {
+        const input = document.getElementById("input");
+        input.value = ${JSON.stringify(text)};
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+    })()`;
+    await andRun(typeInput(""), "no input", `${settled} && document.body.dataset.status === "empty"`);
+    const emptyWide = await page.evaluate("document.getElementById('error').innerText.trim()");
+    assert.equal(emptyWide, "Paste JSON or a JSON Schema in the Input pane, load a sample, or drop a file there.", "no input, at 1440 px");
+    console.log(`ok: no input: "${emptyWide}"`);
     const invalid = '{\n  "name": "Ann",\n  "age": 7,\n}';
     await andRun(
-        `(() => {
-            const input = document.getElementById("input");
-            input.value = ${JSON.stringify(invalid)};
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-        })()`,
+        typeInput(invalid),
         "the error",
         `${settled} && document.body.dataset.status === "error"`,
     );
@@ -1307,6 +1795,17 @@ try {
     assert.match(error.text, /^Syntax error in input JSON Description: Expected double-quoted property name/);
     assert.equal(error.kind, "MiscJSONParseError");
     console.log(`ok: invalid JSON shows: ${error.text}`);
+    // The error is an alert, drawn (and said) once per result: not again
+    // while quicktype runs the same input, once for quicktype's own.
+    await page.evaluate(`(() => {
+        globalThis.errorDrawn = 0;
+        new MutationObserver(() => errorDrawn++).observe(document.getElementById("error"), { childList: true });
+    })()`);
+    await switchEngine("ts", "quicktype on invalid JSON");
+    const tsError = await page.evaluate("({ drawn: errorDrawn, role: document.getElementById('error').getAttribute('role'), engine: playground.view.shown.engine })");
+    assert.deepEqual(tsError, { drawn: 1, role: "alert", engine: "ts" }, "quicktype's error on invalid JSON");
+    await switchEngine("wasm", "back to quickertype on invalid JSON");
+    console.log("ok: an error is drawn, as an alert, once per result");
 
     // The input survives a reload (localStorage); the hash keeps the rest.
     const hash = await page.evaluate("location.hash");
@@ -1632,6 +2131,7 @@ try {
             for (const entry of list.getEntries()) longTasks.push(Math.round(entry.duration));
         }).observe({ type: "longtask" });
     })()`);
+    await watchLive();
     await openFile(rulingsFile, { timeout: 300_000 });
     const largeOpened = await page.evaluate(`({
         posted: playground.view.request.file instanceof File && playground.view.request.file.name,
@@ -1648,12 +2148,21 @@ try {
         "the large file: posted as a File, not read on the page",
     );
     assert.match(largeOpened.status, /^quickertype ran it in \d[\d.]* m?s\.$/, "the large file's status");
+    // Nothing to edit: the output takes more of the room.
+    const largeLayout = await page.evaluate(
+        `({ input: document.body.dataset.input, ratio: document.getElementById("output-pane").offsetWidth / document.getElementById("input-pane").offsetWidth })`,
+    );
+    assert.deepEqual({ ...largeLayout, ratio: largeLayout.ratio >= 1.9 }, { input: "large", ratio: true }, `the large file: the output is ${largeLayout.ratio.toFixed(2)}× as wide as the input`);
     await sameAsCli(`Open file: rulings.json (${(rulings.text.length / 1e6).toFixed(1)} MB, ${rulings.records} records) → TypeScript`, "quicktype --lang typescript --top-level Rulings rulings.json");
     await page.screenshot("speed-large-file.png");
     ran = await switchEngine("ts", "quicktype on the 26 MB file", undefined);
     assert.deepEqual(ran, { wasm: 0, ts: 1 }, "the switch to quicktype on the 26 MB file ran");
     await sameAsCli("Open file: rulings.json → TypeScript on quicktype", "quicktype --lang typescript --top-level Rulings rulings.json", "ts");
     await comparedIdentical("the 26 MB file");
+    // Read, run (the comparison's time ticking), and run on quicktype: the live region said the two results only.
+    const liveLarge = await liveSaid(["generated", "compared"], "the live region, with the 26 MB file");
+    console.log(`ok: the live region, with the 26 MB file (the comparison drawn ${liveLarge.drawn} times): ${liveLarge.said.map((s) => `"${s}"`).join(", ")}`);
+    await page.screenshot("layout-large-file.png");
     const longTasks = await page.evaluate("longTasks");
     const longest = Math.max(0, ...longTasks);
     assert.ok(longest <= 200, `a main-thread task took ${longest} ms with the 26 MB file (long tasks: ${longTasks.join(", ")} ms)`);
@@ -1814,12 +2323,14 @@ try {
         length: document.getElementById("input").value.length,
         focused: document.activeElement.id,
         button: ${editButton},
+        layout: document.body.dataset.input,
     })`);
     assert.deepEqual(inEditor, {
         reads: 1,
         length: fs.readFileSync(editorFile, "utf8").length,
         focused: "input",
         button: { label: "Show in the editor", disabled: null, shown: true },
+        layout: "editor",
     });
     const tooBigForEditor = chosen("editor-60mb.json", readInput("pokedex.json"));
     await openFile(tooBigForEditor);
@@ -1988,7 +2499,7 @@ try {
                 }
             } else {
                 assert.ok(
-                    [benchLinks.readme, repository, "https://github.com/glideapps/quicktype"].includes(href),
+                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype"].includes(href),
                     `an unexpected link: ${href}`,
                 );
             }
@@ -2031,7 +2542,89 @@ try {
         const { lines } = await commandShown(`${width} px`);
         assert.ok(lines > 1, `${width} px: the command is on ${lines} line(s)`);
         console.log(`ok: ${width} px wide, both engines compared, no horizontal scrolling; the command wraps onto ${lines} lines and copies whole`);
+
+        // One pane at a time, the output first: the code starts in the first
+        // screen, with the options closed (a drawer, out of the way); so does
+        // the input, shown instead. Nothing scrolls sideways: the comparison's
+        // details open, the options open, the input shown.
+        await page.evaluate("scrollTo(0, 0)");
+        const phone = await page.evaluate(`({
+            panel: document.documentElement.dataset.panel,
+            view: document.body.dataset.view,
+            code: Math.round(document.getElementById("output").getBoundingClientRect().top),
+            input: document.getElementById("input-pane").getClientRects().length,
+        })`);
+        assert.deepEqual({ ...phone, code: phone.code < 844 * 0.55 }, { panel: "closed", view: "output", code: true, input: 0 }, `${width} px: the output first`);
+        await noSidewaysScroll(width, `${width} px`);
+        await page.evaluate("document.getElementById('meter-toggle').click()");
+        await noSidewaysScroll(width, `${width} px, the comparison's details open`);
+        await page.evaluate("document.getElementById('meter-toggle').click()");
+        await page.evaluate("document.getElementById('options-toggle').focus()");
+        await pressEnter();
+        assert.deepEqual(
+            { ...(await panelNow()), codeWidth: undefined },
+            { open: true, modal: true, layout: "drawer", expanded: "true", focus: "first", codeWidth: undefined },
+            `${width} px: the options`,
+        );
+        await noSidewaysScroll(width, `${width} px, the options open`);
+        if (width === 390) await page.screenshot("layout-options-drawer-390.png");
+        await pressEscape();
+        assert.deepEqual((await panelNow()).focus, "toggle", `${width} px: Escape in the options`);
+        if (width === 390) await page.screenshot("layout-390.png");
+        await page.evaluate("document.querySelector('input[name=view][value=input]').click()");
+        const inputView = await page.evaluate(`({
+            view: document.body.dataset.view,
+            input: Math.round(document.getElementById("input").getBoundingClientRect().top),
+            output: document.getElementById("output-pane").getClientRects().length,
+        })`);
+        assert.deepEqual({ ...inputView, input: inputView.input < 844 * 0.55 }, { view: "input", input: true, output: 0 }, `${width} px: the input`);
+        await noSidewaysScroll(width, `${width} px, the input shown`);
+        if (width === 390) await page.screenshot("layout-390-input.png");
+        console.log(`ok: ${width} px: the output first (its code from ${phone.code} px down), the input a tap away (from ${inputView.input} px); the options a modal drawer; nothing scrolls sideways`);
     }
+
+    // No input on a phone: the output says where the input is, a switch
+    // away, and its "Input" switches to it, the focus on the switch.
+    await andRun(typeInput(""), "no input at 390 px", `${settled} && document.body.dataset.status === "empty"`);
+    await page.evaluate("document.querySelector('input[name=view][value=output]').click()");
+    const emptyPhone = await page.evaluate("document.getElementById('error').innerText.trim()");
+    assert.equal(emptyPhone, "Switch to Input to paste JSON or a JSON Schema, load a sample, or open a file.", "no input, at 390 px");
+    await noSidewaysScroll(390, "390 px, no input");
+    await page.screenshot("layout-390-empty.png");
+    await page.evaluate("document.querySelector('#error .show-input').click()");
+    assert.deepEqual(
+        await page.evaluate(
+            "({ view: document.body.dataset.view, checked: document.querySelector('input[name=view]:checked').value, focus: document.activeElement === document.querySelector('input[name=view][value=input]') })",
+        ),
+        { view: "input", checked: "input", focus: true },
+        "390 px: Input, where the output says there is no input",
+    );
+    console.log(`ok: no input at 390 px: "${emptyPhone}", its Input shows the input`);
+
+    // A file too large for the editor on a phone: still one pane at a time,
+    // as wide as the page, the output's and the input's; nothing scrolls sideways.
+    await upload(sampleFiles["big-senators.json"]);
+    for (const view of ["output", "input"]) {
+        await page.evaluate(`document.querySelector('input[name=view][value=${view}]').click()`);
+        const large = await page.evaluate(`(() => {
+            const panes = document.querySelector(".panes");
+            return {
+                input: document.body.dataset.input,
+                columns: getComputedStyle(panes).gridTemplateColumns.split(" ").length,
+                shown: Math.round(document.getElementById("${view}-pane").getBoundingClientRect().width),
+                panes: Math.round(panes.getBoundingClientRect().width),
+                other: document.getElementById("${view === "input" ? "output" : "input"}-pane").getClientRects().length,
+            };
+        })()`);
+        assert.deepEqual(
+            { ...large, shown: large.shown === large.panes },
+            { input: "large", columns: 1, shown: true, panes: 390, other: 0 },
+            `390 px, a large file: the ${view} (${large.shown} px wide)`,
+        );
+        await noSidewaysScroll(390, `390 px, a large file, the ${view}`);
+        await page.screenshot(`layout-390-large-${view}.png`);
+    }
+    console.log("ok: 390 px, a file too large for the editor: one pane at a time, the output's and the input's as wide as the page; nothing scrolls sideways");
 
     const missing = requests.filter(([status]) => status !== 200);
     assert.deepEqual(missing, [], "requests that failed");
