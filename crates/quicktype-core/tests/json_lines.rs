@@ -97,33 +97,31 @@ impl Sample {
     fn json_sample(&self, as_lines: bool, seed: u64) -> JsonSample {
         let text = self.text(as_lines);
         let lines = self.lines && as_lines;
+        // A stream, as JSON Lines or not.
+        let reader = |reader| {
+            if lines {
+                JsonSample::ReaderLines(reader)
+            } else {
+                JsonSample::Reader(reader)
+            }
+        };
         match self.reader {
             Reader::String if lines => JsonSample::StringLines(text),
             Reader::String => JsonSample::String(text),
             Reader::Stream if lines => JsonSample::StreamLines(text.into_bytes()),
             Reader::Stream => JsonSample::Stream(text.into_bytes()),
-            Reader::Chunks(_) | Reader::Parallel(..) => {
-                let reader = match self.reader {
-                    Reader::Parallel(threads, range) => {
-                        let options = ParallelOptions::default()
-                            .with_threads(threads)
-                            .with_small_ranges(range)
-                            .with_min_len(0);
-                        parallel_sample(text.into_bytes(), options)
-                    }
-                    Reader::Chunks(max) => SampleReader::new(Chunked {
-                        data: text.into_bytes(),
-                        position: 0,
-                        rng: Rng::new(seed),
-                        max,
-                    }),
-                    Reader::String | Reader::Stream => unreachable!(),
-                };
-                if lines {
-                    JsonSample::ReaderLines(reader)
-                } else {
-                    JsonSample::Reader(reader)
-                }
+            Reader::Chunks(max) => reader(SampleReader::new(Chunked {
+                data: text.into_bytes(),
+                position: 0,
+                rng: Rng::new(seed),
+                max,
+            })),
+            Reader::Parallel(threads, range) => {
+                let options = ParallelOptions::default()
+                    .with_threads(threads)
+                    .with_small_ranges(range)
+                    .with_min_len(0);
+                reader(parallel_sample(text.into_bytes(), options))
             }
         }
     }
