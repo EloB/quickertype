@@ -49,6 +49,8 @@ pub struct Stats {
     pub methods: BTreeMap<String, MethodStats>,
     /// Requests sent one at a time, each waiting for its answer.
     pub round_trips: u64,
+    /// Calls back to the client (file system callbacks) it answered.
+    pub callbacks: u64,
     /// Pipelined batches sent.
     pub batches: u64,
     /// Time spent in pipelined batches (their requests count no round trip).
@@ -99,10 +101,11 @@ impl std::fmt::Display for Stats {
         )?;
         writeln!(
             f,
-            "round trips: {} one at a time, {} pipelined batches ({:.1} ms)",
+            "round trips: {} one at a time, {} pipelined batches ({:.1} ms); {} callbacks",
             self.round_trips,
             self.batches,
-            ms(self.batch_time)
+            ms(self.batch_time),
+            self.callbacks
         )?;
         writeln!(
             f,
@@ -130,6 +133,14 @@ impl Read for TimedReader {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    /// Makes the next batch on this thread fail as if the compiler had
+    /// called back during it.
+    pub(crate) static FAKE_CALLBACK_IN_NEXT_BATCH: std::cell::Cell<bool> =
+        const { std::cell::Cell::new(false) };
+}
+
 /// A running `tsc --api` process.
 pub struct Channel {
     child: Child,
@@ -140,8 +151,10 @@ pub struct Channel {
     files: VirtualFiles,
     stats: BTreeMap<String, MethodStats>,
     round_trips: u64,
+    callbacks: u64,
     batches: u64,
     batch_time: Duration,
+    called_back: bool,
 }
 
 fn write_bin(w: &mut impl Write, bytes: &[u8]) -> io::Result<()> {
@@ -226,9 +239,6 @@ impl Channel {
             .arg("--cwd")
             .arg(cwd)
             .arg("--callbacks=readFile,fileExists");
-        if std::env::var_os(STATS_ENV).is_some() {
-            command.arg("--timing");
-        }
         let mut child = command
             .current_dir(cwd)
             .stdin(Stdio::piped())
@@ -276,8 +286,10 @@ impl Channel {
             files,
             stats: BTreeMap::new(),
             round_trips: 0,
+            callbacks: 0,
             batches: 0,
             batch_time: Duration::ZERO,
+            called_back: false,
         })
     }
 
@@ -318,14 +330,27 @@ impl Channel {
     /// error. The server reads and answers one message at a time, so the
     /// answers are the ones serial requests would get; only the waiting for
     /// each round trip is gone. The requests must not make the compiler call
-    /// back: checker and program queries do not (the file system callbacks
-    /// happen while a snapshot is built), and a callback fails the batch.
+    /// back: it would read the next request as the answer to its call and
+    /// fail. Checker and program queries do not call back (the file system
+    /// callbacks happen while a snapshot is built; imports, references and
+    /// packages in `node_modules` are resolved by then). If one does, the
+    /// process is ended, the batch fails, and
+    /// [`Channel::called_back_in_batch`] says so, for the caller to start
+    /// over without pipelining.
     pub fn request_batch(
         &mut self,
         requests: &[(&'static str, Vec<u8>)],
     ) -> Result<Vec<Option<Vec<u8>>>> {
         if requests.is_empty() {
             return Ok(Vec::new());
+        }
+        #[cfg(test)]
+        if FAKE_CALLBACK_IN_NEXT_BATCH.with(|c| c.replace(false)) {
+            self.called_back = true;
+            let _ = self.child.kill();
+            let e =
+                io::Error::other("the compiler called back (`readFile`) during pipelined requests");
+            return Err(self.failure("(pipelined)", e));
         }
         let start = Instant::now();
         let replies = self
@@ -348,6 +373,7 @@ impl Channel {
             writer,
             reader,
             child,
+            called_back,
             ..
         } = self;
         let writer = writer
@@ -372,6 +398,11 @@ impl Channel {
                     }
                     Ok((MSG_ERROR, name, _)) if name == method.as_bytes() => replies.push(None),
                     Ok((MSG_CALL, name, _)) => {
+                        // The compiler reads the next pipelined request as the
+                        // answer to its call, and fails (`unexpected message
+                        // while waiting for … response`): the protocol cannot
+                        // serve a callback here, and the session is over.
+                        *called_back = true;
                         failure = Some(io::Error::other(format!(
                             "the compiler called back (`{}`) during pipelined requests",
                             String::from_utf8_lossy(&name)
@@ -412,11 +443,18 @@ impl Channel {
         })
     }
 
+    /// Whether the compiler called back during a pipelined batch, which ended
+    /// the session (see [`Channel::request_batch`]).
+    pub fn called_back_in_batch(&self) -> bool {
+        self.called_back
+    }
+
     /// Statistics of the requests so far.
     pub fn stats(&self) -> Stats {
         Stats {
             methods: self.stats.clone(),
             round_trips: self.round_trips,
+            callbacks: self.callbacks,
             batches: self.batches,
             batch_time: self.batch_time,
             blocked: self.reader.get_ref().blocked,
@@ -436,7 +474,10 @@ impl Channel {
                     ));
                 }
                 MSG_CALL => match self.callback(&name, &body) {
-                    Ok(reply) => self.frame(MSG_CALL_RESPONSE, &name, reply.as_bytes())?,
+                    Ok(reply) => {
+                        self.callbacks += 1;
+                        self.frame(MSG_CALL_RESPONSE, &name, reply.as_bytes())?
+                    }
                     Err(msg) => {
                         self.frame(MSG_CALL_ERROR, &name, msg.as_bytes())?;
                         return Err(io::Error::other(msg));
@@ -523,16 +564,9 @@ impl Channel {
 
 impl Drop for Channel {
     fn drop(&mut self) {
-        if std::env::var_os(STATS_ENV).is_some() && self.writer.is_some() {
-            eprint!("{}", self.stats());
-            if let Ok(t) = self.request_io("getServerTiming", b"") {
-                let t: serde_json::Value = serde_json::from_slice(&t).unwrap_or_default();
-                eprintln!(
-                    "server processing: {:.1} ms over {} requests",
-                    t["totals"]["totalProcessingTimeMs"].as_f64().unwrap_or(0.0),
-                    t["totals"]["requestCount"]
-                );
-            }
+        if std::env::var_os(STATS_ENV).is_some() {
+            // A diagnostic: nothing may fail here, not even writing it.
+            let _ = write!(io::stderr().lock(), "{}", self.stats());
         }
         // Closing stdin ends the server; kill it in case it does not exit.
         self.writer = None;
@@ -541,6 +575,41 @@ impl Drop for Channel {
         if let Some(t) = self.stderr_thread.take() {
             let _ = t.join();
         }
+    }
+}
+
+#[cfg(test)]
+mod batch_tests {
+    use super::*;
+
+    /// Building a snapshot reads the (virtual) project file through a
+    /// callback; inside a batch the compiler cannot be answered, and the
+    /// batch fails with the channel marked, not with a hang or a mix-up.
+    #[test]
+    fn a_callback_during_a_batch_ends_it() {
+        let crate_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let Some(exe) = super::super::locate::for_tests(crate_dir) else {
+            eprintln!("skipped: no TypeScript compiler");
+            return;
+        };
+        let dir =
+            std::env::temp_dir().join(format!("qt-tsc-batch-callback-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.ts"), "export interface A { a: string }\n").unwrap();
+        let config = format!("{}/virtual.json", dir.to_string_lossy());
+        let files = vec![(config.clone(), r#"{"files":["a.ts"]}"#.to_owned())];
+        let mut ch = Channel::spawn(&exe, &dir, files).unwrap();
+        ch.request("initialize", b"null").unwrap();
+        let snapshot = serde_json::json!({ "openProjects": [config] }).to_string();
+        let result = ch.request_batch(&[
+            ("updateSnapshot", snapshot.into_bytes()),
+            ("initialize", b"null".to_vec()),
+        ]);
+        let err = result.unwrap_err().message();
+        assert!(ch.called_back_in_batch(), "{err}");
+        assert!(err.contains("called back (`readFile`)"), "{err}");
+        drop(ch);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
 
