@@ -791,7 +791,7 @@ impl Reading<'_> {
         let RunningTallies {
             tallies, strings, ..
         } = running;
-        PortableTree::new(&tallies, strings, tree).ok()
+        PortableTree::new(tallies, strings, tree).ok()
     }
 
     /// The thread that reads the sample: forms the parts as the summaries
@@ -1007,7 +1007,7 @@ impl Reading<'_> {
                     // Append the trees in order.
                     while let Some(tree) = waiting.remove(&appended) {
                         let so_far = root?;
-                        let imported = match running.tallies.import(&mut running.strings, &tree) {
+                        let imported = match running.tallies.import(&mut running.strings, tree) {
                             Ok(imported) => imported,
                             Err(_) => return rest(running, Some(so_far), &parts, appended),
                         };

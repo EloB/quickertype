@@ -3,13 +3,13 @@
 //! large top-level array on a thread of its own, and appends the parts'
 //! trees, in order, to the sample's tree on the thread that reads it. A
 //! tree's string attributes hold `Rc`s, so a part's tree crosses threads
-//! as a [`PortableTree`]: the same nodes, its keys and cases as ids into
-//! its own string table (which it brings along), and the string attributes
-//! as plain values. [`Tallies::import`] copies it into other tallies,
-//! mapping each id to the id of the same text there: the copy is the
-//! part's tree with the same texts, which [`Tallies::merge`] then appends
-//! as it appends any other tree (see `docs/STREAMING-INFERENCE.md`,
-//! "Reading on several threads").
+//! as a [`PortableTree`]: the same nodes, moved out of the part's tallies,
+//! its keys and cases as ids into its own string table (which it brings
+//! along), and the string attributes as plain values. [`Tallies::import`]
+//! moves it into other tallies, mapping each id to the id of the same text
+//! there: the result is the part's tree with the same texts, which
+//! [`Tallies::merge`] then appends as it appends any other tree (see
+//! `docs/STREAMING-INFERENCE.md`, "Reading on several threads").
 
 use std::collections::VecDeque;
 use std::mem::size_of;
@@ -17,7 +17,7 @@ use std::rc::Rc;
 
 use indexmap::IndexMap;
 
-use super::{KeyTally, KindOrder, Node, NodeId, StringTally, Tallies, alloc};
+use super::{KeyTally, KindOrder, Node, NodeId, ObjectTally, Tallies, alloc, map_size};
 use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeValue, TypeAttributes};
 use crate::attributes::uri_attributes::UriAttributes;
@@ -36,30 +36,25 @@ pub(crate) struct PortableTree {
     bytes: usize,
 }
 
-/// A [`Node`], with nodes as indexes into [`PortableTree::nodes`].
+/// A [`Node`], with nodes as indexes into [`PortableTree::nodes`]: the
+/// node's object tally, moved, with its keys' and `__proto__`'s nodes as
+/// such indexes.
 #[derive(Default)]
 struct PortableNode {
     kinds: KindOrder,
     items: Option<u32>,
     strings: Option<PortableStrings>,
-    object: Option<PortableObject>,
+    object: Option<Box<ObjectTally>>,
 }
 
-/// A [`StringTally`], with portable attributes.
+/// A [`StringTally`](super::StringTally): its cases, moved, and its
+/// attributes as plain values.
 struct PortableStrings {
-    cases: Vec<(u32, u64)>,
+    cases: IndexMap<u32, u64, BuildHasher>,
     with_enums: Option<PortableAttributes>,
     without_enums: Option<PortableAttributes>,
     not_interned: bool,
     absorbed: [u32; 2],
-}
-
-/// An [`ObjectTally`]: each key's id, count and node.
-struct PortableObject {
-    count: u64,
-    keys: Vec<(u32, u64, u32)>,
-    proto_runs: Vec<(u32, u64)>,
-    proto: Option<u32>,
 }
 
 /// String attributes as plain values, in order: string types and URI
@@ -87,16 +82,12 @@ impl PortableAttributes {
     }
 
     /// The attributes, equal to those made portable, kinds in their order.
-    fn to_attributes(&self) -> TypeAttributes {
+    fn into_attributes(self) -> TypeAttributes {
         let mut attributes = TypeAttributes::new();
-        for value in &self.0 {
+        for value in self.0 {
             attributes.insert(match value {
-                PortableAttribute::StringTypes(st) => {
-                    TypeAttributeValue::StringTypes(Rc::new(st.clone()))
-                }
-                PortableAttribute::Uri(uri) => {
-                    TypeAttributeValue::UriAttributes(Rc::new(uri.clone()))
-                }
+                PortableAttribute::StringTypes(st) => TypeAttributeValue::StringTypes(Rc::new(st)),
+                PortableAttribute::Uri(uri) => TypeAttributeValue::UriAttributes(Rc::new(uri)),
             });
         }
         attributes
@@ -105,12 +96,13 @@ impl PortableAttributes {
 
 impl PortableTree {
     /// The tree at `root` of `tallies`, whose keys and cases are ids into
-    /// `strings`. The tallies keep the tree.
-    pub(crate) fn new(tallies: &Tallies, strings: Strings, root: NodeId) -> Result<Self> {
+    /// `strings`, moved out of them (only the few attribute sets are
+    /// copied).
+    pub(crate) fn new(mut tallies: Tallies, strings: Strings, root: NodeId) -> Result<Self> {
         let mut nodes = vec![PortableNode::default()];
         let mut pending = VecDeque::from([(root, 0usize)]);
         while let Some((id, at)) = pending.pop_front() {
-            let node = tallies.node(id)?;
+            let node = std::mem::take(defined(tallies.nodes.get_mut(id as usize))?);
             // Each child gets the next index, filled in when it is reached.
             let mut place = |child: NodeId| {
                 let index = nodes.len();
@@ -119,19 +111,16 @@ impl PortableTree {
                 index as u32
             };
             let items = node.items.map(&mut place);
-            let object = node.object.as_deref().map(|o| PortableObject {
-                count: o.count,
-                keys: o
-                    .keys
-                    .iter()
-                    .map(|(&id, key)| (id, key.count, place(key.node)))
-                    .collect(),
-                proto_runs: o.proto_runs.clone(),
-                proto: o.proto.map(&mut place),
+            let object = node.object.map(|mut o| {
+                for key in o.keys.values_mut() {
+                    key.node = place(key.node);
+                }
+                o.proto = o.proto.map(&mut place);
+                o
             });
-            let strings = match node.strings.as_deref() {
-                Some(s) => Some(PortableStrings {
-                    cases: s.cases.iter().map(|(&id, &count)| (id, count)).collect(),
+            let strings = match node.strings {
+                Some(mut s) => Some(PortableStrings {
+                    cases: std::mem::take(&mut s.cases),
                     with_enums: s
                         .with_enums
                         .as_ref()
@@ -159,10 +148,10 @@ impl PortableTree {
             + nodes
                 .iter()
                 .map(|n| {
-                    n.strings.as_ref().map_or(0, |s| vec_size(&s.cases))
-                        + n.object
-                            .as_ref()
-                            .map_or(0, |o| vec_size(&o.keys) + vec_size(&o.proto_runs))
+                    n.strings.as_ref().map_or(0, |s| map_size(&s.cases))
+                        + n.object.as_ref().map_or(0, |o| {
+                            size_of::<ObjectTally>() + map_size(&o.keys) + vec_size(&o.proto_runs)
+                        })
                 })
                 .sum::<usize>();
         Ok(PortableTree {
@@ -201,15 +190,13 @@ impl Tallies {
             bytes += size_of::<PortableNode>();
             pending.extend(node.items);
             if let Some(s) = node.strings.as_deref() {
-                bytes += size_of::<PortableStrings>() + s.cases.len() * size_of::<(u32, u64)>();
+                bytes += size_of::<PortableStrings>() + map_size(&s.cases);
                 for &case in s.cases.keys() {
                     bytes += text(case)?;
                 }
             }
             if let Some(o) = node.object.as_deref() {
-                bytes += size_of::<PortableObject>()
-                    + o.keys.len() * size_of::<(u32, u64, u32)>()
-                    + vec_size(&o.proto_runs);
+                bytes += size_of::<ObjectTally>() + map_size(&o.keys) + vec_size(&o.proto_runs);
                 for (&key, tally) in &o.keys {
                     bytes += text(key)?;
                     pending.push(tally.node);
@@ -220,61 +207,58 @@ impl Tallies {
         Ok(bytes)
     }
 
-    /// Copies `tree` into these tallies, its keys and cases as ids into
-    /// `strings` (whose texts it adds as needed); returns the copy's root.
-    pub(crate) fn import(&mut self, strings: &mut Strings, tree: &PortableTree) -> Result<NodeId> {
+    /// Moves `tree` into these tallies, its keys and cases as ids into
+    /// `strings` (whose texts it adds as needed); returns its root here.
+    pub(crate) fn import(&mut self, strings: &mut Strings, tree: PortableTree) -> Result<NodeId> {
+        let mut nodes = Vec::with_capacity(tree.nodes.len());
+        let PortableTree {
+            strings: texts,
+            nodes: portable,
+            ..
+        } = tree;
         // The ids of the tree's strings here, found once each.
-        let mut ids = vec![u32::MAX; tree.strings.len()];
+        let mut ids = vec![u32::MAX; texts.len()];
         let mut id = |strings: &mut Strings, local: u32| -> Result<u32> {
             let slot = defined(ids.get_mut(local as usize))?;
             if *slot == u32::MAX {
-                *slot = strings.intern_text(defined(tree.strings.get(local as usize))?);
+                *slot = strings.intern_text(defined(texts.get(local as usize))?);
             }
             Ok(*slot)
         };
-        let mut nodes = Vec::with_capacity(tree.nodes.len());
-        for _ in &tree.nodes {
+        // A node's children come after it: all nodes first.
+        for _ in &portable {
             nodes.push(alloc(&mut self.nodes, &mut self.free)?);
         }
         let node = |index: u32| defined(nodes.get(index as usize)).copied();
-        for (portable, &at) in tree.nodes.iter().zip(&nodes) {
-            let strings_tally = match &portable.strings {
+        for (portable, &at) in portable.into_iter().zip(&nodes) {
+            let strings_tally = match portable.strings {
                 Some(s) => {
                     let mut tally = self.spare_strings.pop().unwrap_or_default();
-                    let mut cases =
-                        IndexMap::with_capacity_and_hasher(s.cases.len(), BuildHasher::default());
-                    for &(local, count) in &s.cases {
-                        cases.insert(id(strings, local)?, count);
+                    tally.cases.reserve(s.cases.len());
+                    for (local, count) in s.cases {
+                        tally.cases.insert(id(strings, local)?, count);
                     }
-                    *tally = StringTally {
-                        cases,
-                        with_enums: s.with_enums.as_ref().map(PortableAttributes::to_attributes),
-                        without_enums: s
-                            .without_enums
-                            .as_ref()
-                            .map(PortableAttributes::to_attributes),
-                        not_interned: s.not_interned,
-                        absorbed: s.absorbed,
-                    };
+                    tally.with_enums = s.with_enums.map(PortableAttributes::into_attributes);
+                    tally.without_enums = s.without_enums.map(PortableAttributes::into_attributes);
+                    tally.not_interned = s.not_interned;
+                    tally.absorbed = s.absorbed;
                     Some(tally)
                 }
                 None => None,
             };
-            let object = match &portable.object {
-                Some(o) => {
-                    let mut tally = self.spare_objects.pop().unwrap_or_default();
-                    tally.count = o.count;
-                    tally.keys.reserve(o.keys.len());
-                    for &(local, count, child) in &o.keys {
+            let object = match portable.object {
+                Some(mut o) => {
+                    let keys = std::mem::take(&mut o.keys);
+                    o.keys = IndexMap::with_capacity_and_hasher(keys.len(), BuildHasher::default());
+                    for (local, key) in keys {
                         let key = KeyTally {
-                            count,
-                            node: node(child)?,
+                            count: key.count,
+                            node: node(key.node)?,
                         };
-                        tally.keys.insert(id(strings, local)?, key);
+                        o.keys.insert(id(strings, local)?, key);
                     }
-                    tally.proto_runs.extend_from_slice(&o.proto_runs);
-                    tally.proto = o.proto.map(node).transpose()?;
-                    Some(tally)
+                    o.proto = o.proto.map(node).transpose()?;
+                    Some(o)
                 }
                 None => None,
             };
@@ -285,7 +269,7 @@ impl Tallies {
                 object,
             };
         }
-        Ok(nodes[0])
+        defined(nodes.first().copied())
     }
 }
 
@@ -322,7 +306,7 @@ mod tests {
         let RunningTallies {
             tallies, strings, ..
         } = part;
-        PortableTree::new(&tallies, strings, tree).unwrap()
+        PortableTree::new(tallies, strings, tree).unwrap()
     }
 
     const SAMPLES: [&str; 6] = [
@@ -398,7 +382,7 @@ mod tests {
                 let mut into = RunningTallies::new();
                 let root = into
                     .tallies
-                    .import(&mut into.strings, &portable(&config, sample))
+                    .import(&mut into.strings, portable(&config, sample))
                     .unwrap();
                 assert_eq!(into.dump(root), expected);
                 let other = parse_stream_into(
@@ -409,7 +393,7 @@ mod tests {
                 .unwrap();
                 let root = into
                     .tallies
-                    .import(&mut into.strings, &portable(&config, sample))
+                    .import(&mut into.strings, portable(&config, sample))
                     .unwrap();
                 assert_eq!(into.dump(root), expected);
                 into.tallies.free_tree(other);
@@ -443,7 +427,7 @@ mod tests {
                 let mut root = None;
                 for group in groups.iter().filter(|g| !g.is_empty()) {
                     let part = portable(&config, &format!("[{}]", group.join(",")));
-                    let imported = merged.tallies.import(&mut merged.strings, &part).unwrap();
+                    let imported = merged.tallies.import(&mut merged.strings, part).unwrap();
                     match root {
                         None => root = Some(imported),
                         Some(root) => merged.tallies.merge(root, imported).unwrap(),
