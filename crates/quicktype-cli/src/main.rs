@@ -619,7 +619,24 @@ fn cli_main(args: Vec<String>) -> u8 {
     };
     console.flush();
     set_console_sink(None);
+    #[cfg(debug_assertions)]
+    report_reads();
     code
+}
+
+/// In debug builds, with the internal variable `QUICKTYPE_READ_REPORT`
+/// set to a path, writes there how this thread read the samples on several
+/// threads, for the CLI's tests: the output does not change.
+#[cfg(debug_assertions)]
+fn report_reads() {
+    if let Some(path) = std::env::var_os("QUICKTYPE_READ_REPORT") {
+        let reads = quicktype_core::internal::parallel_reads();
+        let report = format!(
+            "whole {} in_part {} again {}\n",
+            reads.whole, reads.in_part, reads.again
+        );
+        let _ = std::fs::write(path, report);
+    }
 }
 
 fn main() -> ExitCode {
