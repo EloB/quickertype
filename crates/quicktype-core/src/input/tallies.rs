@@ -54,7 +54,9 @@ use crate::attributes::string_types::{
 use crate::attributes::type_attributes::{
     AttributeKind, CombinationKind, TypeAttributes, combine_type_attributes2,
 };
-use crate::attributes::uri_attributes::{UriParts, UriTypeAttributeKind, uri_inference_parts};
+use crate::attributes::uri_attributes::{
+    UriParts, UriTypeAttributeKind, parsed_uri_parts, plain_uri_parts, uri_inference_parts,
+};
 use crate::messages::Result;
 use crate::support::fast_hash::BuildHasher;
 use crate::support::support::{defined, panic};
@@ -1393,8 +1395,9 @@ pub(crate) fn tally_compressed<'c>(
     #[cfg(test)]
     WALKS.with(|walks| walks.set(walks.get() + 1));
     // A string is known by its index, but for `"__proto__"`, which is
-    // interned anew each time and so is known by its text.
-    if !cjson.unique_strings() {
+    // interned anew each time and so is known by its text. A transformed
+    // string is a `uri`, as a reader records it.
+    if !cjson.unique_strings() || !cjson.transformed_are_uris() {
         return Ok(None);
     }
     let mut tallies = Tallies::new();
@@ -1418,9 +1421,11 @@ pub(crate) fn tally_compressed<'c>(
 /// compressed form from elsewhere (the tables of a JavaScript
 /// `CompressedJSON`) could hold one that is reached twice, or a cycle; the
 /// walk then declines. So it does for the other values no reader makes: an
-/// object key that is not an interned string, a transformed string whose
-/// text has no kind or no attribute producer (`Inference.ts` fails on it),
-/// and a string table that holds a text twice. Nothing else declines: an
+/// object key that is not an interned string, a transformed string that is
+/// not a `uri` (one without a kind or without an attribute producer, on
+/// which `Inference.ts` fails, as the form tells before the walk:
+/// [`CompressedJson::transformed_are_uris`]), and a string table that
+/// holds a text twice. Nothing else declines: an
 /// error tallying a value (a lookup that fails, too many places) is raised.
 struct CompressedTally<'c> {
     cjson: &'c CompressedJson,
@@ -1441,11 +1446,13 @@ struct CompressedTally<'c> {
     /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
-    /// The kinds of the transformed strings recognized so far, at the slot
-    /// of their string index ([`TRANSFORMED_SLOTS`] of them, made with the
-    /// first): the same text recurs under the same index, and is
-    /// recognized once while its slot keeps it.
-    transformed: Vec<(u32, Option<TypeKind>)>,
+    /// The parts of the URIs urijs' parser read so far (those that are
+    /// not plain: user info, brackets, an unusual port), at the slot of
+    /// their string index ([`PARSED_SLOTS`] of them, made with the first):
+    /// the same text recurs under the same index, and is parsed once while
+    /// its slot keeps it. Plain URIs are read each time, which costs less
+    /// than keeping them.
+    parsed: Vec<Option<(u32, Option<UriParts<'static>>)>>,
     /// The containers being walked, innermost last.
     stack: Vec<WalkFrame<'c>>,
 }
@@ -1453,11 +1460,10 @@ struct CompressedTally<'c> {
 /// No string index (yet).
 const NO_INDEX: u32 = u32::MAX;
 
-/// How many transformed strings (URIs) the walk keeps the kind of, by
-/// string index: a bounded number, since an input of distinct URIs would
-/// gain nothing from keeping them all, and one whose URIs recur has few
-/// of them.
-const TRANSFORMED_SLOTS: usize = 256;
+/// How many parsed URIs the walk keeps the parts of, by string index: a
+/// bounded number, since an input of distinct URIs would gain nothing from
+/// keeping them all, and one whose URIs recur has few of them.
+const PARSED_SLOTS: usize = 256;
 
 /// An object or array whose values [`CompressedTally`] is walking.
 enum WalkFrame<'c> {
@@ -1507,7 +1513,7 @@ impl<'c> CompressedTally<'c> {
             proto: NO_INDEX,
             objects_seen: Vec::new(),
             arrays_seen: Vec::new(),
-            transformed: Vec::new(),
+            parsed: Vec::new(),
             stack: Vec::new(),
         }
     }
@@ -1539,47 +1545,23 @@ impl<'c> CompressedTally<'c> {
         Ok(self.proto_strings[word] & bit != 0)
     }
 
-    /// The kind `commitString` classified the transformed string `index`,
-    /// of text `text`, as: recognized from its text as `Inference.ts`
-    /// recognizes it (once while its slot keeps it).
-    fn transformed_kind(&mut self, index: u32, text: &str) -> Option<TypeKind> {
-        if self.transformed.is_empty() {
-            self.transformed = vec![(NO_INDEX, None); TRANSFORMED_SLOTS];
-        }
-        let slot = &mut self.transformed[index as usize % TRANSFORMED_SLOTS];
-        if slot.0 != index {
-            let recognizer = self.cjson.date_time_recognizer();
-            *slot = (
-                index,
-                infer_transformed_string_type_kind_for_string(text, recognizer),
-            );
-        }
-        slot.1
-    }
-
-    /// Tallies the transformed string `index` at `node`, of the kind
-    /// `commitString` classified it as: a `uri` in a form a reader made
-    /// ([`CompressedJson::uris_classified`]), else as recognized from its
-    /// text ([`transformed_kind`](Self::transformed_kind)). Whether it has
-    /// a kind with an attribute producer, as a reader's always has. A `uri`
-    /// is tallied by its parts, made each time: they cost less than keeping
-    /// them would.
-    fn transformed(&mut self, tallies: &mut Tallies, node: NodeId, index: u32) -> Result<bool> {
+    /// Tallies the transformed string `index` at `node`: a `uri`, the one
+    /// kind with an attribute producer, which every transformed string of
+    /// a form the walk takes is ([`CompressedJson::transformed_are_uris`]).
+    fn transformed(&mut self, tallies: &mut Tallies, node: NodeId, index: u32) -> Result<()> {
         let text = defined(self.cjson.string(index))?;
-        let kind = if self.cjson.uris_classified() {
-            Some(TypeKind::Uri)
-        } else {
-            self.transformed_kind(index, text)
-        };
-        match kind {
-            Some(TypeKind::Uri) => tallies.add_uri(node, uri_inference_parts(text).as_ref())?,
-            Some(kind) => match transformed_string_type_attributes_producer(kind) {
-                Some(producer) => tallies.add_transformed_string(node, kind, &producer(text))?,
-                None => return Ok(false),
-            },
-            None => return Ok(false),
+        if let Some(parts) = plain_uri_parts(text) {
+            return tallies.add_uri(node, Some(&parts));
         }
-        Ok(true)
+        if self.parsed.is_empty() {
+            self.parsed.resize_with(PARSED_SLOTS, || None);
+        }
+        let slot = &mut self.parsed[index as usize % PARSED_SLOTS];
+        if !matches!(slot, Some((known, _)) if *known == index) {
+            *slot = Some((index, parsed_uri_parts(text)));
+        }
+        let parts = slot.as_ref().and_then(|(_, parts)| parts.as_ref());
+        tallies.add_uri(node, parts)
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
@@ -1682,11 +1664,7 @@ impl<'c> CompressedTally<'c> {
             }
             Value::UninternedString => tallies.add_uninterned(node)?,
             Value::StringFormat(kind) => tallies.add_string_format(node, kind)?,
-            Value::TransformedString(index) => {
-                if !self.transformed(tallies, node, index)? {
-                    return Ok(false);
-                }
-            }
+            Value::TransformedString(index) => self.transformed(tallies, node, index)?,
             Value::Object(index) => {
                 if !first_visit(&mut self.objects_seen, index, self.counts.objects)? {
                     return Ok(false);

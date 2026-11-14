@@ -35,7 +35,7 @@
 //! enum instead of tagged integers, objects are lists of key/value pairs,
 //! and a [`Value::StringFormat`] holds its kind (whose name it interned).
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::io::Read;
 use std::rc::Rc;
@@ -211,9 +211,10 @@ pub struct CompressedJson {
     /// with it for the next inference over them (see
     /// `JsonInput::set_keep_tallies`); dropped when a sample is added.
     kept_tallies: RefCell<Option<Rc<KeptTallies>>>,
-    /// Whether the tables were imported ([`from_tables`](Self::from_tables)),
-    /// so that their strings were classified elsewhere.
-    imported: bool,
+    /// Whether a [`Value::TransformedString`] decoded here is not a `uri`
+    /// to this form's date/time recognizer (see
+    /// [`transformed_are_uris`](Self::transformed_are_uris)).
+    odd_transformed: Cell<bool>,
 }
 
 /// No string index (yet).
@@ -525,7 +526,7 @@ impl CompressedJson {
             kind_names: Vec::new(),
             string_reader: from_string::StringReaderState::default(),
             kept_tallies: RefCell::new(None),
-            imported: false,
+            odd_transformed: Cell::new(false),
         }
     }
 
@@ -652,14 +653,16 @@ impl CompressedJson {
         self.strings.protos
     }
 
-    /// Whether every [`Value::TransformedString`] here is a string that
-    /// [`commit_string`](Self::commit_string) classified, with this form's
-    /// date/time recognizer, as a `uri`, the one kind with an attribute
-    /// producer (see the test `uri_is_the_kind_with_attributes`): so for
-    /// samples read here, not for imported tables, whose strings were
-    /// classified elsewhere.
-    pub(crate) fn uris_classified(&self) -> bool {
-        !self.imported
+    /// Whether every [`Value::TransformedString`] here is a `uri` to this
+    /// form's date/time recognizer, the one kind with an attribute producer
+    /// (see the test `uri_is_the_kind_with_attributes`). Samples read here
+    /// are: [`commit_string`](Self::commit_string) records only a string of
+    /// such a kind as transformed. Imported tables
+    /// ([`from_tables`](Self::from_tables), and the samples encoded against
+    /// them) are unless [`decode_value`](Self::decode_value) found one that
+    /// is not, as it checks each.
+    pub(crate) fn transformed_are_uris(&self) -> bool {
+        !self.odd_transformed.get()
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
@@ -1096,7 +1099,6 @@ impl CompressedJson {
         tables: &CompressedJsonTables,
     ) -> Result<Self> {
         let mut cjson = CompressedJson::new(date_time_recognizer, handle_refs, None);
-        cjson.imported = true;
         for s in &tables.strings {
             // The first of equal strings is the one found.
             cjson.strings.import(s);
@@ -1204,6 +1206,15 @@ impl CompressedJson {
                 }
             }
             TAG_TRANSFORMED_STRING if in_range(self.strings.len()) => {
+                // A reader makes only `uri`s transformed strings; tables
+                // made elsewhere may hold another (`transformed_are_uris`).
+                let kind = infer_transformed_string_type_kind_for_string(
+                    self.string_at(index)?,
+                    self.date_time_recognizer(),
+                );
+                if kind != Some(TypeKind::Uri) {
+                    self.odd_transformed.set(true);
+                }
                 Value::TransformedString(index)
             }
             _ => return panic(format!("Invalid CompressedJSON value {v}")),
@@ -1839,8 +1850,8 @@ mod tests {
 
     /// `uri` is the one transformed string kind with an attribute producer,
     /// so a [`Value::TransformedString`] that `commit_string` made is a
-    /// `uri` (see [`CompressedJson::uris_classified`]); imported tables'
-    /// are not known to be.
+    /// `uri`; imported tables are checked as they are decoded, their
+    /// samples too (see [`CompressedJson::transformed_are_uris`]).
     #[test]
     fn uri_is_the_kind_with_attributes() {
         use crate::ty::transformed_string_type::TRANSFORMED_STRING_TYPE_KINDS;
@@ -1852,13 +1863,25 @@ mod tests {
             );
         }
         let mut read = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), false);
-        read.parse_string(r#"["http://a/b.png"]"#).unwrap();
-        assert!(read.uris_classified());
+        read.parse_string(r#"["http://a/b.png", "x"]"#).unwrap();
+        assert!(read.transformed_are_uris());
         let (tables, _) = read.to_tables(&[]);
+        let import =
+            || CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables);
+        assert!(import().unwrap().transformed_are_uris());
+        // The string `x` (index 1) as a transformed string, in a table or
+        // as a sample.
+        let odd = encode_tagged(TAG_TRANSFORMED_STRING, 1);
+        let mut bad = tables.clone();
+        bad.arrays.push(odd);
+        bad.array_offsets.push(bad.arrays.len() as u32 - 1);
         let imported =
-            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &tables)
-                .unwrap();
-        assert!(!imported.uris_classified());
+            CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &bad).unwrap();
+        assert!(!imported.transformed_are_uris());
+        let imported = import().unwrap();
+        let (objects, arrays) = imported.counts();
+        imported.decode_value(odd, objects, arrays).unwrap();
+        assert!(!imported.transformed_are_uris());
     }
 
     /// What a compressed form holds grows with its tables, and not with
