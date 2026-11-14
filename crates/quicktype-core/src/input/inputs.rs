@@ -29,7 +29,9 @@ use super::compressed_json::{
 };
 use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
 use super::inference::TypeInference;
-use super::tallies::{KeptTallies, NodeId, RunningTallies, TallyBuilder, tally_compressed};
+use super::tallies::{
+    KeptTallies, NodeId, RunningTallies, Tallies, TallyBuilder, tally_compressed,
+};
 use super::tally_inference::TallyInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
@@ -793,28 +795,22 @@ impl JsonInput {
             Tallies(TallyInference<'a>),
             CompressedJson(TypeInference<'a>),
         }
-        // Without running tallies, those of the compressed form: kept from
-        // an earlier inference over the same samples, or made now (an
-        // error making them is this way's).
-        let compressed_tallies = if self.tallies.is_none() && self.tally_compressed {
-            self.compressed_tallies()?
-        } else {
-            None
+        // Without running tallies, those of the compressed form, if it is
+        // tallied (an error making them is this way's).
+        let (inferred_from, compressed_tallies) = match self.tallies {
+            Some(_) => (JsonInference::RunningTallies, Ok(None)),
+            None => self.compressed_tallies(),
         };
+        self.inferred_from = Some(inferred_from);
+        let compressed_tallies = compressed_tallies?;
         // The tallies, and the text of their keys and cases.
         let (tallies, compressed_roots) = match (&self.tallies, &compressed_tallies) {
-            (Some(running), _) => {
-                self.inferred_from = Some(JsonInference::RunningTallies);
-                (Some((&running.tallies, &running.strings)), None)
-            }
+            (Some(running), _) => (Some((&running.tallies, &running.strings)), None),
             (None, Some(compressed)) => (
-                Some((&compressed.tallies, self.compressed_json.strings())),
-                Some(&compressed.roots),
+                Some((compressed.tallies(), self.compressed_json.strings())),
+                Some(compressed.roots()),
             ),
-            (None, None) => {
-                self.inferred_from = Some(JsonInference::CompressedValues);
-                (None, None)
-            }
+            (None, None) => (None, None),
         };
         let inference = match tallies {
             Some((tallies, strings)) => Inference::Tallies(TallyInference::new(
@@ -860,30 +856,68 @@ impl JsonInput {
     }
 }
 
+/// The tallies of a compressed form an inference reads: made for it, or
+/// kept with the form (by it or an earlier inference over the same
+/// samples).
+enum CompressedTallies {
+    /// The tallies and each top-level's tree.
+    Made(Tallies, Vec<NodeId>),
+    Kept(Rc<KeptTallies>),
+}
+
+impl CompressedTallies {
+    fn tallies(&self) -> &Tallies {
+        match self {
+            CompressedTallies::Made(tallies, _) => tallies,
+            CompressedTallies::Kept(kept) => &kept.tallies,
+        }
+    }
+
+    /// Each top-level's tree, in order.
+    fn roots(&self) -> &[NodeId] {
+        match self {
+            CompressedTallies::Made(_, roots) => roots,
+            CompressedTallies::Kept(kept) => &kept.roots,
+        }
+    }
+}
+
 impl JsonInput {
-    /// The tallies of the compressed form, with each top-level's tree, in
-    /// order: those kept with the form if they are of these samples and
-    /// this input uses kept tallies, else made in a walk over it (and kept
-    /// if this input keeps them); `None` if the walk declines the form.
-    fn compressed_tallies(&mut self) -> Result<Option<Rc<KeptTallies>>> {
+    /// For an input without running tallies: where its types are inferred
+    /// from, with the tallies of the compressed form if they are tallied
+    /// (`Ok(None)` if they are inferred from its values one by one, as
+    /// asked or because the walk declines the form). The tallies are those
+    /// kept with the form if they are of these samples and this input uses
+    /// kept tallies, else made in a walk over it (and kept if this input
+    /// keeps them). An error is the walk's.
+    fn compressed_tallies(&self) -> (JsonInference, Result<Option<CompressedTallies>>) {
+        if !self.tally_compressed {
+            return (JsonInference::CompressedValues, Ok(None));
+        }
         let samples = || self.top_levels.values().map(|t| t.samples.as_slice());
         if self.keep_tallies
             && let Some(kept) = self.compressed_json.kept_tallies()
             && kept.of(samples())
         {
-            self.inferred_from = Some(JsonInference::KeptTallies);
-            return Ok(Some(kept));
+            return (
+                JsonInference::KeptTallies,
+                Ok(Some(CompressedTallies::Kept(kept))),
+            );
         }
-        self.inferred_from = Some(JsonInference::CompressedTallies);
-        let Some((tallies, roots)) = tally_compressed(&self.compressed_json, samples())? else {
-            return Ok(None);
+        let made = match tally_compressed(&self.compressed_json, samples()) {
+            Ok(Some(made)) => made,
+            Ok(None) => return (JsonInference::CompressedValues, Ok(None)),
+            Err(e) => return (JsonInference::CompressedTallies, Err(e)),
         };
-        if !self.keep_tallies {
-            return Ok(Some(Rc::new(KeptTallies::unkept(tallies, roots))));
-        }
-        let kept = Rc::new(KeptTallies::new(tallies, roots, samples()));
-        self.compressed_json.keep_tallies(Some(Rc::clone(&kept)));
-        Ok(Some(kept))
+        let (tallies, roots) = made;
+        let compressed = if self.keep_tallies {
+            let kept = Rc::new(KeptTallies::new(tallies, roots, samples()));
+            self.compressed_json.keep_tallies(Some(Rc::clone(&kept)));
+            CompressedTallies::Kept(kept)
+        } else {
+            CompressedTallies::Made(tallies, roots)
+        };
+        (JsonInference::CompressedTallies, Ok(Some(compressed)))
     }
 }
 

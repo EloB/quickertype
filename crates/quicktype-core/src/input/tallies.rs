@@ -675,17 +675,6 @@ pub(crate) struct KeptTallies {
 }
 
 impl KeptTallies {
-    /// `tallies`, with each top-level's tree `roots`, for one inference:
-    /// not kept, and of no samples in particular.
-    pub(crate) fn unkept(tallies: Tallies, roots: Vec<NodeId>) -> Self {
-        KeptTallies {
-            samples: Vec::new(),
-            tallies,
-            roots,
-            bytes: 0,
-        }
-    }
-
     /// `tallies`, with each top-level's tree `roots`, of the samples
     /// `top_levels`, to keep.
     pub(crate) fn new<'c>(
