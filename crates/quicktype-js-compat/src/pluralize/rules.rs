@@ -201,3 +201,37 @@ pub const UNCOUNTABLE_RULES: &[&str] = &[
     "/pox$/i",    // "chickpox", "smallpox"
     "/sheep$/i",
 ];
+
+/// A hash of a rule list and the uncountable rules: 64-bit FNV-1a over
+/// every string, each followed by a byte that UTF-8 never has. The build
+/// script records it beside what it builds from the tables, and the crate
+/// compares it with the tables it is compiled with, so that the patterns
+/// and automata of other rules fail the build. A `const fn` for that.
+pub const fn rules_hash(rules: &[(&str, &str)], uncountables: &[&str]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut i = 0;
+    while i < rules.len() {
+        hash = fnv_string(hash, rules[i].0);
+        hash = fnv_string(hash, rules[i].1);
+        i += 1;
+    }
+    let mut i = 0;
+    while i < uncountables.len() {
+        hash = fnv_string(hash, uncountables[i]);
+        i += 1;
+    }
+    hash
+}
+
+/// [`rules_hash`]'s step: the bytes of `s`, then 0xFF.
+const fn fnv_string(mut hash: u64, s: &str) -> u64 {
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i <= bytes.len() {
+        let b = if i < bytes.len() { bytes[i] } else { 0xFF };
+        hash ^= b as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+        i += 1;
+    }
+    hash
+}

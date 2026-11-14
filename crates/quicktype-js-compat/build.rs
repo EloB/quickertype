@@ -1,7 +1,8 @@
 //! Translates `pluralize`'s rules and builds the automata that select
 //! them (see `pluralize::Rules`) ahead of time. For each rule list it
-//! writes the translated patterns, as a Rust expression
-//! (`pluralize_<list>.rs`), and their dense DFA (`pluralize_<list>.dfa`).
+//! writes the dense DFA (`pluralize_<list>.dfa`) and, as a Rust expression
+//! (`pluralize_<list>.rs`), the hash of the rule tables it read and the
+//! translated patterns.
 
 use std::path::PathBuf;
 use std::{env, fs};
@@ -40,7 +41,11 @@ fn main() {
             .expect("write the automaton");
         // `{:?}` of a `str` is a Rust string literal.
         let literals: Vec<String> = patterns.iter().map(|p| format!("{p:?}")).collect();
-        let built = format!("&[{}]\n", literals.join(", "));
+        let built = format!(
+            "({:#018x}, &[{}])\n",
+            rules_hash(rules, UNCOUNTABLE_RULES),
+            literals.join(", ")
+        );
         fs::write(out.join(format!("pluralize_{name}.rs")), built).expect("write the patterns");
     }
 }

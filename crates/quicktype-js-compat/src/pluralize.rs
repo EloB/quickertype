@@ -28,7 +28,9 @@
 //!   0.7 ms per process (the singular rules) and 1 ms (the plural ones), so
 //!   the build script does both: it writes each list's patterns and a DFA
 //!   of them, and a process only checks the DFA's tables
-//!   (`DFA::from_bytes`, about 40 µs).
+//!   (`DFA::from_bytes`, about 40 µs). A hash of the rule tables the build
+//!   script read must equal that of the tables the crate is compiled with,
+//!   or the crate does not compile.
 //!
 //! The rules are JavaScript regular expressions with the `i` flag and without
 //! `u`. They are translated to `regex`-crate syntax with JavaScript's meaning
@@ -44,7 +46,7 @@ use regex::{Captures, Regex};
 use regex_automata::dfa::{Automaton as _, dense};
 use regex_automata::{Input, PatternSet};
 
-use self::rules::{PLURAL_RULES, SINGULAR_RULES, UNCOUNTABLE_RULES};
+use self::rules::{PLURAL_RULES, SINGULAR_RULES, UNCOUNTABLE_RULES, rules_hash};
 use crate::{number, utf16};
 
 mod rules;
@@ -114,24 +116,39 @@ struct Aligned<B: ?Sized> {
     bytes: B,
 }
 
-/// The plural rules' patterns, as the build script translated them.
-const PLURAL_PATTERNS: &[&str] = include!(concat!(env!("OUT_DIR"), "/pluralize_plural.rs"));
+/// What the build script made of a rule list: the hash of the rule tables
+/// it read ([`rules_hash`]), and the patterns it translated, in order.
+type Built = (u64, &'static [&'static str]);
+
+/// The plural rules as the build script translated them.
+const PLURAL_BUILT: Built = include!(concat!(env!("OUT_DIR"), "/pluralize_plural.rs"));
 
 /// The plural rules' automaton, which the build script made from
-/// [`PLURAL_PATTERNS`].
+/// [`PLURAL_BUILT`]'s patterns.
 static PLURAL_DFA: &Aligned<[u8]> = &Aligned {
     _align: [],
     bytes: *include_bytes!(concat!(env!("OUT_DIR"), "/pluralize_plural.dfa")),
 };
 
-/// The singular rules' patterns, as the build script translated them.
-const SINGULAR_PATTERNS: &[&str] = include!(concat!(env!("OUT_DIR"), "/pluralize_singular.rs"));
+/// The singular rules as the build script translated them.
+const SINGULAR_BUILT: Built = include!(concat!(env!("OUT_DIR"), "/pluralize_singular.rs"));
 
-/// The singular rules' automaton, from [`SINGULAR_PATTERNS`].
+/// The singular rules' automaton, from [`SINGULAR_BUILT`]'s patterns.
 static SINGULAR_DFA: &Aligned<[u8]> = &Aligned {
     _align: [],
     bytes: *include_bytes!(concat!(env!("OUT_DIR"), "/pluralize_singular.dfa")),
 };
+
+// The build script's output is for these rule tables: output left from
+// other tables fails the build here, rather than misnaming at run time.
+const _: () = assert!(
+    PLURAL_BUILT.0 == rules_hash(PLURAL_RULES, UNCOUNTABLE_RULES),
+    "pluralize's plural patterns and automaton were built from other rules"
+);
+const _: () = assert!(
+    SINGULAR_BUILT.0 == rules_hash(SINGULAR_RULES, UNCOUNTABLE_RULES),
+    "pluralize's singular patterns and automaton were built from other rules"
+);
 
 /// A rule list (plural or singular rules, then the uncountable patterns),
 /// in the order `pluralize.js` adds them.
@@ -229,11 +246,11 @@ static TABLES: LazyLock<Tables> = LazyLock::new(|| {
 
 /// The pluralization rules.
 static PLURAL: LazyLock<Rules> =
-    LazyLock::new(|| Rules::new(PLURAL_RULES, PLURAL_PATTERNS, &PLURAL_DFA.bytes));
+    LazyLock::new(|| Rules::new(PLURAL_RULES, PLURAL_BUILT.1, &PLURAL_DFA.bytes));
 
 /// The singularization rules.
 static SINGULAR: LazyLock<Rules> =
-    LazyLock::new(|| Rules::new(SINGULAR_RULES, SINGULAR_PATTERNS, &SINGULAR_DFA.bytes));
+    LazyLock::new(|| Rules::new(SINGULAR_RULES, SINGULAR_BUILT.1, &SINGULAR_DFA.bytes));
 
 /// The replacement templates of a rule list (`rule[1]`), then `$0` for each
 /// uncountable pattern, in the order of the build script's patterns.
@@ -537,16 +554,30 @@ mod tests {
     }
 
     /// The build script's patterns are the translation of the current rule
-    /// tables, made at run time.
+    /// tables, and its hash is theirs.
     #[test]
     fn the_build_script_translated_these_rules() {
         for (list, built) in [
-            (PLURAL_RULES, PLURAL_PATTERNS),
-            (SINGULAR_RULES, SINGULAR_PATTERNS),
+            (PLURAL_RULES, PLURAL_BUILT),
+            (SINGULAR_RULES, SINGULAR_BUILT),
         ] {
-            assert_eq!(built, rule_patterns(list, UNCOUNTABLE_RULES));
-            assert_eq!(built.len(), rule_replacements(list).len());
+            assert_eq!(built.0, rules_hash(list, UNCOUNTABLE_RULES));
+            assert_eq!(built.1, rule_patterns(list, UNCOUNTABLE_RULES));
+            assert_eq!(built.1.len(), rule_replacements(list).len());
         }
+        // The hash changes with any string of the tables, and with where
+        // one string ends and the next starts.
+        let mut changed = PLURAL_RULES.to_vec();
+        changed[3].1 = "$1ez";
+        assert_ne!(rules_hash(&changed, UNCOUNTABLE_RULES), PLURAL_BUILT.0);
+        assert_ne!(
+            rules_hash(PLURAL_RULES, &UNCOUNTABLE_RULES[1..]),
+            PLURAL_BUILT.0
+        );
+        assert_ne!(
+            rules_hash(&[("ab", "c")], &[]),
+            rules_hash(&[("a", "bc")], &[])
+        );
     }
 
     /// Words, as UTF-16 code units, to select rules for: every word of the
