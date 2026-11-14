@@ -1552,8 +1552,10 @@ mod tests {
     #[test]
     fn every_split_point() {
         let config = config(false);
-        let documents: [&[u8]; 7] = [
+        let documents: [&[u8]; 8] = [
             br#"[1,"a,]","b\"],[",{"c":[1,2,{"d":"]}"}]},[],{},null,true,-1.5e3,"\\",["x",["y"]]]"#,
+            // URIs with ports, user info, queries and fragments.
+            br#"[{"u":"http://user:pw@h:8080/a.png?q=1"},"ftp://u@h:21/x.gz",{"u":"https://h/b.jpg#f","v":"http://h:1/"},"http://user@h/c.PNG",{"u":"https://[::1]:443/d"}]"#,
             b" \n[ 1 , 2 ,\t3\r\n, \"x\" ] \n ",
             br##"[{"a":1},{"a":"x","b":[1,{"__proto__":2}]},{"$ref":"#/a"}]"##,
             b"[[],[[]],[[],[]]]",

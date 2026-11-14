@@ -309,13 +309,16 @@ mod tests {
         PortableTree::new(tallies, strings, tree).unwrap()
     }
 
-    const SAMPLES: [&str; 6] = [
+    const SAMPLES: [&str; 7] = [
         r##"{"a":[1,"x",1.5,"2020-01-01T00:00:00Z",null,true],"$ref":"#/a","u":"http://h/x.png","__proto__":"__proto__"}"##,
         r#"{"__proto__":[{"b":"0123"}],"e":{},"f":[[]],"g":"7","a":[{"b":"__proto__"}],"__proto__":{"p":1}}"#,
         r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]},"6ba7b810-9dad-11d1-80b4-00c04fd430c8"]"#,
         r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg","x":"x","x":2}"#,
         r#""long string, long string, long string, long string, long string, too""#,
         r##"{"$ref":"#/z","$ref":"2020-01-01","a":{"$ref":"https://h/r"},"c":"false","t":"12:00:00Z"}"##,
+        // URIs with ports, user info, queries and fragments, some parsed
+        // (not plain), at places that had others.
+        r#"{"u":"http://user:pw@h.example:8080/a/b.png?x=1#f","v":["ftp://anon@files.example:21/pub/x.tar.gz","https://h:443/","http://[::1]:80/i.JPG"],"d":"https://u@h/y.jpg?z"}"#,
     ];
 
     /// Samples with places whose strings come to absorb every string
