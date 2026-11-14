@@ -52,6 +52,8 @@ const LIB_CREATED: &[&str] = &[
 pub struct CreationOrder {
     index: HashMap<u64, usize>,
     lib_created: HashSet<u64>,
+    /// The first tuple type node of the user files with each type.
+    tuples: HashMap<u64, Node>,
 }
 
 fn key(n: &Node) -> (usize, usize) {
@@ -416,6 +418,9 @@ impl CreationOrder {
         for (n, t) in all.iter().zip(s.types_at(&all)?) {
             if let Some(t) = t {
                 types.insert(key(n), t.id);
+                if n.kind() == sk::TupleType {
+                    order.tuples.entry(t.id).or_insert_with(|| n.clone());
+                }
             }
         }
         let names: Vec<Node> = refs
@@ -463,6 +468,12 @@ impl CreationOrder {
         Ok(order)
     }
 
+    /// A tuple type node of the user files that has type `id` (the source of
+    /// its `labeledElementDeclarations` in TypeScript 5.9).
+    pub fn tuple_node(&self, id: u64) -> Option<&Node> {
+        self.tuples.get(&id)
+    }
+
     /// Reorders the object-type members of a union or intersection by
     /// TypeScript 5.9 creation order; other members keep their positions.
     pub fn reorder(&mut self, s: &Session, types: Vec<Rc<Type>>) -> Result<Vec<Rc<Type>>> {
@@ -501,10 +512,16 @@ impl CreationOrder {
 
 impl Generator<'_> {
     /// `getPropertiesOfType`, in TypeScript 5.9's order for classes and
-    /// interfaces.
+    /// interfaces (by escaped name, which tells private names apart).
     pub(super) fn ts5_properties_of_type(&mut self, t: &Rc<Type>) -> Result<Vec<Rc<Symbol>>> {
-        let props = self.s.properties_of_type(t)?;
+        let mut props = self.s.properties_of_type(t)?;
         let Some(order) = self.ts5_names(t, 0)? else {
+            // A class's static side: TypeScript 5.9's binder adds `prototype`
+            // to the class's exports before its static members.
+            if let Some(i) = props.iter().position(|p| p.flags & sf::Prototype != 0) {
+                let prototype = props.remove(i);
+                props.insert(0, prototype);
+            }
             return Ok(props);
         };
         let mut ranked: Vec<(usize, Rc<Symbol>)> = props
@@ -514,7 +531,7 @@ impl Generator<'_> {
                 (
                     order
                         .iter()
-                        .position(|n| *n == p.name)
+                        .position(|n| *n == p.escaped_name)
                         .unwrap_or(order.len() + i),
                     p,
                 )
@@ -566,7 +583,7 @@ impl Generator<'_> {
                         .is_some_and(|c| h.path == d.path && h.index == c.index())
                 })
                 .unwrap_or(usize::MAX);
-            own.push(((ci, d.index), p.name.clone()));
+            own.push(((ci, d.index), p.escaped_name.clone()));
         }
         own.sort_by_key(|(k, _)| *k);
         let mut names: Vec<String> = Vec::new();
@@ -581,7 +598,7 @@ impl Generator<'_> {
                 None => s
                     .properties_of_type(&base)?
                     .iter()
-                    .map(|p| p.name.clone())
+                    .map(|p| p.escaped_name.clone())
                     .collect(),
             };
             for n in base_names {
