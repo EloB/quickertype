@@ -1,6 +1,6 @@
 {
     "name": "quickertype-core",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "quicktype's quicktype-core API with a WebAssembly engine compiled from its Rust port: a drop-in replacement for quicktype-core",
     "license": "Apache-2.0",
     "main": "dist/index.js",

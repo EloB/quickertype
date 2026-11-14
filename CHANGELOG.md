@@ -15,6 +15,12 @@ section are absolute.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
+Large JSON and JSON Lines files read on every core, JSON Lines input, a
+faster WebAssembly engine for the JavaScript API, and the command renamed
+to `quickertype` so that it installs beside quicktype.
+
 ### Added
 
 - **JSON Lines input** (not in quicktype): one JSON value per line, read
@@ -79,11 +85,6 @@ section are absolute.
 
 ### Changed
 
-- **Breaking for the Rust API:** `DateTimeRecognizer` is `Send + Sync`
-  (the threads that read a large file share the recognizer). The
-  built-in recognizers are; a recognizer that holds an `Rc` or a
-  `RefCell` no longer compiles.
-
 - **Breaking: the command is now `quickertype`,** not `quicktype`, so that
   it installs beside the TypeScript quicktype (homebrew-core's `quicktype`
   formula, npm's `quicktype` package). Its arguments, output files and
@@ -112,6 +113,11 @@ section are absolute.
 
   If you unlinked homebrew-core's `quicktype` for 0.1.0,
   `brew link quicktype` links it again.
+
+- **Breaking for the Rust API:** `DateTimeRecognizer` is `Send + Sync`
+  (the threads that read a large file share the recognizer). The
+  built-in recognizers are; a recognizer that holds an `Rc` or a
+  `RefCell` no longer compiles.
 
 - JSON with many URIs infers faster, in the CLI and in the JavaScript
   API's WebAssembly engine: a plain URI's protocol and extension are read
@@ -148,9 +154,9 @@ section are absolute.
   error naming it. Not fixed yet: the `IndexMap`s and `IndexSet`s on
   `std`'s `RandomState` (class properties, enum and string cases,
   `JsonValue` objects) still have fixed keys in WebAssembly, so crafted
-  property names can still slow inference there. They follow in
-  `fix/seeded-index-maps` (docs/BENCHMARKS.md, "Hash seeds in
-  WebAssembly").
+  property names can still slow inference there; a later release seeds
+  them too (see
+  [Hash seeds in WebAssembly](https://github.com/EloB/quickertype/blob/main/docs/BENCHMARKS.md#hash-seeds-in-webassembly)).
 
 ## [0.1.0] - 2026-11-13
 
@@ -200,5 +206,6 @@ and installers.
 - Divergences from quicktype that no recorded case exercises are listed in
   [docs/PARITY.md](https://github.com/EloB/quickertype/blob/main/docs/PARITY.md#known-gaps).
 
-[Unreleased]: https://github.com/EloB/quickertype/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/EloB/quickertype/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/EloB/quickertype/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/EloB/quickertype/releases/tag/v0.1.0

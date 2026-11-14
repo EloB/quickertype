@@ -81,9 +81,17 @@ jobs:
               failed=1
             fi
           done
-          # Every member's dependencies on the crates, of every kind.
+          # Every member's dependencies on the crates, of every kind, except
+          # a dev-dependency by path alone (no version): cargo publish leaves
+          # it out of the published manifest. quickertype-core has one on
+          # itself, for its test hooks (the `test-support` feature).
+          jq -r '.packages[] | .name as $member | .dependencies[]
+            | select(.name | startswith("quickertype"))
+            | select(.kind == "dev" and .req == "*" and .path != null)
+            | "\($member) -> \(.name) by path (dev, not published)"' <<<"$metadata"
           deps=$(jq -r '.packages[] | .name as $member | .dependencies[]
             | select(.name | startswith("quickertype"))
+            | select((.kind == "dev" and .req == "*" and .path != null) | not)
             | [$member, .kind // "normal", .name, .req] | @tsv' <<<"$metadata")
           if [ -z "$deps" ]; then
             echo "::error::No dependencies on the quickertype-* crates found: has cargo metadata's format changed?"
