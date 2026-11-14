@@ -56,8 +56,24 @@ section are absolute.
   and encoding that again into its memory: in Chrome, a run on a 27 MB
   array of records takes 48 instead of 57 ms, and a 656 MB file, too large
   to be a JavaScript string, can be read.
+- **The CLI reads a large JSON file on several threads:** a regular file
+  of 8 MiB or more whose top-level value is an array (or standard input
+  redirected from one, on Unix) is cut between its elements and read on
+  every core, into the same tallies as reading it in one go, so the
+  output is the same byte for byte. An array of 1 million records
+  (267 MB) becomes TypeScript types about 4.5 times as fast on 12 cores.
+  The memory the parts read beside each other take is bounded; pipes,
+  JSON Lines and smaller files are read in one go as before.
+  - quickertype-core: `ParallelOptions` (made from its `Default`) and
+    `Readable::open_sample(options)`, which opens a file so that a large
+    top-level array in it is read on several threads.
 
 ### Changed
+
+- **Breaking for the Rust API:** `DateTimeRecognizer` is `Send + Sync`
+  (the threads that read a large file share the recognizer). The
+  built-in recognizers are; a recognizer that holds an `Rc` or a
+  `RefCell` no longer compiles.
 
 - **Breaking: the command is now `quickertype`,** not `quicktype`, so that
   it installs beside the TypeScript quicktype (homebrew-core's `quicktype`
