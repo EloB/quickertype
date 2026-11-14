@@ -347,8 +347,9 @@ pub struct JsonSourceData<T = JsonSample> {
 #[derive(Debug, Default)]
 struct JsonTopLevel {
     description: Option<String>,
-    /// The samples in the compressed form, when inferring from it.
-    samples: Vec<Value>,
+    /// The samples in the compressed form, when inferring from it; shared
+    /// with the tallies kept of them (see [`KeptTallies`]).
+    samples: Rc<Vec<Value>>,
     /// The tally of all samples, when inferring from tallies.
     tally: Option<NodeId>,
 }
@@ -695,7 +696,7 @@ impl JsonInput {
     fn add_samples(&mut self, name: &str, values: Vec<Value>, description: Option<&str>) {
         for value in values {
             let top_level = self.top_levels.entry(name.to_owned()).or_default();
-            top_level.samples.push(value);
+            Rc::make_mut(&mut top_level.samples).push(value);
             if let Some(description) = description {
                 top_level.description = Some(description.to_owned());
             }
@@ -921,7 +922,10 @@ impl JsonInput {
                 None => (JsonInference::CompressedValues, Ok(None)),
             };
         }
-        let kept = Rc::new(KeptTallies::new(made, samples()));
+        let kept = Rc::new(KeptTallies::new(
+            made,
+            self.top_levels.values().map(|t| Rc::clone(&t.samples)),
+        ));
         self.compressed_json.keep_tallies(Some(Rc::clone(&kept)));
         match kept.tallied() {
             Some(tallied) => (
@@ -1191,7 +1195,7 @@ mod tests {
             Value::InternedString(strings),
             Value::TransformedString(strings),
         ] {
-            let samples = &mut input.top_levels[0].samples;
+            let samples = Rc::make_mut(&mut input.top_levels[0].samples);
             samples.truncate(2);
             samples.push(missing);
             input.set_tally_compressed(false);

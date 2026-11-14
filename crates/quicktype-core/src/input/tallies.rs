@@ -673,8 +673,9 @@ pub(crate) struct FormTallies {
 /// so the walk makes the same of the same samples. Adding a sample drops
 /// this, since the next inference will most likely be over more samples.
 pub(crate) struct KeptTallies {
-    /// Each top-level's samples, as they were walked.
-    samples: Vec<Vec<Value>>,
+    /// Each top-level's samples, as they were walked: the input's own
+    /// lists, shared, not copies.
+    samples: Vec<Rc<Vec<Value>>>,
     /// Their tallies; `None` if the walk declined them.
     tallied: Option<Rc<FormTallies>>,
     /// About how many bytes this holds.
@@ -684,21 +685,26 @@ pub(crate) struct KeptTallies {
 impl KeptTallies {
     /// What the walk made of the samples `top_levels` (`None` for a
     /// decline), to keep.
-    pub(crate) fn new<'c>(
+    pub(crate) fn new(
         tallied: Option<FormTallies>,
-        top_levels: impl IntoIterator<Item = &'c [Value]>,
+        top_levels: impl IntoIterator<Item = Rc<Vec<Value>>>,
     ) -> Self {
         let tallied = tallied.map(|mut tallied| {
             tallied.tallies.trim();
             Rc::new(tallied)
         });
-        let samples: Vec<Vec<Value>> = top_levels.into_iter().map(<[Value]>::to_vec).collect();
+        let samples: Vec<Rc<Vec<Value>>> = top_levels.into_iter().collect();
+        // The lists count here: they outlive the input they are shared
+        // with, as long as these are kept.
         let bytes = size_of::<Self>()
             + tallied.as_ref().map_or(0, |t| {
                 size_of::<FormTallies>() + t.tallies.heap_size() + vec_size(&t.roots)
             })
             + vec_size(&samples)
-            + samples.iter().map(vec_size).sum::<usize>();
+            + samples
+                .iter()
+                .map(|s| size_of::<Vec<Value>>() + vec_size(s))
+                .sum::<usize>();
         KeptTallies {
             samples,
             tallied,
@@ -715,7 +721,12 @@ impl KeptTallies {
     pub(crate) fn of<'c>(&self, top_levels: impl IntoIterator<Item = &'c [Value]>) -> bool {
         let mut count = 0;
         for (i, samples) in top_levels.into_iter().enumerate() {
-            if self.samples.get(i).map(Vec::as_slice) != Some(samples) {
+            // The same list (the input that made these) or an equal one.
+            let same = self
+                .samples
+                .get(i)
+                .is_some_and(|s| std::ptr::eq(s.as_slice(), samples) || s.as_slice() == samples);
+            if !same {
                 return false;
             }
             count += 1;
