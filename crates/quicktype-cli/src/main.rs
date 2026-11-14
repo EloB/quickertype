@@ -37,8 +37,8 @@ use quicktype_core::{
     Comment, DebugOptions, ErrorKind, FetchingJsonSchemaStore, INFERENCE_FLAGS, InferenceFlags,
     InputData, JsonSample, JsonSchemaInput, JsonSchemaSourceData, JsonSourceData,
     MultiFileRenderResult, Options, ParallelOptions, QuickTypeError, Readable, RendererOptions,
-    SampleReader, StdIo, TargetLanguage, default_target_languages, json_input_for_target_language,
-    parse_json, quicktype_multi_file, set_console_sink, sources_from_postman_collection,
+    StdIo, TargetLanguage, default_target_languages, json_input_for_target_language, parse_json,
+    quicktype_multi_file, set_console_sink, sources_from_postman_collection,
 };
 use quicktype_graphql_input::{GraphQlInput, GraphQlSourceData};
 use quicktype_js_compat::wordwrap::WordWrap;
@@ -198,18 +198,19 @@ async fn add_json_source(
         return Ok(input_data.add_source("json", empty, make_input).await?);
     }
     // A regular file can also be read at any offset: a large top-level
-    // array in it is read on several threads.
+    // array in it, or large JSON Lines, is read on several threads.
     let read_options = read_options();
     for sample in samples {
         // Read chunk by chunk as it is parsed, like TypeScript's stream:
         // a large file is never held whole.
+        let reader = sample
+            .readable
+            .open_sample(read_options)
+            .map_err(CliError::Io)?;
         let sample = if sample.json_lines {
-            // JSON Lines are read in one go.
-            let reader = SampleReader::new(sample.readable.open_std().map_err(CliError::Io)?);
             JsonSample::ReaderLines(reader)
         } else {
-            let reader = sample.readable.open_sample(read_options);
-            JsonSample::Reader(reader.map_err(CliError::Io)?)
+            JsonSample::Reader(reader)
         };
         let one = JsonSourceData {
             name: name.clone(),
@@ -221,13 +222,13 @@ async fn add_json_source(
     Ok(())
 }
 
-/// How large top-level arrays are read on several threads: the library's
-/// defaults, but for the internal variables `QUICKTYPE_READ_THREADS` (the
-/// threads), `QUICKTYPE_READ_CHUNK` (the range size, for samples of any
-/// size) and `QUICKTYPE_READ_BUDGET` (the bytes the parts' trees may take),
-/// for tests and benchmarks. There is no option, and the output does not
-/// depend on them; values that are not numbers are ignored, and the
-/// library bounds the threads.
+/// How large top-level arrays and JSON Lines are read on several threads:
+/// the library's defaults, but for the internal variables
+/// `QUICKTYPE_READ_THREADS` (the threads), `QUICKTYPE_READ_CHUNK` (the
+/// range size, for samples of any size) and `QUICKTYPE_READ_BUDGET` (the
+/// bytes the parts' trees may take), for tests and benchmarks. There is
+/// no option, and the output does not depend on them; values that are not
+/// numbers are ignored, and the library bounds the threads.
 fn read_options() -> ParallelOptions {
     let number = |name: &str| {
         std::env::var(name)

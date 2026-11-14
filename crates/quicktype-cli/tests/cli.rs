@@ -808,3 +808,97 @@ fn files_read_on_several_threads_read_as_in_one_go() {
         }
     }
 }
+
+/// JSON Lines are read on several threads too: a `.jsonl` file, and
+/// standard input redirected from a file with `--src-lang jsonl`. They
+/// read as in one go (the array of their values), and a bad line is
+/// reported on its line whichever part it is in.
+#[test]
+fn json_lines_read_on_several_threads_read_as_in_one_go() {
+    let dir = work_dir("parallel-read-lines");
+    let records: Vec<String> = (0..16_000)
+        .map(|i| {
+            format!(
+                r#"{{"id":{i},"kind":"k{}","s":"a,]\n\"{}","ok":{}}}"#,
+                i % 5,
+                i % 9,
+                i % 2 == 0
+            )
+        })
+        .collect();
+    let good = format!("\u{feff}{}\n", records.join("\n"));
+    // Line 1501 holds the record with id 1500.
+    let broken = good.replacen(r#""id":1500,"#, r#""id":1500,,"#, 1);
+    fs::create_dir_all(dir.join("array")).unwrap();
+    fs::write(
+        dir.join("array").join("good.json"),
+        format!("[{}]", records.join(",")),
+    )
+    .unwrap();
+    let array = Command::new(BIN)
+        .args(["array/good.json", "-l", "ts"])
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    assert!(array.status.success());
+    for (name, text) in [("good.jsonl", good), ("broken.jsonl", broken)] {
+        fs::write(dir.join(name), text).unwrap();
+        let report = dir.join("report.txt");
+        let run = |threads: &str, chunk: &str, stdin: bool| {
+            let _ = fs::remove_file(&report);
+            let mut command = Command::new(BIN);
+            if stdin {
+                // Named as the file's source is.
+                let top_level = name.trim_end_matches(".jsonl");
+                command
+                    .args(["--src-lang", "jsonl", "-t", top_level, "-l", "ts"])
+                    .stdin(fs::File::open(dir.join(name)).unwrap());
+            } else {
+                command.args([name, "-l", "ts"]);
+            }
+            let output = command
+                .current_dir(&dir)
+                .env("QUICKTYPE_READ_THREADS", threads)
+                .env("QUICKTYPE_READ_CHUNK", chunk)
+                .env("QUICKTYPE_READ_REPORT", &report)
+                .output()
+                .unwrap();
+            (output, fs::read_to_string(&report).unwrap_or_default())
+        };
+        let (one, read) = run("1", "1024", false);
+        if cfg!(debug_assertions) {
+            assert_eq!(read, "whole 0 in_part 0 again 0\n", "{name} in one go");
+        }
+        if name == "good.jsonl" {
+            assert_eq!(one.stdout, array.stdout);
+        } else {
+            let stderr = String::from_utf8_lossy(&one.stderr);
+            assert!(stderr.contains(": line 1501: "), "{stderr}");
+        }
+        for stdin in [false, true] {
+            // (Standard input is read from a file on Unix only.)
+            if stdin && !cfg!(unix) {
+                continue;
+            }
+            for (threads, chunk) in [("2", "1024"), ("4", "100"), ("8", "65536")] {
+                let (several, read) = run(threads, chunk, stdin);
+                assert_eq!(
+                    (several.status.code(), &several.stdout, &several.stderr),
+                    (one.status.code(), &one.stdout, &one.stderr),
+                    "{name}, {threads} threads, chunks of {chunk}, stdin {stdin}"
+                );
+                let expected = if name == "good.jsonl" {
+                    "whole 1 in_part 0 again 0\n"
+                } else {
+                    "whole 0 in_part 1 again 0\n"
+                };
+                if cfg!(debug_assertions) {
+                    assert_eq!(
+                        read, expected,
+                        "{name}, {threads} threads, chunks of {chunk}, stdin {stdin}"
+                    );
+                }
+            }
+        }
+    }
+}
