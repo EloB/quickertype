@@ -242,10 +242,10 @@ pub struct CliOptions {
     pub src: Vec<String>,
     /// `--src-urls`: a URL grammar file.
     pub src_urls: Option<String>,
-    /// The source language: `json` unless given or inferred.
+    /// The source language: `json` unless given or inferred. `jsonl` (not
+    /// in TypeScript) is `json` here, with [`JsonLines::Always`].
     pub src_lang: String,
-    /// Which of the JSON inputs named on the command line are JSON Lines
-    /// (not in TypeScript).
+    /// Which JSON samples are JSON Lines (not in TypeScript).
     pub json_lines: JsonLines,
     /// The target language.
     pub lang: &'static dyn TargetLanguage,
@@ -290,17 +290,23 @@ pub struct CliOptions {
     pub negated_inference_flags: [bool; 8],
 }
 
-/// Which of the JSON inputs named on the command line (files, URLs,
-/// standard input, `--src-urls`) are JSON Lines, read as the array of
-/// their values. Not in TypeScript, which reads every sample as one JSON
-/// value. Files in directories go by their names whatever this says.
+/// Which JSON samples are JSON Lines, read as the array of their values.
+/// Not in TypeScript, which reads every sample as one JSON value: with a
+/// `--src-lang` other than `jsonl`, quickertype behaves exactly as
+/// quicktype.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum JsonLines {
-    /// Those named `*.jsonl` or `*.ndjson`: no `--src-lang` was given.
+    /// No `--src-lang`: the inputs named on the command line (files, URLs,
+    /// `--src-urls`) and the files in directories that are named `*.jsonl`
+    /// or `*.ndjson` (a directory also takes those files, and a `.url`
+    /// file goes by its URL's name).
     ByName,
-    /// None: `--src-lang` was given and is not `jsonl`, as in TypeScript.
+    /// A `--src-lang` other than `jsonl`: none, and directories take the
+    /// files quicktype takes, as quicktype does.
     Never,
-    /// All of them: `--src-lang jsonl`.
+    /// `--src-lang jsonl`: all inputs named on the command line, standard
+    /// input included; the files in directories by their names, as for
+    /// [`ByName`](Self::ByName).
     Always,
 }
 
@@ -498,6 +504,12 @@ fn infer_cli_options(
         Some("jsonl") => JsonLines::Always,
         Some(_) => JsonLines::Never,
     };
+    // From here on, `jsonl` is `json` read as `json_lines` says.
+    let src_lang = if src_lang == "jsonl" {
+        "json".to_owned()
+    } else {
+        src_lang
+    };
     Ok(CliOptions {
         src: options.src.unwrap_or_default(),
         src_urls: options.src_urls,
@@ -654,7 +666,7 @@ mod tests {
                 lines.json_lines,
                 lines.top_level.as_str()
             ),
-            ("jsonl", JsonLines::Always, "TopLevel")
+            ("json", JsonLines::Always, "TopLevel")
         );
         assert_eq!(parse(&["cards.jsonl"]).unwrap().top_level, "cards");
         assert_eq!(parse(&["a.ts", "b.ts"]).unwrap().src_lang, "typescript");

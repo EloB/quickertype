@@ -286,10 +286,12 @@ fn src_lang_decides() {
     assert_eq!(code, Some(1));
 }
 
-/// In a directory, each file's name says what it holds, whatever
-/// `--src-lang` says: `.jsonl` and `.ndjson` files are JSON Lines, `.json`
-/// files JSON, so a directory that mixes them gives the same types every
-/// way. `arrays` holds the same samples as `.json` files of the arrays.
+/// Without `--src-lang` and with `--src-lang jsonl`, each file in a
+/// directory is read as its name says: `.jsonl` and `.ndjson` files as
+/// JSON Lines, `.json` files as JSON, so a directory that mixes them gives
+/// each its types (`arrays` holds the same samples as `.json` files of
+/// the arrays). With `--src-lang json`, the directory is quicktype's:
+/// `same` holds only its `.json` files.
 #[test]
 fn directories_frame_each_file_by_its_name() {
     let dir = work_dir("directories");
@@ -310,9 +312,13 @@ fn directories_frame_each_file_by_its_name() {
             ("arrays/More.json", ARRAY),
             ("arrays/Sub/one.json", ARRAY),
             ("arrays/Sub/two.json", r#"{"id": 9}"#),
+            ("same/Alpha.json", r#"{"a": "x"}"#),
+            ("same/Bar.json", r#"{"y": 1}"#),
+            ("same/List.json", "[1, 2]"),
+            ("same/Sub/two.json", r#"{"id": 9}"#),
         ],
     );
-    for src_lang in [&[][..], &["--src-lang", "json"], &["--src-lang", "jsonl"]] {
+    for src_lang in [&[][..], &["--src-lang", "jsonl"]] {
         let mut ours = vec!["-l", "rust"];
         ours.extend_from_slice(src_lang);
         ours.push("data");
@@ -328,6 +334,65 @@ fn directories_frame_each_file_by_its_name() {
             "{src_lang:?}: {code}"
         );
     }
+    let code = same(
+        &dir,
+        &["-l", "rust", "--src-lang", "json", "data"],
+        &["-l", "rust", "same"],
+    );
+    assert!(!code.contains("Card"), "{code}");
+}
+
+/// With a `--src-lang` other than `jsonl`, quickertype is quicktype: a
+/// directory ignores its `.jsonl` and `.ndjson` files, as quicktype's
+/// does, so a stray one changes nothing (each run here gives what the
+/// same directory without it gives).
+#[test]
+fn an_explicit_source_language_ignores_json_lines_in_directories() {
+    let dir = work_dir("explicit");
+    let graphql = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/inputs/graphql");
+    let schema = fs::read_to_string(graphql.join("github.gqlschema")).unwrap();
+    let query = fs::read_to_string(graphql.join("github1.graphql")).unwrap();
+    let a = r#"{"type": "object", "properties": {"a": {"type": "string"}}}"#;
+    write(
+        &dir,
+        &[
+            // The review's case: a schema and a stray JSON Lines file in a
+            // subdirectory, which would mix JSON with JSON Schema.
+            ("d/sub/A.schema", a),
+            ("d/sub/data.jsonl", LINES),
+            ("d/x.NDJSON", LINES),
+            ("clean/sub/A.schema", a),
+            ("g/schema.gqlschema", &schema),
+            ("g/Query.graphql", &query),
+            ("g/stray.jsonl", LINES),
+            ("g/sub/more.ndjson", LINES),
+            ("gclean/schema.gqlschema", &schema),
+            ("gclean/Query.graphql", &query),
+        ],
+    );
+    let code = same(
+        &dir,
+        &["-l", "ts", "--src-lang", "schema", "d"],
+        &["-l", "ts", "--src-lang", "schema", "clean"],
+    );
+    assert!(code.contains("export interface A {"), "{code}");
+    for src_lang in ["json", "schema"] {
+        let code = same(
+            &dir,
+            &["-l", "ts", "--src-lang", src_lang, "g"],
+            &["-l", "ts", "--src-lang", src_lang, "gclean"],
+        );
+        assert!(
+            code.contains("export interface Query"),
+            "{src_lang}: {code}"
+        );
+    }
+    // Without `--src-lang`, the directory reads the JSON Lines file: a
+    // subdirectory then mixes JSON with JSON Schema, which quicktype's
+    // directories do not allow.
+    let (code, _, err) = outcome(&run(&dir, &["-l", "ts", "d"], b""));
+    assert_eq!(code, Some(1));
+    assert!(err.starts_with("Error: Cannot mix JSON samples"), "{err}");
 }
 
 #[test]

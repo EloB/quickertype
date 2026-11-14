@@ -6,9 +6,11 @@
 //! Sources are opened here (missing files fail now) and read later, when
 //! the input parses them.
 //!
-//! Not in TypeScript: JSON samples may be JSON Lines, the inputs named on
-//! the command line as [`JsonLines`] says, the files in directories by
-//! their names ([`is_json_lines_name`]).
+//! Not in TypeScript: JSON samples may be JSON Lines, as [`JsonLines`]
+//! says: the inputs named on the command line by their names or all of
+//! them, the files in directories by their names
+//! ([`is_json_lines_name`]); or, with a `--src-lang` other than `jsonl`,
+//! none, exactly as quicktype.
 
 use quicktype_core::{
     ErrorKind, JsonSchemaSourceData, QuickTypeError, Readable, is_url, parse_json,
@@ -31,6 +33,12 @@ impl JsonLines {
             JsonLines::Never => false,
             JsonLines::Always => true,
         }
+    }
+
+    /// Whether the files in directories go by their names (otherwise a
+    /// directory is read exactly as quicktype reads it).
+    fn by_name_in_directories(self) -> bool {
+        self != JsonLines::Never
     }
 }
 
@@ -93,15 +101,18 @@ struct GraphQlSchemaFile {
 
 /// `readFilesOrURLsInDirectory(d)` of `samplesFromDirectory(dataDir)`: one
 /// source per file in `d`. `data_dir` is the directory given on the
-/// command line, which the errors name. Not in TypeScript: `*.jsonl` and
-/// `*.ndjson` files are JSON samples too, read as JSON Lines, and so is a
-/// `.url` file's URL that is named so ([`is_json_lines_name`]), whatever
-/// `--src-lang` says: a file's name says what it holds.
+/// command line, which the errors name. Not in TypeScript, unless a
+/// `--src-lang` other than `jsonl` was given ([`JsonLines::Never`]):
+/// `*.jsonl` and `*.ndjson` files are JSON samples too, read as JSON
+/// Lines, and so is a `.url` file's URL that is named so
+/// ([`is_json_lines_name`]): a file's name says what it holds.
 async fn read_files_or_urls_in_directory(
     d: &str,
     data_dir: &str,
     http_headers: &[String],
+    json_lines: JsonLines,
 ) -> Result<Vec<TypeSource>, CliError> {
+    let by_name = json_lines.by_name_in_directories();
     let mut files = Vec::new();
     for entry in node_fs::readdir_sync(d)? {
         let path = js::path_join(&[d, &entry]);
@@ -125,13 +136,16 @@ async fn read_files_or_urls_in_directory(
             file_or_url = js::trim(&node_fs::read_file_sync_utf8(&file)?).to_owned();
         }
 
-        if file.ends_with(".url") || file.ends_with(".json") || is_json_lines_name(&file) {
+        if file.ends_with(".url")
+            || file.ends_with(".json")
+            || (by_name && is_json_lines_name(&file))
+        {
             sources_in_dir.push(TypeSource::Json(JsonTypeSource {
                 name,
                 samples: vec![JsonSampleSource {
                     readable: node_fs::readable_from_file_or_url(&file_or_url, http_headers)
                         .await?,
-                    json_lines: is_json_lines_name(&file_or_url),
+                    json_lines: by_name && is_json_lines_name(&file_or_url),
                 }],
                 description: None,
             }));
@@ -192,6 +206,7 @@ async fn read_files_or_urls_in_directory(
 async fn samples_from_directory(
     data_dir: &str,
     http_headers: &[String],
+    json_lines: JsonLines,
 ) -> Result<Vec<TypeSource>, CliError> {
     let mut directories = Vec::new();
     for entry in node_fs::readdir_sync(data_dir)? {
@@ -201,14 +216,17 @@ async fn samples_from_directory(
         }
     }
 
-    let mut sources = read_files_or_urls_in_directory(data_dir, data_dir, http_headers).await?;
+    let mut sources =
+        read_files_or_urls_in_directory(data_dir, data_dir, http_headers, json_lines).await?;
 
     for dir in directories {
         let mut json_samples = Vec::new();
         let mut schema_sources = Vec::new();
         let mut graphql_sources = Vec::new();
 
-        for source in read_files_or_urls_in_directory(&dir, data_dir, http_headers).await? {
+        for source in
+            read_files_or_urls_in_directory(&dir, data_dir, http_headers, json_lines).await?
+        {
             match source {
                 TypeSource::Json(json) => json_samples.extend(json.samples),
                 TypeSource::Schema(schema) => schema_sources.push(TypeSource::Schema(schema)),
@@ -264,14 +282,14 @@ async fn get_source_uris(options: &CliOptions) -> Result<Vec<(String, Vec<String
 }
 
 /// `typeSourcesForURIs(name, uris, options)`: one JSON source with all
-/// `uris` as samples (also for `jsonl`), or one schema source per URI.
+/// `uris` as samples, or one schema source per URI.
 async fn type_sources_for_uris(
     name: &str,
     uris: &[String],
     options: &CliOptions,
 ) -> Result<Vec<TypeSource>, CliError> {
     match options.src_lang.as_str() {
-        "json" | "jsonl" => Ok(vec![TypeSource::Json(
+        "json" => Ok(vec![TypeSource::Json(
             source_from_file_or_url_array(
                 name,
                 uris,
@@ -316,7 +334,7 @@ pub async fn get_sources(options: &CliOptions) -> Result<Vec<TypeSource>, CliErr
     }
 
     for data_dir in &directories {
-        sources.extend(samples_from_directory(data_dir, http_headers).await?);
+        sources.extend(samples_from_directory(data_dir, http_headers, options.json_lines).await?);
     }
 
     // Every source that is not a directory is a file or URL.

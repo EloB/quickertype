@@ -195,23 +195,34 @@ fn json_lines_urls_are_the_array_of_their_values() {
         let output = run_in(&work_dir("json"), args);
         assert_eq!(output.status.code(), Some(1), "{args:?}");
     }
-    // A `.url` file in a directory.
-    let dir = work_dir("url-file");
-    std::fs::create_dir_all(dir.join("data")).unwrap();
-    std::fs::write(
-        dir.join("data/TopLevel.url"),
-        format!("{base}/lines.jsonl\n"),
-    )
-    .unwrap();
-    let output = run_in(&dir, &["--lang", "rust", "--out", "out.rs", "data"]);
-    assert_eq!(
-        output.status.code(),
-        Some(0),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    assert_eq!(
-        std::fs::read_to_string(dir.join("out.rs")).unwrap(),
-        expected
-    );
+    // A `.url` file in a directory, by its URL's name: JSON Lines without
+    // `--src-lang` or with `--src-lang jsonl`; with `--src-lang json`, JSON,
+    // as quicktype reads it (two values: a syntax error).
+    for (name, url) in [("jsonl", "lines.jsonl"), ("ndjson", "lines.ndjson")] {
+        let dir = work_dir(&format!("url-file-{name}"));
+        std::fs::create_dir_all(dir.join("data")).unwrap();
+        std::fs::write(dir.join("data/TopLevel.url"), format!("{base}/{url}\n")).unwrap();
+        for src_lang in [&[][..], &["--src-lang", "jsonl"]] {
+            let mut args = vec!["--lang", "rust", "--out", "out.rs"];
+            args.extend_from_slice(src_lang);
+            args.push("data");
+            let output = run_in(&dir, &args);
+            assert_eq!(
+                output.status.code(),
+                Some(0),
+                "{args:?}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert_eq!(
+                std::fs::read_to_string(dir.join("out.rs")).unwrap(),
+                expected
+            );
+        }
+        let output = run_in(&dir, &["--lang", "rust", "--src-lang", "json", "data"]);
+        assert_eq!(output.status.code(), Some(1));
+        assert_eq!(
+            String::from_utf8_lossy(&output.stderr),
+            "Error: Syntax error in input JSON TopLevel: Parser cannot parse input: unexpected characters.\n"
+        );
+    }
 }

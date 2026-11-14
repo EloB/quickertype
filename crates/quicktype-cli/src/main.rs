@@ -439,8 +439,7 @@ async fn make_quicktype_options(
             Some(sources) => sources,
             None => return Ok(None),
         },
-        // `jsonl` is not in TypeScript: JSON samples read as JSON Lines.
-        "json" | "jsonl" | "schema" => sources::get_sources(options).await?,
+        "json" | "schema" => sources::get_sources(options).await?,
         "typescript" => vec![TypeSource::Schema(make_typescript_source(
             &options.src,
             console,
