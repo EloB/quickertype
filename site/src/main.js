@@ -897,7 +897,7 @@ function phasesOf(result, measured) {
     }
 
     const last = result.times.length - 1;
-    return { total: result.ms, input: result.inputTimes?.[last], generate: generate[last] };
+    return { total: result.ms, input: result.inputTimes?.[last], generate: generate[last], reused: result.reused === true };
 }
 
 /** A tag for a result that did not run the way its worker's name says. */
@@ -934,9 +934,11 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
     const tag = engineTag(engine, result);
     const inputShare = split !== undefined && split.input !== undefined && ms > 0 ? Math.min(1, split.input / ms) : 0;
     const detail =
-        split !== undefined && split.input !== undefined
-            ? `reading the input ${formatMs(split.input)}, generating ${formatMs(split.generate)}`
-            : undefined;
+        split === undefined || split.input === undefined
+            ? undefined
+            : split.reused
+              ? `the input read before, generating ${formatMs(split.generate)}`
+              : `reading the input ${formatMs(split.input)}, generating ${formatMs(split.generate)}`;
     const notes = [detail, note].filter(Boolean).join("; ");
     return `${head}<span class="bar"><span class="fill" style="width:${width.toFixed(2)}%"><span class="input-part" style="width:${(inputShare * 100).toFixed(2)}%"></span></span></span><span class="time">${label}</span>${
         notes ? `<span class="lane-note">${escapeHtml(notes)}</span>` : ""
@@ -1130,6 +1132,9 @@ function drawMeter() {
         note(
             "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",
         );
+        if (!measured && (sides.wasm.reused || sides.ts.reused)) {
+            note("A run on the same input, read the same way, reuses the input both engines read before, so it only generates the code.");
+        }
         if (sides.wasm.ok && sides.ts.ok) {
             const generating = pace({ wasm: phases(sides.wasm).generate, ts: phases(sides.ts).generate });
             if (generating !== undefined && generating.key !== line.faster?.key) {

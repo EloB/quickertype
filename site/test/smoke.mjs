@@ -14,6 +14,9 @@
 // quicktype's general options one by one and combined, `--no-ignore-json-refs`
 // on an uploaded file with `$ref`s, Rust's `--integer-type force-i32` on one
 // with integers beyond 32 bits, renderer options given in the URL hash,
+// a run on the same input read the same way reusing the input both
+// engines read before (and a language, option or text that changes the
+// reading reading it again),
 // and an uploaded file too large for the editor; that the URL hash brings all
 // of those back, while a link from before the presets (no `v`) gets
 // quicktype's defaults; that the just-types hints are there, and not where
@@ -1576,6 +1579,60 @@ try {
         "quicktype --lang rust --top-level T32431 --density dense --integer-type force-i32 32431.json",
     );
     assert.match(forceI32, /pub time: f64,/);
+
+    // A run on the same input, read the same way, reuses the input both
+    // engines read before (the worker's `reused`): a change of language that
+    // keeps the date/time recognizer and the range of integers (Go, C#,
+    // Java) only generates the code, on quickertype and on quicktype; a
+    // language that reads dates differently (Kotlin), an option that changes
+    // how the input is read (--no-ignore-json-refs) and another text read it
+    // again. The output is the CLI's either way.
+    const reading = (engine = "wasm") =>
+        page.evaluate(`(() => {
+            const result = playground.view.results["${engine}"]?.result;
+            return { reused: result?.reused, read: result?.inputTimes?.[0] > 0 };
+        })()`);
+    await page.navigate(`${url}#v=2&l=go&s=pokedex`);
+    await page.waitFor(settled, "the run on Go");
+    assert.deepEqual(await reading(), { reused: false, read: true }, "a first run reads its input");
+    await select("lang", "cs");
+    await sameAsCli("pokedex.json → C#, on the input read for Go", "quicktype --lang cs --top-level Pokedex pokedex.json");
+    assert.deepEqual(await reading(), { reused: true, read: false }, "Go → C# reuses the input read");
+    let switched = await switchEngine("ts", "the switch to quicktype, on C#");
+    assert.deepEqual(switched, { wasm: 0, ts: 1 });
+    assert.deepEqual(await reading("ts"), { reused: false, read: true }, "quicktype's first run reads its input");
+    await select("lang", "java");
+    await sameAsCli("pokedex.json → Java on quicktype, on the input read for C#", "quicktype --lang java --top-level Pokedex pokedex.json", "ts");
+    assert.deepEqual(await reading("ts"), { reused: true, read: false }, "quicktype: C# → Java reuses the input read");
+    switched = await switchEngine("wasm", "the switch back to quickertype, on Java");
+    assert.deepEqual(switched, { wasm: 1, ts: 0 });
+    assert.deepEqual(await reading(), { reused: true, read: false }, "quickertype: C# → Java reuses the input read");
+    assert.match(
+        await page.evaluate("[...document.querySelectorAll('#meter-details .fine p')].map((p) => p.textContent).join(' ')"),
+        /reuses the input both engines read before, so it only generates the code/,
+    );
+    await select("lang", "kotlin");
+    await sameAsCli("pokedex.json → Kotlin, which reads dates its own way", "quicktype --lang kotlin --top-level Pokedex pokedex.json");
+    assert.deepEqual(await reading(), { reused: false, read: true }, "Kotlin reads the input again");
+    await select("lang", "go");
+    assert.deepEqual(await reading(), { reused: false, read: true }, "Go after Kotlin reads the input again");
+    await click("general-no-ignore-json-refs");
+    assert.deepEqual(await reading(), { reused: false, read: true }, "--no-ignore-json-refs reads the input again");
+    await click("general-no-ignore-json-refs");
+    assert.deepEqual(await reading(), { reused: false, read: true }, "--ignore-json-refs again reads the input again");
+    await click("general-all-properties-optional");
+    assert.deepEqual(await reading(), { reused: true, read: false }, "--all-properties-optional reuses the input read");
+    await click("general-all-properties-optional");
+    await andRun(
+        `(() => {
+            const input = document.getElementById("input");
+            input.value = '{"pokemon": [{"id": 1, "name": "Bulbasaur"}]}';
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        })()`,
+        "a run on another text",
+    );
+    assert.deepEqual(await reading(), { reused: false, read: true }, "another text is read");
+    console.log("ok: a change of language or of an option that does not change reading reuses the input read, on both engines (the page says so); Kotlin, --no-ignore-json-refs and another text read it again");
 
     // The footer: the quicktype commit the output matches, linked.
     const { commit } = quicktypeReference();

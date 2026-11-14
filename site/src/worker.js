@@ -6,8 +6,8 @@
 // Request:  { id, kind: "json" | "schema", lang, name, text | file, rendererOptions,
 //             options, warmup?, repeat? }
 // Replies:  { type: "ready", engine, compileMs, loadError, readyMs }
-//           { type: "result", id, ok, files | error, ms, times, inputTimes, ran, reason, first,
-//             workerFailure (a failure that is not quicktype's) }
+//           { type: "result", id, ok, files | error, ms, times, inputTimes, reused, ran, reason,
+//             first, workerFailure (a failure that is not quicktype's) }
 //
 // `options` are `quicktype()` options from the page's general options
 // (`allPropertiesOptional`, the inference flags, …), as quicktype's CLI sets
@@ -18,6 +18,16 @@
 // reads JSON samples itself as they are added; a JSON Schema is parsed by
 // quicktype's TypeScript code on both engines. The rest is generating the
 // code.
+//
+// A JSON input, once read, is kept for the next run on the same input read
+// the same way (`reused` in the reply, and no time spent reading it): the
+// same text or file, top-level name, and everything that decides how its
+// samples are read (the target language's date/time recognizer and integer
+// range, and whether `$ref`s are references). Changing the language,
+// renderer or inference options then only generates the code again, as a
+// program that runs quicktype on an input it has read already does. Both
+// engines' workers do this, so the times stay comparable. A measurement
+// (`repeat`, `warmup`) reads the input for every run.
 //
 // The input is `text`, or a `file` (a File, which the page posts without
 // reading it, so that a large file never passes through the page's main
@@ -39,12 +49,37 @@ import {
     InputData,
     JSONSchemaInput,
     jsonInputForTargetLanguage,
+    languageNamed,
     quicktypeMultiFile,
 } from "../../npm/quicktype-core/dist/esm/index.js";
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
 
-/** One quicktype run, as quicktype's CLI would do it for a file of `kind`. */
-async function generate({ kind, lang, name, sample, rendererOptions, options = {} }, phases) {
+/** The JSON input read last, for the next run that reads it the same way: { sample, key, input }. */
+let lastRead;
+
+/** A number for each date/time recognizer class, for `readKey`. */
+const recognizerIds = new Map();
+
+/**
+ * What reading a JSON sample depends on besides the sample: its top-level
+ * name and the `CompressedJSON`'s configuration, as
+ * `jsonInputForTargetLanguage` sets it (the language's date/time
+ * recognizer, whether `$ref`s are references, and the range of integers,
+ * which renderer options can set).
+ */
+function readKey({ lang, name, rendererOptions, options = {} }) {
+    const language = languageNamed(lang);
+    const recognizer = language.dateTimeRecognizer.constructor;
+    if (!recognizerIds.has(recognizer)) recognizerIds.set(recognizer, recognizerIds.size);
+    const range = language.getSupportedIntegerRange(rendererOptions ?? {});
+    return JSON.stringify([name, recognizerIds.get(recognizer), options.ignoreJsonRefs === false, range]);
+}
+
+/**
+ * One quicktype run, as quicktype's CLI would do it for a file of `kind`;
+ * with `reuse`, on the JSON input read last if it is read the same way.
+ */
+async function generate({ kind, lang, name, sample, rendererOptions, options = {} }, phases, reuse) {
     const start = performance.now();
     const inputData = new InputData();
     if (kind === "schema") {
@@ -52,15 +87,24 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
         await input.addSource({ name, schema: sample });
         inputData.addInput(input);
     } else {
-        // As the CLI's makeInputData: `$ref`s are references with
-        // --no-ignore-json-refs, and the renderer options set the range of
-        // integers (Rust's `integer-type`, cJSON's `integer-size`).
-        const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
-        await input.addSource({ name, samples: [sample] });
-        inputData.addInput(input);
+        const key = readKey({ lang, name, rendererOptions, options });
+        if (reuse && lastRead !== undefined && lastRead.key === key && lastRead.sample === sample) {
+            inputData.addInput(lastRead.input);
+            phases.reused = true;
+        } else {
+            // As the CLI's makeInputData: `$ref`s are references with
+            // --no-ignore-json-refs, and the renderer options set the range of
+            // integers (Rust's `integer-type`, cJSON's `integer-size`).
+            const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
+            // A failed read keeps nothing.
+            if (reuse) lastRead = undefined;
+            await input.addSource({ name, samples: [sample] });
+            inputData.addInput(input);
+            if (reuse) lastRead = { sample, key, input };
+        }
     }
 
-    phases.input = performance.now() - start;
+    phases.input = phases.reused ? 0 : performance.now() - start;
     return quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
 }
 
@@ -113,6 +157,7 @@ async function inputSample({ kind, text, file }) {
     const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, bytes]);
     // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
+    if (lastRead !== undefined && lastRead.sample !== (file === undefined ? text : lastFile?.sample)) lastRead = undefined;
     if (file === undefined) return text;
     if (lastFile !== undefined) return lastFile.sample;
     const large = tooLarge(file.name, file.size);
@@ -143,19 +188,26 @@ async function handle(request) {
     return timedRuns(request, sample, first);
 }
 
-/** `warmup` untimed runs, then `repeat` timed ones, on `sample`; the reply has the last run's result. */
+/**
+ * `warmup` untimed runs, then `repeat` timed ones, on `sample`; the reply
+ * has the last run's result. A single run reuses the input read last if it
+ * can (`generate`); a measurement reads it every time.
+ */
 async function timedRuns(request, sample, first) {
     const warmup = request.warmup ?? 0;
     const repeat = Math.max(1, request.repeat ?? 1);
+    const reuse = warmup === 0 && repeat === 1;
     const times = [];
     const inputTimes = [];
     let reply;
+    let reused = false;
     for (let i = 0; i < warmup + repeat; i++) {
         const before = snapshot();
         const phases = {};
         const start = performance.now();
         try {
-            const result = await generate({ ...request, sample }, phases);
+            const result = await generate({ ...request, sample }, phases, reuse);
+            reused = phases.reused === true;
             const ms = performance.now() - start;
             if (i >= warmup) {
                 times.push(ms);
@@ -177,7 +229,7 @@ async function timedRuns(request, sample, first) {
         }
     }
 
-    return { type: "result", id: request.id, ms: times[times.length - 1], times, inputTimes, first, ...reply };
+    return { type: "result", id: request.id, ms: times[times.length - 1], times, inputTimes, reused, first, ...reply };
 }
 
 /** A result for a request the worker could not handle at all: not quicktype's (the page does not keep it). */
