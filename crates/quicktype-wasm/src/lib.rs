@@ -386,6 +386,18 @@ pub(crate) fn install_clock() {
     trace::set_clock(performance_now);
 }
 
+/// When the module starts: takes the hash maps' seed from
+/// `crypto.getRandomValues` (`quicktype_core::support::fast_hash`; the first
+/// map would take it otherwise), so that a host without it fails here, with
+/// an error naming it, rather than in a run.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(start)]
+fn module_start() {
+    if let Err(message) = quicktype_core::support::fast_hash::init() {
+        wasm_bindgen::throw_str(&message);
+    }
+}
+
 /// The spans recorded since the last call (`quicktype_core::trace`), one
 /// per line, `name\tstart\tend` in milliseconds of `performance.now`, then
 /// a line `dropped\t<n>` if the buffer was full. Only in builds with the

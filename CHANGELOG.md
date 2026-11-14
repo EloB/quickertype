@@ -67,6 +67,26 @@ section are absolute.
   where an input inferred its types from; `JsonInput::set_keep_tallies`
   keeps the tallies of a compressed form with it. An error while tallying
   a compressed form is reported instead of falling back to its values.
+- The WebAssembly engine reads large JSON samples 7–11% faster (the 20 MB
+  benchmark input: 96 instead of 103 ms in Chrome). The reader's string
+  and key tables hash each string with foldhash's `write` alone, without
+  the end marker that `Hash for str` adds, which costs a call and four
+  multiplies in WebAssembly.
+
+### Fixed
+
+- Partly fixed: the JavaScript API's WebAssembly engine seeded its hash
+  maps the same in every instance, because WebAssembly has no randomness of
+  its own, and whoever knows the seed can craft keys that collide. Now the
+  JSON reader's string and key tables and the engine's other `fast_hash`
+  maps take their seed from `crypto.getRandomValues`, per instance. An
+  engine on a host without `crypto.getRandomValues` fails to load, with an
+  error naming it. Not fixed yet: the `IndexMap`s and `IndexSet`s on
+  `std`'s `RandomState` (class properties, enum and string cases,
+  `JsonValue` objects) still have fixed keys in WebAssembly, so crafted
+  property names can still slow inference there. They follow in
+  `fix/seeded-index-maps` (docs/BENCHMARKS.md, "Hash seeds in
+  WebAssembly").
 
 ## [0.1.0] - 2026-11-13
 

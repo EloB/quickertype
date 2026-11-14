@@ -62,8 +62,6 @@
 //! only while they are small ([`KEEP_NODES`], [`KEEP_KEYS`]); a large
 //! sample's are freed.
 
-use std::hash::BuildHasher as _;
-
 use hashbrown::HashTable;
 use quicktype_js_compat::json::is_array_index;
 
@@ -73,7 +71,7 @@ use super::{
 };
 use crate::input::json_scan::plain_run;
 use crate::messages::{QuickTypeError, Result};
-use crate::support::fast_hash::{BuildHasher, HashMap, HashSet};
+use crate::support::fast_hash::{HashMap, HashSet, StrHasher};
 use crate::support::recursion::stack_overflow;
 
 /// Limits on what [`CompressedJson::read_string_sample`] reads; a sample
@@ -144,7 +142,7 @@ struct Keys {
     spans: Vec<(u32, u32)>,
     /// Key ids, hashed by text.
     index: HashTable<u32>,
-    hasher: BuildHasher,
+    hasher: StrHasher,
     /// By key id: its index in the string table, or [`NO_INDEX`] until a
     /// value under it is committed.
     interned: Vec<u32>,
@@ -201,7 +199,7 @@ impl Keys {
         {
             return id;
         }
-        let hash = self.hasher.hash_one(key);
+        let hash = self.hasher.hash_str(key);
         let found = {
             let Keys {
                 text, spans, index, ..
@@ -244,7 +242,7 @@ impl Keys {
         } = self;
         index.insert_unique(hash, id, |&id| {
             let (start, len) = spans[id as usize];
-            hasher.hash_one(&text[start as usize..(start + len) as usize])
+            hasher.hash_str(&text[start as usize..(start + len) as usize])
         });
         id
     }
