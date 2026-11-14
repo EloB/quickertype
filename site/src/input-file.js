@@ -11,7 +11,7 @@
 export const maxTextBytes = 2 ** 29 - 24;
 
 /** Where to get the CLI, which reads files of any size. */
-export const cliLink = { href: "https://github.com/EloB/quickertype#readme", text: "the quickertype CLI" };
+export const cliLink = { href: "https://github.com/EloB/quickertype#install", text: "the quickertype CLI" };
 
 export function formatBytes(n) {
     if (n < 1000) return `${n} bytes`;

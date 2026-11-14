@@ -245,6 +245,24 @@ button.quiet:hover:not(:disabled) {
     font: 12px var(--mono);
 }
 
+/* A command to copy, a line of its own. */
+.tip code.command {
+    display: block;
+    margin: 6px 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--rule);
+    background: var(--sunk);
+    white-space: nowrap;
+    overflow-x: auto;
+    user-select: all;
+}
+
+.tip a {
+    color: var(--wasm);
+    font-weight: 600;
+}
+
 /* ---- The panes ---------------------------------------------------------- */
 
 .panes {

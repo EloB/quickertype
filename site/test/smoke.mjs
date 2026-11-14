@@ -955,7 +955,7 @@ async function openFailed(what, { title, message, before, cli: withCli = false }
     else assert.equal(shownNow.message, message, `${what}: the message`);
     assert.deepEqual(
         { ...shownNow, title: undefined, message: undefined },
-        { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#readme" : null, request: true, busy: false, stale: false, running: false },
+        { status: "error", title: undefined, message: undefined, link: withCli ? "https://github.com/EloB/quickertype#install" : null, request: true, busy: false, stale: false, running: false },
         `${what}: the page after it`,
     );
     const expected = before.large === null ? before : { ...before, large: { ...before.large, status: "" } };
@@ -1083,7 +1083,7 @@ try {
         headline.text,
         `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
     );
-    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.readme]]);
+    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.install]]);
     // It leaves the playground in view: the panes start in the first screen.
     const panesTop = await page.evaluate("document.querySelector('.panes').getBoundingClientRect().top");
     assert.ok(panesTop < 900 * 0.6, `the panes start at ${panesTop} px`);
@@ -1337,7 +1337,7 @@ try {
 
     // The notes behind an "i": Enter opens one, inside the window; Escape
     // closes it, the focus back on its button.
-    for (const [note, text] of [["engine-note", /^Both run in your browser: /], ["version-note", /^This is newer than the v26\.0\.0 release/], ["input-note", /^Paste JSON or a JSON Schema, /]]) {
+    for (const [note, text] of [["engine-note", /^Both run in your browser: /], ["version-note", /^This is newer than the v26\.0\.0 release/], ["input-note", /^Paste JSON or a JSON Schema, /], ["install-note", /^Get the CLI\. .*brew install elob\/tap\/quickertype.*npm install -g quickertype.*cargo install quickertype/]]) {
         const button = `document.querySelector('[aria-controls=${note}]')`;
         await page.evaluate(`${button}.focus()`);
         await pressEnter();
@@ -2499,7 +2499,7 @@ try {
                 }
             } else {
                 assert.ok(
-                    [benchLinks.readme, repository, "https://github.com/glideapps/quicktype"].includes(href),
+                    [benchLinks.readme, benchLinks.install, benchLinks.releases, benchLinks.npmCore, repository, "https://github.com/glideapps/quicktype"].includes(href),
                     `an unexpected link: ${href}`,
                 );
             }
