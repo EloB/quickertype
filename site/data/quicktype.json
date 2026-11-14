@@ -1,0 +1,1017 @@
+{
+  "format": 1,
+  "retrieved": "2026-11-14",
+  "sources": {
+    "history": "git log and git shortlog --no-merges of a quicktype checkout, up to c39af7d303b025280e2668a1b2d29913093593c9 (tests/golden/REFERENCE)",
+    "repository": "GitHub REST API: GET /repos/glideapps/quicktype and GET /orgs/glideapps",
+    "contributors": "GitHub REST API: GET /repos/glideapps/quicktype/contributors (accounts linked to commits on master; bots left out)"
+  },
+  "repository": {
+    "url": "https://github.com/glideapps/quicktype",
+    "default_branch": "master",
+    "owner": {
+      "login": "glideapps",
+      "name": "Glide",
+      "url": "https://github.com/glideapps"
+    },
+    "homepage": "https://app.quicktype.io",
+    "description": "Generate types and converters from JSON, Schema, and GraphQL",
+    "license": "Apache-2.0",
+    "created_at": "2017-07-13T00:22:50Z",
+    "stars": 13913,
+    "forks": 1196
+  },
+  "history": {
+    "commit": "c39af7d303b025280e2668a1b2d29913093593c9",
+    "commit_date": "2026-09-08",
+    "first_commit": "be99e7e27e58d1efe8024a6562f9924e39a747f3",
+    "first_commit_date": "2017-07-13",
+    "commits": 3927,
+    "author_names": 220,
+    "commits_by_year": {
+      "2017": 1150,
+      "2018": 1339,
+      "2019": 130,
+      "2020": 119,
+      "2021": 29,
+      "2022": 33,
+      "2023": 195,
+      "2024": 82,
+      "2025": 39,
+      "2026": 811
+    }
+  },
+  "contributors": {
+    "bots_left_out": [
+      "dependabot[bot]",
+      "deepsource-autofix[bot]"
+    ],
+    "people": [
+      {
+        "login": "schani",
+        "id": 61363,
+        "contributions": 3478
+      },
+      {
+        "login": "dvdsgl",
+        "id": 108197,
+        "contributions": 627
+      },
+      {
+        "login": "harsszegi",
+        "id": 3242731,
+        "contributions": 55
+      },
+      {
+        "login": "MrRooni",
+        "id": 170720,
+        "contributions": 47
+      },
+      {
+        "login": "inferrinizzard",
+        "id": 10782902,
+        "contributions": 33
+      },
+      {
+        "login": "asarazan",
+        "id": 542872,
+        "contributions": 17
+      },
+      {
+        "login": "thegoldenmule",
+        "id": 528526,
+        "contributions": 16
+      },
+      {
+        "login": "Quafadas",
+        "id": 24899792,
+        "contributions": 15
+      },
+      {
+        "login": "remorses",
+        "id": 31321188,
+        "contributions": 14
+      },
+      {
+        "login": "agisboye",
+        "id": 4165670,
+        "contributions": 13
+      },
+      {
+        "login": "mkrawczuk",
+        "id": 11332155,
+        "contributions": 12
+      },
+      {
+        "login": "skornel02",
+        "id": 11486307,
+        "contributions": 11
+      },
+      {
+        "login": "algas",
+        "id": 629955,
+        "contributions": 9
+      },
+      {
+        "login": "mamantoha",
+        "id": 61285,
+        "contributions": 9
+      },
+      {
+        "login": "thatsokay",
+        "id": 23479033,
+        "contributions": 7
+      },
+      {
+        "login": "Murnto",
+        "id": 5044884,
+        "contributions": 7
+      },
+      {
+        "login": "krk",
+        "id": 1447853,
+        "contributions": 7
+      },
+      {
+        "login": "Ender-events",
+        "id": 7770119,
+        "contributions": 6
+      },
+      {
+        "login": "davidhodge",
+        "id": 838040,
+        "contributions": 6
+      },
+      {
+        "login": "uhop",
+        "id": 37966,
+        "contributions": 6
+      },
+      {
+        "login": "matthew-c-lee",
+        "id": 77367175,
+        "contributions": 5
+      },
+      {
+        "login": "bitsol",
+        "id": 55592169,
+        "contributions": 5
+      },
+      {
+        "login": "gifanonim",
+        "id": 1533241,
+        "contributions": 4
+      },
+      {
+        "login": "about-code",
+        "id": 6525873,
+        "contributions": 4
+      },
+      {
+        "login": "wgottschalk",
+        "id": 11728959,
+        "contributions": 4
+      },
+      {
+        "login": "tim-smart",
+        "id": 40680,
+        "contributions": 4
+      },
+      {
+        "login": "untitaker",
+        "id": 837573,
+        "contributions": 4
+      },
+      {
+        "login": "jessicamrbr",
+        "id": 18180548,
+        "contributions": 4
+      },
+      {
+        "login": "waywardmonkeys",
+        "id": 178582,
+        "contributions": 4
+      },
+      {
+        "login": "mohamedelhabib",
+        "id": 4631042,
+        "contributions": 3
+      },
+      {
+        "login": "ozum",
+        "id": 1497060,
+        "contributions": 3
+      },
+      {
+        "login": "RmondJone",
+        "id": 10555850,
+        "contributions": 3
+      },
+      {
+        "login": "melvspace",
+        "id": 19855397,
+        "contributions": 3
+      },
+      {
+        "login": "haya14busa",
+        "id": 3797062,
+        "contributions": 3
+      },
+      {
+        "login": "derberg",
+        "id": 6995927,
+        "contributions": 3
+      },
+      {
+        "login": "kelliott121",
+        "id": 1477132,
+        "contributions": 3
+      },
+      {
+        "login": "alan-agius4",
+        "id": 17563226,
+        "contributions": 3
+      },
+      {
+        "login": "benquarmby",
+        "id": 1434816,
+        "contributions": 3
+      },
+      {
+        "login": "colinking",
+        "id": 2907397,
+        "contributions": 3
+      },
+      {
+        "login": "colinsullivan",
+        "id": 94535,
+        "contributions": 3
+      },
+      {
+        "login": "DanielBretzigheimer",
+        "id": 23380519,
+        "contributions": 3
+      },
+      {
+        "login": "gurdasnijor",
+        "id": 1755404,
+        "contributions": 3
+      },
+      {
+        "login": "tolbon",
+        "id": 768394,
+        "contributions": 3
+      },
+      {
+        "login": "kathewang",
+        "id": 101601144,
+        "contributions": 3
+      },
+      {
+        "login": "kriswest",
+        "id": 1701764,
+        "contributions": 2
+      },
+      {
+        "login": "timia2109",
+        "id": 6303931,
+        "contributions": 2
+      },
+      {
+        "login": "thives",
+        "id": 18176214,
+        "contributions": 2
+      },
+      {
+        "login": "redsolver",
+        "id": 30355444,
+        "contributions": 2
+      },
+      {
+        "login": "qm3ster",
+        "id": 10551234,
+        "contributions": 2
+      },
+      {
+        "login": "foobra",
+        "id": 7357530,
+        "contributions": 2
+      },
+      {
+        "login": "coyaSONG",
+        "id": 66289470,
+        "contributions": 2
+      },
+      {
+        "login": "bzuidgeest",
+        "id": 1292740,
+        "contributions": 2
+      },
+      {
+        "login": "taorepoara",
+        "id": 8969556,
+        "contributions": 2
+      },
+      {
+        "login": "simon04",
+        "id": 782446,
+        "contributions": 2
+      },
+      {
+        "login": "Nipodemos",
+        "id": 11494727,
+        "contributions": 2
+      },
+      {
+        "login": "Fylax",
+        "id": 6639528,
+        "contributions": 2
+      },
+      {
+        "login": "rekram1-node",
+        "id": 63023139,
+        "contributions": 2
+      },
+      {
+        "login": "Adam724",
+        "id": 32963828,
+        "contributions": 2
+      },
+      {
+        "login": "avallete",
+        "id": 8771783,
+        "contributions": 2
+      },
+      {
+        "login": "AysajanE",
+        "id": 47014605,
+        "contributions": 2
+      },
+      {
+        "login": "Crayon2000",
+        "id": 11451841,
+        "contributions": 2
+      },
+      {
+        "login": "danielsharvey",
+        "id": 12858056,
+        "contributions": 2
+      },
+      {
+        "login": "DexterMsft",
+        "id": 101596428,
+        "contributions": 2
+      },
+      {
+        "login": "zewish",
+        "id": 3149568,
+        "contributions": 2
+      },
+      {
+        "login": "joelguittet",
+        "id": 6479682,
+        "contributions": 2
+      },
+      {
+        "login": "johanrydenstam",
+        "id": 1712588,
+        "contributions": 2
+      },
+      {
+        "login": "zippy1981",
+        "id": 146930,
+        "contributions": 2
+      },
+      {
+        "login": "kvnxiao",
+        "id": 14130413,
+        "contributions": 2
+      },
+      {
+        "login": "SirAlvarex",
+        "id": 1682998,
+        "contributions": 2
+      },
+      {
+        "login": "damncabbage",
+        "id": 133028,
+        "contributions": 1
+      },
+      {
+        "login": "chenrui333",
+        "id": 1580956,
+        "contributions": 1
+      },
+      {
+        "login": "ryoid",
+        "id": 18044529,
+        "contributions": 1
+      },
+      {
+        "login": "exKAZUu",
+        "id": 436237,
+        "contributions": 1
+      },
+      {
+        "login": "Kylmakalle",
+        "id": 24507532,
+        "contributions": 1
+      },
+      {
+        "login": "SimonCahill",
+        "id": 3124521,
+        "contributions": 1
+      },
+      {
+        "login": "SushanShakya",
+        "id": 53656009,
+        "contributions": 1
+      },
+      {
+        "login": "T-Fowl",
+        "id": 3842450,
+        "contributions": 1
+      },
+      {
+        "login": "tessig",
+        "id": 2521981,
+        "contributions": 1
+      },
+      {
+        "login": "tiaanl",
+        "id": 2261995,
+        "contributions": 1
+      },
+      {
+        "login": "timsuchanek",
+        "id": 1094804,
+        "contributions": 1
+      },
+      {
+        "login": "usefulalgorithm",
+        "id": 6112039,
+        "contributions": 1
+      },
+      {
+        "login": "Uvais-Mohammad",
+        "id": 63300484,
+        "contributions": 1
+      },
+      {
+        "login": "U3erKa",
+        "id": 108535441,
+        "contributions": 1
+      },
+      {
+        "login": "vipulasri",
+        "id": 7822179,
+        "contributions": 1
+      },
+      {
+        "login": "rvanlaak",
+        "id": 2707563,
+        "contributions": 1
+      },
+      {
+        "login": "renatodex",
+        "id": 68507,
+        "contributions": 1
+      },
+      {
+        "login": "ReneWerner87",
+        "id": 7063188,
+        "contributions": 1
+      },
+      {
+        "login": "pedromassango",
+        "id": 33294549,
+        "contributions": 1
+      },
+      {
+        "login": "pagr",
+        "id": 6533541,
+        "contributions": 1
+      },
+      {
+        "login": "humanintheloo",
+        "id": 1733676,
+        "contributions": 1
+      },
+      {
+        "login": "karaketir16",
+        "id": 27349806,
+        "contributions": 1
+      },
+      {
+        "login": "oliver-kopcik",
+        "id": 302548724,
+        "contributions": 1
+      },
+      {
+        "login": "ninaniiranen",
+        "id": 4035296,
+        "contributions": 1
+      },
+      {
+        "login": "PssbleTrngle",
+        "id": 12880806,
+        "contributions": 1
+      },
+      {
+        "login": "nikhilunni",
+        "id": 2001609,
+        "contributions": 1
+      },
+      {
+        "login": "siketyan",
+        "id": 12772118,
+        "contributions": 1
+      },
+      {
+        "login": "nh7a",
+        "id": 10003,
+        "contributions": 1
+      },
+      {
+        "login": "multinerd",
+        "id": 6367998,
+        "contributions": 1
+      },
+      {
+        "login": "mortenbekditlevsen",
+        "id": 1384769,
+        "contributions": 1
+      },
+      {
+        "login": "satinowl",
+        "id": 75016818,
+        "contributions": 1
+      },
+      {
+        "login": "euxn23",
+        "id": 5271091,
+        "contributions": 1
+      },
+      {
+        "login": "w830207",
+        "id": 44136372,
+        "contributions": 1
+      },
+      {
+        "login": "sakets594",
+        "id": 22242097,
+        "contributions": 1
+      },
+      {
+        "login": "darklyspaced",
+        "id": 85880237,
+        "contributions": 1
+      },
+      {
+        "login": "actions-user",
+        "id": 65916846,
+        "contributions": 1
+      },
+      {
+        "login": "qiaoruntao",
+        "id": 5846433,
+        "contributions": 1
+      },
+      {
+        "login": "ondbyte",
+        "id": 46318890,
+        "contributions": 1
+      },
+      {
+        "login": "nazo6",
+        "id": 53177992,
+        "contributions": 1
+      },
+      {
+        "login": "naughtyGitCat",
+        "id": 20264659,
+        "contributions": 1
+      },
+      {
+        "login": "nareshjs",
+        "id": 25642364,
+        "contributions": 1
+      },
+      {
+        "login": "michadn",
+        "id": 44829750,
+        "contributions": 1
+      },
+      {
+        "login": "meld-cp",
+        "id": 18450687,
+        "contributions": 1
+      },
+      {
+        "login": "masinc",
+        "id": 1301215,
+        "contributions": 1
+      },
+      {
+        "login": "Logikgate",
+        "id": 2379994,
+        "contributions": 1
+      },
+      {
+        "login": "k-vasily",
+        "id": 257636770,
+        "contributions": 1
+      },
+      {
+        "login": "jonashao",
+        "id": 7600440,
+        "contributions": 1
+      },
+      {
+        "login": "jnpdx",
+        "id": 50815,
+        "contributions": 1
+      },
+      {
+        "login": "dbrenot-pelmorex",
+        "id": 120058075,
+        "contributions": 1
+      },
+      {
+        "login": "danwsong",
+        "id": 44812932,
+        "contributions": 1
+      },
+      {
+        "login": "cwtuan",
+        "id": 3455798,
+        "contributions": 1
+      },
+      {
+        "login": "cconverse711",
+        "id": 4616788,
+        "contributions": 1
+      },
+      {
+        "login": "cbmgit",
+        "id": 40800907,
+        "contributions": 1
+      },
+      {
+        "login": "cartwrightluke",
+        "id": 3690111,
+        "contributions": 1
+      },
+      {
+        "login": "black-desk",
+        "id": 29726878,
+        "contributions": 1
+      },
+      {
+        "login": "beku-epitome",
+        "id": 115151513,
+        "contributions": 1
+      },
+      {
+        "login": "alpoi",
+        "id": 106070053,
+        "contributions": 1
+      },
+      {
+        "login": "afajl",
+        "id": 366018,
+        "contributions": 1
+      },
+      {
+        "login": "adriandole",
+        "id": 25236206,
+        "contributions": 1
+      },
+      {
+        "login": "airtonix",
+        "id": 61225,
+        "contributions": 1
+      },
+      {
+        "login": "zoidyzoidzoid",
+        "id": 2572493,
+        "contributions": 1
+      },
+      {
+        "login": "neo",
+        "id": 9028430,
+        "contributions": 1
+      },
+      {
+        "login": "eliasposen",
+        "id": 29180243,
+        "contributions": 1
+      },
+      {
+        "login": "ineffyble",
+        "id": 834880,
+        "contributions": 1
+      },
+      {
+        "login": "DetachHead",
+        "id": 57028336,
+        "contributions": 1
+      },
+      {
+        "login": "DeltaEpsilon7787",
+        "id": 860874,
+        "contributions": 1
+      },
+      {
+        "login": "CommanderRoot",
+        "id": 4395417,
+        "contributions": 1
+      },
+      {
+        "login": "ciffelia",
+        "id": 15273128,
+        "contributions": 1
+      },
+      {
+        "login": "hoesler",
+        "id": 1052770,
+        "contributions": 1
+      },
+      {
+        "login": "uuf6429",
+        "id": 230049,
+        "contributions": 1
+      },
+      {
+        "login": "eqinox76",
+        "id": 5861557,
+        "contributions": 1
+      },
+      {
+        "login": "cv",
+        "id": 5445,
+        "contributions": 1
+      },
+      {
+        "login": "CabinIkaros",
+        "id": 81321122,
+        "contributions": 1
+      },
+      {
+        "login": "pseudotronics",
+        "id": 79676695,
+        "contributions": 1
+      },
+      {
+        "login": "brunorzn",
+        "id": 18266054,
+        "contributions": 1
+      },
+      {
+        "login": "brenoxp",
+        "id": 7716247,
+        "contributions": 1
+      },
+      {
+        "login": "bradphelan",
+        "id": 17650,
+        "contributions": 1
+      },
+      {
+        "login": "bielikb",
+        "id": 4924709,
+        "contributions": 1
+      },
+      {
+        "login": "blixt",
+        "id": 158591,
+        "contributions": 1
+      },
+      {
+        "login": "9ParsonsB",
+        "id": 6250431,
+        "contributions": 1
+      },
+      {
+        "login": "benmccallum",
+        "id": 157336,
+        "contributions": 1
+      },
+      {
+        "login": "keitwb",
+        "id": 614344,
+        "contributions": 1
+      },
+      {
+        "login": "bastian-huber-keen",
+        "id": 99333038,
+        "contributions": 1
+      },
+      {
+        "login": "basdl",
+        "id": 1148027,
+        "contributions": 1
+      },
+      {
+        "login": "artursvonda",
+        "id": 147427,
+        "contributions": 1
+      },
+      {
+        "login": "Osttra-a-klava",
+        "id": 127942036,
+        "contributions": 1
+      },
+      {
+        "login": "ankrgyl",
+        "id": 565363,
+        "contributions": 1
+      },
+      {
+        "login": "andrei-mereuta-phonsoft",
+        "id": 149884167,
+        "contributions": 1
+      },
+      {
+        "login": "amorscher",
+        "id": 16909139,
+        "contributions": 1
+      },
+      {
+        "login": "Alfred-Mountfield",
+        "id": 25749103,
+        "contributions": 1
+      },
+      {
+        "login": "Rigellute",
+        "id": 12150276,
+        "contributions": 1
+      },
+      {
+        "login": "liosha",
+        "id": 874688,
+        "contributions": 1
+      },
+      {
+        "login": "376TEMP",
+        "id": 38068555,
+        "contributions": 1
+      },
+      {
+        "login": "madmo",
+        "id": 393078,
+        "contributions": 1
+      },
+      {
+        "login": "mitchsayre",
+        "id": 40548527,
+        "contributions": 1
+      },
+      {
+        "login": "mikecrowe-otp",
+        "id": 181109982,
+        "contributions": 1
+      },
+      {
+        "login": "mdornseif",
+        "id": 167073,
+        "contributions": 1
+      },
+      {
+        "login": "marvin-kolja",
+        "id": 54174311,
+        "contributions": 1
+      },
+      {
+        "login": "VolatileCoder",
+        "id": 14131912,
+        "contributions": 1
+      },
+      {
+        "login": "mariusbancila",
+        "id": 5336650,
+        "contributions": 1
+      },
+      {
+        "login": "vexdev",
+        "id": 2225871,
+        "contributions": 1
+      },
+      {
+        "login": "louiswins",
+        "id": 1060726,
+        "contributions": 1
+      },
+      {
+        "login": "louis-bompart",
+        "id": 12366410,
+        "contributions": 1
+      },
+      {
+        "login": "Brooooooklyn",
+        "id": 3468483,
+        "contributions": 1
+      },
+      {
+        "login": "Leonard013",
+        "id": 95079472,
+        "contributions": 1
+      },
+      {
+        "login": "jushar",
+        "id": 4458720,
+        "contributions": 1
+      },
+      {
+        "login": "julian-avar",
+        "id": 28635807,
+        "contributions": 1
+      },
+      {
+        "login": "hernando",
+        "id": 791427,
+        "contributions": 1
+      },
+      {
+        "login": "josejulio",
+        "id": 3845764,
+        "contributions": 1
+      },
+      {
+        "login": "proppy",
+        "id": 5268,
+        "contributions": 1
+      },
+      {
+        "login": "jhosteny",
+        "id": 1070790,
+        "contributions": 1
+      },
+      {
+        "login": "jimisaacs",
+        "id": 299156,
+        "contributions": 1
+      },
+      {
+        "login": "Clancey",
+        "id": 256046,
+        "contributions": 1
+      },
+      {
+        "login": "jack-seek",
+        "id": 19676584,
+        "contributions": 1
+      },
+      {
+        "login": "h3ndrk",
+        "id": 3900641,
+        "contributions": 1
+      },
+      {
+        "login": "HavardNJ-Laerdal",
+        "id": 143999875,
+        "contributions": 1
+      },
+      {
+        "login": "hansl",
+        "id": 681969,
+        "contributions": 1
+      },
+      {
+        "login": "hm-tamim",
+        "id": 43744334,
+        "contributions": 1
+      },
+      {
+        "login": "gudjonragnar",
+        "id": 10629275,
+        "contributions": 1
+      },
+      {
+        "login": "guoyunhe",
+        "id": 5836790,
+        "contributions": 1
+      },
+      {
+        "login": "grant",
+        "id": 744973,
+        "contributions": 1
+      },
+      {
+        "login": "flovouin",
+        "id": 5155149,
+        "contributions": 1
+      },
+      {
+        "login": "fdietze",
+        "id": 1186516,
+        "contributions": 1
+      },
+      {
+        "login": "feefladder",
+        "id": 33122845,
+        "contributions": 1
+      }
+    ]
+  }
+}

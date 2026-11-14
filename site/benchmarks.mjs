@@ -294,12 +294,12 @@ export function speedFacts(bench) {
     };
 }
 
-/** The playground's headline, as HTML (one sentence, the numbers from the JSON, and two links). */
+/** The playground's headline, as HTML (one sentence, the numbers from the JSON, and two links; the playground is in app/). */
 export function headlineHtml(facts) {
     return (
         `quicktype rewritten in Rust: the same output, byte for byte. ` +
         `The CLI is up to <b>${facts.upTo}×</b> faster (about ${facts.typical}× on typical files) and uses a fraction of the memory. ` +
-        `<a href="./benchmarks.html">Benchmarks</a><span class="sep" aria-hidden="true"> · </span><a href="${links.install}">Install the CLI</a>`
+        `<a href="../benchmarks.html">Benchmarks</a><span class="sep" aria-hidden="true"> · </span><a href="${links.install}">Install the CLI</a>`
     );
 }
 
@@ -649,7 +649,7 @@ ${reportChart}
 <figcaption id="startup-title">One CLI run on pokedex.json (82 KB) → TypeScript</figcaption>
 ${startup.html}
 </figure>
-<p><a href="./#v=2&amp;l=typescript&amp;s=pokedex">Compare both engines in your browser</a>: switch engines in the playground, then <i>Measure warm runs</i>.</p>
+<p><a href="./app/#v=2&amp;l=typescript&amp;s=pokedex">Compare both engines in your browser</a>: switch engines in the playground, then <i>Measure warm runs</i>.</p>
 </section>`);
 
     const facts2 = [

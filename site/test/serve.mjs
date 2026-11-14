@@ -1,5 +1,6 @@
 // A tiny static server for site/dist, under /quickertype/ as on GitHub Pages
-// (so a URL that is not relative shows up as a 404). No dependencies.
+// (so a URL that is not relative shows up as a 404): the landing page at
+// /quickertype/, the playground at /quickertype/app/. No dependencies.
 //
 //   node site/test/serve.mjs [port]      (after `node site/build.mjs`)
 
@@ -17,6 +18,9 @@ const types = {
     ".wasm": "application/wasm",
     ".json": "application/json; charset=utf-8",
     ".schema": "application/json; charset=utf-8",
+    ".woff2": "font/woff2",
+    ".webp": "image/webp",
+    ".png": "image/png",
 };
 
 /** Serves `root` at `base`; `requests` records every request as [status, url]. */
@@ -35,7 +39,20 @@ export async function serve(root, port = 0) {
                 status = 400;
             }
 
-            const candidate = relative === undefined ? undefined : path.join(root, relative);
+            let candidate = relative === undefined ? undefined : path.join(root, relative);
+            // A directory serves its index.html, as GitHub Pages does
+            // (app/ is the playground); without its slash it is redirected.
+            if (candidate?.startsWith(root + path.sep) && fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+                if (!url.pathname.endsWith("/")) {
+                    requests.push([301, url.pathname]);
+                    response.writeHead(301, { location: `${url.pathname}/${url.search}` });
+                    response.end();
+                    return;
+                }
+
+                candidate = path.join(candidate, "index.html");
+            }
+
             if (candidate?.startsWith(root + path.sep) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
                 file = candidate;
                 status = 200;
@@ -66,5 +83,5 @@ export async function serve(root, port = 0) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "dist");
     const { url } = await serve(root, Number(process.argv[2] ?? 8080));
-    console.log(`serving site/dist at ${url} (Ctrl-C to stop)`);
+    console.log(`serving site/dist at ${url}, the playground at ${url}app/ (Ctrl-C to stop)`);
 }

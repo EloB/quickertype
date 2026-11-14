@@ -1125,7 +1125,7 @@ function drawMeter() {
         else if (line.startUp !== undefined) say(escapeHtml(line.startUp), "qualifier cold");
         glance.push(line.verdict);
         details += line.html;
-        details += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="./benchmarks.html#browser">Why</a></p>`;
+        details += `<p class="cli-note">In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speed.upTo}× faster. <a href="../benchmarks.html#browser">Why</a></p>`;
         if (line.detail !== undefined) note(line.detail);
         note(
             "The lighter part of each bar is reading the input (quickertype reads JSON with its own engine, quicktype with JSON.parse); the rest is generating the code.",

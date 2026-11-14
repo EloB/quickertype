@@ -19,8 +19,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # The playground (site/): quicktype-core with the WebAssembly engine,
-  # bundled for the browser, checked in headless Chrome against the CLI.
+  # The site (site/, see docs/SITE.md): the landing page; the playground,
+  # quicktype-core with the WebAssembly engine bundled for the browser; the
+  # benchmarks page. Checked in headless Chrome against the CLI.
   build:
     runs-on: ubuntu-latest
     steps:

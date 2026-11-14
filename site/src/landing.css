@@ -1,0 +1,1314 @@
+/* The landing page (index.html). What the site's pages share is base.css;
+   this adds the landing page's type (Archivo, a variable font with a width
+   axis: expanded for headings and figures, normal for text) and its layout.
+
+   The colours keep the site's: violet for quickertype, blue for quicktype
+   (the mark's two bars), the charts' violet and gray from base.css. The top
+   of the page is a dark stage in both themes, for the image behind it; the
+   rest follows prefers-color-scheme. The rules that come from the data (the
+   race's bar widths and timing, the example's tabs) and the @font-face rule
+   (the font's hashed file name) are added by the build. */
+
+@import "./base.css";
+
+.landing {
+    --bg: #f5f5f9;
+    --surface: #ffffff;
+    --surface-2: #eeedf6;
+    --line: #dfdeea;
+    --ink: #17162a;
+    --muted: #57566c;
+    --violet: #5b3fd6;
+    --blue: #2a69ad;
+    --stage: #0c0b1a;
+    --stage-ink: #f2f0fb;
+    --stage-muted: #b8b4d2;
+    --stage-line: rgb(255 255 255 / 0.12);
+    --display: "Archivo", var(--sans);
+    --text: "Archivo", var(--sans);
+    --measure: 66ch;
+    --gutter: clamp(16px, 4vw, 44px);
+    --width: 1180px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 17px/1.6 var(--text);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+@media (prefers-color-scheme: dark) {
+    .landing {
+        --bg: #0f0e19;
+        --surface: #17162a;
+        --surface-2: #1d1c33;
+        --line: #2c2a45;
+        --ink: #eceaf7;
+        --muted: #a6a3bb;
+        --violet: #a99aff;
+        --blue: #7ab2ee;
+        --stage: #09081a;
+    }
+}
+
+html:has(.landing) {
+    background: var(--stage, #0c0b1a);
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html:has(.landing) {
+        scroll-behavior: auto;
+    }
+}
+
+.landing h1,
+.landing h2,
+.landing h3 {
+    margin: 0;
+    font-family: var(--display);
+    text-wrap: balance;
+}
+
+.landing h2 {
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.25rem);
+    font-stretch: 118%;
+    font-weight: 780;
+    line-height: 1.04;
+    letter-spacing: -0.022em;
+}
+
+.landing h3 {
+    font-size: 1.15rem;
+    font-stretch: 108%;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+}
+
+.landing p {
+    margin: 0;
+}
+
+.landing code {
+    font: 0.86em/1.4 var(--mono);
+}
+
+.landing a {
+    text-underline-offset: 3px;
+}
+
+.lead {
+    max-width: 38em;
+    font-size: clamp(1.1rem, 1rem + 0.4vw, 1.3rem);
+    line-height: 1.5;
+}
+
+.skip {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--stage-ink);
+    color: var(--stage);
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(-200%);
+}
+
+.skip:focus {
+    transform: none;
+}
+
+/* ---- Buttons: the mark's rounded bar ------------------------------------ */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.55em 1.2em;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font-family: var(--display);
+    font-size: 0.98rem;
+    font-stretch: 106%;
+    font-weight: 650;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.button:hover {
+    border-color: var(--violet);
+}
+
+.button.primary {
+    border-color: var(--violet);
+    background: var(--violet);
+    color: #fff;
+}
+
+.button.primary:hover {
+    background: color-mix(in srgb, var(--violet) 86%, #000);
+}
+
+@media (prefers-color-scheme: dark) {
+    .button.primary {
+        color: #120e2a;
+    }
+
+    .button.primary:hover {
+        background: color-mix(in srgb, var(--violet) 86%, #fff);
+    }
+}
+
+/* ---- The header, over the stage ------------------------------------------ */
+
+.site-head {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 24px;
+    max-width: calc(var(--width) + 2 * var(--gutter));
+    margin: 0 auto;
+    padding: 20px var(--gutter);
+    color: var(--stage-ink);
+}
+
+.site-head .mark {
+    width: 26px;
+    height: 26px;
+}
+
+.site-head .mark-wasm {
+    fill: #a08cff;
+}
+
+.site-head .mark-ts {
+    fill: #6ea8ea;
+}
+
+.site-head .wordmark {
+    font-family: var(--display);
+    font-size: 21px;
+    font-stretch: 112%;
+    font-weight: 760;
+}
+
+.site-head nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 22px;
+    margin-left: auto;
+    font-size: 0.95rem;
+    font-weight: 550;
+}
+
+.site-head nav a {
+    color: var(--stage-muted);
+    text-decoration: none;
+}
+
+.site-head nav a:hover {
+    color: var(--stage-ink);
+    text-decoration: underline;
+}
+
+/* ---- The hero: a dark stage --------------------------------------------- */
+
+.hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 112px var(--gutter) clamp(150px, 11vw, 160px);
+    background: var(--stage);
+    color: var(--stage-ink);
+    --code-comment: #8c88a8;
+    --code-string: #9edc93;
+    --code-number: #f3bb75;
+    --code-keyword: #bfaeff;
+    --code-type: #7dd6df;
+}
+
+.hero :focus-visible {
+    outline-color: #c9bdff;
+}
+
+/* The image: a band along the bottom of the stage, under the text, its
+   trails racing across below it; it fades in from the stage above. */
+.hero-art {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    width: 100%;
+    height: clamp(330px, 34vw, 480px);
+    object-fit: cover;
+    object-position: 30% 30%;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 50%);
+    mask-image: linear-gradient(to bottom, transparent, #000 50%);
+}
+
+.hero-grid {
+    display: grid;
+    gap: 48px;
+    max-width: var(--width);
+    margin: 0 auto;
+}
+
+@media (min-width: 1060px) {
+    .hero-grid {
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        align-items: start;
+        gap: 56px;
+    }
+}
+
+.hero h1 {
+    max-width: 11em;
+    font-size: clamp(2.7rem, 1.2rem + 5.4vw, 5.6rem);
+    font-stretch: 125%;
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+}
+
+.hero-lead {
+    max-width: 30em;
+    margin-top: 40px;
+    color: var(--stage-ink);
+    font-size: clamp(1.12rem, 1rem + 0.5vw, 1.35rem);
+    line-height: 1.5;
+}
+
+.hero-lead [data-stat] {
+    font-weight: 700;
+}
+
+.hero .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.hero .button {
+    border-color: var(--stage-line);
+    color: var(--stage-ink);
+}
+
+.hero .button:hover {
+    border-color: #a08cff;
+}
+
+.hero .button.primary {
+    border-color: #a08cff;
+    background: #a08cff;
+    color: #120e2a;
+}
+
+.hero .button.primary:hover {
+    background: #b9abff;
+}
+
+.hero-credit {
+    max-width: 34em;
+    margin-top: 28px;
+    color: var(--stage-muted);
+    font-size: 0.98rem;
+}
+
+.hero-credit a {
+    color: var(--stage-ink);
+}
+
+/* ---- The race: one CLI run, both bars at one rate ---------------------- */
+
+.race {
+    max-width: 34rem;
+    margin: 34px 0 0;
+}
+
+.race figcaption {
+    margin-bottom: 12px;
+    color: var(--stage-muted);
+    font-size: 0.95rem;
+}
+
+.race figcaption b {
+    color: var(--stage-ink);
+    font-weight: 700;
+}
+
+.lane {
+    display: grid;
+    grid-template-columns: 6.6rem minmax(0, 1fr) 4.6rem;
+    gap: 12px;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.lane + .lane {
+    margin-top: 8px;
+}
+
+.lane-name {
+    color: var(--stage-muted);
+    font-size: 0.95rem;
+}
+
+.lane-time {
+    font-weight: 650;
+    text-align: right;
+}
+
+.lane-track {
+    position: relative;
+    height: 14px;
+    border-radius: 7px;
+    background: rgb(255 255 255 / 0.07);
+}
+
+.lane-bar {
+    display: block;
+    min-width: 6px;
+    height: 100%;
+    border-radius: 7px;
+    animation: race linear both;
+}
+
+.lane.theirs .lane-bar {
+    background: #6ea8ea;
+}
+
+.lane.ours .lane-bar {
+    background: #a08cff;
+}
+
+@keyframes race {
+    from {
+        clip-path: inset(0 100% 0 0 round 7px);
+    }
+    to {
+        clip-path: inset(0 0 0 0 round 7px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lane-bar {
+        animation: none;
+    }
+}
+
+/* ---- The example -------------------------------------------------------- */
+
+.specimen {
+    margin: 0;
+    padding: 18px;
+    border: 1px solid var(--stage-line);
+    border-radius: 20px;
+    background: rgb(17 15 38 / 0.82);
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.7);
+    backdrop-filter: blur(14px);
+    font-size: 0.9rem;
+}
+
+.specimen figcaption {
+    margin: 2px 4px 14px;
+    color: var(--stage-muted);
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+
+.specimen figcaption b {
+    color: var(--stage-ink);
+    font-weight: 650;
+}
+
+.specimen figcaption code {
+    color: var(--stage-ink);
+}
+
+.code {
+    margin: 0;
+    padding: 14px 16px;
+    overflow: auto;
+    border-radius: 12px;
+    background: rgb(0 0 0 / 0.32);
+    color: #e9e6f8;
+    font: 12.5px/1.6 var(--mono);
+    tab-size: 4;
+}
+
+.code .c {
+    color: var(--code-comment);
+}
+
+.code .s {
+    color: var(--code-string);
+}
+
+.code .n {
+    color: var(--code-number);
+}
+
+.code .k {
+    color: var(--code-keyword);
+}
+
+.code .t {
+    color: var(--code-type);
+}
+
+.code.input {
+    max-height: 17.5em;
+}
+
+.outputs {
+    margin-top: 14px;
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.tabs label {
+    position: relative;
+    cursor: pointer;
+}
+
+.tabs input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.tabs span {
+    display: block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: var(--stage-muted);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.tabs label:hover span {
+    color: var(--stage-ink);
+}
+
+.tabs input:checked + span {
+    background: rgb(160 140 255 / 0.2);
+    color: var(--stage-ink);
+    box-shadow: inset 0 0 0 1px rgb(160 140 255 / 0.55);
+}
+
+.tabs input:focus-visible + span {
+    outline: 2px solid #c9bdff;
+    outline-offset: 2px;
+}
+
+.panel {
+    display: none;
+}
+
+@supports not selector(:has(*)) {
+    .panel:first-of-type {
+        display: block;
+    }
+}
+
+/* As tall as the TypeScript output; longer ones scroll. */
+.panel .code {
+    height: calc(15 * 1.6em + 28px);
+}
+
+.command {
+    margin-top: 10px;
+    padding: 0 4px;
+    color: var(--stage-muted);
+    font-size: 0.82rem;
+}
+
+.command code {
+    font-size: 12px;
+}
+
+/* The command wraps between its arguments, not inside one (--just-types). */
+.command code span {
+    white-space: nowrap;
+}
+
+.proof {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-top: 6px;
+    padding: 0 4px;
+    color: var(--stage-ink);
+    font-size: 0.86rem;
+    line-height: 1.45;
+}
+
+.proof code {
+    color: var(--stage-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.tick {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    transform: translateY(2px);
+    fill: none;
+    stroke: #9edc93;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---- Sections ------------------------------------------------------------ */
+
+.landing main > section:not(.hero) {
+    max-width: calc(var(--width) + 2 * var(--gutter));
+    margin: 0 auto;
+    padding: clamp(72px, 9vw, 128px) var(--gutter) 0;
+}
+
+.landing main > section > h2 + .lead,
+.landing main > section .lead {
+    margin-top: 20px;
+}
+
+.landing section p + p {
+    margin-top: 14px;
+}
+
+/* An image beside a section's opening text. */
+.thanks-intro,
+.tested-intro {
+    display: grid;
+    gap: 36px;
+    align-items: center;
+}
+
+@media (min-width: 1000px) {
+    .thanks-intro {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+        gap: 64px;
+    }
+
+    .tested-intro {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+        gap: 64px;
+    }
+}
+
+.art {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 22px;
+    background: var(--stage);
+}
+
+.thanks-text > p:not(.lead) {
+    max-width: var(--measure);
+    color: var(--muted);
+}
+
+/* After `.thanks-text > p:not(.lead)`, and as specific: the buttons are not text. */
+.thanks-text > p.thanks-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: none;
+    margin-top: 28px;
+}
+
+.thanks-links .button {
+    min-height: 40px;
+    padding: 0.45em 1em;
+    font-size: 0.92rem;
+}
+
+/* ---- The ledgers: a figure over a few words, under a short bar -------- */
+
+.ledger {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+    gap: 34px 40px;
+    margin: 64px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ledger li {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.97rem;
+    line-height: 1.45;
+}
+
+.ledger li::before {
+    content: "";
+    width: 30px;
+    height: 7px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    background: var(--violet);
+}
+
+.quicktype-facts li::before {
+    background: var(--blue);
+}
+
+@media (min-width: 900px) {
+    .quicktype-facts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.figure {
+    color: var(--ink);
+    font-family: var(--display);
+    font-size: clamp(2.2rem, 1.6rem + 1.6vw, 3.1rem);
+    font-stretch: 125%;
+    font-weight: 760;
+    font-variant-numeric: tabular-nums lining-nums;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+/* ---- The contributors ---------------------------------------------------- */
+
+.people {
+    margin-top: 64px;
+}
+
+.people > p {
+    max-width: var(--measure);
+    margin-top: 8px;
+    color: var(--muted);
+}
+
+.wall {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wall a {
+    display: block;
+    border-radius: 50%;
+}
+
+.wall img {
+    display: block;
+    border-radius: 50%;
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--line);
+    transition: box-shadow 0.15s;
+}
+
+.wall a:hover img,
+.wall a:focus-visible img {
+    box-shadow: 0 0 0 3px var(--blue);
+}
+
+.wall .top img {
+    width: 88px;
+    height: 88px;
+}
+
+.wall .mid img {
+    width: 56px;
+    height: 56px;
+}
+
+.wall .rest img {
+    width: 40px;
+    height: 40px;
+}
+
+.disclaimer {
+    max-width: var(--measure);
+    margin-top: 40px !important;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+/* ---- How it is checked --------------------------------------------------- */
+
+.flow {
+    display: grid;
+    gap: 18px;
+    margin: 64px 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+}
+
+@media (min-width: 900px) {
+    .flow {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+    }
+}
+
+.flow li {
+    position: relative;
+    padding: 0 0 0 56px;
+    counter-increment: step;
+}
+
+@media (min-width: 900px) {
+    .flow li {
+        padding: 60px 28px 0 0;
+    }
+}
+
+/* The step's number, on the line that joins the steps. */
+.flow li::before {
+    content: counter(step);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--violet);
+    color: var(--bg);
+    font-family: var(--display);
+    font-size: 1rem;
+    font-stretch: 112%;
+    font-weight: 760;
+}
+
+.flow li::after {
+    content: "";
+    position: absolute;
+    top: 38px;
+    bottom: -18px;
+    left: 18px;
+    width: 2px;
+    background: color-mix(in srgb, var(--violet) 35%, transparent);
+}
+
+.flow li:last-child::after {
+    display: none;
+}
+
+@media (min-width: 900px) {
+    .flow li::after {
+        top: 18px;
+        bottom: auto;
+        left: 46px;
+        right: 8px;
+        width: auto;
+        height: 2px;
+    }
+}
+
+.flow h3 {
+    margin-top: 6px;
+}
+
+@media (min-width: 900px) {
+    .flow h3 {
+        margin-top: 0;
+    }
+}
+
+.flow p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.97rem;
+    line-height: 1.5;
+}
+
+.flow p [data-stat] {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+.fuzzing {
+    display: grid;
+    gap: 24px 48px;
+    margin-top: 48px;
+    padding: 26px 28px;
+    border: 1.5px dashed color-mix(in srgb, var(--violet) 55%, transparent);
+    border-radius: 20px;
+}
+
+@media (min-width: 1000px) {
+    .fuzzing {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+        align-items: center;
+    }
+}
+
+/* One round of fuzzing: steps down a line that comes back to the top. */
+.loop {
+    position: relative;
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0 0 0 26px;
+    list-style: none;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+.loop::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 5px;
+    width: 12px;
+    border: 2px solid color-mix(in srgb, var(--violet) 45%, transparent);
+    border-right: 0;
+    border-radius: 8px 0 0 8px;
+}
+
+.loop li {
+    position: relative;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.loop li::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -25px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--violet);
+    transform: translateY(-50%);
+}
+
+.fuzzing p {
+    max-width: 72ch;
+    margin-top: 8px;
+    color: var(--muted);
+}
+
+.fuzzing [data-stat] {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+.tested-more {
+    display: grid;
+    gap: 40px;
+    align-items: start;
+    margin-top: 16px;
+}
+
+@media (min-width: 1000px) {
+    .tested-more {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: 56px;
+    }
+
+    .tested-more .ledger {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tested-more .chart {
+        margin-top: 64px;
+    }
+}
+
+.more {
+    max-width: var(--measure);
+    margin-top: 44px !important;
+    color: var(--muted);
+}
+
+/* ---- Charts (site/charts.mjs) -------------------------------------------- */
+
+.chart {
+    container-type: inline-size;
+    margin: 0;
+    padding: 22px 24px 20px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--surface);
+    font-size: 0.92rem;
+}
+
+.chart figcaption {
+    margin-bottom: 14px;
+    font-family: var(--display);
+    font-size: 1.02rem;
+    font-stretch: 106%;
+    font-weight: 680;
+    line-height: 1.3;
+}
+
+.chart.years {
+    margin-top: 48px;
+}
+
+.legend {
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.key {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border-radius: 3px;
+    vertical-align: -1px;
+}
+
+.legend .key:not(:first-child) {
+    margin-left: 16px;
+}
+
+.key.ours {
+    background: var(--viz-ours);
+}
+
+.key.theirs {
+    background: var(--viz-theirs);
+}
+
+.bars {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name value" "bar bar";
+    gap: 3px 12px;
+    align-items: baseline;
+}
+
+.bar-name {
+    grid-area: name;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.bar-value {
+    grid-area: value;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.bars-svg {
+    grid-area: bar;
+    display: block;
+    width: 100%;
+    overflow: visible;
+}
+
+@container (min-width: 700px) {
+    .bar-row {
+        grid-template-columns: 17rem minmax(0, 1fr) 7.5rem;
+        grid-template-areas: "name bar value";
+        align-items: center;
+    }
+}
+
+.bar-mark.ours rect,
+rect.bar-mark.ours {
+    fill: var(--viz-ours);
+}
+
+.bar-mark.theirs rect,
+rect.bar-mark.theirs {
+    fill: var(--viz-theirs);
+}
+
+.years .bar-mark.theirs rect {
+    fill: var(--blue);
+}
+
+/* A bar that goes on further than drawn. */
+rect.more {
+    fill: var(--viz-theirs);
+    opacity: 0.3;
+}
+
+.bar-name .key {
+    vertical-align: -1px;
+}
+
+.tip {
+    fill: var(--ink);
+    font-family: var(--text);
+    font-size: 12px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.axis {
+    fill: var(--muted);
+    font-family: var(--text);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.baseline {
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.columns-svg {
+    display: block;
+    overflow: visible;
+}
+
+.table-view {
+    margin-top: 16px;
+    font-size: 0.86rem;
+}
+
+.table-view summary {
+    width: fit-content;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.table-view[open] summary {
+    margin-bottom: 8px;
+}
+
+.table-view table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.table-view caption {
+    padding-bottom: 6px;
+    color: var(--muted);
+    text-align: left;
+}
+
+.table-view th,
+.table-view td {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--line);
+    font-weight: normal;
+    text-align: left;
+    vertical-align: top;
+}
+
+.table-view thead th {
+    color: var(--muted);
+}
+
+.table-view tbody th {
+    min-width: 10em;
+    padding-right: 14px;
+}
+
+.table-view .num {
+    padding-left: 16px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.fineprint {
+    margin-top: 14px !important;
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+/* ---- Speed ---------------------------------------------------------------- */
+
+.charts {
+    display: grid;
+    gap: 20px;
+    margin-top: 48px;
+}
+
+.charts .column {
+    display: grid;
+    gap: 20px;
+    align-content: start;
+}
+
+@media (min-width: 1000px) {
+    .charts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .charts .wide {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---- Use it ---------------------------------------------------------------- */
+
+.ways {
+    display: grid;
+    gap: 20px;
+    margin-top: 40px;
+}
+
+@media (min-width: 960px) {
+    .ways {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.way {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 26px 26px 28px;
+    border-radius: 20px;
+    background: var(--surface-2);
+}
+
+.way p {
+    margin: 0 !important;
+    color: var(--muted);
+}
+
+.way h3 {
+    font-size: 1.3rem;
+    font-stretch: 112%;
+}
+
+.commands {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    border-radius: 12px;
+    background: var(--surface);
+    font: 13px/1.7 var(--mono);
+}
+
+.commands code {
+    font: inherit;
+}
+
+/* ---- Footer ----------------------------------------------------------------- */
+
+.site-foot {
+    width: min(var(--width), 100% - 2 * var(--gutter));
+    margin: clamp(72px, 9vw, 120px) auto 0;
+    padding: 28px 0 40px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.site-foot p {
+    max-width: 80ch;
+}
+
+.site-foot p + p {
+    margin-top: 6px;
+}
+
+.site-foot p:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-top: 16px;
+}
+
+/* Phones: the header wraps under the mark, the stage gets room for it. */
+@media (max-width: 560px) {
+    .landing {
+        font-size: 16px;
+    }
+
+    .site-head nav {
+        gap: 4px 16px;
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .hero {
+        padding-top: 120px;
+    }
+
+    .lane {
+        grid-template-columns: 5.6rem minmax(0, 1fr) 4.2rem;
+        gap: 10px;
+    }
+
+    .specimen {
+        padding: 12px;
+    }
+
+    /* Smaller avatars: about ten to a row. */
+    .wall {
+        gap: 6px;
+    }
+
+    .wall .top img {
+        width: 64px;
+        height: 64px;
+    }
+
+    .wall .mid img {
+        width: 42px;
+        height: 42px;
+    }
+
+    .wall .rest img {
+        width: 30px;
+        height: 30px;
+    }
+
+    /* quicktype's six figures, two to a row. */
+    .quicktype-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px 20px;
+    }
+
+    .quicktype-facts .figure {
+        font-size: 2rem;
+    }
+
+    .way {
+        padding: 22px 20px 24px;
+    }
+}

@@ -35,7 +35,7 @@ const { lines } = await quicktype({ inputData, lang: "typescript" });
 quicktype's. In a browser the engine is a separate `.wasm` file that your
 bundler has to serve, or that you hand over yourself: see
 [Loading](#loading). Try it in the
-[playground](https://elob.github.io/quickertype/).
+[playground](https://elob.github.io/quickertype/app/).
 
 The rest of this file is about how the package works and how to build it.
 
