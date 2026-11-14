@@ -152,8 +152,16 @@ pub(crate) fn parse_lines_part_into<S: JsonSink>(
     first: bool,
 ) -> Result<(S::Root, u64), ParseError> {
     let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
+    // Elsewhere a byte order mark is not a value: the sample fails there.
+    if !first
+        && tokenizer.byte(0) == Some(0xEF)
+        && tokenizer.byte(1) == Some(0xBB)
+        && tokenizer.byte(2) == Some(0xBF)
+    {
+        return Err(syntax("Parser cannot parse input: unexpected token"));
+    }
     let mut lines = Lines::default();
-    let result = tokenizer.run_lines(sink, &mut lines, true, first);
+    let result = tokenizer.run_lines::<S, false>(sink, &mut lines);
     let feeds = lines.feeds as u64;
     finish(sink, tokenizer, result).map(|root| (root, feeds))
 }
@@ -177,12 +185,12 @@ pub(crate) fn parse_lines_rest_into<S: JsonSink>(
         value_line: feeds.saturating_add(1),
         started: false,
     };
-    tokenize_lines_with(
-        sink,
-        Tokenizer::streaming(reader, CHUNK_SIZE),
-        &mut lines,
-        false,
-    )
+    let mut tokenizer = Tokenizer::streaming(reader, CHUNK_SIZE);
+    let result = match tokenizer.run_lines::<S, true>(sink, &mut lines) {
+        Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
+        result => result,
+    };
+    finish(sink, tokenizer, result)
 }
 
 /// [`parse_stream_reader_into`] with chunks of at most `chunk_size` bytes.
@@ -240,20 +248,10 @@ fn finish<S: JsonSink, W: Window>(
 /// compile as they did before JSON Lines.)
 fn tokenize_lines<S: JsonSink, W: Window>(
     sink: &mut S,
-    tokenizer: Tokenizer<'_, W>,
-) -> Result<S::Root, ParseError> {
-    tokenize_lines_with(sink, tokenizer, &mut Lines::default(), true)
-}
-
-/// [`tokenize_lines`] from `lines`, in a sample whose array is opened here
-/// (`whole`, where a byte order mark may come first) or was before.
-fn tokenize_lines_with<S: JsonSink, W: Window>(
-    sink: &mut S,
     mut tokenizer: Tokenizer<'_, W>,
-    lines: &mut Lines,
-    whole: bool,
 ) -> Result<S::Root, ParseError> {
-    let result = match tokenizer.run_lines(sink, lines, whole, whole) {
+    let mut lines = Lines::default();
+    let result = match tokenizer.run_lines::<S, false>(sink, &mut lines) {
         Err(ParseError::Js(e)) => Err(line_error(lines.value_line, &e)),
         result => result,
     };
@@ -780,28 +778,27 @@ impl<W: Window> Tokenizer<'_, W> {
     /// [`run`](Self::run) for JSON Lines: the array of the values, each
     /// read as a whole sample, which must start on a line after the last
     /// one ends (`Expect::Done` is between values, and the stack is empty
-    /// there). `lines` says where the reading is, for the line of an
-    /// error. The array is opened here if `open` (else `sink` is in it
-    /// already, for the rest of a sample read on several threads), and a
-    /// byte order mark may come first if `bom` (at the sample's start).
-    fn run_lines<S: JsonSink>(
+    /// there). A byte order mark may come first. `lines` says where the
+    /// reading is, for the line of an error. With `REST`, the rest of a
+    /// sample read on several threads, after a line feed between its
+    /// values: `sink` is in the array already, and no byte order mark
+    /// comes first. (A constant, so that reading a whole sample compiles
+    /// as it did before.)
+    fn run_lines<S: JsonSink, const REST: bool>(
         &mut self,
         sink: &mut S,
         lines: &mut Lines,
-        open: bool,
-        bom: bool,
     ) -> Result<S::Root, ParseError> {
         let mut expect = Expect::Done;
         let mut stack: Vec<Parent> = Vec::new();
-        if open {
+        if !REST {
             sink.push_array_context()?;
-        }
-        if bom
-            && self.byte(0) == Some(0xEF)
-            && self.byte(1) == Some(0xBB)
-            && self.byte(2) == Some(0xBF)
-        {
-            self.index += 3;
+            if self.byte(0) == Some(0xEF)
+                && self.byte(1) == Some(0xBB)
+                && self.byte(2) == Some(0xBF)
+            {
+                self.index += 3;
+            }
         }
         states!(self, sink, expect, stack, skip: self.skip_line_whitespace(&mut lines.feeds), done: {
             let feeds = lines.feeds;
