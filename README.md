@@ -64,7 +64,7 @@ files. Wall time, median of 10 runs:
   the JSON, not with its size.
 - **Several cores:** a file of 8 MiB or more whose top-level value is an
   array is read on all cores: an array of 1 million records (267 MB)
-  becomes TypeScript types in 48–59 ms instead of 265 ms on a 12-core
+  becomes TypeScript types in 50 ms instead of 261 ms on a 12-core
   M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
   Node.js's startup (about 215 ms); on large inputs it is the engine. As

@@ -538,7 +538,7 @@ table, so the steps add up only roughly.
 | 3a. One threshold in `discard_consumed` | done | about −2.3 ms | 100k: 40.9 → 39.4 (−3.6%); 1M: 374 → 354 |
 | 3b. UUID shape first, under the default recognizer | done | with 3c, classification 34.9 → 31.2 ms in the parse bench | 100k: 39.4 → 36.7 (−7%); 1M: 354 → 331; nothing on text without UUIDs |
 | 3c. The UTF-16 bound in `commit_string` | done | (with 3b) | 100k: 30.4 → 29.8 (−2%); generated 43.7 MB: 175 → 170 (−3%) |
-| 4. Several threads | done (`perf/parallel-read`) | 4–6× less wall time on 8 cores (estimate) | against `6f40b0d16`, load average 5: 1M: 265 → 58.9 ms on 12 threads (4.5×), 62.9 ms on 8 (4.2×), 1.7–1.8× the CPU (47.5 ms at load 1.3); 100k: 30.4 → 11.6 ms (11.4 on 8); text-heavy 62.9 → 24.1 ms (23.5 on 8); pretty-printed 32.6 → 11.9 ms |
+| 4. Several threads | done (`perf/parallel-read`) | 4–6× less wall time on 8 cores (estimate) | against `e2e3f3fc9`, load average 4: 1M: 261 → 49.9 ms on 12 threads (5.2×), 56.3 ms on 8 (4.6×), 1.5–1.7× the CPU; 100k: 30.9 → 10.5 ms; text-heavy 62.5 → 21.7 ms (21.3 on 8); pretty-printed 33.0 → 11.3 ms |
 | 5. Last-case cache | tried, dropped | −1 to −2 ms (estimate) | the tallies' case slots already count a recurring case without hashing its id; comparing a string with its place's last case before hashing it saved under 1% on the records and cost 1.5–2.4% on the generated input, whose places vary |
 | 6. Pluralize's rules built at compile time | done | −0.7 ms | 9-byte input 4.4 → 3.7 ms, pokedex 5.5 → 4.8 ms, 100k 37.1 → 36.4 ms; peak RSS −1.0 to −1.6 MiB on small inputs |
 | 7. A cheaper window | not started | – | – |
@@ -649,19 +649,25 @@ Exactness of what is implemented:
 - `cargo xtask parity`: 11,177 of 11,177. The fuzz targets `json_stream`
   and `json_parse` ran 5 minutes each (1.8 million inputs each) without a
   finding.
-- Item 4, against main (`6f40b0d16`): the CLI on 260,928 runs (2,416
+- Item 4, against main (`e2e3f3fc9`): the CLI on 260,928 runs (2,416
   files: these, 148 edge cases around range boundaries, and the 2,000
   generated documents; × 9 option sets × 12 settings of threads, 1, 2,
   3, 8 and the default, and chunk size, 16 B to 64 KiB), 13,416 failing
   identically; 6,048 runs on 28 arrays whose places come to absorb every
-  string partway, around the range sizes and at random elements; 252
-  runs on two arrays with a string of 50 million backslashes; and 756
-  runs on the large inputs; all from a path and from standard input.
-  The differential harness's `parallel` way: 200,000 seeds, 0
-  differences (458,180 samples read whole on several threads, 22,821 in
-  part); a fault that merges the parts' trees out of order is caught on
-  5,851 of 20,000 seeds. The fuzz target `json_split` ran 154,472 and,
-  after the second review, 23,641 more inputs without a finding. The
+  string partway, around the range sizes and at random elements; 3,024
+  on 14 arrays full of URIs (ports, user info, queries, IPv6 hosts, new
+  protocols and extensions around the range sizes); 252 on two arrays
+  with a string of 50 million backslashes; 432 on four 30 MB arrays of
+  elements with keys of their own; and 756 on the large inputs; all from
+  a path and from standard input; and the 2.6 GB input and ten copies of
+  the generated document with three budgets. The differential harness's
+  `parallel` way: 200,000 seeds, 0 differences (234,787 samples read
+  whole on several threads, 33,770 in part: small samples read whole on
+  the reading thread, to measure their trees, count as whole); a fault
+  that merges the parts' trees out of order is caught on 4,222 of
+  20,000 seeds. The fuzz target `json_split` ran 154,472 and, after the
+  second and third reviews, 23,641 and 42,169 more inputs without a
+  finding. The
   WebAssembly engine does not read on several threads; npm/quicktype-core's
   tests, its differential suite (19,078 scenarios, 0 different) and its
   browser smoke test passed before the rebase onto `a91401e78`.
