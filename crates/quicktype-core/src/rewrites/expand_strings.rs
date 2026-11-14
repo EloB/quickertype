@@ -16,6 +16,7 @@ use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeKind, TypeAttributes};
 use crate::graph_rewriting::make_replacer;
 use crate::messages::Result;
+use crate::support::fast_hash::{HashMap, HashSet};
 use crate::support::support::{assert, assert_default, defined};
 use crate::ty::transformed_string_type::TypeKind;
 use crate::ty::type_builder::TypeBuilder;
@@ -153,6 +154,9 @@ fn find_enum_sets(
     // First, make case sets for all the enums that stand on their own. If we
     // find some overlap (searching eagerly), make unions.
     let keys: Vec<TypeRef> = enum_infos.keys().copied().collect();
+    // The ones we're done with, removed together below: removing each one
+    // as it is done (`shift_remove`) moves all later entries every time.
+    let mut done: HashSet<TypeRef> = HashSet::default();
     for t in keys {
         let info = defined(enum_infos.get(&t))?;
         if inference == EnumInference::All {
@@ -169,10 +173,9 @@ fn find_enum_sets(
                 None => enum_sets.push(info.cases.clone()),
             }
         }
-
-        // Remove the ones we're done with.
-        enum_infos.shift_remove(&t);
+        done.insert(t);
     }
+    enum_infos.retain(|t, _| !done.contains(t));
 
     if inference == EnumInference::All {
         assert_default(enum_infos.is_empty())?;
@@ -192,6 +195,48 @@ fn find_enum_sets(
     Ok(enum_sets)
 }
 
+/// The enum case sets, and for `EnumInference::All` (where a string type's
+/// enum is the first set equal to its cases) the first set of each distinct
+/// case set, keyed by its sorted cases.
+struct EnumSets {
+    sets: Vec<IndexSet<String>>,
+    first_equal: HashMap<Vec<String>, usize>,
+}
+
+impl EnumSets {
+    fn new(sets: Vec<IndexSet<String>>, inference: EnumInference) -> EnumSets {
+        let mut first_equal = HashMap::default();
+        if inference == EnumInference::All {
+            for (i, s) in sets.iter().enumerate() {
+                first_equal.entry(sorted_cases(s.iter())).or_insert(i);
+            }
+        }
+        EnumSets { sets, first_equal }
+    }
+
+    /// `enumSets.find(s => setEquals(s, set))` for `EnumInference::All`, else
+    /// the first set that contains all of `cases`.
+    fn find(
+        &self,
+        cases: &IndexMap<String, u64>,
+        inference: EnumInference,
+    ) -> Option<&IndexSet<String>> {
+        if inference == EnumInference::All {
+            let i = *self.first_equal.get(&sorted_cases(cases.keys()))?;
+            return self.sets.get(i);
+        }
+        self.sets
+            .iter()
+            .find(|s| cases.keys().all(|k| s.contains(k)))
+    }
+}
+
+fn sorted_cases<'a>(cases: impl Iterator<Item = &'a String>) -> Vec<String> {
+    let mut v: Vec<String> = cases.cloned().collect();
+    v.sort_unstable();
+    v
+}
+
 /// `replaceString(group, builder, forwardingRef)`.
 fn replace_string(
     t: TypeRef,
@@ -199,7 +244,7 @@ fn replace_string(
     forwarding_ref: TypeRef,
     string_type_mapping: &StringTypeMapping,
     inference: EnumInference,
-    enum_sets: &[IndexSet<String>],
+    enum_sets: &EnumSets,
 ) -> Result<TypeRef> {
     let graph = builder.original_graph()?;
     let string_types = string_types_for_type(graph, t)?;
@@ -217,20 +262,9 @@ fn replace_string(
         );
     };
 
-    // The case set (`new Set(cases.keys())`) is `cases`' keys; it is used
-    // through them instead of being copied.
-    let set_matches = |s: &IndexSet<String>| -> bool {
-        if inference == EnumInference::All {
-            // `setEquals`.
-            s.len() == cases.len() && s.iter().all(|x| cases.contains_key(x))
-        } else {
-            cases.keys().all(|k| s.contains(k))
-        }
-    };
-
     let mut types: Vec<TypeRef> = Vec::new();
     if !cases.is_empty() {
-        let full_cases = enum_sets.iter().find(|s| set_matches(s));
+        let full_cases = enum_sets.find(cases, inference);
         match full_cases {
             Some(full_cases)
                 if inference != EnumInference::None && !is_always_empty_string(cases.keys()) =>
@@ -288,7 +322,10 @@ pub fn expand_strings(
         }
     }
 
-    let enum_sets = find_enum_sets(graph, string_type_mapping, inference, &all_strings)?;
+    let enum_sets = EnumSets::new(
+        find_enum_sets(graph, string_type_mapping, inference, &all_strings)?,
+        inference,
+    );
 
     let mapping = string_type_mapping.clone();
     let replacer = make_replacer(move |group, builder, forwarding_ref| {
@@ -319,6 +356,39 @@ mod tests {
         for s in ["", "-", "1.", ".5", "1e5", "1.2.3", "٣", "+-1", "1 "] {
             assert!(!is_number_string(s), "{s}");
         }
+    }
+
+    #[test]
+    fn finds_the_first_equal_or_containing_set() {
+        let set = |cases: &[&str]| -> IndexSet<String> {
+            cases.iter().map(|s| (*s).to_owned()).collect()
+        };
+        let cases = |cases: &[&str]| -> IndexMap<String, u64> {
+            cases.iter().map(|s| ((*s).to_owned(), 1)).collect()
+        };
+        let sets = vec![
+            set(&["a", "b"]),
+            set(&["b", "a", "c"]),
+            set(&["c", "b", "a"]),
+            set(&["a", "b", "c", "d"]),
+        ];
+        let all = EnumSets::new(sets.clone(), EnumInference::All);
+        let found = all.find(&cases(&["c", "a", "b"]), EnumInference::All);
+        assert_eq!(
+            found.map(|s| s.iter().cloned().collect::<Vec<_>>()),
+            Some(vec!["b".to_owned(), "a".to_owned(), "c".to_owned()])
+        );
+        assert!(all.find(&cases(&["a"]), EnumInference::All).is_none());
+        let infer = EnumSets::new(sets, EnumInference::Infer);
+        let len = |c: &[&str]| {
+            infer
+                .find(&cases(c), EnumInference::Infer)
+                .map(IndexSet::len)
+        };
+        assert_eq!(len(&["a"]), Some(2));
+        assert_eq!(len(&["c", "a"]), Some(3));
+        assert_eq!(len(&["d"]), Some(4));
+        assert_eq!(len(&["e"]), None);
     }
 
     #[test]
