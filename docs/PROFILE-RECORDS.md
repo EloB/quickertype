@@ -556,10 +556,14 @@ How it differs from the prototypes:
   date-time to it (`DateTimeRecognizer::rejects_uuids`, `false` by
   default, `true` for the three built-in recognizers: the default one,
   Kotlin's and Swift's), and tests only strings of 36 bytes.
-- Item 6 builds dense DFAs, which load in about 40 µs. Sparse ones would
-  be 22% smaller but take 360–450 µs to load. The WebAssembly module
-  uses them too: it grows by 183 KB, 20 KB gzipped (see
-  [BENCHMARKS.md](BENCHMARKS.md#reading-after-the-cli-profile)).
+- Item 6's build script also translates the rules, and builds minimized
+  dense DFAs, which load in 30–37 µs per rule list: a process does no
+  other rule work. Sparse DFAs would be 22% smaller but take 360–450 µs
+  to load. The WebAssembly module uses them too: it grows by 181 KB,
+  18 KB gzipped (see
+  [BENCHMARKS.md](BENCHMARKS.md#reading-after-the-cli-profile)). A hash
+  of the rule tables the build script read is checked against the
+  crate's own tables when the crate compiles.
 
 Exactness of what is implemented:
 

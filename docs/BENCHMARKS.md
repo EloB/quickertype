@@ -422,20 +422,26 @@ The TypeScript CLI ran in the same benchmark (pokedex 398 (284) ms,
 github-events 274–291 ms, the 40 MB input 2,676 ms), so it is not
 repeated here.
 
-**Module and binary sizes.** The pluralize DFAs are 230 KB (plural rules)
-and 286 KB (singular), 16 KB gzipped, in the CLI and in the WebAssembly
-engine alike. Bytes; gzip with `-9`, brotli with `-q 11`:
+**Module and binary sizes.** The pluralize DFAs, minimized, are 223 KB
+(plural rules) and 276 KB (singular), 15 KB gzipped, in the CLI and in
+the WebAssembly engine alike; the build script's translated patterns
+replace the code that translated them. Bytes; gzip with `-9`, brotli
+with `-q 11`:
 
 | Build | Main | This branch |
 |---|---:|---:|
-| CLI (`target/release/quicktype`) | 8,515,296 | 8,812,512 |
-| `quicktype_wasm.wasm` (`cargo build -p quicktype-wasm --release`) | 6,463,986; gzip 1,980,187 | 6,767,683; gzip 1,995,130 |
-| `quicktype_wasm_bg.wasm` as npm/quicktype-core ships it (wasm-bindgen, `wasm-opt -O3`) | 5,259,102; gzip 1,911,724; brotli 1,262,314 | 5,441,679; gzip 1,931,641; brotli 1,272,214 |
+| CLI (`target/release/quicktype`) | 8,515,296 | 8,795,984 |
+| `quicktype_wasm.wasm` (`cargo build -p quicktype-wasm --release`) | 6,463,986; gzip 1,980,187 | 6,760,572; gzip 1,994,881 |
+| `quicktype_wasm_bg.wasm` as npm/quicktype-core ships it (wasm-bindgen, `wasm-opt -O3`) | 5,259,102; gzip 1,911,724; brotli 1,262,314 | 5,439,624; gzip 1,929,933; brotli 1,271,602 |
 
-The module the package ships grows by 183 KB, 20 KB gzipped and 10 KB
+The module the package ships grows by 181 KB, 18 KB gzipped and 9 KB
 with brotli. In exchange, a new engine instance loads the rules'
-automata instead of building them for its first array (natively 40 µs
-instead of 0.7 ms for the singular rules; not measured in a browser).
+patterns and automata instead of translating and building them for its
+first array (natively 30–37 µs per rule list instead of 75–89 µs to
+translate and 0.7–1 ms to build; not measured in a browser). Minimizing
+the DFAs saved 5.5 KB of the shipped module, 60 bytes gzipped, and
+loads them as fast; unminimized, the module was 5,445,167 bytes, gzip
+1,929,993.
 
 To reproduce: build main in a second work tree (or copy its
 `target/release/quicktype`), then
