@@ -574,8 +574,13 @@ compares two more ways with the reference, for every seed: the
 compressed form the readers made, tallied (the engine's path for the
 samples it read, `jsonShared`), and its tables exported and imported
 again with `JsonInput::from_compressed` (its path for tables a
-JavaScript `CompressedJSON` built, `json`). `cargo test` checks 3,000
-seeds that way too, and the hand-written cases above run every way
+JavaScript `CompressedJSON` built, `json`). After every graph it also
+checks where each way inferred from (`JsonInput::inferred_from`): forms
+the readers made, and their tables, must be tallied, never declined, so
+a walk that declined them fails the comparison instead of comparing the
+reference with itself (forcing `tally_compressed` to decline fails it on
+the first seeds and on every hand-written case). `cargo test` checks
+3,000 seeds that way too, and the hand-written cases above run every way
 (`Path::All`).
 
 - `cargo xtask streaming-fuzz --path compressed --seeds 1_000_000` checks

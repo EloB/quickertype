@@ -363,6 +363,21 @@ pub struct CompressedTopLevel {
     pub samples: Vec<i32>,
 }
 
+/// Where a [`JsonInput`] inferred its types from, the last time it did
+/// ([`JsonInput::inferred_from`]). All of them infer the same types.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum JsonInference {
+    /// Running tallies, counted while the samples were read (the default).
+    RunningTallies,
+    /// Tallies of the compressed form, made in one walk over it (see
+    /// [`JsonInput::set_tally_compressed`]).
+    CompressedTallies,
+    /// The compressed form's values one by one, as quicktype does: the
+    /// reference, or a form the walk declined (values no reader makes).
+    CompressedValues,
+}
+
 /// The JSON samples input (TS `JSONInput<T>`).
 ///
 /// Each sample says how to read it ([`JsonSample`]): `JSON.parse`
@@ -425,6 +440,8 @@ pub struct JsonInput {
     /// than from its values one by one (see
     /// [`set_tally_compressed`](Self::set_tally_compressed)).
     tally_compressed: bool,
+    /// Where the types were inferred from last.
+    inferred_from: Option<JsonInference>,
 }
 
 /// Whether `QUICKTYPE_INFERENCE=compressed-json` asks every new
@@ -450,6 +467,7 @@ impl JsonInput {
             top_levels: IndexMap::new(),
             tallies: (!compressed_json_inference_requested()).then(Tallies::new),
             tally_compressed: false,
+            inferred_from: None,
         }
     }
 
@@ -483,6 +501,7 @@ impl JsonInput {
             top_levels: IndexMap::new(),
             tallies: None,
             tally_compressed: !compressed_json_inference_requested(),
+            inferred_from: None,
         };
         for top_level in top_levels {
             let values = top_level
@@ -548,6 +567,15 @@ impl JsonInput {
     /// [`set_tally_compressed`](Self::set_tally_compressed)).
     pub fn tally_compressed(&self) -> bool {
         self.tally_compressed
+    }
+
+    /// Where the types were inferred from the last time
+    /// [`add_types_sync`](Self::add_types_sync) inferred them (also if
+    /// inference failed then); `None` before. Inferring from tallies of
+    /// the compressed form falls back to its values only for values no
+    /// reader makes, which this tells apart (for tests).
+    pub fn inferred_from(&self) -> Option<JsonInference> {
+        self.inferred_from
     }
 
     /// A JSON input from the tables and top-levels a JavaScript
@@ -733,8 +761,9 @@ impl JsonInput {
             CompressedJson(TypeInference<'a>),
         }
         // Without running tallies, those of the compressed form: each
-        // top-level's tree, in order.
+        // top-level's tree, in order. (An error making them is this way's.)
         let compressed_tallies = if self.tallies.is_none() && self.tally_compressed {
+            self.inferred_from = Some(JsonInference::CompressedTallies);
             tally_compressed(
                 &self.compressed_json,
                 self.top_levels.values().map(|t| t.samples.as_slice()),
@@ -742,11 +771,15 @@ impl JsonInput {
         } else {
             None
         };
-        let (tallies, compressed_roots) = match (&self.tallies, &compressed_tallies) {
-            (Some(tallies), _) => (Some(tallies), None),
-            (None, Some((tallies, roots))) => (Some(tallies), Some(roots)),
-            (None, None) => (None, None),
+        let (tallies, compressed_roots, inferred_from) = match (&self.tallies, &compressed_tallies)
+        {
+            (Some(tallies), _) => (Some(tallies), None, JsonInference::RunningTallies),
+            (None, Some((tallies, roots))) => {
+                (Some(tallies), Some(roots), JsonInference::CompressedTallies)
+            }
+            (None, None) => (None, None, JsonInference::CompressedValues),
         };
+        self.inferred_from = Some(inferred_from);
         let inference = match tallies {
             Some(tallies) => Inference::Tallies(TallyInference::new(
                 tallies,
@@ -988,16 +1021,45 @@ mod tests {
                 tallied.tally_compressed(),
                 !compressed_json_inference_requested()
             );
+            tallied.set_tally_compressed(true);
             let mut by_value = input();
             by_value.set_tally_compressed(false);
             let expected = graph(&mut by_value);
+            assert_eq!(
+                by_value.inferred_from(),
+                Some(JsonInference::CompressedValues)
+            );
             assert!(!expected.starts_with("error"), "{expected}");
             assert_eq!(graph(&mut tallied), expected);
+            // The reader's form is tallied, the shared array declined.
+            let declined = top_levels[0].name == "S";
+            assert_eq!(
+                tallied.inferred_from(),
+                Some(if declined {
+                    JsonInference::CompressedValues
+                } else {
+                    JsonInference::CompressedTallies
+                })
+            );
         }
+        assert_eq!(reference.inferred_from(), None);
         reference.set_tally_compressed(true);
         let tallied = graph(&mut reference);
+        assert_eq!(
+            reference.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
         reference.set_tally_compressed(false);
         assert_eq!(tallied, graph(&mut reference));
+        assert_eq!(
+            reference.inferred_from(),
+            Some(JsonInference::CompressedValues)
+        );
+        // Running tallies.
+        let mut running = tallied_input();
+        running.add_source_sync(source("T", &[A, B])).unwrap();
+        graph(&mut running);
+        assert_eq!(running.inferred_from(), Some(JsonInference::RunningTallies));
     }
 
     /// An error tallying a compressed form is raised, not taken for a form
@@ -1030,6 +1092,12 @@ mod tests {
             );
             input.set_tally_compressed(true);
             assert_eq!(graph(&mut input), expected, "{missing:?}");
+            // The walk's own error, not the values' after a decline.
+            assert_eq!(
+                input.inferred_from(),
+                Some(JsonInference::CompressedTallies),
+                "{missing:?}"
+            );
         }
     }
 

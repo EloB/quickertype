@@ -10,7 +10,7 @@ pub mod generator;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
+use quicktype_core::input::inputs::{InputData, JsonInference, JsonInput, JsonSourceData};
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::Type;
 use quicktype_core::ty::type_builder::TypeBuilder;
@@ -114,6 +114,21 @@ pub enum Path {
     All,
 }
 
+impl Inference {
+    /// Where an input made for this way infers its types from: the forms
+    /// the readers made, and their tables, are always tallied (never
+    /// declined for values no reader makes).
+    fn inferred_from(self) -> JsonInference {
+        match self {
+            Inference::Reference => JsonInference::CompressedValues,
+            Inference::RunningTallies => JsonInference::RunningTallies,
+            Inference::CompressedTallies | Inference::ImportedTables => {
+                JsonInference::CompressedTallies
+            }
+        }
+    }
+}
+
 impl Path {
     /// The ways of inferring compared with the reference.
     fn tested(self) -> &'static [Inference] {
@@ -202,7 +217,7 @@ struct GraphFlags {
 /// The type graph right after inference.
 fn graph_of(
     lang: &dyn TargetLanguage,
-    input: &mut InputData,
+    input: &mut JsonInput,
     flags: GraphFlags,
 ) -> quicktype_core::Result<TypeGraph> {
     let mut inference_flags = InferenceFlags::default();
@@ -270,7 +285,7 @@ fn has_set_operation_cycle(graph: &TypeGraph) -> bool {
 }
 
 /// The type graph right after inference, printed with every detail.
-fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) -> String {
+fn graph(lang: &dyn TargetLanguage, input: &mut JsonInput, flags: GraphFlags) -> String {
     match graph_of(lang, input, flags) {
         Ok(graph) => format!("{graph:?}"),
         Err(e) => format!("error {e:?}"),
@@ -350,7 +365,7 @@ fn compare_graphs(
     path: Path,
 ) -> Result<(), String> {
     let renderer_options = RendererOptions::new();
-    let (reference, reference_sources) =
+    let (mut reference, reference_sources) =
         input(case, lang, &renderer_options, Some(Inference::Reference));
     let mut tested = Vec::new();
     for &inference in path.tested() {
@@ -360,23 +375,33 @@ fn compare_graphs(
                 "add_source differs\n  {inference:?}: {sources:?}\n  reference: {reference_sources:?}"
             ));
         }
-        let mut data = InputData::new();
-        data.add_input(input);
-        tested.push((inference, data));
+        tested.push((inference, input));
     }
     stats.source_errors += reference_sources
         .iter()
         .filter(|r| r.starts_with("Err"))
         .count() as u64;
-    let mut reference_data = InputData::new();
-    reference_data.add_input(reference);
+    // Each way must have inferred as it says, not fallen back to the
+    // values (which would compare the reference with itself).
+    let check_path = |inference: Inference, input: &JsonInput| {
+        let expected = inference.inferred_from();
+        match input.inferred_from() {
+            Some(actual) if actual == expected => Ok(()),
+            actual => Err(format!(
+                "{inference:?} inferred from {actual:?}, not {expected:?} ({})",
+                lang.name()
+            )),
+        }
+    };
     for &flags in flags {
         if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
             eprintln!("  graph {} {flags:?}", lang.name());
         }
-        let b = graph(lang, &mut reference_data, flags);
-        for (inference, data) in &mut tested {
-            let a = graph(lang, data, flags);
+        let b = graph(lang, &mut reference, flags);
+        check_path(Inference::Reference, &reference)?;
+        for (inference, input) in &mut tested {
+            let a = graph(lang, input, flags);
+            check_path(*inference, input)?;
             if a != b {
                 return Err(format!(
                     "graphs differ ({}, {flags:?})\n  {inference:?}: {a}\n  reference: {b}",
@@ -399,14 +424,12 @@ fn compare_run(
     path: Path,
 ) -> Result<(), String> {
     if case.handle_refs {
-        let (input, _) = input(
+        let (mut input, _) = input(
             case,
             lang,
             &RendererOptions::new(),
             Some(Inference::Reference),
         );
-        let mut data = InputData::new();
-        data.add_input(input);
         let flags = GraphFlags {
             infer_maps: option_set != "--no-maps",
             infer_enums: option_set != "--no-enums",
@@ -415,7 +438,7 @@ fn compare_run(
             all_optional: false,
             no_date_times: false,
         };
-        if graph_of(lang, &mut data, flags).is_ok_and(|g| has_set_operation_cycle(&g)) {
+        if graph_of(lang, &mut input, flags).is_ok_and(|g| has_set_operation_cycle(&g)) {
             stats.skipped_runs += 1;
             return Ok(());
         }
@@ -579,7 +602,7 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
 /// flags.
 pub fn graph_text(case: &Case) -> String {
     let lang = language("typescript");
-    let (input, sources) = input(
+    let (mut input, sources) = input(
         case,
         lang,
         &RendererOptions::new(),
@@ -588,11 +611,9 @@ pub fn graph_text(case: &Case) -> String {
     if let Some(failed) = sources.iter().find(|result| result.starts_with("Err")) {
         return format!("error adding a source: {failed}");
     }
-    let mut data = InputData::new();
-    data.add_input(input);
     graph(
         lang,
-        &mut data,
+        &mut input,
         GraphFlags {
             infer_maps: true,
             infer_enums: true,
