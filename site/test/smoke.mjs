@@ -314,10 +314,19 @@ async function launch(browser) {
         return result.result.value;
     }
 
+    // A page that sends itself on (the root's redirect of an old playground
+    // link to app/) can navigate while an evaluation is under way; Chrome
+    // then rejects it, which only means "not yet".
+    const navigating = /Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/;
+
     async function waitFor(expression, what, timeout = 60_000) {
         const until = Date.now() + timeout;
         for (;;) {
-            if (await evaluate(`Boolean(${expression})`)) return;
+            const done = await evaluate(`Boolean(${expression})`).catch((error) => {
+                if (navigating.test(error.message)) return false;
+                throw error;
+            });
+            if (done) return;
             if (Date.now() > until) {
                 const status = await evaluate(
                     "JSON.stringify({ ...document.body.dataset, meter: document.getElementById('meter')?.textContent, error: document.getElementById('error')?.textContent })",
