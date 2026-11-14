@@ -9,7 +9,8 @@
 use std::fs::File;
 use std::path::PathBuf;
 
-use quicktype_core::internal::{ParallelOptions, parallel_file_sample, parallel_reads};
+use quicktype_core::ParallelOptions;
+use quicktype_core::internal::{parallel_file_sample, parallel_reads};
 use quicktype_core::language::typescript_flow::language::TypeScriptTargetLanguage;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::{

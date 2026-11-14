@@ -12,11 +12,11 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use quicktype_core::internal::{ParallelOptions, parallel_sample};
+use quicktype_core::internal::parallel_sample;
 use quicktype_core::language::typescript_flow::language::TypeScriptTargetLanguage;
 use quicktype_core::ty::type_builder::TypeBuilder;
 use quicktype_core::{
-    InferenceFlags, JsonSample, JsonSourceData, RendererOptions, RunContext,
+    InferenceFlags, JsonSample, JsonSourceData, ParallelOptions, RendererOptions, RunContext,
     json_input_for_target_language,
 };
 

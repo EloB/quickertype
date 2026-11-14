@@ -188,6 +188,8 @@ pub use crate::input::io::node_io::{
     HttpResponse, Io, IoError, IoErrorKind, Readable, RequestInit, is_url, read_from_file_or_url,
     readable_from_file_or_url,
 };
+#[cfg(not(target_family = "wasm"))]
+pub use crate::input::parallel_read::ParallelOptions;
 
 // ---- Languages and renderer options --------------------------------------
 
@@ -221,9 +223,7 @@ pub mod internal {
     #[cfg(all(not(target_family = "wasm"), any(unix, windows), feature = "fs"))]
     pub use crate::input::parallel_read::parallel_file_sample;
     #[cfg(not(target_family = "wasm"))]
-    pub use crate::input::parallel_read::{
-        Fault, ParallelOptions, parallel_reads, parallel_sample,
-    };
+    pub use crate::input::parallel_read::{Fault, parallel_reads, parallel_sample};
     pub use crate::markov_chain::{TrainingMarkovChain, train as train_markov_chain};
     pub use crate::source::Source;
     pub use crate::support::support::{capture_console, set_console_error_sink};

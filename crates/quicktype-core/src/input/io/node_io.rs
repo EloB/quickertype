@@ -574,16 +574,22 @@ mod std_io {
         /// sample. A regular file (on Unix and Windows), or standard input
         /// redirected from one (on Unix), can then also be read at any
         /// offset, so that a large top-level array in it is read on several
-        /// threads, into the same tallies (see `docs/STREAMING-INFERENCE.md`,
-        /// "Reading on several threads").
+        /// threads as `options` say, into the same tallies (see
+        /// `docs/STREAMING-INFERENCE.md`, "Reading on several threads").
         ///
         /// [`JsonSample::Reader`]: crate::JsonSample::Reader
-        pub fn open_sample(self) -> Result<crate::SampleReader, IoError> {
+        #[cfg(not(target_family = "wasm"))]
+        pub fn open_sample(
+            self,
+            options: crate::ParallelOptions,
+        ) -> Result<crate::SampleReader, IoError> {
+            #[cfg(not(any(unix, windows)))]
+            let _ = options;
             #[cfg(any(unix, windows))]
             if let super::Readable::File(path) = &self {
                 let file = open_file(path)?;
                 if file.metadata().is_ok_and(|m| m.is_file()) {
-                    let sample = crate::input::parallel_read::PositionalSample::file(file);
+                    let sample = crate::input::parallel_read::PositionalSample::file(file, options);
                     return Ok(crate::SampleReader::positional(sample));
                 }
                 return Ok(crate::SampleReader::new(NodeReader(file)));
@@ -601,9 +607,9 @@ mod std_io {
                     .ok()
                     .map(std::fs::File::from)
                     .filter(|file| file.metadata().is_ok_and(|m| m.is_file()));
-                if let Some(sample) =
-                    file.and_then(crate::input::parallel_read::PositionalSample::stdin)
-                {
+                if let Some(sample) = file.and_then(|file| {
+                    crate::input::parallel_read::PositionalSample::stdin(file, options)
+                }) {
                     return Ok(crate::SampleReader::positional(sample));
                 }
             }

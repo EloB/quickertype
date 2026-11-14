@@ -36,7 +36,7 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, VecDeque};
 use std::io::{self, Read};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Condvar, Mutex, OnceLock, mpsc};
+use std::sync::{Condvar, Mutex, mpsc};
 use std::thread;
 
 use super::compressed_json::{CompressedJson, Framing, ParseError};
@@ -120,33 +120,32 @@ pub(crate) struct PositionalSample {
     source: Positional,
     /// Where the sample starts.
     start: u64,
-    /// The options to read with; `None` for those of the environment
-    /// ([`ParallelOptions::from_env`]).
-    options: Option<ParallelOptions>,
+    /// The options to read with.
+    options: ParallelOptions,
 }
 
 impl PositionalSample {
-    /// The regular file `file`, from its start.
+    /// The regular file `file`, from its start, read with `options`.
     #[cfg(all(any(unix, windows), feature = "fs"))]
-    pub(crate) fn file(file: std::fs::File) -> Self {
+    pub(crate) fn file(file: std::fs::File, options: ParallelOptions) -> Self {
         PositionalSample {
             source: Positional::File(file),
             start: 0,
-            options: None,
+            options,
         }
     }
 
     /// Standard input redirected from the regular file `file`, from where
     /// it is: when read whole on several threads, it is left at its end,
     /// as reading it in one go leaves it. `None` if where it is cannot be
-    /// told.
+    /// told. Read with `options`.
     #[cfg(all(unix, feature = "fs"))]
-    pub(crate) fn stdin(mut file: std::fs::File) -> Option<Self> {
+    pub(crate) fn stdin(mut file: std::fs::File, options: ParallelOptions) -> Option<Self> {
         let start = io::Seek::stream_position(&mut file).ok()?;
         Some(PositionalSample {
             source: Positional::File(file),
             start,
-            options: None,
+            options,
         })
     }
 
@@ -164,7 +163,7 @@ impl PositionalSample {
         PositionalSample {
             source: Positional::Memory(bytes),
             start: 0,
-            options: Some(options),
+            options,
         }
     }
 
@@ -212,9 +211,11 @@ impl<R: Read + io::Seek> Read for StreamFrom<R> {
     }
 }
 
-/// How a sample is read on several threads. Internal, for tests and
-/// benchmarks: the CLI takes them from the environment
-/// ([`from_env`](Self::from_env)).
+/// How a large top-level array in a sample is read on several threads
+/// ([`Readable::open_sample`](crate::Readable::open_sample)). The output
+/// does not depend on them. The defaults ([`Default`]) are those of the
+/// CLI, which tests and benchmarks change with internal environment
+/// variables; the library reads none.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ParallelOptions {
     /// The most threads that read (besides the one that reads the
@@ -279,37 +280,18 @@ pub const MAX_THREADS: usize = 1024;
 /// theirs).
 const PROBE_LEN: u64 = 64 << 10;
 
-impl ParallelOptions {
-    /// The options of the environment (read once): as many threads as the
-    /// machine runs at once, or `QUICKTYPE_READ_THREADS`, and ranges of
+impl Default for ParallelOptions {
+    /// As many threads as the machine runs at once, ranges of
     /// [`DEFAULT_RANGE`] bytes for samples of [`DEFAULT_MIN_LEN`] or more,
-    /// or of `QUICKTYPE_READ_CHUNK` bytes for any sample; the parts' trees
-    /// may take the threads times the range size, or [`TREE_BUDGET`], or
-    /// `QUICKTYPE_READ_BUDGET` bytes. The variables are internal, for tests
-    /// and benchmarks: there is no CLI option, and the output does not
-    /// depend on them.
-    pub fn from_env() -> ParallelOptions {
-        static OPTIONS: OnceLock<ParallelOptions> = OnceLock::new();
-        *OPTIONS.get_or_init(|| {
-            let number = |name: &str| {
-                std::env::var(name)
-                    .ok()
-                    .and_then(|v| v.trim().parse::<usize>().ok())
-            };
-            let threads = number("QUICKTYPE_READ_THREADS")
-                .unwrap_or_else(|| thread::available_parallelism().map_or(1, usize::from));
-            let (range, min_len) = match number("QUICKTYPE_READ_CHUNK") {
-                Some(range) => (range.max(1), 0),
-                None => (DEFAULT_RANGE, DEFAULT_MIN_LEN),
-            };
-            ParallelOptions {
-                threads,
-                range,
-                min_len,
-                budget: number("QUICKTYPE_READ_BUDGET").map(|budget| budget as u64),
-                fault: None,
-            }
-        })
+    /// and the default budget.
+    fn default() -> Self {
+        ParallelOptions {
+            threads: thread::available_parallelism().map_or(1, usize::from),
+            range: DEFAULT_RANGE,
+            min_len: DEFAULT_MIN_LEN,
+            budget: None,
+            fault: None,
+        }
     }
 }
 
@@ -327,7 +309,7 @@ pub fn parallel_file_sample(file: std::fs::File, options: ParallelOptions) -> cr
     crate::SampleReader::positional(PositionalSample {
         source: Positional::File(file),
         start: 0,
-        options: Some(options),
+        options,
     })
 }
 
@@ -495,7 +477,7 @@ fn read(
     tallies: &mut RunningTallies,
     config: &CompressedJson,
 ) -> Option<Outcome> {
-    let options = sample.options.unwrap_or_else(ParallelOptions::from_env);
+    let options = sample.options;
     if options.threads < 2 {
         return None;
     }

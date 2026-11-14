@@ -11,8 +11,9 @@ pub mod generator;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+use quicktype_core::ParallelOptions;
 use quicktype_core::input::inputs::{InputData, JsonInference, JsonInput, JsonSourceData};
-use quicktype_core::internal::{Fault, ParallelOptions, parallel_reads, parallel_sample};
+use quicktype_core::internal::{Fault, parallel_reads, parallel_sample};
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::Type;
 use quicktype_core::ty::type_builder::TypeBuilder;

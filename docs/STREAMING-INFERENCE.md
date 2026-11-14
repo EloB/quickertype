@@ -728,7 +728,9 @@ default is as many as the machine runs at once; 1 reads in one go), and
 `QUICKTYPE_READ_CHUNK` the range size in bytes, which also reads samples
 of any size so (by default only those of 8 MiB or more), and
 `QUICKTYPE_READ_BUDGET` the bytes the parts' trees under way may take.
-They are read once per process.
+The CLI reads them and hands the library a `ParallelOptions`
+(`Readable::open_sample`); the library itself reads no environment
+variable, and its defaults are the CLI's.
 
 ## Memory
 
