@@ -2063,11 +2063,23 @@ mod tests {
         assert_eq!(within.tallies.live_nodes(), once.tallies.live_nodes());
     }
 
-    const SAMPLES: [&str; 4] = [
-        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01"}"#,
+    /// Samples with places whose strings come to absorb every string
+    /// partway: `s` and `t`'s elements get a string of more than 64 units
+    /// after cases and before more of them (and URIs), in the fourth and
+    /// fifth samples, the top-level in the eighth; `u` only in the last.
+    /// Every split falls before, between and after those.
+    const SAMPLES: [&str; 11] = [
+        r#"{"a":[1,"x"],"b":{"__proto__":1,"c":null},"d":"2020-01-01","s":"a"}"#,
         r#"[{"b":{"e":true,"__proto__":[2]}},"http://h/x.PNG",{"a":[]}]"#,
-        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg"}"#,
+        r#"{"z":{"y":1},"a":[{"q":1.5}],"b":{"c":"s","__proto__":"t"},"d":"https://h/y.jpg","t":["a","b"]}"#,
+        r#"{"s":"b","t":["c","long text long text long text long text long text long text long text","d","a"]}"#,
+        r#"{"s":"long text long text long text long text long text long text long text","t":["e"],"u":"a"}"#,
+        r#"{"s":"c","t":["ftp://h/z.gz","f"],"u":"b","d":"2020-01-02"}"#,
+        r#""short""#,
         r#""long string, long string, long string, long string, long string, too""#,
+        r#""after""#,
+        r#"{"s":"https://h/w.png","t":["a"],"u":"c"}"#,
+        r#"{"s":"d","u":"long text long text long text long text long text long text long text"}"#,
     ];
 
     /// Merging the samples' trees gives the tree of the elements of one

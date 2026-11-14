@@ -349,7 +349,9 @@ sequence of samples, split anywhere, equal the items of one array of
 those samples read in one go. That holds for a place whose string types
 come to absorb every string too (see "Interned strings"): it holds no
 cases, read on or merged, since it forgets them when it starts absorbing
-them, whichever tree that happens in, and counts none after.
+them, whichever tree that happens in, and counts none after. The
+samples of that test make places absorb partway, with cases before and
+after, on both sides of every split.
 
 The CLI adds each file (or standard input) as its own source, with one
 sample, so a directory of samples is merged into one tree per top-level.
