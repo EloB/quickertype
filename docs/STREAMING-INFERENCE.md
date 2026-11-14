@@ -413,13 +413,14 @@ it stands, and is left at its end as reading it in one go leaves it.
    outside strings: a comma between two of the top-level array's
    elements.
 3. **Parts.** Between consecutive such commas lie the *parts*, about a
-   range each. The first part (from the array's `[` to the first such
-   comma) is read on the reading thread, straight into the tallies. The
-   others are read on other threads, each by the stream tokenizer as the
-   array of its elements (`[` + part + `]`, or `[` + part for the last part,
-   which runs to the end of the file), into tallies of its own. The
-   tokenizer reads them at offsets of the file, 64 KiB at a time, as it
-   reads any stream.
+   range each. Each is read by the stream tokenizer as the array of its
+   elements (`[` + part + `]`, or `[` + part for the last part, which runs
+   to the end of the file), into tallies of its own: the first ones on the
+   reading thread, until they hold 64 KiB of text (or a 64th of a smaller
+   sample; the first range is twice that long, so they are short), to
+   measure their trees, and the others on other threads. The tokenizer
+   reads them at offsets of the file, 64 KiB at a time, as it reads any
+   stream.
 4. **Appending.** A part's tree crosses threads as a `PortableTree`
    (`input/tallies/portable.rs`): the same nodes, its keys and cases as
    ids into its own string table, and its string attributes (string types
@@ -437,16 +438,17 @@ or strings. (A part's tallies are moved into the portable tree, and that
 into the sample's tallies, not copied.) So each part given out holds
 bytes until it is appended: its tree as estimated while it is read (by
 the largest ratio of tree to text seen, and at least the smallest tree
-seen; the first part is measured as a part read elsewhere would hold it),
-its tree's own size once read and while it waits for the parts before
-it. Together they may hold at most the threads that read times the
-range size, or 32 MiB, and at most 2 × threads + 2 parts are given out
-beyond the last one appended. Where a single part's tree would take half
-of the budget, the parallel reading stops and the rest is read in one go
-(below), which shares one set of tallies for all elements; so it does,
-without scanning on, once the ranges hold no split for as long as such a
-part. Summaries run only a few ranges ahead of the next part to give
-out, so the second read of a range finds it cached.
+seen; the first ratio is that of the first parts' trees, read on the
+reading thread before any part is given out), its tree's own size once
+read and while it waits for the parts before it. Together they may hold
+at most the threads that read times the range size, or 32 MiB, and at
+most 2 × threads + 2 parts are given out beyond the last one appended.
+Where a single part's tree would take half of the budget, the parallel
+reading stops and the rest is read in one go (below), which shares one
+set of tallies for all elements; so it does, without scanning on, once
+the ranges hold no split for as long as such a part. Summaries run only
+a few ranges ahead of the next part to give out, so the second read of a
+range finds it cached.
 
 Files are read at offsets with `pread` on Unix and `seek_read` on
 Windows, which also moves the file's position: every reading in one go
@@ -454,16 +456,19 @@ that follows seeks first. Windows serializes the reads of one handle
 opened for synchronous reads (as std opens files), so there each read
 takes a handle of its own: the file opened again from its path, as long
 as that holds a regular file of the same size and times (otherwise the
-first handle, shared). Read in one go, as before: samples under 8 MiB,
-top-levels that are not arrays, arrays whose first element is longer than
-a part the budget would read beside others, standard input from a pipe or
-a terminal (it cannot be read at offsets, and reading it ahead would hold
-it in memory), standard input on Windows (a console or a pipe is not told
-from a file as surely there), text samples (`JSON.parse` semantics),
-streams the Rust API hands in (`SampleReader::new`) and the WebAssembly
-engine; and if the system will not start the threads. (A date/time
-recognizer decides from the string alone and is `Send + Sync`: the
-threads share the sample's.)
+first handle, shared). Ranges are 256 KiB at least, and a sample has at
+most 65,536 of them, whatever the options ask for; at most 1,024 threads
+read, and as many as the ranges give four each. Read in one go, as
+before: samples under 8 MiB, samples that would have fewer than two
+threads, top-levels that are not arrays, arrays whose first element is
+longer than a part the budget would read beside others, standard input
+from a pipe or a terminal (it cannot be read at offsets, and reading it
+ahead would hold it in memory), standard input on Windows (a console or
+a pipe is not told from a file as surely there), text samples
+(`JSON.parse` semantics), streams the Rust API hands in
+(`SampleReader::new`) and the WebAssembly engine; and if the system will
+not start the threads. (A date/time recognizer decides from the string
+alone and is `Send + Sync`: the threads share the sample's.)
 
 ### Why it is exact
 
@@ -559,12 +564,18 @@ reading thread, which raises it, as reading in one go would panic.
   read in one go after scanning that much; a thread that does not start
   makes the sample read in one go; a panic on a reading thread reaches
   the caller; an import that fails part way leaves the tallies as they
-  were; the threads that read are as many as the ranges keep busy, at
-  most 1,024 however many are asked for; long runs of backslashes, cut
-  anywhere, give the escapes of a byte-by-byte scan, and are read whole
-  on several threads; a file opened again for each thread reads as in one
-  go, and a file put in its place is not opened; and a fault that merges
-  the parts' trees out of order is caught.
+  were; the plans: threads as many as the ranges keep busy (two at
+  least, 1,024 at most however many are asked for), ranges of 256 KiB at
+  least and at most 65,536 of them; parts whose trees are 30 times their
+  text are measured before any is given out, and stay within the budget;
+  long runs of backslashes, cut anywhere, give the escapes of a
+  byte-by-byte scan, and are read whole on several threads; a file
+  opened again for each thread reads as in one go, and a file put in its
+  place is not opened; a file written while it is read (shorter, or of
+  the same length) is read again in one go; and a fault that merges the
+  parts' trees out of order is caught. The test hooks (the fault, the
+  counts of how samples were read) need the crate's `test-support`
+  feature, which its own tests turn on, or a debug build.
 - Files written by the tests and read at offsets
   (`tests/parallel_files.rs` in quicktype-core, and the CLI's
   `files_read_on_several_threads_read_as_in_one_go` with the internal
