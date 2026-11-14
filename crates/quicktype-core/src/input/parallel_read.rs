@@ -338,6 +338,9 @@ thread_local! {
     /// The most bytes the parts given out held at once in the last reading
     /// on this thread, and the largest part's tree (for tests).
     static HELD: Cell<(u64, u64)> = const { Cell::new((0, 0)) };
+    /// How many bytes of ranges the last reading on this thread had
+    /// summarized (for tests).
+    static SCANNED: Cell<u64> = const { Cell::new(0) };
 }
 
 thread_local! {
@@ -813,7 +816,8 @@ impl Reading<'_> {
     /// read here straight into the tallies, is the first estimate. The
     /// ranges are summarized only a few ahead of the first part not
     /// appended yet, so that their text is read again while it is still
-    /// cached.
+    /// cached, and where they hold no split for as long as such a part,
+    /// not at all: the rest is read in one go.
     fn coordinate(
         &self,
         open: u64,
@@ -869,15 +873,26 @@ impl Reading<'_> {
             };
         loop {
             let before = (summarized, resolved, formed, parts.len(), dispatched);
-            // Summaries a few ranges past those formed into parts, and
-            // while parts are not appended, not much past the first.
-            let limit = parts.get(appended).map_or(u64::MAX, |next| {
-                next.from.saturating_add(parts_ahead as u64 * self.range)
-            });
+            // Summaries a few ranges past those formed into parts; while
+            // parts are not appended, not much past the first; and not past
+            // where a stretch without a split ends the reading (below).
+            let limit = parts
+                .get(appended)
+                .map_or(u64::MAX, |next| {
+                    next.from.saturating_add(parts_ahead as u64 * self.range)
+                })
+                .min(
+                    last_split.saturating_add((budget as f64 / (2.0 * ratio)) as u64 + self.range),
+                );
             while summarized < n
                 && summarized < formed + 2 * threads + 2
                 && self.bounds(summarized).0 < limit
             {
+                #[cfg(test)]
+                SCANNED.with(|s| {
+                    let (from, to) = self.bounds(summarized);
+                    s.set(if summarized == 0 { 0 } else { s.get() } + (to - from));
+                });
                 self.push(Job::Summarize(summarized));
                 pending += 1;
                 summarized += 1;
@@ -921,6 +936,24 @@ impl Reading<'_> {
                     first: parts.is_empty(),
                 });
                 all_formed = true;
+            }
+            // A stretch without a split as long as a part the budget would
+            // not read beside others (below): the part there will be read
+            // in one go anyway, so the rest is, without scanning on (a
+            // whole sample whose first element is that long).
+            let scanned = if formed < n {
+                self.bounds(formed).0
+            } else {
+                self.len
+            };
+            let stretch = scanned.saturating_sub(last_split) as f64;
+            if !all_formed && stretch * ratio * 2.0 > budget as f64 {
+                if parts.is_empty() {
+                    return None;
+                }
+                if appended == parts.len() {
+                    return rest(running, root, &parts, appended);
+                }
             }
             // The first part, here.
             if appended == 0 && !parts.is_empty() {
@@ -1271,6 +1304,34 @@ mod tests {
             assert_eq!(result, in_one_go(&config, bytes));
             assert_eq!(how, ParallelReads::default());
         }
+    }
+
+    /// An array whose elements are all longer than a part the budget would
+    /// read beside others is read in one go, after scanning as much (not
+    /// all of it, as a single element has no split).
+    #[test]
+    fn long_elements_are_read_in_one_go_without_scanning_on() {
+        let config = config(false);
+        let element = format!("{{\"a\":[{}]}}", vec!["1"; 50_000].join(","));
+        let bytes = format!("[{element},{element},{element}]");
+        let expected = in_one_go(&config, bytes.as_bytes());
+        let mut options = options(3, 1_000);
+        options.budget = 64 << 10;
+        let (result, how) = read_with(&config, bytes.as_bytes(), options);
+        assert_eq!(result, expected);
+        assert_eq!(how.again, 1, "{how:?}");
+        let scanned = SCANNED.with(Cell::get);
+        assert!(
+            scanned < 200_000,
+            "{scanned} of {} bytes scanned",
+            bytes.len()
+        );
+        // With a first element as short as a part, the rest goes on in
+        // one go from the first long one.
+        let short = format!("[{{\"b\":1}},{element},{element}]");
+        let (result, how) = read_with(&config, short.as_bytes(), options);
+        assert_eq!(result, in_one_go(&config, short.as_bytes()));
+        assert_eq!(how.in_part, 1, "{how:?}");
     }
 
     /// Where the parts' trees would take too much memory beside each
