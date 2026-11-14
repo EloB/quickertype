@@ -17,6 +17,30 @@ section are absolute.
 
 ### Added
 
+- **JSON Lines input** (not in quicktype): one JSON value per line, read
+  as the JSON array of those values, so a file of values `V1`…`Vn` gives
+  exactly the code quicktype gives for `[V1,…,Vn]`, in every language and
+  with every option.
+  - The CLI reads files and URLs named `*.jsonl` or `*.ndjson` so (a
+    URL by its path, without the query). `--src-lang jsonl` reads every
+    JSON input so, standard input included, and lets a directory take its
+    `*.jsonl` and `*.ndjson` files, which it otherwise ignores as
+    quicktype does. `--src-lang json` reads them as JSON, as quicktype
+    does. `--help` lists `jsonl` among the source languages.
+  - **This changes what a `.jsonl` or `.ndjson` file gives without
+    `--src-lang`:** quicktype reads it as one JSON value, so a file with
+    one line gave that value's type (say, an object) and now gives an
+    array of it; a file with more lines was a syntax error and now works.
+    Pass `--src-lang json` for the old behavior.
+  - Values are separated by line breaks (`\n` or `\r\n`); blank lines
+    are skipped, the last line break is optional, a value may span lines
+    (a pretty-printed one), and two values on one line are an error. A
+    file without values is `[]`. A syntax error names the line its value
+    starts on (`Syntax error in input JSON cards: line 3: …`).
+  - quickertype-core: `JsonSample::StringLines`, `StreamLines` and
+    `ReaderLines`, the JSON Lines forms of `String`, `Stream` and
+    `Reader`.
+  - Reading JSON Lines is as fast as reading the same values as an array.
 - quickertype-core (npm): the JSON inputs of `jsonInputForTargetLanguage`
   take a sample as its UTF-8 bytes too (a `Uint8Array` or a Node.js
   `Buffer`, e.g. `fs.readFileSync(path)`), read as the text
