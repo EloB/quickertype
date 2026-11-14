@@ -19,7 +19,7 @@
 
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes, combine_type_attributes2,
@@ -878,7 +878,7 @@ impl<'a, 'g> TypeReconstituter<'a, 'g> {
         &mut self,
         trefs: &IndexMap<K, TypeRef>,
     ) -> Result<IndexMap<K, TypeRef>> {
-        let mut result = IndexMap::with_capacity(trefs.len());
+        let mut result = IndexMap::with_capacity_and_hasher(trefs.len(), Default::default());
         for (k, &tref) in trefs {
             let r = self
                 .builder

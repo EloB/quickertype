@@ -3,7 +3,7 @@
 //! User-specified values for enum cases (`qt-enum-values`). The schema
 //! attribute producer is ported with the JSON Schema input.
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 
 use crate::attributes::accessor_names::lookup_key;
 use crate::attributes::type_attributes::AttributeKind;
@@ -41,7 +41,7 @@ pub fn enum_case_values(
 pub fn enum_values_attribute_producer(
     schema: &crate::input::json_schema_store::JsonSchema,
     _canonical_ref: &crate::input::json_schema_input::Ref,
-    _types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    _types: &crate::support::fast_hash::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
     _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
 ) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
     use crate::attributes::accessor_names::make_accessor_names;

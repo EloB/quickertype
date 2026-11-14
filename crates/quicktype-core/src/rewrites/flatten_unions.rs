@@ -9,7 +9,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::make_replacer;

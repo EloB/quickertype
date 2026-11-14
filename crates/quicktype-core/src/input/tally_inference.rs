@@ -18,14 +18,13 @@
 
 use std::cell::RefCell;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use super::compressed_json::Strings;
 use super::inference::resolve_ref;
 use super::tallies::{NodeId, ObjectTally, Tallies, add_proto_occurrences, property_names};
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::messages::Result;
-use crate::support::fast_hash::BuildHasher;
 use crate::support::recursion::guard;
 use crate::support::support::{defined, panic};
 use crate::ty::transformed_string_type::TypeKind;
@@ -59,7 +58,7 @@ struct Collected {
     count: u64,
     /// Each key (by its text's index) in first-seen order: its number of
     /// values, and the range of `places` that holds its places.
-    keys: IndexMap<u32, (u64, u32, u32), BuildHasher>,
+    keys: IndexMap<u32, (u64, u32, u32)>,
     /// The places of the keys' values, key by key, each key's in order.
     places: Vec<NodeId>,
     /// `__proto__`'s occurrences, as in [`ObjectTally::proto_runs`].
@@ -355,7 +354,7 @@ impl<'t> TallyInference<'t> {
                 if all_interned {
                     // The references in first-seen order: resolving the
                     // rest of TypeScript's list (repeats) adds nothing.
-                    let mut all_refs: IndexSet<&str> = IndexSet::new();
+                    let mut all_refs: IndexSet<&str> = IndexSet::default();
                     for &place in places {
                         let strings = defined(self.tallies.node(place)?.strings.as_deref())?;
                         for &case in strings.cases.keys() {
@@ -402,7 +401,7 @@ impl<'t> TallyInference<'t> {
         }
 
         let object_count = properties.object_count();
-        let mut class_properties: IndexMap<String, ClassProperty> = IndexMap::new();
+        let mut class_properties: IndexMap<String, ClassProperty> = IndexMap::default();
         for (key, run) in properties.names() {
             match key {
                 Some(index) => {

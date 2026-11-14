@@ -277,7 +277,7 @@ fn span(start: usize, end: usize) -> Span {
 
 #[test]
 fn combine_render_results_prefixes_each_file() {
-    let mut files = MultiFileRenderResult::new();
+    let mut files = MultiFileRenderResult::default();
     assert_eq!(
         combine_render_results(files.clone()),
         SerializedRenderResult::default()

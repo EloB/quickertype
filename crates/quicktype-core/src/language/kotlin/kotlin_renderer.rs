@@ -12,7 +12,7 @@
 //! - [`kotlin_hooks`]: the `ConvenienceRenderer` hooks `KotlinRenderer`
 //!   overrides.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::annotation::{any_type_issue_annotation, null_type_issue_annotation};
 use crate::convenience_renderer::ConvenienceRendererCore;

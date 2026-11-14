@@ -45,7 +45,7 @@
 
 use std::fmt;
 
-use indexmap::IndexMap;
+use crate::hash::IndexMap;
 use saphyr_parser::{Event, Parser, ScalarStyle, ScanError};
 
 use crate::json::{JsonValue, insert_js_property};
@@ -391,7 +391,7 @@ impl ToJs<'_> {
                 (JsonValue::Array(values), height.max(1))
             }
             Node::Map(pairs) => {
-                let mut map = IndexMap::new();
+                let mut map = IndexMap::default();
                 let mut height = 0;
                 for &(key, value) in pairs {
                     let js_key = self.value(key, depth + 1)?;
@@ -545,7 +545,7 @@ pub fn parse(text: &str) -> Result<JsonValue, YamlError> {
     let mut doc = Document::default();
     let mut stack: Vec<Open> = Vec::new();
     // saphyr's anchor ids → node indexes.
-    let mut anchors: IndexMap<usize, usize> = IndexMap::new();
+    let mut anchors: IndexMap<usize, usize> = IndexMap::default();
     let mut root: Option<usize> = None;
     let mut documents = 0;
 
@@ -659,7 +659,7 @@ pub fn parse(text: &str) -> Result<JsonValue, YamlError> {
     };
     let mut to_js = ToJs {
         doc: &doc,
-        anchors: IndexMap::new(),
+        anchors: IndexMap::default(),
     };
     to_js.value(root, 0)
 }

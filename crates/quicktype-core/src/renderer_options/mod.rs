@@ -12,7 +12,7 @@ pub mod types;
 use std::borrow::Cow;
 use std::fmt;
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 
 pub use self::types::{CliOptionDefinitions, OptionDefinition, OptionKind, OptionType};
 

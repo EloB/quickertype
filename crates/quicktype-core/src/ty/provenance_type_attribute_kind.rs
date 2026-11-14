@@ -5,7 +5,7 @@
 //! graph unless they deliberately drop attributes; the type graph checks
 //! that after every rewrite (`IRTypeAttributesNotPropagated`).
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 /// `provenanceTypeAttributeKind`: `provenance`. Applies to every kind,
 /// including `any`, and survives `makeInferred`.

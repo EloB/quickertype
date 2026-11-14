@@ -9,7 +9,7 @@
 use std::borrow::Cow;
 use std::sync::LazyLock;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 use quicktype_js_compat::unicode::{self, GeneralCategory};
 
 use super::constants::{KEYWORDS, RESERVED_PROPERTIES};

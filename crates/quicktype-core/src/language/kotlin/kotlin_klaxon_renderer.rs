@@ -3,7 +3,7 @@
 //! `KotlinKlaxonRenderer`: data classes for the Klaxon JSON library, with
 //! converters for enums, unions, empty objects and `java.time` types.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 use quicktype_js_compat::number;
 
 use crate::attributes::constraints::{

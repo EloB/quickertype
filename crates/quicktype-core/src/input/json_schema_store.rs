@@ -9,7 +9,7 @@
 
 use std::rc::Rc;
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 use quicktype_js_compat::json::JsonValue;
 
 use crate::input::io::{LocalBoxFuture, grow_stack};
@@ -74,7 +74,7 @@ impl From<JsonValue> for JsonSchema {
                 JsonValue::Object(map) => {
                     let map = std::mem::take(map);
                     return Start::Open(Frame::Object(
-                        IndexMap::with_capacity(map.len()),
+                        IndexMap::with_capacity_and_hasher(map.len(), Default::default()),
                         None,
                         map.into_iter(),
                     ));

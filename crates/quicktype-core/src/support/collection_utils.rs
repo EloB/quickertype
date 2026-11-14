@@ -23,7 +23,7 @@
 use std::cmp::Ordering;
 use std::hash::Hash;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use quicktype_js_compat::sort::{compare_utf16, sort_by};
 
@@ -249,7 +249,7 @@ pub struct EqualityMap<K, V> {
 impl<K, V> Default for EqualityMap<K, V> {
     fn default() -> Self {
         EqualityMap {
-            map: IndexMap::new(),
+            map: IndexMap::default(),
         }
     }
 }

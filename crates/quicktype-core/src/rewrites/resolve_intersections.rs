@@ -15,7 +15,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{
     CombinationKind, TypeAttributes, combine_type_attributes, combine_type_attributes2,
@@ -101,24 +101,24 @@ impl IntersectionAccumulator {
     pub fn new() -> Self {
         IntersectionAccumulator {
             primitive_types: None,
-            primitive_attributes: IndexMap::new(),
+            primitive_attributes: IndexMap::default(),
             array_item_types: IntersectionArrayItems::Unseen,
             array_attributes: TypeAttributes::new(),
-            object_data: Some((IndexMap::new(), Some(IndexSet::new()))),
+            object_data: Some((IndexMap::default(), Some(IndexSet::default()))),
             object_attributes: TypeAttributes::new(),
             lost_type_attributes: Cell::new(false),
         }
     }
 
     fn update_primitive_types(&mut self, graph: &TypeGraph, members: &[TypeRef]) -> Result<()> {
-        let mut types: IndexSet<TypeRef> = IndexSet::new();
+        let mut types: IndexSet<TypeRef> = IndexSet::default();
         for &t in members {
             if graph.kind(t)?.is_primitive_type_kind() {
                 types.insert(t);
             }
         }
         // `attributesForTypes`: the last type of a kind wins.
-        let mut attributes: IndexMap<TypeKind, TypeAttributes> = IndexMap::new();
+        let mut attributes: IndexMap<TypeKind, TypeAttributes> = IndexMap::default();
         for &t in &types {
             attributes.insert(graph.kind(t)?, graph.attributes(t)?.clone());
         }
@@ -130,7 +130,7 @@ impl IntersectionAccumulator {
             self.primitive_attributes.insert(kind, merged);
         }
 
-        let mut kinds: IndexSet<TypeKind> = IndexSet::new();
+        let mut kinds: IndexSet<TypeKind> = IndexSet::default();
         for &t in &types {
             kinds.insert(graph.kind(t)?);
         }
@@ -177,7 +177,7 @@ impl IntersectionAccumulator {
         match &mut self.array_item_types {
             IntersectionArrayItems::Unseen => {
                 // The first array's items are dropped (TypeScript quirk).
-                self.array_item_types = IntersectionArrayItems::Items(IndexSet::new());
+                self.array_item_types = IntersectionArrayItems::Items(IndexSet::default());
             }
             IntersectionArrayItems::Items(items) => {
                 items.insert(graph.type_at(array)?.items()?);
@@ -232,7 +232,7 @@ impl IntersectionAccumulator {
                 }
                 (None, Some(new_property)) => {
                     let mut types = match additional_property_types {
-                        None => IndexSet::new(),
+                        None => IndexSet::default(),
                         Some(additional) => additional.clone(),
                     };
                     types.insert(new_property.type_ref);
@@ -319,7 +319,7 @@ impl UnionTypeProvider for IntersectionAccumulator {
     }
 
     fn get_member_kinds(&self) -> Result<IndexMap<TypeKind, TypeAttributes>> {
-        let mut kinds: IndexMap<TypeKind, TypeAttributes> = IndexMap::new();
+        let mut kinds: IndexMap<TypeKind, TypeAttributes> = IndexMap::default();
         for &k in defined(self.primitive_types.as_ref())? {
             kinds.insert(k, defined(self.primitive_attributes.get(&k))?.clone());
         }
@@ -372,7 +372,7 @@ impl IntersectionUnionBuilder {
         members: &IndexSet<TypeRef>,
         attributes: TypeAttributes,
     ) -> Result<TypeRef> {
-        let mut reconstituted_members: IndexSet<TypeRef> = IndexSet::new();
+        let mut reconstituted_members: IndexSet<TypeRef> = IndexSet::default();
         for &t in members {
             reconstituted_members.insert(builder.reconstitute_type_ref(
                 t,
@@ -414,7 +414,8 @@ impl<'g> UnionBuilder<'g> for IntersectionUnionBuilder {
             );
         };
 
-        let mut properties = IndexMap::with_capacity(property_types.len());
+        let mut properties =
+            IndexMap::with_capacity_and_hasher(property_types.len(), Default::default());
         for (name, cp) in property_types {
             let t = self.make_intersection(builder, &cp.types, TypeAttributes::new())?;
             properties.insert(name.clone(), builder.make_class_property(t, cp.is_optional));

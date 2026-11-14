@@ -12,7 +12,7 @@
 //! [`collection_utils`](crate::support::collection_utils)), so the same
 //! duplicates are found as in TypeScript.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::sort as js_sort;
 
 use crate::attributes::type_attributes::TypeAttributes;
@@ -164,7 +164,7 @@ impl Type {
             type_ref,
             TypeKind::Map,
             false,
-            values.map(|_| IndexMap::new()),
+            values.map(|_| IndexMap::default()),
             values,
         )
     }
@@ -583,7 +583,7 @@ pub fn map_type_identify(
     object_type_identify(
         TypeKind::Map,
         attributes,
-        IndexMap::new(),
+        IndexMap::default(),
         additional_properties,
     )
 }
@@ -925,14 +925,14 @@ pub(crate) fn reconstitute(
                         r.get_unique_intersection_type()?;
                     }
                     let reconstituted = r.reconstitute_map(&sorted_member_refs)?;
-                    let mut new_members = IndexSet::new();
+                    let mut new_members = IndexSet::default();
                     for m in &members_in_order {
                         new_members.insert(*defined(reconstituted.get(m))?);
                     }
                     r.set_set_operation_members(new_members)
                 }
                 Some(maybe_members) => {
-                    let mut new_members = IndexSet::new();
+                    let mut new_members = IndexSet::default();
                     for m in &members_in_order {
                         new_members.insert(*defined(maybe_members.get(m))?);
                     }
@@ -1008,7 +1008,7 @@ mod tests {
     fn constructors_check_invariants() {
         assert!(Type::object(r(0), TypeKind::Object, false, None, None).is_err());
         assert!(Type::object(r(0), TypeKind::Class, false, None, Some(r(1))).is_err());
-        let e = Type::union(r(0), Some(IndexSet::new())).unwrap_err();
+        let e = Type::union(r(0), Some(IndexSet::default())).unwrap_err();
         assert_eq!(e.kind(), Some(ErrorKind::IRNoEmptyUnions));
         let mut a = Type::array(r(0), None);
         assert!(a.items().is_err());
@@ -1017,12 +1017,12 @@ mod tests {
         assert!(a.set_items(r(2)).is_err());
         let mut u = Type::union(r(0), None).unwrap();
         assert_eq!(
-            u.set_members(IndexSet::new()).unwrap_err().kind(),
+            u.set_members(IndexSet::default()).unwrap_err().kind(),
             Some(ErrorKind::IRNoEmptyUnions)
         );
         let mut c = Type::class(r(0), false, None).unwrap();
         assert!(c.properties().is_err());
-        c.set_properties(IndexMap::new(), None).unwrap();
-        assert!(c.set_properties(IndexMap::new(), None).is_err());
+        c.set_properties(IndexMap::default(), None).unwrap();
+        assert!(c.set_properties(IndexMap::default(), None).is_err());
     }
 }

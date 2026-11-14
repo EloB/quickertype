@@ -18,7 +18,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributes};
 use crate::messages::Result;
@@ -328,17 +328,21 @@ impl TypeNames {
         match self {
             TypeNames::Regular(r) => {
                 let names = if self.are_inferred() {
-                    IndexSet::new()
+                    IndexSet::default()
                 } else {
                     r.names.clone()
                 };
-                TypeNames::make_with_distance(names, Some(IndexSet::new()), r.distance)
+                TypeNames::make_with_distance(names, Some(IndexSet::default()), r.distance)
             }
             TypeNames::TooMany(t) => {
                 if !self.are_inferred() {
                     return self.clone();
                 }
-                TypeNames::make_with_distance(IndexSet::new(), Some(IndexSet::new()), t.distance)
+                TypeNames::make_with_distance(
+                    IndexSet::default(),
+                    Some(IndexSet::default()),
+                    t.distance,
+                )
             }
         }
     }
@@ -417,7 +421,7 @@ impl RegularTypeNames {
                 && let Some(alternatives) = &o.alternative_names
             {
                 new_alternative_names
-                    .get_or_insert_with(IndexSet::new)
+                    .get_or_insert_with(IndexSet::default)
                     .extend(alternatives.iter().cloned());
             }
 
@@ -453,7 +457,7 @@ impl RegularTypeNames {
 pub(crate) fn combine(names_array: &[&TypeNames]) -> TypeNames {
     match names_array.first() {
         Some(first) => first.add(names_array, 1),
-        None => TypeNames::make_with_distance(IndexSet::new(), None, 0),
+        None => TypeNames::make_with_distance(IndexSet::default(), None, 0),
     }
 }
 
@@ -475,7 +479,7 @@ pub fn singularize_type_names(attributes: &TypeAttributes) -> TypeAttributes {
 pub fn make_names_type_attributes(name: &str, are_names_inferred: bool) -> TypeAttributes {
     let names = TypeNames::make(
         [name.to_owned()].into_iter().collect(),
-        Some(IndexSet::new()),
+        Some(IndexSet::default()),
         are_names_inferred,
     );
     NamesTypeAttributeKind.make_attributes(names)

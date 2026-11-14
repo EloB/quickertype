@@ -9,7 +9,7 @@
 
 use std::hash::Hash;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::messages::Result;
 use crate::support::fast_hash::HashMap;
@@ -378,7 +378,7 @@ impl<T: Clone + Eq + Hash> Graph<T> {
         let nodes: Vec<Vec<T>> = components
             .iter()
             .map(|ns| {
-                let mut seen = IndexSet::new();
+                let mut seen = IndexSet::default();
                 for &n in ns {
                     seen.insert(self.nodes[n].clone());
                 }

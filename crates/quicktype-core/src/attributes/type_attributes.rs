@@ -26,7 +26,7 @@ use std::any::Any;
 use std::fmt;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::json::{JsonValue, insert_js_property};
 
 use crate::attributes::accessor_names::{
@@ -270,7 +270,7 @@ impl TypeAttributeValue {
     pub fn children(&self) -> IndexSet<TypeRef> {
         match self {
             TypeAttributeValue::Transformation(xf) => xf.children(),
-            _ => IndexSet::new(),
+            _ => IndexSet::default(),
         }
     }
 
@@ -745,7 +745,7 @@ fn make_value_inferred(value: &TypeAttributeValue) -> Result<Option<TypeAttribut
     use TypeAttributeValue as V;
     Ok(match value {
         V::Names(tn) => Some(V::Names(Rc::new(tn.make_inferred()))),
-        V::UnionIdentifier(_) => Some(V::UnionIdentifier(Rc::new(IndexSet::new()))),
+        V::UnionIdentifier(_) => Some(V::UnionIdentifier(Rc::new(IndexSet::default()))),
         V::Provenance(p) => Some(V::Provenance(Rc::clone(p))),
         V::UnionMemberNames(_) | V::Transformation(_) => {
             return panic(format!(
@@ -914,7 +914,7 @@ mod add_to_schema_tests {
 
     #[test]
     fn schema_properties_follow_javascript_object_order() {
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         set_schema_property(&mut schema, "b", Some(JsonValue::Bool(true)));
         set_schema_property(&mut schema, "title", None);
         set_schema_property(&mut schema, "42", Some(JsonValue::Null));
@@ -935,10 +935,10 @@ mod add_to_schema_tests {
 
     #[test]
     fn attributes_add_their_keywords_for_their_type_kinds() {
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         let uri = TypeAttributeValue::UriAttributes(Rc::new((
             ["https", "ftp"].into_iter().map(String::from).collect(),
-            IndexSet::new(),
+            IndexSet::default(),
         )));
         let length = TypeAttributeValue::MinMaxLength(MinMaxConstraint(Some(1.0), None));
         let range = TypeAttributeValue::MinMax(MinMaxConstraint(None, Some(1e21)));
@@ -955,7 +955,7 @@ mod add_to_schema_tests {
             r#"{"qt-uri-protocols":["ftp","https"],"minLength":1,"pattern":"^a$","default":null,"description":"one\ntwo"}"#
         );
 
-        let mut schema = SchemaObject::new();
+        let mut schema = SchemaObject::default();
         for attribute in [&uri, &length, &range, &pattern] {
             attribute.add_to_schema(&mut schema, TypeKind::Integer);
         }
@@ -1020,7 +1020,7 @@ mod tests {
 
     #[test]
     fn panicking_kinds_return_errors() {
-        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::new());
+        let a = AccessorNamesTypeAttributeKind.make_attributes(AccessorNames::default());
         assert_eq!(
             combine_type_attributes(CombinationKind::Union, &[&a, &a])
                 .unwrap_err()
@@ -1029,7 +1029,7 @@ mod tests {
         );
         // A single value is used as is, without calling combine.
         assert!(combine_type_attributes(CombinationKind::Union, &[&a]).is_ok());
-        let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::new());
+        let m = UnionMemberNamesTypeAttributeKind.make_attributes(IndexMap::default());
         assert_eq!(
             make_type_attributes_inferred(&m)
                 .unwrap_err()
@@ -1041,7 +1041,7 @@ mod tests {
     #[test]
     fn make_inferred_drops_or_transforms() {
         let a = make_names_type_attributes("a", false)
-            .with(DescriptionTypeAttributeKind.wrap_value(IndexSet::new()))
+            .with(DescriptionTypeAttributeKind.wrap_value(IndexSet::default()))
             .with(UnionIdentifierTypeAttributeKind.wrap_value([3].into_iter().collect()));
         let inferred = make_type_attributes_inferred(&a).unwrap();
         assert_eq!(

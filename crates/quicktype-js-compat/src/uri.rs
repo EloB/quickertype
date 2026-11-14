@@ -25,7 +25,7 @@
 use std::fmt;
 use std::sync::OnceLock;
 
-use indexmap::IndexMap;
+use crate::hash::IndexMap;
 use regex::Regex;
 
 use crate::json::insert_js_property;
@@ -416,7 +416,7 @@ fn encode_query(s: &str) -> String {
 
 /// urijs `URI.parseQuery(string)`.
 fn parse_query(s: &str) -> QueryData {
-    let mut items = QueryData::new();
+    let mut items = QueryData::default();
     // Collapse `&&`, then drop leading `?`/`&` and trailing `&`.
     let mut collapsed = String::with_capacity(s.len());
     for c in s.chars() {

@@ -27,7 +27,7 @@
 
 use std::cell::OnceCell;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::{AttributeKind, TypeAttributeValue, TypeAttributes};
 use crate::attributes::type_names::NamesTypeAttributeKind;
@@ -80,7 +80,7 @@ impl TypeGraph {
             have_provenance_attributes,
             types,
             attributes,
-            top_level_attributes: IndexMap::new(),
+            top_level_attributes: IndexMap::default(),
             top_levels,
             parents: OnceCell::new(),
             print_on_rewrite: false,
@@ -203,7 +203,7 @@ impl TypeGraph {
     pub fn non_attribute_children(&self, r: TypeRef) -> Result<IndexSet<TypeRef>> {
         let t = self.type_at(r)?;
         Ok(match t.data() {
-            TypeData::Primitive | TypeData::Enum { .. } => IndexSet::new(),
+            TypeData::Primitive | TypeData::Enum { .. } => IndexSet::default(),
             TypeData::Array { .. } => [t.items()?].into_iter().collect(),
             TypeData::Object { .. } => {
                 let mut children: IndexSet<TypeRef> = t
@@ -242,7 +242,7 @@ impl TypeGraph {
         mut predicate: impl FnMut(&TypeGraph, TypeRef) -> Result<bool>,
     ) -> Result<IndexSet<TypeRef>> {
         let mut seen: HashSet<TypeRef> = HashSet::default();
-        let mut types: IndexSet<TypeRef> = IndexSet::new();
+        let mut types: IndexSet<TypeRef> = IndexSet::default();
         // An explicit stack instead of recursion, visiting in the same order.
         let mut stack: Vec<(IndexSet<TypeRef>, usize)> = Vec::new();
         for &top in self.top_levels.values() {
@@ -291,7 +291,7 @@ impl TypeGraph {
     /// order. Computed once and cached.
     pub fn parents_of_type(&self, r: TypeRef) -> Result<&IndexSet<TypeRef>> {
         if self.parents.get().is_none() {
-            let mut parents: Vec<IndexSet<TypeRef>> = vec![IndexSet::new(); self.types.len()];
+            let mut parents: Vec<IndexSet<TypeRef>> = vec![IndexSet::default(); self.types.len()];
             for p in self.all_types_unordered() {
                 for c in self.children(p)? {
                     parents[self.index_of(c)?].insert(p);
@@ -328,7 +328,7 @@ impl TypeGraph {
 
     fn all_provenance(&self) -> Result<IndexSet<u32>> {
         assert(self.have_provenance_attributes, "Assertion failed")?;
-        let mut result = IndexSet::new();
+        let mut result = IndexSet::default();
         for attributes in &self.attributes {
             if let Some(p) = ProvenanceTypeAttributeKind.try_get_in_attributes(attributes) {
                 result.extend(p.iter().copied());
@@ -490,7 +490,7 @@ impl TypeGraph {
             "GC",
             &get_no_string_type_mapping(),
             alphabetize_properties,
-            IndexMap::new(),
+            IndexMap::default(),
             debug_print_reconstitution,
             true,
         )?;

@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use indexmap::IndexMap;
+use quicktype_js_compat::hash::IndexMap;
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::wordwrap::WordWrap;
 use quicktype_js_compat::{number, pluralize, sort, unicode, utf16, whitespace};
@@ -399,7 +399,7 @@ fn json_tree(v: &Value) -> JsonValue {
         "str" => JsonValue::String(str_of(&v[1]).to_owned()),
         "arr" => JsonValue::Array(arr(&v[1]).iter().map(json_tree).collect()),
         "obj" => {
-            let mut map = IndexMap::new();
+            let mut map = IndexMap::default();
             for entry in arr(&v[1]) {
                 json::insert_js_property(
                     &mut map,

@@ -8,7 +8,7 @@
 
 use std::borrow::Cow;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 use quicktype_js_compat::json::JsonValue;
 use quicktype_js_compat::sort::sort_strings;
 
@@ -272,7 +272,7 @@ pub fn uri_schema_attributes_producer(
     }
     let strings = |property: &str| -> crate::messages::Result<IndexSet<String>> {
         Ok(match schema.get(property) {
-            None => IndexSet::new(),
+            None => IndexSet::default(),
             Some(values) => check_array(values, |v| matches!(v, JsonSchema::String(_)))?
                 .iter()
                 .filter_map(|v| v.as_str().map(str::to_owned))
@@ -479,7 +479,7 @@ mod tests {
 
     #[test]
     fn combine_unites() {
-        let a: UriAttributes = (["http".into()].into_iter().collect(), IndexSet::new());
+        let a: UriAttributes = (["http".into()].into_iter().collect(), IndexSet::default());
         let b: UriAttributes = (
             ["https".into(), "http".into()].into_iter().collect(),
             [".png".into()].into_iter().collect(),

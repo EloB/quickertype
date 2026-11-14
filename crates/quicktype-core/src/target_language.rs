@@ -116,7 +116,7 @@ pub trait TargetLanguage: Sync {
             given_output_filename,
             alphabetize_properties,
         )?;
-        let mut result = MultiFileRenderResult::new();
+        let mut result = MultiFileRenderResult::default();
         for (filename, source) in &render_result.sources {
             let serialized =
                 crate::source::serialize_render_result(source, &render_result.names, indentation)?;
@@ -257,7 +257,8 @@ pub fn has_renderer(lang: &dyn TargetLanguage) -> bool {
 
 /// `MultiFileRenderResult`: the serialized files by file name, in the order
 /// the renderer finished them.
-pub type MultiFileRenderResult = indexmap::IndexMap<String, crate::source::SerializedRenderResult>;
+pub type MultiFileRenderResult =
+    crate::support::fast_hash::IndexMap<String, crate::source::SerializedRenderResult>;
 
 #[cfg(test)]
 mod tests {

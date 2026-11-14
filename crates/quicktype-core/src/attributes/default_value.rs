@@ -95,7 +95,7 @@ pub fn default_value_for_type(graph: &TypeGraph, t: TypeRef) -> Result<Option<De
 pub fn default_value_attribute_producer(
     schema: &crate::input::json_schema_store::JsonSchema,
     _ref: &crate::input::json_schema_input::Ref,
-    types: &indexmap::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
+    types: &crate::support::fast_hash::IndexSet<crate::input::json_schema_input::JsonSchemaType>,
     _cases: Option<&[crate::input::json_schema_store::JsonSchema]>,
 ) -> Result<Option<crate::input::json_schema_input::JsonSchemaAttributes>> {
     use crate::input::json_schema_input::{JsonSchemaAttributes, JsonSchemaType as T};

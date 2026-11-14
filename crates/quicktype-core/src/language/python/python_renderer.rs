@@ -16,7 +16,7 @@
 //! types are declared at that moment, so the call sequence matters, not
 //! just the results.
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::convenience_renderer::ConvenienceRendererCore;
 use crate::convenience_renderer::prelude::*;
@@ -141,9 +141,9 @@ impl PythonState {
     pub fn new(options: PythonOptions) -> Self {
         PythonState {
             options,
-            imports: IndexMap::new(),
-            module_imports: IndexSet::new(),
-            declared_types: IndexSet::new(),
+            imports: IndexMap::default(),
+            module_imports: IndexSet::default(),
+            declared_types: IndexSet::default(),
         }
     }
 }

@@ -6,7 +6,7 @@
 //! no properties, otherwise a map whose values are the union of the property
 //! and additional property types (losing the class semantics).
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::type_attributes::TypeAttributes;
 use crate::graph_rewriting::make_replacer;
@@ -30,7 +30,7 @@ fn replace(o: TypeRef, builder: &mut TypeBuilder<'_>, forwarding_ref: TypeRef) -
     let make_class = |builder: &mut TypeBuilder<'_>,
                       attributes: TypeAttributes|
      -> Result<TypeRef> {
-        let mut reconstituted: IndexMap<String, ClassProperty> = IndexMap::new();
+        let mut reconstituted: IndexMap<String, ClassProperty> = IndexMap::default();
         for (name, cp) in properties {
             let t = builder.reconstitute_type_ref(cp.type_ref, TypeAttributes::new(), None)?;
             reconstituted.insert(name.clone(), builder.make_class_property(t, cp.is_optional));
@@ -62,7 +62,7 @@ fn replace(o: TypeRef, builder: &mut TypeBuilder<'_>, forwarding_ref: TypeRef) -
     let union = match builder.lookup_type_refs(&property_type_refs, None, true)? {
         Some(union) => union,
         None => {
-            let mut reconstituted_types: IndexSet<TypeRef> = IndexSet::new();
+            let mut reconstituted_types: IndexSet<TypeRef> = IndexSet::default();
             for &t in &property_types {
                 reconstituted_types.insert(builder.reconstitute_type(
                     t,

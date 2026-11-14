@@ -5,7 +5,7 @@
 //! in Rust; their error behaviour for unexpected kinds is left to the
 //! callers.
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind};
 use crate::attributes::type_attributes::{
@@ -56,8 +56,8 @@ pub fn set_operation_members_recursively(
     };
     let kind = graph.kind(first)?;
     let include_any = kind != TypeKind::Intersection;
-    let mut processed: IndexSet<TypeRef> = IndexSet::new();
-    let mut members: IndexSet<TypeRef> = IndexSet::new();
+    let mut processed: IndexSet<TypeRef> = IndexSet::default();
+    let mut members: IndexSet<TypeRef> = IndexSet::default();
     let mut attributes = TypeAttributes::new();
 
     // An explicit stack instead of recursion, visiting in the same order.
@@ -117,7 +117,7 @@ pub fn make_groups_to_flatten(
             set.insert(u);
             continue;
         }
-        let mut set = IndexSet::new();
+        let mut set = IndexSet::default();
         if members.len() == 1 {
             set.insert(members[0]);
         }
@@ -189,7 +189,7 @@ pub fn remove_null_from_type(
     t: TypeRef,
 ) -> Result<(Option<TypeRef>, IndexSet<TypeRef>)> {
     match graph.kind(t)? {
-        TypeKind::Null => Ok((Some(t), IndexSet::new())),
+        TypeKind::Null => Ok((Some(t), IndexSet::default())),
         TypeKind::Union => remove_null_from_union(graph, t, NullRemovalSort::None),
         _ => Ok((None, [t].into_iter().collect())),
     }
@@ -279,7 +279,7 @@ pub fn directly_reachable_types<T: Clone + std::hash::Hash + Eq>(
         if let Some(set) = set_for_type(t)? {
             return Ok(set);
         }
-        let mut result = IndexSet::new();
+        let mut result = IndexSet::default();
         for c in graph.non_attribute_children(t)? {
             result.extend(directly_reachable_types(graph, c, set_for_type)?);
         }
@@ -334,7 +334,7 @@ pub fn find_member(graph: &TypeGraph, union: TypeRef, kind: TypeKind) -> Result<
 /// `UnionType.stringTypeMembers`: members that are primitive strings or
 /// enums.
 pub fn string_type_members(graph: &TypeGraph, union: TypeRef) -> Result<IndexSet<TypeRef>> {
-    let mut result = IndexSet::new();
+    let mut result = IndexSet::default();
     for &m in graph.type_at(union)?.members()? {
         let k = graph.kind(m)?;
         if k.is_primitive_string_type_kind() || k == TypeKind::Enum {

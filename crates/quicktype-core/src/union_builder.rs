@@ -6,7 +6,7 @@
 //! one member per kind, in kind order. How arrays and objects are combined
 //! is up to the union builder (unification, intersection or inference).
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::string_types::{StringTypes, StringTypesTypeAttributeKind};
 use crate::attributes::type_attributes::{
@@ -68,7 +68,7 @@ fn add_attributes_to_builder(
 fn build_type_attribute_map(
     builder: &TypeAttributeMapBuilder,
 ) -> Result<IndexMap<TypeKind, TypeAttributes>> {
-    let mut result = IndexMap::with_capacity(builder.len());
+    let mut result = IndexMap::with_capacity_and_hasher(builder.len(), Default::default());
     for (&kind, arr) in builder {
         let refs: Vec<&TypeAttributes> = arr.iter().collect();
         result.insert(
@@ -127,12 +127,12 @@ impl<TArray, TObject> UnionAccumulator<TArray, TObject> {
     /// `integer` and `double` members become one `double`.
     pub fn new(conflate_numbers: bool) -> Self {
         UnionAccumulator {
-            non_string_type_attributes: IndexMap::new(),
-            string_type_attributes: IndexMap::new(),
-            string_cases: IndexMap::new(),
+            non_string_type_attributes: IndexMap::default(),
+            string_type_attributes: IndexMap::default(),
+            string_cases: IndexMap::default(),
             array_data: Vec::new(),
             object_data: Vec::new(),
-            enum_cases: IndexSet::new(),
+            enum_cases: IndexSet::default(),
             lost_type_attributes: false,
             conflate_numbers,
         }
@@ -318,7 +318,7 @@ impl<TArray, TObject> UnionAccumulator<TArray, TObject> {
         if !self.string_cases.is_empty() {
             let cases = StringTypes {
                 cases: Some(self.string_cases.clone()),
-                transformations: IndexSet::new(),
+                transformations: IndexSet::default(),
             };
             set_attributes(
                 &mut string_type_attributes,
@@ -473,7 +473,7 @@ fn attributes_for_types(
         }
     };
 
-    let mut result_attributes: IndexMap<TypeRef, TypeAttributes> = IndexMap::new();
+    let mut result_attributes: IndexMap<TypeRef, TypeAttributes> = IndexMap::default();
     for (&t, union_for_type) in &unions_for_type {
         let single_ancestors: Vec<UnionOrFaux> = union_for_type
             .iter()

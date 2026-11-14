@@ -41,7 +41,7 @@
 
 use std::sync::{LazyLock, OnceLock};
 
-use indexmap::{IndexMap, IndexSet};
+use crate::hash::{IndexMap, IndexSet};
 use regex::{Captures, Regex};
 use regex_automata::dfa::{Automaton as _, dense};
 use regex_automata::{Input, PatternSet};
@@ -225,9 +225,9 @@ struct Tables {
 
 static TABLES: LazyLock<Tables> = LazyLock::new(|| {
     let mut tables = Tables {
-        uncountables: IndexSet::new(),
-        irregular_singles: IndexMap::new(),
-        irregular_plurals: IndexMap::new(),
+        uncountables: IndexSet::default(),
+        irregular_singles: IndexMap::default(),
+        irregular_plurals: IndexMap::default(),
     };
     for &(single, plural) in IRREGULAR_RULES {
         let (single, plural) = (single.to_lowercase(), plural.to_lowercase());

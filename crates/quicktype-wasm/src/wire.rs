@@ -221,7 +221,7 @@ pub struct EncodedValue {
 /// as `undefined`) is dropped from objects, as if the key were missing,
 /// and becomes `null` in arrays, as `JSON.stringify` does.
 pub fn decode_value(encoded: &EncodedValue) -> Result<Option<JsonSchema>, WireError> {
-    use indexmap::IndexMap;
+    use quicktype_js_compat::hash::IndexMap;
     use std::rc::Rc;
 
     enum Frame {
@@ -269,7 +269,11 @@ pub fn decode_value(encoded: &EncodedValue) -> Result<Option<JsonSchema>, WireEr
                 }
                 tag::OBJECT => {
                     let n = counts.next().ok_or_else(truncated)?;
-                    stack.push(Frame::Object(IndexMap::with_capacity(n as usize), n, None));
+                    stack.push(Frame::Object(
+                        IndexMap::with_capacity_and_hasher(n as usize, Default::default()),
+                        n,
+                        None,
+                    ));
                     continue;
                 }
                 other => return Err(WireError::new(format!("unknown value tag {other}"))),

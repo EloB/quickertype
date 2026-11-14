@@ -3490,7 +3490,7 @@ static inline size_t quicktype_strlen_codepoints(const char * s)
     /// class or union uses, except `filename` itself.
     fn emit_includes(&mut self, t: TypeRef, filename: &str) -> Result<()> {
         // List required includes.
-        let mut includes = IncludeMap::new();
+        let mut includes = IncludeMap::default();
         let ty = self.type_graph().type_at(t)?;
         if ty.is_union() {
             self.update_includes(false, &mut includes, t)?;

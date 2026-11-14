@@ -34,7 +34,7 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_js_compat::sort::{compare_utf16, sort_by};
 use quicktype_js_compat::uri::{Uri, UriError, decode_uri_component};
 use quicktype_js_compat::{number, utf16};
@@ -884,7 +884,7 @@ fn check_type_list(type_or_types: &JsonSchema, loc: &Location) -> Result<IndexSe
     let set: IndexSet<String> = match type_or_types {
         JsonSchema::String(t) => [t.clone()].into_iter().collect(),
         JsonSchema::Array(items) => {
-            let mut set = IndexSet::new();
+            let mut set = IndexSet::default();
             for t in items.iter() {
                 let JsonSchema::String(t) = t else {
                     return message_error(
@@ -1241,7 +1241,7 @@ impl<'g> TypeAdder<'_, 'g> {
         let new_names = match title {
             Some(title) => TypeNames::make(
                 [title].into_iter().collect(),
-                Some(IndexSet::new()),
+                Some(IndexSet::default()),
                 conv.has("$ref"),
             ),
             None => type_names.make_inferred(),
@@ -1454,7 +1454,7 @@ impl<'g> TypeAdder<'_, 'g> {
                 modify_type_names(&conv.type_attributes, |_| {
                     Some(TypeNames::make(
                         [name].into_iter().collect(),
-                        Some(IndexSet::new()),
+                        Some(IndexSet::default()),
                         true,
                     ))
                 })
@@ -1619,7 +1619,7 @@ impl<'g> TypeAdder<'_, 'g> {
         };
 
         let properties: Rc<IndexMap<String, JsonSchema>> = match conv.get("properties") {
-            None => Rc::new(IndexMap::new()),
+            None => Rc::new(IndexMap::default()),
             Some(p) => Rc::clone(check_json_schema_object(p, || {
                 Ok(conv.loc.canonical_ref.clone())
             })?),
@@ -1714,7 +1714,7 @@ impl<'g> TypeAdder<'_, 'g> {
         }
         sort_by(&mut entries, |a, b| compare_keys(&a.0, &b.0));
 
-        let mut props: IndexMap<String, crate::ty::ty::ClassProperty> = IndexMap::new();
+        let mut props: IndexMap<String, crate::ty::ty::ClassProperty> = IndexMap::default();
         for (_, prop_name, prop_schema) in entries {
             let prop_loc = loc.push(&["properties", prop_name])?;
             check_json_schema(prop_schema, || Ok(prop_loc.canonical_ref.clone()))?;
@@ -1962,7 +1962,7 @@ async fn refs_in_schema_for_uri(resolver: &mut Resolver<'_>, uri: &Uri) -> Resul
                 vec![("ref", r.to_string().into())],
             );
         };
-        let mut refs = IndexMap::new();
+        let mut refs = IndexMap::default();
         for key in map.keys() {
             refs.insert(key.clone(), r.push(&[key])?);
         }
@@ -2073,9 +2073,9 @@ impl JsonSchemaInput {
         JsonSchemaInput {
             schema_store,
             attribute_producers,
-            schema_inputs: IndexMap::new(),
+            schema_inputs: IndexMap::default(),
             schema_sources: Vec::new(),
-            top_levels: IndexMap::new(),
+            top_levels: IndexMap::default(),
             need_ir: false,
             additional_schema_addresses,
         }
@@ -2288,7 +2288,7 @@ impl JsonSchemaInput {
     /// `singleStringSchemaSource()`: the schema text, if every source has
     /// the same one.
     pub fn single_string_schema_source(&self) -> Option<String> {
-        let mut schemas: IndexSet<&str> = IndexSet::new();
+        let mut schemas: IndexSet<&str> = IndexSet::default();
         for (_, source) in &self.schema_sources {
             schemas.insert(source.schema.as_deref()?);
         }

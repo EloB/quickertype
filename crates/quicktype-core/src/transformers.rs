@@ -27,7 +27,7 @@
 use std::any::Any;
 use std::rc::Rc;
 
-use indexmap::IndexSet;
+use crate::support::fast_hash::IndexSet;
 
 use crate::attributes::type_attributes::{
     AttributeKind, TransformationAttribute, TransformationTypeAttributeKind, TypeAttributes,
@@ -809,10 +809,10 @@ impl Transformer {
             "Reversing a decoding transformer can't have a target transformer",
         )?;
 
-        let mut by_kind: indexmap::IndexMap<TypeKind, Vec<Rc<Transformer>>> =
-            indexmap::IndexMap::new();
-        let mut by_member: indexmap::IndexMap<TypeRef, Vec<Rc<Transformer>>> =
-            indexmap::IndexMap::new();
+        let mut by_kind: crate::support::fast_hash::IndexMap<TypeKind, Vec<Rc<Transformer>>> =
+            crate::support::fast_hash::IndexMap::default();
+        let mut by_member: crate::support::fast_hash::IndexMap<TypeRef, Vec<Rc<Transformer>>> =
+            crate::support::fast_hash::IndexMap::default();
 
         for xfer in cases.slots().into_iter().flatten() {
             let reversed = xfer.reverse(lookup, target_type_ref, None)?;

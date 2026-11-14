@@ -345,10 +345,10 @@ impl Parser<'_> {
                 Token::LBrace => {
                     self.pos += 1;
                     if self.check(Token::RBrace) {
-                        JsonValue::Object(IndexMap::new())
+                        JsonValue::Object(IndexMap::default())
                     } else {
                         let key = self.scan_property_key(Positional::ExpectedPropNameOrRBrace)?;
-                        stack.push(Frame::Object(IndexMap::new(), key, false));
+                        stack.push(Frame::Object(IndexMap::default(), key, false));
                         continue 'value;
                     }
                 }

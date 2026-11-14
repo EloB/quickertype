@@ -18,7 +18,7 @@
 
 use std::cell::RefCell;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use super::compressed_json::{CompressedJson, Value};
 use crate::attributes::string_types::{StringTypes, infer_transformed_string_type_kind_for_string};
@@ -107,7 +107,7 @@ impl<'c> TypeInference<'c> {
                         TypeKind::String,
                         empty(),
                         Some(StringTypes::new(
-                            Some(IndexMap::new()),
+                            Some(IndexMap::default()),
                             [kind].into_iter().collect(),
                         )?),
                     )?;
@@ -127,7 +127,7 @@ impl<'c> TypeInference<'c> {
                         TypeKind::String,
                         producer(s),
                         Some(StringTypes::new(
-                            Some(IndexMap::new()),
+                            Some(IndexMap::default()),
                             [kind].into_iter().collect(),
                         )?),
                     )?;
@@ -239,7 +239,7 @@ impl<'c> TypeInference<'c> {
     ) -> Result<TypeRef> {
         // `propertyNames` and the plain object `propertyValues`.
         let mut property_names: Vec<&'c str> = Vec::new();
-        let mut property_values: IndexMap<&'c str, Vec<Value>> = IndexMap::new();
+        let mut property_values: IndexMap<&'c str, Vec<Value>> = IndexMap::default();
         let mut proto_values: Vec<Value> = Vec::new();
         for object in objects {
             for &(key, value) in *object {
@@ -297,7 +297,7 @@ impl<'c> TypeInference<'c> {
             return builder.get_map_type(type_attributes, values, forwarding_ref);
         }
 
-        let mut properties: IndexMap<String, ClassProperty> = IndexMap::new();
+        let mut properties: IndexMap<String, ClassProperty> = IndexMap::default();
         for key in &property_names {
             let values = values_of(key);
             let t = self.infer_type(

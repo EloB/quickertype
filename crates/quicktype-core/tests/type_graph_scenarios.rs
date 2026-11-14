@@ -14,7 +14,6 @@ use std::fs;
 use std::path::Path;
 use std::rc::Rc;
 
-use indexmap::{IndexMap, IndexSet};
 use quicktype_core::attributes::constraints::{
     MinMaxConstraint, MinMaxLengthTypeAttributeKind, MinMaxTypeAttributeKind,
     PatternTypeAttributeKind,
@@ -33,6 +32,7 @@ use quicktype_core::graph_rewriting::make_replacer;
 use quicktype_core::language::csharp::language::CSharpTargetLanguage;
 use quicktype_core::language::python::language::PythonTargetLanguage;
 use quicktype_core::messages::{QuickTypeError, Result};
+use quicktype_core::support::fast_hash::{IndexMap, IndexSet};
 use quicktype_core::support::support::set_console_sink;
 use quicktype_core::target_language::TargetLanguage;
 use quicktype_core::ty::transformed_string_type::TypeKind;
@@ -174,7 +174,7 @@ impl Interpreter {
     }
 
     fn props(&self, spec: &str) -> Result<IndexMap<String, ClassProperty>> {
-        let mut props = IndexMap::new();
+        let mut props = IndexMap::default();
         if spec == "-" || spec == "{}" {
             return Ok(props);
         }
@@ -193,7 +193,7 @@ impl Interpreter {
 
     fn members(&self, spec: &str) -> Result<IndexSet<TypeRef>> {
         if spec == "-" {
-            return Ok(IndexSet::new());
+            return Ok(IndexSet::default());
         }
         spec.split(',').map(|v| self.var(v)).collect()
     }
@@ -246,7 +246,7 @@ impl Interpreter {
                         None => (spec, None),
                     };
                     let cases: IndexMap<String, u64> = if cases_spec.is_empty() {
-                        IndexMap::new()
+                        IndexMap::default()
                     } else {
                         cases_spec
                             .split(',')
@@ -268,7 +268,7 @@ impl Interpreter {
                             .collect::<Result<_>>()?
                     };
                     let kinds: IndexSet<TypeKind> = match kinds_spec {
-                        None => IndexSet::new(),
+                        None => IndexSet::default(),
                         Some(list) => list
                             .split(',')
                             .map(|k| TypeKind::from_str(k).ok_or_else(|| err("bad kind")))
@@ -463,7 +463,7 @@ impl Interpreter {
             "remap" => {
                 let graph = self.graph()?;
                 let types: Vec<TypeRef> = graph.all_types_unordered().collect();
-                let mut map = IndexMap::new();
+                let mut map = IndexMap::default();
                 for p in arg(0)?.split(',') {
                     let (from, to) = p.split_once('>').ok_or_else(|| err("bad remap"))?;
                     let from: usize = from.parse().map_err(|_| err("bad index"))?;

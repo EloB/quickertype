@@ -22,7 +22,7 @@
 
 use std::fmt;
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 use quicktype_js_compat::json::insert_js_property;
 use quicktype_js_compat::{path, whitespace};
 
@@ -284,7 +284,7 @@ pub fn is_url(s: &str) -> bool {
 /// property order; a later header with the same name wins). A non-empty
 /// header without a `:` is an internal error.
 fn parse_headers(http_headers: &[String]) -> Result<Vec<(String, String)>> {
-    let mut result: IndexMap<String, String> = IndexMap::new();
+    let mut result: IndexMap<String, String> = IndexMap::default();
     for header in http_headers {
         if header.is_empty() {
             continue;

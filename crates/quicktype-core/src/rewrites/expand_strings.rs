@@ -12,7 +12,7 @@
 
 use std::hash::BuildHasher as _;
 
-use indexmap::{IndexMap, IndexSet};
+use crate::support::fast_hash::{IndexMap, IndexSet};
 
 use crate::attributes::string_types::StringTypes;
 use crate::attributes::type_attributes::{TypeAttributeKind, TypeAttributes};
@@ -136,7 +136,7 @@ fn find_enum_sets(
         return Ok(enum_sets);
     }
 
-    let mut enum_infos: IndexMap<TypeRef, EnumInfo> = IndexMap::new();
+    let mut enum_infos: IndexMap<TypeRef, EnumInfo> = IndexMap::default();
     for &t in all_strings {
         if let Some(info) = make_enum_info(graph, string_type_mapping, inference, t)? {
             enum_infos.insert(t, info);

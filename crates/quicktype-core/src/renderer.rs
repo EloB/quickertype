@@ -16,7 +16,7 @@
 //!   [`ConvenienceRendererExt`](crate::convenience_renderer::ConvenienceRendererExt)
 //!   trait, because the callback needs the whole renderer.
 
-use indexmap::IndexMap;
+use crate::support::fast_hash::IndexMap;
 
 use crate::annotation::AnnotationData;
 use crate::messages::{ErrorKind, QuickTypeError, Result};
@@ -288,7 +288,7 @@ impl<'a> RendererCore<'a> {
             names: None,
             contexts: vec![EmitContext::new()],
             current: 0,
-            finished_files: IndexMap::new(),
+            finished_files: IndexMap::default(),
             finished_emit_contexts: HashMap::default(),
         }
     }
