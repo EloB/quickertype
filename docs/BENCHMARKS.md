@@ -544,50 +544,52 @@ standard input redirected from one) is read on several threads, into the
 same tallies as reading it in one go (see
 [STREAMING-INFERENCE.md](STREAMING-INFERENCE.md#reading-on-several-threads)).
 Output is byte-identical: 260,928 CLI runs against main (2,416 files ×
-9 option sets × 12 settings of threads and chunk size), 756 more on the
-large inputs below, the differential harness on 200,000 seeds and the
-`json_split` fuzz target.
+9 option sets × 12 settings of threads and chunk size), 6,048 on arrays
+whose places come to absorb every string partway, 756 on the large
+inputs below (both from a path and from standard input), the
+differential harness on 200,000 seeds and the `json_split` fuzz target.
 
 **Scaling.** `cargo build --release -p quickertype`, `-l ts -o
 /dev/null`; the threads set with `QUICKTYPE_READ_THREADS` (the default is
-12, the machine's cores), interleaved; medians of 15 runs (9 for 1M
-records); wall / CPU time in ms (user + system, from `wait4`) and peak
-RSS. Main is the parent commit. Load average 5 to 7 on 12 cores (another
-agent's work).
+12, the machine's cores), interleaved with main; medians of 15 runs (11
+for 1M records); wall / CPU time in ms (user + system, from `wait4`) and
+peak RSS. Main is `a91401e78` (the second phase of `perf/reader-speed`,
+which this branch is rebased on). Load average 4.3 to 5.1 on 12 cores.
 
 | Input | Main | 1 thread | 2 | 4 | 8 | 12 (default) |
 |---|---:|---:|---:|---:|---:|---:|
-| 100k records (26.8 MB) | 32.9 / 31.7, 9.7 MiB | 33.3 / 32.1, 9.7 MiB | 24.0 / 41.8, 12.2 MiB | 15.6 / 43.6, 14.8 MiB | 12.4 / 51.9, 20.2 MiB | **12.1** / 61.0, 25.3 MiB |
-| 1M records (267 MB) | 297 / 296, 43.1 MiB | 295 / 294, 43.2 MiB | 201 / 392, 44.7 MiB | 110 / 397, 47.9 MiB | 71.8 / 438, 53.1 MiB | **66.5** / 502, 60.8 MiB |
-| 1M records, `< file` on standard input | 297 / 296, 43.1 MiB | 294 / 292, 43.2 MiB | | | 72.3 / 437, 54.9 MiB | **65.7** / 498, 59.9 MiB |
-| 20k articles, long text (23.4 MB) | 69.5 / 68.2, 19.5 MiB | 70.3 / 69.0, 19.5 MiB | 46.0 / 82.3, 25.3 MiB | 29.6 / 85.2, 26.1 MiB | 24.0 / 98.6, 32.6 MiB | **24.5** / 113, 37.5 MiB |
-| 100k records, pretty-printed (30.3 MB) | 35.2 / 34.0, 9.8 MiB | 35.9 / 34.6, 9.9 MiB | 26.1 / 45.7, 12.4 MiB | 16.6 / 47.4, 15.1 MiB | 13.2 / 55.9, 20.0 MiB | **12.8** / 66.3, 25.8 MiB |
+| 100k records (26.8 MB) | 31.0 / 29.9, 6.0 MiB | 30.3 / 29.2, 6.1 MiB | 20.0 / 38.2, 8.3 MiB | 13.6 / 39.6, 10.7 MiB | 10.3 / 45.2, 15.9 MiB | **10.2** / 58.1, 19.6 MiB |
+| 1M records (267 MB) | 264 / 263, 6.0 MiB | 263 / 262, 6.0 MiB | 140 / 351, 9.3 MiB | 81.2 / 358, 12.2 MiB | 54.5 / 384, 17.6 MiB | **48.8** / 443, 21.3 MiB |
+| 1M records, `< file` on standard input | 266 / 264, 6.0 MiB | 263 / 262, 6.0 MiB | | | 56.0 / 386, 17.5 MiB | **47.9** / 442, 20.9 MiB |
+| 20k articles, long text (23.4 MB) | 62.1 / 60.9, 19.1 MiB | 60.8 / 59.4, 19.2 MiB | 38.6 / 73.1, 23.8 MiB | 26.9 / 78.5, 25.7 MiB | **23.0** / 86.9, 31.1 MiB | 24.2 / 108, 36.1 MiB |
+| 100k records, pretty-printed (30.3 MB) | 33.1 / 32.0, 6.0 MiB | 32.7 / 31.5, 6.0 MiB | 21.5 / 41.7, 8.9 MiB | 14.1 / 43.5, 10.7 MiB | 10.8 / 49.3, 16.4 MiB | **10.7** / 62.7, 19.8 MiB |
 
-The 1M records take 4.5× less wall time on 12 threads and 4.1× less on
+The 1M records take 5.4× less wall time on 12 threads and 4.8× less on
 8, for 1.5–1.7× the CPU time: the ranges are scanned once before their
 parts are tallied (about 4 GB/s per thread, 65 ms of CPU for 267 MB),
 each byte is read from the page cache twice, and the efficiency cores
-are slower. Peak RSS grows by 1–1.5 MiB per thread: read buffers, the
-tallies of the part each thread reads, and the allocator's per-thread
-heaps. A pipe (`cat file |`) is read in one go, as before.
+are slower (on the text-heavy records, 8 threads are as fast as 12).
+Peak RSS grows by 1.2–1.5 MiB per thread: read buffers, the tallies of
+the part each thread reads, and the allocator's per-thread heaps. A pipe
+(`cat file |`) is read in one go, as before.
 
 **Where it starts to pay.** The same records, cut to 2–64 MB, read in one
 go (`QUICKTYPE_READ_THREADS=1`) and on 12 threads with every sample split
 (`QUICKTYPE_READ_CHUNK=4194304`, which also lifts the 8 MiB threshold);
-medians of 15, load average 7:
+medians of 15, load average 4.7:
 
 | Size | In one go | 12 threads |
 |---|---:|---:|
-| 2 MB | 6.7 / 5.7 ms, 6.2 MiB | 6.1 / 12.3 ms, 14.4 MiB |
-| 4 MB | 8.6 / 7.5 ms, 6.5 MiB | 7.2 / 20.6 ms, 18.1 MiB |
-| 8 MB | 13.4 / 12.3 ms, 7.0 MiB | 8.5 / 30.1 ms, 21.6 MiB |
-| 16 MB | 22.4 / 21.1 ms, 8.2 MiB | 10.7 / 45.0 ms, 25.4 MiB |
-| 32 MB | 40.2 / 39.1 ms, 10.1 MiB | 13.8 / 71.8 ms, 28.2 MiB |
-| 64 MB | 75.7 / 74.3 ms, 14.6 MiB | 20.5 / 127.7 ms, 33.1 MiB |
+| 2 MB | 6.0 / 5.0 ms, 6.0 MiB | 5.5 / 10.0 ms, 11.3 MiB |
+| 4 MB | 8.3 / 7.2 ms, 6.0 MiB | 6.6 / 16.7 ms, 14.7 MiB |
+| 8 MB | 12.2 / 11.3 ms, 6.0 MiB | 7.3 / 23.8 ms, 16.6 MiB |
+| 16 MB | 20.1 / 18.9 ms, 6.0 MiB | 9.4 / 37.1 ms, 18.8 MiB |
+| 32 MB | 36.0 / 34.7 ms, 6.0 MiB | 12.3 / 61.9 ms, 19.6 MiB |
+| 64 MB | 67.7 / 66.4 ms, 6.0 MiB | 18.3 / 111.8 ms, 20.1 MiB |
 
-Below 8 MB the threads save at most 1.5 ms, for two to three times the
-CPU time and 8–12 MiB more memory; from 8 MB on they save 37% and more.
-So samples under 8 MiB are read in one go.
+Below 8 MB the threads save at most 1.7 ms, for two to two and a half
+times the CPU time and 5–9 MiB more memory; from 8 MB on they save 40%
+and more. So samples under 8 MiB are read in one go.
 
 **Elements with large tallies of their own.** The 2.6 GB input of
 [Memory on large inputs](#memory-on-large-inputs) is an array of 60
@@ -597,21 +599,30 @@ elements beside each other multiplies them. With the default budget for
 the parts' trees (the threads times the range size, or 32 MiB), the
 first element shows that one part's tree would fill it, and the rest is
 read in one go, as before. A larger budget (`QUICKTYPE_READ_BUDGET`,
-internal) trades that memory for time. Medians of 3, load average 4.5 to
-6.4:
+internal) trades that memory for time. Medians of 3, load average 3.8 to
+5.8:
 
 | 2.6 GB generated input | Wall | CPU | Peak RSS |
 |---|---:|---:|---:|
-| Main | 8.56 s | 8.54 s | 62.2 MiB |
-| 1 thread | 8.37 s | 8.36 s | 62.2 MiB |
-| 2, 4, 8, 12 threads, default budget | 8.40–8.70 s | 8.44–8.78 s | 62–70 MiB |
-| 4 threads, budget 512 MiB | 2.95 s | 13.0 s | 560 MiB |
-| 8 threads, budget 1 GiB | 2.11 s | 15.5 s | 1,017 MiB |
-| 12 threads, budget 1 GiB | 2.12 s | 16.7 s | 1,539 MiB |
+| Main | 8.56 s | 8.53 s | 62.2 MiB |
+| 1 thread | 8.66 s | 8.65 s | 62.1 MiB |
+| 2, 4, 8, 12 threads, default budget | 8.44–8.84 s | 8.40–8.78 s | 62.5–62.7 MiB |
+| 4 threads, budget 512 MiB | 3.04 s | 13.2 s | 557 MiB |
+| 8 threads, budget 1 GiB | 2.28 s | 14.9 s | 928 MiB |
+| 12 threads, budget 1 GiB | 2.25 s | 16.7 s | 1,333 MiB |
 
-The budget bounds the trees as estimated from the parts read so far;
-what a thread holds at its peak is about twice that (a part's tallies,
-and their copy for the reading thread), plus what the allocator keeps.
+The budget bounds what the parts given out and not appended yet hold:
+their trees as estimated while they are read, and their trees' own
+sizes once read, while they wait for the parts before them. A part's
+tallies are moved to the reading thread, not copied. Above the 62 MiB
+of reading in one go, the peak was 0.85 to 1.25 times the budget.
+
+**Arrays that do not split.** An array whose elements are longer than a
+part the budget lets be read beside others is read in one go as soon as
+the ranges scanned past the last split are that long, without scanning
+the rest. The 1M records inside one object, in a one-element array
+(267 MB), on 12 threads: 265 / 275 ms against main's 263 / 261 ms
+(medians of 7, load average 1.2).
 
 ## Profiling
 

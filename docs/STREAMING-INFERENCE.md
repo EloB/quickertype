@@ -424,27 +424,37 @@ it stands, and is left at its end as reading it in one go leaves it.
    string table) and appends each to the sample's tree with
    `Tallies::merge`.
 
-The parts read elsewhere hold trees of their own (and, while one is
-copied for the reading thread, the copy too), which take as much memory
-as the tallies of their text: a fraction of it for arrays of
+The parts read elsewhere hold trees of their own, which take as much
+memory as the tallies of their text: a fraction of it for arrays of
 records, whose elements share their places, but as much as a whole
 sample's tallies for an element as large as a part full of distinct keys
-or strings. So the trees under way, estimated by the largest ratio of
-tree to text seen (the first part's, then each part's), may take
-together at most the threads times the range size, or 32 MiB. Where a
-single part's would take half of that, the parallel reading stops and the
-rest is read in one go (below), which shares one set of tallies for all
-elements. Summaries run a few ranges ahead of the parts given out, so the
-second read of a range finds it cached.
+or strings. (A part's tallies are moved into the portable tree, and that
+into the sample's tallies, not copied.) So each part given out holds
+bytes until it is appended: its tree as estimated while it is read (by
+the largest ratio of tree to text seen, and at least the smallest tree
+seen; the first part is measured as a part read elsewhere would hold it),
+its tree's own size once read and while it waits for the parts before
+it. Together they may hold at most the threads times the range size, or
+32 MiB, and at most 2 × threads + 2 parts are given out beyond the last
+one appended. Where a single part's tree would take half of the budget,
+the parallel reading stops and the rest is read in one go (below), which
+shares one set of tallies for all elements; so it does, without scanning
+on, once the ranges hold no split for as long as such a part. Summaries
+run only a few ranges ahead of the next part to give out, so the second
+read of a range finds it cached.
 
-Read in one go, as before: samples under 8 MiB, top-levels that are not
-arrays, standard input from a pipe or a terminal (it cannot be read at
-offsets, and reading it ahead would hold it in memory), text samples
-(`JSON.parse` semantics), streams the Rust API hands in
-(`SampleReader::new`), the WebAssembly engine, Windows (positional reads
-are Unix's here), and date/time recognizers other than the built-in ones,
-which may not be copied to other threads
-(`DateTimeRecognizer::thread_copy`).
+Files are read at offsets with `pread` on Unix and `seek_read` on
+Windows, which also moves the file's position: every reading in one go
+that follows seeks first. Read in one go, as before: samples under 8 MiB,
+top-levels that are not arrays, arrays whose first element is longer than
+a part the budget would read beside others, standard input from a pipe or
+a terminal (it cannot be read at offsets, and reading it ahead would hold
+it in memory), standard input on Windows (a console or a pipe is not told
+from a file as surely there), text samples (`JSON.parse` semantics),
+streams the Rust API hands in (`SampleReader::new`), the WebAssembly
+engine, and date/time recognizers other than the built-in ones, which may
+not be copied to other threads (`DateTimeRecognizer::thread_copy`); and
+if the system will not start the threads.
 
 ### Why it is exact
 
@@ -488,9 +498,15 @@ gives the tree of reading their samples on (`merging_trees_is_reading_on`;
 `merging_imported_trees_is_reading_on` groups the samples every way). The
 parts' trees are those of arrays of their elements: their roots hold the
 `array` kind and the elements at their items, as the sample's root does,
-so the appended tree is the sample's tree. String ids are only identities
-(every list of keys and cases keeps its first-seen order), so the order in
-which texts enter the string table does not matter.
+so the appended tree is the sample's tree. That includes places whose
+strings come to absorb every string (and so hold no cases, see
+[Interned strings](#interned-strings-cases-and-counts)): a part's place
+may absorb from one of its values on, or only once appended to the parts
+before it, and `StringTally::append` forgets the cases when the union
+absorbs, as reading on would have (the merging test runs samples whose
+places start absorbing partway, split every way). String ids are only
+identities (every list of keys and cases keeps its first-seen order), so
+the order in which texts enter the string table does not matter.
 
 *Errors.* A part that does not read as the sample's elements (it fails,
 it is empty, it starts with `]`), a read that fails, or a merge that
@@ -526,8 +542,18 @@ anyway.)
   broken arrays with every range size (an error in the first part, the
   last, between, at a part's end, trailing commas, garbage after the
   array, invalid UTF-8 in and out of strings); a tree budget that admits
-  one part reads the rest in one go; and a fault that merges the parts'
-  trees out of order is caught.
+  one part reads the rest in one go; behind a part read slowly (a test
+  hook), the parts' trees stay within the budget but for one, and parts
+  longer than the ranges scanned ahead are still read beside it; arrays of
+  elements longer than a part the budget lets be read beside others are
+  read in one go after scanning that much; a thread that does not start
+  makes the sample read in one go; an import that fails part way leaves
+  the tallies as they were; and a fault that merges the parts' trees out
+  of order is caught.
+- Files written by the tests and read at offsets
+  (`tests/parallel_files.rs` in quicktype-core, and the CLI's
+  `files_read_on_several_threads_read_as_in_one_go` with the internal
+  variables), on every platform CI tests, Windows included.
 - The differential harness reads every byte-stream sample on several
   threads (`Path::Parallel`, in `Path::All`), with 2 to 5 threads, ranges
   of one byte to half the sample and, for a fifth of the samples, a tree
