@@ -4,7 +4,7 @@
 output, byte for byte, up to 96× faster.**
 
 [![CI](https://github.com/EloB/quickertype/actions/workflows/ci.yml/badge.svg)](https://github.com/EloB/quickertype/actions/workflows/ci.yml)
-[![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/)
+[![Playground](https://img.shields.io/badge/playground-try%20it%20in%20the%20browser-6e56cf)](https://elob.github.io/quickertype/app/)
 [![crates.io](https://img.shields.io/crates/v/quickertype?label=crates.io)](https://crates.io/crates/quickertype)
 [![npm](https://img.shields.io/npm/v/quickertype-core?label=npm%20quickertype-core)](https://www.npmjs.com/package/quickertype-core)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
@@ -97,7 +97,7 @@ reproduce them:
 
 ## Try it
 
-The [playground](https://elob.github.io/quickertype/) runs quicktype's API on
+The [playground](https://elob.github.io/quickertype/app/) runs quicktype's API on
 the WebAssembly engine in your browser. Its engine switch runs the same input
 on quicktype's own TypeScript engine, to compare output and time.
 

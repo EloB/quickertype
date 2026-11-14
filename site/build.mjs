@@ -1,10 +1,21 @@
-// Builds the playground into site/dist (a static site for GitHub Pages).
+// Builds the site into site/dist (a static site for GitHub Pages): the
+// landing page at its root, the playground in app/, the benchmarks page.
+// docs/SITE.md says where everything on them comes from.
 //
 //   node site/build.mjs [--dev]
 //
 // Needs npm/quicktype-core built first (`npm ci && npm run build` there);
 // esbuild comes from that package's devDependencies.
 //
+// * index.html, landing-*.css: the landing page (site/landing.mjs renders
+//   it from the repository's data; see there), with the font and the images
+//   it uses (src/fonts, src/images) and the social preview
+//   (docs/assets/social-preview.png). landing-head.js is inlined in its head:
+//   a link from the playground's old address (the root, its state in the
+//   hash) goes on to app/;
+//
+// The playground, in app/ (it was the root until the landing page; links to
+// the root that carry its state still reach it):
 // * worker.js: quicktype-core (its ES module build) in a Web Worker;
 // * main.js and style.css: the page; head.js, inlined in its head (it
 //   decides where the options go before the first paint);
@@ -32,14 +43,20 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
 import { benchmarksFile, benchmarksPageHtml, bigInputsFile, headlineHtml, readBenchmarks, speedFacts, times } from "./benchmarks.mjs";
+import { landingDescription, landingFacts, landingPageHtml, raceCss, specimenCss } from "./landing.mjs";
 import { quicktypeReference } from "./reference.mjs";
 import { hashKeys } from "./src/hash.js";
+import { escapeHtml } from "./src/html.js";
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.join(siteRoot, "..");
 const packageRoot = path.join(repositoryRoot, "npm", "quicktype-core");
 const src = path.join(siteRoot, "src");
 const dist = path.join(siteRoot, "dist");
+/** The playground's directory in the site. */
+const app = path.join(dist, "app");
+/** Where the site is published (for the landing page's canonical and Open Graph URLs). */
+const siteUrl = "https://elob.github.io/quickertype/";
 const wasmSource = path.join(packageRoot, "dist", "native", "wasm", "quicktype_wasm_bg.wasm");
 const dev = process.argv.includes("--dev");
 
@@ -220,13 +237,27 @@ function upstream() {
     return { ...reference, long };
 }
 
+/** A WebP image's width and height, from its header. */
+function webpSize(buffer) {
+    if (buffer.toString("ascii", 0, 4) !== "RIFF" || buffer.toString("ascii", 8, 12) !== "WEBP") throw new Error("not a WebP image");
+    const chunk = buffer.toString("ascii", 12, 16);
+    if (chunk === "VP8X") return { width: 1 + buffer.readUIntLE(24, 3), height: 1 + buffer.readUIntLE(27, 3) };
+    if (chunk === "VP8 ") return { width: buffer.readUInt16LE(26) & 0x3fff, height: buffer.readUInt16LE(28) & 0x3fff };
+    if (chunk === "VP8L") {
+        const bits = buffer.readUInt32LE(21);
+        return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >> 14) & 0x3fff) };
+    }
+    throw new Error(`a WebP image whose first chunk is ${chunk}`);
+}
+
 function hash(content) {
     return createHash("sha256").update(content).digest("hex").slice(0, 10);
 }
 
-function writeHashed(name, extension, content) {
+/** `content` written to `dir` (the playground's by default) under a name with its hash; that name. */
+function writeHashed(name, extension, content, dir = app) {
     const file = `${name}-${hash(content)}.${extension}`;
-    fs.writeFileSync(path.join(dist, file), content);
+    fs.writeFileSync(path.join(dir, file), content);
     return file;
 }
 
@@ -252,7 +283,7 @@ async function bundle(entry, define, format = "esm") {
 }
 
 /**
- * A classic script for index.html's head (in its own scope), and the hash a
+ * A classic script for a page's head (in its own scope), and the hash a
  * Content-Security-Policy would allow it by (`script-src 'sha256-…'`).
  */
 async function inlineScript(entry) {
@@ -272,7 +303,7 @@ for (const warning of benchmarks.warnings) console.warn(`warning: ${warning}`);
 const speed = speedFacts(benchmarks.bench);
 
 fs.rmSync(dist, { recursive: true, force: true });
-fs.mkdirSync(path.join(dist, "samples"), { recursive: true });
+fs.mkdirSync(path.join(app, "samples"), { recursive: true });
 
 const wasmFile = writeHashed("quicktype", "wasm", fs.readFileSync(wasmSource));
 const workerFile = writeHashed(
@@ -305,10 +336,10 @@ const css = async (entry) =>
         })
     ).outputFiles[0].contents;
 const styleFile = writeHashed("style", "css", await css("style.css"));
-const benchmarksStyleFile = writeHashed("benchmarks", "css", await css("benchmarks.css"));
+const benchmarksStyleFile = writeHashed("benchmarks", "css", await css("benchmarks.css"), dist);
 
 for (const { file } of samples) {
-    fs.copyFileSync(path.join(repositoryRoot, "tests", "inputs", file), path.join(dist, "samples", path.basename(file)));
+    fs.copyFileSync(path.join(repositoryRoot, "tests", "inputs", file), path.join(app, "samples", path.basename(file)));
 }
 
 const { commit, short, date, long } = upstream();
@@ -326,7 +357,7 @@ if (left !== null) throw new Error(`a placeholder is left in index.html: ${left[
 if (html.split("%HEAD_SCRIPT%").length !== 2) throw new Error("index.html needs %HEAD_SCRIPT% once");
 // Last, and as it is (a function: no `$&` in it is a replacement pattern).
 html = html.replace("%HEAD_SCRIPT%", () => headScript.code);
-fs.writeFileSync(path.join(dist, "index.html"), html);
+fs.writeFileSync(path.join(app, "index.html"), html);
 
 const benchmarksHtml = fs
     .readFileSync(path.join(src, "benchmarks.html"), "utf8")
@@ -343,10 +374,62 @@ fs.writeFileSync(path.join(dist, "benchmarks.html"), benchmarksHtml);
 fs.mkdirSync(path.join(dist, "data"));
 for (const file of [benchmarksFile, bigInputsFile]) fs.copyFileSync(file, path.join(dist, "data", path.basename(file)));
 
+// The landing page. Its numbers come from the repository (landing.mjs); its
+// example is generated here, by both of quickertype-core's engines.
+const facts = await landingFacts({
+    qt,
+    engineStats: require(path.join(packageRoot, "dist", "native", "bridge.js")).engineStats,
+    languages: languageList,
+    bench: benchmarks,
+});
+const fontFile = writeHashed("archivo", "woff2", fs.readFileSync(path.join(src, "fonts", "archivo.woff2")), dist);
+/** The section images, each at its full width and at 800 px: hashed file names and the full size. */
+const images = {};
+for (const name of ["speed-trails", "thanks-threads", "parity-mirror"]) {
+    const read = (suffix) => fs.readFileSync(path.join(src, "images", `${name}${suffix}.webp`));
+    const full = read("");
+    images[name] = { full: writeHashed(name, "webp", full, dist), small: writeHashed(`${name}-800`, "webp", read("-800"), dist), ...webpSize(full) };
+}
+fs.copyFileSync(path.join(repositoryRoot, "docs", "assets", "social-preview.png"), path.join(dist, "social-preview.png"));
+// What comes from the data or the build: the font's file, the race's bars, the example's tabs.
+const landingGenerated =
+    `@font-face{font-family:"Archivo";src:url("./${fontFile}") format("woff2");font-weight:400 800;font-stretch:100% 125%;font-style:normal;font-display:swap}` +
+    raceCss(benchmarks.bench) +
+    specimenCss(facts.specimen);
+const landingStyleFile = writeHashed("landing", "css", `${new TextDecoder().decode(await css("landing.css")).trim()}\n${landingGenerated}\n`, dist);
+const landingScript = await inlineScript("landing-head.js");
+const landingContent = landingPageHtml(facts, images);
+// The script sends a hash with "=" on to the playground: no anchor here may have one.
+const equalIds = [...landingContent.matchAll(/\sid="([^"]*=[^"]*)"/g)].map((m) => m[1]);
+if (equalIds.length > 0) throw new Error(`the landing page has ids with "=", which its script would send to the playground: ${equalIds.join(", ")}`);
+let landingHtml = fs
+    .readFileSync(path.join(src, "landing.html"), "utf8")
+    .replace("%STYLE%", `./${landingStyleFile}`)
+    .replace("%FONT%", `./${fontFile}`)
+    .replaceAll("%DESCRIPTION%", escapeHtml(landingDescription(facts)))
+    .replaceAll("%SITE_URL%", siteUrl)
+    .replace("%SOCIAL_IMAGE%", "social-preview.png")
+    .replace("%CONTENT%", () => landingContent);
+const leftInLanding = /%(?!HEAD_SCRIPT%)[A-Z_]+%/.exec(landingHtml.replace(/data:image\/svg\+xml,[^"]*/, ""));
+if (leftInLanding !== null) throw new Error(`a placeholder is left in landing.html: ${leftInLanding[0]}`);
+if (landingHtml.split("%HEAD_SCRIPT%").length !== 2) throw new Error("landing.html needs %HEAD_SCRIPT% once");
+landingHtml = landingHtml.replace("%HEAD_SCRIPT%", () => landingScript.code);
+fs.writeFileSync(path.join(dist, "index.html"), landingHtml);
+
 const kib = (n) => `${(n / 1024).toFixed(1)} KiB`;
 console.log("site/dist:");
-for (const file of [mainFile, styleFile, "index.html", benchmarksStyleFile, "benchmarks.html", workerFile, wasmFile]) {
+const listed = [
+    "index.html",
+    landingStyleFile,
+    fontFile,
+    ...Object.values(images).flatMap((i) => [i.full, i.small]),
+    "benchmarks.html",
+    benchmarksStyleFile,
+    ...[mainFile, styleFile, "index.html", workerFile, wasmFile].map((file) => `app/${file}`),
+];
+for (const file of listed) {
     const content = fs.readFileSync(path.join(dist, file));
-    console.log(`  ${file.padEnd(34)} ${kib(content.length).padStart(12)}  ${kib(gzipSync(content, { level: 9 }).length).padStart(11)} gzipped`);
+    console.log(`  ${file.padEnd(38)} ${kib(content.length).padStart(12)}  ${kib(gzipSync(content, { level: 9 }).length).padStart(11)} gzipped`);
 }
-console.log(`  index.html's inline script: ${headScript.code.length} bytes; a Content-Security-Policy allows it by script-src ${headScript.csp}`);
+console.log(`  index.html's inline script: ${landingScript.code.length} bytes; a Content-Security-Policy allows it by script-src ${landingScript.csp}`);
+console.log(`  app/index.html's inline script: ${headScript.code.length} bytes; a Content-Security-Policy allows it by script-src ${headScript.csp}`);

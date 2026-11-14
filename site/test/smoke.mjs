@@ -1,6 +1,8 @@
-// Smoke test for the playground: site/dist served under /quickertype/ (as on
+// Smoke test for the site: site/dist served under /quickertype/ (as on
 // GitHub Pages), loaded in headless Chrome driven over the DevTools protocol
-// (as npm/quicktype-core/test/browser/smoke.mjs does).
+// (as npm/quicktype-core/test/browser/smoke.mjs does). The playground is at
+// /quickertype/app/, the landing page at /quickertype/ (see "The landing
+// page" below).
 //
 //   node site/test/smoke.mjs [--screenshots <dir>]     (after `node site/build.mjs`)
 //
@@ -102,6 +104,12 @@
 // warm runs" says what it does, and does it: one warm-up and 5 timed runs
 // per engine, one engine after the other.
 //
+// The landing page: every figure on it is what the repository's data holds
+// (counted again here), its example is the CLI's output, its links and images
+// resolve, a link to the root with the playground's state goes on to app/
+// with it (also under a Content-Security-Policy), and it follows the theme
+// and fits a phone (see "The landing page" below).
+//
 // The CLI is required: $QUICKTYPE_CLI, else target/release/quickertype
 // (`cargo build --release -p quickertype`). The browser is $CHROME, else
 // Google Chrome or Chromium; without one the test says so and exits 0 (in
@@ -131,6 +139,7 @@ import {
     speedupText,
     times as speedup,
 } from "../benchmarks.mjs";
+import { fuzzFacts, landingLinks, readQuicktype, workflowFacts } from "../landing.mjs";
 import { chartProblems, chartUrl, readmeFile } from "../readme-charts.mjs";
 import { quicktypeReference } from "../reference.mjs";
 import { serve } from "./serve.mjs";
@@ -320,15 +329,19 @@ async function launch(browser) {
         });
     }
 
-    /** Saves a screenshot of the viewport, or with `full`, of the whole page. */
-    async function screenshot(name, { full = false } = {}) {
+    /**
+     * Saves a screenshot of the viewport, or with `full`, of the whole page
+     * (at `scale`: a long page at twice the pixels is more than Chrome
+     * captures).
+     */
+    async function screenshot(name, { full = false, scale = 1 } = {}) {
         if (screenshots === undefined) return;
         fs.mkdirSync(screenshots, { recursive: true });
         const params = { format: "png" };
         if (full) {
             const { cssContentSize } = await send("Page.getLayoutMetrics");
             params.captureBeyondViewport = true;
-            params.clip = { x: 0, y: 0, width: cssContentSize.width, height: cssContentSize.height, scale: 1 };
+            params.clip = { x: 0, y: 0, width: cssContentSize.width, height: cssContentSize.height, scale };
         }
 
         const { data } = await send("Page.captureScreenshot", params);
@@ -520,9 +533,13 @@ if (browser === undefined) {
     process.exit(0);
 }
 
-if (!fs.existsSync(path.join(dist, "index.html"))) throw new Error("site/dist is not built: node site/build.mjs");
+for (const page of ["index.html", "app/index.html", "benchmarks.html"]) {
+    if (!fs.existsSync(path.join(dist, page))) throw new Error(`site/dist/${page} is missing: node site/build.mjs`);
+}
 
-const { server, requests, url } = await serve(dist);
+// `siteUrl`: the site's root, the landing page; `url`: the playground.
+const { server, requests, url: siteUrl } = await serve(dist);
+const url = new URL("app/", siteUrl).href;
 const page = await launch(browser);
 
 /**
@@ -1112,7 +1129,7 @@ try {
         headline.text,
         `quicktype rewritten in Rust: the same output, byte for byte. The CLI is up to ${speedNow.upTo}× faster (about ${speedNow.typical}× on typical files) and uses a fraction of the memory. Benchmarks · Install the CLI`,
     );
-    assert.deepEqual(headline.links, [["Benchmarks", "./benchmarks.html"], ["Install the CLI", benchLinks.install]]);
+    assert.deepEqual(headline.links, [["Benchmarks", "../benchmarks.html"], ["Install the CLI", benchLinks.install]]);
     // It leaves the playground in view: the panes start in the first screen.
     const panesTop = await page.evaluate("document.querySelector('.panes').getBoundingClientRect().top");
     assert.ok(panesTop < 900 * 0.6, `the panes start at ${panesTop} px`);
@@ -1712,7 +1729,7 @@ try {
     })()`);
     assert.deepEqual(note, {
         text: `In the browser both engines run inside this page, so the gap is smaller; on the command line quickertype is up to ${speedNow.upTo}× faster. Why`,
-        href: "./benchmarks.html#browser",
+        href: "../benchmarks.html#browser",
     });
     console.log(`ok: the note at the comparison: "${note.text}"`);
     // Its details open and close from the keyboard (Enter on the line at a
@@ -2471,7 +2488,7 @@ try {
     // The benchmarks page: rendered from site/data/*.json at build time.
     {
         const { bench: data, big } = benchmarkData;
-        const benchUrl = `${url}benchmarks.html`;
+        const benchUrl = `${siteUrl}benchmarks.html`;
         await page.viewport(1440, 900);
         await page.navigate(benchUrl, { playground: false });
         const pageNow = await page.evaluate(`(() => {
@@ -2618,7 +2635,7 @@ try {
             checked.push(href);
         }
         // The playground's links to this page resolve too.
-        assert.equal((await fetch(new URL("./benchmarks.html", url))).status, 200);
+        assert.equal((await fetch(new URL("../benchmarks.html", url))).status, 200);
         console.log(`ok: ${checked.length} links on the benchmarks page resolve (pages, data, anchors, repository files, commits)`);
 
         // Phones: no sideways scrolling, at 360 and 390 px.
@@ -2633,6 +2650,286 @@ try {
             assert.deepEqual(sizes.overflowing, [], `${width} px: past the right edge`);
             if (width === 390) await page.screenshot("speed-benchmarks-390.png", { full: true });
             console.log(`ok: the benchmarks page at ${width} px: no horizontal scrolling`);
+        }
+        await page.viewport(1440, 900);
+    }
+
+    // The landing page, the site's root: it renders, landmarks, title,
+    // description and Open Graph tags in place, its one script the redirect
+    // in its head; every figure on it is what the repository's data holds,
+    // counted again here (tests/golden, tests/inputs, site/data, the
+    // differential suite's scenarios, fuzz targets and regressions, Rust
+    // tests, benchmarks); its example is what the CLI writes for the command
+    // shown, with the bytes and hash it states, and its tabs work without a
+    // script; every link and image resolves (pages, anchors, repository
+    // files, quicktype's pages and its contributors' profiles); a link with
+    // the playground's state in its hash (#v=2&l=…, or an older one without
+    // v) goes on to app/ with that hash, also under a Content-Security-Policy
+    // that allows the inline script by its hash, while its own anchors stay;
+    // it follows the theme; and it does not scroll sideways at 360 or 390 px.
+    {
+        await page.viewport(1440, 900);
+        await page.navigate(siteUrl, { playground: false });
+        const landing = await page.evaluate(`(() => {
+            const meta = (selector) => document.querySelector(selector)?.getAttribute("content") ?? null;
+            return {
+                title: document.title,
+                description: meta('meta[name="description"]'),
+                og: { title: meta('meta[property="og:title"]'), description: meta('meta[property="og:description"]'), url: meta('meta[property="og:url"]'), image: meta('meta[property="og:image"]') },
+                canonical: document.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+                h1: [...document.querySelectorAll("h1")].map((h) => h.textContent),
+                landmarks: [document.querySelectorAll("body > header").length, document.querySelectorAll("main").length, document.querySelectorAll("body > footer").length],
+                sections: [...document.querySelectorAll("main > section")].map((s) => [s.id, document.getElementById(s.getAttribute("aria-labelledby"))?.textContent ?? null]),
+                noAlt: [...document.querySelectorAll("img")].filter((i) => !i.hasAttribute("alt")).length,
+                scripts: [...document.scripts].map((s) => s.src || "inline"),
+                stats: Object.fromEntries([...document.querySelectorAll("[data-stat]")].map((n) => [n.dataset.stat, [n.dataset.value, n.textContent]])),
+            };
+        })()`);
+        const quicktype = readQuicktype();
+        const people = quicktype.contributors.people;
+        const published = "https://elob.github.io/quickertype/";
+        assert.equal(landing.title, "quickertype — quicktype, rewritten in Rust");
+        assert.deepEqual(landing.h1, ["quicktype, rewritten in Rust."]);
+        assert.deepEqual(landing.landmarks, [1, 1, 1], "header, main, footer");
+        assert.deepEqual(landing.sections.map(([id]) => id), ["", "thanks", "tested", "speed", "install"]);
+        assert.ok(landing.sections.every(([, label]) => label), `sections without a heading: ${JSON.stringify(landing.sections)}`);
+        assert.equal(landing.noAlt, 0, "images without alt");
+        assert.deepEqual(landing.scripts, ["inline"], "the landing page's scripts: the redirect in its head, nothing else");
+        assert.deepEqual([landing.canonical, landing.og.url, landing.og.image], [published, published, `${published}social-preview.png`]);
+        assert.equal(landing.og.description, landing.description);
+        for (const part of [`up to ${speedNow.upTo}× faster`, `${people.length} contributors`]) assert.ok(landing.description.includes(part), `the description says ${part}`);
+        const preview = await fetch(new URL("social-preview.png", siteUrl));
+        assert.deepEqual(Buffer.from(await preview.arrayBuffer()), fs.readFileSync(path.join(repositoryRoot, "docs", "assets", "social-preview.png")), "the social preview");
+
+        // Every figure, from the sources, counted again here.
+        const filesIn = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? filesIn(path.join(dir, d.name)) : [path.join(dir, d.name)]));
+        const golden = path.join(repositoryRoot, "tests", "golden");
+        const cases = filesIn(golden).filter((f) => path.basename(f) === "case.json");
+        const caseIds = cases.map((f) => path.relative(golden, path.dirname(f)).split(path.sep).join("/"));
+        const baseline = new Set(fs.readFileSync(path.join(repositoryRoot, "tests", "parity-baseline.txt"), "utf8").split("\n").map((l) => l.trim()));
+        const steps = cases.reduce((n, f) => n + JSON.parse(fs.readFileSync(f, "utf8")).steps.length, 0);
+        const inputs = filesIn(path.join(repositoryRoot, "tests", "inputs")).length;
+        const { allScenarios } = await import(new URL("../../npm/quicktype-core/test/differential/scenarios.mjs", import.meta.url).href);
+        const rustTests = filesIn(path.join(repositoryRoot, "crates"))
+            .filter((f) => f.endsWith(".rs"))
+            .reduce((n, f) => n + (fs.readFileSync(f, "utf8").match(/#\[test\]/g) ?? []).length, 0);
+        const years = (() => {
+            const [a, b] = [quicktype.history.first_commit_date, quicktype.history.commit_date].map((d) => new Date(`${d}T00:00:00Z`));
+            const whole = b.getUTCFullYear() - a.getUTCFullYear();
+            return b.getUTCMonth() * 100 + b.getUTCDate() < a.getUTCMonth() * 100 + a.getUTCDate() ? whole - 1 : whole;
+        })();
+        const workflows = workflowFacts();
+        const fuzz = fuzzFacts();
+        const bench = benchmarkData.bench;
+        const cliRow = (name) => bench.cli.find((r) => r.name === name).results;
+        const version = cliRow(benchNamed.startup);
+        const pokedexRun = cliRow(benchNamed.pokedex);
+        const largest = benchmarkData.big.measured.inputs.reduce((a, b) => (b.peak_rss_mib > a.peak_rss_mib ? b : a));
+        const n = (v) => [String(v), v.toLocaleString("en-US")];
+        const spaced = (v, text) => [String(v), text.replaceAll(" ", " ")];
+        const expected = {
+            upto: [speedNow.upTo, `${speedNow.upTo}×`],
+            "race-speedup": [String(Number((pokedexRun.typescript.median_ms / pokedexRun.rust.median_ms).toFixed(1))), speedup(pokedexRun.typescript.median_ms / pokedexRun.rust.median_ms)],
+            "contributors-hero": n(people.length),
+            contributors: n(people.length),
+            "contributors-wall": n(people.length),
+            years: n(years),
+            commits: n(quicktype.history.commits),
+            languages: n(languages),
+            "languages-ledger": n(languages),
+            inputs: n(inputs),
+            "flow-inputs": n(inputs),
+            stars: [String(quicktype.repository.stars), `${(quicktype.repository.stars / 1000).toFixed(1).replace(/\.0$/, "")}k`],
+            "golden-cases": n(cases.length),
+            "golden-steps": n(steps),
+            "golden-passing": n(caseIds.filter((id) => baseline.has(id)).length),
+            scenarios: n(allScenarios().length),
+            "roundtrip-fixtures": n(workflows.roundtrip.fixtures),
+            "fuzz-targets": n(fs.readdirSync(path.join(repositoryRoot, "fuzz", "fuzz_targets")).filter((f) => f.endsWith(".rs")).length),
+            "fuzz-regressions": n(fs.readdirSync(path.join(repositoryRoot, "tests", "fuzz-regressions"), { withFileTypes: true }).filter((d) => d.isDirectory()).length),
+            "streaming-seeds": n(fuzz.streamingSeeds),
+            "rust-tests": n(rustTests),
+            "ci-os": n(workflows.ci.os.length),
+            "startup-quicktype": spaced(version.typescript.median_ms, formatBenchMs(version.typescript.median_ms)),
+            "startup-quickertype": spaced(version.rust.median_ms, formatBenchMs(version.rust.median_ms)),
+            "corpus-quicktype": spaced(bench.corpus.results.typescript.wall_s, `${bench.corpus.results.typescript.wall_s} s`),
+            "corpus-quickertype": spaced(bench.corpus.results.rust.wall_s, `${bench.corpus.results.rust.wall_s} s`),
+            "big-size": spaced(largest.size, largest.size),
+            "big-seconds": spaced(largest.seconds, `${largest.seconds} s`),
+            "big-memory": spaced(largest.peak_rss_mib, formatMiB(largest.peak_rss_mib)),
+        };
+        assert.equal(workflows.ci.os.join(), "Linux,macOS,Windows", "CI's operating systems");
+
+        // The example: the input is pokedex.json's first Pokémon; each output
+        // is what the CLI writes for the command under it, with the bytes
+        // and the hash the page states.
+        const example = await page.evaluate(`({
+            json: document.querySelector(".specimen pre.input").textContent,
+            panels: [...document.querySelectorAll(".specimen .panel")].map((p) => ({ lang: p.dataset.lang, code: p.querySelector("pre code").textContent, command: p.querySelector(".command").textContent })),
+        })`);
+        const first = JSON.parse(fs.readFileSync(path.join(repositoryRoot, "tests", "inputs", "json", "samples", "pokedex.json"), "utf8")).pokemon[0];
+        const shown = JSON.parse(example.json);
+        assert.deepEqual(shown, Object.fromEntries(Object.keys(shown).map((k) => [k, first[k]])), "the example's input is pokedex.json's first Pokémon");
+        const exampleDir = fs.mkdtempSync(path.join(os.tmpdir(), "qt-landing-"));
+        cleanUp.push(exampleDir);
+        fs.writeFileSync(path.join(exampleDir, "pokemon.json"), example.json);
+        for (const panel of example.panels) {
+            const args = panel.command.split(" ");
+            assert.equal(args.shift(), "quickertype", panel.command);
+            const run = spawnSync(cli, args, { cwd: exampleDir, encoding: "utf8" });
+            assert.equal(run.status, 0, `${panel.command}: ${run.stderr}`);
+            assert.equal(panel.code.replace(/\n+$/, ""), run.stdout.replace(/\n+$/, ""), `the example in ${panel.lang} is not what \`${panel.command}\` writes`);
+            expected[`specimen-bytes-${panel.lang}`] = n(Buffer.byteLength(panel.code));
+            expected[`specimen-sha-${panel.lang}`] = [createHash("sha256").update(panel.code).digest("hex"), `${createHash("sha256").update(panel.code).digest("hex").slice(0, 12)}…`];
+        }
+        assert.ok(example.panels.length >= 4, "the example's languages");
+        assert.deepEqual(Object.keys(landing.stats).sort(), Object.keys(expected).sort(), "the figures on the landing page");
+        for (const [name, [value, text]] of Object.entries(expected)) {
+            assert.deepEqual(landing.stats[name], [value, text], `the landing page's ${name}`);
+        }
+        console.log(`ok: the landing page's ${Object.keys(expected).length} figures are the data's (e.g. ${cases.length.toLocaleString("en-US")} golden cases, ${allScenarios().length.toLocaleString("en-US")} API scenarios, ${people.length} contributors); its example (${example.panels.map((p) => p.lang).join(", ")}) is the CLI's output`);
+
+        // The example's tabs are radio buttons: no script.
+        const tabs = await page.evaluate(`(() => {
+            const shown = () => [...document.querySelectorAll(".specimen .panel")].filter((p) => p.getClientRects().length > 0).map((p) => p.dataset.lang);
+            const before = shown();
+            document.querySelector('.specimen input[value="rust"]').click();
+            const after = shown();
+            document.querySelector('.specimen input[value="typescript"]').click();
+            return { before, after };
+        })()`);
+        assert.deepEqual(tabs, { before: ["typescript"], after: ["rust"] }, "the example's tabs");
+        // The race: quicktype's bar the whole track, quickertype's in proportion (6 px at the least).
+        const race = await page.evaluate(`(() => {
+            const width = (selector) => document.querySelector(selector).getBoundingClientRect().width;
+            return { track: width(".race .lane-track"), theirs: width(".race .theirs .lane-bar"), ours: width(".race .ours .lane-bar") };
+        })()`);
+        assert.ok(Math.abs(race.theirs - race.track) < 0.5, `the race: quicktype's bar is ${race.theirs} of ${race.track} px`);
+        const oursWidth = Math.max(6, (race.track * pokedexRun.rust.median_ms) / pokedexRun.typescript.median_ms);
+        assert.ok(Math.abs(race.ours - oursWidth) < 1, `the race: quickertype's bar is ${race.ours} px, not ${oursWidth}`);
+
+        // Every link and image resolves.
+        const refs = await page.evaluate(`({
+            links: [...new Set([...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")))],
+            images: [...new Set([...document.querySelectorAll("img")].flatMap((i) => [i.getAttribute("src"), ...(i.getAttribute("srcset") ?? "").split(",").map((s) => s.trim().split(" ")[0]).filter(Boolean)]))],
+            wall: document.querySelectorAll(".wall img").length,
+        })`);
+        const repo = quicktype.repository;
+        const quicktypeLinks = [repo.url, repo.homepage, `${repo.url}/graphs/contributors`, `${repo.url}/blob/${repo.default_branch}/LICENSE`, `https://github.com/glideapps/quicktype/commit/${quicktypeReference().commit}`];
+        const profiles = new Set(people.map((p) => `https://github.com/${p.login}`));
+        const ours = new Set([landingLinks.repository, landingLinks.install, landingLinks.npmCore, landingLinks.crate]);
+        const linked = { anchors: 0, pages: 0, files: 0, quicktype: 0, profiles: 0, ours: 0 };
+        for (const href of refs.links) {
+            if (href.startsWith("#")) {
+                assert.ok(await page.evaluate(`document.getElementById(${JSON.stringify(href.slice(1))}) !== null`), `no ${href} on the landing page`);
+                linked.anchors++;
+            } else if (href.startsWith("./")) {
+                assert.equal((await fetch(new URL(href, siteUrl))).status, 200, href);
+                linked.pages++;
+            } else if (href.startsWith(`${landingLinks.repository}/blob/main/`)) {
+                const file = href.slice(`${landingLinks.repository}/blob/main/`.length).split("#")[0];
+                assert.ok(fs.existsSync(path.join(repositoryRoot, file)), `${href}: ${file} is not in this repository`);
+                linked.files++;
+            } else if (quicktypeLinks.includes(href)) linked.quicktype++;
+            else if (profiles.has(href)) linked.profiles++;
+            else if (ours.has(href)) linked.ours++;
+            else assert.fail(`an unexpected link on the landing page: ${href}`);
+        }
+        assert.equal(linked.profiles, people.length, "a link to each contributor's profile");
+        assert.equal(refs.wall, people.length, "an avatar for each contributor");
+        const avatars = new Set(people.map((p) => p.id));
+        for (const src of refs.images) {
+            if (src.startsWith("./")) {
+                const response = await fetch(new URL(src, siteUrl));
+                assert.equal(response.status, 200, src);
+                assert.match(response.headers.get("content-type"), /^image\//, src);
+            } else {
+                const avatar = /^https:\/\/avatars\.githubusercontent\.com\/u\/(\d+)\?v=4&s=\d+$/.exec(src);
+                assert.ok(avatar !== null && avatars.has(Number(avatar[1])), `an unexpected image: ${src}`);
+            }
+        }
+        console.log(`ok: ${refs.links.length} links on the landing page resolve (${Object.entries(linked).map(([k, v]) => `${v} ${k}`).join(", ")}), and its ${refs.images.length} images`);
+
+        // The playground's old links: a hash with its state goes on to app/, with the hash.
+        await page.navigate(`${siteUrl}#v=2&l=rust&s=pokedex`);
+        await page.waitFor(settled, "the playground, from a link to the root");
+        assert.deepEqual(await page.evaluate("[location.pathname, location.hash]"), ["/quickertype/app/", "#v=2&l=rust&s=pokedex"]);
+        await sameAsCli("a link to the root: pokedex.json → Rust", "quickertype --lang rust --top-level Pokedex --density dense pokedex.json");
+        await page.navigate(`${siteUrl}#l=go&s=us-senators`);
+        await page.waitFor(settled, "the playground, from an old link to the root");
+        const old = await page.evaluate("[location.pathname, new URLSearchParams(location.hash.slice(1)).get('l'), new URLSearchParams(location.hash.slice(1)).get('s')]");
+        assert.deepEqual(old, ["/quickertype/app/", "go", "us-senators"], "an old link to the root (no v)");
+        await page.navigate(`${siteUrl}#thanks`, { playground: false });
+        assert.deepEqual(await page.evaluate("[location.pathname, location.hash, document.getElementById('thanks') !== null]"), ["/quickertype/", "#thanks", true]);
+        const noSlash = await fetch(new URL("app", siteUrl), { redirect: "manual" });
+        assert.deepEqual([noSlash.status, noSlash.headers.get("location")], [301, "/quickertype/app/"], "app without its slash");
+        console.log("ok: links to the root with the playground's state (#v=2&l=rust&s=pokedex, and an old one without v) go on to app/ with it; #thanks stays");
+
+        // Under a Content-Security-Policy that allows its one inline script by its hash.
+        const landingInline = [...(await (await fetch(siteUrl)).text()).matchAll(/<script>([^<]*)<\/script>/g)].map((m) => m[1]);
+        assert.equal(landingInline.length, 1, "inline scripts in the landing page");
+        const landingPolicy = `script-src 'self' 'sha256-${createHash("sha256").update(landingInline[0]).digest("base64")}'`;
+        const { identifier: watchLanding } = await page.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: "globalThis.violations = []; addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective + ' ' + e.blockedURI));",
+        });
+        const withPolicy = async (target) => {
+            await page.navigate("about:blank", { playground: false });
+            await page.send("Fetch.enable", { patterns: [{ urlPattern: siteUrl, requestStage: "Response" }] });
+            const paused = page.next("Fetch.requestPaused");
+            const navigated = page.send("Page.navigate", { url: target });
+            const { requestId, responseHeaders } = await paused;
+            const { body, base64Encoded } = await page.send("Fetch.getResponseBody", { requestId });
+            await page.send("Fetch.fulfillRequest", {
+                requestId,
+                responseCode: 200,
+                responseHeaders: [...responseHeaders, { name: "Content-Security-Policy", value: landingPolicy }],
+                body: base64Encoded ? body : Buffer.from(body).toString("base64"),
+            });
+            await navigated;
+            await page.send("Fetch.disable");
+        };
+        await withPolicy(siteUrl);
+        await page.waitFor("document.readyState === 'complete'", "the landing page under a Content-Security-Policy");
+        assert.deepEqual(
+            await page.evaluate("({ violations, path: location.pathname, shown: getComputedStyle(document.documentElement).display !== 'none' })"),
+            { violations: [], path: "/quickertype/", shown: true },
+            `the landing page under "${landingPolicy}"`,
+        );
+        await withPolicy(`${siteUrl}#v=2&l=typescript&s=pokedex`);
+        await page.waitFor(`location.pathname === "/quickertype/app/" && globalThis.playground && ${settled}`, "the redirect under a Content-Security-Policy");
+        await page.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: watchLanding });
+        assert.equal(await page.evaluate("location.hash"), "#v=2&l=typescript&s=pokedex");
+        console.log(`ok: under "${landingPolicy}" the landing page shows, nothing blocked, and its script still sends a playground link on`);
+
+        // The theme: light and dark, the charts' colours with it.
+        const theme = () =>
+            page.evaluate(`({
+                page: getComputedStyle(document.body).backgroundColor,
+                ours: getComputedStyle(document.querySelector("#speed .bar-mark.ours rect")).fill,
+                theirs: getComputedStyle(document.querySelector("#speed .bar-mark.theirs rect")).fill,
+            })`);
+        await page.navigate(siteUrl, { playground: false });
+        const lightTheme = await theme();
+        await page.screenshot("landing-light.png", { full: true, scale: 0.5 });
+        await page.viewport(1440, 900, { dark: true });
+        const darkTheme = await theme();
+        await page.screenshot("landing-dark.png", { full: true, scale: 0.5 });
+        assert.deepEqual([lightTheme.ours, lightTheme.theirs, darkTheme.ours, darkTheme.theirs], ["rgb(98, 80, 214)", "rgb(138, 140, 153)", "rgb(144, 133, 233)", "rgb(105, 108, 121)"]);
+        assert.notEqual(lightTheme.page, darkTheme.page, "the landing page in light and dark");
+        console.log(`ok: the landing page follows the theme (page ${lightTheme.page} / ${darkTheme.page})`);
+
+        // Phones: nothing past the right edge (code scrolls in its box).
+        for (const width of [360, 390]) {
+            await page.viewport(width, 844, { mobile: true });
+            await page.navigate(siteUrl, { playground: false });
+            const sizes = await page.evaluate(`({
+                scroll: document.documentElement.scrollWidth,
+                overflowing: [...document.querySelectorAll("body *")].filter((n) => n.getBoundingClientRect().right > ${width} + 0.5 && n.closest("pre, table") === null && !n.matches(".hero-art")).map((n) => n.tagName + "." + n.getAttribute("class")).slice(0, 5),
+            })`);
+            assert.ok(sizes.scroll <= width, `the landing page is ${sizes.scroll} px wide at ${width} px`);
+            assert.deepEqual(sizes.overflowing, [], `the landing page at ${width} px: past the right edge`);
+            if (width === 390) await page.screenshot("landing-390.png", { full: true, scale: 0.5 });
+            console.log(`ok: the landing page at ${width} px: no horizontal scrolling`);
         }
         await page.viewport(1440, 900);
     }
@@ -2738,7 +3035,8 @@ try {
     }
     console.log("ok: 390 px, a file too large for the editor: one pane at a time, the output's and the input's as wide as the page; nothing scrolls sideways");
 
-    const missing = requests.filter(([status]) => status !== 200);
+    // app without its slash is redirected, as the landing page's check asks.
+    const missing = requests.filter(([status, p]) => status !== 200 && !(status === 301 && p === "/quickertype/app"));
     assert.deepEqual(missing, [], "requests that failed");
     const wasmRequests = requests.filter(([, p]) => p.endsWith(".wasm"));
     assert.ok(wasmRequests.length >= 1);
