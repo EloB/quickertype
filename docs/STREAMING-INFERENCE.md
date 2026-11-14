@@ -126,6 +126,38 @@ The cases are kept even without enum inference, because the flag is
 only known when the types are added, after the samples were read; the
 `$ref` case needs them too.
 
+But a place stops counting cases once its string types are unrestricted
+both with and without enum inference (`StringTally::absorbs_strings`:
+the `absorbed` bit of unrestricted strings in both combinations, see the
+next section), and the readers do not even classify or intern a string
+there that cannot be a URI (`may_have_attributes`: only `uri` has
+attributes of its own, and a URI starts with `h` or `f`). Nothing reads
+those cases:
+
+- With enum inference they are replayed as `addStringCase`, and
+  `getMemberKinds` unites `StringTypes(cases)` with the combined string
+  types, which are unrestricted: `StringTypes.union` returns unrestricted
+  types as they are, so the cases vanish, and the `string` kind is there
+  either way. Without enum inference they are not replayed.
+- A `$ref` resolves its cases only where every string is interned, and
+  string types become unrestricted with enum inference only by a string
+  that is not (`add_uninterned` sets `not_interned` with the bit; a merge
+  carries both). Strings under a `$ref` key, with references handled,
+  are counted wherever they are.
+- Nothing makes the place restricted again. More values only add to its
+  string types; a merge unites them with another place's, the place's
+  into the other or the other's into it, and the union is unrestricted
+  if either is. Tallies kept with a compressed form are used as they
+  were made, by inference with any flags, and never added to or merged.
+
+URIs still go through, since their protocols and extensions are combined
+beside the string types (`add_produced`), and so do uninterned and
+transformed strings in the walk over a compressed form, where they cost a
+bit test. On the 1M records of `docs/PROFILE-RECORDS.md`, whose
+`comment` field is unrestricted from its first long comment on, this
+leaves nearly all of its 107,412 short comments uncounted and
+uninterned: the CLI's peak RSS drops from 43 to 6 MiB.
+
 ### Other strings: combined attributes
 
 Every other string value adds attributes to the accumulator's `string`
@@ -313,7 +345,11 @@ merged recursively. Each rule is the corresponding operation applied to
 the concatenation, so a merged tree equals the tree of reading on: the
 unit test `merging_trees_is_reading_on` checks that the merged trees of a
 sequence of samples, split anywhere, equal the items of one array of
-those samples read in one go.
+those samples read in one go. The one exception is the cases of a place
+whose string types absorb them (see "Interned strings"): read on in one
+tree, the place stops counting cases at the value that makes it absorb
+them, while a later sample's own tree counts its cases until its own
+place absorbs them. Inference reads neither, so it infers the same.
 
 The CLI adds each file (or standard input) as its own source, with one
 sample, so a directory of samples is merged into one tree per top-level.
@@ -390,8 +426,10 @@ in order, then for each object at a place, in that order, its entries,
 and for each array its elements. A container is tallied where it starts,
 as the builder tallies it. Each top-level's samples go into one tree,
 where reading gives each sample a tree and merges them, which is the
-same tree (`merging_trees_is_reading_on`). The tallies are therefore the
-ones reading the samples gives, and everything above applies.
+same tree (`merging_trees_is_reading_on`) but for cases at places that
+absorb them, which inference does not read. The tallies are therefore
+the ones reading the samples gives, as far as inference can tell, and
+everything above applies.
 
 One difference cannot be observed: a key or case is known by its index
 in the form's string table, not in a table of the tallies' own; every

@@ -49,6 +49,7 @@ use super::compressed_json::{
 };
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
+    may_have_attributes,
 };
 use crate::attributes::type_attributes::{
     AttributeKind, CombinationKind, TypeAttributes, combine_type_attributes2,
@@ -337,6 +338,16 @@ fn take_combined(
 }
 
 impl StringTally {
+    /// Whether the string types are unrestricted both with and without
+    /// enum inference: then a string here changes nothing inference reads
+    /// but for a URI's attributes (see [`Tallies::add_case`]). Once true,
+    /// always true, as [`add_unrestricted_once`] argues, and a merge keeps
+    /// it.
+    #[inline(always)]
+    fn absorbs_strings(&self) -> bool {
+        self.absorbed[0] & self.absorbed[1] & ABSORBS_UNRESTRICTED != 0
+    }
+
     /// What an interned string (`Tag.InternedString`) adds besides its
     /// case: an unrestricted string, without enum inference.
     #[inline(always)]
@@ -1074,7 +1085,37 @@ impl Tallies {
         Ok(())
     }
 
+    /// Whether the strings at `node` absorb every further string but a
+    /// URI ([`StringTally::absorbs_strings`]): the reader need not
+    /// classify or intern a string here that cannot be one.
+    #[inline(always)]
+    pub(crate) fn absorbs_strings(&self, node: NodeId) -> Result<bool> {
+        Ok(self
+            .node(node)?
+            .strings
+            .as_deref()
+            .is_some_and(StringTally::absorbs_strings))
+    }
+
     /// An interned string (`Tag.InternedString`): the case `id`.
+    ///
+    /// Not counted where the strings are unrestricted with and without
+    /// enum inference ([`StringTally::absorbs_strings`]): no inference
+    /// reads such a place's cases. With enum inference, the cases are
+    /// replayed as `addStringCase`, and `getMemberKinds` unites them with
+    /// the combined string types, which are unrestricted and so absorb
+    /// them (`StringTypes.union` returns the unrestricted types as they
+    /// are; the `string` kind is there either way). Without it, cases are
+    /// not replayed at all. A `$ref` resolves its cases only where every
+    /// string is interned, and unrestricted string types with enum
+    /// inference come from a string that is not (`add_uninterned` set
+    /// `not_interned` with the bit). Nothing makes the place restricted
+    /// again: more values only add to its string types, and a merge, the
+    /// place's into another or another's into it, unites them with
+    /// another place's, which is unrestricted if either is. So a case
+    /// left out here is not needed later, by a merge, by tallies kept
+    /// with a compressed form for later runs, or by inference with other
+    /// flags.
     #[inline(always)]
     pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
         let Tallies {
@@ -1087,6 +1128,9 @@ impl Tallies {
         let strings = n
             .strings
             .get_or_insert_with(|| spare_strings.pop().unwrap_or_default());
+        if strings.absorbs_strings() {
+            return Ok(());
+        }
         if case_slots.is_empty() {
             *case_slots = vec![CaseSlot::default(); CASE_SLOTS];
         }
@@ -1686,44 +1730,33 @@ impl<'a> TallyBuilder<'a> {
         Ok(())
     }
 
-    /// An interned string (`Tag.InternedString`).
-    fn add_case(&mut self, s: &str) -> Result<()> {
-        let node = self.destination()?;
+    /// An interned string (`Tag.InternedString`) at `node`.
+    fn add_case(&mut self, node: NodeId, s: &str) -> Result<()> {
         let id = self.strings.intern_text(s);
-        self.tallies.add_case(node, id)?;
-        self.value_done();
-        Ok(())
+        self.tallies.add_case(node, id)
     }
 
-    /// A string too long to intern (`Tag.UninternedString`).
-    fn add_uninterned(&mut self) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies.add_uninterned(node)?;
-        self.value_done();
-        Ok(())
-    }
-
-    /// A string of a transformed kind without attribute producer
-    /// (`Tag.StringFormat`).
-    fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies.add_string_format(node, kind)?;
-        self.value_done();
-        Ok(())
-    }
-
-    /// A string of a transformed kind with an attribute producer (`uri`,
-    /// `Tag.TransformedString`): the producer's attributes, then the kind.
-    fn add_transformed_string(
-        &mut self,
-        kind: TypeKind,
-        attributes: &TypeAttributes,
-    ) -> Result<()> {
-        let node = self.destination()?;
-        self.tallies
-            .add_transformed_string(node, kind, attributes)?;
-        self.value_done();
-        Ok(())
+    /// `commitString`'s classification of `s`, a string at `node` that is
+    /// not a reference, and what it adds there.
+    fn add_string(&mut self, node: NodeId, s: &str) -> Result<()> {
+        match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
+            Some(kind) => match transformed_string_type_attributes_producer(kind) {
+                Some(producer) => self
+                    .tallies
+                    .add_transformed_string(node, kind, &producer(s)),
+                None => self.tallies.add_string_format(node, kind),
+            },
+            // A case is not counted where the strings absorb it
+            // (`Tallies::add_case`), so it need not be interned there.
+            None if utf16::len(s) <= 64 => {
+                if self.tallies.absorbs_strings(node)? {
+                    Ok(())
+                } else {
+                    self.add_case(node, s)
+                }
+            }
+            None => self.tallies.add_uninterned(node),
+        }
     }
 }
 
@@ -1748,6 +1781,9 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     /// `commitString(s)`: classifies the string as `CompressedJSON` does.
+    /// Where the strings absorb every further string but a URI
+    /// ([`Tallies::absorbs_strings`]), one that cannot be a URI
+    /// ([`may_have_attributes`]) adds nothing, and is not classified.
     fn commit_string(&mut self, s: &str) -> Result<()> {
         let expecting_ref = matches!(
             self.frames.last(),
@@ -1756,17 +1792,14 @@ impl JsonSink for TallyBuilder<'_> {
                 ..
             })
         );
+        let node = self.destination()?;
         if self.config.handle_refs() && expecting_ref {
-            return self.add_case(s);
+            self.add_case(node, s)?;
+        } else if may_have_attributes(s) || !self.tallies.absorbs_strings(node)? {
+            self.add_string(node, s)?;
         }
-        match infer_transformed_string_type_kind_for_string(s, self.config.date_time_recognizer()) {
-            Some(kind) => match transformed_string_type_attributes_producer(kind) {
-                Some(producer) => self.add_transformed_string(kind, &producer(s)),
-                None => self.add_string_format(kind),
-            },
-            None if utf16::len(s) <= 64 => self.add_case(s),
-            None => self.add_uninterned(),
-        }
+        self.value_done();
+        Ok(())
     }
 
     fn push_object_context(&mut self) -> Result<()> {
@@ -2330,6 +2363,95 @@ mod tests {
                 "{missing:?}"
             );
         }
+    }
+
+    /// The cases at `node`, as text.
+    fn cases(tallies: &RunningTallies, node: NodeId) -> Vec<(String, u64)> {
+        let strings = tallies.tallies.node(node).unwrap().strings.as_deref();
+        strings
+            .unwrap()
+            .cases
+            .iter()
+            .map(|(&id, &count)| (tallies.strings.get(id as usize).unwrap().to_owned(), count))
+            .collect()
+    }
+
+    /// Once a place's strings are unrestricted with and without enum
+    /// inference, its strings are neither counted nor interned, but for
+    /// URIs, whose attributes still count, and references. A merge of
+    /// such a place with one that is not keeps what the other counted,
+    /// either way round; the walk over a compressed form tallies alike.
+    #[test]
+    fn strings_a_place_absorbs_are_not_counted() {
+        let long = "x".repeat(70);
+        let config = config(false);
+        let mut tallies = RunningTallies::new();
+        let sample =
+            format!(r#"["a","{long}","b","https://h/c.PNG","a","ftp://h/d.zip","2020-01-01","c"]"#);
+        let root = read(&mut tallies, &config, &[&sample]);
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        assert_eq!(cases(&tallies, items), [("a".to_owned(), 1)]);
+        assert!(tallies.tallies.absorbs_strings(items).unwrap());
+        for text in ["b", "c"] {
+            assert!(!(0..tallies.strings.len()).any(|i| tallies.strings.get(i) == Some(text)));
+        }
+        let strings = tallies.tallies.node(items).unwrap().strings.as_deref();
+        let with_enums = strings.unwrap().with_enums.as_ref().unwrap();
+        let (protocols, extensions) = UriTypeAttributeKind
+            .try_get_in_attributes(with_enums)
+            .unwrap();
+        assert_eq!(protocols.iter().collect::<Vec<_>>(), ["https", "ftp"]);
+        assert_eq!(extensions.iter().collect::<Vec<_>>(), [".png", ".zip"]);
+        // The walk over the compressed form of the same sample.
+        let mut cjson = self::config(false);
+        let value = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (walked, roots) = tally_compressed(&cjson, [[value].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(walked.dump(cjson.strings(), roots[0]), dump(&tallies, root));
+        // Merged with a place that counts its cases, either way round.
+        let counted = r#"["d","e","d"]"#;
+        let absorbing = format!(r#"["{long}","e","f"]"#);
+        for counted_first in [true, false] {
+            let mut tallies = RunningTallies::new();
+            let a = read(&mut tallies, &config, &[counted]);
+            let b = read(&mut tallies, &config, &[&absorbing]);
+            let (into, from) = if counted_first { (a, b) } else { (b, a) };
+            tallies.tallies.merge(into, from).unwrap();
+            let items = tallies.tallies.node(into).unwrap().items.unwrap();
+            assert_eq!(
+                cases(&tallies, items),
+                [("d".to_owned(), 2), ("e".to_owned(), 1)]
+            );
+            assert!(tallies.tallies.absorbs_strings(items).unwrap());
+        }
+        // References are counted wherever they are.
+        let config = self::config(true);
+        let mut tallies = RunningTallies::new();
+        let root = read(
+            &mut tallies,
+            &config,
+            &[&format!(
+                r##"[{{"$ref":"#/a"}},{{"$ref":"{long}"}},{{"$ref":"#/b"}}]"##
+            )],
+        );
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let object = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .object
+            .as_deref()
+            .unwrap();
+        let refs = object.keys[0].node;
+        assert_eq!(
+            cases(&tallies, refs),
+            [
+                ("#/a".to_owned(), 1),
+                (long.clone(), 1),
+                ("#/b".to_owned(), 1)
+            ]
+        );
     }
 
     #[test]

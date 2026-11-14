@@ -250,6 +250,18 @@ fn is_uri(s: &str) -> bool {
     rest.is_some_and(|r| !r.is_empty() && !r.contains(['{', '}']))
 }
 
+/// Whether [`infer_transformed_string_type_kind_for_string`] could classify
+/// `s` as a kind with attributes of its own
+/// ([`transformed_string_type_attributes_producer`]): `uri` is the only
+/// one, and a URI starts with `http://`, `https://` or `ftp://`. Every
+/// other string is a plain string or a transformed kind without
+/// attributes, whatever the date/time recognizer.
+///
+/// [`transformed_string_type_attributes_producer`]: crate::ty::transformed_string_type::transformed_string_type_attributes_producer
+pub(crate) fn may_have_attributes(s: &str) -> bool {
+    matches!(s.as_bytes().first(), Some(b'h' | b'f'))
+}
+
 /// `inferTransformedStringTypeKindForString(s, recognizer)`: the
 /// transformed string kind JSON inference infers for a string, if any.
 pub fn infer_transformed_string_type_kind_for_string(
@@ -407,6 +419,39 @@ mod tests {
         assert_eq!(infer("http://{x}"), None);
         assert_eq!(infer(""), None);
         assert_eq!(infer("zebra"), None);
+    }
+
+    /// Only `uri` has attributes of its own, and a string classified as one
+    /// starts as [`may_have_attributes`] says.
+    #[test]
+    fn only_uris_have_attributes() {
+        use crate::ty::transformed_string_type::{
+            TRANSFORMED_STRING_TYPE_KINDS, transformed_string_type_attributes_producer,
+        };
+        for kind in TRANSFORMED_STRING_TYPE_KINDS {
+            assert_eq!(
+                transformed_string_type_attributes_producer(kind).is_some(),
+                kind == TypeKind::Uri,
+                "{kind:?}"
+            );
+        }
+        let r = NoDates;
+        for s in [
+            "http://x",
+            "https://x.org/a",
+            "ftp://x",
+            "HTTP://x",
+            "Https://x",
+            " http://x",
+            "xhttp://x",
+            "http:/x",
+            "fttp://x",
+            "",
+        ] {
+            let uri = infer_transformed_string_type_kind_for_string(s, &r) == Some(TypeKind::Uri);
+            assert!(!uri || may_have_attributes(s), "{s}");
+        }
+        assert!(!may_have_attributes("2020-01-01") && !may_have_attributes("Http://x"));
     }
 
     /// A recognizer asked before the UUID test, as one that does not
