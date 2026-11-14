@@ -359,6 +359,8 @@ thread_local! {
     /// A part to read slowly, and how slowly (for tests): see
     /// `trees_waiting_for_a_slow_part_stay_within_the_budget`.
     static SLOW_PART: Cell<Option<(usize, std::time::Duration)>> = const { Cell::new(None) };
+    /// A part whose reading thread panics (for tests).
+    static PANIC_PART: Cell<Option<usize>> = const { Cell::new(None) };
     /// The most bytes the parts given out held at once in the last reading
     /// on this thread, and the largest part's tree (for tests).
     static HELD: Cell<(u64, u64)> = const { Cell::new((0, 0)) };
@@ -486,6 +488,8 @@ fn read(
         abort: AtomicBool::new(false),
         #[cfg(test)]
         slow_part: SLOW_PART.with(Cell::get),
+        #[cfg(test)]
+        panic_part: PANIC_PART.with(Cell::get),
     };
     let outcome = thread::scope(|scope| {
         let (sender, results) = mpsc::channel();
@@ -586,6 +590,8 @@ enum Done {
     /// A part's tree, or `None` if it did not read as the sample's
     /// elements there do.
     Part(usize, Option<PortableTree>),
+    /// A job panicked, with this payload; its thread stops.
+    Panicked(Box<dyn std::any::Any + Send>),
 }
 
 /// The jobs waiting: scans first, which the parts wait for.
@@ -618,6 +624,8 @@ struct Reading<'s> {
     abort: AtomicBool,
     #[cfg(test)]
     slow_part: Option<(usize, std::time::Duration)>,
+    #[cfg(test)]
+    panic_part: Option<usize>,
 }
 
 /// How many bytes a thread scans at a time (a multiple of 64): what the
@@ -679,11 +687,18 @@ impl Reading<'_> {
         }
     }
 
-    /// A reading thread: does jobs until the reading is closed.
+    /// A reading thread: does jobs until the reading is closed. A job that
+    /// panics is reported, with its payload, to the thread that reads the
+    /// sample, which raises it (see [`coordinate`](Self::coordinate)): it
+    /// would otherwise wait for the job's result forever.
     fn work(&self, config: CompressedJson, results: &mpsc::Sender<Done>) {
         let mut buffer = vec![0u8; SCAN_PIECE];
         while let Some(job) = self.next_job() {
-            if results.send(self.run(job, &config, &mut buffer)).is_err() {
+            let done = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.run(job, &config, &mut buffer)
+            }));
+            let panicked = done.is_err();
+            if results.send(done.unwrap_or_else(Done::Panicked)).is_err() || panicked {
                 break;
             }
         }
@@ -700,6 +715,10 @@ impl Reading<'_> {
                     && slow == i
                 {
                     thread::sleep(delay);
+                }
+                #[cfg(test)]
+                if self.panic_part == Some(i) {
+                    panic!("a part panicked (a test hook)");
                 }
                 Done::Part(i, self.tally(part, config))
             }
@@ -1093,6 +1112,9 @@ impl Reading<'_> {
                         appended += 1;
                     }
                 }
+                // A job that panicked panics here, as reading in one go
+                // would (the threads stop as the reading closes).
+                Ok(Done::Panicked(payload)) => std::panic::resume_unwind(payload),
                 // A part that did not read as the sample's elements, a read
                 // that failed, or the threads gone: the rest in one go.
                 _ => return rest(running, root, &parts, appended),
@@ -1446,6 +1468,34 @@ mod tests {
         assert_eq!(how.whole, 1);
         let ahead = AHEAD.with(Cell::get);
         assert!(ahead >= 4, "{ahead} parts given out at once");
+    }
+
+    /// A reading thread that panics makes the reading panic with its
+    /// payload, as reading in one go would, rather than wait for its part
+    /// forever.
+    #[test]
+    fn a_panic_on_a_reading_thread_is_raised_here() {
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let config = config(false);
+            let elements: Vec<String> = (0..200).map(|i| format!(r#"{{"a":{i}}}"#)).collect();
+            let bytes = format!("[{}]", elements.join(","));
+            PANIC_PART.with(|p| p.set(Some(2)));
+            let read = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                read_with(&config, bytes.as_bytes(), options(3, 64))
+            }));
+            let payload = read
+                .err()
+                .map(|e| e.downcast_ref::<&str>().map(|s| s.to_string()));
+            let _ = sender.send(payload);
+        });
+        let payload = receiver
+            .recv_timeout(std::time::Duration::from_secs(60))
+            .expect("the reading ends");
+        assert_eq!(
+            payload,
+            Some(Some("a part panicked (a test hook)".to_owned()))
+        );
     }
 
     /// Where the system refuses a reading thread, the sample is read in one
