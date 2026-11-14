@@ -2243,8 +2243,14 @@ try {
         await click("general-no-ignore-json-refs");
         assert.deepEqual(await largeReading(), { ok: true, reused: false, evicted: 0 }, `--no-ignore-json-refs ${state} on the 26 MB file`);
     }
+    // Measuring warm runs reads the file for every run, and lets go of the
+    // input kept before and of each run's: nothing is evicted either.
+    const measured = await page.evaluate(
+        `playground.engines.wasm.run({ ...playground.view.request, warmup: 1, repeat: 2, heldLimit: 1 << 20 }).then((r) => ({ ok: r.ok, runs: r.times.length, read: r.inputTimes.every((t) => t > 0), reused: r.reused, evicted: r.evicted }))`,
+    );
+    assert.deepEqual(measured, { ok: true, runs: 2, read: true, reused: false, evicted: 0 }, "measuring warm runs of the 26 MB file with a 1 MiB limit");
     await page.evaluate(`playground.engines.wasm.run({ ...playground.view.request, heldLimit: 256 * 1024 * 1024 })`);
-    console.log("ok: a reading option changed on the 26 MB file reads it again and evicts nothing (the input before is let go)");
+    console.log("ok: a reading option changed on the 26 MB file reads it again, and measuring it reads it every time, and neither evicts anything (the inputs before are let go)");
 
     // Files that cannot be read as text: one larger than a browser's
     // longest string (its size faked: no multi-GB file is written), and one

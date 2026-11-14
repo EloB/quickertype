@@ -32,7 +32,8 @@
 // renderer or inference options then only generates the code again, as a
 // program that runs quicktype on an input it has read already does. Both
 // engines' workers do this, so the times stay comparable. A measurement
-// (`repeat`, `warmup`) reads the input for every run.
+// (`repeat`, `warmup`) lets go of the input kept, and reads the input for
+// every run, letting go of each when its run ends.
 //
 // The input is `text`, or a `file` (a File, which the page posts without
 // reading it, so that a large file never passes through the page's main
@@ -54,80 +55,80 @@ import {
     InputData,
     JSONSchemaInput,
     jsonInputForTargetLanguage,
-    languageNamed,
     quicktypeMultiFile,
 } from "../../npm/quicktype-core/dist/esm/index.js";
 import { engineStats } from "../../npm/quicktype-core/dist/esm/native/bridge.js";
-import { releaseJSONInput, setHeldLimit } from "../../npm/quicktype-core/dist/esm/native/samples.js";
+// Not quickertype-core's public API, but its internals the playground
+// uses: should they move, the site's build fails (esbuild: no such file or
+// export), and the smoke test's checks of eviction would too.
+import { readingKey, releaseJSONInput, setHeldLimit } from "../../npm/quicktype-core/dist/esm/native/samples.js";
 
-/** The JSON input read last, for the next run that reads it the same way: { sample, key, input }. */
+/**
+ * The JSON input read last, kept for the next run that reads the same
+ * sample the same way: { sample, key, input }. Only `settleLastRead`
+ * decides what becomes of it.
+ */
 let lastRead;
 
 /**
- * Lets go of the input read last. Its samples in the engine are freed
- * right away (not when the garbage collector gets to the input): otherwise
- * the next input read, while this one is gone but not finalized, would
- * find the engine past its limit on what inputs hold together and copy
- * this one's tables out, which takes a quarter of a second for a 450 MB
- * file.
+ * Decides what becomes of the input read last before a run, or before
+ * another file is read (`sample` undefined): a run that may reuse it
+ * (`reuse`) on the same sample read the same way (`key`, which is
+ * undefined for an input that cannot be reused) gets it; otherwise it is
+ * let go, and its samples in the engine are freed right away, not when
+ * the garbage collector gets to it. A form kept meanwhile would count
+ * toward the engine's limit on what inputs hold together, and reading the
+ * next input past that limit copies the tables of the others out: a
+ * quarter of a second for a 450 MB file, and as much memory again.
  */
-function forgetLastRead() {
-    if (lastRead !== undefined) releaseJSONInput(lastRead.input);
+function settleLastRead(sample, key, reuse) {
+    if (lastRead === undefined) return undefined;
+    if (reuse && key !== undefined && lastRead.key === key && lastRead.sample === sample) return lastRead.input;
+    releaseJSONInput(lastRead.input);
     lastRead = undefined;
-}
-
-/** A number for each date/time recognizer class, for `readKey`. */
-const recognizerIds = new Map();
-
-/**
- * What reading a JSON sample depends on besides the sample: its top-level
- * name and the `CompressedJSON`'s configuration, as
- * `jsonInputForTargetLanguage` sets it (the language's date/time
- * recognizer, whether `$ref`s are references, and the range of integers,
- * which renderer options can set).
- */
-function readKey({ lang, name, rendererOptions, options = {} }) {
-    const language = languageNamed(lang);
-    const recognizer = language.dateTimeRecognizer.constructor;
-    if (!recognizerIds.has(recognizer)) recognizerIds.set(recognizer, recognizerIds.size);
-    const range = language.getSupportedIntegerRange(rendererOptions ?? {});
-    return JSON.stringify([name, recognizerIds.get(recognizer), options.ignoreJsonRefs === false, range]);
+    return undefined;
 }
 
 /**
  * One quicktype run, as quicktype's CLI would do it for a file of `kind`;
- * with `reuse`, on the JSON input read last if it is read the same way.
+ * with `reuse`, on the JSON input read last if it reads the same sample
+ * the same way, and keeping the input it reads for the next run.
  */
 async function generate({ kind, lang, name, sample, rendererOptions, options = {} }, phases, reuse) {
     const start = performance.now();
     const inputData = new InputData();
+    let release;
     if (kind === "schema") {
+        settleLastRead(undefined, undefined, false);
         const input = new JSONSchemaInput(new FetchingJSONSchemaStore());
         await input.addSource({ name, schema: sample });
         inputData.addInput(input);
     } else {
-        const key = readKey({ lang, name, rendererOptions, options });
-        if (reuse && lastRead !== undefined && lastRead.key === key && lastRead.sample === sample) {
-            inputData.addInput(lastRead.input);
+        // As the CLI's makeInputData: `$ref`s are references with
+        // --no-ignore-json-refs, and the renderer options set the range of
+        // integers (Rust's `integer-type`, cJSON's `integer-size`). How it
+        // reads samples is the key, with the top-level name: the
+        // configuration quickertype-core reads them with, from the input.
+        const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
+        const reading = readingKey(input);
+        const key = reading === undefined ? undefined : JSON.stringify([name, reading]);
+        const kept = settleLastRead(sample, key, reuse);
+        if (kept !== undefined) {
+            inputData.addInput(kept);
             phases.reused = true;
         } else {
-            // As the CLI's makeInputData: `$ref`s are references with
-            // --no-ignore-json-refs, and the renderer options set the range of
-            // integers (Rust's `integer-type`, cJSON's `integer-size`).
-            const input = jsonInputForTargetLanguage(lang, undefined, options.ignoreJsonRefs === false, rendererOptions);
-            // A failed read keeps nothing.
-            if (reuse) forgetLastRead();
             try {
                 await input.addSource({ name, samples: [sample] });
             } catch (e) {
+                // A failed read keeps nothing.
                 releaseJSONInput(input);
                 throw e;
             }
 
             inputData.addInput(input);
-            if (reuse) lastRead = { sample, key, input };
             // An input not kept for the next run is let go when this one ends.
-            else phases.release = input;
+            if (reuse && key !== undefined) lastRead = { sample, key, input };
+            else release = input;
         }
     }
 
@@ -135,7 +136,7 @@ async function generate({ kind, lang, name, sample, rendererOptions, options = {
     try {
         return await quicktypeMultiFile({ ...options, inputData, lang, rendererOptions });
     } finally {
-        if (phases.release !== undefined) releaseJSONInput(phases.release);
+        if (release !== undefined) releaseJSONInput(release);
     }
 }
 
@@ -188,11 +189,13 @@ async function inputSample({ kind, text, file }) {
     const key = file === undefined ? undefined : JSON.stringify([file.name, file.size, file.lastModified, file.type, bytes]);
     // Another input than the file kept: let it go (before reading the next file, if there is one).
     if (lastFile !== undefined && lastFile.key !== key) lastFile = undefined;
-    if (lastRead !== undefined && lastRead.sample !== (file === undefined ? text : lastFile?.sample)) forgetLastRead();
     if (file === undefined) return text;
     if (lastFile !== undefined) return lastFile.sample;
     const large = tooLarge(file.name, file.size);
     if (large !== undefined) throw large;
+    // Another file: the input read from the one before goes before this
+    // one is read, so that the two are never held at once.
+    settleLastRead(undefined, undefined, false);
     let read;
     try {
         read = bytes ? new Uint8Array(await file.arrayBuffer()) : await file.text();
