@@ -30,6 +30,24 @@ pub type HashMap<K, V> = std::collections::HashMap<K, V, BuildHasher>;
 /// [`std::collections::HashSet`] with [`BuildHasher`].
 pub type HashSet<T> = std::collections::HashSet<T, BuildHasher>;
 
+/// The hash of `s` for a table that hashes its strings itself (hashbrown's
+/// `HashTable`: the JSON reader's string and key tables), where each hash
+/// is of one whole string. It is what foldhash's own `write_str` does with
+/// its `nightly` feature: `write` mixes the length in.
+///
+/// `state.hash_one(s)` also writes a marker after the bytes, to keep a
+/// string apart from what follows it in a longer key. foldhash adds the
+/// marker through a 128-bit buffer and one more multiply; in WebAssembly
+/// that is four multiplies and a call to shift the buffer. A lone string
+/// does not need it. Every hash of one table has to be made this way.
+#[inline]
+pub fn hash_str(state: &BuildHasher, s: &str) -> u64 {
+    use std::hash::{BuildHasher as _, Hasher as _};
+    let mut hasher = state.build_hasher();
+    hasher.write(s.as_bytes());
+    hasher.finish()
+}
+
 /// Seeds every [`BuildHasher`] made from now on with `entropy`, which must
 /// be random and secret (`crypto.getRandomValues`). In WebAssembly, call it
 /// once, before anything makes a map: a map made earlier was seeded without
@@ -162,6 +180,40 @@ mod tests {
         let a = RandomState::with_seeds(seeds([5, 6]));
         let b = RandomState::with_seeds(seeds([5, 6]));
         assert_eq!(a.hash_one("key"), b.hash_one("key"));
+    }
+
+    #[test]
+    fn hash_str_tells_texts_apart() {
+        let texts = [
+            "",
+            "\0",
+            "\0\0",
+            "a",
+            "ab",
+            "abb",
+            "abcd",
+            "abcdabcd",
+            "abcdefgh",
+            "abcdefghi",
+            "abcdefghabcdefgh",
+            "abcdefghabcdefghX",
+            "\u{e9}",
+            "e\u{301}",
+        ];
+        let check = |hash: &dyn Fn(&str) -> u64| {
+            let hashes: std::collections::HashSet<u64> = texts.iter().map(|t| hash(t)).collect();
+            assert_eq!(hashes.len(), texts.len());
+            assert!(texts.iter().all(|t| hash(t) == hash(t)));
+        };
+        let native = super::BuildHasher::default();
+        check(&|t| super::hash_str(&native, t));
+        let seeded = RandomState::with_seeds(seeds([7, 8]));
+        check(&|t| {
+            use std::hash::Hasher as _;
+            let mut hasher = seeded.build_hasher();
+            hasher.write(t.as_bytes());
+            hasher.finish()
+        });
     }
 
     #[test]

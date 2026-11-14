@@ -1395,6 +1395,115 @@ differential suite (19,078, of which 18,957 run on WebAssembly) gave
 byte-identical results with two different seeds. The differential test
 against TypeScript passes as before.
 
+### Hashing strings in WebAssembly
+
+A profile of the engine reading the 20 MB input in Chrome put 7.1% of
+the time in foldhash's `write_str` and 5.2% in looking strings up in the
+string table. Reading hashes every key and every short string value.
+
+Hashing a `&str` through `Hash` writes the bytes and then a marker byte.
+The marker keeps a string apart from what follows it in a longer key.
+foldhash keeps the marker in a 128-bit buffer and spends one more
+multiply on it when it finishes. In WebAssembly that is costly:
+- WebAssembly has no instruction for the high half of a 64 by 64 bit
+  multiply, so each of foldhash's multiplies becomes four `i64.mul`.
+- Shifting the 128-bit buffer is a call (`__ashlti3`).
+- `write_str` was not inlined, so the hasher's state went through memory.
+
+The reader's string and key tables hash one whole string at a time, so
+they do not need the marker. They now hash with
+`fast_hash::hash_str`: foldhash's `write` and `finish` only. This is
+exactly what foldhash's own `write_str` does with its `nightly` feature;
+`write` mixes the length in. The seed and the quality are foldhash's
+(see the quality notes below).
+
+Warm runs in headless Chrome, medians in ms, before and after this
+change (both with the seeding above), interleaved in one page. There
+were two runs, of 11 and 25 rounds per input. The table shows the
+second run; the Change column gives both.
+
+| Input | Phase | Before | After | Change |
+|---|---|---:|---:|---:|
+| generated, 2 MB | read: record | 4.61 | 4.25 | −8% / −9% |
+| | read: commit | 4.51 | 4.15 | −8% / −8% |
+| | addSource | 10.19 | 9.46 | −7% / −7% |
+| | total | 17.73 | 17.08 | −4% / −4% |
+| generated, 20 MB | read: record | 46.23 | 42.68 | −8% / −10% |
+| | read: commit | 46.98 | 43.38 | −8% / −13% |
+| | addSource | 102.8 | 95.56 | −7% / −11% |
+| | total | 155.0 | 147.6 | −5% / −8% |
+| rulings, 27 MB | read: commit | 20.82 | 19.74 | −5% / −4% |
+| | addSource | 52.65 | 51.58 | −2% / −1% |
+| | total | 59.44 | 58.44 | −2% / −1% |
+| pokedex, 82 KB | addSource | 0.560 | 0.530 | −5% (one run) |
+
+The run (`quicktypeMultiFile`) changed by −3% to +1%, within noise, and
+so did everything with the seeding commit alone (−1.3% to +1.1% in
+total). The rulings gain is small because most of their strings are
+comments too long to intern. The engine is 0.5 KB larger.
+
+Natively (the `phases` example, mimalloc) the change is about neutral.
+Hashing is a smaller share of reading there, and the machine was heavily
+loaded (load average 30 to 75), so these are medians of 10 to 20
+interleaved cycles, with the minimum where the medians were too noisy:
+- 2 MB input, `read: commit`: −3% to −4% in three runs (2.96 to 2.84 ms).
+- 20 MB input, `read: commit`: −0.4% to −3% at the minimum (31.6 to
+  31.5, 32.8 to 31.8 ms); the medians were too noisy to tell.
+- Rulings, `read: commit`: +4% in all three runs (11.7 to 12.2 ms). A
+  microbenchmark of interning rulings' strings (all of them, or only the
+  100,000 UUIDs) is 4–7% faster with `write` and `finish`. A build that
+  hashed with `hash_one` through the same function did not show the
+  slowdown, so the cause is not clear; it may be how the code is laid
+  out.
+- `read: record`, the run, and every phase of pokedex: within ±3%.
+
+#### Tried and dropped: a 32-bit hasher for WebAssembly
+
+foldhash's design with 32-bit halves ("fold32"). Each step multiplies the
+two 32-bit halves of a word that was XORed with secrets, in one
+`i64.mul`, and XORs the halves of the product. Strings of up to 8 bytes
+take one step, numbers take one step, and the hash is 32 bits; on a
+32-bit target hashbrown uses only 32 bits anyway. It was also the
+`BuildHasher` of every map. In a microbenchmark it hashed the benchmark
+inputs' strings 10–18% faster than foldhash's `write` and `finish`. In
+the engine it was the same within noise: on the 20 MB input, 95.75 ms
+against 95.56 to read and 147.9 against 147.6 in all, over 25
+interleaved rounds (3–4% slower in the first run, of 11 rounds). It made
+the engine 42 KB larger, so it was dropped. Its quality matched
+foldhash's (see below).
+
+#### Hash quality
+
+Measured on the distinct strings of the benchmark inputs (292,182 from the
+20 MB input, 52,274 from rulings), as a 32-bit target's hashbrown sees
+them: the bucket from the low bits, the tag from bits 25 to 31.
+- 32-bit collisions on the 20 MB input's strings, with two seeds: 10 and
+  6 for `write` and `finish`, 6 and 13 for `hash_one`, 7 to 22 for
+  fold32. Chance alone gives 9.9. On rulings' strings: 0 to 2, where
+  chance gives 0.3.
+- Bucket and tag counts against uniform: χ²/df between 0.73 and 1.24
+  for every hash. That is what uniform counts give: one standard
+  deviation is 0.13 for the 128 tags.
+- Avalanche (one input bit flipped, how often each output bit flips): on
+  average within 0.01 of one half for every length. The worst single
+  pair of bits is 0.2 from one half for 4 to 12 bytes, for `write` and
+  `finish` and for fold32. With the marker's extra multiply, foldhash
+  stays within 0.03. A bias on some pairs of bits does not show in the
+  bucket counts.
+- Pairs built to collide whatever the seed (halves swapped, texts that
+  read the same words at different lengths, a 64-byte prefix): none
+  collided over 2^20 random seeds.
+
+How they stand against crafted collisions: all of these are only as good
+as their seed. If the seed is known, keys that zero one factor of a
+multiply collide at once. With a secret seed, an attacker cannot compute
+the hash, and nothing above collides independently of the seed. This
+holds for foldhash's `hash_one` too, which is no stronger here.
+WebAssembly's 32-bit hashbrown uses 32 bits of any hash. Natively, the
+seed is per process (address space layout randomization and the clock).
+In WebAssembly it is now per instance, from `crypto.getRandomValues`
+(see "Hash seeds in WebAssembly").
+
 ## Reproducing
 
 ```sh

@@ -67,6 +67,11 @@ section are absolute.
   where an input inferred its types from; `JsonInput::set_keep_tallies`
   keeps the tallies of a compressed form with it. An error while tallying
   a compressed form is reported instead of falling back to its values.
+- The WebAssembly engine reads large JSON samples 7–11% faster (the 20 MB
+  benchmark input: 96 instead of 103 ms in Chrome). The reader's string
+  and key tables hash each string with foldhash's `write` alone, without
+  the end marker that `Hash for str` adds, which costs a call and four
+  multiplies in WebAssembly.
 
 ### Fixed
 

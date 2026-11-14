@@ -37,7 +37,6 @@
 
 use std::cell::RefCell;
 use std::fmt;
-use std::hash::BuildHasher as _;
 use std::io::Read;
 use std::rc::Rc;
 
@@ -50,7 +49,7 @@ use crate::attributes::string_types::infer_transformed_string_type_kind_for_stri
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
 use crate::renderer_options::RendererOptions;
-use crate::support::fast_hash::BuildHasher;
+use crate::support::fast_hash::{BuildHasher, hash_str};
 use crate::support::integer_range::{INT64_RANGE, IntegerRange, integer_string_in_range};
 use crate::support::recursion::stack_overflow;
 use crate::support::support::{assert, defined, panic};
@@ -398,7 +397,7 @@ impl Strings {
 
     /// The index `internString(s)` would return, if `s` is there.
     fn find(&self, s: &str) -> Option<u32> {
-        self.find_hashed(s, self.hasher.hash_one(s))
+        self.find_hashed(s, hash_str(&self.hasher, s))
     }
 
     /// `internString(s)`: the index of `s`, appended if it is not there
@@ -408,7 +407,7 @@ impl Strings {
         if s == "__proto__" {
             return self.append(s, None);
         }
-        let hash = self.hasher.hash_one(s);
+        let hash = hash_str(&self.hasher, s);
         if let Some(index) = self.find_hashed(s, hash) {
             return index;
         }
@@ -418,7 +417,7 @@ impl Strings {
     /// The index of `s`, appended if it is not there yet; unlike
     /// [`intern`](Self::intern), `"__proto__"` is found like any other text.
     pub(crate) fn intern_text(&mut self, s: &str) -> u32 {
-        let hash = self.hasher.hash_one(s);
+        let hash = hash_str(&self.hasher, s);
         if let Some(index) = self.find_hashed(s, hash) {
             return index;
         }
@@ -428,7 +427,7 @@ impl Strings {
     /// Appends a string of an imported table: found from then on if it is
     /// the first with its text (and not `"__proto__"`).
     fn import(&mut self, s: &str) -> u32 {
-        let hash = self.hasher.hash_one(s);
+        let hash = hash_str(&self.hasher, s);
         let is_proto = s == "__proto__";
         let findable = !is_proto && self.find_hashed(s, hash).is_none();
         self.duplicates |= !is_proto && !findable;
@@ -474,7 +473,7 @@ impl Strings {
                 let start = span.start as usize;
                 &blocks[span.block as usize][start..start + span.len as usize]
             };
-            indexes.insert_unique(hash, index, |&i| hasher.hash_one(text(i)));
+            indexes.insert_unique(hash, index, |&i| hash_str(hasher, text(i)));
         }
         index
     }
