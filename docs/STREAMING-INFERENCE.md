@@ -388,7 +388,7 @@ Reading and tallying are almost all of a large run, so the CLI reads a
 regular file that holds a large top-level array on several threads
 (`input/parallel_read.rs`, with the scan in `input/json_split.rs`), into
 the same tallies as reading it in one go. Standard input redirected from
-a regular file (`quicktype < big.json`) is read the same way, from where
+a regular file (`quickertype < big.json`) is read the same way, from where
 it stands, and is left at its end as reading it in one go leaves it.
 
 ### How
@@ -531,7 +531,8 @@ first part fails, the whole sample is read in one go from its start. The
 same goes for the memory budget above. A file whose length changed while
 it was read is read again in one go. (stream-json's errors carry no
 position, but the rest is read by the same tokenizer from the same state
-anyway.)
+anyway.) A job that panics on another thread hands its panic to the
+reading thread, which raises it, as reading in one go would panic.
 
 ### Testing it
 
@@ -556,9 +557,14 @@ anyway.)
   longer than the ranges scanned ahead are still read beside it; arrays of
   elements longer than a part the budget lets be read beside others are
   read in one go after scanning that much; a thread that does not start
-  makes the sample read in one go; an import that fails part way leaves
-  the tallies as they were; and a fault that merges the parts' trees out
-  of order is caught.
+  makes the sample read in one go; a panic on a reading thread reaches
+  the caller; an import that fails part way leaves the tallies as they
+  were; the threads that read are as many as the ranges keep busy, at
+  most 1,024 however many are asked for; long runs of backslashes, cut
+  anywhere, give the escapes of a byte-by-byte scan, and are read whole
+  on several threads; a file opened again for each thread reads as in one
+  go, and a file put in its place is not opened; and a fault that merges
+  the parts' trees out of order is caught.
 - Files written by the tests and read at offsets
   (`tests/parallel_files.rs` in quicktype-core, and the CLI's
   `files_read_on_several_threads_read_as_in_one_go` with the internal
