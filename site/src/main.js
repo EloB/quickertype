@@ -312,16 +312,11 @@ function optionControl(definition) {
     return `<label class="field${hint ? " hinted" : ""}" title="${flag}"><span class="field-label">${label}</span><input type="text" id="${id}" data-option="${definition.name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(definition.typeLabel ?? "")}" spellcheck="false" autocomplete="off">${hint}</label>`;
 }
 
-/** How many general options there are, or how many are on. */
-function renderGeneralCount() {
-    const on = general.filter((g) => state.general[g.name]).length;
-    els.generalCount.textContent = on > 0 ? `${on} on` : String(general.length);
-    els.generalCount.classList.toggle("on", on > 0);
-}
+/** How many general options are on. */
+const generalOn = () => general.filter((g) => state.general[g.name]).length;
 
 /** The General section's options (it is opened or closed by the user, or by a link; see applyHash). */
 function renderGeneral() {
-    renderGeneralCount();
     els.generalOptions.innerHTML = general
         .map(
             (g) =>
@@ -351,12 +346,27 @@ function renderOptions() {
     });
 }
 
-/** On the Options button: how many options differ from the page's defaults (renderer and general), if any. */
-function renderOptionsCount() {
-    const changed = Object.keys(state.options).length + general.filter((g) => state.general[g.name]).length;
+/**
+ * What shows the state besides the controls themselves: General's count
+ * (how many general options there are, or how many are on), the Options
+ * button's (how many options differ from the page's defaults, renderer and
+ * general, if any), and the command under the output.
+ */
+function renderState() {
+    const on = generalOn();
+    els.generalCount.textContent = on > 0 ? `${on} on` : String(general.length);
+    els.generalCount.classList.toggle("on", on > 0);
+    const changed = Object.keys(state.options).length + on;
     els.optionsCount.hidden = changed === 0;
     els.optionsCount.classList.toggle("on", changed > 0);
     els.optionsCount.innerHTML = `<span class="sr-only">, </span>${changed}<span class="sr-only"> changed from the defaults</span>`;
+    renderCli();
+}
+
+/** After the viewer changed the state with a control: all that shows it, and the hash. */
+function stateChanged() {
+    renderState();
+    writeHash();
 }
 
 function renderControls() {
@@ -368,8 +378,7 @@ function renderControls() {
     els.sample.value = state.source.type === "sample" ? state.source.id : "";
     renderOptions();
     renderGeneral();
-    renderOptionsCount();
-    renderCli();
+    renderState();
 }
 
 function inputFileName() {
@@ -901,17 +910,27 @@ function engineTag(worker, result) {
     return undefined;
 }
 
+/**
+ * An engine's side of the comparison, for its bar and its chip: its time
+ * (`timeOf`, the `label`) and the bar's `width` (%) on `scale`, the
+ * slower engine's time (0: a full bar), at least `least`; or, while it runs
+ * (no width), what it is doing, as the label.
+ */
+function barOf(engine, side, scale, timeOf, least) {
+    if (side === "running") return { label: engines[engine].boot === undefined ? "loading…" : "running…", width: undefined };
+    const ms = timeOf(side);
+    return { label: formatMs(ms), width: scale > 0 ? Math.max(least, (ms / scale) * 100) : 100, ms };
+}
+
 /** One engine's bar: its time (`timeOf`) against `scale`, the part spent reading the input lighter. */
 function lane(engine, result, { scale, timeOf, note, split, shown }) {
     const name = engineNames[engine];
     const head = `<div class="lane ${engine}${shown ? " shown" : ""}"><span class="engine">${name}</span>`;
-    if (result === "running") {
-        const what = engines[engine].boot === undefined ? "loading…" : "running…";
-        return `${head}<span class="bar"><span class="fill pending"></span></span><span class="time muted">${what}</span></div>`;
+    const { label, width, ms } = barOf(engine, result, scale, timeOf, 1.5);
+    if (width === undefined) {
+        return `${head}<span class="bar"><span class="fill pending"></span></span><span class="time muted">${label}</span></div>`;
     }
 
-    const ms = timeOf(result);
-    const width = scale > 0 ? Math.max(1.5, (ms / scale) * 100) : 0;
     const tag = engineTag(engine, result);
     const inputShare = split !== undefined && split.input !== undefined && ms > 0 ? Math.min(1, split.input / ms) : 0;
     const detail =
@@ -919,7 +938,7 @@ function lane(engine, result, { scale, timeOf, note, split, shown }) {
             ? `reading the input ${formatMs(split.input)}, generating ${formatMs(split.generate)}`
             : undefined;
     const notes = [detail, note].filter(Boolean).join("; ");
-    return `${head}<span class="bar"><span class="fill" style="width:${width.toFixed(2)}%"><span class="input-part" style="width:${(inputShare * 100).toFixed(2)}%"></span></span></span><span class="time">${formatMs(ms)}</span>${
+    return `${head}<span class="bar"><span class="fill" style="width:${width.toFixed(2)}%"><span class="input-part" style="width:${(inputShare * 100).toFixed(2)}%"></span></span></span><span class="time">${label}</span>${
         notes ? `<span class="lane-note">${escapeHtml(notes)}</span>` : ""
     }${tag ? `<span class="lane-note warn">${escapeHtml(tag)}</span>` : ""}</div>`;
 }
@@ -1070,13 +1089,14 @@ function drawMeter() {
     const solo = lanes.length === 1;
     const timeOf = measured ? (r) => median(r.times) : (r) => r.ms;
     const phases = (r) => phasesOf(r, measured);
-    const scale = Math.max(0, ...lanes.filter((engine) => isResult(sides[engine])).map((engine) => timeOf(sides[engine])));
+    // The bars' scale: the slower engine's time; one engine alone, a full bar.
+    const scale = solo ? 0 : Math.max(0, ...lanes.filter((engine) => isResult(sides[engine])).map((engine) => timeOf(sides[engine])));
     let race = `<div class="race${solo ? " solo" : ""}">`;
     for (const engine of lanes) {
         const side = sides[engine];
         const done = isResult(side);
         race += lane(engine, side, {
-            scale: solo ? timeOf(side) : scale,
+            scale,
             timeOf,
             note: !done ? undefined : measured ? `median of ${side.times.length} warm runs` : side.first ? "first run, includes start-up" : undefined,
             split: done && side.ok ? phases(side) : undefined,
@@ -1087,7 +1107,7 @@ function drawMeter() {
     race += "</div>";
 
     // At a glance: each engine's time over a short bar, how they compare, and the verdict.
-    const glance = [`<span class="chips">${lanes.map((engine) => chip(engine, sides[engine], solo ? 0 : scale, timeOf)).join("")}</span>`];
+    const glance = [`<span class="chips">${lanes.map((engine) => chip(engine, sides[engine], scale, timeOf)).join("")}</span>`];
     const say = (html, kind = "qualifier") => glance.push(`<span class="${kind}">${html}</span>`);
     /** The details: the bars, the sentence, the fine print (as HTML). */
     let details = race;
@@ -1193,18 +1213,16 @@ function toggleMeter() {
 
 /**
  * An engine's time at a glance, over a short bar on the same `scale` as
- * the other engine's (none: a full bar), or what it is doing.
+ * the other engine's (see barOf), or what it is doing.
  */
 function chip(engine, side, scale, timeOf) {
     const head = `<span class="chip ${engine}"><span class="engine">${engineNames[engine]}</span>`;
-    if (side === "running") {
-        const what = engines[engine].boot === undefined ? "loading…" : "running…";
-        return `${head}<span class="time muted">${what}</span><span class="chip-bar" aria-hidden="true"><span class="pending"></span></span></span>`;
+    const { label, width } = barOf(engine, side, scale, timeOf, 4);
+    if (width === undefined) {
+        return `${head}<span class="time muted">${label}</span><span class="chip-bar" aria-hidden="true"><span class="pending"></span></span></span>`;
     }
 
-    const ms = timeOf(side);
-    const width = scale > 0 ? Math.max(4, (ms / scale) * 100) : 100;
-    return `${head}<span class="time">${formatMs(ms)}</span><span class="chip-bar" aria-hidden="true"><span style="width:${width.toFixed(2)}%"></span></span></span>`;
+    return `${head}<span class="time">${label}</span><span class="chip-bar" aria-hidden="true"><span style="width:${width.toFixed(2)}%"></span></span></span>`;
 }
 
 /** While a newer request runs, the output shown is an older one's: dimmed, as stale. */
@@ -1587,16 +1605,13 @@ function bind() {
         state.lang = languageNamed(els.lang.value);
         state.options = {};
         renderOptions();
-        renderOptionsCount();
-        renderCli();
-        writeHash();
+        stateChanged();
         void run();
     });
 
     els.name.addEventListener("input", () => {
         state.name = els.name.value;
-        renderCli();
-        writeHash();
+        stateChanged();
         schedule(300);
     });
 
@@ -1614,9 +1629,7 @@ function bind() {
         const value = definition.type === "boolean" ? control.checked : control.value;
         if (value === pageDefault(definition)) delete state.options[definition.name];
         else state.options[definition.name] = value;
-        renderOptionsCount();
-        renderCli();
-        writeHash();
+        stateChanged();
         schedule(definition.type === "string" ? 300 : 0);
     });
 
@@ -1625,10 +1638,7 @@ function bind() {
         if (control === null) return;
         if (control.checked) state.general[control.dataset.general] = true;
         else delete state.general[control.dataset.general];
-        renderGeneralCount();
-        renderOptionsCount();
-        renderCli();
-        writeHash();
+        stateChanged();
         schedule(0);
     });
 
@@ -1658,8 +1668,7 @@ function bind() {
         if (state.source.type !== "typed") {
             state.source = { type: "typed" };
             els.sample.value = "";
-            renderCli();
-            writeHash();
+            stateChanged();
         }
 
         clearTimeout(infoTimer);

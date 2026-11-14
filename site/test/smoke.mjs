@@ -1517,6 +1517,22 @@ try {
         "quicktype --lang typescript --top-level KitchenSink --all-properties-optional --no-maps --no-enums kitchen-sink.json",
     );
     console.log("ok: a link with general options opens General; closed by the user, it stays closed");
+    // The Options button counts the options changed, general and the
+    // language's, however they change: a general option, a renderer
+    // option, another language (whose options start from its defaults).
+    const badge = () =>
+        page.evaluate("(() => { const c = document.getElementById('options-count'); return c.hidden ? 0 : Number(/\\d+/.exec(c.textContent)[0]); })()");
+    const badges = [await badge()];
+    await click("opt-just-types");
+    badges.push(await badge());
+    await select("lang", "rust");
+    badges.push(await badge());
+    for (const flag of ["all-properties-optional", "no-maps", "no-enums"]) {
+        await click(`general-${flag}`);
+        badges.push(await badge());
+    }
+    assert.deepEqual(badges, [3, 4, 3, 2, 1, 0], "the Options button's count");
+    console.log(`ok: the Options button counts the options changed: ${badges.join(", ")}`);
     await page.navigate(`${url}#v=2&l=rust&s=github-events&alphabetize-properties=true&no-date-times=true`);
     await page.waitFor(settled, "the run on Rust with two general options");
     await sameAsCli(
