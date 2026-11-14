@@ -44,7 +44,7 @@ files. Wall time, median of 10 runs:
 | Run | quicktype | quickertype | Faster |
 |---|---:|---:|---:|
 | Startup (`--version`) | 226 ms | 2.9 ms | 77× |
-| Tiny JSON (77 B) → TypeScript | 244 ms | 2.9 ms | 86× |
+| Tiny JSON (77 B) → TypeScript | 244 ms | 2.8 ms | 86× |
 | `pokedex.json` (82 KB) → TypeScript | 266 ms | 4.0 ms | 67× |
 | `github-events.json` (82 KB) → 8 languages | 284–312 ms | 5.9–8.5 ms | 37–49× |
 | GraphQL schema (1.2 MB) and query → TypeScript | 269 ms | 9.2 ms | 29× |
@@ -62,7 +62,7 @@ files. Wall time, median of 10 runs:
 
 - **Large files:** a 2.6 GB JSON file becomes TypeScript types in 8.4 s
   at a peak of 64 MiB; memory grows with what is distinct in the JSON,
-  not with its size. Scryfall cards (real data): 656 MB take 0.28 s and
+  not with its size. Scryfall cards (real data): 657 MB take 0.28 s and
   50 MiB, against quicktype's 30 s and 3.2 GiB, and the cards in every
   language (3.0 GB) take 1.4 s.
 - **Several cores:** a file of 8 MiB or more whose top-level value is an
@@ -70,7 +70,8 @@ files. Wall time, median of 10 runs:
   becomes TypeScript types in 57 ms instead of 262 ms on a 12-core
   M2 Max, with the same output.
 - **Where the time goes:** on small inputs, most of the difference is
-  Node.js's startup (about 215 ms); on large inputs it is the engine. As
+  starting Node.js and loading quicktype (226 ms for `--version` alone);
+  on large inputs it is the engine. As
   libraries in a warm process, the native engine is 3.7× faster than
   quicktype's TypeScript.
 - **In the browser and on npm:** the table is the native CLI's. The

@@ -23,18 +23,19 @@ commands it compares write the same files.
 | Golden corpus, 11,178 CLI runs (wall, 12 jobs) | 473.8 s | 12.5 s | 9.0 s | 52× | 1.4× |
 | In process, 112 runs (engine as a library) | 342 ms (warm Node) | 98.2 ms | 92.8 ms | 3.7× | 1.1× |
 | JS API in Chrome, 20 MB JSON (WebAssembly engine, warm) | 406 ms | 145 ms | 122 ms | 3.3× | 1.2× |
-| 1M records (267 MB), on all cores | 5,440 ms | 49.9 ms | 56.7 ms | 96× | 0.9× |
-| Scryfall cards (real data), 656 MB | 29.9 s | – | 0.284 s | 105× | – |
+| 1M records (267 MB), on all cores | 5,445 ms | 49.9 ms | 56.7 ms | 96× | 0.9× |
+| Scryfall cards (real data), 657 MB | 29.9 s | – | 0.284 s | 105× | – |
 | Peak RSS, 40 MB input | 653 MiB | 62.1 MiB | 60.6 MiB | 11× less | 1.0× |
 | Peak RSS, 2.6 GB input | – | 63.1 MiB | 64.2 MiB | – | 1.0× |
-| Peak RSS, Scryfall cards (real data), 656 MB | 3.20 GiB | – | 50.1 MiB | 65× less | – |
+| Peak RSS, Scryfall cards (real data), 657 MB | 3.20 GiB | – | 50.1 MiB | 65× less | – |
 
 Wall-time medians. "Before" is what this file and the README published
 before this refresh, each measured at its own time and load (see
 [Machine](#machine)), so differences of up to about 10% between the two
 columns are within what separate runs give on this machine. The CLI's
-lead over TypeScript on small inputs is mostly Node's startup (about
-220 ms); on large inputs and in process it is the engine.
+lead over TypeScript on small inputs is mostly starting Node.js and
+loading quicktype (226 ms for `--version` alone); on large inputs and in
+process it is the engine.
 
 What moved:
 
@@ -53,7 +54,7 @@ What moved:
   down when other work runs ([Reading on several
   threads](#reading-on-several-threads)).
 - **New here:** quicktype on the 1M records and on real data (Scryfall
-  cards, 656 MB), and the large inputs on all cores against one thread
+  cards, 657 MB), and the large inputs on all cores against one thread
   ([Large inputs](#large-inputs)).
 
 ## Machine
@@ -197,16 +198,16 @@ system) and peak RSS of each run from `wait4`; medians.
 |---|---:|---:|---:|---:|---:|
 | generated (40 MB), an object at the top | 15 (5) | 170 / 168 ms, 60.6 MiB | 171 / 169 ms, 60.6 MiB | 2.67 / 3.48 s, 614 MiB | 5.6 (4.1–4.5) |
 | 100k records (26.8 MB) | 11 | 12.2 / 58.1 ms, 19.6 MiB | 30.9 / 29.4 ms, 6.0 MiB | – | 5.6 |
-| 1M records (267 MB) | 11 (3) | 56.7 / 453 ms, 21.5 MiB | 262 / 260 ms, 5.9 MiB | 5.44 / 7.11 s, 1.44 GiB | 5.6 (5.0–5.2) |
-| 60 × generated (40 MB) in one array, 2.6 GB | 3 | 8.38 / 8.37 s, 64.2 MiB | 8.36 / 8.33 s, 63.0 MiB | – | 5.7–5.9 |
-| 10.5 M objects with ~210-character strings, 2.5 GB | 3 | 308 ms / 2.69 s, 21.0 MiB | 1.40 / 1.39 s, 6.0 MiB | – | 5.7 |
-| Scryfall cards (real data), 656 MB | 5 (3) | 284 ms / 1.74 s, 50.1 MiB | 1.43 / 1.43 s, 20.2 MiB | 29.9 / 38.6 s, 3.20 GiB | 5.3–5.5 (4.7–5.3) |
-| the same cards as JSON Lines, 656 MB | 5 | 1.53 / 1.53 s, 20.2 MiB (read in one go) | – | – | 5.3–5.5 |
-| Scryfall cards (real data), every language, 3.0 GB | 3 | 1.35 / 8.15 s, 148 MiB | 6.65 / 6.64 s, 96.2 MiB | – | 5.7–5.8 |
+| 1M records (267 MB) | 11 (3) | 56.7 / 453 ms, 21.5 MiB | 262 / 260 ms, 5.9 MiB | 5.44 / 7.10 s, 1.44 GiB | 5.6 (5.0–5.2) |
+| 60 × generated (40 MB) in one array, 2.62 GB | 3 | 8.38 / 8.37 s, 64.2 MiB | 8.36 / 8.33 s, 63.0 MiB | – | 5.7–5.9 |
+| 10.5 M objects with ~210-character strings, 2.53 GB | 3 | 308 ms / 2.69 s, 21.0 MiB | 1.40 / 1.39 s, 6.0 MiB | – | 5.7 |
+| Scryfall cards (real data), 657 MB | 5 (3) | 284 ms / 1.74 s, 50.1 MiB | 1.43 / 1.43 s, 20.2 MiB | 29.9 / 38.6 s, 3.20 GiB | 5.3–5.5 (4.7–5.3) |
+| the same cards as JSON Lines, 657 MB | 5 | 1.53 / 1.53 s, 20.3 MiB (read in one go) | – | – | 5.3–5.5 |
+| Scryfall cards (real data), every language, 3.01 GB | 3 | 1.35 / 8.15 s, 148 MiB | 6.65 / 6.64 s, 96.2 MiB | – | 5.7–5.8 |
 
 Every command wrote the same output: all cores against one thread on
 every input, quicktype against quickertype on the 40 MB input (`cargo
-xtask bench`), the 100k and 1M records and the 656 MB cards, and the
+xtask bench`), the 100k and 1M records and the 657 MB cards, and the
 cards as JSON Lines against the array. quicktype was not run on the
 2.5 to 3.0 GB inputs.
 
@@ -224,7 +225,7 @@ cards as JSON Lines against the array. quicktype was not run on the
   4.9), main took 7.80 s and main before the parallel read was merged
   (`e2e3f3fc9`, which took 7.25 s then) 8.01 s, so the difference is the
   machine's, not the code's.
-- **Against quicktype**, on real data: the 656 MB of cards take 105× less
+- **Against quicktype**, on real data: the 657 MB of cards take 105× less
   wall time and 65× less memory (quicktype: 29.9 s and 3.20 GiB; on one
   thread quickertype still takes 21× less time). On the 1M records,
   quicktype takes 5.44 s and 1.44 GiB.
@@ -274,16 +275,18 @@ npm/quicktype-core/test/bench/compare.mjs --browser --again`):
 `addSource`, then `quicktypeMultiFile` to TypeScript, the two engines
 interleaved, medians of 41 runs (21 for 2 MB, 9 for the larger inputs),
 and of those the median of three runs of the benchmark (`site/data/browser.json`).
-Reading + generating = total, then a second run on the same input
-("again"), ms; Chrome's timer steps by 0.1 ms here:
+Reading, generating and the whole run, then a second run's generating on
+the same input ("again"), ms. Each is its own median, so reading and
+generating need not add up to the total. Chrome's timer steps by 0.1 ms
+here:
 
-| Input | quickertype | quicktype | × quicktype | Generating only |
+| Input | quickertype: read / generate / total; again | quicktype: read / generate / total; again | × quicktype | Generating only |
 |---|---:|---:|---:|---:|
-| pokedex (82 KB) | 0.50 + 1.10 = 1.60; again 0.80 | 1.20 + 3.50 = 4.70; again 2.20 | 2.9× | 3.2× |
-| generated (2 MB) | 9.10 + 5.10 = 14.1; again 2.70 | 22.4 + 21.7 = 44.0; again 14.6 | 3.1× | 4.3× |
-| generated (20 MB) | 89.1 + 33.0 = 122; again 11.9 | 247 + 159 = 406; again 150 | 3.3× | 4.8× |
-| rulings: 100k records (27 MB) | 46.5 + 6.60 = 53.1; again 0.30 | 79.9 + 76.0 = 156; again 71.8 | 2.9× | 12× |
-| cards: 5k generated cards (22 MB) | 89.7 + 23.5 = 113; again 6.10 | 137 + 235 = 371; again 229 | 3.3× | 10× |
+| pokedex (82 KB) | 0.50 / 1.10 / 1.60; again 0.80 | 1.20 / 3.50 / 4.70; again 2.20 | 2.9× | 3.2× |
+| generated (2 MB) | 9.10 / 5.10 / 14.1; again 2.70 | 22.4 / 21.7 / 44.0; again 14.6 | 3.1× | 4.3× |
+| generated (20 MB) | 89.1 / 33.0 / 122; again 11.9 | 247 / 159 / 406; again 150 | 3.3× | 4.8× |
+| rulings: 100k records (27 MB) | 46.5 / 6.60 / 53.1; again 0.30 | 79.9 / 76.0 / 156; again 71.8 | 2.9× | 12× |
+| cards: 5k generated cards (22 MB) | 89.7 / 23.5 / 113; again 6.10 | 137 / 235 / 371; again 229 | 3.3× | 10× |
 
 The three runs were within 8% of each other (the first, at a load average
 of 5.6 to 6.1, the slowest). Before, in [Inference from tallies in the
@@ -293,16 +296,16 @@ against 179. The engine's totals are 16 to 30% lower, after the slab
 allocator, the hashing and the cards' URIs and walk (the sections below).
 
 First runs in a fresh Node.js process (`compare.mjs --cold 7`), which
-compiles the engine first; medians of 7, ms, CPU time of the process in
-parentheses:
+compiles the engine first: reading, generating and the whole run, each
+its own median of 7, ms, and the process's CPU time in parentheses:
 
-| Input | quickertype | quicktype |
+| Input | quickertype: read / generate / total (CPU) | quicktype: read / generate / total (CPU) |
 |---|---:|---:|
-| pokedex (82 KB) | 3.90 + 47.3 = 51.1 (130) | 3.79 + 26.0 = 29.5 (46.6) |
-| generated (2 MB) | 26.6 + 45.4 = 71.9 (165) | 38.1 + 54.8 = 93.6 (171) |
-| generated (20 MB) | 148 + 90.7 = 239 (370) | 393 + 246 = 640 (890) |
-| rulings: 100k records (27 MB) | 82.1 + 32.4 = 114 (191) | 125 + 120 = 245 (431) |
-| cards: 5k generated cards (22 MB) | 131 + 72.2 = 202 (343) | 275 + 347 = 625 (821) |
+| pokedex (82 KB) | 3.90 / 47.3 / 51.1 (130) | 3.79 / 26.0 / 29.5 (46.6) |
+| generated (2 MB) | 26.5 / 45.4 / 71.9 (165) | 38.1 / 54.8 / 93.6 (171) |
+| generated (20 MB) | 148 / 90.7 / 239 (370) | 393 / 246 / 640 (890) |
+| rulings: 100k records (27 MB) | 82.1 / 32.4 / 114 (191) | 125 / 120 / 245 (431) |
+| cards: 5k generated cards (22 MB) | 131 / 72.2 / 202 (343) | 275 / 347 / 625 (821) |
 
 On pokedex the engine's compilation dominates, as before (51.6 against
 28.5 ms in [Inference from tallies in the
