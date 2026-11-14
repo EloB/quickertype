@@ -11,6 +11,7 @@ import { descriptionTypeAttributeKind } from "../attributes/Description.js";
 import { makeNamesTypeAttributes } from "../attributes/TypeNames.js";
 import { languageNamed } from "../language/All.js";
 import { messageError } from "../Messages.js";
+import { parseJSONLines, parseJSONLinesSync } from "../native/lines.js";
 import type { RunContext } from "../Run.js";
 import { defined, errorMessage, panic } from "../support/Support.js";
 import type { TargetLanguage } from "../TargetLanguage.js";
@@ -59,6 +60,12 @@ export interface JSONSourceData<T> {
     description?: string;
     name: string;
     samples: T[];
+    /**
+     * quickertype-core, not in quicktype: with `true`, each sample is JSON
+     * Lines text (one JSON value per line), read as the JSON array of its
+     * values; a syntax error names its line (`line 3: …`).
+     */
+    jsonLines?: boolean;
 }
 
 function messageParseError(
@@ -119,7 +126,7 @@ export class JSONInput<T> implements Input<JSONSourceData<T>> {
     }
 
     public async addSource(source: JSONSourceData<T>): Promise<void> {
-        const { name, samples, description } = source;
+        const { name, samples, description, jsonLines } = source;
         if (samples.length === 0) {
             return messageError("DriverNoSamplesForTopLevel", { name });
         }
@@ -127,7 +134,10 @@ export class JSONInput<T> implements Input<JSONSourceData<T>> {
         try {
             const values = await arrayMapSync(
                 samples,
-                async (s) => await this._compressedJSON.parse(s),
+                async (s) =>
+                    await (jsonLines === true
+                        ? parseJSONLines(this._compressedJSON, s)
+                        : this._compressedJSON.parse(s)),
             );
             this.addSamples(name, values, description);
         } catch (e) {
@@ -136,14 +146,16 @@ export class JSONInput<T> implements Input<JSONSourceData<T>> {
     }
 
     public addSourceSync(source: JSONSourceData<T>): void {
-        const { name, samples, description } = source;
+        const { name, samples, description, jsonLines } = source;
         if (samples.length === 0) {
             return messageError("DriverNoSamplesForTopLevel", { name });
         }
 
         try {
             const values = samples.map((s) =>
-                this._compressedJSON.parseSync(s),
+                jsonLines === true
+                    ? parseJSONLinesSync(this._compressedJSON, s)
+                    : this._compressedJSON.parseSync(s),
             );
             this.addSamples(name, values, description);
         } catch (e) {

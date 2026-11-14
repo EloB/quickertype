@@ -7,12 +7,14 @@
 // (crates/quicktype-wasm/src/samples.rs: the port's `JSON.parse`-semantics
 // reader; a sample given as a `Uint8Array` is its UTF-8 bytes, which the
 // engine reads as they are, `jsonReadBytes`, as the text `TextDecoder`
-// would give) into a compressed form it keeps for every run that uses the
-// input, and returns the sample's root `Value` exactly as TypeScript would
-// have computed it. The TypeScript tables of the `CompressedJSON` stay
-// empty until something reads them: its four table fields become accessors
-// that, on first use, fill them with the engine's tables, which are the
-// ones TypeScript builds from the same samples (`materialize`). A run on
+// would give; a JSON Lines sample, `jsonReadLines(Bytes)`, as the array of
+// its values, see src/native/lines.ts) into a compressed form it keeps for
+// every run that uses the input, and returns the sample's root `Value`
+// exactly as TypeScript would have computed it. The TypeScript tables of
+// the `CompressedJSON` stay empty until something reads them: its four
+// table fields become accessors that, on first use, fill them with the
+// engine's tables, which are the ones TypeScript builds from the same
+// samples (`materialize`). A run on
 // the engine holds the engine's copy from when it is encoded
 // (`leaseSamples`, encode.ts), so the TypeScript parse and the conversion
 // of the tables are both skipped.
@@ -51,6 +53,7 @@ import { engineFailed, engineStats } from "./bridge.js";
 import { dateTimeKind, hasOnlyBuiltinFields, isWellFormed } from "./encode.js";
 import { engineIfCompiled, engineMode, engineSync, isDiscarded } from "./engine.js";
 import { decodeUtf8, installSampleReader, isBytes, passDecoded, sampleText } from "./hook.js";
+import { jsonLinesValues } from "./lines.js";
 import type { ExportedTables, WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the samples reader reads private fields of the facade's objects
@@ -71,6 +74,12 @@ interface Config {
     range: Range | null;
 }
 
+/** A sample the engine read, kept (see `NativeSamples.texts`): its text, and whether it is JSON Lines. */
+interface KeptSample {
+    text: string | Uint8Array;
+    lines: boolean;
+}
+
 /** A `CompressedJSON` whose samples the engine reads. */
 interface NativeSamples {
     readonly glue: WasmGlue;
@@ -87,7 +96,7 @@ interface NativeSamples {
      * most `keptTexts` code units or bytes; `undefined` after that. Only
      * for an engine instance that fails (see `materialize`).
      */
-    texts: Array<string | Uint8Array> | undefined;
+    texts: KeptSample[] | undefined;
     /** The code units (or bytes) of the samples read. */
     textLength: number;
     /**
@@ -673,7 +682,7 @@ export function materialize(cjson: any): void {
         }
 
         if (tables !== undefined) fill(cjson, tables);
-        else replay(cjson, state.config, texts as Array<string | Uint8Array>);
+        else replay(cjson, state.config, texts as KeptSample[]);
         // Only tables that were filled.
         engineStats.tablesFilled++;
     } finally {
@@ -726,7 +735,7 @@ function fill(cjson: any, tables: ExportedTables): void {
  * configuration they were read with. Whatever `cjson` is in the middle of
  * (a read that touched a table first) is set aside meanwhile.
  */
-function replay(cjson: any, config: Config, texts: Array<string | Uint8Array>): void {
+function replay(cjson: any, config: Config, texts: KeptSample[]): void {
     // `_ctx` and `_rootValue` exist (as own fields) only once a read has
     // created them, as the engine's reads did for the samples replayed.
     const own = (name: string): boolean => Object.prototype.hasOwnProperty.call(cjson, name);
@@ -742,8 +751,8 @@ function replay(cjson: any, config: Config, texts: Array<string | Uint8Array>): 
         cjson.dateTimeRecognizer = config.recognizer;
         cjson.handleRefs = config.handleRefs;
         cjson.supportedIntegerRange = config.range;
-        for (const text of texts) {
-            cjson.process(JSON.parse(sampleText(text) as string));
+        for (const { text, lines } of texts) {
+            cjson.process(lines ? jsonLinesValues(text) : JSON.parse(sampleText(text) as string));
             cjson.finish();
         }
     } finally {
@@ -863,15 +872,23 @@ function declined(cjson: object): undefined {
 }
 
 /**
- * `jsonRead` (or `jsonReadBytes`) of `sample` into `state`'s form: what it
- * returned, and what the forms hold afterwards; `undefined` if the engine
- * failed (it is discarded).
+ * `jsonRead` (or `jsonReadBytes`; for JSON Lines, `jsonReadLines` or
+ * `jsonReadLinesBytes`) of `sample` into `state`'s form: what it returned,
+ * and what the forms hold afterwards; `undefined` if the engine failed (it
+ * is discarded).
  */
-function readOnEngine(state: NativeSamples, sample: string | Uint8Array): { value: number; held: number } | undefined {
+function readOnEngine(state: NativeSamples, sample: string | Uint8Array, lines: boolean): { value: number; held: number } | undefined {
     const { glue, id } = state;
     try {
         const before = glue.jsonHeld();
-        const value = typeof sample === "string" ? glue.jsonRead(id, sample) : glue.jsonReadBytes(id, sample);
+        const value =
+            typeof sample === "string"
+                ? lines
+                    ? glue.jsonReadLines(id, sample)
+                    : glue.jsonRead(id, sample)
+                : lines
+                  ? glue.jsonReadLinesBytes(id, sample)
+                  : glue.jsonReadBytes(id, sample);
         const held = glue.jsonHeld();
         state.bytes += held - before;
         return { value, held };
@@ -881,8 +898,11 @@ function readOnEngine(state: NativeSamples, sample: string | Uint8Array): { valu
     }
 }
 
-/** The reader `CompressedJSONFromString.parseSync` asks first (see the top). */
-function readSample(cjson: any, sample: unknown): number | undefined {
+/**
+ * The reader `CompressedJSONFromString.parseSync` asks first (see the
+ * top), and src/native/lines.ts for a JSON Lines sample (`lines`).
+ */
+function readSample(cjson: any, sample: unknown, lines: boolean): number | undefined {
     passDecoded(undefined);
     let state = states.get(cjson);
     const bytes = isBytes(sample);
@@ -903,7 +923,7 @@ function readSample(cjson: any, sample: unknown): number | undefined {
         return declined(cjson);
     }
 
-    let read = readOnEngine(state, text);
+    let read = readOnEngine(state, text, lines);
     if (read?.value === notUtf8) {
         // What the decoder replaces is read as it replaces it. Decoded here,
         // outside the engine's calls: what the decoder throws (a text
@@ -911,9 +931,10 @@ function readSample(cjson: any, sample: unknown): number | undefined {
         // `addSource` as TypeScript's own decoding of it would be. Nothing
         // was read.
         text = decodeUtf8(text as Uint8Array);
-        read = readOnEngine(state, text);
+        read = readOnEngine(state, text, lines);
         if (read === undefined || read.value <= 0) {
-            // `parseSync` then parses this text, without decoding it again.
+            // `parseSync` (or the JSON Lines reader) then parses this
+            // text, without decoding it again.
             const result = read === undefined || read.value !== 0 ? declined(cjson) : undefined;
             passDecoded(sample as Uint8Array, text);
             return result;
@@ -927,7 +948,7 @@ function readSample(cjson: any, sample: unknown): number | undefined {
         state.textLength += text.length;
         if (state.texts !== undefined) {
             // A copy of the bytes: the caller may change them afterwards.
-            if (state.textLength <= keptTexts) state.texts.push(typeof text === "string" ? text : new Uint8Array(text));
+            if (state.textLength <= keptTexts) state.texts.push({ text: typeof text === "string" ? text : new Uint8Array(text), lines });
             else state.texts = undefined;
         }
 
@@ -948,7 +969,9 @@ function readSample(cjson: any, sample: unknown): number | undefined {
     }
 
     // Not JSON (0): `JSON.parse` throws V8's error, before the tables are
-    // touched. Declined (-1): TypeScript reads it, and every sample after.
+    // touched (not JSON Lines: the JSON Lines reader throws the error of
+    // the line, src/native/lines.ts). Declined (-1): TypeScript reads it,
+    // and every sample after.
     return value === 0 ? undefined : declined(cjson);
 }
 

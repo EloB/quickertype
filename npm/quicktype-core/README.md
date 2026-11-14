@@ -58,6 +58,51 @@ that are not UTF-8 are decoded once either way, and what the decoder
 throws (a `RangeError` for a text longer than the longest string) is
 `addSource`'s error, as on the TypeScript engine.
 
+### JSON Lines
+
+The JSON inputs also read [JSON Lines](https://jsonlines.org) (NDJSON),
+which quicktype does not: give a source `jsonLines: true`, and each of its
+samples is JSON Lines text, one JSON value per line, read as the JSON array
+of those values. The output is what quicktype gives for that array, byte
+for byte, in every language and with every option, as with the CLI's JSON
+Lines ([README](../../README.md#json-lines)). This is an addition to
+quicktype-core's API: without `jsonLines`, a sample is one JSON value, as
+in quicktype.
+
+```ts
+import * as fs from "node:fs";
+import { InputData, jsonInputForTargetLanguage, quicktype } from "quickertype-core";
+
+const input = jsonInputForTargetLanguage("typescript");
+await input.addSource({ name: "Cards", samples: [fs.readFileSync("cards.jsonl")], jsonLines: true });
+const inputData = new InputData();
+inputData.addInput(input);
+const { lines } = await quicktype({ inputData, lang: "typescript" });
+```
+
+- A sample is a string or its UTF-8 bytes (as above), each a whole JSON
+  Lines document; several samples are several documents, each read as one
+  array, as several array samples would be. `addSourceSync` takes
+  `jsonLines` too, and in TypeScript it is `JSONSourceData.jsonLines`.
+- Line breaks are `\n` or `\r\n`; blank lines are skipped, the last line
+  break is optional, a value may span lines, a byte order mark may come
+  first, and two values on one line are an error. A sample without values
+  is `[]`, and one with a single value an array of one.
+- Each value is read as `JSON.parse` reads a JSON sample. A syntax error
+  names the line its value starts on, followed by `JSON.parse`'s message
+  for that value, whose positions count from the value's start (V8's
+  `(line L column C)` is left out): `Syntax error in input JSON cards:
+  line 3: Expected ',' or '}' after property value in JSON at position
+  9`. The CLI names the same line; its message after it is quicktype's
+  CLI's, which reads files with another parser.
+- The engine reads JSON Lines as fast as the same values as an array, and
+  bytes as they are. On the TypeScript engine, each value is decoded and
+  parsed by itself, so bytes too large to be one string can be read
+  there too.
+- Only a `CompressedJSONFromString` (what `jsonInputForTargetLanguage`
+  makes, or a subclass of it) reads JSON Lines; with another
+  `CompressedJSON`, `addSource` fails.
+
 `require("quickertype-core")` works too. The package matches `quicktype-core`
 24.0.0 at quicktype commit
 [`c39af7d3`](https://github.com/glideapps/quicktype/tree/c39af7d303b025280e2668a1b2d29913093593c9)
@@ -79,7 +124,9 @@ when the engine can do it exactly; `input/CompressedJSON.ts`, whose
 before parsing it itself (see [JSON samples](#json-samples)), and decodes
 a sample given as bytes; and `input/Inputs.ts`, whose
 `jsonInputForTargetLanguage` is typed to take such samples (see [JSON
-samples as bytes](#json-samples-as-bytes)). Everything
+samples as bytes](#json-samples-as-bytes)), and whose `JSONInput` reads
+the samples of a source with `jsonLines` with `src/native/lines.ts` (see
+[JSON Lines](#json-lines)). Everything
 else before the run stays in TypeScript, so inputs are collected, schema
 text parsed (JSON, then YAML) and files and URLs read exactly as before.
 Each run is **one call** into `crates/quicktype-wasm`, carrying the JSON
@@ -181,6 +228,23 @@ are the ones TypeScript builds from the same samples, and from then on the
 on the engine sends a lease on the compressed form instead of the tables
 (`kind: "jsonShared"`); a run on the TypeScript engine reads the tables,
 which fills them.
+
+**JSON Lines.** The samples of a source with `jsonLines` are read by
+`src/native/lines.ts`, which asks the same reader first:
+`jsonReadLines(id, text)` (`jsonReadLinesBytes(id, bytes)` for bytes)
+reads the text with `CompressedJson::read_string_lines_sample` into the
+same compressed form, as the array of its values, exactly as the JSON text
+of that array would be read, and returns the array's root `Value`.
+Everything here holds for it as for a JSON sample. What the engine does
+not read, the JSON Lines reader reads: it finds where each value ends
+(after its closing bracket or quote, or at the whitespace after a number
+or a literal), parses the value with `JSON.parse` (the bytes of each value
+decoded by themselves, which gives the text decoding them all would), and
+hands the array of the values to `process`, as `parseSync` hands it the
+value of `JSON.parse`. A sample that is not JSON Lines is not read by the
+engine (it reports so, without changing anything); the JSON Lines reader
+then throws the error of its line, so the error is the same on both
+engines.
 
 **When the engine reads samples.** Only once it is compiled: in browsers
 the module compiles in the background from the start, and samples added
