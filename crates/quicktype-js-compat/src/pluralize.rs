@@ -24,10 +24,11 @@
 //!   only when it is the one that applies (its captures build the
 //!   replacement). The automaton reports a pattern exactly when that
 //!   pattern's regex matches, so the first matching rule from the end is the
-//!   same. Building the automata took another 0.7 ms per process (the
-//!   singular rules) and 1 ms (the plural ones), so the build script builds
-//!   them as DFAs from the same patterns, and a process only checks the
-//!   serialized tables (`DFA::from_bytes`, about 40 µs).
+//!   same. Translating the rules and building the automata took another
+//!   0.7 ms per process (the singular rules) and 1 ms (the plural ones), so
+//!   the build script does both: it writes each list's patterns and a DFA
+//!   of them, and a process only checks the DFA's tables
+//!   (`DFA::from_bytes`, about 40 µs).
 //!
 //! The rules are JavaScript regular expressions with the `i` flag and without
 //! `u`. They are translated to `regex`-crate syntax with JavaScript's meaning
@@ -43,10 +44,12 @@ use regex::{Captures, Regex};
 use regex_automata::dfa::{Automaton as _, dense};
 use regex_automata::{Input, PatternSet};
 
-use self::rules::{PLURAL_RULES, SINGULAR_RULES, UNCOUNTABLE_RULES, rule_list};
+use self::rules::{PLURAL_RULES, SINGULAR_RULES, UNCOUNTABLE_RULES};
 use crate::{number, utf16};
 
 mod rules;
+#[cfg(test)]
+mod translate;
 
 /// `[single, plural]` pairs, in the order `pluralize.js` adds them.
 const IRREGULAR_RULES: &[(&str, &str)] = &[
@@ -111,14 +114,20 @@ struct Aligned<B: ?Sized> {
     bytes: B,
 }
 
+/// The plural rules' patterns, as the build script translated them.
+const PLURAL_PATTERNS: &[&str] = include!(concat!(env!("OUT_DIR"), "/pluralize_plural.rs"));
+
 /// The plural rules' automaton, which the build script made from
-/// `rule_list(PLURAL_RULES)`.
+/// [`PLURAL_PATTERNS`].
 static PLURAL_DFA: &Aligned<[u8]> = &Aligned {
     _align: [],
     bytes: *include_bytes!(concat!(env!("OUT_DIR"), "/pluralize_plural.dfa")),
 };
 
-/// The singular rules' automaton, from `rule_list(SINGULAR_RULES)`.
+/// The singular rules' patterns, as the build script translated them.
+const SINGULAR_PATTERNS: &[&str] = include!(concat!(env!("OUT_DIR"), "/pluralize_singular.rs"));
+
+/// The singular rules' automaton, from [`SINGULAR_PATTERNS`].
 static SINGULAR_DFA: &Aligned<[u8]> = &Aligned {
     _align: [],
     bytes: *include_bytes!(concat!(env!("OUT_DIR"), "/pluralize_singular.dfa")),
@@ -128,7 +137,7 @@ static SINGULAR_DFA: &Aligned<[u8]> = &Aligned {
 /// in the order `pluralize.js` adds them.
 struct Rules {
     /// Each rule's translated pattern.
-    patterns: Vec<String>,
+    patterns: &'static [&'static str],
     /// Each rule's replacement template.
     replacements: Vec<&'static str>,
     /// Every pattern in one DFA, for `which rules match this word`: built
@@ -141,11 +150,18 @@ struct Rules {
 }
 
 impl Rules {
-    fn new(rules: &[(&str, &'static str)], dfa: &'static [u8]) -> Self {
-        let (patterns, replacements) = rule_list(rules);
+    /// The rules of `rules` (and the uncountable patterns), with the
+    /// patterns and the DFA the build script made of them.
+    fn new(
+        rules: &[(&str, &'static str)],
+        patterns: &'static [&'static str],
+        dfa: &'static [u8],
+    ) -> Self {
+        let replacements = rule_replacements(rules);
         let (selector, _) = dense::DFA::from_bytes(dfa)
             .unwrap_or_else(|e| panic!("the pluralize automaton does not load: {e}"));
         assert_eq!(selector.pattern_len(), patterns.len());
+        assert_eq!(replacements.len(), patterns.len());
         let regexes = patterns.iter().map(|_| OnceLock::new()).collect();
         Rules {
             patterns,
@@ -175,7 +191,7 @@ impl Rules {
     /// Rule `index`'s regex (`rule[0]`).
     fn regex(&self, index: usize) -> &Regex {
         self.regexes[index].get_or_init(|| {
-            Regex::new(&self.patterns[index])
+            Regex::new(self.patterns[index])
                 .unwrap_or_else(|e| panic!("pluralize rule {index} does not translate: {e}"))
         })
     }
@@ -212,11 +228,22 @@ static TABLES: LazyLock<Tables> = LazyLock::new(|| {
 });
 
 /// The pluralization rules.
-static PLURAL: LazyLock<Rules> = LazyLock::new(|| Rules::new(PLURAL_RULES, &PLURAL_DFA.bytes));
+static PLURAL: LazyLock<Rules> =
+    LazyLock::new(|| Rules::new(PLURAL_RULES, PLURAL_PATTERNS, &PLURAL_DFA.bytes));
 
 /// The singularization rules.
 static SINGULAR: LazyLock<Rules> =
-    LazyLock::new(|| Rules::new(SINGULAR_RULES, &SINGULAR_DFA.bytes));
+    LazyLock::new(|| Rules::new(SINGULAR_RULES, SINGULAR_PATTERNS, &SINGULAR_DFA.bytes));
+
+/// The replacement templates of a rule list (`rule[1]`), then `$0` for each
+/// uncountable pattern, in the order of the build script's patterns.
+fn rule_replacements(rules: &[(&str, &'static str)]) -> Vec<&'static str> {
+    let rules = rules.iter().map(|&(_, replacement)| replacement);
+    let patterns = UNCOUNTABLE_RULES
+        .iter()
+        .filter(|rule| rule.starts_with('/'));
+    rules.chain(patterns.map(|_| "$0")).collect()
+}
 
 /// Encodes UTF-16 code units as a string with one `char` per unit, so that
 /// regexes see JavaScript's units: surrogates map to the private-use
@@ -460,7 +487,7 @@ pub fn pluralize(word: &str, count: f64, inclusive: bool) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::rules::translate;
+    use super::translate::{rule_patterns, translate};
     use super::*;
 
     #[test]
@@ -506,6 +533,19 @@ mod tests {
             ("Pokémons", "Pokémon"),
         ] {
             assert_eq!(singular(plural), singular_form, "singular({plural})");
+        }
+    }
+
+    /// The build script's patterns are the translation of the current rule
+    /// tables, made at run time.
+    #[test]
+    fn the_build_script_translated_these_rules() {
+        for (list, built) in [
+            (PLURAL_RULES, PLURAL_PATTERNS),
+            (SINGULAR_RULES, SINGULAR_PATTERNS),
+        ] {
+            assert_eq!(built, rule_patterns(list, UNCOUNTABLE_RULES));
+            assert_eq!(built.len(), rule_replacements(list).len());
         }
     }
 
@@ -579,8 +619,7 @@ mod tests {
     fn the_prebuilt_automata_select_the_matching_rules() {
         let words = selector_words();
         for (rules, list) in [(&*PLURAL, PLURAL_RULES), (&*SINGULAR, SINGULAR_RULES)] {
-            let (patterns, _) = rule_list(list);
-            assert_eq!(rules.patterns, patterns);
+            let patterns = rule_patterns(list, UNCOUNTABLE_RULES);
             let regexes: Vec<Regex> = patterns.iter().map(|p| Regex::new(p).unwrap()).collect();
             // Words for which some rule is selected, and for which several are.
             let (mut some, mut several) = (0, 0);
