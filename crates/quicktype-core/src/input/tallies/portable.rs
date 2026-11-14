@@ -209,8 +209,29 @@ impl Tallies {
 
     /// Moves `tree` into these tallies, its keys and cases as ids into
     /// `strings` (whose texts it adds as needed); returns its root here.
+    /// If this fails, the tallies are as they were (but for the texts
+    /// added).
     pub(crate) fn import(&mut self, strings: &mut Strings, tree: PortableTree) -> Result<NodeId> {
         let mut nodes = Vec::with_capacity(tree.nodes.len());
+        let imported = self.import_into(strings, tree, &mut nodes);
+        if imported.is_err() {
+            // Nothing refers to the nodes taken but each other: freed,
+            // with whatever they were given.
+            for id in nodes {
+                self.nodes[id as usize] = Node::default();
+                self.free.push(id);
+            }
+        }
+        imported
+    }
+
+    /// [`import`](Self::import), with the nodes it takes in `nodes`.
+    fn import_into(
+        &mut self,
+        strings: &mut Strings,
+        tree: PortableTree,
+        nodes: &mut Vec<NodeId>,
+    ) -> Result<NodeId> {
         let PortableTree {
             strings: texts,
             nodes: portable,
@@ -230,7 +251,7 @@ impl Tallies {
             nodes.push(alloc(&mut self.nodes, &mut self.free)?);
         }
         let node = |index: u32| defined(nodes.get(index as usize)).copied();
-        for (portable, &at) in portable.into_iter().zip(&nodes) {
+        for (portable, &at) in portable.into_iter().zip(nodes.iter()) {
             let strings_tally = match portable.strings {
                 Some(s) => {
                     let mut tally = self.spare_strings.pop().unwrap_or_default();
@@ -270,6 +291,23 @@ impl Tallies {
             };
         }
         defined(nodes.first().copied())
+    }
+}
+
+#[cfg(test)]
+impl PortableTree {
+    /// Gives the last node with keys a key whose text is not in the
+    /// tree's string table (for tests).
+    fn break_last_key(&mut self) {
+        let bad = self.strings.len() as u32 + 7;
+        let object = self
+            .nodes
+            .iter_mut()
+            .rev()
+            .find_map(|n| n.object.as_mut().filter(|o| !o.keys.is_empty()))
+            .unwrap();
+        let (_, key) = object.keys.pop().unwrap();
+        object.keys.insert(bad, key);
     }
 }
 
@@ -360,6 +398,36 @@ mod tests {
             fresh.1 <= portable && portable <= 2 * fresh.1 + (64 << 10),
             "{fresh:?} {portable}"
         );
+    }
+
+    /// An import that fails part way (here at a key whose text is not in
+    /// the tree's string table) leaves the tallies as they were: no node
+    /// taken, the trees there unchanged; the next import goes as usual.
+    #[test]
+    fn a_failed_import_changes_nothing() {
+        let config = config(false);
+        let mut into = RunningTallies::new();
+        let existing = parse_stream_into(
+            &mut TallyBuilder::new(&mut into, &config),
+            SAMPLES[0].as_bytes(),
+        )
+        .unwrap();
+        let before = (into.dump(existing), into.tallies.live_nodes());
+        let mut broken = portable(&config, SAMPLES[1]);
+        broken.break_last_key();
+        assert!(into.tallies.import(&mut into.strings, broken).is_err());
+        assert_eq!((into.dump(existing), into.tallies.live_nodes()), before);
+        let root = into
+            .tallies
+            .import(&mut into.strings, portable(&config, SAMPLES[1]))
+            .unwrap();
+        let mut read = RunningTallies::new();
+        let tree = parse_stream_into(
+            &mut TallyBuilder::new(&mut read, &config),
+            SAMPLES[1].as_bytes(),
+        )
+        .unwrap();
+        assert_eq!(into.dump(root), read.dump(tree));
     }
 
     /// A tree made portable and imported into other tallies is the same
