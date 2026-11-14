@@ -39,6 +39,7 @@
 use std::cell::Cell;
 use std::fmt;
 use std::mem::size_of;
+use std::rc::Rc;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
@@ -658,46 +659,59 @@ fn object_tally_size(tally: &ObjectTally) -> usize {
     size_of::<ObjectTally>() + map_size(&tally.keys) + vec_size(&tally.proto_runs)
 }
 
-/// The tallies of a compressed form's samples, kept with the form
-/// ([`CompressedJson::kept_tallies`]) for the next inference over the same
-/// samples (`JsonInput::set_keep_tallies`): a form only ever grows, and
-/// what is in it never changes, so the tallies of the same samples are
-/// these. Adding a sample drops them, since the next inference will most
-/// likely be over more samples.
-pub(crate) struct KeptTallies {
-    /// Each top-level's samples, as they were tallied.
-    samples: Vec<Vec<Value>>,
+/// The tallies of a compressed form's top-levels ([`tally_compressed`]).
+pub(crate) struct FormTallies {
     pub(crate) tallies: Tallies,
-    /// Each top-level's tree.
+    /// Each top-level's tree, in order.
     pub(crate) roots: Vec<NodeId>,
+}
+
+/// What the walk made of a compressed form's samples, kept with the form
+/// ([`CompressedJson::kept_tallies`]) for the next inference over the same
+/// samples (`JsonInput::set_keep_tallies`): their tallies, or that the walk
+/// declined them. A form only ever grows, and what is in it never changes,
+/// so the walk makes the same of the same samples. Adding a sample drops
+/// this, since the next inference will most likely be over more samples.
+pub(crate) struct KeptTallies {
+    /// Each top-level's samples, as they were walked.
+    samples: Vec<Vec<Value>>,
+    /// Their tallies; `None` if the walk declined them.
+    tallied: Option<Rc<FormTallies>>,
     /// About how many bytes this holds.
     bytes: usize,
 }
 
 impl KeptTallies {
-    /// `tallies`, with each top-level's tree `roots`, of the samples
-    /// `top_levels`, to keep.
+    /// What the walk made of the samples `top_levels` (`None` for a
+    /// decline), to keep.
     pub(crate) fn new<'c>(
-        mut tallies: Tallies,
-        roots: Vec<NodeId>,
+        tallied: Option<FormTallies>,
         top_levels: impl IntoIterator<Item = &'c [Value]>,
     ) -> Self {
-        tallies.trim();
+        let tallied = tallied.map(|mut tallied| {
+            tallied.tallies.trim();
+            Rc::new(tallied)
+        });
         let samples: Vec<Vec<Value>> = top_levels.into_iter().map(<[Value]>::to_vec).collect();
         let bytes = size_of::<Self>()
-            + tallies.heap_size()
-            + vec_size(&roots)
+            + tallied.as_ref().map_or(0, |t| {
+                size_of::<FormTallies>() + t.tallies.heap_size() + vec_size(&t.roots)
+            })
             + vec_size(&samples)
             + samples.iter().map(vec_size).sum::<usize>();
         KeptTallies {
             samples,
-            tallies,
-            roots,
+            tallied,
             bytes,
         }
     }
 
-    /// Whether these are the tallies of `top_levels`' samples.
+    /// The tallies; `None` if the walk declined the samples.
+    pub(crate) fn tallied(&self) -> Option<&Rc<FormTallies>> {
+        self.tallied.as_ref()
+    }
+
+    /// Whether this is what the walk made of `top_levels`' samples.
     pub(crate) fn of<'c>(&self, top_levels: impl IntoIterator<Item = &'c [Value]>) -> bool {
         let mut count = 0;
         for (i, samples) in top_levels.into_iter().enumerate() {
@@ -1183,6 +1197,13 @@ impl Tallies {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    /// How many walks [`tally_compressed`] started on this thread (for
+    /// tests).
+    pub(crate) static WALKS: Cell<usize> = const { Cell::new(0) };
+}
+
 /// Tallies the values of a compressed form (each top-level's samples, in
 /// order) as reading their samples would have tallied them: the running
 /// tallies of samples that were read into a [`CompressedJson`] instead
@@ -1199,6 +1220,8 @@ pub(crate) fn tally_compressed<'c>(
     cjson: &CompressedJson,
     top_levels: impl IntoIterator<Item = &'c [Value]>,
 ) -> Result<Option<(Tallies, Vec<NodeId>)>> {
+    #[cfg(test)]
+    WALKS.with(|walks| walks.set(walks.get() + 1));
     // A string is known by its index, but for `"__proto__"`, which is
     // interned anew each time and so is known by its text.
     if !cjson.unique_strings() {

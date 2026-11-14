@@ -350,7 +350,7 @@ then the inference from tallies of the sections above. An input over a
 form the engine keeps (`from_shared`) keeps the tallies with the form
 (`KeptTallies`, `JsonInput::set_keep_tallies`), and the next inference
 over the same samples, by any input over the form, uses them instead of
-walking again. That is exact: a form only grows, and what is in it never
+walking again (a form the walk declined is kept declined, the same way). That is exact: a form only grows, and what is in it never
 changes, so the tallies of the same samples (each top-level's, compared
 when they are used) are the same, whatever the inference flags, which
 the tallies do not depend on. Reading a sample into the form drops them,
