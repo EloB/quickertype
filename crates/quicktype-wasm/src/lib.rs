@@ -125,6 +125,32 @@ fn install() {
     }));
 }
 
+/// The compressed forms (by id) a run uses: when the run ends, however it
+/// ends, their bytes are counted again (it may have kept the tallies it
+/// made of them, see [`samples::recount`]).
+struct SharedForms(Vec<f64>);
+
+impl SharedForms {
+    fn of(request: &Request) -> Self {
+        SharedForms(
+            request
+                .inputs
+                .iter()
+                .filter_map(|input| match input {
+                    wire::InputRequest::JsonShared { form, .. } => Some(*form),
+                    _ => None,
+                })
+                .collect(),
+        )
+    }
+}
+
+impl Drop for SharedForms {
+    fn drop(&mut self) {
+        samples::recount(&self.0);
+    }
+}
+
 /// The run as a future of its outcome.
 fn run_future(
     request: Result<Request, quicktype_core::QuickTypeError>,
@@ -132,7 +158,9 @@ fn run_future(
 ) -> RunFuture {
     Box::pin(async move {
         let result = async {
-            let options = assemble::assemble(request?, Rc::new(Rc::clone(&host)))?;
+            let request = request?;
+            let _forms = SharedForms::of(&request);
+            let options = assemble::assemble(request, Rc::new(Rc::clone(&host)))?;
             quicktype_core::quicktype_multi_file(options).await
         }
         .await;
@@ -148,6 +176,7 @@ pub fn run_sync(request: JsValue, host: JsValue) -> JsValue {
     let host = JsHost::new(host);
     with_active(&host, || {
         let result = js::decode_request(&request).and_then(|request| {
+            let _forms = SharedForms::of(&request);
             let options = assemble::assemble(request, Rc::new(Rc::clone(&host)))?;
             quicktype_core::quicktype_multi_file_sync(options)
         });

@@ -22,9 +22,14 @@
 //! (see [`crate::slots`]). While a run holds a compressed form, no sample
 //! is added to it.
 //!
+//! A run over a compressed form keeps the tallies it inferred the types
+//! from with the form (`JsonInput::from_shared`), for the next run over
+//! the same samples; the next sample read into the form drops them. They
+//! count in the form's bytes ([`recount`] after each run, [`json_bytes`]).
+//!
 //! The facade bounds what the compressed forms hold together
 //! ([`json_held`]): past its limit, it fills the tables of the least
-//! recently used and drops them here.
+//! recently used and drops them here, tallies and all.
 //!
 //! No borrow of the tables here spans a read: [`json_read`] takes the
 //! compressed form out for it. Should the instance trap during a read (run
@@ -82,17 +87,18 @@ struct Samples {
     /// Set once the compressed form went past `committed`: it takes no
     /// more samples.
     closed: bool,
-    /// Its [`heap_size`](CompressedJson::heap_size) after the last read,
-    /// counted in [`HELD`].
+    /// Its [`heap_size`](CompressedJson::heap_size) (with the tallies a
+    /// run kept with it) after the last read or run, counted in [`HELD`].
     bytes: usize,
 }
 
 thread_local! {
     /// The compressed forms, by id.
     static SAMPLES: RefCell<Slots<Samples>> = const { RefCell::new(Slots::new()) };
-    /// The runs' holds on compressed forms, by lease id, until the run
-    /// starts ([`take_lease`]) or the facade lets go of it.
-    static LEASES: RefCell<Slots<Rc<CompressedJson>>> = const { RefCell::new(Slots::new()) };
+    /// The runs' holds on compressed forms (with the forms' ids), by lease
+    /// id, until the run starts ([`take_lease`]) or the facade lets go of
+    /// it.
+    static LEASES: RefCell<Slots<(f64, Rc<CompressedJson>)>> = const { RefCell::new(Slots::new()) };
     /// The bytes of every compressed form in [`SAMPLES`] ([`json_held`]).
     static HELD: Cell<usize> = const { Cell::new(0) };
 }
@@ -220,13 +226,42 @@ pub fn json_drop(id: f64) {
 }
 
 /// About how many bytes the compressed forms hold together (their
-/// [`heap_size`](CompressedJson::heap_size) after their last read), which
-/// the facade keeps within its limit by filling the tables of the least
-/// recently used and dropping them. A form dropped while a run holds it is
-/// no longer counted; it is freed when the run ends.
+/// [`heap_size`](CompressedJson::heap_size) after their last read or run,
+/// which counts the tallies a run kept with a form), which the facade
+/// keeps within its limit by filling the tables of the least recently used
+/// and dropping them. A form dropped while a run holds it is no longer
+/// counted; it is freed when the run ends.
 #[wasm_bindgen(js_name = jsonHeld)]
 pub fn json_held() -> f64 {
     HELD.with(Cell::get) as f64
+}
+
+/// The bytes of compressed form `id` as [`json_held`] counts them, or
+/// `undefined` for an id that is gone: what a run kept with it is counted
+/// when the run ends ([`recount`]), so the facade asks after each run.
+#[wasm_bindgen(js_name = jsonBytes)]
+pub fn json_bytes(id: f64) -> Option<f64> {
+    SAMPLES.with(|all| all.borrow().get(id).map(|samples| samples.bytes as f64))
+}
+
+/// Counts the bytes of the compressed forms `ids` again, after a run that
+/// used them: it may have kept the tallies it made of them (a form a run
+/// holds takes no samples, so nothing else changes it meanwhile).
+pub fn recount(ids: &[f64]) {
+    SAMPLES.with(|all| {
+        let mut all = all.borrow_mut();
+        for &id in ids {
+            let Some(samples) = all.get_mut(id) else {
+                continue;
+            };
+            let Some(cjson) = &samples.cjson else {
+                continue;
+            };
+            let bytes = cjson.heap_size();
+            HELD.with(|held| held.set(held.get() + bytes - samples.bytes));
+            samples.bytes = bytes;
+        }
+    });
 }
 
 /// The tables of compressed form `id` as the JavaScript `CompressedJSON`
@@ -281,7 +316,7 @@ pub fn json_acquire(id: f64) -> Option<f64> {
         let all = all.borrow();
         Some(Rc::clone(all.get(id)?.cjson.as_ref()?))
     })?;
-    LEASES.with(|leases| leases.borrow_mut().insert(cjson).ok())
+    LEASES.with(|leases| leases.borrow_mut().insert((id, cjson)).ok())
 }
 
 /// Lets go of a lease whose run did not start.
@@ -290,9 +325,9 @@ pub fn json_release(lease: f64) {
     drop(take_lease(lease));
 }
 
-/// The compressed form a lease holds, for the run that carries it; the
-/// lease is gone afterwards.
-pub fn take_lease(lease: f64) -> Option<Rc<CompressedJson>> {
+/// The compressed form a lease holds, and its id, for the run that carries
+/// it; the lease is gone afterwards.
+pub fn take_lease(lease: f64) -> Option<(f64, Rc<CompressedJson>)> {
     LEASES.with(|leases| leases.borrow_mut().remove(lease))
 }
 
@@ -386,7 +421,8 @@ mod tests {
         let other = create("default", None, None);
         assert!(json_read(other, r#"{"b": "x"}"#) > 0);
         assert!(json_read(id, "[]") == DECLINED);
-        let held = take_lease(lease).unwrap();
+        let (form, held) = take_lease(lease).unwrap();
+        assert_eq!(form, id);
         let (tables, _) = held.to_tables(&[]);
         assert_eq!(tables.strings, ["a"]);
         assert!(take_lease(lease).is_none());
@@ -443,6 +479,79 @@ mod tests {
         assert!(json_read(a, "[4]") > 0);
         json_drop(a);
         json_drop(b);
+    }
+
+    /// A run keeps the tallies it made of a form with it: they are counted
+    /// in the form's bytes once the run ends, the next run over the same
+    /// samples uses them, and the next sample read drops them.
+    #[test]
+    fn kept_tallies_are_counted() {
+        use quicktype_core::input::inputs::{CompressedTopLevel, JsonInference, JsonInput};
+        use quicktype_core::ty::type_builder::TypeBuilder;
+        use quicktype_core::{InferenceFlags, RunContext, get_target_language};
+
+        let before = json_held();
+        let id = create("default", None, None);
+        let records: Vec<String> = (0..2_000)
+            .map(|i| {
+                format!(
+                    r#"{{"id": {i}, "name": "n{}", "home": "https://h/{}.png"}}"#,
+                    i % 9,
+                    i % 5
+                )
+            })
+            .collect();
+        let root = json_read(id, &format!("[{}]", records.join(",")));
+        assert!(root > 0);
+        let read = json_bytes(id).unwrap();
+        let lang = get_target_language("go").unwrap();
+        let ctx = RunContext::for_target_language(lang, &InferenceFlags::default());
+        // A run: a lease, an input over the form, its inference.
+        let run = || {
+            let (form, cjson) = take_lease(json_acquire(id).unwrap()).unwrap();
+            let mut input = JsonInput::from_shared(
+                cjson,
+                vec![CompressedTopLevel {
+                    name: "T".to_owned(),
+                    description: None,
+                    samples: vec![root],
+                }],
+            )
+            .unwrap();
+            let mut builder =
+                TypeBuilder::new(ctx.string_type_mapping.clone(), false, false, false, false)
+                    .unwrap();
+            input
+                .add_types_sync(&ctx, &mut builder, true, true, false)
+                .unwrap();
+            let graph = format!("{:?}", builder.finish().unwrap());
+            let inferred_from = input.inferred_from();
+            drop(input);
+            recount(&[form]);
+            (graph, inferred_from)
+        };
+        let (first, from) = run();
+        assert_eq!(from, Some(JsonInference::CompressedTallies));
+        let kept = json_bytes(id).unwrap();
+        assert!(kept > read, "{kept} against {read}");
+        assert_eq!(kept, form(id).heap_size() as f64);
+        assert_eq!(json_held() - before, kept);
+        let (second, from) = run();
+        assert_eq!(from, Some(JsonInference::KeptTallies));
+        assert_eq!(second, first);
+        assert_eq!(json_bytes(id), Some(kept));
+        // A sample read drops them.
+        assert!(json_read(id, "[1]") > 0);
+        let after = json_bytes(id).unwrap();
+        assert!(after < kept, "{after} against {kept}");
+        assert_eq!(after, form(id).heap_size() as f64);
+        assert_eq!(json_held() - before, after);
+        // And dropping the form drops what it holds, tallies and all.
+        let (_, from) = run();
+        assert_eq!(from, Some(JsonInference::CompressedTallies));
+        json_drop(id);
+        assert_eq!(json_held(), before);
+        assert_eq!(json_bytes(id), None);
     }
 
     /// What the forms hold is counted as they grow and as they go.

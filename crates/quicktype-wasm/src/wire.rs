@@ -72,6 +72,8 @@ pub enum InputRequest {
     /// A `JSONInput` whose samples the engine read as they were added
     /// ([`crate::samples`]).
     JsonShared {
+        /// The compressed form's id ([`crate::samples`]).
+        form: f64,
         /// The compressed samples.
         compressed_json: Rc<CompressedJson>,
         /// `_topLevels`, in insertion order (no sample is a string).

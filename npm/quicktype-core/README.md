@@ -190,9 +190,10 @@ every sample with TypeScript.
 WebAssembly memory never shrinks, so a long-running process cannot count
 on its inputs being collected before the engine runs out of its 4 GiB. The
 compressed forms in an instance are therefore kept within **256 MiB**
-together, as the engine counts them (the capacities of their tables,
-`jsonHeld`), all but the one a sample was just read into, which stays
-however large. After a sample is read, if the others are past that limit,
+together, as the engine counts them (the capacities of their tables, and
+the tallies a run kept with them, below; `jsonHeld`), all but the one a
+sample was just read into or a run just used, which stays however large.
+After a sample is read or a run ends, if the others are past that limit,
 they are kept most recently used (read into, or leased by a run) first,
 each one as long as it still fits beside those kept before it, and the
 rest are evicted. So a form past the limit on its own (a large input read
@@ -276,8 +277,11 @@ limit it grew by 2.2 MiB per input, to 539 MiB.)
   form, made in one walk over it when the run starts, which give the
   types quicktype infers from its values
   ([docs/STREAMING-INFERENCE.md](../../docs/STREAMING-INFERENCE.md),
-  "Tallies of a compressed form"); the tallies are freed when inference
-  ends, so the form is all the engine keeps of an input. Reading samples
+  "Tallies of a compressed form"). The engine keeps those tallies with
+  the form, so that the next run over the same samples (the same input,
+  another language or other options) skips the walk, until a sample is
+  read into the form; they count in the form's bytes, and evicting the
+  form drops them. Reading samples
   prints nothing and reports no timing in TypeScript, nor here; a run's
   `read input` timing covers inference in both. `quicktypeMultiFileSync` uses the shared samples like
   `quicktype()`; where the engine is not compiled yet, samples are read

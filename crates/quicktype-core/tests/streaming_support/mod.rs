@@ -10,7 +10,7 @@ pub mod generator;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use quicktype_core::input::inputs::{InputData, JsonInput, JsonSourceData};
+use quicktype_core::input::inputs::{InputData, JsonInference, JsonInput, JsonSourceData};
 use quicktype_core::ty::transformed_string_type::TypeKind;
 use quicktype_core::ty::ty::Type;
 use quicktype_core::ty::type_builder::TypeBuilder;
@@ -93,8 +93,9 @@ pub enum Inference {
     /// CLI's).
     RunningTallies,
     /// From tallies of the compressed form the readers made, made when the
-    /// types are inferred: the WebAssembly engine's, for the samples it
-    /// read (`JsonInput::from_shared`).
+    /// types are inferred and kept with the form for the next inference:
+    /// the WebAssembly engine's, for the samples it read
+    /// (`JsonInput::from_shared`).
     CompressedTallies,
     /// The same of that form's tables, exported and imported again: the
     /// WebAssembly engine's, for the tables of a JavaScript
@@ -112,6 +113,23 @@ pub enum Path {
     CompressedTallies,
     /// All of them.
     All,
+}
+
+impl Inference {
+    /// Where an input made for this way infers its types from, the first
+    /// time or later: the forms the readers made, and their tables, are
+    /// always tallied (never declined for values no reader makes), and the
+    /// tallies kept with a form are used from the second time on.
+    fn inferred_from(self, first: bool) -> JsonInference {
+        match self {
+            Inference::Reference => JsonInference::CompressedValues,
+            Inference::RunningTallies => JsonInference::RunningTallies,
+            Inference::CompressedTallies if !first => JsonInference::KeptTallies,
+            Inference::CompressedTallies | Inference::ImportedTables => {
+                JsonInference::CompressedTallies
+            }
+        }
+    }
 }
 
 impl Path {
@@ -171,7 +189,10 @@ fn input(
     }
     match inference {
         Some(Inference::Reference) => input.set_tally_compressed(false),
-        Some(Inference::CompressedTallies) => input.set_tally_compressed(true),
+        Some(Inference::CompressedTallies) => {
+            input.set_tally_compressed(true);
+            input.set_keep_tallies(true);
+        }
         Some(Inference::ImportedTables) => {
             let (tables, top_levels) = input.to_compressed().expect("the compressed form");
             input = JsonInput::from_compressed(
@@ -202,7 +223,7 @@ struct GraphFlags {
 /// The type graph right after inference.
 fn graph_of(
     lang: &dyn TargetLanguage,
-    input: &mut InputData,
+    input: &mut JsonInput,
     flags: GraphFlags,
 ) -> quicktype_core::Result<TypeGraph> {
     let mut inference_flags = InferenceFlags::default();
@@ -270,7 +291,7 @@ fn has_set_operation_cycle(graph: &TypeGraph) -> bool {
 }
 
 /// The type graph right after inference, printed with every detail.
-fn graph(lang: &dyn TargetLanguage, input: &mut InputData, flags: GraphFlags) -> String {
+fn graph(lang: &dyn TargetLanguage, input: &mut JsonInput, flags: GraphFlags) -> String {
     match graph_of(lang, input, flags) {
         Ok(graph) => format!("{graph:?}"),
         Err(e) => format!("error {e:?}"),
@@ -330,11 +351,17 @@ pub fn language(name: &str) -> &'static dyn TargetLanguage {
 /// What one seed compared.
 #[derive(Default, Debug)]
 pub struct Stats {
+    /// Graphs compared with the reference's: one per combination of the
+    /// inference flags and way of inferring.
     pub graphs: u64,
+    /// Whole runs (a case, a language and an option set) whose every way
+    /// of inferring was compared with the reference: one each, however
+    /// many ways.
     pub runs: u64,
     /// Whole runs not made: a `$ref` cycle through unions (see
     /// `has_set_operation_cycle`).
     pub skipped_runs: u64,
+    /// Of `runs`, those that failed (alike on every way).
     pub failed_runs: u64,
     pub source_errors: u64,
 }
@@ -350,7 +377,7 @@ fn compare_graphs(
     path: Path,
 ) -> Result<(), String> {
     let renderer_options = RendererOptions::new();
-    let (reference, reference_sources) =
+    let (mut reference, reference_sources) =
         input(case, lang, &renderer_options, Some(Inference::Reference));
     let mut tested = Vec::new();
     for &inference in path.tested() {
@@ -360,23 +387,33 @@ fn compare_graphs(
                 "add_source differs\n  {inference:?}: {sources:?}\n  reference: {reference_sources:?}"
             ));
         }
-        let mut data = InputData::new();
-        data.add_input(input);
-        tested.push((inference, data));
+        tested.push((inference, input));
     }
     stats.source_errors += reference_sources
         .iter()
         .filter(|r| r.starts_with("Err"))
         .count() as u64;
-    let mut reference_data = InputData::new();
-    reference_data.add_input(reference);
-    for &flags in flags {
+    // Each way must have inferred as it says, not fallen back to the
+    // values (which would compare the reference with itself).
+    let check_path = |inference: Inference, input: &JsonInput, first: bool| {
+        let expected = inference.inferred_from(first);
+        match input.inferred_from() {
+            Some(actual) if actual == expected => Ok(()),
+            actual => Err(format!(
+                "{inference:?} inferred from {actual:?}, not {expected:?} ({})",
+                lang.name()
+            )),
+        }
+    };
+    for (i, &flags) in flags.iter().enumerate() {
         if std::env::var_os("QUICKTYPE_STREAMING_TRACE").is_some() {
             eprintln!("  graph {} {flags:?}", lang.name());
         }
-        let b = graph(lang, &mut reference_data, flags);
-        for (inference, data) in &mut tested {
-            let a = graph(lang, data, flags);
+        let b = graph(lang, &mut reference, flags);
+        check_path(Inference::Reference, &reference, i == 0)?;
+        for (inference, input) in &mut tested {
+            let a = graph(lang, input, flags);
+            check_path(*inference, input, i == 0)?;
             if a != b {
                 return Err(format!(
                     "graphs differ ({}, {flags:?})\n  {inference:?}: {a}\n  reference: {b}",
@@ -399,14 +436,12 @@ fn compare_run(
     path: Path,
 ) -> Result<(), String> {
     if case.handle_refs {
-        let (input, _) = input(
+        let (mut input, _) = input(
             case,
             lang,
             &RendererOptions::new(),
             Some(Inference::Reference),
         );
-        let mut data = InputData::new();
-        data.add_input(input);
         let flags = GraphFlags {
             infer_maps: option_set != "--no-maps",
             infer_enums: option_set != "--no-enums",
@@ -415,7 +450,7 @@ fn compare_run(
             all_optional: false,
             no_date_times: false,
         };
-        if graph_of(lang, &mut data, flags).is_ok_and(|g| has_set_operation_cycle(&g)) {
+        if graph_of(lang, &mut input, flags).is_ok_and(|g| has_set_operation_cycle(&g)) {
             stats.skipped_runs += 1;
             return Ok(());
         }
@@ -432,10 +467,10 @@ fn compare_run(
                 lang.name()
             ));
         }
-        stats.runs += 1;
-        if b.1.is_err() {
-            stats.failed_runs += 1;
-        }
+    }
+    stats.runs += 1;
+    if b.1.is_err() {
+        stats.failed_runs += 1;
     }
     Ok(())
 }
@@ -579,7 +614,7 @@ pub fn check_light(case: &Case) -> Result<Stats, String> {
 /// flags.
 pub fn graph_text(case: &Case) -> String {
     let lang = language("typescript");
-    let (input, sources) = input(
+    let (mut input, sources) = input(
         case,
         lang,
         &RendererOptions::new(),
@@ -588,11 +623,9 @@ pub fn graph_text(case: &Case) -> String {
     if let Some(failed) = sources.iter().find(|result| result.starts_with("Err")) {
         return format!("error adding a source: {failed}");
     }
-    let mut data = InputData::new();
-    data.add_input(input);
     graph(
         lang,
-        &mut data,
+        &mut input,
         GraphFlags {
             infer_maps: true,
             infer_enums: true,

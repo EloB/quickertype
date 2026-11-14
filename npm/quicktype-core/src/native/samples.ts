@@ -87,7 +87,8 @@ interface NativeSamples {
     textLength: number;
     /**
      * The bytes of its form, as `jsonHeld` counts them: what it added to
-     * that count when it was created and with each read (`evict`).
+     * that count when it was created and with each read (`evict`), and
+     * after each run (`afterRun`).
      */
     bytes: number;
     /** The table fields as they were (empty), restored by `materialize`. */
@@ -116,7 +117,8 @@ export function setKeptTexts(codeUnits: number): number {
 
 /**
  * The most bytes the compressed forms in an engine instance may hold
- * together (`jsonHeld`, the capacities of their tables), but for the one
+ * together (`jsonHeld`, the capacities of their tables and the tallies
+ * runs kept with them, see `afterRun`), but for the one
  * a sample was just read into, before the least recently used are evicted
  * (`evict`): 256 MiB. That is the form of about 190 MB of JSON samples (a
  * 104 MB sample takes 138 MiB), more than the inputs of nearly any
@@ -489,9 +491,11 @@ function start(cjson: any, text: string): NativeSamples | undefined {
 
 /**
  * Keeps the forms in `current`'s engine instance within `heldLimit`
- * bytes after a sample was read into `current` (when the instance holds
- * `held` bytes in all). `current` itself is exempt, however large: the
- * limit is on the others together. If they are past it, they are kept
+ * bytes after a sample was read into the one form of `current`, or a run
+ * used the forms of `current` (when the instance holds `held` bytes in
+ * all, and `current` their bytes up to date). `current` is exempt,
+ * however large: the limit is on the others together. If they are past
+ * it, they are kept
  * most recently used first, each one as long as it still fits beside
  * those kept before it, and the others are evicted. So a form past the
  * limit on its own (one large input read in many samples, say) evicts
@@ -507,15 +511,16 @@ function start(cjson: any, text: string): NativeSamples | undefined {
  * is the whole loop. So the tables of one that is gone are exported too,
  * where the garbage collector sees them, and collected with it.
  */
-function evict(current: NativeSamples, held: number): void {
-    const { glue } = current;
+function evict(current: NativeSamples[], held: number): void {
+    if (current.length === 0) return;
+    const { glue } = current[0];
     // The bytes of the others not looked at yet, and of those kept.
-    let rest = held - current.bytes;
+    let rest = held - current.reduce((sum, state) => sum + state.bytes, 0);
     let kept = 0;
     if (rest <= heldLimit) return;
     try {
         for (const state of [...recent].reverse()) {
-            if (state === current || state.glue !== glue) continue;
+            if (current.includes(state) || state.glue !== glue) continue;
             if (kept + rest <= heldLimit) return;
             rest -= state.bytes;
             if (kept + state.bytes <= heldLimit) {
@@ -722,6 +727,35 @@ export function leaseSamples(cjson: any, glue: WasmGlue | undefined, roots: numb
 }
 
 /**
+ * After a run on `glue` that used the forms of `cjsons` (`leaseSamples`):
+ * their bytes as the engine counts them now, and then the other forms
+ * kept within `heldLimit`, with all of these the ones in use. A run keeps
+ * the tallies it inferred the types from with each form, for the next run
+ * on the same samples (the next sample read into it drops them), and the
+ * engine counts them in the form's bytes when the run ends (`jsonBytes`).
+ * Every form's bytes are taken up before any eviction, which would
+ * otherwise count one form's new tallies against the others.
+ */
+export function afterRun(glue: WasmGlue, cjsons: object[]): void {
+    if (isDiscarded(glue)) return;
+    const used: NativeSamples[] = [];
+    try {
+        for (const cjson of cjsons) {
+            const state = states.get(cjson);
+            if (state === undefined || state.glue !== glue || state.exported !== undefined || used.includes(state)) continue;
+            const bytes = glue.jsonBytes(state.id);
+            if (bytes === undefined) continue;
+            state.bytes = bytes;
+            used.push(state);
+        }
+
+        evict(used, glue.jsonHeld());
+    } catch (e) {
+        engineFailed(glue, e);
+    }
+}
+
+/**
  * Lets go of the leases of a run that is not going to `glue` after all,
  * or that started there (a lease the run took over is gone already).
  */
@@ -792,7 +826,7 @@ function readSample(cjson: any, text: unknown): number | undefined {
         }
 
         touch(state);
-        evict(state, held);
+        evict([state], held);
         return value;
     }
 

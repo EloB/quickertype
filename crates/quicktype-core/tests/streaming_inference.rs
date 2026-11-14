@@ -5,9 +5,8 @@
 //! the type graph right after inference for every combination of the
 //! inference flags, and a whole run for a language and option set).
 //!
-//! `tallies_infer_what_the_compressed_form_infers` and
-//! `compressed_tallies_infer_what_the_compressed_form_infers` check a few
-//! thousand seeds; `cargo xtask streaming-fuzz` runs the ignored `fuzz`
+//! `tallies_infer_what_the_compressed_form_infers` checks a few thousand
+//! seeds every way; `cargo xtask streaming-fuzz` runs the ignored `fuzz`
 //! test over millions (`QUICKTYPE_STREAMING_SEEDS`,
 //! `QUICKTYPE_STREAMING_START`, `QUICKTYPE_STREAMING_JOBS`; per seed
 //! `QUICKTYPE_STREAMING_GRAPHS` graphs and `QUICKTYPE_STREAMING_RUNS` whole
@@ -85,6 +84,10 @@ fn check_seeds(
     }
 }
 
+/// Every way against the reference, which each seed computes once:
+/// running tallies (the CLI's), and tallies of the compressed form as the
+/// readers made it and as tables imported from JavaScript (the WebAssembly
+/// engine's).
 #[test]
 fn tallies_infer_what_the_compressed_form_infers() {
     let effort = Effort {
@@ -92,19 +95,7 @@ fn tallies_infer_what_the_compressed_form_infers() {
         runs: 1,
         runs_every: 1,
     };
-    check_seeds(3_000, CI_LIMITS, effort, false, Path::RunningTallies);
-}
-
-/// The WebAssembly engine's path: tallies of the compressed form, as the
-/// readers made it and as tables imported from JavaScript.
-#[test]
-fn compressed_tallies_infer_what_the_compressed_form_infers() {
-    let effort = Effort {
-        graphs: 5,
-        runs: 1,
-        runs_every: 1,
-    };
-    check_seeds(3_000, CI_LIMITS, effort, false, Path::CompressedTallies);
+    check_seeds(3_000, CI_LIMITS, effort, false, Path::All);
 }
 
 /// The long run (`cargo xtask streaming-fuzz`).

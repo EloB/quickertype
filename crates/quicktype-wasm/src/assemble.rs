@@ -68,6 +68,7 @@ pub fn assemble(request: Request, host: Rc<dyn RunHost>) -> Result<Options<'stat
             InputRequest::JsonShared {
                 compressed_json,
                 top_levels,
+                ..
             } => {
                 input_data.add_input(JsonInput::from_shared(compressed_json, top_levels)?);
             }

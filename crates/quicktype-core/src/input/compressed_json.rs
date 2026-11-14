@@ -45,6 +45,7 @@ use hashbrown::HashTable;
 use quicktype_js_compat::json::{self, JsonValue};
 use quicktype_js_compat::utf16;
 
+use super::tallies::KeptTallies;
 use crate::attributes::string_types::infer_transformed_string_type_kind_for_string;
 use crate::date_time::DateTimeRecognizer;
 use crate::messages::{JsErrorName, JsException, QuickTypeError, Result};
@@ -207,6 +208,10 @@ pub struct CompressedJson {
     kind_names: Vec<u32>,
     /// What [`parse_string`](Self::parse_string) keeps between samples.
     string_reader: from_string::StringReaderState,
+    /// The tallies a JSON input made of samples of this form and keeps
+    /// with it for the next inference over them (see
+    /// `JsonInput::set_keep_tallies`); dropped when a sample is added.
+    kept_tallies: RefCell<Option<Rc<KeptTallies>>>,
 }
 
 /// No string index (yet).
@@ -351,6 +356,8 @@ pub(crate) struct Strings {
     /// Whether a text other than `"__proto__"` is in the table more than
     /// once (only an imported table can have that).
     duplicates: bool,
+    /// Whether `"__proto__"` is in the table.
+    protos: bool,
 }
 
 impl Strings {
@@ -361,6 +368,7 @@ impl Strings {
             indexes: HashTable::new(),
             hasher: BuildHasher::default(),
             duplicates: false,
+            protos: false,
         }
     }
 
@@ -436,6 +444,7 @@ impl Strings {
     /// Appends `s`, registered for lookups under `hash` if given; returns
     /// its index.
     fn append(&mut self, s: &str, hash: Option<u64>) -> u32 {
+        self.protos |= s == "__proto__";
         let index = self.spans.len() as u32;
         let fits = self
             .blocks
@@ -513,6 +522,7 @@ impl CompressedJson {
             key_stack: String::new(),
             kind_names: Vec::new(),
             string_reader: from_string::StringReaderState::default(),
+            kept_tallies: RefCell::new(None),
         }
     }
 
@@ -619,12 +629,24 @@ impl CompressedJson {
         self.strings.get(index as usize)
     }
 
+    /// The string table: the text of the keys and cases of the tallies
+    /// made of this form (see `tallies::tally_compressed`).
+    pub(crate) fn strings(&self) -> &Strings {
+        &self.strings
+    }
+
     /// Whether every text but `"__proto__"` is in the string table at most
     /// once, so that a string is known by its index: always for samples
     /// read here, as in TypeScript, whose `internString` interns every
     /// text once but `"__proto__"`; for imported tables, if they are such.
     pub(crate) fn unique_strings(&self) -> bool {
         !self.strings.duplicates
+    }
+
+    /// Whether `"__proto__"` is in the string table (a key or string of
+    /// the samples was, and only then).
+    pub(crate) fn has_proto_strings(&self) -> bool {
+        self.strings.protos
     }
 
     /// `getObjectForValue(v)`: the object's key/value pairs, in the order
@@ -793,6 +815,8 @@ impl CompressedJson {
 
     /// `finish()`: the root value of the sample just read.
     pub fn finish(&mut self) -> Result<Value> {
+        // A sample was added: the kept tallies are of fewer.
+        *self.kept_tallies.get_mut() = None;
         // The buffers are kept for one sample at a time.
         self.spare_objects = Vec::new();
         self.spare_arrays = Vec::new();
@@ -898,6 +922,7 @@ impl CompressedJson {
     /// read further samples (the TypeScript leaves the state as is; it is
     /// never used again because the error ends the run).
     pub fn reset_partial_sample(&mut self) {
+        *self.kept_tallies.get_mut() = None;
         self.spare_objects = Vec::new();
         self.spare_arrays = Vec::new();
         self.root_value = None;
@@ -1180,8 +1205,9 @@ impl CompressedJson {
 
     /// About how many bytes of memory this compressed form holds: itself
     /// and the capacity of every buffer it owns (not what the allocator
-    /// adds to them), for whoever bounds the memory compressed forms take
-    /// (the WebAssembly engine keeps the forms of many inputs).
+    /// adds to them), with the tallies an input keeps with it, for whoever
+    /// bounds the memory compressed forms take (the WebAssembly engine
+    /// keeps the forms of many inputs).
     pub fn heap_size(&self) -> usize {
         std::mem::size_of::<Self>()
             + self.strings.heap_size()
@@ -1193,6 +1219,22 @@ impl CompressedJson {
             + self.key_stack.capacity()
             + vec_size(&self.kind_names)
             + self.string_reader.heap_size()
+            + self
+                .kept_tallies
+                .borrow()
+                .as_ref()
+                .map_or(0, |kept| kept.heap_size())
+    }
+
+    /// The tallies a JSON input keeps with this form, if any.
+    pub(crate) fn kept_tallies(&self) -> Option<Rc<KeptTallies>> {
+        self.kept_tallies.borrow().clone()
+    }
+
+    /// Keeps `kept` with this form (instead of what was kept), for the
+    /// next inference over the same samples.
+    pub(crate) fn keep_tallies(&self, kept: Option<Rc<KeptTallies>>) {
+        *self.kept_tallies.borrow_mut() = kept;
     }
 }
 

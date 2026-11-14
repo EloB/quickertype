@@ -38,12 +38,15 @@
 #[cfg(test)]
 use std::cell::Cell;
 use std::fmt;
+use std::mem::size_of;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
 use quicktype_js_compat::utf16;
 
-use super::compressed_json::{CompressedJson, JsonSink, StringReaderState, Strings, Value};
+use super::compressed_json::{
+    CompressedJson, JsonSink, StringReaderState, Strings, TableCounts, Value, vec_size,
+};
 use crate::attributes::string_types::{
     StringTypes, StringTypesTypeAttributeKind, infer_transformed_string_type_kind_for_string,
 };
@@ -142,8 +145,8 @@ pub(crate) struct StringTally {
     /// Whether some string here is not interned (the `$ref` check).
     pub(crate) not_interned: bool,
     /// What `with_enums` and `without_enums` are known to absorb, as bits
-    /// (see [`add_unrestricted_once`]); only the walk over a compressed
-    /// form sets them, and a merge keeps them true.
+    /// (see [`add_unrestricted_once`]), which the values' combinations
+    /// set; a merge keeps those of both tallies.
     absorbed: [u32; 2],
 }
 
@@ -198,6 +201,7 @@ fn absorbs_transformation(kind: TypeKind) -> u32 {
 /// unrestricted if either is, and unites the transformations), so once
 /// the combined string types absorb an addition they always do, and the
 /// bit records that instead of looking at them for every value.
+#[inline(always)]
 fn add_unrestricted_once(combined: &mut Option<TypeAttributes>, absorbed: &mut u32) -> Result<()> {
     if *absorbed & ABSORBS_UNRESTRICTED != 0 {
         return Ok(());
@@ -209,6 +213,7 @@ fn add_unrestricted_once(combined: &mut Option<TypeAttributes>, absorbed: &mut u
 
 /// [`add_transformation`], skipped once `absorbed` says the string types
 /// allow `kind` or are unrestricted (see [`add_unrestricted_once`]).
+#[inline(always)]
 fn add_transformation_once(
     combined: &mut Option<TypeAttributes>,
     absorbed: &mut u32,
@@ -332,6 +337,44 @@ fn take_combined(
 }
 
 impl StringTally {
+    /// What an interned string (`Tag.InternedString`) adds besides its
+    /// case: an unrestricted string, without enum inference.
+    #[inline(always)]
+    fn add_interned(&mut self) -> Result<()> {
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+    }
+
+    /// A string too long to intern (`Tag.UninternedString`).
+    #[inline(always)]
+    fn add_uninterned(&mut self) -> Result<()> {
+        self.not_interned = true;
+        add_unrestricted_once(&mut self.with_enums, &mut self.absorbed[0])?;
+        add_unrestricted_once(&mut self.without_enums, &mut self.absorbed[1])
+    }
+
+    /// A string of a transformed kind without attribute producer
+    /// (`Tag.StringFormat`).
+    #[inline(always)]
+    fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
+        self.not_interned = true;
+        add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
+        add_transformation_once(&mut self.without_enums, &mut self.absorbed[1], kind)
+    }
+
+    /// A string of a transformed kind with an attribute producer (`uri`,
+    /// `Tag.TransformedString`): the producer's attributes, then the kind.
+    fn add_transformed_string(
+        &mut self,
+        kind: TypeKind,
+        attributes: &TypeAttributes,
+    ) -> Result<()> {
+        self.not_interned = true;
+        add_produced(&mut self.with_enums, attributes)?;
+        add_transformation_once(&mut self.with_enums, &mut self.absorbed[0], kind)?;
+        add_produced(&mut self.without_enums, attributes)?;
+        add_transformation_once(&mut self.without_enums, &mut self.absorbed[1], kind)
+    }
+
     /// The fallible part of appending `other`'s strings after these: the
     /// combined attributes, computed without changing anything.
     fn combined_with(&self, other: &StringTally) -> Result<Combined> {
@@ -355,6 +398,10 @@ impl StringTally {
             without_enums,
         );
         self.not_interned |= other.not_interned;
+        // What either combination absorbs, their union does.
+        for (absorbed, other) in self.absorbed.iter_mut().zip(other.absorbed) {
+            *absorbed |= other;
+        }
     }
 }
 
@@ -521,17 +568,14 @@ pub(crate) struct Node {
     pub(crate) object: Option<Box<ObjectTally>>,
 }
 
-/// The nodes of all tallies of a JSON input, and the text of their keys
-/// and string cases.
+/// The nodes of all tallies of a JSON input. Keys and string cases are
+/// string ids, whose text is in a string table beside them: the
+/// [`RunningTallies`]' own, or the compressed form's for the tallies of a
+/// compressed form ([`tally_compressed`]).
 pub(crate) struct Tallies {
     nodes: Vec<Node>,
     /// Nodes no tree uses any more, for reuse.
     free: Vec<NodeId>,
-    strings: Strings,
-    /// For the tallies of a compressed form ([`tally_compressed`]): that
-    /// form, whose string table holds the keys and cases instead of
-    /// `strings`.
-    texts: Option<Rc<CompressedJson>>,
     /// Emptied string and object tallies, for reuse: each sample is read
     /// into a tree of its own, which merging empties. Boxed as the nodes
     /// hold them, so that reusing one moves a pointer.
@@ -539,12 +583,49 @@ pub(crate) struct Tallies {
     spare_strings: Vec<Box<StringTally>>,
     #[allow(clippy::vec_box)]
     spare_objects: Vec<Box<ObjectTally>>,
-    /// What the `JSON.parse` reader keeps between samples.
-    string_reader: StringReaderState,
+    /// Where string cases were counted last ([`CaseSlot`]); empty until
+    /// the first case, then [`CASE_SLOTS`] long.
+    case_slots: Vec<CaseSlot>,
     /// Makes the next [`merge`](Self::merge) fail after planning this many
     /// steps (for tests).
     #[cfg(test)]
     pub(crate) fail_merge_at: Cell<Option<usize>>,
+}
+
+/// The running tallies of a JSON input's samples (see [`TallyBuilder`]),
+/// and the text of their keys and string cases.
+pub(crate) struct RunningTallies {
+    pub(crate) tallies: Tallies,
+    /// The text of the keys and string cases, by the ids the tallies know
+    /// them by.
+    pub(crate) strings: Strings,
+    /// What the `JSON.parse` reader keeps between samples.
+    string_reader: StringReaderState,
+}
+
+impl RunningTallies {
+    pub(crate) fn new() -> Self {
+        RunningTallies {
+            tallies: Tallies::new(),
+            strings: Strings::new(),
+            string_reader: StringReaderState::default(),
+        }
+    }
+
+    /// The tree at `node` with keys and cases as text (for tests).
+    #[cfg(test)]
+    pub(crate) fn dump(&self, node: NodeId) -> String {
+        self.tallies.dump(&self.strings, node)
+    }
+}
+
+impl fmt::Debug for RunningTallies {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RunningTallies")
+            .field("tallies", &self.tallies)
+            .field("strings", &self.strings.len())
+            .finish_non_exhaustive()
+    }
 }
 
 /// One pair of places [`Tallies::merge`] joins: the values at `from` are
@@ -560,8 +641,102 @@ impl fmt::Debug for Tallies {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Tallies")
             .field("nodes", &(self.nodes.len() - self.free.len()))
-            .field("strings", &self.strings.len())
             .finish_non_exhaustive()
+    }
+}
+
+/// About how many bytes `map`'s buffers take: its entries (each with its
+/// hash) and its index table (an index and a control byte per bucket).
+fn map_size<K, V, S>(map: &IndexMap<K, V, S>) -> usize {
+    map.capacity() * (size_of::<(u64, K, V)>() + size_of::<usize>() + 1)
+}
+
+fn string_tally_size(tally: &StringTally) -> usize {
+    size_of::<StringTally>() + map_size(&tally.cases)
+}
+
+fn object_tally_size(tally: &ObjectTally) -> usize {
+    size_of::<ObjectTally>() + map_size(&tally.keys) + vec_size(&tally.proto_runs)
+}
+
+/// The tallies of a compressed form's top-levels ([`tally_compressed`]).
+pub(crate) struct FormTallies {
+    pub(crate) tallies: Tallies,
+    /// Each top-level's tree, in order.
+    pub(crate) roots: Vec<NodeId>,
+}
+
+/// What the walk made of a compressed form's samples, kept with the form
+/// ([`CompressedJson::kept_tallies`]) for the next inference over the same
+/// samples (`JsonInput::set_keep_tallies`): their tallies, or that the walk
+/// declined them. A form only ever grows, and what is in it never changes,
+/// so the walk makes the same of the same samples. Adding a sample drops
+/// this, since the next inference will most likely be over more samples.
+pub(crate) struct KeptTallies {
+    /// Each top-level's samples, as they were walked: the input's own
+    /// lists, shared, not copies.
+    samples: Vec<Rc<Vec<Value>>>,
+    /// Their tallies; `None` if the walk declined them.
+    tallied: Option<Rc<FormTallies>>,
+    /// About how many bytes this holds.
+    bytes: usize,
+}
+
+impl KeptTallies {
+    /// What the walk made of the samples `top_levels` (`None` for a
+    /// decline), to keep.
+    pub(crate) fn new(
+        tallied: Option<FormTallies>,
+        top_levels: impl IntoIterator<Item = Rc<Vec<Value>>>,
+    ) -> Self {
+        let tallied = tallied.map(|mut tallied| {
+            tallied.tallies.trim();
+            Rc::new(tallied)
+        });
+        let samples: Vec<Rc<Vec<Value>>> = top_levels.into_iter().collect();
+        // The lists count here: they outlive the input they are shared
+        // with, as long as these are kept.
+        let bytes = size_of::<Self>()
+            + tallied.as_ref().map_or(0, |t| {
+                size_of::<FormTallies>() + t.tallies.heap_size() + vec_size(&t.roots)
+            })
+            + vec_size(&samples)
+            + samples
+                .iter()
+                .map(|s| size_of::<Vec<Value>>() + vec_size(s))
+                .sum::<usize>();
+        KeptTallies {
+            samples,
+            tallied,
+            bytes,
+        }
+    }
+
+    /// The tallies; `None` if the walk declined the samples.
+    pub(crate) fn tallied(&self) -> Option<&Rc<FormTallies>> {
+        self.tallied.as_ref()
+    }
+
+    /// Whether this is what the walk made of `top_levels`' samples.
+    pub(crate) fn of<'c>(&self, top_levels: impl IntoIterator<Item = &'c [Value]>) -> bool {
+        let mut count = 0;
+        for (i, samples) in top_levels.into_iter().enumerate() {
+            // The same list (the input that made these) or an equal one.
+            let same = self
+                .samples
+                .get(i)
+                .is_some_and(|s| std::ptr::eq(s.as_slice(), samples) || s.as_slice() == samples);
+            if !same {
+                return false;
+            }
+            count += 1;
+        }
+        count == self.samples.len()
+    }
+
+    /// About how many bytes these tallies hold.
+    pub(crate) fn heap_size(&self) -> usize {
+        self.bytes
     }
 }
 
@@ -582,11 +757,9 @@ impl Tallies {
         Tallies {
             nodes: Vec::new(),
             free: Vec::new(),
-            strings: Strings::new(),
-            texts: None,
             spare_strings: Vec::new(),
             spare_objects: Vec::new(),
-            string_reader: StringReaderState::default(),
+            case_slots: Vec::new(),
             #[cfg(test)]
             fail_merge_at: Cell::new(None),
         }
@@ -597,32 +770,21 @@ impl Tallies {
         defined(self.nodes.get(id as usize))
     }
 
-    /// The text of the key or string case `id`.
-    pub(crate) fn text(&self, id: u32) -> Result<&str> {
-        match &self.texts {
-            Some(cjson) => defined(cjson.string(id)),
-            None => defined(self.strings.get(id as usize)),
-        }
-    }
-
     /// The number of nodes in use (for tests).
     #[cfg(test)]
     pub(crate) fn live_nodes(&self) -> usize {
         self.nodes.len() - self.free.len()
     }
 
-    /// The tree at `node` with keys and cases as text, independent of node
-    /// numbers (for tests).
+    /// The tree at `node` with keys and cases as their text in `strings`,
+    /// independent of node numbers (for tests).
     #[cfg(test)]
-    pub(crate) fn dump(&self, node: NodeId) -> String {
+    pub(crate) fn dump(&self, strings: &Strings, node: NodeId) -> String {
+        let text = |id: u32| strings.get(id as usize).unwrap();
         let n = self.node(node).unwrap();
         let mut out = format!("{:?}", n.kinds);
         if let Some(s) = &n.strings {
-            let cases: Vec<(&str, u64)> = s
-                .cases
-                .iter()
-                .map(|(&id, &c)| (self.text(id).unwrap(), c))
-                .collect();
+            let cases: Vec<(&str, u64)> = s.cases.iter().map(|(&id, &c)| (text(id), c)).collect();
             out += &format!(
                 " strings{cases:?} {:?} {:?} {}",
                 s.with_enums, s.without_enums, s.not_interned
@@ -633,20 +795,70 @@ impl Tallies {
             for (&id, k) in &o.keys {
                 out += &format!(
                     "{:?}×{}: {}, ",
-                    self.text(id).unwrap(),
+                    text(id),
                     k.count,
-                    self.dump(k.node)
+                    self.dump(strings, k.node)
                 );
             }
             if let Some(p) = o.proto {
-                out += &format!("__proto__: {}", self.dump(p));
+                out += &format!("__proto__: {}", self.dump(strings, p));
             }
             out += "}";
         }
         if let Some(items) = n.items {
-            out += &format!(" items [{}]", self.dump(items));
+            out += &format!(" items [{}]", self.dump(strings, items));
         }
         out
+    }
+
+    /// About how many bytes the tallies hold: their buffers and what
+    /// their nodes own (not what the allocator adds, nor the few attribute
+    /// sets of each place's strings).
+    pub(crate) fn heap_size(&self) -> usize {
+        let nodes: usize = self
+            .nodes
+            .iter()
+            .map(|n| {
+                n.strings.as_deref().map_or(0, string_tally_size)
+                    + n.object.as_deref().map_or(0, object_tally_size)
+            })
+            .sum();
+        let spares: usize = self
+            .spare_strings
+            .iter()
+            .map(|s| string_tally_size(s))
+            .chain(self.spare_objects.iter().map(|o| object_tally_size(o)))
+            .sum();
+        vec_size(&self.nodes)
+            + vec_size(&self.free)
+            + vec_size(&self.spare_strings)
+            + vec_size(&self.spare_objects)
+            + vec_size(&self.case_slots)
+            + nodes
+            + spares
+    }
+
+    /// Drops what only adding to the tallies needs (the spare tallies, the
+    /// case slots, the free list) and the room the buffers grew for (of the
+    /// nodes, and of each place's cases and keys: up to half of what they
+    /// hold), for tallies that are kept as they are. (The nodes freed for
+    /// a `__proto__` stay, empty: compacting would renumber every node,
+    /// and only a repeated `__proto__` key frees one.)
+    fn trim(&mut self) {
+        self.spare_strings = Vec::new();
+        self.spare_objects = Vec::new();
+        self.case_slots = Vec::new();
+        self.free = Vec::new();
+        self.nodes.shrink_to_fit();
+        for node in &mut self.nodes {
+            if let Some(strings) = &mut node.strings {
+                strings.cases.shrink_to_fit();
+            }
+            if let Some(object) = &mut node.object {
+                object.keys.shrink_to_fit();
+                object.proto_runs.shrink_to_fit();
+            }
+        }
     }
 
     /// A new, empty tree; returns its root.
@@ -771,11 +983,252 @@ impl Tallies {
     }
 }
 
-/// What [`CompressedTally`] knows of a string of the compressed form: not
-/// looked at yet, a text other than `"__proto__"`, or `"__proto__"`.
-const UNKNOWN: u8 = 0;
-const PLAIN: u8 = 1;
-const PROTO: u8 = 2;
+/// A key as [`Tallies::add_key`] counts it: the id of its text in the
+/// tallies' string table, which may have to be found first.
+pub(crate) trait KeyId {
+    /// Whether the key is the string `id`.
+    fn is(&self, id: u32) -> bool;
+    /// Its string id.
+    fn id(self) -> u32;
+}
+
+/// A key known by its string id (the walk's, an index of the compressed
+/// form's string table).
+impl KeyId for u32 {
+    fn is(&self, id: u32) -> bool {
+        *self == id
+    }
+
+    fn id(self) -> u32 {
+        self
+    }
+}
+
+/// A key known by its text (a reader's), found in the string table (and
+/// added to it) only when it is not the key expected.
+struct KeyText<'a> {
+    strings: &'a mut Strings,
+    text: &'a str,
+}
+
+impl KeyId for KeyText<'_> {
+    fn is(&self, id: u32) -> bool {
+        self.strings.get(id as usize) == Some(self.text)
+    }
+
+    fn id(self) -> u32 {
+        self.strings.intern_text(self.text)
+    }
+}
+
+/// How many places [`Tallies`] remembers where a string case was counted
+/// (see [`CaseSlot`]): 12 KiB, made with the first case.
+const CASE_SLOTS: usize = 1 << 10;
+
+/// Where a string case was counted last, at a slot of [`Tallies`] chosen
+/// by its string id and node: its position among the node's cases. A case
+/// that recurs at a place (an enum's) is then counted without hashing it.
+/// The slot may be another case's, or stale (its node freed and reused,
+/// its tally merged); a position is used only if the node's case there is
+/// the string, which is then its position, whatever put it there.
+#[derive(Clone, Copy, Default)]
+struct CaseSlot {
+    id: u32,
+    node: NodeId,
+    position: u32,
+}
+
+/// The slot of string `id` at `node`.
+fn case_slot(id: u32, node: NodeId) -> usize {
+    (id ^ node.wrapping_mul(0x9E37_79B9)) as usize & (CASE_SLOTS - 1)
+}
+
+/// What each value adds at the node of its place: the handlers both the
+/// [`TallyBuilder`] (for each event of a reader) and the walk over a
+/// compressed form ([`tally_compressed`], for each value the event made)
+/// call, so that they tally the same values alike. Keys and string cases
+/// are string ids.
+impl Tallies {
+    #[inline(always)]
+    fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
+        defined(self.nodes.get_mut(id as usize))
+    }
+
+    /// The strings at `node`, a new tally if there are none yet.
+    #[inline(always)]
+    fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
+        let Tallies {
+            nodes,
+            spare_strings,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        Ok(n.strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
+    }
+
+    /// A `null`, a boolean or a number, of non-string `kind`.
+    #[inline(always)]
+    pub(crate) fn add_kind(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
+        self.node_mut(node)?.kinds.add(kind);
+        Ok(())
+    }
+
+    /// An interned string (`Tag.InternedString`): the case `id`.
+    #[inline(always)]
+    pub(crate) fn add_case(&mut self, node: NodeId, id: u32) -> Result<()> {
+        let Tallies {
+            nodes,
+            spare_strings,
+            case_slots,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        let strings = n
+            .strings
+            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default());
+        if case_slots.is_empty() {
+            *case_slots = vec![CaseSlot::default(); CASE_SLOTS];
+        }
+        let slot = &mut case_slots[case_slot(id, node)];
+        match strings.cases.get_index_mut(slot.position as usize) {
+            Some((&case, count)) if slot.id == id && slot.node == node && case == id => {
+                *count += 1;
+            }
+            _ => {
+                let entry = strings.cases.entry(id);
+                *slot = CaseSlot {
+                    id,
+                    node,
+                    position: entry.index() as u32,
+                };
+                *entry.or_insert(0) += 1;
+            }
+        }
+        strings.add_interned()
+    }
+
+    /// A string too long to intern (`Tag.UninternedString`).
+    #[inline(always)]
+    pub(crate) fn add_uninterned(&mut self, node: NodeId) -> Result<()> {
+        self.strings_mut(node)?.add_uninterned()
+    }
+
+    /// A string of a transformed kind without attribute producer
+    /// (`Tag.StringFormat`).
+    #[inline(always)]
+    pub(crate) fn add_string_format(&mut self, node: NodeId, kind: TypeKind) -> Result<()> {
+        self.strings_mut(node)?.add_string_format(kind)
+    }
+
+    /// A string of a transformed kind with an attribute producer (`uri`,
+    /// `Tag.TransformedString`), which made `attributes` of it.
+    pub(crate) fn add_transformed_string(
+        &mut self,
+        node: NodeId,
+        kind: TypeKind,
+        attributes: &TypeAttributes,
+    ) -> Result<()> {
+        self.strings_mut(node)?
+            .add_transformed_string(kind, attributes)
+    }
+
+    /// An object, where it starts (`pushObjectContext`); its keys and
+    /// values follow.
+    #[inline(always)]
+    pub(crate) fn add_object(&mut self, node: NodeId) -> Result<()> {
+        let Tallies {
+            nodes,
+            spare_objects,
+            ..
+        } = self;
+        let n = defined(nodes.get_mut(node as usize))?;
+        n.kinds.add(TypeKind::Object);
+        n.object
+            .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
+            .count += 1;
+        Ok(())
+    }
+
+    /// An array, where it starts (`pushArrayContext`): returns the node of
+    /// its elements, which follow.
+    #[inline(always)]
+    pub(crate) fn add_array(&mut self, node: NodeId) -> Result<NodeId> {
+        let items = match self.node(node)?.items {
+            Some(items) => items,
+            None => {
+                let items = self.new_tree()?;
+                self.node_mut(node)?.items = Some(items);
+                items
+            }
+        };
+        self.node_mut(node)?.kinds.add(TypeKind::Array);
+        Ok(items)
+    }
+
+    /// The key `__proto__` of the object at `node` (`setPropertyKey`):
+    /// listed again at each occurrence, and only its last value counts, so
+    /// this returns a new node for its value and frees the previous one.
+    pub(crate) fn add_proto_key(&mut self, node: NodeId) -> Result<NodeId> {
+        let fresh = self.new_tree()?;
+        let object = defined(self.node_mut(node)?.object.as_mut())?;
+        object.add_proto_occurrences(1);
+        if let Some(old) = object.proto.replace(fresh) {
+            self.free_tree(old);
+        }
+        Ok(fresh)
+    }
+
+    /// A key other than `__proto__` of the object at `node`
+    /// (`setPropertyKey`), where the key at index `expected` of the place's
+    /// keys is expected: objects at one place usually list their keys in
+    /// the same order, and a key found there is counted without a lookup.
+    /// Returns the node of the key's value and the index of the key
+    /// expected next.
+    #[inline]
+    pub(crate) fn add_key(
+        &mut self,
+        node: NodeId,
+        key: impl KeyId,
+        expected: usize,
+    ) -> Result<(NodeId, usize)> {
+        let Tallies { nodes, free, .. } = self;
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        if let Some((&found, tally)) = object.keys.get_index_mut(expected)
+            && key.is(found)
+        {
+            tally.count += 1;
+            return Ok((tally.node, expected + 1));
+        }
+        let id = key.id();
+        let index = match object.keys.get_index_of(&id) {
+            Some(index) => index,
+            None => {
+                let fresh = alloc(nodes, free)?;
+                let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+                object.keys.insert(
+                    id,
+                    KeyTally {
+                        count: 0,
+                        node: fresh,
+                    },
+                );
+                object.keys.len() - 1
+            }
+        };
+        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
+        let (_, tally) = defined(object.keys.get_index_mut(index))?;
+        tally.count += 1;
+        Ok((tally.node, index + 1))
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    /// How many walks [`tally_compressed`] started on this thread (for
+    /// tests).
+    pub(crate) static WALKS: Cell<usize> = const { Cell::new(0) };
+}
 
 /// Tallies the values of a compressed form (each top-level's samples, in
 /// order) as reading their samples would have tallied them: the running
@@ -783,57 +1236,84 @@ const PROTO: u8 = 2;
 /// (the WebAssembly engine keeps its inputs in that form, which quicktype's
 /// API can ask for at any time), made in one walk over it when their types
 /// are inferred. Returns the tallies, whose keys and cases are the
-/// compressed form's strings, and each top-level's tree; `None` if the
-/// values are not as a reader makes them, where only inference from the
-/// values themselves is exact. See `docs/STREAMING-INFERENCE.md`, "Tallies
-/// of a compressed form".
+/// compressed form's strings ([`CompressedJson::strings`]), and each
+/// top-level's tree; `Ok(None)` if the values are not as a reader makes
+/// them (see [`CompressedTally`]), where only inference from the values
+/// themselves is exact. An error is one tallying raises (as reading the
+/// samples would have), not a decline: it is the run's. See
+/// `docs/STREAMING-INFERENCE.md`, "Tallies of a compressed form".
 pub(crate) fn tally_compressed<'c>(
-    cjson: &Rc<CompressedJson>,
+    cjson: &CompressedJson,
     top_levels: impl IntoIterator<Item = &'c [Value]>,
-) -> Option<(Tallies, Vec<NodeId>)> {
+) -> Result<Option<(Tallies, Vec<NodeId>)>> {
+    #[cfg(test)]
+    WALKS.with(|walks| walks.set(walks.get() + 1));
     // A string is known by its index, but for `"__proto__"`, which is
     // interned anew each time and so is known by its text.
     if !cjson.unique_strings() {
-        return None;
+        return Ok(None);
     }
     let mut tallies = Tallies::new();
-    tallies.texts = Some(Rc::clone(cjson));
     let mut walk = CompressedTally::new(cjson);
     let mut roots = Vec::new();
     for samples in top_levels {
-        roots.push(walk.tally(&mut tallies, samples)?);
+        match walk.tally(&mut tallies, samples)? {
+            Some(root) => roots.push(root),
+            None => return Ok(None),
+        }
     }
-    Some((tallies, roots))
+    Ok(Some((tallies, roots)))
 }
 
-/// The walk of [`tally_compressed`].
+/// The walk of [`tally_compressed`]: for each value, what the
+/// [`TallyBuilder`] does for the reader's event that made it, with the
+/// same handlers ([`Tallies::add_kind`] and the others).
 ///
 /// The values a reader made form a tree from each sample's root: every
 /// object and array is the value of exactly one key, element or root. A
 /// compressed form from elsewhere (the tables of a JavaScript
 /// `CompressedJSON`) could hold one that is reached twice, or a cycle; the
-/// walk then declines.
+/// walk then declines. So it does for the other values no reader makes: an
+/// object key that is not an interned string, a transformed string whose
+/// text has no kind or no attribute producer (`Inference.ts` fails on it),
+/// and a string table that holds a text twice. Nothing else declines: an
+/// error tallying a value (a lookup that fails, too many places) is raised.
 struct CompressedTally<'c> {
     cjson: &'c CompressedJson,
-    /// By string index: [`UNKNOWN`], [`PLAIN`] or [`PROTO`].
-    classes: Vec<u8>,
+    /// The number of strings, objects and arrays of the form.
+    counts: TableCounts,
+    /// Whether the form has a `"__proto__"` text; most have none, and then
+    /// no string is looked at to tell.
+    protos: bool,
+    /// When it has: by string index, whether the string was looked at, and
+    /// whether it is `"__proto__"` (a bit each, made with the first look),
+    /// so that each string's text is compared once.
+    proto_seen: Vec<u64>,
+    proto_strings: Vec<u64>,
     /// The index of the first `"__proto__"` looked at, which stands for
     /// every one ([`NO_INDEX`] before).
     proto: u32,
-    /// By string index: the node whose cases it was last counted in, and
-    /// its position among them. Most strings occur at one place, where
-    /// this finds them without hashing; it is checked against the cases,
-    /// since the node may have been freed and reused since.
-    case_positions: Vec<(NodeId, u32)>,
-    /// Bit sets of the objects and arrays reached so far.
+    /// Bit sets of the objects and arrays reached so far, by index, as
+    /// long as the largest index reached needs.
     objects_seen: Vec<u64>,
     arrays_seen: Vec<u64>,
+    /// The kind and attributes of transformed strings recognized so far,
+    /// at the slot of their string index ([`TRANSFORMED_SLOTS`] of them,
+    /// made with the first): the same text recurs under the same index,
+    /// and is recognized once while its slot keeps it.
+    transformed: Vec<Option<(u32, TypeKind, TypeAttributes)>>,
     /// The containers being walked, innermost last.
     stack: Vec<WalkFrame<'c>>,
 }
 
 /// No string index (yet).
 const NO_INDEX: u32 = u32::MAX;
+
+/// How many transformed strings (URIs) the walk keeps the kind and
+/// attributes of, by string index: a bounded number, since an input of
+/// distinct URIs would gain nothing from keeping them all (each a few
+/// hundred bytes), and one whose URIs recur has few of them.
+const TRANSFORMED_SLOTS: usize = 256;
 
 /// An object or array whose values [`CompressedTally`] is walking.
 enum WalkFrame<'c> {
@@ -843,7 +1323,7 @@ enum WalkFrame<'c> {
         next: usize,
         /// The node of the object.
         node: NodeId,
-        /// The index of the key expected next (see `Frame::Object`).
+        /// The index of the key expected next (see [`Tallies::add_key`]).
         next_key: usize,
     },
     Array {
@@ -855,64 +1335,107 @@ enum WalkFrame<'c> {
     },
 }
 
-/// Marks bit `index` of `bits`; whether it was clear.
-fn first_visit(bits: &mut [u64], index: u32) -> bool {
-    let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
-    match bits.get_mut(word) {
-        Some(w) if *w & bit == 0 => {
-            *w |= bit;
-            true
-        }
-        _ => false,
+/// Marks container `index` (of `count`) in `bits`, which grow to hold it;
+/// whether it was not marked yet. An index past `count` is a value that is
+/// not there, as looking it up finds.
+#[inline(always)]
+fn first_visit(bits: &mut Vec<u64>, index: u32, count: usize) -> Result<bool> {
+    if index as usize >= count {
+        return defined(None);
     }
+    let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
+    if word >= bits.len() {
+        bits.resize(word + 1, 0);
+    }
+    let first = bits[word] & bit == 0;
+    bits[word] |= bit;
+    Ok(first)
 }
 
 impl<'c> CompressedTally<'c> {
     fn new(cjson: &'c CompressedJson) -> Self {
-        let (objects, arrays) = cjson.counts();
         CompressedTally {
             cjson,
-            classes: vec![UNKNOWN; cjson.table_counts().strings],
+            counts: cjson.table_counts(),
+            protos: cjson.has_proto_strings(),
+            proto_seen: Vec::new(),
+            proto_strings: Vec::new(),
             proto: NO_INDEX,
-            case_positions: vec![(NO_INDEX, 0); cjson.table_counts().strings],
-            objects_seen: vec![0; objects.div_ceil(64)],
-            arrays_seen: vec![0; arrays.div_ceil(64)],
+            objects_seen: Vec::new(),
+            arrays_seen: Vec::new(),
+            transformed: Vec::new(),
             stack: Vec::new(),
         }
     }
 
-    /// Whether string `index` is `"__proto__"`.
-    #[inline]
+    /// Whether string `index` is `"__proto__"`. An index past the string
+    /// table is a value that is not there, as looking it up finds.
+    #[inline(always)]
     fn is_proto(&mut self, index: u32) -> Result<bool> {
-        let class = defined(self.classes.get_mut(index as usize))?;
-        if *class == UNKNOWN {
-            *class = if defined(self.cjson.string(index))? == "__proto__" {
+        if index as usize >= self.counts.strings {
+            return defined(None);
+        }
+        if !self.protos {
+            return Ok(false);
+        }
+        if self.proto_seen.is_empty() {
+            self.proto_seen = vec![0; self.counts.strings.div_ceil(64)];
+            self.proto_strings = vec![0; self.counts.strings.div_ceil(64)];
+        }
+        let (word, bit) = ((index / 64) as usize, 1u64 << (index % 64));
+        if self.proto_seen[word] & bit == 0 {
+            self.proto_seen[word] |= bit;
+            if defined(self.cjson.string(index))? == "__proto__" {
+                self.proto_strings[word] |= bit;
                 if self.proto == NO_INDEX {
                     self.proto = index;
                 }
-                PROTO
-            } else {
-                PLAIN
-            };
+            }
         }
-        Ok(*class == PROTO)
+        Ok(self.proto_strings[word] & bit != 0)
+    }
+
+    /// The kind and attributes `commitString` classified the transformed
+    /// string `index` by, recognized from its text as `Inference.ts`
+    /// recognizes them (once while its slot keeps them); `None` if it has
+    /// no kind or no attribute producer.
+    fn transformed(&mut self, index: u32) -> Result<Option<(TypeKind, &TypeAttributes)>> {
+        if self.transformed.is_empty() {
+            self.transformed.resize_with(TRANSFORMED_SLOTS, || None);
+        }
+        let slot = &mut self.transformed[index as usize % TRANSFORMED_SLOTS];
+        if !matches!(slot, Some((known, ..)) if *known == index) {
+            let text = defined(self.cjson.string(index))?;
+            let Some(kind) = infer_transformed_string_type_kind_for_string(
+                text,
+                self.cjson.date_time_recognizer(),
+            ) else {
+                return Ok(None);
+            };
+            let Some(producer) = transformed_string_type_attributes_producer(kind) else {
+                return Ok(None);
+            };
+            *slot = Some((index, kind, producer(text)));
+        }
+        Ok(slot
+            .as_ref()
+            .map(|(_, kind, attributes)| (*kind, attributes)))
     }
 
     /// Tallies `samples` into a new tree of `tallies`, and returns it;
-    /// `None` if a value is not one a reader makes (see the type), or
-    /// tallying it fails.
-    fn tally(&mut self, tallies: &mut Tallies, samples: &[Value]) -> Option<NodeId> {
-        let root = tallies.new_tree().ok()?;
+    /// `Ok(None)` if a value is not one a reader makes (see the type).
+    fn tally(&mut self, tallies: &mut Tallies, samples: &[Value]) -> Result<Option<NodeId>> {
+        let root = tallies.new_tree()?;
         for &sample in samples {
-            if !self.walk(tallies, root, sample).unwrap_or(false) {
-                return None;
+            if !self.walk(tallies, root, sample)? {
+                return Ok(None);
             }
         }
-        Some(root)
+        Ok(Some(root))
     }
 
     /// Tallies `value` and everything in it at `node`; whether it is a
-    /// tree as a reader makes it.
+    /// tree as a reader makes it (`Ok(false)` declines it).
     fn walk(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
         if !self.visit(tallies, node, value)? {
             return Ok(false);
@@ -961,9 +1484,9 @@ impl<'c> CompressedTally<'c> {
     }
 
     /// Counts key `key` (a string index) in the object at `node`, where the
-    /// key at index `expected` is expected, as `TallyBuilder::tally_key`
-    /// counts its text. Returns the node of its value and the index of the
-    /// key expected next.
+    /// key at index `expected` is expected, as the [`TallyBuilder`] counts
+    /// its text. Returns the node of its value and the index of the key
+    /// expected next.
     fn key(
         &mut self,
         tallies: &mut Tallies,
@@ -972,187 +1495,63 @@ impl<'c> CompressedTally<'c> {
         expected: usize,
     ) -> Result<(NodeId, usize)> {
         if self.is_proto(key)? {
-            let fresh = tallies.new_tree()?;
-            let object = defined(
-                defined(tallies.nodes.get_mut(node as usize))?
-                    .object
-                    .as_mut(),
-            )?;
-            object.add_proto_occurrences(1);
-            if let Some(old) = object.proto.replace(fresh) {
-                tallies.free_tree(old);
-            }
-            return Ok((fresh, expected));
+            Ok((tallies.add_proto_key(node)?, expected))
+        } else {
+            tallies.add_key(node, key, expected)
         }
-        let Tallies { nodes, free, .. } = tallies;
-        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-        // Objects at one place usually list their keys in the same order.
-        if let Some((&found, tally)) = object.keys.get_index_mut(expected)
-            && found == key
-        {
-            tally.count += 1;
-            return Ok((tally.node, expected + 1));
-        }
-        let index = match object.keys.get_index_of(&key) {
-            Some(index) => index,
-            None => {
-                let fresh = alloc(nodes, free)?;
-                let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                object.keys.insert(
-                    key,
-                    KeyTally {
-                        count: 0,
-                        node: fresh,
-                    },
-                );
-                object.keys.len() - 1
-            }
-        };
-        let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-        let (_, tally) = defined(object.keys.get_index_mut(index))?;
-        tally.count += 1;
-        Ok((tally.node, index + 1))
     }
 
-    /// The string tally of `node`.
-    #[inline]
-    fn strings(tallies: &mut Tallies, node: NodeId) -> Result<&mut StringTally> {
-        let Tallies {
-            nodes,
-            spare_strings,
-            ..
-        } = tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        Ok(n.strings
-            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
-    }
-
-    /// Tallies `value` at `node`, as the [`TallyBuilder`] event its reader
-    /// would have emitted (whose strings `commitString` classified as the
-    /// value records); an object or array is pushed, its values to come.
-    /// Whether the value is one a reader makes.
+    /// Tallies `value` at `node`, as the [`TallyBuilder`] tallies the
+    /// reader's event that made it (whose strings `commitString` classified
+    /// as the value records); an object or array is pushed, its values to
+    /// come. Whether the value is one a reader makes.
     fn visit(&mut self, tallies: &mut Tallies, node: NodeId, value: Value) -> Result<bool> {
-        let kind = match value {
-            Value::Null => TypeKind::Null,
-            Value::False | Value::True => TypeKind::Bool,
-            Value::Integer => TypeKind::Integer,
-            Value::Double => TypeKind::Double,
+        match value {
+            Value::Null => tallies.add_kind(node, TypeKind::Null)?,
+            Value::False | Value::True => tallies.add_kind(node, TypeKind::Bool)?,
+            Value::Integer => tallies.add_kind(node, TypeKind::Integer)?,
+            Value::Double => tallies.add_kind(node, TypeKind::Double)?,
             Value::InternedString(index) => {
-                // `TallyBuilder::add_case`.
+                // Every `"__proto__"` is the first one's case.
                 let id = if self.is_proto(index)? {
                     self.proto
                 } else {
                     index
                 };
-                let strings = Self::strings(tallies, node)?;
-                let slot = defined(self.case_positions.get_mut(id as usize))?;
-                match strings.cases.get_index_mut(slot.1 as usize) {
-                    Some((&case, count)) if slot.0 == node && case == id => *count += 1,
-                    _ => {
-                        let entry = strings.cases.entry(id);
-                        *slot = (node, entry.index() as u32);
-                        *entry.or_insert(0) += 1;
-                    }
-                }
-                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
-                return Ok(true);
+                tallies.add_case(node, id)?;
             }
-            Value::UninternedString => {
-                // `TallyBuilder::add_uninterned`.
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_unrestricted_once(&mut strings.with_enums, &mut strings.absorbed[0])?;
-                add_unrestricted_once(&mut strings.without_enums, &mut strings.absorbed[1])?;
-                return Ok(true);
-            }
-            Value::StringFormat(kind) => {
-                // `TallyBuilder::add_string_format`.
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
-                add_transformation_once(
-                    &mut strings.without_enums,
-                    &mut strings.absorbed[1],
-                    kind,
-                )?;
-                return Ok(true);
-            }
+            Value::UninternedString => tallies.add_uninterned(node)?,
+            Value::StringFormat(kind) => tallies.add_string_format(node, kind)?,
             Value::TransformedString(index) => {
-                // `TallyBuilder::add_transformed_string`, with the kind and
-                // attributes `commitString` classified the string by.
-                let text = defined(self.cjson.string(index))?;
-                let Some(kind) = infer_transformed_string_type_kind_for_string(
-                    text,
-                    self.cjson.date_time_recognizer(),
-                ) else {
+                let Some((kind, attributes)) = self.transformed(index)? else {
                     return Ok(false);
                 };
-                let Some(producer) = transformed_string_type_attributes_producer(kind) else {
-                    return Ok(false);
-                };
-                let attributes = producer(text);
-                let strings = Self::strings(tallies, node)?;
-                strings.not_interned = true;
-                add_produced(&mut strings.with_enums, &attributes)?;
-                add_transformation_once(&mut strings.with_enums, &mut strings.absorbed[0], kind)?;
-                add_produced(&mut strings.without_enums, &attributes)?;
-                add_transformation_once(
-                    &mut strings.without_enums,
-                    &mut strings.absorbed[1],
-                    kind,
-                )?;
-                return Ok(true);
+                tallies.add_transformed_string(node, kind, attributes)?;
             }
             Value::Object(index) => {
-                if !first_visit(&mut self.objects_seen, index) {
+                if !first_visit(&mut self.objects_seen, index, self.counts.objects)? {
                     return Ok(false);
                 }
-                // `push_object_context`.
-                let Tallies {
-                    nodes,
-                    spare_objects,
-                    ..
-                } = tallies;
-                let n = defined(nodes.get_mut(node as usize))?;
-                n.kinds.add(TypeKind::Object);
-                n.object
-                    .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
-                    .count += 1;
+                tallies.add_object(node)?;
                 self.stack.push(WalkFrame::Object {
                     entries: self.cjson.get_object_for_value(value)?,
                     next: 0,
                     node,
                     next_key: 0,
                 });
-                return Ok(true);
             }
             Value::Array(index) => {
-                if !first_visit(&mut self.arrays_seen, index) {
+                if !first_visit(&mut self.arrays_seen, index, self.counts.arrays)? {
                     return Ok(false);
                 }
-                // `push_array_context`.
-                let items = match defined(tallies.nodes.get(node as usize))?.items {
-                    Some(items) => items,
-                    None => {
-                        let items = tallies.new_tree()?;
-                        defined(tallies.nodes.get_mut(node as usize))?.items = Some(items);
-                        items
-                    }
-                };
-                defined(tallies.nodes.get_mut(node as usize))?
-                    .kinds
-                    .add(TypeKind::Array);
+                let items = tallies.add_array(node)?;
                 self.stack.push(WalkFrame::Array {
                     items: self.cjson.get_array_for_value(value)?,
                     next: 0,
                     node: items,
                 });
-                return Ok(true);
             }
-        };
-        defined(tallies.nodes.get_mut(node as usize))?
-            .kinds
-            .add(kind);
+        }
         Ok(true)
     }
 }
@@ -1167,9 +1566,7 @@ enum Frame {
         value: Option<NodeId>,
         /// Whether the current key is `"$ref"` (TS `isExpectingRef`).
         expecting_ref: bool,
-        /// The index of the key expected next: objects at one place
-        /// usually list their keys in the same order, and a key found
-        /// there needs no lookup.
+        /// The index of the key expected next (see [`Tallies::add_key`]).
         next_key: usize,
     },
     Array {
@@ -1184,9 +1581,14 @@ enum Frame {
 /// ([`reset_partial_sample`](JsonSink::reset_partial_sample), or when the
 /// builder is dropped), so it leaves nothing behind but the text of its
 /// keys and strings in the shared string table, which nothing refers to.
-/// Appending a sample to others is [`Tallies::merge`]'s job.
+/// Appending a sample to others is [`Tallies::merge`]'s job. What each
+/// event adds is [`Tallies`]' handlers' job ([`Tallies::add_kind`] and the
+/// others), which the walk over a compressed form calls too.
 pub(crate) struct TallyBuilder<'a> {
     tallies: &'a mut Tallies,
+    /// The text of the keys and cases.
+    strings: &'a mut Strings,
+    string_reader: &'a mut StringReaderState,
     /// The reading configuration: date/time recognizer, `$ref` handling,
     /// integer range.
     config: &'a CompressedJson,
@@ -1198,9 +1600,16 @@ pub(crate) struct TallyBuilder<'a> {
 
 impl<'a> TallyBuilder<'a> {
     /// A builder that reads samples as `config` reads them.
-    pub(crate) fn new(tallies: &'a mut Tallies, config: &'a CompressedJson) -> Self {
+    pub(crate) fn new(running: &'a mut RunningTallies, config: &'a CompressedJson) -> Self {
+        let RunningTallies {
+            tallies,
+            strings,
+            string_reader,
+        } = running;
         TallyBuilder {
             tallies,
+            strings,
+            string_reader,
             config,
             root: None,
             frames: Vec::new(),
@@ -1231,91 +1640,35 @@ impl<'a> TallyBuilder<'a> {
         }
     }
 
-    fn node_mut(&mut self, id: NodeId) -> Result<&mut Node> {
-        defined(self.tallies.nodes.get_mut(id as usize))
-    }
-
-    /// What [`JsonSink::set_property_key`] does in the tallies: counts
-    /// `key` in the current object, with only the fields of the tallies it
-    /// needs, so that `key` can be borrowed from another of them (the
-    /// reader's key table, [`JsonSink::set_property_key_read`]). Returns
-    /// the key's value node, the index of the key expected next, and the
-    /// `__proto__` tree it replaced ([`key_set`](Self::key_set) does the
-    /// rest).
-    fn tally_key(
-        frames: &[Frame],
-        nodes: &mut Vec<Node>,
-        free: &mut Vec<NodeId>,
+    /// What [`JsonSink::set_property_key`] does: counts `key` in the
+    /// current object, and makes its value's node where the next value
+    /// goes. Takes only the fields it needs, so that `key` can be borrowed
+    /// from another (the reader's key table,
+    /// [`JsonSink::set_property_key_read`]).
+    fn set_key(
+        tallies: &mut Tallies,
         strings: &mut Strings,
+        frames: &mut [Frame],
         key: &str,
-    ) -> Result<(NodeId, usize, Option<NodeId>)> {
-        let Some(&Frame::Object { node, next_key, .. }) = frames.last() else {
+    ) -> Result<()> {
+        let Some(Frame::Object {
+            node,
+            value,
+            expecting_ref,
+            next_key,
+        }) = frames.last_mut()
+        else {
             return panic("Setting a key outside an object");
         };
-        let mut replaced = None;
-        let (value, next_key) = if key == "__proto__" {
-            let fresh = alloc(nodes, free)?;
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            object.add_proto_occurrences(1);
-            replaced = object.proto.replace(fresh);
-            (fresh, next_key)
+        let (child, following) = if key == "__proto__" {
+            (tallies.add_proto_key(*node)?, *next_key)
         } else {
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let expected = object
-                .keys
-                .get_index(next_key)
-                .is_some_and(|(&id, _)| strings.get(id as usize) == Some(key));
-            let index = if expected {
-                next_key
-            } else {
-                let id = strings.intern_text(key);
-                match object.keys.get_index_of(&id) {
-                    Some(index) => index,
-                    None => {
-                        let fresh = alloc(nodes, free)?;
-                        let object =
-                            defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-                        object.keys.insert(
-                            id,
-                            KeyTally {
-                                count: 0,
-                                node: fresh,
-                            },
-                        );
-                        object.keys.len() - 1
-                    }
-                }
-            };
-            let object = defined(defined(nodes.get_mut(node as usize))?.object.as_mut())?;
-            let (_, tally) = defined(object.keys.get_index_mut(index))?;
-            tally.count += 1;
-            (tally.node, index + 1)
+            tallies.add_key(*node, KeyText { strings, text: key }, *next_key)?
         };
-        Ok((value, next_key, replaced))
-    }
-
-    /// The rest of [`JsonSink::set_property_key`], after
-    /// [`tally_key`](Self::tally_key): frees the `__proto__` tree the key
-    /// replaced, and makes the key's value node where the next value goes.
-    fn key_set(
-        &mut self,
-        (value, next_key, replaced): (NodeId, usize, Option<NodeId>),
-        is_ref: bool,
-    ) {
-        if let Some(old) = replaced {
-            self.tallies.free_tree(old);
-        }
-        if let Some(Frame::Object {
-            value: v,
-            expecting_ref,
-            next_key: n,
-            ..
-        }) = self.frames.last_mut()
-        {
-            *v = Some(value);
-            *expecting_ref = is_ref;
-            *n = next_key;
-        }
+        *value = Some(child);
+        *expecting_ref = key == "$ref";
+        *next_key = following;
+        Ok(())
     }
 
     /// The current key's value is complete (TS: `currentKey = undefined`).
@@ -1328,29 +1681,16 @@ impl<'a> TallyBuilder<'a> {
     /// A value of a non-string `kind`.
     fn add_kind(&mut self, kind: TypeKind) -> Result<()> {
         let node = self.destination()?;
-        self.node_mut(node)?.kinds.add(kind);
+        self.tallies.add_kind(node, kind)?;
         self.value_done();
         Ok(())
-    }
-
-    fn strings_mut(&mut self, node: NodeId) -> Result<&mut StringTally> {
-        let Tallies {
-            nodes,
-            spare_strings,
-            ..
-        } = &mut *self.tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        Ok(n.strings
-            .get_or_insert_with(|| spare_strings.pop().unwrap_or_default()))
     }
 
     /// An interned string (`Tag.InternedString`).
     fn add_case(&mut self, s: &str) -> Result<()> {
         let node = self.destination()?;
-        let id = self.tallies.strings.intern_text(s);
-        let strings = self.strings_mut(node)?;
-        *strings.cases.entry(id).or_insert(0) += 1;
-        add_unrestricted(&mut strings.without_enums)?;
+        let id = self.strings.intern_text(s);
+        self.tallies.add_case(node, id)?;
         self.value_done();
         Ok(())
     }
@@ -1358,10 +1698,7 @@ impl<'a> TallyBuilder<'a> {
     /// A string too long to intern (`Tag.UninternedString`).
     fn add_uninterned(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_unrestricted(&mut strings.with_enums)?;
-        add_unrestricted(&mut strings.without_enums)?;
+        self.tallies.add_uninterned(node)?;
         self.value_done();
         Ok(())
     }
@@ -1370,10 +1707,7 @@ impl<'a> TallyBuilder<'a> {
     /// (`Tag.StringFormat`).
     fn add_string_format(&mut self, kind: TypeKind) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_transformation(&mut strings.with_enums, kind)?;
-        add_transformation(&mut strings.without_enums, kind)?;
+        self.tallies.add_string_format(node, kind)?;
         self.value_done();
         Ok(())
     }
@@ -1386,12 +1720,8 @@ impl<'a> TallyBuilder<'a> {
         attributes: &TypeAttributes,
     ) -> Result<()> {
         let node = self.destination()?;
-        let strings = self.strings_mut(node)?;
-        strings.not_interned = true;
-        add_produced(&mut strings.with_enums, attributes)?;
-        add_transformation(&mut strings.with_enums, kind)?;
-        add_produced(&mut strings.without_enums, attributes)?;
-        add_transformation(&mut strings.without_enums, kind)?;
+        self.tallies
+            .add_transformed_string(node, kind, attributes)?;
         self.value_done();
         Ok(())
     }
@@ -1441,16 +1771,7 @@ impl JsonSink for TallyBuilder<'_> {
 
     fn push_object_context(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let Tallies {
-            nodes,
-            spare_objects,
-            ..
-        } = &mut *self.tallies;
-        let n = defined(nodes.get_mut(node as usize))?;
-        n.kinds.add(TypeKind::Object);
-        n.object
-            .get_or_insert_with(|| spare_objects.pop().unwrap_or_default())
-            .count += 1;
+        self.tallies.add_object(node)?;
         self.frames.push(Frame::Object {
             node,
             value: None,
@@ -1461,15 +1782,7 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn set_property_key(&mut self, key: &str) -> Result<()> {
-        let Tallies {
-            nodes,
-            free,
-            strings,
-            ..
-        } = &mut *self.tallies;
-        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
-        self.key_set(set, key == "$ref");
-        Ok(())
+        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
     }
 
     fn finish_object(&mut self) -> Result<()> {
@@ -1484,15 +1797,7 @@ impl JsonSink for TallyBuilder<'_> {
 
     fn push_array_context(&mut self) -> Result<()> {
         let node = self.destination()?;
-        let items = match self.node_mut(node)?.items {
-            Some(items) => items,
-            None => {
-                let items = self.tallies.new_tree()?;
-                self.node_mut(node)?.items = Some(items);
-                items
-            }
-        };
-        self.node_mut(node)?.kinds.add(TypeKind::Array);
+        let items = self.tallies.add_array(node)?;
         self.frames.push(Frame::Array { items });
         Ok(())
     }
@@ -1530,24 +1835,14 @@ impl JsonSink for TallyBuilder<'_> {
     }
 
     fn string_reader(&mut self) -> &mut StringReaderState {
-        &mut self.tallies.string_reader
+        self.string_reader
     }
 
     fn set_property_key_read(&mut self, id: u32) -> Result<()> {
         // The key is the reader's, borrowed beside the fields it is
         // counted in.
-        let Tallies {
-            nodes,
-            free,
-            strings,
-            string_reader,
-            ..
-        } = &mut *self.tallies;
-        let key = string_reader.key_text(id);
-        let set = Self::tally_key(&self.frames, nodes, free, strings, key)?;
-        let is_ref = key == "$ref";
-        self.key_set(set, is_ref);
-        Ok(())
+        let key = self.string_reader.key_text(id);
+        Self::set_key(self.tallies, self.strings, &mut self.frames, key)
     }
 
     /// Frees the failed sample's tree: the tallies are as they were before
@@ -1580,7 +1875,7 @@ mod tests {
 
     /// Reads `samples` (at least one), each into a tree of its own, and
     /// merges them in order; returns the tree.
-    fn read(tallies: &mut Tallies, config: &CompressedJson, samples: &[&str]) -> NodeId {
+    fn read(tallies: &mut RunningTallies, config: &CompressedJson, samples: &[&str]) -> NodeId {
         let trees: Vec<NodeId> = samples
             .iter()
             .map(|sample| {
@@ -1590,12 +1885,12 @@ mod tests {
             .collect();
         let (&first, rest) = trees.split_first().expect("a sample");
         for &tree in rest {
-            tallies.merge(first, tree).unwrap();
+            tallies.tallies.merge(first, tree).unwrap();
         }
         first
     }
 
-    fn dump(tallies: &Tallies, node: NodeId) -> String {
+    fn dump(tallies: &RunningTallies, node: NodeId) -> String {
         tallies.dump(node)
     }
 
@@ -1632,21 +1927,27 @@ mod tests {
     #[test]
     fn proto_is_listed_at_each_occurrence_with_its_last_value() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let root = read(
             &mut tallies,
             &config,
             &[r#"[{"a":1,"__proto__":1,"__proto__":{"x":2},"b":1},{"__proto__":"s","a":2}]"#],
         );
-        let items = tallies.node(root).unwrap().items.unwrap();
-        let object = tallies.node(items).unwrap().object.as_deref().unwrap();
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let object = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .object
+            .as_deref()
+            .unwrap();
         assert_eq!(object.count, 2);
         assert_eq!(
             object.property_names().collect::<Vec<_>>(),
             [(Some(0), 1), (None, 2), (Some(1), 1), (None, 1)]
         );
         assert_eq!(object.keys[0].count, 2);
-        let proto = tallies.node(object.proto.unwrap()).unwrap();
+        let proto = tallies.tallies.node(object.proto.unwrap()).unwrap();
         assert!(proto.kinds.is_empty());
         assert!(proto.strings.is_some());
     }
@@ -1654,23 +1955,23 @@ mod tests {
     #[test]
     fn replaced_proto_values_are_freed() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let one = r#"{"__proto__":{"a":{"b":[1]}}}"#;
         let root = read(&mut tallies, &config, &[one]);
-        let after_one = tallies.live_nodes();
+        let after_one = tallies.tallies.live_nodes();
         let more = read(&mut tallies, &config, &[one, one, one]);
-        tallies.merge(root, more).unwrap();
-        assert_eq!(tallies.live_nodes(), after_one);
+        tallies.tallies.merge(root, more).unwrap();
+        assert_eq!(tallies.tallies.live_nodes(), after_one);
         // Also within one sample.
-        let mut within = Tallies::new();
+        let mut within = RunningTallies::new();
         read(
             &mut within,
             &config,
             &[r#"[{"__proto__":{"a":{"b":[1]}},"__proto__":{"a":{"b":[1]}}}]"#],
         );
-        let mut once = Tallies::new();
+        let mut once = RunningTallies::new();
         read(&mut once, &config, &[r#"[{"__proto__":{"a":{"b":[1]}}}]"#]);
-        assert_eq!(within.live_nodes(), once.live_nodes());
+        assert_eq!(within.tallies.live_nodes(), once.tallies.live_nodes());
     }
 
     const SAMPLES: [&str; 4] = [
@@ -1685,17 +1986,21 @@ mod tests {
     #[test]
     fn merging_trees_is_reading_on() {
         let config = config(true);
-        let mut one = Tallies::new();
+        let mut one = RunningTallies::new();
         let root = read(&mut one, &config, &[&format!("[{}]", SAMPLES.join(","))]);
-        let items = one.node(root).unwrap().items.unwrap();
+        let items = one.tallies.node(root).unwrap().items.unwrap();
         for split in 1..SAMPLES.len() {
-            let mut two = Tallies::new();
+            let mut two = RunningTallies::new();
             let a = read(&mut two, &config, &SAMPLES[..split]);
             let b = read(&mut two, &config, &SAMPLES[split..]);
-            two.merge(a, b).unwrap();
+            two.tallies.merge(a, b).unwrap();
             assert_eq!(dump(&two, a), dump(&one, items), "split at {split}");
             // All but the array's node.
-            assert_eq!(two.live_nodes(), one.live_nodes() - 1, "split at {split}");
+            assert_eq!(
+                two.tallies.live_nodes(),
+                one.tallies.live_nodes() - 1,
+                "split at {split}"
+            );
         }
     }
 
@@ -1712,36 +2017,39 @@ mod tests {
             r#"{"a":[2.5,{"b":"http://h/y.png","e":null}],"c":{"d":"y","f":[true],"g":[["s"]]},"__proto__":[1]}"#,
             SAMPLES[2],
         ];
-        let mut expected = Tallies::new();
+        let mut expected = RunningTallies::new();
         let all = read(
             &mut expected,
             &config,
             &[first[0], first[1], second[0], second[1]],
         );
         let steps = {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let a = read(&mut tallies, &config, &first);
             let b = read(&mut tallies, &config, &second);
-            tallies.plan_merge(a, b).unwrap().len()
+            tallies.tallies.plan_merge(a, b).unwrap().len()
         };
         assert!(steps > 10, "{steps} steps");
         for fail_at in 0..steps {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let a = read(&mut tallies, &config, &first);
-            let before = (dump(&tallies, a), tallies.live_nodes());
+            let before = (dump(&tallies, a), tallies.tallies.live_nodes());
             let b = read(&mut tallies, &config, &second);
-            tallies.fail_merge_at.set(Some(fail_at));
-            assert!(tallies.merge(a, b).is_err(), "failing at step {fail_at}");
+            tallies.tallies.fail_merge_at.set(Some(fail_at));
+            assert!(
+                tallies.tallies.merge(a, b).is_err(),
+                "failing at step {fail_at}"
+            );
             assert_eq!(
-                (dump(&tallies, a), tallies.live_nodes()),
+                (dump(&tallies, a), tallies.tallies.live_nodes()),
                 before,
                 "failing at step {fail_at}"
             );
             // The tree takes the next merge as if nothing had happened.
             let b = read(&mut tallies, &config, &second);
-            tallies.merge(a, b).unwrap();
+            tallies.tallies.merge(a, b).unwrap();
             assert_eq!(dump(&tallies, a), dump(&expected, all));
-            assert_eq!(tallies.live_nodes(), expected.live_nodes());
+            assert_eq!(tallies.tallies.live_nodes(), expected.tallies.live_nodes());
         }
     }
 
@@ -1752,30 +2060,30 @@ mod tests {
         let config = config(false);
         let good = r#"{"a":[1,{"b":"x"}],"c":"2020-01-01","__proto__":{"q":[]}}"#;
         let broken = r#"{"a":[2.5,{"b":"y","z":[null,{"w":"http://h/a.png"}]}],"c":"q","__proto__":{"p":1},"d":{"e":[[1]]}}"#;
-        let mut expected = Tallies::new();
+        let mut expected = RunningTallies::new();
         let tree = read(&mut expected, &config, &[good]);
-        let expected = (dump(&expected, tree), expected.live_nodes());
+        let expected = (dump(&expected, tree), expected.tallies.live_nodes());
         for cut in 1..broken.len() {
-            let mut tallies = Tallies::new();
+            let mut tallies = RunningTallies::new();
             let mut builder = TallyBuilder::new(&mut tallies, &config);
             assert!(parse_stream_into(&mut builder, &broken.as_bytes()[..cut]).is_err());
             let tree = parse_stream_into(&mut builder, good.as_bytes()).unwrap();
             drop(builder);
             assert_eq!(
-                (dump(&tallies, tree), tallies.live_nodes()),
+                (dump(&tallies, tree), tallies.tallies.live_nodes()),
                 expected,
                 "cut at {cut}"
             );
         }
         // A builder dropped in the middle of a sample frees it too.
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let mut builder = TallyBuilder::new(&mut tallies, &config);
         builder.push_object_context().unwrap();
         builder.set_property_key("a").unwrap();
         builder.push_array_context().unwrap();
         builder.commit_null().unwrap();
         drop(builder);
-        assert_eq!(tallies.live_nodes(), 0);
+        assert_eq!(tallies.tallies.live_nodes(), 0);
     }
 
     /// `JSON.parse` samples emit what the stream reader emits for text both
@@ -1788,16 +2096,16 @@ mod tests {
         ];
         for handle_refs in [false, true] {
             let config = config(handle_refs);
-            let mut streamed = Tallies::new();
+            let mut streamed = RunningTallies::new();
             let root = read(&mut streamed, &config, &samples);
-            let mut parsed = Tallies::new();
+            let mut parsed = RunningTallies::new();
             let trees: Vec<NodeId> = samples
                 .iter()
                 .map(|sample| {
                     parse_string_into(&mut TallyBuilder::new(&mut parsed, &config), sample).unwrap()
                 })
                 .collect();
-            parsed.merge(trees[0], trees[1]).unwrap();
+            parsed.tallies.merge(trees[0], trees[1]).unwrap();
             assert_eq!(dump(&parsed, trees[0]), dump(&streamed, root));
         }
     }
@@ -1822,7 +2130,7 @@ mod tests {
     fn tallying_a_compressed_form_is_reading() {
         for handle_refs in [false, true] {
             let config = config(handle_refs);
-            let mut read_tallies = Tallies::new();
+            let mut read_tallies = RunningTallies::new();
             let expected = read(&mut read_tallies, &config, &WALKED);
             let expected = dump(&read_tallies, expected);
             let mut streamed = self::config(handle_refs);
@@ -1834,19 +2142,21 @@ mod tests {
                 string_roots.push(parsed.parse_string(sample).unwrap());
             }
             // The stream reader keeps what the tallies were read with.
-            let streamed = Rc::new(streamed);
-            let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()]).unwrap();
-            assert_eq!(dump(&tallies, roots[0]), expected, "refs {handle_refs}");
+            let (tallies, roots) = tally_compressed(&streamed, [stream_roots.as_slice()])
+                .unwrap()
+                .unwrap();
+            let walked = |tallies: &Tallies, root| tallies.dump(streamed.strings(), root);
+            assert_eq!(walked(&tallies, roots[0]), expected, "refs {handle_refs}");
             // Split into top-levels: each its own tree.
             let (first, rest) = stream_roots.split_at(3);
-            let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap();
-            let mut one = Tallies::new();
+            let (tallies, roots) = tally_compressed(&streamed, [first, rest]).unwrap().unwrap();
+            let mut one = RunningTallies::new();
             let a = read(&mut one, &config, &WALKED[..3]);
             let b = read(&mut one, &config, &WALKED[3..]);
-            assert_eq!(dump(&tallies, roots[0]), dump(&one, a));
-            assert_eq!(dump(&tallies, roots[1]), dump(&one, b));
+            assert_eq!(walked(&tallies, roots[0]), dump(&one, a));
+            assert_eq!(walked(&tallies, roots[1]), dump(&one, b));
             // `JSON.parse` semantics: as reading the text samples.
-            let mut text_tallies = Tallies::new();
+            let mut text_tallies = RunningTallies::new();
             let trees: Vec<NodeId> = WALKED
                 .iter()
                 .map(|sample| {
@@ -1855,16 +2165,91 @@ mod tests {
                 })
                 .collect();
             for &tree in &trees[1..] {
-                text_tallies.merge(trees[0], tree).unwrap();
+                text_tallies.tallies.merge(trees[0], tree).unwrap();
             }
-            let parsed = Rc::new(parsed);
-            let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()]).unwrap();
+            let (tallies, roots) = tally_compressed(&parsed, [string_roots.as_slice()])
+                .unwrap()
+                .unwrap();
             assert_eq!(
-                dump(&tallies, roots[0]),
+                tallies.dump(parsed.strings(), roots[0]),
                 dump(&text_tallies, trees[0]),
                 "refs {handle_refs}"
             );
         }
+    }
+
+    /// URIs that recur, between others that push them out of the walk's
+    /// slots of recognized strings, are tallied as reading tallies them.
+    #[test]
+    fn recurring_uris_are_tallied_as_read() {
+        let uris: Vec<String> = (0..2_000)
+            .map(|i| match i % 4 {
+                0 => format!(r#""http://h/{i}.png""#),
+                1 => r#""https://h/same.jpg""#.to_owned(),
+                2 => format!(r#""ftp://h/{}.gif""#, i % 7),
+                _ => r#""2020-01-01""#.to_owned(),
+            })
+            .collect();
+        let sample = format!("[{}]", uris.join(","));
+        let config = config(false);
+        let mut read_tallies = RunningTallies::new();
+        let expected = read(&mut read_tallies, &config, &[&sample]);
+        let mut cjson = self::config(false);
+        let root = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (tallies, roots) = tally_compressed(&cjson, [[root].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            tallies.dump(cjson.strings(), roots[0]),
+            dump(&read_tallies, expected)
+        );
+    }
+
+    /// Cases are counted right however many there are, many more than the
+    /// slots that remember where they were counted, which they share.
+    #[test]
+    fn many_cases_are_counted() {
+        let distinct = 3 * CASE_SLOTS + 7;
+        let mut values: Vec<String> = Vec::new();
+        for round in 0..3 {
+            for i in 0..distinct {
+                values.push(format!(r#""c{i}""#));
+                // A few that recur all along, between the others.
+                values.push(format!(r#""r{}""#, (i + round) % 5));
+            }
+        }
+        let sample = format!("[{}]", values.join(","));
+        let config = config(false);
+        let mut tallies = RunningTallies::new();
+        let tree = read(&mut tallies, &config, &[&sample]);
+        let items = tallies.tallies.node(tree).unwrap().items.unwrap();
+        let strings = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .strings
+            .as_deref()
+            .unwrap();
+        assert_eq!(strings.cases.len(), distinct + 5);
+        let count = |text: &str| {
+            let id = (0..tallies.strings.len())
+                .find(|&i| tallies.strings.get(i) == Some(text))
+                .unwrap();
+            strings.cases[&(id as u32)]
+        };
+        assert_eq!(count("c0"), 3);
+        assert_eq!(count(&format!("c{}", distinct - 1)), 3);
+        assert_eq!(
+            (0..5).map(|r| count(&format!("r{r}"))).sum::<u64>(),
+            3 * distinct as u64
+        );
+        // The compressed form's walk counts the same.
+        let mut cjson = self::config(false);
+        let root = cjson.parse_stream(sample.as_bytes()).unwrap();
+        let (walked, roots) = tally_compressed(&cjson, [[root].as_slice()])
+            .unwrap()
+            .unwrap();
+        assert_eq!(walked.dump(cjson.strings(), roots[0]), dump(&tallies, tree));
     }
 
     /// Tables no reader makes: the walk declines them.
@@ -1903,7 +2288,9 @@ mod tests {
             let (objects, arrays) = cjson.counts();
             let root = cjson.decode_value(root, objects, arrays).unwrap();
             assert!(
-                tally_compressed(&Rc::new(cjson), [[root].as_slice()]).is_none(),
+                tally_compressed(&cjson, [[root].as_slice()])
+                    .unwrap()
+                    .is_none(),
                 "{tables:?}"
             );
         }
@@ -1913,24 +2300,55 @@ mod tests {
             CompressedJson::from_tables(Box::new(DefaultDateTimeRecognizer), false, &good).unwrap();
         let (objects, arrays) = cjson.counts();
         let root = cjson.decode_value(array, objects, arrays).unwrap();
-        let (tallies, roots) = tally_compressed(&Rc::new(cjson), [[root].as_slice()]).unwrap();
+        let (tallies, roots) = tally_compressed(&cjson, [[root].as_slice()])
+            .unwrap()
+            .unwrap();
         assert_eq!(
-            dump(&tallies, roots[0]),
+            tallies.dump(cjson.strings(), roots[0]),
             "[array] items [[object] objects 1 [] {\"a\"×1: [integer], }]"
         );
+    }
+
+    /// A value that is not there is an error, as it is for the values'
+    /// inference, which looks it up: not a form the walk declines.
+    #[test]
+    fn values_that_are_not_there_are_errors() {
+        let mut cjson = config(false);
+        let root = cjson.parse_stream(br#"[{"a":"x"}]"#).unwrap();
+        let (objects, arrays) = cjson.counts();
+        let strings = cjson.table_counts().strings as u32;
+        for missing in [
+            Value::Object(objects as u32),
+            Value::Array(arrays as u32),
+            Value::InternedString(strings),
+            Value::TransformedString(strings),
+        ] {
+            let error = tally_compressed(&cjson, [[root, missing].as_slice()]).unwrap_err();
+            assert_eq!(
+                error.user_message(),
+                "Internal error: Defined value expected, but got undefined",
+                "{missing:?}"
+            );
+        }
     }
 
     #[test]
     fn string_attributes_combine_once_per_change() {
         let config = config(false);
-        let mut tallies = Tallies::new();
+        let mut tallies = RunningTallies::new();
         let root = read(
             &mut tallies,
             &config,
             &[r#"["2020-01-01","x","http://h/a.PNG","2020-01-02","https://h/b.png","12:00:00Z"]"#],
         );
-        let items = tallies.node(root).unwrap().items.unwrap();
-        let strings = tallies.node(items).unwrap().strings.as_deref().unwrap();
+        let items = tallies.tallies.node(root).unwrap().items.unwrap();
+        let strings = tallies
+            .tallies
+            .node(items)
+            .unwrap()
+            .strings
+            .as_deref()
+            .unwrap();
         let with_enums = strings.with_enums.as_ref().unwrap();
         let st = StringTypesTypeAttributeKind
             .try_get_in_attributes(with_enums)

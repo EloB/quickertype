@@ -29,7 +29,9 @@ use super::compressed_json::{
 };
 use super::compressed_json_from_stream::{parse_stream_into, parse_stream_reader_into};
 use super::inference::TypeInference;
-use super::tallies::{NodeId, Tallies, TallyBuilder, tally_compressed};
+use super::tallies::{
+    FormTallies, KeptTallies, NodeId, RunningTallies, Tallies, TallyBuilder, tally_compressed,
+};
 use super::tally_inference::TallyInference;
 use crate::attributes::description::DescriptionTypeAttributeKind;
 use crate::attributes::type_attributes::AttributeKind;
@@ -345,8 +347,9 @@ pub struct JsonSourceData<T = JsonSample> {
 #[derive(Debug, Default)]
 struct JsonTopLevel {
     description: Option<String>,
-    /// The samples in the compressed form, when inferring from it.
-    samples: Vec<Value>,
+    /// The samples in the compressed form, when inferring from it; shared
+    /// with the tallies kept of them (see [`KeptTallies`]).
+    samples: Rc<Vec<Value>>,
     /// The tally of all samples, when inferring from tallies.
     tally: Option<NodeId>,
 }
@@ -361,6 +364,25 @@ pub struct CompressedTopLevel {
     pub description: Option<String>,
     /// Its samples' root values.
     pub samples: Vec<i32>,
+}
+
+/// Where a [`JsonInput`] inferred its types from, the last time it did
+/// ([`JsonInput::inferred_from`]). All of them infer the same types.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum JsonInference {
+    /// Running tallies, counted while the samples were read (the default).
+    RunningTallies,
+    /// Tallies of the compressed form, made in one walk over it (see
+    /// [`JsonInput::set_tally_compressed`]).
+    CompressedTallies,
+    /// Tallies of the compressed form made by an earlier inference over
+    /// the same samples, and kept with it (see
+    /// [`JsonInput::set_keep_tallies`]).
+    KeptTallies,
+    /// The compressed form's values one by one, as quicktype does: the
+    /// reference, or a form the walk declined (values no reader makes).
+    CompressedValues,
 }
 
 /// The JSON samples input (TS `JSONInput<T>`).
@@ -419,12 +441,17 @@ pub struct JsonInput {
     top_levels: IndexMap<String, JsonTopLevel>,
     /// The running tallies; `None` to keep the samples in the compressed
     /// form.
-    tallies: Option<Tallies>,
+    tallies: Option<RunningTallies>,
     /// Without running tallies: whether the types are inferred from
     /// tallies of the compressed form, made when they are inferred, rather
     /// than from its values one by one (see
     /// [`set_tally_compressed`](Self::set_tally_compressed)).
     tally_compressed: bool,
+    /// Whether the tallies of the compressed form are kept with it (see
+    /// [`set_keep_tallies`](Self::set_keep_tallies)).
+    keep_tallies: bool,
+    /// Where the types were inferred from last.
+    inferred_from: Option<JsonInference>,
 }
 
 /// Whether `QUICKTYPE_INFERENCE=compressed-json` asks every new
@@ -448,8 +475,10 @@ impl JsonInput {
         JsonInput {
             compressed_json: Rc::new(compressed_json),
             top_levels: IndexMap::new(),
-            tallies: (!compressed_json_inference_requested()).then(Tallies::new),
+            tallies: (!compressed_json_inference_requested()).then(RunningTallies::new),
             tally_compressed: false,
+            keep_tallies: false,
+            inferred_from: None,
         }
     }
 
@@ -461,12 +490,16 @@ impl JsonInput {
     /// strings (whose index in TypeScript's string table this compressed
     /// form does not know). The input cannot take more samples while the
     /// compressed form is shared. It infers from tallies of the compressed
-    /// form (see [`set_tally_compressed`](Self::set_tally_compressed)).
+    /// form (see [`set_tally_compressed`](Self::set_tally_compressed)),
+    /// which it keeps with the form for the next run over the same samples
+    /// (see [`set_keep_tallies`](Self::set_keep_tallies)).
     pub fn from_shared(
         compressed_json: Rc<CompressedJson>,
         top_levels: Vec<CompressedTopLevel>,
     ) -> Result<Self> {
-        Self::over_compressed(compressed_json, top_levels, false)
+        let mut input = Self::over_compressed(compressed_json, top_levels, false)?;
+        input.keep_tallies = true;
+        Ok(input)
     }
 
     /// An input that infers from `compressed_json`, with `top_levels`
@@ -483,6 +516,8 @@ impl JsonInput {
             top_levels: IndexMap::new(),
             tallies: None,
             tally_compressed: !compressed_json_inference_requested(),
+            keep_tallies: false,
+            inferred_from: None,
         };
         for top_level in top_levels {
             let values = top_level
@@ -517,7 +552,7 @@ impl JsonInput {
             return panic("The inference source must be chosen before sources are added");
         }
         if tallies != self.tallies.is_some() {
-            self.tallies = tallies.then(Tallies::new);
+            self.tallies = tallies.then(RunningTallies::new);
         }
         Ok(())
     }
@@ -548,6 +583,36 @@ impl JsonInput {
     /// [`set_tally_compressed`](Self::set_tally_compressed)).
     pub fn tally_compressed(&self) -> bool {
         self.tally_compressed
+    }
+
+    /// For an input that infers from tallies of its compressed form (see
+    /// [`set_tally_compressed`](Self::set_tally_compressed)): whether it
+    /// keeps the tallies it makes with the form, for the next inference
+    /// over the same samples. Any input over the form (keeping its own or
+    /// not) uses tallies kept with it that are of its samples, instead of
+    /// walking the form again. The form holds them until a sample is added
+    /// to it, and counts them in its
+    /// [`heap_size`](CompressedJson::heap_size). The default of
+    /// [`from_shared`](Self::from_shared), whose form the WebAssembly
+    /// engine keeps for every run that uses the input; otherwise the
+    /// tallies an input makes are freed when inference ends.
+    pub fn set_keep_tallies(&mut self, keep: bool) {
+        self.keep_tallies = keep;
+    }
+
+    /// Whether the tallies of the compressed form are kept with it (see
+    /// [`set_keep_tallies`](Self::set_keep_tallies)).
+    pub fn keep_tallies(&self) -> bool {
+        self.keep_tallies
+    }
+
+    /// Where the types were inferred from the last time
+    /// [`add_types_sync`](Self::add_types_sync) inferred them (also if
+    /// inference failed then); `None` before. Inferring from tallies of
+    /// the compressed form falls back to its values only for values no
+    /// reader makes, which this tells apart (for tests).
+    pub fn inferred_from(&self) -> Option<JsonInference> {
+        self.inferred_from
     }
 
     /// A JSON input from the tables and top-levels a JavaScript
@@ -631,7 +696,7 @@ impl JsonInput {
     fn add_samples(&mut self, name: &str, values: Vec<Value>, description: Option<&str>) {
         for value in values {
             let top_level = self.top_levels.entry(name.to_owned()).or_default();
-            top_level.samples.push(value);
+            Rc::make_mut(&mut top_level.samples).push(value);
             if let Some(description) = description {
                 top_level.description = Some(description.to_owned());
             }
@@ -691,7 +756,7 @@ impl JsonInput {
             };
             drop(builder);
             let added = read.map_err(report).and_then(|tree| match source {
-                Some(source) => tallies.merge(source, tree),
+                Some(source) => tallies.tallies.merge(source, tree),
                 None => {
                     source = Some(tree);
                     Ok(())
@@ -699,7 +764,7 @@ impl JsonInput {
             });
             if let Err(e) = added {
                 if let Some(source) = source {
-                    tallies.free_tree(source);
+                    tallies.tallies.free_tree(source);
                 }
                 return Err(e);
             }
@@ -707,7 +772,7 @@ impl JsonInput {
         let tree = defined(source)?;
         let existing = self.top_levels.get(&name).and_then(|t| t.tally);
         if let Some(existing) = existing {
-            tallies.merge(existing, tree)?;
+            tallies.tallies.merge(existing, tree)?;
         }
         let top_level = self.top_levels.entry(name).or_default();
         top_level.tally = Some(existing.unwrap_or(tree));
@@ -732,24 +797,27 @@ impl JsonInput {
             Tallies(TallyInference<'a>),
             CompressedJson(TypeInference<'a>),
         }
-        // Without running tallies, those of the compressed form: each
-        // top-level's tree, in order.
-        let compressed_tallies = if self.tallies.is_none() && self.tally_compressed {
-            tally_compressed(
-                &self.compressed_json,
-                self.top_levels.values().map(|t| t.samples.as_slice()),
-            )
-        } else {
-            None
+        // Without running tallies, those of the compressed form, if it is
+        // tallied (an error making them is this way's).
+        let (inferred_from, compressed_tallies) = match self.tallies {
+            Some(_) => (JsonInference::RunningTallies, Ok(None)),
+            None => self.compressed_tallies(),
         };
+        self.inferred_from = Some(inferred_from);
+        let compressed_tallies = compressed_tallies?;
+        // The tallies, and the text of their keys and cases.
         let (tallies, compressed_roots) = match (&self.tallies, &compressed_tallies) {
-            (Some(tallies), _) => (Some(tallies), None),
-            (None, Some((tallies, roots))) => (Some(tallies), Some(roots)),
+            (Some(running), _) => (Some((&running.tallies, &running.strings)), None),
+            (None, Some(compressed)) => (
+                Some((compressed.tallies(), self.compressed_json.strings())),
+                Some(compressed.roots()),
+            ),
             (None, None) => (None, None),
         };
         let inference = match tallies {
-            Some(tallies) => Inference::Tallies(TallyInference::new(
+            Some((tallies, strings)) => Inference::Tallies(TallyInference::new(
                 tallies,
+                strings,
                 self.compressed_json.handle_refs(),
                 infer_maps,
                 infer_enums,
@@ -787,6 +855,85 @@ impl JsonInput {
             }
         }
         Ok(())
+    }
+}
+
+/// The tallies of a compressed form an inference reads: made for it, or
+/// kept with the form (by it or an earlier inference over the same
+/// samples).
+enum CompressedTallies {
+    Made(FormTallies),
+    Kept(Rc<FormTallies>),
+}
+
+impl CompressedTallies {
+    fn form(&self) -> &FormTallies {
+        match self {
+            CompressedTallies::Made(tallied) => tallied,
+            CompressedTallies::Kept(tallied) => tallied,
+        }
+    }
+
+    fn tallies(&self) -> &Tallies {
+        &self.form().tallies
+    }
+
+    /// Each top-level's tree, in order.
+    fn roots(&self) -> &[NodeId] {
+        &self.form().roots
+    }
+}
+
+impl JsonInput {
+    /// For an input without running tallies: where its types are inferred
+    /// from, with the tallies of the compressed form if they are tallied
+    /// (`Ok(None)` if they are inferred from its values one by one, as
+    /// asked or because the walk declines the form). The tallies are those
+    /// kept with the form if they are of these samples (whoever made them),
+    /// else made in a walk over it (and kept if this input keeps them; so is
+    /// a decline, which a keeping input does not walk again for). An error is
+    /// the walk's.
+    fn compressed_tallies(&self) -> (JsonInference, Result<Option<CompressedTallies>>) {
+        if !self.tally_compressed {
+            return (JsonInference::CompressedValues, Ok(None));
+        }
+        let samples = || self.top_levels.values().map(|t| t.samples.as_slice());
+        if let Some(kept) = self.compressed_json.kept_tallies()
+            && kept.of(samples())
+        {
+            return match kept.tallied() {
+                Some(tallied) => (
+                    JsonInference::KeptTallies,
+                    Ok(Some(CompressedTallies::Kept(Rc::clone(tallied)))),
+                ),
+                None => (JsonInference::CompressedValues, Ok(None)),
+            };
+        }
+        let made = match tally_compressed(&self.compressed_json, samples()) {
+            Ok(made) => made.map(|(tallies, roots)| FormTallies { tallies, roots }),
+            Err(e) => return (JsonInference::CompressedTallies, Err(e)),
+        };
+        if !self.keep_tallies {
+            return match made {
+                Some(made) => (
+                    JsonInference::CompressedTallies,
+                    Ok(Some(CompressedTallies::Made(made))),
+                ),
+                None => (JsonInference::CompressedValues, Ok(None)),
+            };
+        }
+        let kept = Rc::new(KeptTallies::new(
+            made,
+            self.top_levels.values().map(|t| Rc::clone(&t.samples)),
+        ));
+        self.compressed_json.keep_tallies(Some(Rc::clone(&kept)));
+        match kept.tallied() {
+            Some(tallied) => (
+                JsonInference::CompressedTallies,
+                Ok(Some(CompressedTallies::Kept(Rc::clone(tallied)))),
+            ),
+            None => (JsonInference::CompressedValues, Ok(None)),
+        }
     }
 }
 
@@ -926,7 +1073,7 @@ mod tests {
             .iter()
             .map(|(name, t)| (name.clone(), tallies.dump(t.tally.unwrap())))
             .collect();
-        (top_levels, tallies.live_nodes())
+        (top_levels, tallies.tallies.live_nodes())
     }
 
     /// The type graph `input` infers, or the error, for TypeScript.
@@ -988,16 +1135,239 @@ mod tests {
                 tallied.tally_compressed(),
                 !compressed_json_inference_requested()
             );
+            tallied.set_tally_compressed(true);
             let mut by_value = input();
             by_value.set_tally_compressed(false);
             let expected = graph(&mut by_value);
+            assert_eq!(
+                by_value.inferred_from(),
+                Some(JsonInference::CompressedValues)
+            );
             assert!(!expected.starts_with("error"), "{expected}");
             assert_eq!(graph(&mut tallied), expected);
+            // The reader's form is tallied, the shared array declined.
+            let declined = top_levels[0].name == "S";
+            assert_eq!(
+                tallied.inferred_from(),
+                Some(if declined {
+                    JsonInference::CompressedValues
+                } else {
+                    JsonInference::CompressedTallies
+                })
+            );
         }
+        assert_eq!(reference.inferred_from(), None);
         reference.set_tally_compressed(true);
         let tallied = graph(&mut reference);
+        assert_eq!(
+            reference.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
         reference.set_tally_compressed(false);
         assert_eq!(tallied, graph(&mut reference));
+        assert_eq!(
+            reference.inferred_from(),
+            Some(JsonInference::CompressedValues)
+        );
+        // Running tallies.
+        let mut running = tallied_input();
+        running.add_source_sync(source("T", &[A, B])).unwrap();
+        graph(&mut running);
+        assert_eq!(running.inferred_from(), Some(JsonInference::RunningTallies));
+    }
+
+    /// An error tallying a compressed form is raised, not taken for a form
+    /// the walk declines (which would infer from the values instead): here
+    /// a value that is not there, which the values' inference raises too.
+    #[test]
+    fn errors_tallying_a_compressed_form_are_raised() {
+        let mut input = JsonInput::new(CompressedJson::with_int64_range(
+            Box::new(DefaultDateTimeRecognizer),
+            false,
+        ));
+        input.set_tally_inference(false).unwrap();
+        input.add_source_sync(source("T", &[A, B])).unwrap();
+        let (objects, arrays) = input.compressed_json.counts();
+        let strings = input.compressed_json.table_counts().strings as u32;
+        for missing in [
+            Value::Object(objects as u32),
+            Value::Array(arrays as u32),
+            Value::InternedString(strings),
+            Value::TransformedString(strings),
+        ] {
+            let samples = Rc::make_mut(&mut input.top_levels[0].samples);
+            samples.truncate(2);
+            samples.push(missing);
+            input.set_tally_compressed(false);
+            let expected = graph(&mut input);
+            assert!(
+                expected.starts_with("error") && expected.contains("undefined"),
+                "{expected}"
+            );
+            input.set_tally_compressed(true);
+            assert_eq!(graph(&mut input), expected, "{missing:?}");
+            // The walk's own error, not the values' after a decline.
+            assert_eq!(
+                input.inferred_from(),
+                Some(JsonInference::CompressedTallies),
+                "{missing:?}"
+            );
+        }
+    }
+
+    /// An input over a shared form keeps the tallies it makes with the
+    /// form, and the next inference over the same samples (by any input)
+    /// uses them; the form counts them in its size, and drops them when a
+    /// sample is added.
+    #[test]
+    fn tallies_are_kept_with_a_shared_form() {
+        let mut cjson = CompressedJson::with_int64_range(Box::new(DefaultDateTimeRecognizer), true);
+        let roots: Vec<i32> = [A, B, C]
+            .iter()
+            .map(|s| {
+                let value = cjson.parse_stream(s.as_bytes()).unwrap();
+                cjson.encode_value(value).unwrap()
+            })
+            .collect();
+        let top_levels = |samples: &[i32]| {
+            vec![
+                CompressedTopLevel {
+                    name: "T".to_owned(),
+                    description: None,
+                    samples: samples.to_vec(),
+                },
+                CompressedTopLevel {
+                    name: "U".to_owned(),
+                    description: None,
+                    samples: vec![roots[2]],
+                },
+            ]
+        };
+        let bare = cjson.heap_size();
+        let mut cjson = Rc::new(cjson);
+        let shared = |cjson: &Rc<CompressedJson>, samples: &[i32]| {
+            let mut input = JsonInput::from_shared(Rc::clone(cjson), top_levels(samples)).unwrap();
+            assert!(input.keep_tallies());
+            input.set_tally_compressed(true);
+            input
+        };
+        let mut reference = shared(&cjson, &roots[..2]);
+        reference.set_tally_compressed(false);
+        let expected = graph(&mut reference);
+
+        let mut input = shared(&cjson, &roots[..2]);
+        assert_eq!(graph(&mut input), expected);
+        assert_eq!(
+            input.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
+        let walks = || crate::input::tallies::WALKS.with(std::cell::Cell::get);
+        let walked = walks();
+        let kept = cjson.heap_size();
+        assert!(kept > bare + 1000, "{kept} against {bare}");
+        assert_eq!(graph(&mut input), expected);
+        assert_eq!(input.inferred_from(), Some(JsonInference::KeptTallies));
+        // Another input over the same samples uses them too.
+        let mut other = shared(&cjson, &roots[..2]);
+        assert_eq!(graph(&mut other), expected);
+        assert_eq!(other.inferred_from(), Some(JsonInference::KeptTallies));
+        // So does one that would not keep its own.
+        other.set_keep_tallies(false);
+        assert_eq!(graph(&mut other), expected);
+        assert_eq!(other.inferred_from(), Some(JsonInference::KeptTallies));
+        assert_eq!(walks(), walked);
+        // Over other samples, such an input makes its own, and leaves those.
+        let mut unkept = shared(&cjson, &roots[..1]);
+        unkept.set_keep_tallies(false);
+        let mut unkept_reference = shared(&cjson, &roots[..1]);
+        unkept_reference.set_tally_compressed(false);
+        assert_eq!(graph(&mut unkept), graph(&mut unkept_reference));
+        assert_eq!(
+            unkept.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
+        assert_eq!(cjson.heap_size(), kept);
+        assert_eq!(graph(&mut input), expected);
+        assert_eq!(input.inferred_from(), Some(JsonInference::KeptTallies));
+        // Other samples: other tallies, kept instead.
+        let mut fewer = shared(&cjson, &roots[..1]);
+        let mut fewer_reference = shared(&cjson, &roots[..1]);
+        fewer_reference.set_tally_compressed(false);
+        assert_eq!(graph(&mut fewer), graph(&mut fewer_reference));
+        assert_eq!(
+            fewer.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
+        assert_eq!(graph(&mut input), expected);
+        assert_eq!(
+            input.inferred_from(),
+            Some(JsonInference::CompressedTallies)
+        );
+        // A sample added drops them.
+        drop((
+            reference,
+            input,
+            other,
+            fewer,
+            fewer_reference,
+            unkept,
+            unkept_reference,
+        ));
+        let form = Rc::get_mut(&mut cjson).unwrap();
+        form.parse_stream(b"[1]").unwrap();
+        assert!(form.kept_tallies().is_none());
+        assert!(form.heap_size() < kept);
+    }
+
+    /// A form the walk declines is kept declined, as tallies are kept:
+    /// the next inference over the same samples does not walk it again.
+    #[test]
+    fn a_declined_form_is_not_walked_again() {
+        use crate::input::tallies::WALKS;
+        let walks = || WALKS.with(std::cell::Cell::get);
+        // `{"a": o, "b": o}` with `o = [1]`: an array reached twice.
+        let tables = CompressedJsonTables {
+            strings: vec!["a".to_owned(), "b".to_owned()],
+            objects: vec![6, 9, 6 | 1 << 4, 9],
+            object_offsets: vec![0],
+            arrays: vec![4],
+            array_offsets: vec![0],
+        };
+        let input = || {
+            let mut input = JsonInput::from_compressed(
+                &tables,
+                false,
+                Box::new(DefaultDateTimeRecognizer),
+                vec![CompressedTopLevel {
+                    name: "S".to_owned(),
+                    description: None,
+                    samples: vec![8],
+                }],
+            )
+            .unwrap();
+            input.set_tally_compressed(true);
+            input
+        };
+        let mut reference = input();
+        reference.set_tally_compressed(false);
+        let expected = graph(&mut reference);
+        let mut declined = input();
+        declined.set_keep_tallies(true);
+        let before = walks();
+        for _ in 0..3 {
+            assert_eq!(graph(&mut declined), expected);
+            assert_eq!(
+                declined.inferred_from(),
+                Some(JsonInference::CompressedValues)
+            );
+        }
+        assert_eq!(walks() - before, 1);
+        // Without keeping, every inference walks it.
+        let mut unkept = input();
+        let before = walks();
+        graph(&mut unkept);
+        graph(&mut unkept);
+        assert_eq!(walks() - before, 2);
     }
 
     const A: &str = r#"{"a":[1,{"b":"x"}],"c":{"d":"2020-01-01"},"__proto__":{"p":1}}"#;
@@ -1033,7 +1403,7 @@ mod tests {
             input.add_source_sync(source("T", &[A])).unwrap();
             input.add_source_sync(source("U", &[C])).unwrap();
             let tallies = input.tallies.as_ref().unwrap();
-            tallies.fail_merge_at.set(fail_merge_at);
+            tallies.tallies.fail_merge_at.set(fail_merge_at);
             assert!(
                 input.add_source_sync(source("T", samples)).is_err(),
                 "{samples:?} {fail_merge_at:?}"

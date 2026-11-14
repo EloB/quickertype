@@ -20,6 +20,7 @@ use std::cell::RefCell;
 
 use indexmap::{IndexMap, IndexSet};
 
+use super::compressed_json::Strings;
 use super::inference::resolve_ref;
 use super::tallies::{NodeId, ObjectTally, Tallies, add_proto_occurrences, property_names};
 use crate::attributes::type_attributes::TypeAttributes;
@@ -133,6 +134,8 @@ impl Properties<'_> {
 /// `TypeInference` over tallies.
 pub(crate) struct TallyInference<'t> {
     tallies: &'t Tallies,
+    /// The text of the tallies' keys and cases.
+    strings: &'t Strings,
     handle_refs: bool,
     infer_maps: bool,
     infer_enums: bool,
@@ -144,17 +147,24 @@ impl<'t> TallyInference<'t> {
     /// `new TypeInference(cjson, typeBuilder, inferMaps, inferEnums)`.
     pub(crate) fn new(
         tallies: &'t Tallies,
+        strings: &'t Strings,
         handle_refs: bool,
         infer_maps: bool,
         infer_enums: bool,
     ) -> Self {
         TallyInference {
             tallies,
+            strings,
             handle_refs,
             infer_maps,
             infer_enums,
             ref_intersections: RefCell::new(None),
         }
+    }
+
+    /// The text of the key or string case `id`.
+    fn text(&self, id: u32) -> Result<&'t str> {
+        defined(self.strings.get(id as usize))
     }
 
     /// `addValuesToAccumulator(valueArray, accumulator)` for the values of
@@ -172,7 +182,7 @@ impl<'t> TallyInference<'t> {
         if let Some(strings) = &n.strings {
             if self.infer_enums {
                 for (&id, &count) in &strings.cases {
-                    accumulator.add_string_case(self.tallies.text(id)?, count, empty());
+                    accumulator.add_string_case(self.text(id)?, count, empty());
                 }
                 if let Some(attributes) = &strings.with_enums {
                     accumulator.add_string_type(TypeKind::String, attributes.clone(), None)?;
@@ -337,7 +347,7 @@ impl<'t> TallyInference<'t> {
 
         if self.handle_refs && names_len == 1 && properties.key_count() == 1 {
             let (id, _, places) = properties.key(0)?;
-            if self.tallies.text(id)? == "$ref" {
+            if self.text(id)? == "$ref" {
                 let mut all_interned = true;
                 for &place in places {
                     all_interned &= self.only_interned_strings(place)?;
@@ -349,7 +359,7 @@ impl<'t> TallyInference<'t> {
                     for &place in places {
                         let strings = defined(self.tallies.node(place)?.strings.as_deref())?;
                         for &case in strings.cases.keys() {
-                            all_refs.insert(self.tallies.text(case)?);
+                            all_refs.insert(self.text(case)?);
                         }
                     }
                     let all_refs = all_refs.into_iter().map(str::to_owned).collect();
@@ -400,7 +410,7 @@ impl<'t> TallyInference<'t> {
                     let t = self.infer_type(builder, TypeAttributes::new(), places, false, None)?;
                     let is_optional = count < object_count;
                     class_properties.insert(
-                        self.tallies.text(id)?.to_owned(),
+                        self.text(id)?.to_owned(),
                         builder.make_class_property(t, is_optional),
                     );
                 }

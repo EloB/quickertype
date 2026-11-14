@@ -15,6 +15,19 @@ section are absolute.
 
 ## [Unreleased]
 
+### Changed
+
+- The JavaScript API's WebAssembly engine keeps the tallies a run inferred
+  an input's types from with the input's samples, so that the next run on
+  the same input (another language, other options) does not walk them
+  again: generating the 20 MB benchmark input a second time takes 13.9
+  instead of 46.9 ms in Chrome. They count toward the engine's limit on
+  the memory its inputs hold, and are dropped when a sample is added.
+- quickertype-core: `JsonInput::inferred_from` (and `JsonInference`) tells
+  where an input inferred its types from; `JsonInput::set_keep_tallies`
+  keeps the tallies of a compressed form with it. An error while tallying
+  a compressed form is reported instead of falling back to its values.
+
 ## [0.1.0] - 2026-11-13
 
 The first release: the `quicktype` CLI, ported to Rust, as prebuilt binaries

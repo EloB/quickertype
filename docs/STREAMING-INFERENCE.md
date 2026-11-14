@@ -166,7 +166,13 @@ transformation the string types already allow (or that unrestricted
 types absorb), and adding URI attributes whose protocol and extension are
 already in the combined sets. In each case the union returns the same
 value with the same key order, so skipping it is exact; it makes the work
-per string value a lookup instead of a set merge.
+per string value a lookup instead of a set merge. Bits per tally
+(`StringTally::absorbed`) then skip the lookup too: combining only ever
+adds to the string types (their union is unrestricted if either is, and
+unites the transformations), so once they absorb unrestricted strings or
+a transformation, they always do, and the bit set when it was first
+added says so for every later value. A merge keeps the bits of both
+tallies, since what either combination absorbs, their union does.
 
 `StringTally::without_enums` is the same combination as it is without
 enum inference, where every interned string also adds `unrestricted`.
@@ -340,9 +346,20 @@ ask for a `CompressedJSON`'s tables at any time, and the npm facade then
 fills them from it (`npm/quicktype-core/README.md`, "JSON samples"). Such
 an input infers from tallies made of the form when its types are
 inferred (`tally_compressed` in `input/tallies.rs`): one walk over it,
-then the inference from tallies of the sections above. The tallies of a
-run are freed when its inference ends, so what the engine holds between
-runs, and what its memory limit counts, are as before.
+then the inference from tallies of the sections above. An input over a
+form the engine keeps (`from_shared`) keeps the tallies with the form
+(`KeptTallies`, `JsonInput::set_keep_tallies`), and the next inference
+over the same samples, by any input over the form, uses them instead of
+walking again (a form the walk declined is kept declined, the same way). That is exact: a form only grows, and what is in it never
+changes, so the tallies of the same samples (each top-level's, compared
+when they are used) are the same, whatever the inference flags, which
+the tallies do not depend on. Reading a sample into the form drops them,
+since the next inference is most likely over more samples. The form
+counts them in its `heap_size`, so the engine's memory limit counts them
+(`jsonHeld`, brought up to date when a run ends), and evicting the form
+frees them with it. Inputs over a form made for one run
+(`from_compressed`) do not keep them: their tallies are freed when
+inference ends.
 
 The walk starts at each sample's root, top-level by top-level and sample
 by sample in the order the top-level lists them, and goes depth first,
@@ -358,7 +375,13 @@ with references handled) is `add_case`, an uninterned one
 `add_uninterned`, a string format `add_string_format` with its kind, and
 a transformed string `add_transformed_string` with the kind and
 attributes of its text, computed with the form's date/time recognizer as
-`Inference.ts` computes them.
+`Inference.ts` computes them (once for a text that recurs, which has one
+index: the walk keeps those of the last 256 by index). These are the
+very handlers the builder
+calls for the reader's events (`Tallies::add_kind`, `add_case`,
+`add_object`, `add_array`, `add_key`, `add_proto_key` and the others,
+which take the node of the place and a string id): the builder finds the
+place and the string ids of what it reads, the walk those of the values.
 
 So each place's node sees the operations the builder performs while
 reading, in the same order. By the induction of [Places](#places), the
@@ -370,26 +393,26 @@ where reading gives each sample a tree and merges them, which is the
 same tree (`merging_trees_is_reading_on`). The tallies are therefore the
 ones reading the samples gives, and everything above applies.
 
-Two differences cannot be observed. A key or case is known by its index
+One difference cannot be observed: a key or case is known by its index
 in the form's string table, not in a table of the tallies' own; every
 text is there once, as `internString` interns it, but `"__proto__"`,
 which gets a new index each time and so is known by its text (the walk
-takes the first such index for all). And per-tally bits record what the
-combined string attributes absorb already (unrestricted string types,
-each transformation), which the shortcuts of [Other
-strings](#other-strings-combined-attributes) look up for every value:
-combining only ever adds to them, so once a value is absorbed every
-later one like it is, and the bits skip only combinations those lookups
-would skip, without looking.
+takes the first such index for all).
 
 The walk declines what no reader makes: an object or array reached a
 second time (shared, or a cycle), an object key that is not an interned
 string, a transformed string whose text has no kind or no attribute
-producer, a string table that holds a text twice, a value that is not
-there. Then the input infers from the values one by one, which is the
-reference, so the types are quicktype's either way. Forms the engine
-read, and tables of quicktype's own `CompressedJSON` (which the facade
-requires), have none of these; checking costs a bit per container.
+producer, a string table that holds a text twice. Then the input infers
+from the values one by one, which is the reference, so the types are
+quicktype's either way (for a transformed string without a kind or
+producer, that is `Inference.ts`'s error). Forms the engine read, and
+tables of quicktype's own `CompressedJSON` (which the facade requires),
+have none of these; checking costs a bit per container. Nothing else
+declines: an error while tallying is the run's, raised as reading the
+samples raises it. A value that is not there (which imported tables
+cannot have: importing checks every value) fails the walk with the
+error the values' inference fails with when it looks the value up, and
+more places than a node id counts fails as reading fails.
 
 ## TypeBuilder calls
 
@@ -453,7 +476,9 @@ memory, and is the one `to_compressed` needs. An input that keeps the
 compressed form infers from its values one by one, or from tallies of it
 with `JsonInput::set_tally_compressed(true)`, which `from_shared` and
 `from_compressed` set (and `QUICKTYPE_INFERENCE=compressed-json` does
-not).
+not), and keeps those with the form with
+`JsonInput::set_keep_tallies(true)`, which `from_shared` sets.
+`JsonInput::inferred_from` tells which it did last.
 
 ## Memory
 
@@ -508,7 +533,7 @@ a reader and as text): the same results on both paths, the `RangeError`
 from exactly 1,000 levels on.
 
 - `cargo test` checks 3,000 seeds, each with five graphs and a whole
-  run.
+  run, every way (below), against the reference computed once per seed.
 
 Results when this landed: `cargo xtask streaming-fuzz` over seeds 0 to
 1,999,999 (two runs of a million, the second after merging main) found 0
@@ -568,15 +593,33 @@ compares two more ways with the reference, for every seed: the
 compressed form the readers made, tallied (the engine's path for the
 samples it read, `jsonShared`), and its tables exported and imported
 again with `JsonInput::from_compressed` (its path for tables a
-JavaScript `CompressedJSON` built, `json`). `cargo test` checks 3,000
-seeds that way too, and the hand-written cases above run every way
-(`Path::All`).
+JavaScript `CompressedJSON` built, `json`). The first keeps its
+tallies with the form, as the engine does, so that each seed's second
+and later graphs (other inference flags) come from the kept tallies.
+After every graph the harness also checks where each way inferred from
+(`JsonInput::inferred_from`): forms the readers made, and their tables,
+must be tallied, never declined (and the kept tallies used from the
+second graph on), so a walk that declined them fails the comparison
+instead of comparing the reference with itself (forcing `tally_compressed` to decline fails it on
+the first seeds and on every hand-written case). `cargo test`'s 3,000
+seeds and the hand-written cases above run every way (`Path::All`).
 
 - `cargo xtask streaming-fuzz --path compressed --seeds 1_000_000` checks
   the WebAssembly engine's path instead of the CLI's (`--path all` both).
 
 Results when this landed: seeds 0 to 999,999 with `--path compressed`
 found 0 differences in 4,000,000 graphs (two flag combinations per seed,
-each for both ways) and 199,846 whole runs (16,270 failed identically, 77
-skipped for a `$ref` cycle through a union), with 159,927 sources
-failing identically; 544 s on 12 threads.
+each for both ways) and 99,923 whole runs, each both ways (8,135 failed
+identically, 77 skipped for a `$ref` cycle through a union), with
+159,927 sources failing identically; 544 s on 12 threads. (The harness
+then counted a whole run once per way, and reported 199,846 runs and
+16,270 failures; it counts each run once now.)
+
+After the follow-up review's fixes (errors in the walk raised, the walk
+checked to be taken, one set of handlers for reading and the walk, kept
+tallies): seeds 0 to 299,999 with `--path all` found 0 differences in
+1,800,000 graphs (two flag combinations per seed, each for the three
+ways; on the engine's path the second from the kept tallies) and 29,966
+whole runs, each on the three ways (2,413 failed identically, 34 skipped
+for a `$ref` cycle through a union), with 48,050 sources failing
+identically; 222 s on 10 threads.

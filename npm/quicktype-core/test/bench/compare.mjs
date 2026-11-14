@@ -6,7 +6,7 @@
 // does).
 //
 //   node --expose-gc test/bench/compare.mjs [--browser] [--only REGEX] [--rounds N] [--json]
-//        [--variant NAME=PACKAGE_DIR ...] [--cold N]
+//        [--variant NAME=PACKAGE_DIR ...] [--cold N] [--again]
 //
 // The sides are this package on WebAssembly and on TypeScript; with
 // --variant, each named copy of the package (a directory with its
@@ -21,6 +21,9 @@
 // that includes compiling the engine, which happens on first use; in
 // Chrome the page compiles it first, as the playground does when it
 // starts, so the first run includes instantiating it.
+//
+// With --again (warm only), each round also runs the same input a second
+// time, and its median is printed after the total ("again").
 
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -49,6 +52,7 @@ if (variants.length === 0) variants.push(["WebAssembly", packageRoot]);
 const tsSide = "TypeScript";
 
 const cold = option("--cold") === undefined ? undefined : Number(option("--cold"));
+const again = args.includes("--again");
 const inputs = benchInputs
     .filter(([name]) => only === undefined || only.test(name))
     .map(([name, make]) => ({ name, text: make() }));
@@ -67,6 +71,7 @@ async function inNode() {
     });
     sides.push({ ...sides[0], name: tsSide, ts: true });
     return measure(sides, inputs, {
+        again,
         ...(fixedRounds === undefined ? {} : { rounds: () => fixedRounds }),
         gc: typeof globalThis.gc === "function" ? globalThis.gc : undefined,
         cpu: () => {
@@ -194,6 +199,7 @@ ${variants
     sides.push({ ...sides[0], name: ${JSON.stringify(tsSide)}, ts: true });
     const inputs = await (await fetch("/inputs.json")).json();
     const results = await measure(sides, inputs, {
+        again: ${again},
         ${fixedRounds === undefined ? "" : `rounds: () => ${fixedRounds},`}
         gc: typeof gc === "function" ? gc : undefined,
     });
@@ -372,7 +378,8 @@ if (args.includes("--json")) {
         for (const [name, t] of Object.entries(r.sides)) {
             const cpu = t.cpu === undefined ? "" : ` (${ms(t.cpu)})`;
             const ratio = name === tsSide ? "" : `  ${(ts.total / t.total).toFixed(2)}×`;
-            console.log(`  ${name.padEnd(14)} ${ms(t.read).padStart(7)} + ${ms(t.generate).padStart(7)} = ${ms(t.total).padStart(7)}${cpu}${ratio}`);
+            const second = t.again === undefined ? "" : `; again ${ms(t.again).padStart(7)}`;
+            console.log(`  ${name.padEnd(14)} ${ms(t.read).padStart(7)} + ${ms(t.generate).padStart(7)} = ${ms(t.total).padStart(7)}${cpu}${second}${ratio}`);
         }
     }
 }

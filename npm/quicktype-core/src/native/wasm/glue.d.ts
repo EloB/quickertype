@@ -40,6 +40,8 @@ export interface WasmGlue {
     jsonDrop(id: number): void;
     /** The bytes the compressed forms hold together. */
     jsonHeld(): number;
+    /** The bytes of one compressed form, or `undefined` if it is gone. */
+    jsonBytes(id: number): number | undefined;
     jsonExport(id: number): ExportedTables | undefined;
     jsonAcquire(id: number): number | undefined;
     jsonRelease(lease: number): void;

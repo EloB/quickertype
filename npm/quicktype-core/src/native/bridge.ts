@@ -33,7 +33,7 @@ import {
     engineSync,
     isDiscarded,
 } from "./engine.js";
-import { releaseLeases } from "./samples.js";
+import { afterRun, releaseLeases } from "./samples.js";
 import type { WasmGlue } from "./wasm/glue.js";
 
 // biome-ignore-all lint/suspicious/noExplicitAny: the bridge reads private fields of the facade's objects
@@ -381,6 +381,8 @@ class Driver {
         private readonly restore: Restore,
         private readonly resolve: (result: MultiFileRenderResult | undefined) => void,
         private readonly reject: (e: unknown) => void,
+        /** Called when the engine has ended the run, before its outcome is used. */
+        private readonly ended: () => void,
     ) {
         this.self = weakRef(this);
         let runs = inflight.get(glue);
@@ -470,6 +472,7 @@ class Driver {
             }
 
             if (outcome !== undefined) {
+                this.ended();
                 this.finish(outcome);
                 return;
             }
@@ -635,7 +638,7 @@ function runOnEngine(
 ): Promise<MultiFileRenderResult | undefined> {
     const restore = snapshotInputs(encoded.schemaInputs);
     return new Promise((resolve, reject) => {
-        const driver = new Driver(glue, run, restore, resolve, reject);
+        const driver = new Driver(glue, run, restore, resolve, reject, () => afterRun(glue, encoded.shared));
         const host = makeHost(run, options, encoded, glue, weakRef(driver));
         let id: number | undefined;
         try {
@@ -817,6 +820,8 @@ function runEncodedSync(
         engineStats.rerun++;
         return undefined;
     }
+
+    afterRun(glue, encoded.shared);
 
     if (outcome.unsupported !== undefined) {
         restore();

@@ -51,6 +51,11 @@ export interface EncodedRun {
      * be released (`releaseLeases`).
      */
     leases: number[];
+    /**
+     * The `CompressedJSON`s of those inputs, whose forms the run may
+     * change (`afterRun`).
+     */
+    shared: object[];
 }
 
 const nativeInputsKey = Symbol.for("quicktype-core.nativeInputs");
@@ -425,6 +430,7 @@ function encodeJSONInput(input: any, encoded: EncodedRun): Record<string, unknow
     if (lease !== undefined) {
         encoded.sharedGlue = glue;
         encoded.leases.push(lease);
+        encoded.shared.push(cjson);
         return { kind: "jsonShared", lease, ...topLevels };
     }
 
@@ -592,7 +598,7 @@ export function encodeRun(
         );
 
         const schemaInputs: JSONSchemaInput[] = [];
-        encoded = { request: {}, schemaInputs, leases: [] };
+        encoded = { request: {}, schemaInputs, leases: [], shared: [] };
         const inputs: unknown[] = [];
         for (const input of (inputData as any)._inputs as Set<any>) {
             if (input === null || typeof input !== "object") fail();
