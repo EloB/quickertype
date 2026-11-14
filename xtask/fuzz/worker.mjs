@@ -23,6 +23,8 @@ export function modesFor(seed, kase, config) {
     if (config.modes.includes("api")) modes.push("api");
     if (config.modes.includes("stream") && ["json", "postman", "mixed"].includes(kase.src) && rng.chance(config.streamRate)) modes.push("stream");
     if (config.modes.includes("cli") && rng.chance(config.cliRate)) modes.push("cli");
+    // JSON Lines (not in quicktype) against the arrays of their values.
+    if (config.modes.includes("jsonl") && kase.src === "json" && rng.chance(config.jsonlRate)) modes.push("jsonl");
     // The reference's JSON Schema of the case, as input in its own right.
     if (config.modes.includes("chain") && (kase.src === "json" || kase.src === "postman") && rng.chance(config.chainRate)) modes.push("chain");
     return modes;

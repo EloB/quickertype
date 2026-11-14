@@ -78,7 +78,7 @@ awkward names), general options (`--no-maps`, `--no-enums`, `--no-uuids`,
 
 ## Modes
 
-Each case runs in up to three modes (`--modes`, chosen per seed):
+Each case runs in some of these modes (`--modes`, chosen per seed):
 
 - **api** (always): `quicktypeMultiFile` on the reference quicktype-core and
   on our npm package with the WebAssembly engine forced
@@ -102,6 +102,19 @@ Each case runs in up to three modes (`--modes`, chosen per seed):
   case), since a recorded case is checked out on all three; `record.mjs`
   refuses a case whose output files are not named so.
 
+- **jsonl** (JSON, `--jsonl-rate`, default 8%): JSON Lines, which
+  quicktype does not read. Like the cli mode, but our binary reads each
+  top-level's samples (those that are one JSON value) grouped into JSON
+  Lines files, and the reference reads a `.json` file of the JSON array of
+  each group's values instead (`jsonlInvocations` in `engines.mjs`): the
+  outcomes must be identical, since a JSON Lines file of `V1`…`Vn` must
+  give what `[V1,…,Vn]` gives. The files have LF or CRLF line breaks,
+  blank and whitespace-only lines, whitespace before and after, values
+  that span lines (pretty-printed samples), no values at all, and plain
+  `.json` samples among them; they are named `.jsonl`, `.ndjson` or
+  `.JSONL`, or anything with `--src-lang jsonl` (which several top-levels,
+  a directory, always use). A divergence records our side's run with the
+  reference's outcome.
 - **chain** (JSON and Postman cases, `--chain-rate`, default 15%): the
   reference turns the case into a JSON Schema (target language `schema`),
   and that schema, with the case's language and options, is compared in

@@ -12,6 +12,9 @@
 // * "cli": `node <reference>/dist/index.js` and our native binary, each in a
 //   fresh directory holding the same input files; exit code, stdout, stderr
 //   and written files are compared (the directory is normalized to {CWD}).
+// * "jsonl": the same, but our binary reads JSON Lines files (not in
+//   quicktype) where the reference reads the JSON arrays of their values
+//   (`jsonlInvocations`): the outcomes must be identical.
 //
 // How a case runs in-process ("api", "stream") is in run-case.mjs, which the
 // npm differential suite replays recorded cases with.
@@ -24,6 +27,7 @@ import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { unportablePaths } from "./file-names.mjs";
+import { Rng } from "./rng.mjs";
 import { cliWordWrap, INFERENCE_FLAGS, streamClassFor } from "./run-case.mjs";
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -138,6 +142,14 @@ export function cliInvocation(kase) {
         args.push(file);
     }
 
+    args.push(...optionArgs(kase));
+    if (args.some((a) => a.includes("\0"))) return undefined;
+    return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
+}
+
+/** The CLI arguments for a case's options (after its inputs). */
+function optionArgs(kase) {
+    const args = [];
     for (const [name, value] of Object.entries(kase.rendererOptions)) {
         if (value === true) args.push(`--${name}`);
         else args.push(`--${name}`, String(value));
@@ -149,8 +161,131 @@ export function cliInvocation(kase) {
     if (kase.cli?.quiet) args.push("--quiet");
     if (kase.debug !== undefined && kase.debug.length > 0) args.push("--debug", kase.debug.join(","));
     if (kase.cli?.out !== undefined) args.push("--out", kase.cli.out);
-    if (args.some((a) => a.includes("\0"))) return undefined;
-    return { args, files, dirs: kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [] };
+    return args;
+}
+
+/** Whether `text` is one JSON value (with whitespace around it). */
+function isOneValue(text) {
+    try {
+        JSON.parse(text);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The "jsonl" mode's two CLI invocations of a JSON case, `{ ours, ref }`
+ * (each as `cliInvocation` returns one), or undefined if the case has none.
+ * Each top-level's samples (those that are one JSON value) are grouped,
+ * in order, into files: our binary reads a group as a JSON Lines file
+ * (values on lines of their own, with LF or CRLF, blank lines, whitespace
+ * before and after; named `.jsonl` or `.ndjson`, or anything with
+ * `--src-lang jsonl`), the reference as a `.json` file of the JSON array
+ * of the group's values (`[V1,…,Vn]`, `[]` for none). A group of one may
+ * also stay a plain `.json` sample on both sides, so that one top-level
+ * mixes the two. One top-level's files are the arguments (sometimes one
+ * file named after the top-level, without `--top-level`); several
+ * top-levels are a directory read with `--src-lang jsonl`. The choices
+ * are a function of the case and its seed, so a saved case replays them.
+ */
+export function jsonlInvocations(kase) {
+    if (kase.src !== "json") return undefined;
+    const rng = new Rng((kase.seed ?? 0) ^ 0x75e1);
+    const separators = ["\n", "\r\n", "\n\n", "\n \t\n", " \r\n", "\r\n\r\n"];
+    const arounds = ["", "\n", "\r\n", " \n", "\n\n"];
+    const several = kase.topLevels.length > 1;
+    // `--src-lang jsonl` makes every JSON file JSON Lines; otherwise the
+    // names do (and a directory would not take them).
+    const forced = several || rng.chance(0.3);
+    const lineFiles = (values) => {
+        const between = rng.sample(separators, rng.range(1, 3));
+        const text = values.map((v, i) => (i === 0 ? "" : between[i % between.length]) + v).join("");
+        return { ours: rng.pick(arounds) + text + rng.pick(arounds), ref: `[${values.join(",")}]` };
+    };
+    // Per top-level: its files, each { ours, ref, lines }.
+    const groups = kase.topLevels.map((tl) => {
+        const values = tl.samples.filter(isOneValue);
+        const files = [];
+        let i = 0;
+        do {
+            const n = Math.min(values.length - i, rng.weighted([[3, 1], [3, 2], [2, values.length], [1, 0]]));
+            const group = values.slice(i, i + Math.max(n, 0));
+            i += group.length;
+            if (!forced && group.length === 1 && rng.chance(0.25)) files.push({ ours: group[0], ref: group[0], lines: false });
+            else files.push({ ...lineFiles(group), lines: true });
+        } while (i < values.length);
+        return files;
+    });
+    // A directory takes `.json`, `.jsonl` and `.ndjson` files (with
+    // `--src-lang jsonl`); arguments may have any name.
+    const extension = () =>
+        !forced ? rng.pick(["jsonl", "jsonl", "ndjson", "JSONL"]) : rng.pick(several ? ["json", "jsonl", "ndjson"] : ["json", "jsonl", "txt", "ndjson"]);
+    const ours = new Map();
+    const ref = new Map();
+    const oursArgs = ["--lang", kase.lang];
+    const refArgs = ["--lang", kase.lang, "--src-lang", "json"];
+    if (forced) oursArgs.push("--src-lang", "jsonl");
+    if (!several) {
+        const [tl] = kase.topLevels;
+        const [files] = groups;
+        // One file named after the top-level, which names it.
+        const named = files.length === 1 && files[0].lines && /^[A-Za-z][A-Za-z0-9_-]{0,30}$/.test(tl.name) && rng.chance(0.3);
+        if (!named) {
+            oursArgs.push("--top-level", tl.name);
+            refArgs.push("--top-level", tl.name);
+        }
+
+        files.forEach((f, j) => {
+            const base = named ? `in/${tl.name}` : `in/s0-${j}`;
+            const oursFile = `${base}.${f.lines ? extension() : "json"}`;
+            ours.set(oursFile, f.ours);
+            ref.set(`${base}.json`, f.ref);
+            oursArgs.push(oursFile);
+            refArgs.push(`${base}.json`);
+        });
+    } else {
+        // A directory, read in the order of its (sorted) names: our names
+        // must sort as the reference's do, or they are all `.json`.
+        const place = (ext) => {
+            const names = [];
+            kase.topLevels.forEach((tl, t) => {
+                const files = groups[t];
+                if (files.length === 1) names.push([`in/${tl.name}`, files[0]]);
+                else files.forEach((f, j) => names.push([`in/${tl.name}/s${j}`, f]));
+            });
+            return names.map(([base, f]) => [`${base}.${ext()}`, `${base}.json`, f]);
+        };
+        let placed = place(extension);
+        const order = (names) => names.map((n, i) => [Buffer.from(n), i]).sort(([a], [b]) => Buffer.compare(a, b)).map(([, i]) => i).join();
+        if (order(placed.map(([o]) => o)) !== order(placed.map(([, r]) => r))) placed = place(() => "json");
+        for (const [o, r, f] of placed) {
+            ours.set(o, f.ours);
+            ref.set(r, f.ref);
+        }
+
+        oursArgs.push("in");
+        refArgs.push("in");
+    }
+
+    const options = optionArgs(kase);
+    oursArgs.push(...options);
+    refArgs.push(...options);
+    if ([...oursArgs, ...refArgs].some((a) => a.includes("\0"))) return undefined;
+    const dirs = kase.cli?.out !== undefined ? [path.dirname(kase.cli.out)] : [];
+    return { ours: { args: oursArgs, files: ours, dirs }, ref: { args: refArgs, files: ref, dirs } };
+}
+
+/** Whether the "jsonl" mode can run the case (see `cliCompatible`). */
+export function jsonlCompatible(kase) {
+    if (kase.src !== "json" || !cliCompatible(kase)) return false;
+    const invocations = jsonlInvocations(kase);
+    if (invocations === undefined) return false;
+    const written = [...invocations.ours.files.keys(), ...invocations.ref.files.keys()];
+    if (kase.cli?.out !== undefined) written.push(kase.cli.out);
+    if (unportablePaths(written).length > 0) return false;
+    // Two names that differ only in case would collide on Windows and macOS.
+    return new Set(written.map((f) => f.toLowerCase())).size === new Set(written).size;
 }
 
 /**
