@@ -38,7 +38,8 @@
 // that 360 px and 390 px widths do not scroll sideways.
 //
 // The layout: at 1440×900 the generated code has at least 55% of the
-// window's height, the masthead and the footer one line each, the options
+// window's height, the masthead and the footer one line each (the footer
+// with the samples' license), the options
 // open beside the output and the comparison one line (its details closed).
 // The options open and close from the keyboard (Enter, Escape, their close
 // button): opened, the focus moves to their first control; closed, back to
@@ -1100,6 +1101,7 @@ try {
             code: box("#output").height / innerHeight,
             headline: lines("#speed"),
             footer: box(".credits").height,
+            license: document.getElementById("license").textContent,
             line: box("#meter .meter-line").height,
             details: document.getElementById("meter-details").hidden,
             panel: document.documentElement.dataset.panel,
@@ -1110,7 +1112,18 @@ try {
     assert.ok(layout.code >= 0.55, `the code takes ${(layout.code * 100).toFixed(0)}% of the window's height`);
     assert.deepEqual(
         { ...layout, code: undefined, footer: layout.footer <= 40, line: layout.line <= 44 },
-        { code: undefined, headline: 1, footer: true, line: true, details: true, panel: "inline", panelBeside: true, scrolls: false },
+        {
+            code: undefined,
+            headline: 1,
+            footer: true,
+            // The samples' credit, in the footer, always visible.
+            license: "A Rust/WebAssembly port of quicktype, with samples from its test suite; all Apache-2.0. Not affiliated with quicktype or Glide.",
+            line: true,
+            details: true,
+            panel: "inline",
+            panelBeside: true,
+            scrolls: false,
+        },
         "the layout at 1440×900",
     );
     const panelAtLoad = await panelNow();
